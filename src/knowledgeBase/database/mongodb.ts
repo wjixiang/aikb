@@ -1,62 +1,52 @@
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import { MongoClient, Db } from 'mongodb';
-import createLoggerWithPrefix from '../logger';
 
-const logger = createLoggerWithPrefix('MongoDB');
+// lib/mongodb.ts
+import { MongoClient, Db } from "mongodb";
+import * as dotenv from "dotenv";
 
-interface MongoDBConfig {
-  uri: string;
-  dbName: string;
+dotenv.config();
+
+// Try MONGODB_URI first (used in production)
+const uri = process.env.MONGODB_URI;
+if (!uri) {
+  throw new Error(
+    "Please add your MongoDB URI to environment variables (MONGODB_URI for production)",
+  );
 }
 
-class MongoDBConnection {
-  private client: MongoClient | null = null;
-  private db: Db | null = null;
-  private config: MongoDBConfig;
+// Database name can be from env or use default
+const dbName = process.env.DB_NAME || "aikb";
 
-  constructor(config: MongoDBConfig) {
-    this.config = config;
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
+
+/**
+ * 获取 MongoDB 客户端实例
+ * @returns MongoDB 客户端实例
+ */
+export const clientPromise = (async () => {
+  const { client } = await connectToDatabase();
+  return client;
+})();
+
+export async function connectToDatabase(): Promise<{
+  client: MongoClient;
+  db: Db;
+}> {
+  // 如果已经有缓存的客户端和数据库实例，直接返回
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
   }
 
-  async connect(): Promise<Db> {
-    try {
-      if (!this.client) {
-        this.client = new MongoClient(this.config.uri);
-        await this.client.connect();
-        this.db = this.client.db(this.config.dbName);
-        logger.info(`Connected to MongoDB database: ${this.config.dbName}`);
-      }
-      return this.db!;
-    } catch (error) {
-      logger.error('Failed to connect to MongoDB:', error);
-      throw error;
-    }
-  }
+  // 连接到 MongoDB
 
-  async disconnect(): Promise<void> {
-    try {
-      if (this.client) {
-        await this.client.close();
-        this.client = null;
-        this.db = null;
-        logger.info('Disconnected from MongoDB');
-      }
-    } catch (error) {
-      logger.error('Failed to disconnect from MongoDB:', error);
-      throw error;
-    }
-  }
+  const client = new MongoClient(uri as string);
+  await client.connect();
 
-  getDb(): Db {
-    if (!this.db) {
-      throw new Error('Database not connected. Call connect() first.');
-    }
-    return this.db;
-  }
+  const db = client.db(dbName);
 
-  getClient(): MongoClient | null {
-    return this.client;
-  }
+  // 缓存客户端和数据库实例以便重用
+  cachedClient = client;
+  cachedDb = db;
+
+  return { client, db };
 }
-
-export default MongoDBConnection;

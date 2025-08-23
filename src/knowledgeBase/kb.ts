@@ -1,1 +1,1 @@
-class kb {}
+class aikb {}

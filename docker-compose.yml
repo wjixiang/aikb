@@ -1,0 +1,160 @@
+services:
+  kafka:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9998:9998"
+      - "9095:9095"
+    volumes:
+      - type: volume
+        source: kafka_standalone_data
+        target: /bitnami/kafka
+        read_only: false
+      - type: bind
+        source: ./jmx_prometheus_javaagent-1.0.1.jar
+        target: /opt/bitnami/kafka/config/jmx_prometheus_javaagent-1.0.1.jar
+        read_only: true
+      - type: bind
+        source: ./kafka-kraft-3_0_0.yml
+        target: /opt/bitnami/kafka/config/kafka-kraft-3_0_0.yml
+        read_only: true
+    environment:
+      - BITNAMI_DEBUG=yes
+      # 启用KRaft模式必须设置下面三个属性
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      # broker id
+      - KAFKA_BROKER_ID=1
+      # listener的各种配置
+      - KAFKA_CFG_LISTENERS=CONTROLLER://:9094,BROKER://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      # 注意EXTERNAL配置的是当前Docker所在的主机地址,BROKER可以使用Docker内部的网络地址即可
+      - KAFKA_CFG_ADVERTISED_LISTENERS=BROKER://kafka:9092,EXTERNAL://192.168.0.101:9093
+      # 内部各个broker之间通信用的listener
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=BROKER
+      # 用来进行选举的Controller服务器，如果有多个Controller则都需要写上，这里本机
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9094
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      # 开启JMX监控
+      - JMX_PORT=9998
+      - KAFKA_JMX_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka -Dcom.sun.management.jmxremote.rmi.port=9998
+      # 集成Prometheus JMX Exporter
+      - KAFKA_OPTS=-javaagent:/opt/bitnami/kafka/config/jmx_prometheus_javaagent-1.0.1.jar=9095:/opt/bitnami/kafka/config/kafka-kraft-3_0_0.yml
+
+  kafka-ui:
+      container_name: kafka-ui
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - "9095:8080"
+      depends_on:
+        - kafka
+      environment:
+        KAFKA_CLUSTERS_0_NAME: kafka-stand-alone
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+        KAFKA_CLUSTERS_0_METRICS_PORT: 9998
+        SERVER_SERVLET_CONTEXT_PATH: /kafkaui
+        AUTH_TYPE: "LOGIN_FORM"
+        SPRING_SECURITY_USER_NAME: admin
+        SPRING_SECURITY_USER_PASSWORD: kafkauipassword
+        DYNAMIC_CONFIG_ENABLED: 'true'
+      volumes:
+        kafka_standalone_data:
+          driver: local
+
+  es:
+    container_name: es
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=admin
+      - TZ=Asia/Shanghai
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    mem_limit: 1g
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/es/data:/usr/share/elasticsearch/data
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/es/plugins:/usr/share/elasticsearch/plugins
+
+
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.18
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.5.6
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+    - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: minio:9000
+      OPENSSL_CONF: /etc/milvus/openssl.cnf
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: aikb
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/mongodb/data:/data/db
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/mongodb/config:/data/configdb
+
+networks:
+  milvus:
+    name: milvus
