@@ -1,7 +1,6 @@
-
 // lib/mongodb.ts
-import { MongoClient, Db } from "mongodb";
-import * as dotenv from "dotenv";
+import { MongoClient, Db } from 'mongodb';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -9,12 +8,12 @@ dotenv.config();
 const uri = process.env.MONGODB_URI;
 if (!uri) {
   throw new Error(
-    "Please add your MongoDB URI to environment variables (MONGODB_URI for production)",
+    'Please add your MongoDB URI to environment variables (MONGODB_URI for production)',
   );
 }
 
 // Database name can be from env or use default
-const dbName = process.env.DB_NAME || "aikb";
+const dbName = process.env.DB_NAME || 'aikb';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;

@@ -1,9 +1,11 @@
 import createLoggerWithPrefix from '../logger';
 import { MongodbEntityStorage } from './mongodb-entity-storage';
 import { LocalEntityStorage } from './local-entity-storage';
-import { AbstractPropertyStorage, AbstractEntityStorage } from './abstract-storage';
-import { Property, Entity } from '../knowledge.type';
-
+import {
+  AbstractPropertyStorage,
+  AbstractEntityStorage,
+} from './abstract-storage';
+import { PropertyData, EntityData } from '../knowledge.type';
 
 interface KnowledgeStorageConfig {
   // Configuration options for knowledge storage

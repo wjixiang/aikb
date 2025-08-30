@@ -1,6 +1,6 @@
 import createLoggerWithPrefix from '../logger';
 import { AbstractEntityStorage } from './abstract-storage';
-import { Entity } from '../knowledge.type';
+import { EntityData } from '../knowledge.type';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -29,17 +29,17 @@ class LocalEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  private async readEntities(): Promise<Entity[]> {
+  private async readEntities(): Promise<EntityData[]> {
     try {
       const data = await fs.promises.readFile(this.entitiesFile, 'utf8');
-      return JSON.parse(data) as Entity[];
+      return JSON.parse(data) as EntityData[];
     } catch (error) {
       this.logger.error('Failed to read entities file:', error);
       return [];
     }
   }
 
-  private async writeEntities(entities: Entity[]): Promise<void> {
+  private async writeEntities(entities: EntityData[]): Promise<void> {
     try {
       await fs.promises.writeFile(
         this.entitiesFile,
@@ -55,7 +55,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     return name.join('.');
   }
 
-  async create_new_entity(entity: Entity): Promise<Entity> {
+  async create_new_entity(entity: EntityData): Promise<EntityData> {
     try {
       const entities = await this.readEntities();
       const entityId = this.generateEntityId(entity.name);
@@ -65,7 +65,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
         (e) => this.generateEntityId(e.name) === entityId,
       );
       if (existingEntity) {
-        throw new Error(`Entity with name ${entityId} already exists`);
+        throw new Error(`EntityData with name ${entityId} already exists`);
       }
 
       entities.push(entity);
@@ -79,7 +79,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async get_entity_by_name(name: string[]): Promise<Entity | null> {
+  async get_entity_by_name(name: string[]): Promise<EntityData | null> {
     try {
       const entities = await this.readEntities();
       const entityId = this.generateEntityId(name);
@@ -93,7 +93,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
         return entity;
       }
 
-      this.logger.warn(`Entity with name ${entityId} not found`);
+      this.logger.warn(`EntityData with name ${entityId} not found`);
       return null;
     } catch (error) {
       this.logger.error('Failed to get entity by name:', error);
@@ -101,7 +101,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async update_entity(entity: Entity): Promise<Entity> {
+  async update_entity(entity: EntityData): Promise<EntityData> {
     try {
       const entities = await this.readEntities();
       const entityId = this.generateEntityId(entity.name);
@@ -110,7 +110,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
         (e) => this.generateEntityId(e.name) === entityId,
       );
       if (index === -1) {
-        throw new Error(`Entity with name ${entityId} not found`);
+        throw new Error(`EntityData with name ${entityId} not found`);
       }
 
       entities[index] = entity;
@@ -135,7 +135,9 @@ class LocalEntityStorage extends AbstractEntityStorage {
       );
 
       if (filteredEntities.length === initialLength) {
-        this.logger.warn(`Entity with name ${entityId} not found for deletion`);
+        this.logger.warn(
+          `EntityData with name ${entityId} not found for deletion`,
+        );
         return false;
       }
 
@@ -148,7 +150,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async search_entities(query: string): Promise<Entity[]> {
+  async search_entities(query: string): Promise<EntityData[]> {
     try {
       const entities = await this.readEntities();
       const searchRegex = new RegExp(query, 'i');
@@ -170,7 +172,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async list_all_entities(): Promise<Entity[]> {
+  async list_all_entities(): Promise<EntityData[]> {
     try {
       const entities = await this.readEntities();
       this.logger.info(`Listed ${entities.length} entities`);

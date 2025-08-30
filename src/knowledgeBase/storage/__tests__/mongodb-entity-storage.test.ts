@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MongodbEntityStorage } from '../mongodb-entity-storage';
 import { connectToDatabase } from '../../database/mongodb';
 import { ObjectId } from 'mongodb';
-import { Entity } from '../../knowledge.type';
+import { EntityData } from '../../knowledge.type';
 
 // Mock the database connection
 vi.mock('../../database/mongodb');
@@ -22,13 +22,13 @@ describe('MongodbEntityStorage', () => {
   let mockCollection: any;
   let mockDb: any;
 
-  const mockEntity: Entity = {
+  const mockEntity: EntityData = {
     name: ['test', 'entity'],
     tags: ['test', 'mock'],
     definition: 'A test entity for mocking',
   };
 
-  const mockEntity2: Entity = {
+  const mockEntity2: EntityData = {
     name: ['another', 'entity'],
     tags: ['another', 'mock'],
     definition: 'Another test entity for mocking',
@@ -37,7 +37,7 @@ describe('MongodbEntityStorage', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
-    
+
     // Create mock collection
     mockCollection = {
       insertOne: vi.fn(),
@@ -46,18 +46,18 @@ describe('MongodbEntityStorage', () => {
       deleteOne: vi.fn(),
       find: vi.fn(),
     };
-    
+
     // Create mock db
     mockDb = {
       collection: vi.fn().mockReturnValue(mockCollection),
     };
-    
+
     // Setup mock database connection
     mockConnectToDatabase.mockResolvedValue({
       client: {} as any,
       db: mockDb,
     });
-    
+
     // Create storage instance
     mongodbStorage = new MongodbEntityStorage();
   });
@@ -87,7 +87,9 @@ describe('MongodbEntityStorage', () => {
       mockCollection.insertOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.create_new_entity(mockEntity)).rejects.toThrow(error);
+      await expect(
+        mongodbStorage.create_new_entity(mockEntity),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -101,7 +103,10 @@ describe('MongodbEntityStorage', () => {
       mockCollection.findOne.mockResolvedValue(entityWithId);
 
       // Act
-      const result = await mongodbStorage.get_entity_by_name(['test', 'entity']);
+      const result = await mongodbStorage.get_entity_by_name([
+        'test',
+        'entity',
+      ]);
 
       // Assert
       expect(result).toEqual(mockEntity);
@@ -115,7 +120,10 @@ describe('MongodbEntityStorage', () => {
       mockCollection.findOne.mockResolvedValue(null);
 
       // Act
-      const result = await mongodbStorage.get_entity_by_name(['non', 'existent']);
+      const result = await mongodbStorage.get_entity_by_name([
+        'non',
+        'existent',
+      ]);
 
       // Assert
       expect(result).toBeNull();
@@ -127,7 +135,9 @@ describe('MongodbEntityStorage', () => {
       mockCollection.findOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.get_entity_by_name(['test', 'entity'])).rejects.toThrow(error);
+      await expect(
+        mongodbStorage.get_entity_by_name(['test', 'entity']),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -157,7 +167,7 @@ describe('MongodbEntityStorage', () => {
 
       // Act & Assert
       await expect(mongodbStorage.update_entity(mockEntity)).rejects.toThrow(
-        'Entity with name test.entity not found',
+        'EntityData with name test.entity not found',
       );
     });
 
@@ -167,7 +177,9 @@ describe('MongodbEntityStorage', () => {
       mockCollection.replaceOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.update_entity(mockEntity)).rejects.toThrow(error);
+      await expect(mongodbStorage.update_entity(mockEntity)).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -207,7 +219,9 @@ describe('MongodbEntityStorage', () => {
       mockCollection.deleteOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.delete_entity(['test', 'entity'])).rejects.toThrow(error);
+      await expect(
+        mongodbStorage.delete_entity(['test', 'entity']),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -224,11 +238,11 @@ describe('MongodbEntityStorage', () => {
           entityName: 'another.entity',
         },
       ];
-      
+
       const mockFind = {
         toArray: vi.fn().mockResolvedValue(entitiesWithId),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act
@@ -236,10 +250,7 @@ describe('MongodbEntityStorage', () => {
 
       // Assert
       // The result should not include the entityName field as it's removed before returning
-      expect(result).toEqual([
-        mockEntity,
-        mockEntity2
-      ]);
+      expect(result).toEqual([mockEntity, mockEntity2]);
       expect(mockCollection.find).toHaveBeenCalledWith({
         $or: [
           { entityName: { $regex: /test/i } },
@@ -254,7 +265,7 @@ describe('MongodbEntityStorage', () => {
       const mockFind = {
         toArray: vi.fn().mockResolvedValue([]),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act
@@ -270,11 +281,13 @@ describe('MongodbEntityStorage', () => {
       const mockFind = {
         toArray: vi.fn().mockRejectedValue(error),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act & Assert
-      await expect(mongodbStorage.search_entities('test')).rejects.toThrow(error);
+      await expect(mongodbStorage.search_entities('test')).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -291,11 +304,11 @@ describe('MongodbEntityStorage', () => {
           entityName: 'another.entity',
         },
       ];
-      
+
       const mockFind = {
         toArray: vi.fn().mockResolvedValue(entitiesWithId),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act
@@ -311,7 +324,7 @@ describe('MongodbEntityStorage', () => {
       const mockFind = {
         toArray: vi.fn().mockResolvedValue([]),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act
@@ -327,7 +340,7 @@ describe('MongodbEntityStorage', () => {
       const mockFind = {
         toArray: vi.fn().mockRejectedValue(error),
       };
-      
+
       mockCollection.find.mockReturnValue(mockFind);
 
       // Act & Assert

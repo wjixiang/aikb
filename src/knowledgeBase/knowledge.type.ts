@@ -1,19 +1,22 @@
-import { ObjectId } from "mongodb";
-
 /**
  * 实体为一个"点"，通过以下多个坐标对其进行定位
  */
-export interface Entity {
+export interface EntityData {
   name: string[];
   tags: string[];
   definition: string;
+  propertyBindIds: string[];
 }
 
-export interface EntityWithId extends Entity  {
-  id: ObjectId
+export interface EntityDataWithId extends EntityData {
+  id: string;
 }
 
-export interface Property {
+export interface PropertyData {
   name: string[];
   content: string;
+}
+
+export interface PropertyDataWithId extends PropertyData {
+  id: string;
 }

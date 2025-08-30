@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongodbEntityStorage } from '../mongodb-entity-storage';
 import { MongoClient, Db } from 'mongodb';
-import { Entity } from '../../knowledge.type';
+import { EntityData } from '../../knowledge.type';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,13 +13,13 @@ describe('MongodbEntityStorage Integration Tests', () => {
   const collectionName = 'entities';
 
   // Test data
-  const testEntity: Entity = {
+  const testEntity: EntityData = {
     name: ['test', 'entity'],
     tags: ['test', 'integration'],
     definition: 'A test entity for integration testing',
   };
 
-  const testEntity2: Entity = {
+  const testEntity2: EntityData = {
     name: ['another', 'entity'],
     tags: ['another', 'test'],
     definition: 'Another test entity for integration testing',
@@ -28,13 +28,13 @@ describe('MongodbEntityStorage Integration Tests', () => {
   beforeAll(async () => {
     // Connect to MongoDB
     const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/aikb';
-    
+
     mongoClient = new MongoClient(uri);
     await mongoClient.connect();
-    
+
     const dbName = process.env.DB_NAME || 'aikb';
     db = mongoClient.db(dbName);
-    
+
     // Create storage instance
     mongodbStorage = new MongodbEntityStorage();
   });
@@ -58,7 +58,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
     try {
       await db.collection(collectionName).deleteMany({});
       // Wait a bit to ensure the deletion is complete
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
     } catch (error) {
       console.error('Error cleaning up collection before test:', error);
     }
@@ -71,7 +71,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result).toEqual(testEntity);
-      
+
       // Verify entity was actually inserted into the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -92,7 +92,9 @@ describe('MongodbEntityStorage Integration Tests', () => {
       // Act & Assert
       // Note: MongoDB will allow duplicate inserts with different _id
       // This test verifies the create operation works even if entityName exists
-      await expect(mongodbStorage.create_new_entity(testEntity)).resolves.toEqual(testEntity);
+      await expect(
+        mongodbStorage.create_new_entity(testEntity),
+      ).resolves.toEqual(testEntity);
     });
   });
 
@@ -105,7 +107,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
       });
 
       // Act
-      const result = await mongodbStorage.get_entity_by_name(['test', 'entity']);
+      const result = await mongodbStorage.get_entity_by_name([
+        'test',
+        'entity',
+      ]);
 
       // Assert
       expect(result).toEqual(testEntity);
@@ -113,7 +118,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
     it('should return null if entity is not found', async () => {
       // Act
-      const result = await mongodbStorage.get_entity_by_name(['non', 'existent']);
+      const result = await mongodbStorage.get_entity_by_name([
+        'non',
+        'existent',
+      ]);
 
       // Assert
       expect(result).toBeNull();
@@ -139,7 +147,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result).toEqual(updatedEntity);
-      
+
       // Verify entity was actually updated in the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -152,7 +160,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
     it('should throw an error if entity is not found', async () => {
       // Act & Assert
       await expect(mongodbStorage.update_entity(testEntity)).rejects.toThrow(
-        'Entity with name test.entity not found',
+        'EntityData with name test.entity not found',
       );
     });
   });
@@ -170,10 +178,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result).toBe(true);
-      
+
       // Wait a bit to ensure deletion is complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Verify entity was actually deleted from the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -205,7 +213,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result.length).toBeGreaterThan(0);
-      expect(result.some(e => e.name.join('.') === 'test.entity')).toBe(true);
+      expect(result.some((e) => e.name.join('.') === 'test.entity')).toBe(true);
     });
 
     it('should search entities by tags', async () => {
@@ -214,12 +222,14 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result.length).toBeGreaterThan(0);
-      expect(result.some(e => e.name.join('.') === 'test.entity')).toBe(true);
+      expect(result.some((e) => e.name.join('.') === 'test.entity')).toBe(true);
     });
 
     it('should search entities by definition', async () => {
       // Act
-      const result = await mongodbStorage.search_entities('integration testing');
+      const result = await mongodbStorage.search_entities(
+        'integration testing',
+      );
 
       // Assert
       expect(result.length).toBeGreaterThan(0);
@@ -247,8 +257,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
 
       // Assert
       expect(result.length).toBe(2);
-      expect(result.some(e => e.name.join('.') === 'test.entity')).toBe(true);
-      expect(result.some(e => e.name.join('.') === 'another.entity')).toBe(true);
+      expect(result.some((e) => e.name.join('.') === 'test.entity')).toBe(true);
+      expect(result.some((e) => e.name.join('.') === 'another.entity')).toBe(
+        true,
+      );
     });
 
     it('should return empty array if no entities exist', async () => {
@@ -267,7 +279,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
       expect(createdEntity).toEqual(testEntity);
 
       // Read
-      const retrievedEntity = await mongodbStorage.get_entity_by_name(['test', 'entity']);
+      const retrievedEntity = await mongodbStorage.get_entity_by_name([
+        'test',
+        'entity',
+      ]);
       expect(retrievedEntity).toEqual(testEntity);
 
       // Update
@@ -278,14 +293,23 @@ describe('MongodbEntityStorage Integration Tests', () => {
       };
       await mongodbStorage.update_entity(updatedEntity);
 
-      const retrievedUpdatedEntity = await mongodbStorage.get_entity_by_name(['test', 'entity']);
+      const retrievedUpdatedEntity = await mongodbStorage.get_entity_by_name([
+        'test',
+        'entity',
+      ]);
       expect(retrievedUpdatedEntity).toEqual(updatedEntity);
 
       // Delete
-      const deleteResult = await mongodbStorage.delete_entity(['test', 'entity']);
+      const deleteResult = await mongodbStorage.delete_entity([
+        'test',
+        'entity',
+      ]);
       expect(deleteResult).toBe(true);
 
-      const deletedEntity = await mongodbStorage.get_entity_by_name(['test', 'entity']);
+      const deletedEntity = await mongodbStorage.get_entity_by_name([
+        'test',
+        'entity',
+      ]);
       expect(deletedEntity).toBeNull();
     });
   });
