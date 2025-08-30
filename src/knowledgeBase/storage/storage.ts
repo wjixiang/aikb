@@ -2,7 +2,6 @@ import createLoggerWithPrefix from '../logger';
 import { MongodbEntityStorage } from './mongodb-entity-storage';
 import { LocalEntityStorage } from './local-entity-storage';
 import {
-  AbstractPropertyStorage,
   AbstractEntityStorage,
 } from './abstract-storage';
 import { PropertyData, EntityData } from '../knowledge.type';
@@ -20,21 +19,17 @@ interface KnowledgeStorageConfig {
  */
 class KnowledgeStorage {
   entityStorage: AbstractEntityStorage;
-  propertyStorage: AbstractPropertyStorage;
 
   constructor(
     entityStorage: AbstractEntityStorage,
-    propertyStorage: AbstractPropertyStorage,
   ) {
     this.entityStorage = entityStorage;
-    this.propertyStorage = propertyStorage;
   }
 }
 
 export type { KnowledgeStorageConfig };
 export {
   KnowledgeStorage,
-  AbstractPropertyStorage,
   AbstractEntityStorage,
   MongodbEntityStorage,
   LocalEntityStorage,

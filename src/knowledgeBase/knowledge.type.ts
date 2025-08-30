@@ -5,7 +5,6 @@ export interface EntityData {
   name: string[];
   tags: string[];
   definition: string;
-  propertyBindIds: string[];
 }
 
 export interface EntityDataWithId extends EntityData {
@@ -19,4 +18,18 @@ export interface PropertyData {
 
 export interface PropertyDataWithId extends PropertyData {
   id: string;
+}
+
+export interface Knowledge {
+  id: string;
+  scopePath: {
+    entities: string[];
+    scopes: string[][];
+  };
+  content: string;
+  metadata: {
+    tags: string;
+    createDate: Date;
+
+  }
 }
