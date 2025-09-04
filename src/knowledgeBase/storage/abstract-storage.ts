@@ -1,4 +1,4 @@
-import { PropertyData, EntityData } from '../knowledge.type';
+import { PropertyData, EntityData, KnowledgeData, KnowledgeDataWithId } from '../knowledge.type';
 
 
 /**
@@ -13,3 +13,6 @@ export abstract class AbstractEntityStorage {
   abstract list_all_entities(): Promise<EntityData[]>;
 }
 
+export abstract class AbstractKnowledgeStorage {
+  abstract create_new_knowledge(knowledge: KnowledgeData): Promise<KnowledgeDataWithId>;
+}

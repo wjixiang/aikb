@@ -6,7 +6,7 @@ import {
 } from './abstract-storage';
 import { PropertyData, EntityData } from '../knowledge.type';
 
-interface KnowledgeStorageConfig {
+interface StorageConfig {
   // Configuration options for knowledge storage
   storagePath?: string;
   maxEntities?: number;
@@ -17,7 +17,7 @@ interface KnowledgeStorageConfig {
  * 1. Store knowledge in specific format
  * 2. Implement agent-friendly searching & retrieving interface
  */
-class KnowledgeStorage {
+class Storage {
   entityStorage: AbstractEntityStorage;
 
   constructor(
@@ -27,9 +27,9 @@ class KnowledgeStorage {
   }
 }
 
-export type { KnowledgeStorageConfig };
+export type { StorageConfig };
 export {
-  KnowledgeStorage,
+  Storage,
   AbstractEntityStorage,
   MongodbEntityStorage,
   LocalEntityStorage,
