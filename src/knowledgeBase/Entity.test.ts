@@ -28,5 +28,5 @@ describe("Entity.create_entity_with_ai", () => {
     
     // Verify the mocked definition is returned
     // expect(definition).toBe("Mocked definition for hypertension");
-  },{timeout:30000});
+  }, 30000);
 });

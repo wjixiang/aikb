@@ -146,7 +146,7 @@ describe('ElasticsearchEntityContentStorage Integration Tests', () => {
       
       // Act
       const result = await elasticsearchStorage.create_new_entity_content(testEntity, entityId);
-
+      console.log(result)
       // Assert
       expect(result).toEqual({...expectedTestEntityWithId, id: entityId});
 

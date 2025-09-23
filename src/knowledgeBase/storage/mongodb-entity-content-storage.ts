@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from '../../lib/logger';
 import { connectToDatabase } from '../database/mongodb';
 import { AbstractEntityContentStorage } from './abstract-storage';
 import { EntityData, EntityDataWithId } from '../knowledge.type';
