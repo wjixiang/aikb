@@ -32,7 +32,7 @@ graph TB
     end
     
     subgraph "存储实现层"
-        J[MongodbEntityStorage]
+        J[MongodbEntityContentStorage]
         K[LocalEntityStorage]
         L[ElasticsearchStorage]
         M[Neo4jStorage]

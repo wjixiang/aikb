@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ElasticsearchEntityStorage } from '../elasticsearch-entity-storage';
+import { ElasticsearchEntityContentStorage } from '../elasticsearch-entity-content-storage';
 import { Client } from '@elastic/elasticsearch';
 import { EntityData } from '../../knowledge.type';
 
@@ -18,8 +18,8 @@ vi.mock('../../logger', () => ({
   default: vi.fn(() => mockLogger),
 }));
 
-describe('ElasticsearchEntityStorage', () => {
-  let elasticsearchStorage: ElasticsearchEntityStorage;
+describe('ElasticsearchEntityContentStorage', () => {
+  let elasticsearchStorage: ElasticsearchEntityContentStorage;
   let mockClient: any;
   let mockIndex: any;
 
@@ -75,7 +75,7 @@ describe('ElasticsearchEntityStorage', () => {
     MockClient.mockImplementation(() => mockClient);
 
     // Create storage instance
-    elasticsearchStorage = new ElasticsearchEntityStorage(
+    elasticsearchStorage = new ElasticsearchEntityContentStorage(
       'http://localhost:9200',
     );
   });
@@ -87,10 +87,10 @@ describe('ElasticsearchEntityStorage', () => {
   describe('Constructor', () => {
     it('should create instance with default URL', () => {
       // Act
-      const storage = new ElasticsearchEntityStorage();
+      const storage = new ElasticsearchEntityContentStorage();
 
       // Assert
-      expect(storage).toBeInstanceOf(ElasticsearchEntityStorage);
+      expect(storage).toBeInstanceOf(ElasticsearchEntityContentStorage);
       expect(MockClient).toHaveBeenCalledWith({
         node: 'http://localhost:9200',
         auth: {
@@ -101,10 +101,10 @@ describe('ElasticsearchEntityStorage', () => {
 
     it('should create instance with custom URL', () => {
       // Act
-      const storage = new ElasticsearchEntityStorage('http://custom:9200');
+      const storage = new ElasticsearchEntityContentStorage('http://custom:9200');
 
       // Assert
-      expect(storage).toBeInstanceOf(ElasticsearchEntityStorage);
+      expect(storage).toBeInstanceOf(ElasticsearchEntityContentStorage);
       expect(MockClient).toHaveBeenCalledWith({
         node: 'http://custom:9200',
         auth: {
@@ -118,7 +118,7 @@ describe('ElasticsearchEntityStorage', () => {
       process.env.ELASTICSEARCH_URL_API_KEY = 'test-api-key';
 
       // Act
-      const storage = new ElasticsearchEntityStorage('http://custom:9200');
+      const storage = new ElasticsearchEntityContentStorage('http://custom:9200');
 
       // Assert
       expect(MockClient).toHaveBeenCalledWith({
@@ -360,7 +360,10 @@ describe('ElasticsearchEntityStorage', () => {
       const result = await elasticsearchStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
-      expect(result).toEqual(oldEntity);
+      expect(result).toEqual({
+        ...newEntityData,
+        id: 'entity_12345_abcde',
+      });
       expect(mockClient.update).toHaveBeenCalledWith({
         index: 'entities',
         id: 'entity_12345_abcde',

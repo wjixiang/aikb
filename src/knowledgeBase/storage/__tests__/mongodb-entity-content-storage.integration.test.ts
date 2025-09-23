@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { MongodbEntityStorage } from '../mongodb-entity-storage';
+import { MongodbEntityContentStorage } from '../mongodb-entity-content-storage';
 import { MongoClient, Db } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-describe('MongodbEntityStorage Integration Tests', () => {
-  let mongodbStorage: MongodbEntityStorage;
+describe('MongodbEntityContentStorage Integration Tests', () => {
+  let mongodbStorage: MongodbEntityContentStorage;
   let mongoClient: MongoClient;
   let db: Db;
   const collectionName = 'entities';
@@ -36,7 +36,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
     db = mongoClient.db(dbName);
 
     // Create storage instance
-    mongodbStorage = new MongodbEntityStorage();
+    mongodbStorage = new MongodbEntityContentStorage();
   });
 
   afterAll(async () => {
@@ -155,7 +155,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
       const result = await mongodbStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
-      expect(result).toEqual(oldEntity);
+      expect(result).toEqual({
+        ...newEntityData,
+        id: oldEntity.id,
+      });
 
       // Verify entity was actually updated in the database
       const entityInDb = await db.collection(collectionName).findOne({
@@ -316,7 +319,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
         'test',
         'entity',
       ]);
-      expect(retrievedUpdatedEntity).toEqual(newEntityData);
+      expect(retrievedUpdatedEntity).toEqual({
+        ...newEntityData,
+        id: entityId,
+      });
 
       // Delete
       const deleteResult = await mongodbStorage.delete_entity([

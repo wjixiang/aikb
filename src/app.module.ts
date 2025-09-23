@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ElasticsearchEntityStorage } from './knowledgeBase/storage/elasticsearch-entity-storage';
+import { ElasticsearchEntityContentStorage } from './knowledgeBase/storage/elasticsearch-entity-content-storage';
 import knowledgeManager from './knowledgeBase/knowledgeManager';
 
 @Module({
@@ -14,12 +14,12 @@ import knowledgeManager from './knowledgeBase/knowledgeManager';
       useFactory: () => {
         const elasticsearchUrl =
           process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
-        return new ElasticsearchEntityStorage(elasticsearchUrl);
+        return new ElasticsearchEntityContentStorage(elasticsearchUrl);
       },
     },
     {
       provide: 'KNOWLEDGE_MANAGER',
-      useFactory: (entityStorage: ElasticsearchEntityStorage) => {
+      useFactory: (entityStorage: ElasticsearchEntityContentStorage) => {
         return new knowledgeManager(entityStorage);
       },
       inject: ['ENTITY_STORAGE'],

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { ElasticsearchEntityStorage } from '../elasticsearch-entity-storage';
+import { ElasticsearchEntityContentStorage } from '../elasticsearch-entity-content-storage';
 import { Client } from '@elastic/elasticsearch';
 import { EntityData, EntityDataWithId } from '../../knowledge.type';
 import * as dotenv from 'dotenv';
@@ -26,8 +26,8 @@ async function isElasticSearchAvailable(url: string): Promise<boolean> {
   }
 }
 
-describe('ElasticsearchEntityStorage Integration Tests', () => {
-  let elasticsearchStorage: ElasticsearchEntityStorage;
+describe('ElasticsearchEntityContentStorage Integration Tests', () => {
+  let elasticsearchStorage: ElasticsearchEntityContentStorage;
   let client: Client;
   const indexName = 'entities';
   let elasticSearchAvailable = false;
@@ -82,7 +82,7 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
     });
 
     // Create storage instance
-    elasticsearchStorage = new ElasticsearchEntityStorage(esUrl);
+    elasticsearchStorage = new ElasticsearchEntityContentStorage(esUrl);
 
     // Wait for ElasticSearch to be ready with retries
     let isConnected = false;

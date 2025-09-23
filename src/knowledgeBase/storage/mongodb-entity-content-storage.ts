@@ -6,7 +6,7 @@ import { EntityData, EntityDataWithId } from '../knowledge.type';
 /**
  * Concrete implementation of EntityStorage using MongoDB
  */
-class MongodbEntityStorage extends AbstractEntityContentStorage {
+class MongodbEntityContentStorage extends AbstractEntityContentStorage {
   private collectionName = 'entities';
 
   logger = createLoggerWithPrefix('MongodbEntityContentStorage');
@@ -213,4 +213,4 @@ class MongodbEntityStorage extends AbstractEntityContentStorage {
   }
 }
 
-export { MongodbEntityStorage };
+export { MongodbEntityContentStorage };

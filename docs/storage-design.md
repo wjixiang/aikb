@@ -4,7 +4,7 @@
 
 ### 1.1 当前实现
 - **存储抽象层**: 已有 `AbstractEntityStorage` 和 `AbstractPropertyStorage` 抽象类
-- **存储实现**: 已实现 `MongodbEntityStorage` 和 `LocalEntityStorage`
+- **存储实现**: 已实现 `MongodbEntityContentStorage` 和 `LocalEntityStorage`
 - **数据模型**: 
   - `entity`: 包含 name、tags、definition 字段
   - `property`: 包含 name、content 字段

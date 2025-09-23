@@ -11,11 +11,11 @@ import {
 /**
  * Concrete implementation of EntityStorage using ElasticSearch
  */
-class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
+class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
   private readonly indexName = 'entities';
   private client: Client;
 
-  logger = createLoggerWithPrefix('ElasticsearchEntityStorage');
+  logger = createLoggerWithPrefix('ElasticsearchEntityContentStorage');
 
   constructor(elasticsearchUrl: string = 'http://localhost:9200') {
     super();
@@ -366,4 +366,4 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
   }
 }
 
-export { ElasticsearchEntityStorage };
+export { ElasticsearchEntityContentStorage };

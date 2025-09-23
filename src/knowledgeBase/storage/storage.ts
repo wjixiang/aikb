@@ -1,5 +1,5 @@
 import createLoggerWithPrefix from '../logger';
-import { MongodbEntityStorage } from './mongodb-entity-storage';
+import { MongodbEntityContentStorage } from './mongodb-entity-content-storage';
 import { LocalEntityStorage } from './local-entity-storage';
 import { AbstractEntityStorage } from './abstract-storage';
 
@@ -26,6 +26,6 @@ export type { StorageConfig };
 export {
   Storage,
   AbstractEntityStorage,
-  MongodbEntityStorage,
+  MongodbEntityContentStorage,
   LocalEntityStorage,
 };

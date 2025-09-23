@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MongodbEntityStorage } from '../mongodb-entity-storage';
+import { MongodbEntityContentStorage } from '../mongodb-entity-content-storage';
 import { connectToDatabase } from '../../database/mongodb';
 import { ObjectId } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
@@ -19,8 +19,8 @@ vi.mock('../../logger', () => ({
   })),
 }));
 
-describe('MongodbEntityStorage', () => {
-  let mongodbStorage: MongodbEntityStorage;
+describe('MongodbEntityContentStorage', () => {
+  let mongodbStorage: MongodbEntityContentStorage;
   let mockCollection: any;
   let mockDb: any;
 
@@ -61,7 +61,7 @@ describe('MongodbEntityStorage', () => {
     });
 
     // Create storage instance
-    mongodbStorage = new MongodbEntityStorage();
+    mongodbStorage = new MongodbEntityContentStorage();
   });
 
   describe('create_new_entity', () => {
