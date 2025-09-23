@@ -13,7 +13,10 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
 
   logger = createLoggerWithPrefix('ElasticsearchVectorStorage');
 
-  constructor(elasticsearchUrl: string = 'http://localhost:9200', vectorDimensions: number = 1536) {
+  constructor(
+    elasticsearchUrl: string = 'http://localhost:9200',
+    vectorDimensions: number = 1536,
+  ) {
     super();
     this.vectorDimensions = vectorDimensions;
     this.client = new Client({
@@ -60,7 +63,9 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
             },
           } as any,
         });
-        this.logger.info(`Created index: ${this.indexName} with vector dimensions: ${this.vectorDimensions}`);
+        this.logger.info(
+          `Created index: ${this.indexName} with vector dimensions: ${this.vectorDimensions}`,
+        );
       }
     } catch (error) {
       // If index already exists, just continue
@@ -78,14 +83,16 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
   async store_vector(
     entityId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void> {
     try {
       await this.initializeIndex();
 
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       const document = {
@@ -103,14 +110,15 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
 
       this.logger.info(`Stored vector for entity ID: ${entityId}`);
     } catch (error) {
-      this.logger.error(`Failed to store vector for entity ID ${entityId}:`, error);
+      this.logger.error(
+        `Failed to store vector for entity ID ${entityId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async get_vector(
-    entityId: string
-  ): Promise<{
+  async get_vector(entityId: string): Promise<{
     vector: number[];
     metadata?: Record<string, any>;
   } | null> {
@@ -136,7 +144,10 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
         this.logger.warn(`Vector for entity ID ${entityId} not found`);
         return null;
       }
-      this.logger.error(`Failed to get vector for entity ID ${entityId}:`, error);
+      this.logger.error(
+        `Failed to get vector for entity ID ${entityId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -144,12 +155,14 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
   async update_vector(
     entityId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void> {
     try {
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       // First check if the vector exists
@@ -177,7 +190,10 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
 
       this.logger.info(`Updated vector for entity ID: ${entityId}`);
     } catch (error) {
-      this.logger.error(`Failed to update vector for entity ID ${entityId}:`, error);
+      this.logger.error(
+        `Failed to update vector for entity ID ${entityId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -190,7 +206,9 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       });
 
       if (result.result === 'not_found') {
-        this.logger.warn(`Vector for entity ID ${entityId} not found for deletion`);
+        this.logger.warn(
+          `Vector for entity ID ${entityId} not found for deletion`,
+        );
         return false;
       }
 
@@ -198,10 +216,15 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       return true;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        this.logger.warn(`Vector for entity ID ${entityId} not found for deletion`);
+        this.logger.warn(
+          `Vector for entity ID ${entityId} not found for deletion`,
+        );
         return false;
       }
-      this.logger.error(`Failed to delete vector for entity ID ${entityId}:`, error);
+      this.logger.error(
+        `Failed to delete vector for entity ID ${entityId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -209,16 +232,20 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
   async find_similar_vectors(
     vector: number[],
     limit: number = 10,
-    threshold: number = 0.7
-  ): Promise<Array<{
-    entityId: string;
-    similarity: number;
-    metadata?: Record<string, any>;
-  }>> {
+    threshold: number = 0.7,
+  ): Promise<
+    Array<{
+      entityId: string;
+      similarity: number;
+      metadata?: Record<string, any>;
+    }>
+  > {
     try {
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       const result = await this.client.search({
@@ -248,12 +275,12 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
         .map((hit) => {
           const { _id, _source, _score } = hit;
           const similarity = _score;
-          
+
           // Apply threshold filter
           if (similarity && similarity < threshold) {
             return null;
           }
-          
+
           return {
             entityId: _id,
             similarity: similarity || 0,
@@ -261,10 +288,10 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
           };
         })
         .filter(Boolean) as Array<{
-          entityId: string;
-          similarity: number;
-          metadata?: Record<string, any>;
-        }>;
+        entityId: string;
+        similarity: number;
+        metadata?: Record<string, any>;
+      }>;
 
       this.logger.info(`Found ${similarVectors.length} similar vectors`);
       return similarVectors;
@@ -283,7 +310,7 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       entityId: string;
       vector: number[];
       metadata?: Record<string, any>;
-    }>
+    }>,
   ): Promise<void> {
     try {
       await this.initializeIndex();
@@ -291,7 +318,9 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       // Validate all vectors have correct dimensions
       for (const item of vectors) {
         if (item.vector.length !== this.vectorDimensions) {
-          throw new Error(`Vector dimensions mismatch for entity ID ${item.entityId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`);
+          throw new Error(
+            `Vector dimensions mismatch for entity ID ${item.entityId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`,
+          );
         }
       }
 

@@ -71,8 +71,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
     MockClient.mockImplementation(() => mockClient);
 
     // Create storage instance
-    elasticsearchStorage = new ElasticsearchVectorStorage('http://localhost:9200', 5);
-    
+    elasticsearchStorage = new ElasticsearchVectorStorage(
+      'http://localhost:9200',
+      5,
+    );
+
     // Mock the logger after instance creation
     (elasticsearchStorage as any).logger = mockLogger;
   });
@@ -115,7 +118,10 @@ describe('ElasticsearchEntityVectorStorage', () => {
       process.env.ELASTICSEARCH_URL_API_KEY = 'test-api-key';
 
       // Act
-      const storage = new ElasticsearchVectorStorage('http://custom:9200', 1536);
+      const storage = new ElasticsearchVectorStorage(
+        'http://custom:9200',
+        1536,
+      );
 
       // Assert
       expect(MockClient).toHaveBeenCalledWith({
@@ -137,7 +143,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.indices.create.mockResolvedValue({});
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -172,7 +180,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
           },
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith('Created index: entity_vectors with vector dimensions: 5');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Created index: entity_vectors with vector dimensions: 5',
+      );
     });
 
     it('should not create index if it already exists', async () => {
@@ -180,7 +190,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.indices.exists.mockResolvedValue(true);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -207,7 +219,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.indices.create.mockRejectedValue(error);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -217,7 +231,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
         index: 'entity_vectors',
       });
       expect(mockClient.indices.create).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith('Index entity_vectors already exists, continuing');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Index entity_vectors already exists, continuing',
+      );
     });
 
     it('should throw error if index creation fails with other error', async () => {
@@ -227,11 +243,16 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.indices.create.mockRejectedValue(error);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act & Assert
       await expect(initializeIndex()).rejects.toThrow(error);
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to initialize index:', error);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to initialize index:',
+        error,
+      );
     });
   });
 
@@ -241,7 +262,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.index.mockResolvedValue({});
 
       // Act
-      await elasticsearchStorage.store_vector(entityId, mockVector, mockMetadata);
+      await elasticsearchStorage.store_vector(
+        entityId,
+        mockVector,
+        mockMetadata,
+      );
 
       // Assert
       expect(mockClient.index).toHaveBeenCalledWith({
@@ -254,7 +279,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
           createdAt: expect.any(String),
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Stored vector for entity ID: ${entityId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Stored vector for entity ID: ${entityId}`,
+      );
     });
 
     it('should throw error if vector dimensions mismatch', async () => {
@@ -263,7 +290,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.store_vector(entityId, wrongVector, mockMetadata)
+        elasticsearchStorage.store_vector(entityId, wrongVector, mockMetadata),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -274,7 +301,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.store_vector(entityId, mockVector, mockMetadata)
+        elasticsearchStorage.store_vector(entityId, mockVector, mockMetadata),
       ).rejects.toThrow(error);
     });
   });
@@ -304,7 +331,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
         index: 'entity_vectors',
         id: entityId,
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Retrieved vector for entity ID: ${entityId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Retrieved vector for entity ID: ${entityId}`,
+      );
     });
 
     it('should return null if vector is not found', async () => {
@@ -316,7 +345,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Assert
       expect(result).toBeNull();
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for entity ID nonexistent.id not found');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for entity ID nonexistent.id not found',
+      );
     });
 
     it('should return null if 404 error is thrown', async () => {
@@ -329,7 +360,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Assert
       expect(result).toBeNull();
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for entity ID nonexistent.id not found');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for entity ID nonexistent.id not found',
+      );
     });
 
     it('should throw an error if database operation fails with non-404 error', async () => {
@@ -338,7 +371,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.get.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.get_vector(entityId)).rejects.toThrow(error);
+      await expect(elasticsearchStorage.get_vector(entityId)).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -347,7 +382,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
       // Arrange
       const updatedVector = [0.6, 0.7, 0.8, 0.9, 1.0];
       const updatedMetadata = { ...mockMetadata, updated: true };
-      
+
       mockClient.get.mockResolvedValue({
         found: true,
         _source: {
@@ -360,7 +395,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.update.mockResolvedValue({ result: 'updated' });
 
       // Act
-      await elasticsearchStorage.update_vector(entityId, updatedVector, updatedMetadata);
+      await elasticsearchStorage.update_vector(
+        entityId,
+        updatedVector,
+        updatedMetadata,
+      );
 
       // Assert
       expect(mockClient.update).toHaveBeenCalledWith({
@@ -375,7 +414,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
           },
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Updated vector for entity ID: ${entityId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Updated vector for entity ID: ${entityId}`,
+      );
     });
 
     it('should store a new vector if it does not exist', async () => {
@@ -384,7 +425,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.index.mockResolvedValue({});
 
       // Act
-      await elasticsearchStorage.update_vector(entityId, mockVector, mockMetadata);
+      await elasticsearchStorage.update_vector(
+        entityId,
+        mockVector,
+        mockMetadata,
+      );
 
       // Assert
       expect(mockClient.index).toHaveBeenCalledWith({
@@ -405,7 +450,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_vector(entityId, wrongVector, mockMetadata)
+        elasticsearchStorage.update_vector(entityId, wrongVector, mockMetadata),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -425,7 +470,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_vector(entityId, mockVector, mockMetadata)
+        elasticsearchStorage.update_vector(entityId, mockVector, mockMetadata),
       ).rejects.toThrow(error);
     });
   });
@@ -444,7 +489,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
         index: 'entity_vectors',
         id: entityId,
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Deleted vector for entity ID: ${entityId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Deleted vector for entity ID: ${entityId}`,
+      );
     });
 
     it('should return false if vector is not found', async () => {
@@ -456,7 +503,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for entity ID nonexistent.id not found for deletion');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for entity ID nonexistent.id not found for deletion',
+      );
     });
 
     it('should return false if 404 error is thrown', async () => {
@@ -469,7 +518,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for entity ID nonexistent.id not found for deletion');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for entity ID nonexistent.id not found for deletion',
+      );
     });
 
     it('should throw an error if database operation fails with non-404 error', async () => {
@@ -478,7 +529,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.delete.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.delete_vector(entityId)).rejects.toThrow(error);
+      await expect(
+        elasticsearchStorage.delete_vector(entityId),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -514,7 +567,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([
@@ -584,7 +641,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([
@@ -618,7 +679,11 @@ describe('ElasticsearchEntityVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([]);
@@ -638,11 +703,14 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.search.mockRejectedValue(error);
 
       // Act
-      const result = await elasticsearchStorage.find_similar_vectors(mockVector);
+      const result =
+        await elasticsearchStorage.find_similar_vectors(mockVector);
 
       // Assert
       expect(result).toEqual([]);
-      expect(mockLogger.info).toHaveBeenCalledWith('Vector index does not exist, returning empty array');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Vector index does not exist, returning empty array',
+      );
     });
 
     it('should throw error if vector dimensions mismatch', async () => {
@@ -651,7 +719,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.find_similar_vectors(wrongVector)
+        elasticsearchStorage.find_similar_vectors(wrongVector),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -661,7 +729,9 @@ describe('ElasticsearchEntityVectorStorage', () => {
       mockClient.search.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.find_similar_vectors(mockVector)).rejects.toThrow(error);
+      await expect(
+        elasticsearchStorage.find_similar_vectors(mockVector),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -725,8 +795,10 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.batch_store_vectors(vectors)
-      ).rejects.toThrow('Vector dimensions mismatch for entity ID entity2. Expected: 5, Got: 3');
+        elasticsearchStorage.batch_store_vectors(vectors),
+      ).rejects.toThrow(
+        'Vector dimensions mismatch for entity ID entity2. Expected: 5, Got: 3',
+      );
     });
 
     it('should throw an error if database operation fails', async () => {
@@ -743,7 +815,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.batch_store_vectors(vectors)
+        elasticsearchStorage.batch_store_vectors(vectors),
       ).rejects.toThrow(error);
     });
   });

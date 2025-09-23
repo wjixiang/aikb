@@ -68,8 +68,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
     MockClient.mockImplementation(() => mockClient);
 
     // Create storage instance
-    elasticsearchStorage = new ElasticsearchKnowledgeVectorStorage('http://localhost:9200', 5);
-    
+    elasticsearchStorage = new ElasticsearchKnowledgeVectorStorage(
+      'http://localhost:9200',
+      5,
+    );
+
     // Mock the logger after instance creation
     (elasticsearchStorage as any).logger = mockLogger;
   });
@@ -95,7 +98,10 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
     it('should create instance with custom URL and dimensions', () => {
       // Act
-      const storage = new ElasticsearchKnowledgeVectorStorage('http://custom:9200', 768);
+      const storage = new ElasticsearchKnowledgeVectorStorage(
+        'http://custom:9200',
+        768,
+      );
 
       // Assert
       expect(storage).toBeInstanceOf(ElasticsearchKnowledgeVectorStorage);
@@ -112,7 +118,10 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       process.env.ELASTICSEARCH_URL_API_KEY = 'test-api-key';
 
       // Act
-      const storage = new ElasticsearchKnowledgeVectorStorage('http://custom:9200', 1536);
+      const storage = new ElasticsearchKnowledgeVectorStorage(
+        'http://custom:9200',
+        1536,
+      );
 
       // Assert
       expect(MockClient).toHaveBeenCalledWith({
@@ -134,7 +143,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.indices.create.mockResolvedValue({});
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -169,7 +180,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
           },
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith('Created index: knowledge_vectors with vector dimensions: 5');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Created index: knowledge_vectors with vector dimensions: 5',
+      );
     });
 
     it('should not create index if it already exists', async () => {
@@ -177,7 +190,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.indices.exists.mockResolvedValue(true);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -204,7 +219,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.indices.create.mockRejectedValue(error);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act
       await initializeIndex();
@@ -214,7 +231,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
         index: 'knowledge_vectors',
       });
       expect(mockClient.indices.create).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith('Index knowledge_vectors already exists, continuing');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Index knowledge_vectors already exists, continuing',
+      );
     });
 
     it('should throw error if index creation fails with other error', async () => {
@@ -224,11 +243,16 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.indices.create.mockRejectedValue(error);
 
       // Access private method for testing
-      const initializeIndex = (elasticsearchStorage as any).initializeIndex.bind(elasticsearchStorage);
+      const initializeIndex = (
+        elasticsearchStorage as any
+      ).initializeIndex.bind(elasticsearchStorage);
 
       // Act & Assert
       await expect(initializeIndex()).rejects.toThrow(error);
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to initialize index:', error);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to initialize index:',
+        error,
+      );
     });
   });
 
@@ -238,7 +262,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.index.mockResolvedValue({});
 
       // Act
-      await elasticsearchStorage.store_knowledge_vector(knowledgeId, mockVector, mockMetadata);
+      await elasticsearchStorage.store_knowledge_vector(
+        knowledgeId,
+        mockVector,
+        mockMetadata,
+      );
 
       // Assert
       expect(mockClient.index).toHaveBeenCalledWith({
@@ -251,7 +279,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
           createdAt: expect.any(String),
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Stored vector for knowledge ID: ${knowledgeId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Stored vector for knowledge ID: ${knowledgeId}`,
+      );
     });
 
     it('should throw error if vector dimensions mismatch', async () => {
@@ -260,7 +290,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.store_knowledge_vector(knowledgeId, wrongVector, mockMetadata)
+        elasticsearchStorage.store_knowledge_vector(
+          knowledgeId,
+          wrongVector,
+          mockMetadata,
+        ),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -271,7 +305,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.store_knowledge_vector(knowledgeId, mockVector, mockMetadata)
+        elasticsearchStorage.store_knowledge_vector(
+          knowledgeId,
+          mockVector,
+          mockMetadata,
+        ),
       ).rejects.toThrow(error);
     });
   });
@@ -290,7 +328,8 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.get_knowledge_vector(knowledgeId);
+      const result =
+        await elasticsearchStorage.get_knowledge_vector(knowledgeId);
 
       // Assert
       expect(result).toEqual({
@@ -301,7 +340,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
         index: 'knowledge_vectors',
         id: knowledgeId,
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Retrieved vector for knowledge ID: ${knowledgeId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Retrieved vector for knowledge ID: ${knowledgeId}`,
+      );
     });
 
     it('should return null if knowledge vector is not found', async () => {
@@ -309,11 +350,14 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.get.mockResolvedValue({ found: false });
 
       // Act
-      const result = await elasticsearchStorage.get_knowledge_vector('nonexistent.id');
+      const result =
+        await elasticsearchStorage.get_knowledge_vector('nonexistent.id');
 
       // Assert
       expect(result).toBeNull();
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for knowledge ID nonexistent.id not found');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for knowledge ID nonexistent.id not found',
+      );
     });
 
     it('should return null if 404 error is thrown', async () => {
@@ -322,11 +366,14 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.get.mockRejectedValue(error);
 
       // Act
-      const result = await elasticsearchStorage.get_knowledge_vector('nonexistent.id');
+      const result =
+        await elasticsearchStorage.get_knowledge_vector('nonexistent.id');
 
       // Assert
       expect(result).toBeNull();
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for knowledge ID nonexistent.id not found');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for knowledge ID nonexistent.id not found',
+      );
     });
 
     it('should throw an error if database operation fails with non-404 error', async () => {
@@ -335,7 +382,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.get.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.get_knowledge_vector(knowledgeId)).rejects.toThrow(error);
+      await expect(
+        elasticsearchStorage.get_knowledge_vector(knowledgeId),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -344,7 +393,7 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       // Arrange
       const updatedVector = [0.6, 0.7, 0.8, 0.9, 1.0];
       const updatedMetadata = { ...mockMetadata, updated: true };
-      
+
       mockClient.get.mockResolvedValue({
         found: true,
         _source: {
@@ -357,7 +406,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.update.mockResolvedValue({ result: 'updated' });
 
       // Act
-      await elasticsearchStorage.update_knowledge_vector(knowledgeId, updatedVector, updatedMetadata);
+      await elasticsearchStorage.update_knowledge_vector(
+        knowledgeId,
+        updatedVector,
+        updatedMetadata,
+      );
 
       // Assert
       expect(mockClient.update).toHaveBeenCalledWith({
@@ -372,7 +425,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
           },
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Updated vector for knowledge ID: ${knowledgeId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Updated vector for knowledge ID: ${knowledgeId}`,
+      );
     });
 
     it('should store a new knowledge vector if it does not exist', async () => {
@@ -381,7 +436,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.index.mockResolvedValue({});
 
       // Act
-      await elasticsearchStorage.update_knowledge_vector(knowledgeId, mockVector, mockMetadata);
+      await elasticsearchStorage.update_knowledge_vector(
+        knowledgeId,
+        mockVector,
+        mockMetadata,
+      );
 
       // Assert
       expect(mockClient.index).toHaveBeenCalledWith({
@@ -402,7 +461,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_knowledge_vector(knowledgeId, wrongVector, mockMetadata)
+        elasticsearchStorage.update_knowledge_vector(
+          knowledgeId,
+          wrongVector,
+          mockMetadata,
+        ),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -422,7 +485,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_knowledge_vector(knowledgeId, mockVector, mockMetadata)
+        elasticsearchStorage.update_knowledge_vector(
+          knowledgeId,
+          mockVector,
+          mockMetadata,
+        ),
       ).rejects.toThrow(error);
     });
   });
@@ -433,7 +500,8 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.delete.mockResolvedValue({ result: 'deleted' });
 
       // Act
-      const result = await elasticsearchStorage.delete_knowledge_vector(knowledgeId);
+      const result =
+        await elasticsearchStorage.delete_knowledge_vector(knowledgeId);
 
       // Assert
       expect(result).toBe(true);
@@ -441,7 +509,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
         index: 'knowledge_vectors',
         id: knowledgeId,
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(`Deleted vector for knowledge ID: ${knowledgeId}`);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Deleted vector for knowledge ID: ${knowledgeId}`,
+      );
     });
 
     it('should return false if knowledge vector is not found', async () => {
@@ -449,11 +519,14 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.delete.mockResolvedValue({ result: 'not_found' });
 
       // Act
-      const result = await elasticsearchStorage.delete_knowledge_vector('nonexistent.id');
+      const result =
+        await elasticsearchStorage.delete_knowledge_vector('nonexistent.id');
 
       // Assert
       expect(result).toBe(false);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for knowledge ID nonexistent.id not found for deletion');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for knowledge ID nonexistent.id not found for deletion',
+      );
     });
 
     it('should return false if 404 error is thrown', async () => {
@@ -462,11 +535,14 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.delete.mockRejectedValue(error);
 
       // Act
-      const result = await elasticsearchStorage.delete_knowledge_vector('nonexistent.id');
+      const result =
+        await elasticsearchStorage.delete_knowledge_vector('nonexistent.id');
 
       // Assert
       expect(result).toBe(false);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Vector for knowledge ID nonexistent.id not found for deletion');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Vector for knowledge ID nonexistent.id not found for deletion',
+      );
     });
 
     it('should throw an error if database operation fails with non-404 error', async () => {
@@ -475,7 +551,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.delete.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.delete_knowledge_vector(knowledgeId)).rejects.toThrow(error);
+      await expect(
+        elasticsearchStorage.delete_knowledge_vector(knowledgeId),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -511,7 +589,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_knowledge_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_knowledge_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([
@@ -547,7 +629,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
           size: 10,
         },
       });
-      expect(mockLogger.info).toHaveBeenCalledWith('Found 2 similar knowledge vectors');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Found 2 similar knowledge vectors',
+      );
     });
 
     it('should filter results by threshold', async () => {
@@ -581,7 +665,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_knowledge_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_knowledge_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([
@@ -615,7 +703,11 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.find_similar_knowledge_vectors(queryVector, 10, 0.5);
+      const result = await elasticsearchStorage.find_similar_knowledge_vectors(
+        queryVector,
+        10,
+        0.5,
+      );
 
       // Assert
       expect(result).toEqual([]);
@@ -635,11 +727,14 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.search.mockRejectedValue(error);
 
       // Act
-      const result = await elasticsearchStorage.find_similar_knowledge_vectors(mockVector);
+      const result =
+        await elasticsearchStorage.find_similar_knowledge_vectors(mockVector);
 
       // Assert
       expect(result).toEqual([]);
-      expect(mockLogger.info).toHaveBeenCalledWith('Knowledge vector index does not exist, returning empty array');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Knowledge vector index does not exist, returning empty array',
+      );
     });
 
     it('should throw error if vector dimensions mismatch', async () => {
@@ -648,7 +743,7 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.find_similar_knowledge_vectors(wrongVector)
+        elasticsearchStorage.find_similar_knowledge_vectors(wrongVector),
       ).rejects.toThrow('Vector dimensions mismatch. Expected: 5, Got: 3');
     });
 
@@ -658,7 +753,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       mockClient.search.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(elasticsearchStorage.find_similar_knowledge_vectors(mockVector)).rejects.toThrow(error);
+      await expect(
+        elasticsearchStorage.find_similar_knowledge_vectors(mockVector),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -702,7 +799,9 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
           },
         ],
       });
-      expect(mockLogger.info).toHaveBeenCalledWith('Batch stored 2 knowledge vectors');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Batch stored 2 knowledge vectors',
+      );
     });
 
     it('should throw error if any vector has wrong dimensions', async () => {
@@ -722,8 +821,10 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.batch_store_knowledge_vectors(vectors)
-      ).rejects.toThrow('Vector dimensions mismatch for knowledge ID knowledge2. Expected: 5, Got: 3');
+        elasticsearchStorage.batch_store_knowledge_vectors(vectors),
+      ).rejects.toThrow(
+        'Vector dimensions mismatch for knowledge ID knowledge2. Expected: 5, Got: 3',
+      );
     });
 
     it('should throw an error if database operation fails', async () => {
@@ -740,7 +841,7 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.batch_store_knowledge_vectors(vectors)
+        elasticsearchStorage.batch_store_knowledge_vectors(vectors),
       ).rejects.toThrow(error);
     });
   });

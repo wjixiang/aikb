@@ -13,7 +13,10 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
 
   logger = createLoggerWithPrefix('ElasticsearchKnowledgeVectorStorage');
 
-  constructor(elasticsearchUrl: string = 'http://localhost:9200', vectorDimensions: number = 1536) {
+  constructor(
+    elasticsearchUrl: string = 'http://localhost:9200',
+    vectorDimensions: number = 1536,
+  ) {
     super();
     this.vectorDimensions = vectorDimensions;
     this.client = new Client({
@@ -60,7 +63,9 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
             },
           } as any,
         });
-        this.logger.info(`Created index: ${this.indexName} with vector dimensions: ${this.vectorDimensions}`);
+        this.logger.info(
+          `Created index: ${this.indexName} with vector dimensions: ${this.vectorDimensions}`,
+        );
       }
     } catch (error) {
       // If index already exists, just continue
@@ -78,14 +83,16 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
   async store_knowledge_vector(
     knowledgeId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void> {
     try {
       await this.initializeIndex();
 
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       const document = {
@@ -103,14 +110,15 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
 
       this.logger.info(`Stored vector for knowledge ID: ${knowledgeId}`);
     } catch (error) {
-      this.logger.error(`Failed to store vector for knowledge ID ${knowledgeId}:`, error);
+      this.logger.error(
+        `Failed to store vector for knowledge ID ${knowledgeId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async get_knowledge_vector(
-    knowledgeId: string
-  ): Promise<{
+  async get_knowledge_vector(knowledgeId: string): Promise<{
     vector: number[];
     metadata?: Record<string, any>;
   } | null> {
@@ -136,7 +144,10 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
         this.logger.warn(`Vector for knowledge ID ${knowledgeId} not found`);
         return null;
       }
-      this.logger.error(`Failed to get vector for knowledge ID ${knowledgeId}:`, error);
+      this.logger.error(
+        `Failed to get vector for knowledge ID ${knowledgeId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -144,12 +155,14 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
   async update_knowledge_vector(
     knowledgeId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void> {
     try {
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       // First check if the vector exists
@@ -177,7 +190,10 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
 
       this.logger.info(`Updated vector for knowledge ID: ${knowledgeId}`);
     } catch (error) {
-      this.logger.error(`Failed to update vector for knowledge ID ${knowledgeId}:`, error);
+      this.logger.error(
+        `Failed to update vector for knowledge ID ${knowledgeId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -190,7 +206,9 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
       });
 
       if (result.result === 'not_found') {
-        this.logger.warn(`Vector for knowledge ID ${knowledgeId} not found for deletion`);
+        this.logger.warn(
+          `Vector for knowledge ID ${knowledgeId} not found for deletion`,
+        );
         return false;
       }
 
@@ -198,10 +216,15 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
       return true;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        this.logger.warn(`Vector for knowledge ID ${knowledgeId} not found for deletion`);
+        this.logger.warn(
+          `Vector for knowledge ID ${knowledgeId} not found for deletion`,
+        );
         return false;
       }
-      this.logger.error(`Failed to delete vector for knowledge ID ${knowledgeId}:`, error);
+      this.logger.error(
+        `Failed to delete vector for knowledge ID ${knowledgeId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -209,16 +232,20 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
   async find_similar_knowledge_vectors(
     vector: number[],
     limit: number = 10,
-    threshold: number = 0.7
-  ): Promise<Array<{
-    knowledgeId: string;
-    similarity: number;
-    metadata?: Record<string, any>;
-  }>> {
+    threshold: number = 0.7,
+  ): Promise<
+    Array<{
+      knowledgeId: string;
+      similarity: number;
+      metadata?: Record<string, any>;
+    }>
+  > {
     try {
       // Validate vector dimensions
       if (vector.length !== this.vectorDimensions) {
-        throw new Error(`Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`);
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${this.vectorDimensions}, Got: ${vector.length}`,
+        );
       }
 
       const result = await this.client.search({
@@ -248,12 +275,12 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
         .map((hit) => {
           const { _id, _source, _score } = hit;
           const similarity = _score;
-          
+
           // Apply threshold filter
           if (similarity && similarity < threshold) {
             return null;
           }
-          
+
           return {
             knowledgeId: _id,
             similarity: similarity || 0,
@@ -261,16 +288,20 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
           };
         })
         .filter(Boolean) as Array<{
-          knowledgeId: string;
-          similarity: number;
-          metadata?: Record<string, any>;
-        }>;
+        knowledgeId: string;
+        similarity: number;
+        metadata?: Record<string, any>;
+      }>;
 
-      this.logger.info(`Found ${similarVectors.length} similar knowledge vectors`);
+      this.logger.info(
+        `Found ${similarVectors.length} similar knowledge vectors`,
+      );
       return similarVectors;
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
-        this.logger.info('Knowledge vector index does not exist, returning empty array');
+        this.logger.info(
+          'Knowledge vector index does not exist, returning empty array',
+        );
         return [];
       }
       this.logger.error('Failed to find similar knowledge vectors:', error);
@@ -283,7 +314,7 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
       knowledgeId: string;
       vector: number[];
       metadata?: Record<string, any>;
-    }>
+    }>,
   ): Promise<void> {
     try {
       await this.initializeIndex();
@@ -291,7 +322,9 @@ class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage
       // Validate all vectors have correct dimensions
       for (const item of vectors) {
         if (item.vector.length !== this.vectorDimensions) {
-          throw new Error(`Vector dimensions mismatch for knowledge ID ${item.knowledgeId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`);
+          throw new Error(
+            `Vector dimensions mismatch for knowledge ID ${item.knowledgeId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`,
+          );
         }
       }
 

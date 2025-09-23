@@ -46,11 +46,9 @@ export default class Knowledge {
 
   /**
    * Subdivide current knowledge node
-   * @param new_knowledge 
+   * @param new_knowledge
    */
-  async subdivide(new_knowledge: KnowledgeData) {
-    
-  }
+  async subdivide(new_knowledge: KnowledgeData) {}
 }
 
 /**

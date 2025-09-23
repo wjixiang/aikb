@@ -68,13 +68,16 @@ describe('MongodbEntityContentStorage Integration Tests', () => {
     it('should create a new entity successfully', async () => {
       // Arrange
       const entityId = 'test.entity.id';
-      
+
       // Act
-      const result = await mongodbStorage.create_new_entity_content(testEntity, entityId);
+      const result = await mongodbStorage.create_new_entity_content(
+        testEntity,
+        entityId,
+      );
 
       // Assert
-      
-      expect(result).toEqual({...testEntity, id: entityId});
+
+      expect(result).toEqual({ ...testEntity, id: entityId });
       // Verify entity was actually inserted into the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -98,7 +101,7 @@ describe('MongodbEntityContentStorage Integration Tests', () => {
       const entityId = 'test.entity.id.duplicate';
       await expect(
         mongodbStorage.create_new_entity_content(testEntity, entityId),
-      ).resolves.toEqual({...testEntity, id: entityId});
+      ).resolves.toEqual({ ...testEntity, id: entityId });
     });
   });
 
@@ -152,7 +155,10 @@ describe('MongodbEntityContentStorage Integration Tests', () => {
       };
 
       // Act
-      const result = await mongodbStorage.update_entity(oldEntity, newEntityData);
+      const result = await mongodbStorage.update_entity(
+        oldEntity,
+        newEntityData,
+      );
 
       // Assert
       expect(result).toEqual({
@@ -174,11 +180,11 @@ describe('MongodbEntityContentStorage Integration Tests', () => {
         id: 'nonexistent',
         ...testEntity,
       };
-      
+
       // Act & Assert
-      await expect(mongodbStorage.update_entity(oldEntity, testEntity)).rejects.toThrow(
-        'EntityData with name test.entity not found',
-      );
+      await expect(
+        mongodbStorage.update_entity(oldEntity, testEntity),
+      ).rejects.toThrow('EntityData with name test.entity not found');
     });
   });
 
@@ -293,8 +299,11 @@ describe('MongodbEntityContentStorage Integration Tests', () => {
     it('should support full CRUD operations', async () => {
       // Create
       const entityId = 'test.entity.crud';
-      const createdEntity = await mongodbStorage.create_new_entity_content(testEntity, entityId);
-      expect(createdEntity).toEqual({...testEntity, id: entityId});
+      const createdEntity = await mongodbStorage.create_new_entity_content(
+        testEntity,
+        entityId,
+      );
+      expect(createdEntity).toEqual({ ...testEntity, id: entityId });
 
       // Read
       const retrievedEntity = await mongodbStorage.get_entity_by_name([

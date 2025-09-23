@@ -104,10 +104,10 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       // Assert
       const linksInDb = await db.collection(collectionName).find({}).toArray();
       expect(linksInDb.length).toBe(testLinks.length);
-      
+
       for (const link of testLinks) {
-        const linkInDb = linksInDb.find(l => 
-          l.sourceId === link.sourceId && l.targetId === link.targetId
+        const linkInDb = linksInDb.find(
+          (l) => l.sourceId === link.sourceId && l.targetId === link.targetId,
         );
         expect(linkInDb).toBeTruthy();
         expect(linkInDb?.linkType).toEqual('knowledge');
@@ -123,10 +123,13 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       await mongodbStorage.create_new_link(link.sourceId, link.targetId);
 
       // Assert
-      const linksInDb = await db.collection(collectionName).find({
-        sourceId: link.sourceId,
-        targetId: link.targetId,
-      }).toArray();
+      const linksInDb = await db
+        .collection(collectionName)
+        .find({
+          sourceId: link.sourceId,
+          targetId: link.targetId,
+        })
+        .toArray();
       expect(linksInDb.length).toBe(2); // MongoDB allows duplicates
     });
   });
@@ -136,7 +139,7 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       // This test would require mocking the database connection to fail
       // For now, we'll just ensure the method doesn't crash
       await expect(
-        mongodbStorage.create_new_link('knowledge1', 'knowledge2')
+        mongodbStorage.create_new_link('knowledge1', 'knowledge2'),
       ).resolves.not.toThrow();
     });
   });
@@ -162,7 +165,7 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       // Assert
       const linksInDb = await db.collection(collectionName).find({}).toArray();
       expect(linksInDb.length).toBe(bulkLinks.length);
-      
+
       // Performance assertion - should complete within reasonable time
       expect(endTime - startTime).toBeLessThan(5000); // 5 seconds
     });
@@ -243,8 +246,8 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       }
 
       // Act
-      const promises = concurrentLinks.map(link =>
-        mongodbStorage.create_new_link(link.sourceId, link.targetId)
+      const promises = concurrentLinks.map((link) =>
+        mongodbStorage.create_new_link(link.sourceId, link.targetId),
       );
       await Promise.all(promises);
 
@@ -267,14 +270,14 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
         sourceId: link.sourceId,
         targetId: link.targetId,
       });
-      
+
       expect(linkInDb).toBeTruthy();
       expect(linkInDb?.sourceId).toEqual(link.sourceId);
       expect(linkInDb?.targetId).toEqual(link.targetId);
       expect(linkInDb?.linkType).toEqual('knowledge');
       expect(linkInDb?.createdAt).toBeInstanceOf(Date);
       expect(linkInDb?.updatedAt).toBeInstanceOf(Date);
-      
+
       // Verify createdAt and updatedAt are the same for new records
       expect(linkInDb?.createdAt.getTime()).toBe(linkInDb?.updatedAt.getTime());
     });
@@ -287,19 +290,31 @@ describe('MongoKnowledgeGraphStorage Integration Tests', () => {
       await mongodbStorage.create_new_link('algebra', 'calculus');
       await mongodbStorage.create_new_link('calculus', 'physics');
       await mongodbStorage.create_new_link('physics', 'engineering');
-      
+
       // Create a branching structure
       await mongodbStorage.create_new_link('math', 'geometry');
       await mongodbStorage.create_new_link('geometry', 'topology');
-      
+
       // Verify all links were created
       const linksInDb = await db.collection(collectionName).find({}).toArray();
       expect(linksInDb.length).toBe(6);
-      
+
       // Verify specific links exist
-      expect(linksInDb.some(l => l.sourceId === 'math' && l.targetId === 'algebra')).toBe(true);
-      expect(linksInDb.some(l => l.sourceId === 'algebra' && l.targetId === 'calculus')).toBe(true);
-      expect(linksInDb.some(l => l.sourceId === 'math' && l.targetId === 'geometry')).toBe(true);
+      expect(
+        linksInDb.some(
+          (l) => l.sourceId === 'math' && l.targetId === 'algebra',
+        ),
+      ).toBe(true);
+      expect(
+        linksInDb.some(
+          (l) => l.sourceId === 'algebra' && l.targetId === 'calculus',
+        ),
+      ).toBe(true);
+      expect(
+        linksInDb.some(
+          (l) => l.sourceId === 'math' && l.targetId === 'geometry',
+        ),
+      ).toBe(true);
     });
   });
 });

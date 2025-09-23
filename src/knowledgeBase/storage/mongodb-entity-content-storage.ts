@@ -11,7 +11,10 @@ class MongodbEntityContentStorage extends AbstractEntityContentStorage {
 
   logger = createLoggerWithPrefix('MongodbEntityContentStorage');
 
-  async create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId> {
+  async create_new_entity_content(
+    entity: EntityData,
+    id: string,
+  ): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -57,7 +60,10 @@ class MongodbEntityContentStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId> {
+  async update_entity(
+    old_entity: EntityDataWithId,
+    new_entity_data: EntityData,
+  ): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -121,9 +127,7 @@ class MongodbEntityContentStorage extends AbstractEntityContentStorage {
       });
 
       if (deleteResult.deletedCount === 0) {
-        this.logger.warn(
-          `EntityData with ID ${id} not found for deletion`,
-        );
+        this.logger.warn(`EntityData with ID ${id} not found for deletion`);
         return false;
       }
 

@@ -22,8 +22,4 @@ class Storage {
 }
 
 export type { StorageConfig };
-export {
-  Storage,
-  AbstractEntityStorage,
-  MongodbEntityContentStorage,
-};
+export { Storage, AbstractEntityStorage, MongodbEntityContentStorage };

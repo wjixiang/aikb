@@ -84,14 +84,17 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId> {
+  async create_new_entity_content(
+    entity: EntityData,
+    id: string,
+  ): Promise<EntityDataWithId> {
     try {
       await this.initializeIndex();
 
       const entityName = entity.name.join('.');
       // Use the provided ID instead of generating from name
       const entityId = id;
-      
+
       const entityWithId = {
         ...entity,
         nameString: entityName,
@@ -179,7 +182,10 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId> {
+  async update_entity(
+    old_entity: EntityDataWithId,
+    new_entity_data: EntityData,
+  ): Promise<EntityDataWithId> {
     try {
       const entityName = old_entity.name.join('.');
       const entityId = old_entity.id;
@@ -195,7 +201,10 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
       } catch (error) {
         if (error?.meta?.statusCode === 404) {
           // Entity doesn't exist, create it and return the EntityDataWithId
-          const createdEntity = await this.create_new_entity_content(new_entity_data, old_entity.id);
+          const createdEntity = await this.create_new_entity_content(
+            new_entity_data,
+            old_entity.id,
+          );
           return createdEntity;
         }
         throw error;
@@ -226,7 +235,10 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
         // Entity doesn't exist, create it and return the EntityDataWithId
-        const createdEntity = await this.create_new_entity_content(new_entity_data, old_entity.id);
+        const createdEntity = await this.create_new_entity_content(
+          new_entity_data,
+          old_entity.id,
+        );
         return createdEntity;
       }
       this.logger.error('Failed to update entity:', error);
@@ -272,9 +284,7 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
       });
 
       if (result.result === 'not_found') {
-        this.logger.warn(
-          `Entity with ID ${id} not found for deletion`,
-        );
+        this.logger.warn(`Entity with ID ${id} not found for deletion`);
         return false;
       }
 
@@ -282,9 +292,7 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
       return true;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        this.logger.warn(
-          `Entity with ID ${id} not found for deletion`,
-        );
+        this.logger.warn(`Entity with ID ${id} not found for deletion`);
         return false;
       }
       this.logger.error('Failed to delete entity:', error);

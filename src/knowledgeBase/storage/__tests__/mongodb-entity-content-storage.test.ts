@@ -73,10 +73,13 @@ describe('MongodbEntityContentStorage', () => {
       });
 
       // Act
-      const result = await mongodbStorage.create_new_entity_content(mockEntity, mockId);
+      const result = await mongodbStorage.create_new_entity_content(
+        mockEntity,
+        mockId,
+      );
 
       // Assert
-      expect(result).toEqual({...mockEntity, id: result.id});
+      expect(result).toEqual({ ...mockEntity, id: result.id });
       expect(mockCollection.insertOne).toHaveBeenCalledWith({
         ...mockEntity,
         entityName: 'test.entity',
@@ -90,7 +93,7 @@ describe('MongodbEntityContentStorage', () => {
       const mockId = AbstractEntityStorage.generate_entity_id();
       // Act & Assert
       await expect(
-        mongodbStorage.create_new_entity_content(mockEntity,mockId),
+        mongodbStorage.create_new_entity_content(mockEntity, mockId),
       ).rejects.toThrow(error);
     });
   });
@@ -155,7 +158,10 @@ describe('MongodbEntityContentStorage', () => {
       });
 
       // Act
-      const result = await mongodbStorage.update_entity(mockEntityWithId, mockEntity);
+      const result = await mongodbStorage.update_entity(
+        mockEntityWithId,
+        mockEntity,
+      );
 
       // Assert
       expect(result).toEqual(mockEntityWithId);
@@ -176,9 +182,9 @@ describe('MongodbEntityContentStorage', () => {
       });
 
       // Act & Assert
-      await expect(mongodbStorage.update_entity(mockEntityWithId, mockEntity)).rejects.toThrow(
-        'EntityData with name test.entity not found',
-      );
+      await expect(
+        mongodbStorage.update_entity(mockEntityWithId, mockEntity),
+      ).rejects.toThrow('EntityData with name test.entity not found');
     });
 
     it('should throw an error if database operation fails', async () => {
@@ -191,9 +197,9 @@ describe('MongodbEntityContentStorage', () => {
       mockCollection.replaceOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.update_entity(mockEntityWithId, mockEntity)).rejects.toThrow(
-        error,
-      );
+      await expect(
+        mongodbStorage.update_entity(mockEntityWithId, mockEntity),
+      ).rejects.toThrow(error);
     });
   });
 

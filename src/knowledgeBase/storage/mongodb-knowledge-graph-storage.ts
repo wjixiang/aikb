@@ -25,7 +25,7 @@ class MongoKnowledgeGraphStorage extends AbstractKnowledgeGraphStorage {
 
       const result = await collection.insertOne(link);
       this.logger.info(
-        `Created knowledge link with _id: ${JSON.stringify(result.insertedId)} from ${sourceId} to ${targetId}`
+        `Created knowledge link with _id: ${JSON.stringify(result.insertedId)} from ${sourceId} to ${targetId}`,
       );
     } catch (error) {
       this.logger.error('Failed to create knowledge link:', error);

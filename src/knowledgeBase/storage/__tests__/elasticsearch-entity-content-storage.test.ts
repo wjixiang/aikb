@@ -104,7 +104,9 @@ describe('ElasticsearchEntityContentStorage', () => {
 
     it('should create instance with custom URL', () => {
       // Act
-      const storage = new ElasticsearchEntityContentStorage('http://custom:9200');
+      const storage = new ElasticsearchEntityContentStorage(
+        'http://custom:9200',
+      );
 
       // Assert
       expect(storage).toBeInstanceOf(ElasticsearchEntityContentStorage);
@@ -121,7 +123,9 @@ describe('ElasticsearchEntityContentStorage', () => {
       process.env.ELASTICSEARCH_URL_API_KEY = 'test-api-key';
 
       // Act
-      const storage = new ElasticsearchEntityContentStorage('http://custom:9200');
+      const storage = new ElasticsearchEntityContentStorage(
+        'http://custom:9200',
+      );
 
       // Assert
       expect(MockClient).toHaveBeenCalledWith({
@@ -270,7 +274,10 @@ describe('ElasticsearchEntityContentStorage', () => {
       mockClient.index.mockResolvedValue({});
 
       // Act
-      const result = await elasticsearchStorage.create_new_entity_content(mockEntity, entityId);
+      const result = await elasticsearchStorage.create_new_entity_content(
+        mockEntity,
+        entityId,
+      );
 
       // // Assert
       // expect(result).toEqual(mockEntity);
@@ -360,7 +367,10 @@ describe('ElasticsearchEntityContentStorage', () => {
       mockClient.update.mockResolvedValue({ result: 'updated' });
 
       // Act
-      const result = await elasticsearchStorage.update_entity(oldEntity, newEntityData);
+      const result = await elasticsearchStorage.update_entity(
+        oldEntity,
+        newEntityData,
+      );
 
       // Assert
       expect(result).toEqual({

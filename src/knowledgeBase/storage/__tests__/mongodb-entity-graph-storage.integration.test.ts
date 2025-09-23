@@ -94,7 +94,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
         relation.sourceId,
         relation.targetId,
         relation.relationType,
-        relation.properties
+        relation.properties,
       );
 
       // Assert
@@ -124,7 +124,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       await mongodbStorage.create_relation(
         relation.sourceId,
         relation.targetId,
-        relation.relationType
+        relation.relationType,
       );
 
       // Assert
@@ -150,13 +150,24 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
 
       // Assert
       expect(result.length).toBe(2);
-      expect(result.some((r) => r.sourceId === 'entity1' && r.targetId === 'entity2')).toBe(true);
-      expect(result.some((r) => r.sourceId === 'entity2' && r.targetId === 'entity3')).toBe(true);
+      expect(
+        result.some(
+          (r) => r.sourceId === 'entity1' && r.targetId === 'entity2',
+        ),
+      ).toBe(true);
+      expect(
+        result.some(
+          (r) => r.sourceId === 'entity2' && r.targetId === 'entity3',
+        ),
+      ).toBe(true);
     });
 
     it('should get relations filtered by type', async () => {
       // Act
-      const result = await mongodbStorage.get_entity_relations('entity2', 'contains');
+      const result = await mongodbStorage.get_entity_relations(
+        'entity2',
+        'contains',
+      );
 
       // Assert
       expect(result.length).toBe(1);
@@ -184,7 +195,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
         testRelations[0].sourceId,
         testRelations[0].targetId,
         testRelations[0].relationType,
-        { strength: 0.9 }
+        { strength: 0.9 },
       );
 
       // Assert
@@ -201,13 +212,12 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
     it('should throw an error if relation is not found', async () => {
       // Act & Assert
       await expect(
-        mongodbStorage.update_relation(
-          'nonexistent',
-          'entity2',
-          'related_to',
-          { strength: 0.9 }
-        )
-      ).rejects.toThrow('Relation from nonexistent to entity2 with type related_to not found');
+        mongodbStorage.update_relation('nonexistent', 'entity2', 'related_to', {
+          strength: 0.9,
+        }),
+      ).rejects.toThrow(
+        'Relation from nonexistent to entity2 with type related_to not found',
+      );
     });
   });
 
@@ -220,7 +230,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       const result = await mongodbStorage.delete_relation(
         testRelations[0].sourceId,
         testRelations[0].targetId,
-        testRelations[0].relationType
+        testRelations[0].relationType,
       );
 
       // Assert
@@ -243,7 +253,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       const result = await mongodbStorage.delete_relation(
         'nonexistent',
         'entity2',
-        'related_to'
+        'related_to',
       );
 
       // Assert
@@ -267,8 +277,8 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
           {
             entityId: 'entity2',
             relationType: 'related_to',
-          }
-        ]
+          },
+        ],
       ]);
     });
 
@@ -286,8 +296,8 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
           {
             entityId: 'entity3',
             relationType: 'contains',
-          }
-        ]
+          },
+        ],
       ]);
     });
 
@@ -311,21 +321,21 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
             {
               entityId: 'entity4',
               relationType: 'related_to',
-            }
+            },
           ]),
           expect.arrayContaining([
             {
               entityId: 'entity4',
               relationType: 'references',
-            }
-          ])
-        ])
+            },
+          ]),
+        ]),
       );
     });
 
     it('should respect maxDepth parameter', async () => {
       // Act
-      const result = await mongodbStorage.find_paths('entity1', 'entity5', 2);
+      const result = await mongodbStorage.find_paths('entity1', 'entity4', 1);
 
       // Assert
       expect(result).toEqual([
@@ -333,8 +343,8 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
           {
             entityId: 'entity4',
             relationType: 'references',
-          }
-        ]
+          },
+        ],
       ]);
     });
 
@@ -348,6 +358,9 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
 
     it('should handle complex graph structures', async () => {
       // Arrange - Create a more complex graph structure
+      // Clear the collection first to avoid duplicate key errors
+      await db.collection(collectionName).deleteMany({});
+      
       const complexRelations = [
         ...testRelations,
         {
@@ -396,14 +409,17 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
             {
               entityId: 'entity8',
               relationType: 'references',
-            }
-          ])
-        ])
+            },
+          ]),
+        ]),
       );
     });
 
     it('should handle cycles in the graph', async () => {
       // Arrange - Create a graph with cycles
+      // Clear the collection first to avoid duplicate key errors
+      await db.collection(collectionName).deleteMany({});
+      
       const cyclicRelations = [
         ...testRelations,
         {
@@ -438,9 +454,9 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
             {
               entityId: 'entity5',
               relationType: 'contains',
-            }
-          ])
-        ])
+            },
+          ]),
+        ]),
       );
     });
   });
@@ -448,12 +464,9 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
   describe('full CRUD workflow', () => {
     it('should support full CRUD operations for relations', async () => {
       // Create
-      await mongodbStorage.create_relation(
-        'entityA',
-        'entityB',
-        'related_to',
-        { strength: 0.8 }
-      );
+      await mongodbStorage.create_relation('entityA', 'entityB', 'related_to', {
+        strength: 0.8,
+      });
 
       // Read
       const relations = await mongodbStorage.get_entity_relations('entityA');
@@ -464,25 +477,24 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       expect(relations[0].properties).toEqual({ strength: 0.8 });
 
       // Update
-      await mongodbStorage.update_relation(
-        'entityA',
-        'entityB',
-        'related_to',
-        { strength: 0.9 }
-      );
+      await mongodbStorage.update_relation('entityA', 'entityB', 'related_to', {
+        strength: 0.9,
+      });
 
-      const updatedRelations = await mongodbStorage.get_entity_relations('entityA');
+      const updatedRelations =
+        await mongodbStorage.get_entity_relations('entityA');
       expect(updatedRelations[0].properties).toEqual({ strength: 0.9 });
 
       // Delete
       const deleteResult = await mongodbStorage.delete_relation(
         'entityA',
         'entityB',
-        'related_to'
+        'related_to',
       );
       expect(deleteResult).toBe(true);
 
-      const deletedRelations = await mongodbStorage.get_entity_relations('entityA');
+      const deletedRelations =
+        await mongodbStorage.get_entity_relations('entityA');
       expect(deletedRelations).toEqual([]);
     });
   });

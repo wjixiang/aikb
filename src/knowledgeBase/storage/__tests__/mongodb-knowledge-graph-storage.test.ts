@@ -61,7 +61,10 @@ describe('MongoKnowledgeGraphStorage', () => {
       mockCollection.insertOne.mockResolvedValue(mockInsertResult);
 
       // Act
-      await mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId);
+      await mongodbStorage.create_new_link(
+        testLink.sourceId,
+        testLink.targetId,
+      );
 
       // Assert
       expect(mockCollection.insertOne).toHaveBeenCalledWith({
@@ -80,7 +83,7 @@ describe('MongoKnowledgeGraphStorage', () => {
 
       // Act & Assert
       await expect(
-        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId)
+        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId),
       ).rejects.toThrow(error);
     });
   });
@@ -93,7 +96,7 @@ describe('MongoKnowledgeGraphStorage', () => {
 
       // Act & Assert
       await expect(
-        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId)
+        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId),
       ).rejects.toThrow(error);
     });
 
@@ -104,7 +107,7 @@ describe('MongoKnowledgeGraphStorage', () => {
 
       // Act & Assert
       await expect(
-        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId)
+        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId),
       ).rejects.toThrow(error);
     });
   });
@@ -118,11 +121,14 @@ describe('MongoKnowledgeGraphStorage', () => {
       mockCollection.insertOne.mockResolvedValue(mockInsertResult);
 
       // Act
-      await mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId);
+      await mongodbStorage.create_new_link(
+        testLink.sourceId,
+        testLink.targetId,
+      );
 
       // Assert
       expect(mockLogger.info).toHaveBeenCalledWith(
-        `Created knowledge link with _id: ${JSON.stringify(mockInsertResult.insertedId)} from ${testLink.sourceId} to ${testLink.targetId}`
+        `Created knowledge link with _id: ${JSON.stringify(mockInsertResult.insertedId)} from ${testLink.sourceId} to ${testLink.targetId}`,
       );
     });
 
@@ -133,11 +139,14 @@ describe('MongoKnowledgeGraphStorage', () => {
 
       // Act
       await expect(
-        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId)
+        mongodbStorage.create_new_link(testLink.sourceId, testLink.targetId),
       ).rejects.toThrow();
 
       // Assert
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create knowledge link:', error);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create knowledge link:',
+        error,
+      );
     });
   });
 
@@ -218,7 +227,7 @@ describe('MongoKnowledgeGraphStorage', () => {
       const linkPromises: Promise<void>[] = [];
       for (let i = 0; i < 10; i++) {
         linkPromises.push(
-          mongodbStorage.create_new_link(`source${i}`, `target${i}`)
+          mongodbStorage.create_new_link(`source${i}`, `target${i}`),
         );
       }
 

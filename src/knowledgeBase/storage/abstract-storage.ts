@@ -20,10 +20,16 @@ export abstract class AbstractEntityStorage {
 }
 
 export abstract class AbstractEntityContentStorage {
-  abstract create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId>;
+  abstract create_new_entity_content(
+    entity: EntityData,
+    id: string,
+  ): Promise<EntityDataWithId>;
   abstract get_entity_by_name(name: string[]): Promise<EntityDataWithId | null>;
   abstract get_entity_by_id(id: string): Promise<EntityDataWithId | null>;
-  abstract update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId>;
+  abstract update_entity(
+    old_entity: EntityDataWithId,
+    new_entity_data: EntityData,
+  ): Promise<EntityDataWithId>;
   abstract delete_entity_by_id(id: string): Promise<boolean>;
   abstract search_entities(query: string): Promise<EntityData[]>;
   abstract list_all_entities(): Promise<EntityData[]>;
@@ -41,7 +47,7 @@ export abstract class AbstractEntityGraphStorage {
     sourceId: string,
     targetId: string,
     relationType: string,
-    properties?: Record<string, any>
+    properties?: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -52,13 +58,15 @@ export abstract class AbstractEntityGraphStorage {
    */
   abstract get_entity_relations(
     entityId: string,
-    relationType?: string
-  ): Promise<Array<{
-    sourceId: string;
-    targetId: string;
-    relationType: string;
-    properties?: Record<string, any>;
-  }>>;
+    relationType?: string,
+  ): Promise<
+    Array<{
+      sourceId: string;
+      targetId: string;
+      relationType: string;
+      properties?: Record<string, any>;
+    }>
+  >;
 
   /**
    * Update a relation between entities
@@ -71,7 +79,7 @@ export abstract class AbstractEntityGraphStorage {
     sourceId: string,
     targetId: string,
     relationType: string,
-    properties: Record<string, any>
+    properties: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -83,7 +91,7 @@ export abstract class AbstractEntityGraphStorage {
   abstract delete_relation(
     sourceId: string,
     targetId: string,
-    relationType: string
+    relationType: string,
   ): Promise<boolean>;
 
   /**
@@ -96,11 +104,15 @@ export abstract class AbstractEntityGraphStorage {
   abstract find_paths(
     sourceId: string,
     targetId: string,
-    maxDepth?: number
-  ): Promise<Array<Array<{
-    entityId: string;
-    relationType: string;
-  }>>>;
+    maxDepth?: number,
+  ): Promise<
+    Array<
+      Array<{
+        entityId: string;
+        relationType: string;
+      }>
+    >
+  >;
 }
 
 export abstract class AbstractEntityVectorStorage {
@@ -113,7 +125,7 @@ export abstract class AbstractEntityVectorStorage {
   abstract store_vector(
     entityId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -121,9 +133,7 @@ export abstract class AbstractEntityVectorStorage {
    * @param entityId ID of the entity
    * @returns Promise resolving to vector data and metadata or null if not found
    */
-  abstract get_vector(
-    entityId: string
-  ): Promise<{
+  abstract get_vector(entityId: string): Promise<{
     vector: number[];
     metadata?: Record<string, any>;
   } | null>;
@@ -137,7 +147,7 @@ export abstract class AbstractEntityVectorStorage {
   abstract update_vector(
     entityId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -156,12 +166,14 @@ export abstract class AbstractEntityVectorStorage {
   abstract find_similar_vectors(
     vector: number[],
     limit?: number,
-    threshold?: number
-  ): Promise<Array<{
-    entityId: string;
-    similarity: number;
-    metadata?: Record<string, any>;
-  }>>;
+    threshold?: number,
+  ): Promise<
+    Array<{
+      entityId: string;
+      similarity: number;
+      metadata?: Record<string, any>;
+    }>
+  >;
 
   /**
    * Batch store vectors for multiple entities
@@ -172,12 +184,9 @@ export abstract class AbstractEntityVectorStorage {
       entityId: string;
       vector: number[];
       metadata?: Record<string, any>;
-    }>
+    }>,
   ): Promise<void>;
 }
-
-
-
 
 export abstract class AbstractKnowledgeStorage {
   abstract knowledgeContentStorage: AbstractKnowledgeContentStorage;
@@ -239,6 +248,7 @@ export abstract class AbstractKnowledgeContentStorage {
   abstract create_new_knowledge_content(
     knowledge: KnowledgeData,
   ): Promise<KnowledgeDataWithId>;
+  abstract get_knowledge_content_by_id(id: string): Promise<KnowledgeDataWithId>
 }
 
 export abstract class AbstractKnowledgeGraphStorage {
@@ -255,7 +265,7 @@ export abstract class AbstractKnowledgeVectorStorage {
   abstract store_knowledge_vector(
     knowledgeId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -263,9 +273,7 @@ export abstract class AbstractKnowledgeVectorStorage {
    * @param knowledgeId ID of the knowledge
    * @returns Promise resolving to vector data and metadata or null if not found
    */
-  abstract get_knowledge_vector(
-    knowledgeId: string
-  ): Promise<{
+  abstract get_knowledge_vector(knowledgeId: string): Promise<{
     vector: number[];
     metadata?: Record<string, any>;
   } | null>;
@@ -279,7 +287,7 @@ export abstract class AbstractKnowledgeVectorStorage {
   abstract update_knowledge_vector(
     knowledgeId: string,
     vector: number[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -298,12 +306,14 @@ export abstract class AbstractKnowledgeVectorStorage {
   abstract find_similar_knowledge_vectors(
     vector: number[],
     limit?: number,
-    threshold?: number
-  ): Promise<Array<{
-    knowledgeId: string;
-    similarity: number;
-    metadata?: Record<string, any>;
-  }>>;
+    threshold?: number,
+  ): Promise<
+    Array<{
+      knowledgeId: string;
+      similarity: number;
+      metadata?: Record<string, any>;
+    }>
+  >;
 
   /**
    * Batch store knowledge vectors
@@ -314,6 +324,6 @@ export abstract class AbstractKnowledgeVectorStorage {
       knowledgeId: string;
       vector: number[];
       metadata?: Record<string, any>;
-    }>
+    }>,
   ): Promise<void>;
 }
