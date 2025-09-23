@@ -13,12 +13,13 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "vitest",
+    "vitest": "vitest --exclude=\"src/**/*.integration.test.ts\"",
+    "test": "vitest run",
     "coverage": "vitest run --coverage",
     "baml:generate": "pnpm exec baml-cli generate"
   },
   "dependencies": {
-    "@boundaryml/baml": "^0.206.1",
+    "@boundaryml/baml": "^0.208.1",
     "@elastic/elasticsearch": "^9.1.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import Entity from "../Entity";
+import Entity from "./Entity";
 import { config } from "dotenv";
 config()
 

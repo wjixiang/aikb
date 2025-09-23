@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import createLoggerWithPrefix from '../logger';
 import { Client } from '@elastic/elasticsearch';
-import { AbstractEntityStorage } from './abstract-storage';
-import { EntityData, EntityDataWithId, ElasticsearchEntityResponse } from '../knowledge.type';
+import { AbstractEntityContentStorage } from './abstract-storage';
+import {
+  EntityData,
+  EntityDataWithId,
+  ElasticsearchEntityResponse,
+} from '../knowledge.type';
 
 /**
  * Concrete implementation of EntityStorage using ElasticSearch
  */
-class ElasticsearchEntityStorage extends AbstractEntityStorage {
+class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
   private readonly indexName = 'entities';
   private client: Client;
 
@@ -18,8 +22,8 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
     this.client = new Client({
       node: elasticsearchUrl,
       auth: {
-        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || ""
-      }
+        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+      },
     });
   }
 
@@ -28,8 +32,10 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
    */
   private async initializeIndex(): Promise<void> {
     try {
-      const exists = await this.client.indices.exists({ index: this.indexName });
-      
+      const exists = await this.client.indices.exists({
+        index: this.indexName,
+      });
+
       if (!exists) {
         await this.client.indices.create({
           index: this.indexName,
@@ -67,7 +73,9 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
       }
     } catch (error) {
       // If index already exists, just continue
-      if (error?.meta?.body?.error?.type === 'resource_already_exists_exception') {
+      if (
+        error?.meta?.body?.error?.type === 'resource_already_exists_exception'
+      ) {
         this.logger.info(`Index ${this.indexName} already exists, continuing`);
         return;
       }
@@ -79,8 +87,11 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
   async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     try {
       await this.initializeIndex();
-      
+
       const entityName = entity.name.join('.');
+      // Use the name as the ID for consistency with tests
+      const entityId = entityName;
+      
       const entityWithId = {
         ...entity,
         nameString: entityName,
@@ -89,14 +100,14 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
 
       await this.client.index({
         index: this.indexName,
-        id: entityName,
+        id: entityId,
         body: entityWithId,
       });
 
-      this.logger.info(`Created entity with name: ${entityName}`);
+      this.logger.info(`Created entity with ID: ${entityId}`);
       return {
         ...entity,
-        id: entityName,
+        id: entityId,
       };
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
@@ -104,18 +115,19 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async get_entity_by_name(name: string[]): Promise<EntityData | null> {
+  async get_entity_by_name(name: string[]): Promise<EntityDataWithId | null> {
     try {
       const entityName = name.join('.');
-      
-      const result = await this.client.get({
+
+      const result = (await this.client.get({
         index: this.indexName,
         id: entityName,
-      }) as ElasticsearchEntityResponse;
+      })) as ElasticsearchEntityResponse;
 
       if (result.found) {
         const { _index, _id, _source } = result;
         const entityData = {
+          id: _id,
           name: _source.name,
           tags: _source.tags,
           definition: _source.definition,
@@ -136,30 +148,64 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async update_entity(entity: EntityData): Promise<EntityData> {
+  async get_entity_by_id(id: string): Promise<EntityDataWithId | null> {
+    try {
+      const result = (await this.client.get({
+        index: this.indexName,
+        id: id,
+      })) as ElasticsearchEntityResponse;
+
+      if (result.found) {
+        const { _index, _id, _source } = result;
+        const entityData = {
+          id: _id,
+          name: _source.name,
+          tags: _source.tags,
+          definition: _source.definition,
+        };
+        this.logger.info(`Found entity with ID: ${id}`);
+        return entityData;
+      }
+
+      this.logger.warn(`Entity with ID ${id} not found`);
+      return null;
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        this.logger.warn(`Entity with ID not found: ${id}`);
+        return null;
+      }
+      this.logger.error('Failed to get entity by ID:', error);
+      throw error;
+    }
+  }
+
+  async update_entity(entity: EntityDataWithId): Promise<EntityDataWithId> {
     try {
       const entityName = entity.name.join('.');
-      
+      // Generate ID from name if not provided
+      const entityId = entity.id || entityName;
+
       // First check if the entity exists
       let currentEntity;
       try {
-        const result = await this.client.get({
+        const result = (await this.client.get({
           index: this.indexName,
-          id: entityName,
-        }) as ElasticsearchEntityResponse;
+          id: entityId,
+        })) as ElasticsearchEntityResponse;
         currentEntity = result._source;
       } catch (error) {
         if (error?.meta?.statusCode === 404) {
-          // Entity doesn't exist, create it
-          return this.create_new_entity(entity);
+          // Entity doesn't exist, create it and return the EntityDataWithId
+          const createdEntity = await this.create_new_entity(entity);
+          return createdEntity;
         }
         throw error;
       }
-      
+
       // Use the current version to avoid version conflicts
       const result = await this.client.update({
         index: this.indexName,
-        id: entityName,
+        id: entityId,
         body: {
           doc: {
             ...entity,
@@ -170,15 +216,19 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
       });
 
       if (result.result === 'noop') {
-        throw new Error(`Entity with name ${entityName} not found`);
+        throw new Error(`Entity with ID ${entityId} not found`);
       }
 
-      this.logger.info(`Updated entity with name: ${entityName}`);
-      return entity;
+      this.logger.info(`Updated entity with ID: ${entityId}`);
+      return {
+        ...entity,
+        id: entityId,
+      };
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        // Entity doesn't exist, create it
-        return this.create_new_entity(entity);
+        // Entity doesn't exist, create it and return the EntityDataWithId
+        const createdEntity = await this.create_new_entity(entity);
+        return createdEntity;
       }
       this.logger.error('Failed to update entity:', error);
       throw error;
@@ -188,14 +238,16 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
   async delete_entity(name: string[]): Promise<boolean> {
     try {
       const entityName = name.join('.');
-      
+
       const result = await this.client.delete({
         index: this.indexName,
         id: entityName,
       });
 
       if (result.result === 'not_found') {
-        this.logger.warn(`Entity with name ${entityName} not found for deletion`);
+        this.logger.warn(
+          `Entity with name ${entityName} not found for deletion`,
+        );
         return false;
       }
 
@@ -203,7 +255,37 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
       return true;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        this.logger.warn(`Entity with name ${name.join('.')} not found for deletion`);
+        this.logger.warn(
+          `Entity with name ${name.join('.')} not found for deletion`,
+        );
+        return false;
+      }
+      this.logger.error('Failed to delete entity:', error);
+      throw error;
+    }
+  }
+
+  async delete_entity_by_id(id: string): Promise<boolean> {
+    try {
+      const result = await this.client.delete({
+        index: this.indexName,
+        id: id,
+      });
+
+      if (result.result === 'not_found') {
+        this.logger.warn(
+          `Entity with ID ${id} not found for deletion`,
+        );
+        return false;
+      }
+
+      this.logger.info(`Deleted entity with ID: ${id}`);
+      return true;
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        this.logger.warn(
+          `Entity with ID ${id} not found for deletion`,
+        );
         return false;
       }
       this.logger.error('Failed to delete entity:', error);
@@ -236,7 +318,9 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
         };
       });
 
-      this.logger.info(`Found ${entities.length} entities matching query: ${query}`);
+      this.logger.info(
+        `Found ${entities.length} entities matching query: ${query}`,
+      );
       return entities;
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {

@@ -74,7 +74,7 @@ describe('MongodbEntityStorage', () => {
       const result = await mongodbStorage.create_new_entity(mockEntity);
 
       // Assert
-      expect(result).toEqual(mockEntity);
+      expect(result).toEqual({...mockEntity, id: result.id});
       expect(mockCollection.insertOne).toHaveBeenCalledWith({
         ...mockEntity,
         entityName: 'test.entity',

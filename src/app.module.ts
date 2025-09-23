@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ElasticsearchEntityStorage } from './knowledgeBase/storage/elasticsearch-entity-storage';
 import knowledgeManager from './knowledgeBase/knowledgeManager';
 
-
 @Module({
   imports: [],
   controllers: [AppController],
@@ -13,7 +12,8 @@ import knowledgeManager from './knowledgeBase/knowledgeManager';
     {
       provide: 'ENTITY_STORAGE',
       useFactory: () => {
-        const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+        const elasticsearchUrl =
+          process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
         return new ElasticsearchEntityStorage(elasticsearchUrl);
       },
     },

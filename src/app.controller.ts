@@ -11,8 +11,14 @@ export class AppController {
   }
 
   @Post('entities')
-  async createEntity(@Body() body: { name: string[]; tags: string[]; definition: string }) {
-    return await this.appService.createEntity(body.name, body.tags, body.definition);
+  async createEntity(
+    @Body() body: { name: string[]; tags: string[]; definition: string },
+  ) {
+    return await this.appService.createEntity(
+      body.name,
+      body.tags,
+      body.definition,
+    );
   }
 
   @Get('search')

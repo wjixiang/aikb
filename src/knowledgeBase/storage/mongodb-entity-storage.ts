@@ -1,21 +1,23 @@
 import createLoggerWithPrefix from '../logger';
 import { connectToDatabase } from '../database/mongodb';
-import { AbstractEntityStorage } from './abstract-storage';
+import { AbstractEntityContentStorage } from './abstract-storage';
 import { EntityData, EntityDataWithId } from '../knowledge.type';
 
 /**
  * Concrete implementation of EntityStorage using MongoDB
  */
-class MongodbEntityStorage extends AbstractEntityStorage {
+class MongodbEntityStorage extends AbstractEntityContentStorage {
   private collectionName = 'entities';
 
-  logger = createLoggerWithPrefix('MongodbEntityStorage');
+  logger = createLoggerWithPrefix('MongodbEntityContentStorage');
 
   async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
 
+      // Generate a unique ID
+      const entityId = `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       // Convert name array to a string for unique indexing
       const entityName = entity.name.join('.');
       const entityWithId = { ...entity, entityName };
@@ -25,14 +27,14 @@ class MongodbEntityStorage extends AbstractEntityStorage {
         `Created entity with _id: ${JSON.stringify(result.insertedId)}`,
       );
 
-      return {...entity, id: result.insertedId.toString()};
+      return { ...entity, id: entityId };
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
       throw error;
     }
   }
 
-  async get_entity_by_name(name: string[]): Promise<EntityData | null> {
+  async get_entity_by_name(name: string[]): Promise<EntityDataWithId | null> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -45,7 +47,7 @@ class MongodbEntityStorage extends AbstractEntityStorage {
       if (entity) {
         // Remove MongoDB-specific _id and entityName fields before returning
         const { _id, entityName, ...entityData } = entity;
-        return entityData as EntityData;
+        return entityData as EntityDataWithId;
       }
 
       return null;
@@ -55,7 +57,7 @@ class MongodbEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async update_entity(entity: EntityData): Promise<EntityData> {
+  async update_entity(entity: EntityDataWithId): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -74,6 +76,52 @@ class MongodbEntityStorage extends AbstractEntityStorage {
       return entity;
     } catch (error) {
       this.logger.error('Failed to update entity:', error);
+      throw error;
+    }
+  }
+
+  async get_entity_by_id(id: string): Promise<EntityDataWithId | null> {
+    try {
+      const { db } = await connectToDatabase();
+      const collection = db.collection(this.collectionName);
+
+      const entity = await collection.findOne({
+        id,
+      });
+
+      if (entity) {
+        // Remove MongoDB-specific _id field before returning
+        const { _id, ...entityData } = entity;
+        return entityData as EntityDataWithId;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error('Failed to get entity by ID:', error);
+      throw error;
+    }
+  }
+
+  async delete_entity_by_id(id: string): Promise<boolean> {
+    try {
+      const { db } = await connectToDatabase();
+      const collection = db.collection(this.collectionName);
+
+      const deleteResult = await collection.deleteOne({
+        id,
+      });
+
+      if (deleteResult.deletedCount === 0) {
+        this.logger.warn(
+          `EntityData with ID ${id} not found for deletion`,
+        );
+        return false;
+      }
+
+      this.logger.info(`Deleted entity with ID: ${id}`);
+      return true;
+    } catch (error) {
+      this.logger.error('Failed to delete entity:', error);
       throw error;
     }
   }
@@ -120,9 +168,9 @@ class MongodbEntityStorage extends AbstractEntityStorage {
         })
         .toArray();
 
-      // Remove MongoDB-specific _id and entityName fields before returning
+      // Remove MongoDB-specific _id, entityName, and id fields before returning
       const result = entities.map(
-        ({ _id, entityName, ...entityData }) => entityData as EntityData,
+        ({ _id, entityName, id, ...entityData }) => entityData as EntityData,
       );
 
       this.logger.info(
@@ -142,9 +190,9 @@ class MongodbEntityStorage extends AbstractEntityStorage {
 
       const entities = await collection.find({}).toArray();
 
-      // Remove MongoDB-specific _id and entityName fields before returning
+      // Remove MongoDB-specific _id, entityName, and id fields before returning
       const result = entities.map(
-        ({ _id, entityName, ...entityData }) => entityData as EntityData,
+        ({ _id, entityName, id, ...entityData }) => entityData as EntityData,
       );
 
       this.logger.info(`Listed ${result.length} entities`);

@@ -70,8 +70,8 @@ describe('MongodbEntityStorage Integration Tests', () => {
       const result = await mongodbStorage.create_new_entity(testEntity);
 
       // Assert
-      expect(result).toEqual(testEntity);
-
+      
+      expect(result).toEqual({...testEntity, id: result.id});
       // Verify entity was actually inserted into the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -94,7 +94,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
       // This test verifies the create operation works even if entityName exists
       await expect(
         mongodbStorage.create_new_entity(testEntity),
-      ).resolves.toEqual(testEntity);
+      ).resolves.toEqual({...testEntity, id: expect.any(String)});
     });
   });
 
@@ -276,7 +276,7 @@ describe('MongodbEntityStorage Integration Tests', () => {
     it('should support full CRUD operations', async () => {
       // Create
       const createdEntity = await mongodbStorage.create_new_entity(testEntity);
-      expect(createdEntity).toEqual(testEntity);
+      expect(createdEntity).toEqual({...testEntity, id: createdEntity.id});
 
       // Read
       const retrievedEntity = await mongodbStorage.get_entity_by_name([

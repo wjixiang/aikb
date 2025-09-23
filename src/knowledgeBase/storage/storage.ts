@@ -1,10 +1,7 @@
 import createLoggerWithPrefix from '../logger';
 import { MongodbEntityStorage } from './mongodb-entity-storage';
 import { LocalEntityStorage } from './local-entity-storage';
-import {
-  AbstractEntityStorage,
-} from './abstract-storage';
-
+import { AbstractEntityStorage } from './abstract-storage';
 
 interface StorageConfig {
   // Configuration options for knowledge storage
@@ -20,9 +17,7 @@ interface StorageConfig {
 class Storage {
   entityStorage: AbstractEntityStorage;
 
-  constructor(
-    entityStorage: AbstractEntityStorage,
-  ) {
+  constructor(entityStorage: AbstractEntityStorage) {
     this.entityStorage = entityStorage;
   }
 }
