@@ -246,5 +246,74 @@ export abstract class AbstractKnowledgeGraphStorage {
 }
 
 export abstract class AbstractKnowledgeVectorStorage {
+  /**
+   * Store vector for knowledge
+   * @param knowledgeId ID of the knowledge
+   * @param vector Vector data to store
+   * @param metadata Optional metadata associated with the vector
+   */
+  abstract store_knowledge_vector(
+    knowledgeId: string,
+    vector: number[],
+    metadata?: Record<string, any>
+  ): Promise<void>;
 
+  /**
+   * Get vector for knowledge
+   * @param knowledgeId ID of the knowledge
+   * @returns Promise resolving to vector data and metadata or null if not found
+   */
+  abstract get_knowledge_vector(
+    knowledgeId: string
+  ): Promise<{
+    vector: number[];
+    metadata?: Record<string, any>;
+  } | null>;
+
+  /**
+   * Update vector for knowledge
+   * @param knowledgeId ID of the knowledge
+   * @param vector Updated vector data
+   * @param metadata Updated metadata
+   */
+  abstract update_knowledge_vector(
+    knowledgeId: string,
+    vector: number[],
+    metadata?: Record<string, any>
+  ): Promise<void>;
+
+  /**
+   * Delete vector for knowledge
+   * @param knowledgeId ID of the knowledge
+   */
+  abstract delete_knowledge_vector(knowledgeId: string): Promise<boolean>;
+
+  /**
+   * Find similar knowledge vectors
+   * @param vector Query vector
+   * @param limit Maximum number of results
+   * @param threshold Similarity threshold (0-1)
+   * @returns Promise resolving to array of similar knowledge items with similarity scores
+   */
+  abstract find_similar_knowledge_vectors(
+    vector: number[],
+    limit?: number,
+    threshold?: number
+  ): Promise<Array<{
+    knowledgeId: string;
+    similarity: number;
+    metadata?: Record<string, any>;
+  }>>;
+
+  /**
+   * Batch store knowledge vectors
+   * @param vectors Array of knowledge vectors to store
+   */
+  abstract batch_store_knowledge_vectors(
+    vectors: Array<{
+      knowledgeId: string;
+      vector: number[];
+      metadata?: Record<string, any>;
+    }>
+  ): Promise<void>;
 }
