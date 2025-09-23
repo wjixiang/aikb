@@ -84,13 +84,13 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
+  async create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId> {
     try {
       await this.initializeIndex();
 
       const entityName = entity.name.join('.');
-      // Use the name as the ID for consistency with tests
-      const entityId = entityName;
+      // Use the provided ID instead of generating from name
+      const entityId = id;
       
       const entityWithId = {
         ...entity,
@@ -179,11 +179,10 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async update_entity(entity: EntityDataWithId): Promise<EntityDataWithId> {
+  async update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId> {
     try {
-      const entityName = entity.name.join('.');
-      // Generate ID from name if not provided
-      const entityId = entity.id || entityName;
+      const entityName = old_entity.name.join('.');
+      const entityId = old_entity.id;
 
       // First check if the entity exists
       let currentEntity;
@@ -196,7 +195,7 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
       } catch (error) {
         if (error?.meta?.statusCode === 404) {
           // Entity doesn't exist, create it and return the EntityDataWithId
-          const createdEntity = await this.create_new_entity(entity);
+          const createdEntity = await this.create_new_entity_content(new_entity_data, old_entity.id);
           return createdEntity;
         }
         throw error;
@@ -208,7 +207,7 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
         id: entityId,
         body: {
           doc: {
-            ...entity,
+            ...new_entity_data,
             nameString: entityName,
             updatedAt: new Date().toISOString(),
           },
@@ -221,13 +220,13 @@ class ElasticsearchEntityStorage extends AbstractEntityContentStorage {
 
       this.logger.info(`Updated entity with ID: ${entityId}`);
       return {
-        ...entity,
+        ...new_entity_data,
         id: entityId,
       };
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
         // Entity doesn't exist, create it and return the EntityDataWithId
-        const createdEntity = await this.create_new_entity(entity);
+        const createdEntity = await this.create_new_entity_content(new_entity_data, old_entity.id);
         return createdEntity;
       }
       this.logger.error('Failed to update entity:', error);

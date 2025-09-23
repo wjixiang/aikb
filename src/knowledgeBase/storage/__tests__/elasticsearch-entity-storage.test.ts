@@ -263,16 +263,17 @@ describe('ElasticsearchEntityStorage', () => {
   describe('create_new_entity', () => {
     it('should create a new entity successfully', async () => {
       // Arrange
+      const entityId = 'test.entity.id';
       mockClient.index.mockResolvedValue({});
 
       // Act
-      const result = await elasticsearchStorage.create_new_entity(mockEntity);
+      const result = await elasticsearchStorage.create_new_entity_content(mockEntity, entityId);
 
       // // Assert
       // expect(result).toEqual(mockEntity);
       expect(mockClient.index).toHaveBeenCalledWith({
         index: 'entities',
-        id: expect.any(String),
+        id: entityId,
         body: {
           ...mockEntity,
           nameString: 'test.entity',
@@ -283,12 +284,13 @@ describe('ElasticsearchEntityStorage', () => {
 
     it('should throw an error if database operation fails', async () => {
       // Arrange
+      const entityId = 'test.entity.id';
       const error = new Error('ElasticSearch error');
       mockClient.index.mockRejectedValue(error);
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.create_new_entity(mockEntity),
+        elasticsearchStorage.create_new_entity_content(mockEntity, entityId),
       ).rejects.toThrow(error);
     });
   });
@@ -344,23 +346,27 @@ describe('ElasticsearchEntityStorage', () => {
   describe('update_entity', () => {
     it('should update an entity successfully', async () => {
       // Arrange
-      const mockEntityWithId = {
+      const oldEntity = {
         ...mockEntity,
         id: 'entity_12345_abcde',
+      };
+      const newEntityData = {
+        ...mockEntity,
+        tags: ['updated', 'tags'],
       };
       mockClient.update.mockResolvedValue({ result: 'updated' });
 
       // Act
-      const result = await elasticsearchStorage.update_entity(mockEntityWithId);
+      const result = await elasticsearchStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
-      expect(result).toEqual(mockEntityWithId);
+      expect(result).toEqual(oldEntity);
       expect(mockClient.update).toHaveBeenCalledWith({
         index: 'entities',
         id: 'entity_12345_abcde',
         body: {
           doc: {
-            ...mockEntityWithId,
+            ...newEntityData,
             nameString: 'test.entity',
             updatedAt: expect.any(String),
           },
@@ -370,30 +376,38 @@ describe('ElasticsearchEntityStorage', () => {
 
     it('should throw an error if entity is not found', async () => {
       // Arrange
-      const mockEntityWithId = {
+      const oldEntity = {
         ...mockEntity,
         id: 'entity_12345_abcde',
+      };
+      const newEntityData = {
+        ...mockEntity,
+        tags: ['updated', 'tags'],
       };
       mockClient.update.mockResolvedValue({ result: 'noop' });
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_entity(mockEntityWithId),
+        elasticsearchStorage.update_entity(oldEntity, newEntityData),
       ).rejects.toThrow('Entity with ID entity_12345_abcde not found');
     });
 
     it('should throw an error if database operation fails', async () => {
       // Arrange
-      const mockEntityWithId = {
+      const oldEntity = {
         ...mockEntity,
         id: 'entity_12345_abcde',
+      };
+      const newEntityData = {
+        ...mockEntity,
+        tags: ['updated', 'tags'],
       };
       const error = new Error('ElasticSearch error');
       mockClient.update.mockRejectedValue(error);
 
       // Act & Assert
       await expect(
-        elasticsearchStorage.update_entity(mockEntityWithId),
+        elasticsearchStorage.update_entity(oldEntity, newEntityData),
       ).rejects.toThrow(error);
     });
   });

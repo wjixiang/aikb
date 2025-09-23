@@ -10,25 +10,45 @@ import Knowledge from '../Knowledge';
  * Abstract base class for EntityStorage to decouple from specific database implementations
  */
 export abstract class AbstractEntityStorage {
+  static generate_entity_id() {
+    return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  abstract entityContentStorage: AbstractEntityContentStorage;
+  abstract entityGraphStorage: AbstractEntityGraphStorage;
+  abstract entityVectorStorage: AbstractEntityVectorStorage;
   abstract create_new_entity(entity: EntityData): Promise<EntityDataWithId>;
 }
 
 export abstract class AbstractEntityContentStorage {
-  abstract create_new_entity(entity: EntityData): Promise<EntityDataWithId>;
+  abstract create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId>;
   abstract get_entity_by_name(name: string[]): Promise<EntityDataWithId | null>;
   abstract get_entity_by_id(id: string): Promise<EntityDataWithId | null>;
-  abstract update_entity(entity: EntityDataWithId): Promise<EntityDataWithId>;
+  abstract update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId>;
   abstract delete_entity(name: string[]): Promise<boolean>;
   abstract delete_entity_by_id(id: string): Promise<boolean>;
   abstract search_entities(query: string): Promise<EntityData[]>;
   abstract list_all_entities(): Promise<EntityData[]>;
 }
 
+export abstract class AbstractEntityGraphStorage {
+
+}
+
+export abstract class AbstractEntityVectorStorage {
+
+}
+
+
 
 
 export abstract class AbstractKnowledgeStorage {
   abstract knowledgeContentStorage: AbstractKnowledgeContentStorage;
   abstract knowledgeGraphStorage: AbstractKnowledgeGraphStorage;
+  abstract knowledgeVectorStorage: AbstractKnowledgeVectorStorage;
+
+  static generate_knowledge_id() {
+    return `knowledge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
 
   /**
    * Create new knowledge in storage
@@ -85,4 +105,8 @@ export abstract class AbstractKnowledgeContentStorage {
 
 export abstract class AbstractKnowledgeGraphStorage {
   abstract create_new_link(sourceId: string, targetId: string): Promise<void>;
+}
+
+export abstract class AbstractKnowledgeVectorStorage {
+
 }

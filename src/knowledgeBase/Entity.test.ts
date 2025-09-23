@@ -4,13 +4,13 @@ import { config } from "dotenv";
 config()
 
 // Mock the BAML client to avoid native binding issues
-// vi.mock('baml_client', () => ({
-//   b: {
-//     Generate_plain_definition: vi.fn().mockResolvedValue({
-//       definition: "Mocked definition for hypertension"
-//     })
-//   }
-// }));
+vi.mock('baml_client', () => ({
+  b: {
+    Generate_plain_definition: vi.fn().mockResolvedValue({
+      definition: "Mocked definition for hypertension"
+    })
+  }
+}));
 
 describe("Entity.create_entity_with_ai", () => {
   beforeEach(() => {
@@ -20,11 +20,11 @@ describe("Entity.create_entity_with_ai", () => {
 
   it("should create entity definition with AI", async () => {
     // Test the create_entity_with_ai function with mocked BAML client
-    const definition = await Entity.create_entity_with_ai("高血压", []);
+    const definition = await Entity.create_entity_with_ai("Hypertension", []);
     console.log(definition)
     
     // Verify the function returns a string
-    expect(typeof definition).toBe("string");
+    expect(definition.get_entity_data().definition).toBe("Mocked definition for hypertension");
     
     // Verify the mocked definition is returned
     // expect(definition).toBe("Mocked definition for hypertension");

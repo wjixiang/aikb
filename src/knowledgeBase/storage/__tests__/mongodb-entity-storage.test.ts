@@ -3,6 +3,8 @@ import { MongodbEntityStorage } from '../mongodb-entity-storage';
 import { connectToDatabase } from '../../database/mongodb';
 import { ObjectId } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
+import Entity from 'src/knowledgeBase/Entity';
+import { AbstractEntityStorage } from '../storage';
 
 // Mock the database connection
 vi.mock('../../database/mongodb');
@@ -65,13 +67,13 @@ describe('MongodbEntityStorage', () => {
   describe('create_new_entity', () => {
     it('should create a new entity successfully', async () => {
       // Arrange
-      const mockInsertedId = new ObjectId();
+      const mockId = AbstractEntityStorage.generate_entity_id();
       mockCollection.insertOne.mockResolvedValue({
-        insertedId: mockInsertedId,
+        id: mockId,
       });
 
       // Act
-      const result = await mongodbStorage.create_new_entity(mockEntity);
+      const result = await mongodbStorage.create_new_entity_content(mockEntity, mockId);
 
       // Assert
       expect(result).toEqual({...mockEntity, id: result.id});
@@ -85,10 +87,10 @@ describe('MongodbEntityStorage', () => {
       // Arrange
       const error = new Error('Database error');
       mockCollection.insertOne.mockRejectedValue(error);
-
+      const mockId = AbstractEntityStorage.generate_entity_id();
       // Act & Assert
       await expect(
-        mongodbStorage.create_new_entity(mockEntity),
+        mongodbStorage.create_new_entity_content(mockEntity,mockId),
       ).rejects.toThrow(error);
     });
   });
@@ -144,40 +146,52 @@ describe('MongodbEntityStorage', () => {
   describe('update_entity', () => {
     it('should update an entity successfully', async () => {
       // Arrange
+      const mockEntityWithId = {
+        ...mockEntity,
+        id: 'test.entity',
+      };
       mockCollection.replaceOne.mockResolvedValue({
         modifiedCount: 1,
       });
 
       // Act
-      const result = await mongodbStorage.update_entity(mockEntity);
+      const result = await mongodbStorage.update_entity(mockEntityWithId, mockEntity);
 
       // Assert
-      expect(result).toEqual(mockEntity);
+      expect(result).toEqual(mockEntityWithId);
       expect(mockCollection.replaceOne).toHaveBeenCalledWith(
         { entityName: 'test.entity' },
-        { ...mockEntity, entityName: 'test.entity' },
+        { ...mockEntity, id: 'test.entity', entityName: 'test.entity' },
       );
     });
 
     it('should throw an error if entity is not found', async () => {
       // Arrange
+      const mockEntityWithId = {
+        ...mockEntity,
+        id: 'test.entity',
+      };
       mockCollection.replaceOne.mockResolvedValue({
         modifiedCount: 0,
       });
 
       // Act & Assert
-      await expect(mongodbStorage.update_entity(mockEntity)).rejects.toThrow(
+      await expect(mongodbStorage.update_entity(mockEntityWithId, mockEntity)).rejects.toThrow(
         'EntityData with name test.entity not found',
       );
     });
 
     it('should throw an error if database operation fails', async () => {
       // Arrange
+      const mockEntityWithId = {
+        ...mockEntity,
+        id: 'test.entity',
+      };
       const error = new Error('Database error');
       mockCollection.replaceOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(mongodbStorage.update_entity(mockEntity)).rejects.toThrow(
+      await expect(mongodbStorage.update_entity(mockEntityWithId, mockEntity)).rejects.toThrow(
         error,
       );
     });

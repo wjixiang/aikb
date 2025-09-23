@@ -64,14 +64,17 @@ describe('MongodbEntityStorage Integration Tests', () => {
     }
   });
 
-  describe('create_new_entity', () => {
+  describe('create_new_entity_content', () => {
     it('should create a new entity successfully', async () => {
+      // Arrange
+      const entityId = 'test.entity.id';
+      
       // Act
-      const result = await mongodbStorage.create_new_entity(testEntity);
+      const result = await mongodbStorage.create_new_entity_content(testEntity, entityId);
 
       // Assert
       
-      expect(result).toEqual({...testEntity, id: result.id});
+      expect(result).toEqual({...testEntity, id: entityId});
       // Verify entity was actually inserted into the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
@@ -92,9 +95,10 @@ describe('MongodbEntityStorage Integration Tests', () => {
       // Act & Assert
       // Note: MongoDB will allow duplicate inserts with different _id
       // This test verifies the create operation works even if entityName exists
+      const entityId = 'test.entity.id.duplicate';
       await expect(
-        mongodbStorage.create_new_entity(testEntity),
-      ).resolves.toEqual({...testEntity, id: expect.any(String)});
+        mongodbStorage.create_new_entity_content(testEntity, entityId),
+      ).resolves.toEqual({...testEntity, id: entityId});
     });
   });
 
@@ -131,35 +135,45 @@ describe('MongodbEntityStorage Integration Tests', () => {
   describe('update_entity', () => {
     it('should update an entity successfully', async () => {
       // Arrange - Insert entity directly to database
-      await db.collection(collectionName).insertOne({
+      const res = await db.collection(collectionName).insertOne({
         ...testEntity,
         entityName: 'test.entity',
       });
 
-      const updatedEntity = {
+      const oldEntity = {
+        id: res.insertedId.toString(),
+        ...testEntity,
+      };
+
+      const newEntityData = {
         ...testEntity,
         tags: ['updated', 'tags'],
         definition: 'Updated definition',
       };
 
       // Act
-      const result = await mongodbStorage.update_entity(updatedEntity);
+      const result = await mongodbStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
-      expect(result).toEqual(updatedEntity);
+      expect(result).toEqual(oldEntity);
 
       // Verify entity was actually updated in the database
       const entityInDb = await db.collection(collectionName).findOne({
         entityName: 'test.entity',
       });
       expect(entityInDb).toBeTruthy();
-      expect(entityInDb?.tags).toEqual(updatedEntity.tags);
-      expect(entityInDb?.definition).toEqual(updatedEntity.definition);
+      expect(entityInDb?.tags).toEqual(newEntityData.tags);
+      expect(entityInDb?.definition).toEqual(newEntityData.definition);
     });
 
     it('should throw an error if entity is not found', async () => {
+      const oldEntity = {
+        id: 'nonexistent',
+        ...testEntity,
+      };
+      
       // Act & Assert
-      await expect(mongodbStorage.update_entity(testEntity)).rejects.toThrow(
+      await expect(mongodbStorage.update_entity(oldEntity, testEntity)).rejects.toThrow(
         'EntityData with name test.entity not found',
       );
     });
@@ -275,8 +289,9 @@ describe('MongodbEntityStorage Integration Tests', () => {
   describe('full CRUD workflow', () => {
     it('should support full CRUD operations', async () => {
       // Create
-      const createdEntity = await mongodbStorage.create_new_entity(testEntity);
-      expect(createdEntity).toEqual({...testEntity, id: createdEntity.id});
+      const entityId = 'test.entity.crud';
+      const createdEntity = await mongodbStorage.create_new_entity_content(testEntity, entityId);
+      expect(createdEntity).toEqual({...testEntity, id: entityId});
 
       // Read
       const retrievedEntity = await mongodbStorage.get_entity_by_name([
@@ -286,18 +301,22 @@ describe('MongodbEntityStorage Integration Tests', () => {
       expect(retrievedEntity).toEqual(testEntity);
 
       // Update
-      const updatedEntity = {
+      const oldEntity = {
+        id: createdEntity.id,
+        ...testEntity,
+      };
+      const newEntityData = {
         ...testEntity,
         tags: ['updated', 'tags'],
         definition: 'Updated definition',
       };
-      await mongodbStorage.update_entity(updatedEntity);
+      await mongodbStorage.update_entity(oldEntity, newEntityData);
 
       const retrievedUpdatedEntity = await mongodbStorage.get_entity_by_name([
         'test',
         'entity',
       ]);
-      expect(retrievedUpdatedEntity).toEqual(updatedEntity);
+      expect(retrievedUpdatedEntity).toEqual(newEntityData);
 
       // Delete
       const deleteResult = await mongodbStorage.delete_entity([

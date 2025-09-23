@@ -139,18 +139,21 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
     }
   });
 
-  describe('create_new_entity', () => {
+  describe('create_new_entity_content', () => {
     it('should create a new entity successfully', async () => {
+      // Arrange
+      const entityId = 'test.entity.id';
+      
       // Act
-      const result = await elasticsearchStorage.create_new_entity(testEntity);
+      const result = await elasticsearchStorage.create_new_entity_content(testEntity, entityId);
 
       // Assert
-      expect(result).toEqual(expectedTestEntityWithId);
+      expect(result).toEqual({...expectedTestEntityWithId, id: entityId});
 
       // Verify entity was actually inserted into ElasticSearch
       const entityInEs = await client.get({
         index: indexName,
-        id: 'test.entity',
+        id: entityId,
       });
 
       expect(entityInEs.found).toBe(true);
@@ -163,9 +166,10 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
 
     it('should update entity if it already exists (ElasticSearch behavior)', async () => {
       // Arrange - Insert entity directly to ElasticSearch
+      const entityId = 'test.entity.id';
       await client.index({
         index: indexName,
-        id: 'test.entity',
+        id: entityId,
         body: {
           ...testEntity,
           nameString: 'test.entity',
@@ -174,15 +178,15 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
       });
 
       // Act
-      const result = await elasticsearchStorage.create_new_entity(testEntity);
+      const result = await elasticsearchStorage.create_new_entity_content(testEntity, entityId);
 
       // Assert
-      expect(result).toEqual(expectedTestEntityWithId);
+      expect(result).toEqual({...expectedTestEntityWithId, id: entityId});
 
       // Verify entity was actually updated in ElasticSearch
       const entityInEs = await client.get({
         index: indexName,
-        id: 'test.entity',
+        id: entityId,
       });
 
       expect(entityInEs.found).toBe(true);
@@ -228,9 +232,10 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
   describe('update_entity', () => {
     it('should update an entity successfully', async () => {
       // Arrange - Insert entity directly to ElasticSearch
+      const entityId = 'test.entity';
       await client.index({
         index: indexName,
-        id: 'test.entity',
+        id: entityId,
         body: {
           ...testEntity,
           nameString: 'test.entity',
@@ -238,52 +243,58 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
         },
       });
 
-      const updatedEntity = {
+      const oldEntity = {
+        id: entityId,
+        ...testEntity,
+      };
+
+      const newEntityData = {
         ...testEntity,
         tags: ['updated', 'tags'],
         definition: 'Updated definition',
       };
 
       // Act
-      const result = await elasticsearchStorage.update_entity(updatedEntity);
+      const result = await elasticsearchStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
       expect(result).toEqual({
-        ...updatedEntity,
-        id: 'test.entity',
+        ...newEntityData,
+        id: entityId,
       });
 
       // Verify entity was actually updated in ElasticSearch
       const entityInEs = await client.get({
         index: indexName,
-        id: 'test.entity',
+        id: entityId,
       });
 
       expect(entityInEs.found).toBe(true);
-      expect((entityInEs._source as any)?.tags).toEqual(updatedEntity.tags);
+      expect((entityInEs._source as any)?.tags).toEqual(newEntityData.tags);
       expect((entityInEs._source as any)?.definition).toEqual(
-        updatedEntity.definition,
+        newEntityData.definition,
       );
     }, 30000);
 
     it('should create entity if it does not exist (ElasticSearch behavior)', async () => {
-      const newEntity = {
+      const oldEntity = {
+        id: 'new.entity',
+        name: ['new', 'entity'],
+        tags: ['new', 'creation'],
+        definition: 'A new entity for testing',
+      };
+
+      const newEntityData = {
         name: ['new', 'entity'],
         tags: ['new', 'creation'],
         definition: 'A new entity for testing',
       };
 
       // Act
-      const result = await elasticsearchStorage.update_entity({
-        ...newEntity,
-        id: 'new.entity',
-      });
+      const result = await elasticsearchStorage.update_entity(oldEntity, newEntityData);
 
       // Assert
-      expect(result).toEqual({
-        ...newEntity,
-        id: 'new.entity',
-      });
+      expect(result).toEqual(oldEntity);
 
       // Verify entity was actually created in ElasticSearch
       const entityInEs = await client.get({
@@ -292,10 +303,10 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
       });
 
       expect(entityInEs.found).toBe(true);
-      expect((entityInEs._source as any)?.name).toEqual(newEntity.name);
-      expect((entityInEs._source as any)?.tags).toEqual(newEntity.tags);
+      expect((entityInEs._source as any)?.name).toEqual(newEntityData.name);
+      expect((entityInEs._source as any)?.tags).toEqual(newEntityData.tags);
       expect((entityInEs._source as any)?.definition).toEqual(
-        newEntity.definition,
+        newEntityData.definition,
       );
     }, 30000);
   });
@@ -470,9 +481,10 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
   describe('full CRUD workflow', () => {
     it('should support full CRUD operations', async () => {
       // Create
+      const entityId = 'test.entity.crud';
       const createdEntity =
-        await elasticsearchStorage.create_new_entity(testEntity);
-      expect(createdEntity).toEqual(expectedTestEntityWithId);
+        await elasticsearchStorage.create_new_entity_content(testEntity, entityId);
+      expect(createdEntity).toEqual({...expectedTestEntityWithId, id: entityId});
 
       // Refresh the index to make sure the document is available
       await client.indices.refresh({ index: indexName });
@@ -481,34 +493,44 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
       const retrievedEntity = await elasticsearchStorage.get_entity_by_name([
         'test',
         'entity',
+        'crud',
       ]);
-      expect(retrievedEntity).toEqual(expectedTestEntityWithId);
+      expect(retrievedEntity).toEqual({...expectedTestEntityWithId, id: entityId});
 
       // Update
+      const oldEntity = {
+        id: entityId,
+        ...testEntity,
+      };
+      const newEntityData = {
+        ...testEntity,
+        tags: ['updated', 'tags'],
+        definition: 'Updated definition',
+      };
+      
+      // Expected entity after update
       const updatedEntity = {
         ...testEntity,
         tags: ['updated', 'tags'],
         definition: 'Updated definition',
       };
-      await elasticsearchStorage.update_entity({
-        ...updatedEntity,
-        id: 'test.entity',
-      });
+      await elasticsearchStorage.update_entity(oldEntity, newEntityData);
 
       // Refresh the index again after update
       await client.indices.refresh({ index: indexName });
 
       const retrievedUpdatedEntity =
-        await elasticsearchStorage.get_entity_by_name(['test', 'entity']);
+        await elasticsearchStorage.get_entity_by_name(['test', 'entity', 'crud']);
       expect(retrievedUpdatedEntity).toEqual({
         ...updatedEntity,
-        id: 'test.entity',
+        id: 'test.entity.crud',
       });
 
       // Delete
       const deleteResult = await elasticsearchStorage.delete_entity([
         'test',
         'entity',
+        'crud',
       ]);
       expect(deleteResult).toBe(true);
 
@@ -518,6 +540,7 @@ describe('ElasticsearchEntityStorage Integration Tests', () => {
       const deletedEntity = await elasticsearchStorage.get_entity_by_name([
         'test',
         'entity',
+        'crud',
       ]);
       expect(deletedEntity).toBeNull();
     }, 30000);

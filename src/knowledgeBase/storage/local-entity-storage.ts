@@ -55,7 +55,7 @@ class LocalEntityStorage extends AbstractEntityContentStorage {
     return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
+  async create_new_entity_content(entity: EntityData): Promise<EntityDataWithId> {
     try {
       const entities = await this.readEntities();
       const entityId = this.generateEntityId(entity.name);
@@ -106,22 +106,27 @@ class LocalEntityStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async update_entity(entity: EntityDataWithId): Promise<EntityDataWithId> {
+  async update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId> {
     try {
       const entities = await this.readEntities();
 
       const index = entities.findIndex(
-        (e) => e.id === entity.id,
+        (e) => e.id === old_entity.id,
       );
       if (index === -1) {
-        throw new Error(`EntityData with ID ${entity.id} not found`);
+        throw new Error(`EntityData with ID ${old_entity.id} not found`);
       }
 
-      entities[index] = entity;
+      const updatedEntity = {
+        ...new_entity_data,
+        id: old_entity.id,
+      };
+
+      entities[index] = updatedEntity;
       await this.writeEntities(entities);
 
-      this.logger.info(`Updated entity with ID: ${entity.id}`);
-      return entity;
+      this.logger.info(`Updated entity with ID: ${old_entity.id}`);
+      return updatedEntity;
     } catch (error) {
       this.logger.error('Failed to update entity:', error);
       throw error;

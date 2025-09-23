@@ -11,13 +11,13 @@ class MongodbEntityStorage extends AbstractEntityContentStorage {
 
   logger = createLoggerWithPrefix('MongodbEntityContentStorage');
 
-  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
+  async create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
 
       // Generate a unique ID
-      const entityId = `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // const entityId = `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       // Convert name array to a string for unique indexing
       const entityName = entity.name.join('.');
       const entityWithId = { ...entity, entityName };
@@ -27,7 +27,7 @@ class MongodbEntityStorage extends AbstractEntityContentStorage {
         `Created entity with _id: ${JSON.stringify(result.insertedId)}`,
       );
 
-      return { ...entity, id: entityId };
+      return { ...entity, id: id };
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
       throw error;
@@ -57,15 +57,21 @@ class MongodbEntityStorage extends AbstractEntityContentStorage {
     }
   }
 
-  async update_entity(entity: EntityDataWithId): Promise<EntityDataWithId> {
+  async update_entity(old_entity: EntityDataWithId, new_entity_data: EntityData): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
 
-      const entityName = entity.name.join('.');
+      const entityName = old_entity.name.join('.');
+      const updatedEntity = {
+        ...new_entity_data,
+        id: old_entity.id, // Preserve the original ID
+        entityName, // Keep the entityName for indexing
+      };
+
       const updateResult = await collection.replaceOne(
         { entityName },
-        { ...entity, entityName },
+        updatedEntity,
       );
 
       if (updateResult.modifiedCount === 0) {
@@ -73,7 +79,10 @@ class MongodbEntityStorage extends AbstractEntityContentStorage {
       }
 
       this.logger.info(`Updated entity with name: ${entityName}`);
-      return entity;
+      return {
+        ...new_entity_data,
+        id: old_entity.id,
+      };
     } catch (error) {
       this.logger.error('Failed to update entity:', error);
       throw error;
