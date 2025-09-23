@@ -14,8 +14,8 @@ const mockLogger = {
   warn: vi.fn(),
 };
 
-vi.mock('../../logger', () => ({
-  default: vi.fn(() => mockLogger),
+vi.mock('../../lib/logger', () => ({
+  default: vi.fn().mockImplementation(() => mockLogger),
 }));
 
 describe('ElasticsearchEntityContentStorage', () => {
@@ -78,6 +78,9 @@ describe('ElasticsearchEntityContentStorage', () => {
     elasticsearchStorage = new ElasticsearchEntityContentStorage(
       'http://localhost:9200',
     );
+
+    // Mock the logger instance on the storage class
+    (elasticsearchStorage as any).logger = mockLogger;
   });
 
   afterEach(() => {
