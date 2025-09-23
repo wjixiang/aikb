@@ -1,8 +1,7 @@
 import createLoggerWithPrefix from '../logger';
 import { connectToDatabase } from '../database/mongodb';
-import { ObjectId } from 'mongodb';
 import { AbstractEntityStorage } from './abstract-storage';
-import { EntityData } from '../knowledge.type';
+import { EntityData, EntityDataWithId } from '../knowledge.type';
 
 /**
  * Concrete implementation of EntityStorage using MongoDB
@@ -12,7 +11,7 @@ class MongodbEntityStorage extends AbstractEntityStorage {
 
   logger = createLoggerWithPrefix('MongodbEntityStorage');
 
-  async create_new_entity(entity: EntityData): Promise<EntityData> {
+  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -26,7 +25,7 @@ class MongodbEntityStorage extends AbstractEntityStorage {
         `Created entity with _id: ${JSON.stringify(result.insertedId)}`,
       );
 
-      return entity;
+      return {...entity, id: result.insertedId.toString()};
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
       throw error;

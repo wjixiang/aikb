@@ -1,6 +1,6 @@
 import createLoggerWithPrefix from '../logger';
 import { AbstractEntityStorage } from './abstract-storage';
-import { EntityData } from '../knowledge.type';
+import { EntityData, EntityDataWithId } from '../knowledge.type';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -55,7 +55,7 @@ class LocalEntityStorage extends AbstractEntityStorage {
     return name.join('.');
   }
 
-  async create_new_entity(entity: EntityData): Promise<EntityData> {
+  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     try {
       const entities = await this.readEntities();
       const entityId = this.generateEntityId(entity.name);
@@ -72,7 +72,10 @@ class LocalEntityStorage extends AbstractEntityStorage {
       await this.writeEntities(entities);
 
       this.logger.info(`Created entity with name: ${entityId}`);
-      return entity;
+      return {
+        ...entity,
+        id: entityId,
+      };
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
       throw error;

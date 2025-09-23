@@ -4,7 +4,7 @@ import { LocalEntityStorage } from './local-entity-storage';
 import {
   AbstractEntityStorage,
 } from './abstract-storage';
-import { PropertyData, EntityData } from '../knowledge.type';
+
 
 interface StorageConfig {
   // Configuration options for knowledge storage

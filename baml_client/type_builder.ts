@@ -27,18 +27,24 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    Entity_Plain_Definition: ClassViewer<'Entity_Plain_Definition', "definition">;
+    
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            
+            "Entity_Plain_Definition",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.Entity_Plain_Definition = this.tb.classViewer("Entity_Plain_Definition", [
+          "definition",
+        ]);
         
         
     }

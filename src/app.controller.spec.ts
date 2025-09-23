@@ -7,7 +7,7 @@ describe('AppController', () => {
 
   beforeEach(() => {
     // Create instances manually
-    appService = new AppService();
+    appService = new AppService(null as any);
     appController = new AppController(appService);
   });
 

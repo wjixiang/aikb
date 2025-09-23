@@ -2,7 +2,7 @@
 import createLoggerWithPrefix from '../logger';
 import { Client } from '@elastic/elasticsearch';
 import { AbstractEntityStorage } from './abstract-storage';
-import { EntityData, ElasticsearchEntityResponse } from '../knowledge.type';
+import { EntityData, EntityDataWithId, ElasticsearchEntityResponse } from '../knowledge.type';
 
 /**
  * Concrete implementation of EntityStorage using ElasticSearch
@@ -76,7 +76,7 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
     }
   }
 
-  async create_new_entity(entity: EntityData): Promise<EntityData> {
+  async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     try {
       await this.initializeIndex();
       
@@ -94,7 +94,10 @@ class ElasticsearchEntityStorage extends AbstractEntityStorage {
       });
 
       this.logger.info(`Created entity with name: ${entityName}`);
-      return entity;
+      return {
+        ...entity,
+        id: entityName,
+      };
     } catch (error) {
       this.logger.error('Failed to create entity:', error);
       throw error;

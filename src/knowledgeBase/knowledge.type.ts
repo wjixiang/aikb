@@ -1,3 +1,4 @@
+import Entity from "./Entity";
 
 export interface EntityData {
   name: string[];
@@ -9,48 +10,37 @@ export interface EntityDataWithId extends EntityData {
   id: string;
 }
 
-export interface PropertyData {
-  name: string[];
-  content: string;
-}
-
-export interface PropertyDataWithId extends PropertyData {
-  id: string;
-}
-
 export interface KnowledgeData {
-  scopePath: {
-    entities: string[];
-    scopes: string[][];
-  };
-  scopePathString?: string;
-  content: string;
-  metadata: {
-    tags: string[];
-    createDate: Date;
-  }
+  // Add properties for KnowledgeData as needed
 }
 
 export interface KnowledgeDataWithId extends KnowledgeData {
   id: string;
 }
 
-// Elasticsearch specific types
-export interface ElasticsearchKnowledgeDocument extends KnowledgeData {
-  knowledgeId: string;
-  scopePathString: string;
-  createdAt: string;
+export interface PropertyData {
+  // Add properties for PropertyData as needed
 }
 
-export interface ElasticsearchKnowledgeResponse {
-  _index: string;
-  _id: string;
-  _version: number;
-  _seq_no: number;
-  _primary_term: number;
-  found: boolean;
-  _source: ElasticsearchKnowledgeDocument;
+
+/**
+ * Organize format of knowledge
+ */
+export interface KnowledgeTree {
+  root: Entity[];
+  branch: KnowledgeBranch[]
 }
+
+interface KnowledgeBranch {
+  scope: string;
+  subScope: KnowledgeBranch[] | null;
+  leaf: KnowledgeLeaf | null
+}
+
+interface KnowledgeLeaf {
+  content: string;
+}
+
 
 export interface ElasticsearchEntityDocument extends EntityData {
   nameString: string;
@@ -67,3 +57,5 @@ export interface ElasticsearchEntityResponse {
   found: boolean;
   _source: ElasticsearchEntityDocument;
 }
+
+
