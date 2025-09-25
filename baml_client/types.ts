@@ -47,7 +47,20 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface EntityExtractResult {
+  name: string
+  category: string
+  abstract: string
+  
+}
+
 export interface Entity_Plain_Definition {
   definition: string
+  
+}
+
+export interface ScopeExtractResult {
+  name: string
+  abstract: string
   
 }

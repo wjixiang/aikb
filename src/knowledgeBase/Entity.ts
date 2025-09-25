@@ -10,7 +10,7 @@ export default class Entity {
   constructor(
     private id: string,
     private data: EntityDataWithId,
-    private knowledgeStorage: AbstractEntityStorage,
+    private entityStorage: AbstractEntityStorage,
   ) {}
 
   get_id() {
@@ -46,6 +46,16 @@ export default class Entity {
       tags: [],
       definition: ai_generated_definition.definition,
     });
+  }
+
+  async replace_entity_name(new_name:string[]) {
+    const update_res = await this.entityStorage.entityContentStorage.update_entity(this.data, {
+      name: new_name,
+      tags: this.data.tags,
+      definition: this.data.definition
+    })
+    this.data = update_res
+    return this
   }
 
   create_knowledge_with_knowledge_data(data: KnowledgeData): TKnowledge {
