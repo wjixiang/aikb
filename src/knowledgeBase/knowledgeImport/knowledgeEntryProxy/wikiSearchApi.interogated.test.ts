@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import WikiSearchApi from "./WikiSearchApi";
 
+
 describe(WikiSearchApi, () => {
     let wikiProxy: WikiSearchApi;
     
@@ -18,9 +19,9 @@ describe(WikiSearchApi, () => {
 
         console.log(searchRes)
 
-        const htmlRes = await wikiProxy.getHtml(searchRes[0])
-        console.log(htmlRes)
-    })
+        const mdRes = await wikiProxy.getMarkdown(searchRes[0])
+        console.log(mdRes)
+    },30000)
 
     
 });

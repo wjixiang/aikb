@@ -12,10 +12,11 @@ RUN apt-get update && \
     python3 \
     make \
     g++ \
+    python3-dev \
+    wget \
     && npm install -g pnpm \
     && pipx install uv \
     && pipx ensurepath
-
 
 
 # Copy the rest of the application
@@ -26,6 +27,7 @@ COPY . .
 
 # Expose the application port
 EXPOSE 3000
+EXPOSE 8000
 
 # Default command
 CMD ["pnpm", "start:dev"]

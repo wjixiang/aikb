@@ -12,6 +12,9 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_URL_API_KEY=
     command: sleep infinity
+    ports:
+      - "3000:3000"
+      - "8000:8000"
     networks:
       - app-network
     depends_on:

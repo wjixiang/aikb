@@ -1,4 +1,5 @@
 import axios from "axios";
+import { app_config } from "src/knowledgeBase/config";
 
 interface WikiSearchParams {
     language_code: string;
@@ -18,6 +19,10 @@ interface WikiSearchApiConfig {
 
 interface WikiHtml extends WikiSearchResult {
     htmlStr: string;
+}
+
+interface WikiMarkdown extends WikiSearchResult {
+    mdStr: string;
 }
 
 export default class WikiSearchApi {
@@ -67,6 +72,18 @@ export default class WikiSearchApi {
         return {
             ...searchRes,
             htmlStr: data.data
+        }
+    }
+
+    async getMarkdown(searchRes: WikiSearchResult): Promise<WikiMarkdown>{
+        console.log(`${app_config.fastapiEndPoint}/tomd/url`)
+        const md = await axios.post(`${app_config.fastapiEndPoint}/tomd/url`,{
+            url: searchRes.url
+        })
+
+        return {
+            ...searchRes,
+            mdStr: md.data.markdown
         }
     }
     
