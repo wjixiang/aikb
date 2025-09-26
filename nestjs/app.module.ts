@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ElasticsearchEntityContentStorage } from './knowledgeBase/storage/elasticsearch-entity-content-storage';
-import knowledgeManager from './knowledgeBase/knowledgeManager';
+import { ElasticsearchEntityContentStorage } from '../knowledgeBase/storage/elasticsearch-entity-content-storage';
+import knowledgeManager from '../knowledgeBase/knowledgeManager';
 
 @Module({
   imports: [],

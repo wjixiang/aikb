@@ -1,6 +1,6 @@
 import { b } from 'baml_client';
 import { EntityData, EntityDataWithId, KnowledgeData } from './knowledge.type';
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from './lib/logger';
 import { AbstractEntityStorage, Storage } from './storage/storage';
 import { TKnowledge } from './Knowledge';
 

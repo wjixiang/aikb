@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from '../lib/logger';
 import { MongodbEntityContentStorage } from './mongodb-entity-content-storage';
 import { AbstractEntityStorage } from './abstract-storage';
 

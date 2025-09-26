@@ -3,7 +3,7 @@ import { MongodbEntityContentStorage } from '../mongodb-entity-content-storage';
 import { connectToDatabase } from '../../database/mongodb';
 import { ObjectId } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
-import Entity from 'src/knowledgeBase/Entity';
+import Entity from 'knowledgeBase/Entity';
 import { AbstractEntityStorage } from '../storage';
 
 // Mock the database connection

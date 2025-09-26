@@ -1,5 +1,5 @@
 import axios from "axios";
-import { app_config } from "src/knowledgeBase/config";
+import { app_config } from "knowledgeBase/config";
 
 interface WikiSearchParams {
     language_code: string;

@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from '../lib/logger';
 import { Client } from '@elastic/elasticsearch';
-import { AbstractEntityVectorStorage } from './abstract-storage';
+import { AbstractKnowledgeVectorStorage } from './abstract-storage';
 
 /**
- * Concrete implementation of EntityVectorStorage using ElasticSearch for vector storage
+ * Concrete implementation of KnowledgeVectorStorage using ElasticSearch for vector storage
  */
-class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
-  private readonly indexName = 'entity_vectors';
+class ElasticsearchKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage {
+  private readonly indexName = 'knowledge_vectors';
   private client: Client;
   private vectorDimensions: number;
 
-  logger = createLoggerWithPrefix('ElasticsearchVectorStorage');
+  logger = createLoggerWithPrefix('ElasticsearchKnowledgeVectorStorage');
 
   constructor(
     elasticsearchUrl: string = 'http://localhost:9200',
@@ -42,7 +42,7 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
           body: {
             mappings: {
               properties: {
-                entityId: {
+                knowledgeId: {
                   type: 'keyword',
                 },
                 vector: {
@@ -80,8 +80,8 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
     }
   }
 
-  async store_vector(
-    entityId: string,
+  async store_knowledge_vector(
+    knowledgeId: string,
     vector: number[],
     metadata?: Record<string, any>,
   ): Promise<void> {
@@ -96,7 +96,7 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       }
 
       const document = {
-        entityId,
+        knowledgeId,
         vector,
         metadata: metadata || {},
         createdAt: new Date().toISOString(),
@@ -104,56 +104,56 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
 
       await this.client.index({
         index: this.indexName,
-        id: entityId,
+        id: knowledgeId,
         body: document,
       });
 
-      this.logger.info(`Stored vector for entity ID: ${entityId}`);
+      this.logger.info(`Stored vector for knowledge ID: ${knowledgeId}`);
     } catch (error) {
       this.logger.error(
-        `Failed to store vector for entity ID ${entityId}:`,
+        `Failed to store vector for knowledge ID ${knowledgeId}:`,
         error,
       );
       throw error;
     }
   }
 
-  async get_vector(entityId: string): Promise<{
+  async get_knowledge_vector(knowledgeId: string): Promise<{
     vector: number[];
     metadata?: Record<string, any>;
   } | null> {
     try {
       const result = await this.client.get({
         index: this.indexName,
-        id: entityId,
+        id: knowledgeId,
       });
 
       if (result.found) {
         const { _source } = result as any;
-        this.logger.info(`Retrieved vector for entity ID: ${entityId}`);
+        this.logger.info(`Retrieved vector for knowledge ID: ${knowledgeId}`);
         return {
           vector: _source.vector,
           metadata: _source.metadata,
         };
       }
 
-      this.logger.warn(`Vector for entity ID ${entityId} not found`);
+      this.logger.warn(`Vector for knowledge ID ${knowledgeId} not found`);
       return null;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
-        this.logger.warn(`Vector for entity ID ${entityId} not found`);
+        this.logger.warn(`Vector for knowledge ID ${knowledgeId} not found`);
         return null;
       }
       this.logger.error(
-        `Failed to get vector for entity ID ${entityId}:`,
+        `Failed to get vector for knowledge ID ${knowledgeId}:`,
         error,
       );
       throw error;
     }
   }
 
-  async update_vector(
-    entityId: string,
+  async update_knowledge_vector(
+    knowledgeId: string,
     vector: number[],
     metadata?: Record<string, any>,
   ): Promise<void> {
@@ -166,15 +166,15 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       }
 
       // First check if the vector exists
-      const existing = await this.get_vector(entityId);
+      const existing = await this.get_knowledge_vector(knowledgeId);
       if (!existing) {
         // If it doesn't exist, store it as a new vector
-        await this.store_vector(entityId, vector, metadata);
+        await this.store_knowledge_vector(knowledgeId, vector, metadata);
         return;
       }
 
       const document = {
-        entityId,
+        knowledgeId,
         vector,
         metadata: metadata || existing.metadata || {},
         updatedAt: new Date().toISOString(),
@@ -182,60 +182,60 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
 
       await this.client.update({
         index: this.indexName,
-        id: entityId,
+        id: knowledgeId,
         body: {
           doc: document,
         } as any,
       });
 
-      this.logger.info(`Updated vector for entity ID: ${entityId}`);
+      this.logger.info(`Updated vector for knowledge ID: ${knowledgeId}`);
     } catch (error) {
       this.logger.error(
-        `Failed to update vector for entity ID ${entityId}:`,
+        `Failed to update vector for knowledge ID ${knowledgeId}:`,
         error,
       );
       throw error;
     }
   }
 
-  async delete_vector(entityId: string): Promise<boolean> {
+  async delete_knowledge_vector(knowledgeId: string): Promise<boolean> {
     try {
       const result = await this.client.delete({
         index: this.indexName,
-        id: entityId,
+        id: knowledgeId,
       });
 
       if (result.result === 'not_found') {
         this.logger.warn(
-          `Vector for entity ID ${entityId} not found for deletion`,
+          `Vector for knowledge ID ${knowledgeId} not found for deletion`,
         );
         return false;
       }
 
-      this.logger.info(`Deleted vector for entity ID: ${entityId}`);
+      this.logger.info(`Deleted vector for knowledge ID: ${knowledgeId}`);
       return true;
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
         this.logger.warn(
-          `Vector for entity ID ${entityId} not found for deletion`,
+          `Vector for knowledge ID ${knowledgeId} not found for deletion`,
         );
         return false;
       }
       this.logger.error(
-        `Failed to delete vector for entity ID ${entityId}:`,
+        `Failed to delete vector for knowledge ID ${knowledgeId}:`,
         error,
       );
       throw error;
     }
   }
 
-  async find_similar_vectors(
+  async find_similar_knowledge_vectors(
     vector: number[],
     limit: number = 10,
     threshold: number = 0.7,
   ): Promise<
     Array<{
-      entityId: string;
+      knowledgeId: string;
       similarity: number;
       metadata?: Record<string, any>;
     }>
@@ -282,32 +282,36 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
           }
 
           return {
-            entityId: _id,
+            knowledgeId: _id,
             similarity: similarity || 0,
             metadata: (_source as any).metadata,
           };
         })
         .filter(Boolean) as Array<{
-        entityId: string;
+        knowledgeId: string;
         similarity: number;
         metadata?: Record<string, any>;
       }>;
 
-      this.logger.info(`Found ${similarVectors.length} similar vectors`);
+      this.logger.info(
+        `Found ${similarVectors.length} similar knowledge vectors`,
+      );
       return similarVectors;
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
-        this.logger.info('Vector index does not exist, returning empty array');
+        this.logger.info(
+          'Knowledge vector index does not exist, returning empty array',
+        );
         return [];
       }
-      this.logger.error('Failed to find similar vectors:', error);
+      this.logger.error('Failed to find similar knowledge vectors:', error);
       throw error;
     }
   }
 
-  async batch_store_vectors(
+  async batch_store_knowledge_vectors(
     vectors: Array<{
-      entityId: string;
+      knowledgeId: string;
       vector: number[];
       metadata?: Record<string, any>;
     }>,
@@ -319,15 +323,15 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
       for (const item of vectors) {
         if (item.vector.length !== this.vectorDimensions) {
           throw new Error(
-            `Vector dimensions mismatch for entity ID ${item.entityId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`,
+            `Vector dimensions mismatch for knowledge ID ${item.knowledgeId}. Expected: ${this.vectorDimensions}, Got: ${item.vector.length}`,
           );
         }
       }
 
       const body = vectors.flatMap((item) => [
-        { index: { _index: this.indexName, _id: item.entityId } },
+        { index: { _index: this.indexName, _id: item.knowledgeId } },
         {
-          entityId: item.entityId,
+          knowledgeId: item.knowledgeId,
           vector: item.vector,
           metadata: item.metadata || {},
           createdAt: new Date().toISOString(),
@@ -338,12 +342,12 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
         body,
       });
 
-      this.logger.info(`Batch stored ${vectors.length} vectors`);
+      this.logger.info(`Batch stored ${vectors.length} knowledge vectors`);
     } catch (error) {
-      this.logger.error('Failed to batch store vectors:', error);
+      this.logger.error('Failed to batch store knowledge vectors:', error);
       throw error;
     }
   }
 }
 
-export { ElasticsearchVectorStorage };
+export { ElasticsearchKnowledgeVectorStorage };
