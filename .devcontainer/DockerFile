@@ -5,20 +5,18 @@ FROM ubuntu:latest
 RUN apt-get update && \
     apt-get install -y \
     build-essential \
+    pipx \
     nodejs \
     npm \
     git \
     python3 \
     make \
     g++ \
-    && npm install -g pnpm
+    && npm install -g pnpm \
+    && pipx install uv \
+    && pipx ensurepath
 
 
-# Copy package files first for better Docker layer caching
-# COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies
-# RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the application
 COPY . .
