@@ -31,6 +31,8 @@ export default class TypeBuilder {
     
     Entity_Plain_Definition: ClassViewer<'Entity_Plain_Definition', "definition">;
     
+    HistoryContext: ClassViewer<'HistoryContext', "role" | "context">;
+    
     ScopeExtractResult: ClassViewer<'ScopeExtractResult', "name" | "abstract">;
     
     
@@ -38,7 +40,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "EntityExtractResult","Entity_Plain_Definition","ScopeExtractResult",
+            "EntityExtractResult","Entity_Plain_Definition","HistoryContext","ScopeExtractResult",
           ]),
           enums: new Set([
             
@@ -52,6 +54,10 @@ export default class TypeBuilder {
         
         this.Entity_Plain_Definition = this.tb.classViewer("Entity_Plain_Definition", [
           "definition",
+        ]);
+        
+        this.HistoryContext = this.tb.classViewer("HistoryContext", [
+          "role","context",
         ]);
         
         this.ScopeExtractResult = this.tb.classViewer("ScopeExtractResult", [

@@ -13,4 +13,6 @@ export class aikb {
 
 export class aikbUiAgent {
   constructor(private kb: aikb) {}
+
+  async start() {}
 }

@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {EntityExtractResult, Entity_Plain_Definition, ScopeExtractResult} from "./types"
+import type {EntityExtractResult, Entity_Plain_Definition, HistoryContext, ScopeExtractResult} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type BamlCallOptions = {

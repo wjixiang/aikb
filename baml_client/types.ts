@@ -59,6 +59,12 @@ export interface Entity_Plain_Definition {
   
 }
 
+export interface HistoryContext {
+  role: string
+  context: string
+  
+}
+
 export interface ScopeExtractResult {
   name: string
   abstract: string

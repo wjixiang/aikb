@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  EntityExtractResult,  Entity_Plain_Definition,  ScopeExtractResult } from "./types"
+import type {  EntityExtractResult,  Entity_Plain_Definition,  HistoryContext,  ScopeExtractResult } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -43,6 +43,10 @@ export namespace partial_types {
     }
     export interface Entity_Plain_Definition {
       definition?: string | null
+    }
+    export interface HistoryContext {
+      role?: string | null
+      context?: string | null
     }
     export interface ScopeExtractResult {
       name?: string | null
