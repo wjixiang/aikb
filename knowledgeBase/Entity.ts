@@ -1,7 +1,7 @@
 import { b } from 'baml_client';
 import { EntityData, EntityDataWithId, KnowledgeData } from './knowledge.type';
 import createLoggerWithPrefix from './lib/logger';
-import { AbstractEntityStorage, Storage } from './storage/storage';
+import { AbstractEntityStorage, KBStorage } from './storage/storage';
 import { TKnowledge } from './Knowledge';
 
 export default class Entity {
@@ -48,14 +48,15 @@ export default class Entity {
     });
   }
 
-  async replace_entity_name(new_name:string[]) {
-    const update_res = await this.entityStorage.entityContentStorage.update_entity(this.data, {
-      name: new_name,
-      tags: this.data.tags,
-      definition: this.data.definition
-    })
-    this.data = update_res
-    return this
+  async replace_entity_name(new_name: string[]) {
+    const update_res =
+      await this.entityStorage.entityContentStorage.update_entity(this.data, {
+        name: new_name,
+        tags: this.data.tags,
+        definition: this.data.definition,
+      });
+    this.data = update_res;
+    return this;
   }
 
   create_knowledge_with_knowledge_data(data: KnowledgeData): TKnowledge {

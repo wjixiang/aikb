@@ -248,7 +248,9 @@ export abstract class AbstractKnowledgeContentStorage {
   abstract create_new_knowledge_content(
     knowledge: KnowledgeData,
   ): Promise<KnowledgeDataWithId>;
-  abstract get_knowledge_content_by_id(id: string): Promise<KnowledgeDataWithId>
+  abstract get_knowledge_content_by_id(
+    id: string,
+  ): Promise<KnowledgeDataWithId>;
 }
 
 export abstract class AbstractKnowledgeGraphStorage {

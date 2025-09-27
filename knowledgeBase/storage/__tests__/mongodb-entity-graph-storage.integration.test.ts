@@ -360,7 +360,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       // Arrange - Create a more complex graph structure
       // Clear the collection first to avoid duplicate key errors
       await db.collection(collectionName).deleteMany({});
-      
+
       const complexRelations = [
         ...testRelations,
         {
@@ -419,7 +419,7 @@ describe('MongoEntityGraphStorage Integration Tests', () => {
       // Arrange - Create a graph with cycles
       // Clear the collection first to avoid duplicate key errors
       await db.collection(collectionName).deleteMany({});
-      
+
       const cyclicRelations = [
         ...testRelations,
         {

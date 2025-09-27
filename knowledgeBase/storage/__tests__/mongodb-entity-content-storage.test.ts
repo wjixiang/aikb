@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MongodbEntityContentStorage } from '../mongodb-entity-content-storage';
-import { connectToDatabase } from '../../database/mongodb';
+import { connectToDatabase } from '../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
 import Entity from 'knowledgeBase/Entity';

@@ -39,7 +39,6 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
     knowledge: KnowledgeData,
     sourceId: string,
   ): Promise<KnowledgeDataWithId> {
-  
     // Create knowledge content
     const knowledgeDataWithId =
       await this.knowledgeContentStorage.create_new_knowledge_content({
@@ -111,8 +110,13 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
    */
   async get_knowledge_by_id(knowledgeId: string): Promise<Knowledge | null> {
     try {
-      const retrieved_knowledgeData = await this.knowledgeContentStorage.get_knowledge_content_by_id(knowledgeId)
-      return await this.process_knowledge_with_children(retrieved_knowledgeData);
+      const retrieved_knowledgeData =
+        await this.knowledgeContentStorage.get_knowledge_content_by_id(
+          knowledgeId,
+        );
+      return await this.process_knowledge_with_children(
+        retrieved_knowledgeData,
+      );
     } catch (error) {
       console.error(`Error getting knowledge by ID ${knowledgeId}:`, error);
       return null;

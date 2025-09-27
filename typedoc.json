@@ -1,0 +1,8 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["./nestjs/main.ts", "./knowledgeBase/kb.ts"],
+    "out": "doc",
+    "exclude": [
+        "**/*.test.ts"
+    ]
+}

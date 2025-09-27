@@ -1,5 +1,5 @@
 import createLoggerWithPrefix from '../lib/logger';
-import { connectToDatabase } from '../database/mongodb';
+import { connectToDatabase } from '../lib/mongodb';
 import { AbstractEntityGraphStorage } from './abstract-storage';
 
 /**

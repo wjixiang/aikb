@@ -6,6 +6,28 @@ export default defineConfig({
     environment: 'node',
     hookTimeout: 30000, // Increase timeout for hooks to 30 seconds
     setupFiles: ['./test/setup.ts'],
+    include: ['./knowledgeBase/**/*.test.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/.venv/**',
+      '**/dist/**',
+      'src/**/*.integration.test.ts'
+    ],
+    watch: false,
+    watchExclude: [
+      '**/node_modules/**',
+      '**/.venv/**',
+      '**/dist/**'
+    ],
+    server: {
+      watch: {
+        ignored: [
+          '**/node_modules/**',
+          '**/.venv/**',
+          '**/dist/**'
+        ]
+      }
+    }
   },
   resolve: {
     // Add this to help with module resolution
