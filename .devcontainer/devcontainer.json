@@ -5,7 +5,16 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"dockerComposeFile": "docker-compose.yml",
     "service": "app",
-    "workspaceFolder": "/workspace/"
+    "workspaceFolder": "/workspace/",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"boundary.baml-extension",
+				"vitest.explorer",
+				"ms-python.vscode-pylance"
+			]
+		}
+	}
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 

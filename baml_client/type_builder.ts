@@ -31,16 +31,16 @@ export default class TypeBuilder {
     
     Entity_Plain_Definition: ClassViewer<'Entity_Plain_Definition', "definition">;
     
-    HistoryContext: ClassViewer<'HistoryContext', "role" | "context">;
-    
     ScopeExtractResult: ClassViewer<'ScopeExtractResult', "name" | "abstract">;
+    
+    WikiSearchParamsBaml: ClassViewer<'WikiSearchParamsBaml', "language_code" | "search_query" | "number_of_results">;
     
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "EntityExtractResult","Entity_Plain_Definition","HistoryContext","ScopeExtractResult",
+            "EntityExtractResult","Entity_Plain_Definition","ScopeExtractResult","WikiSearchParamsBaml",
           ]),
           enums: new Set([
             
@@ -56,12 +56,12 @@ export default class TypeBuilder {
           "definition",
         ]);
         
-        this.HistoryContext = this.tb.classViewer("HistoryContext", [
-          "role","context",
-        ]);
-        
         this.ScopeExtractResult = this.tb.classViewer("ScopeExtractResult", [
           "name","abstract",
+        ]);
+        
+        this.WikiSearchParamsBaml = this.tb.classViewer("WikiSearchParamsBaml", [
+          "language_code","search_query","number_of_results",
         ]);
         
         

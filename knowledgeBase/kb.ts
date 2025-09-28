@@ -12,7 +12,22 @@ export class aikb {
 }
 
 export class aikbUiAgent {
-  constructor(private kb: aikb) {}
+  constructor(private kb: aikb, public task: string) {
 
-  async start() {}
+  }
+
+  async start(prompt: string) {
+
+  }
+  
+  async solve() {
+
+  }
+}
+
+abstract class AbstractAgent {
+  abstract memory: string[];
+  abstract plan: any;
+  abstract tool: any;
+
 }

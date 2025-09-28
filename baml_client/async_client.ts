@@ -23,7 +23,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {EntityExtractResult, Entity_Plain_Definition, HistoryContext, ScopeExtractResult} from "./types"
+import type {EntityExtractResult, Entity_Plain_Definition, ScopeExtractResult, WikiSearchParamsBaml} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -176,6 +176,51 @@ export class BamlAsyncClient {
         signal,
       )
       return raw.parsed(false) as types.ScopeExtractResult[]
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  async GenerateWikiSearchPattern(
+      query: string,
+      __baml_options__?: BamlCallOptions
+  ): Promise<types.WikiSearchParamsBaml> {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      // Check if onTick is provided - route through streaming if so
+      if (options.onTick) {
+        const stream = this.stream.GenerateWikiSearchPattern(
+          query,
+          __baml_options__
+        );
+        
+        return await stream.getFinalResponse();
+      }
+      
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = await this.runtime.callFunction(
+        "GenerateWikiSearchPattern",
+        {
+          "query": query
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        env,
+        signal,
+      )
+      return raw.parsed(false) as types.WikiSearchParamsBaml
     } catch (error) {
       throw toBamlError(error);
     }
@@ -403,6 +448,69 @@ class BamlStreamClient {
         raw,
         (a): partial_types.ScopeExtractResult[] => a,
         (a): types.ScopeExtractResult[] => a,
+        this.ctxManager.cloneContext(),
+        options.signal,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateWikiSearchPattern(
+      query: string,
+      __baml_options__?: BamlCallOptions
+  ): BamlStream<partial_types.WikiSearchParamsBaml, types.WikiSearchParamsBaml> {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      let collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      
+      let onTickWrapper: (() => void) | undefined;
+      
+      // Create collector and wrap onTick if provided
+      if (options.onTick) {
+        const tickCollector = new Collector("on-tick-collector");
+        collector = [...collector, tickCollector];
+        
+        onTickWrapper = () => {
+          const log = tickCollector.last;
+          if (log) {
+            try {
+              options.onTick!("Unknown", log);
+            } catch (error) {
+              console.error("Error in onTick callback for GenerateWikiSearchPattern", error);
+            }
+          }
+        };
+      }
+
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.streamFunction(
+        "GenerateWikiSearchPattern",
+        {
+          "query": query
+        },
+        undefined,
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        env,
+        signal,
+        onTickWrapper,
+      )
+      return new BamlStream<partial_types.WikiSearchParamsBaml, types.WikiSearchParamsBaml>(
+        raw,
+        (a): partial_types.WikiSearchParamsBaml => a,
+        (a): types.WikiSearchParamsBaml => a,
         this.ctxManager.cloneContext(),
         options.signal,
       )
