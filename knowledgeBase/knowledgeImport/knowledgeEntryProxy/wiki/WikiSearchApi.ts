@@ -40,7 +40,7 @@ export default class WikiSearchApi {
     try {
       const response = await axios.get(baseUrl, {
         params: searchParams,
-        timeout: 10000, // 10 seconds timeout
+        timeout: 60000, // 10 seconds timeout
       });
 
       // The response format is: [searchTerm, titles, descriptions, urls]

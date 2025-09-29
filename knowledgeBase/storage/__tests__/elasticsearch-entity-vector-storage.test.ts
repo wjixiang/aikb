@@ -1,24 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Client } from '@elastic/elasticsearch';
 
+// Mock createLoggerWithPrefix function
+vi.mock('../../lib/logger', () => ({
+  default: vi.fn().mockReturnValue({
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+  }),
+}));
+
 // Mock the ElasticSearch client
 vi.mock('@elastic/elasticsearch');
 const MockClient = vi.mocked(Client);
 
-// Mock the logger
+// Import after mocking
+import { ElasticsearchVectorStorage } from '../elasticsearch-entity-vector-storage';
+
+// Create mock logger for tests
 const mockLogger = {
   info: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
 };
-
-// Mock createLoggerWithPrefix function
-vi.mock('../../lib/logger', () => ({
-  createLoggerWithPrefix: vi.fn().mockReturnValue(mockLogger),
-}));
-
-// Import after mocking
-import { ElasticsearchVectorStorage } from '../elasticsearch-entity-vector-storage';
 
 describe('ElasticsearchEntityVectorStorage', () => {
   let elasticsearchStorage: ElasticsearchVectorStorage;

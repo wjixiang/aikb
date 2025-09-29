@@ -7,11 +7,11 @@ import Entity from 'knowledgeBase/Entity';
 import { AbstractEntityStorage } from '../storage';
 
 // Mock the database connection
-vi.mock('../../database/mongodb');
+vi.mock('../../lib/mongodb');
 const mockConnectToDatabase = vi.mocked(connectToDatabase);
 
 // Mock the logger
-vi.mock('../../logger', () => ({
+vi.mock('../../lib/logger', () => ({
   default: vi.fn(() => ({
     info: vi.fn(),
     error: vi.fn(),
