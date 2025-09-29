@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 import asyncio
 from contextlib import asynccontextmanager
 from crawl4ai import *
-from python.webCrawler import crawler_service
+from documentProcess.webCrawler import crawler_service
 from pydantic import BaseModel
 
 

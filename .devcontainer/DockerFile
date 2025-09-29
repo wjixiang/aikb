@@ -1,5 +1,6 @@
 # Use the base Node.js image with correct version
 FROM ubuntu:latest
+ENV UV_HTTP_TIMEOUT=10000
 
 # Install system dependencies
 RUN apt-get update && \
@@ -18,9 +19,8 @@ RUN apt-get update && \
     && pipx install uv \
     && pipx ensurepath
 
-
-# Copy the rest of the application
-COPY . .
+# RUN uv pip install -U crawl4ai
+# RUN uv run crawl4ai-setup
 
 # Build the application
 # RUN pnpm build
