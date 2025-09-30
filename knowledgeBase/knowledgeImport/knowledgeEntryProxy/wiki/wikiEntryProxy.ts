@@ -1,5 +1,7 @@
 import { KnowledgeEntryProxy } from '../knowledgeEntryProxy';
 import axios from 'axios';
+import WikiSearchApi, { WikiSearchApiConfig } from './WikiSearchApi';
+import { b } from 'baml_client';
 
 interface WikiSearchParams {
   language_code: string;
@@ -13,73 +15,54 @@ interface WikiSearchResult {
   url: string;
 }
 
-interface WikiEntryProxyConfig {}
+interface WikiEntryProxyConfig {
+  searchAPiConfig: WikiSearchApiConfig;
+}
 
 export default class WikiEntryProxy extends KnowledgeEntryProxy {
+  api: WikiSearchApi;
   constructor(private config: WikiEntryProxyConfig) {
     super();
+    this.api = new WikiSearchApi(config.searchAPiConfig);
   }
 
   async search(search_str: string): Promise<string> {
-    try {
-      throw new Error(`Method hasn't implemented`);
-      // const results = await this.searchWiki({});
-      // return this.formatResults(results);
-    } catch (error) {
-      console.error('Error searching Wikipedia:', error);
-      throw new Error(
-        `Failed to search Wikipedia: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
+    // Step 1: Analyze search_str and convert it into WikiSearchParams[] using b.GenerateWikiSearchPattern()
+    const searchParams = await b.GenerateWikiSearchPattern(search_str);
 
-  async searchWiki(params: WikiSearchParams): Promise<WikiSearchResult[]> {
-    const baseUrl = `https://${params.language_code}.wikipedia.org/w/api.php`;
-    const searchParams = {
-      action: 'opensearch',
-      search: params.search_query,
-      limit: params.number_of_results,
-      namespace: 0,
-      format: 'json',
-      origin: '*',
+    // Convert BAML type to WikiSearchParams
+    const wikiSearchParams: WikiSearchParams = {
+      language_code: searchParams.language_code,
+      search_query: searchParams.search_query,
+      number_of_results: searchParams.number_of_results,
     };
 
-    try {
-      const response = await axios.get(baseUrl, {
-        params: searchParams,
-        timeout: 10000, // 10 seconds timeout
-      });
+    // Step 2: Use this.api to search wiki and parse the returned documents into markdown format context
+    const searchResults = await this.api.searchWiki(wikiSearchParams);
 
-      // The response format is: [searchTerm, titles, descriptions, urls]
-      const [, titles, descriptions, urls] = response.data;
-
-      if (!titles || titles.length === 0) {
-        return [];
+    // Get markdown content for each search result
+    const markdownContents: string[] = [];
+    for (const result of searchResults) {
+      try {
+        const markdownResult = await this.api.getMarkdown(result);
+        markdownContents.push(
+          `# ${markdownResult.title}\n\n${markdownResult.mdStr}\n\n来源: ${markdownResult.url}`,
+        );
+      } catch (error) {
+        console.error(`Error getting markdown for ${result.title}:`, error);
+        // If we can't get markdown, at least include the basic info
+        markdownContents.push(
+          `# ${result.title}\n\n${result.description}\n\n来源: ${result.url}`,
+        );
       }
-
-      return titles.map((title: string, index: number) => ({
-        title,
-        description: descriptions[index] || '',
-        url: urls[index] || '',
-      }));
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(`Wikipedia API request failed: ${error.message}`);
-      }
-      throw error;
-    }
-  }
-
-  private formatResults(results: WikiSearchResult[]): string {
-    if (results.length === 0) {
-      return 'No Wikipedia articles found for the search query.';
     }
 
-    return results
-      .map(
-        (result) =>
-          `Title: ${result.title}\nDescription: ${result.description}\nURL: ${result.url}\n`,
-      )
-      .join('\n');
+    // Combine all markdown contents
+    const combinedMarkdown = markdownContents.join('\n\n---\n\n');
+
+    // Step 3: Use BAML to call LLM to summarize references and return the final result
+    const summary = await b.SummarizeWikiResults(search_str, combinedMarkdown);
+
+    return summary;
   }
 }

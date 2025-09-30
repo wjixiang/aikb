@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@boundaryml/baml':
-        specifier: ^0.208.1
-        version: 0.208.1
+        specifier: ^0.209.0
+        version: 0.209.0
       '@elastic/elasticsearch':
         specifier: ^9.1.1
         version: 9.1.1
@@ -110,7 +110,7 @@ importers:
         version: 7.1.4
       ts-jest:
         specifier: ^29.2.5
-        version: 29.4.4(@babel/core@7.28.4)(@jest/transform@30.1.2)(@jest/types@30.0.5)(babel-jest@30.1.2(@babel/core@7.28.4))(jest-util@30.0.5)(jest@30.1.3(@types/node@22.18.6)(ts-node@10.9.2(@types/node@22.18.6)(typescript@5.9.2)))(typescript@5.9.2)
+        version: 29.4.4(@babel/core@7.28.4)(@jest/types@30.0.5)(babel-jest@30.1.2(@babel/core@7.28.4))(jest@30.1.3(@types/node@22.18.6)(ts-node@10.9.2(@types/node@22.18.6)(typescript@5.9.2)))(typescript@5.9.2)
       ts-loader:
         specifier: ^9.5.2
         version: 9.5.4(typescript@5.9.2)(webpack@5.100.2)
@@ -332,50 +332,50 @@ packages:
   '@borewit/text-codec@0.1.1':
     resolution: {integrity: sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA==}
 
-  '@boundaryml/baml-darwin-arm64@0.208.1':
-    resolution: {integrity: sha512-uVBs8HRs3kgm09okAKJVahHf7SN6uX/eZYxYQfOUgn6ik7cGZJJRKj341Qttg/3SbxuVvg84UqcODq+0xHmr/Q==}
+  '@boundaryml/baml-darwin-arm64@0.209.0':
+    resolution: {integrity: sha512-7yOT1wXVeB4fHLJ2t5Z2OtvQELFooR6VFPKJ6JUHreqcgrEysFbneboJj8/03l7hyrWecM5/zN+/+CGdvZJshw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@boundaryml/baml-darwin-x64@0.208.1':
-    resolution: {integrity: sha512-BjDKIFfOr65gMHcPREASiRV+rg9/qprVGf8TIGoQumQ/Vp8ksi7cbtvdIQ2BQny46CPG0B0TLSU9JHkbzRMW8g==}
+  '@boundaryml/baml-darwin-x64@0.209.0':
+    resolution: {integrity: sha512-br+09VUeKgX8EbFxO8hHZuqmzfJmAdJA88xquuzqe0Ll1/8SNDFiWheiWhu7rfZRX3hOWj6RE0vDPrIABkVXfA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@boundaryml/baml-linux-arm64-gnu@0.208.1':
-    resolution: {integrity: sha512-B200iaVXBw80kp4aSBmr8hiEWZvGdeRkgIkc99sNw5IlJLl1Q7dFsvnu/r6QOC5VlHpSLw+DY3ebNKqSVlhvFw==}
+  '@boundaryml/baml-linux-arm64-gnu@0.209.0':
+    resolution: {integrity: sha512-crGCC5jBuSqUUqqQFevfrL9+XhnIrSatJcwoqrwLLzEqCB03aKcjv7GWYgb5fFFi33c1BoNcHxRXTwmsyfDBMQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@boundaryml/baml-linux-arm64-musl@0.208.1':
-    resolution: {integrity: sha512-ntjQaItF2/LRFuGy+EoRpogY6uwbcbGAjLFCMMyCsnSNJiDQyD081LPXIkzcokBuMFQZaMLz5j73rC4nmNyKNg==}
+  '@boundaryml/baml-linux-arm64-musl@0.209.0':
+    resolution: {integrity: sha512-/0USgOqQM8ua/owjxGwx+7uWZBVFkSohWmlIH5zguP9A+qnX1I/txSnRauH4PzFSpwz9t7cqKgUltPp+bKUlWw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@boundaryml/baml-linux-x64-gnu@0.208.1':
-    resolution: {integrity: sha512-TGyxyibLdpuvCcscNan3DW592xoZRY8CfKItJ+F4w/kdWKrUM9QIsTdToZP7cjbY35Xg/S89P4k6qpbskJhtRw==}
+  '@boundaryml/baml-linux-x64-gnu@0.209.0':
+    resolution: {integrity: sha512-T/wSw5DFzFhx6sNCAWwX06RnShwd+C9FSb2TAU0BW9FAkAcysjZM38WbjuweCQKzfX6fjnJ09Xtkrpieowxacg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@boundaryml/baml-linux-x64-musl@0.208.1':
-    resolution: {integrity: sha512-qWn34AVUUe4C7Z6+Qy/NZFoSvCIiju84nYU3k8u5/S95GcY7ZbBRdlSJr5wKCYWk/oB4vMpsrSHeOqGV69Uyhg==}
+  '@boundaryml/baml-linux-x64-musl@0.209.0':
+    resolution: {integrity: sha512-jxsCrPvlVCHECtzPvYRkJSNQLu6yP4kTxUa1wIxkl8a8Crr36Ba1GHo+9kTpvLWmUpuPalmQpAGLRcm4NI5huw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@boundaryml/baml-win32-x64-msvc@0.208.1':
-    resolution: {integrity: sha512-m3nY6grpZHRMmco7U0PK/pGgaLgNhQcblGcqzZY1UaMv/f9V+T3mibcyF01RhBxNX2/bl+5GgSWLYMdOXLNhRA==}
+  '@boundaryml/baml-win32-x64-msvc@0.209.0':
+    resolution: {integrity: sha512-uCjQ4m6Xv4KT552XAmqM25z0KBzb/ZfDGJjHDhG68z1rsY3pusJaYblrXG6jq6Lqr48MFSrBFvTHfqS/O1A+nA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
 
-  '@boundaryml/baml@0.208.1':
-    resolution: {integrity: sha512-IiLFlsc24rh5NTE8TB2J7AkAk3rMyEwUPh6enbAgu8PbsM+YgC/piPV88LgKYNlPSf8xZIoLZOGRi1ffaJ051g==}
+  '@boundaryml/baml@0.209.0':
+    resolution: {integrity: sha512-A33N3t08Ky+9H/X2RLPIl3Ko+5xHPugvOOJ8p3pwzU+G+eQPaRdtwAirnLaLwZ1oC+qEyJVXpCjOJGpA5S5sFQ==}
     engines: {node: '>= 10'}
     hasBin: true
 
@@ -4493,38 +4493,38 @@ snapshots:
 
   '@borewit/text-codec@0.1.1': {}
 
-  '@boundaryml/baml-darwin-arm64@0.208.1':
+  '@boundaryml/baml-darwin-arm64@0.209.0':
     optional: true
 
-  '@boundaryml/baml-darwin-x64@0.208.1':
+  '@boundaryml/baml-darwin-x64@0.209.0':
     optional: true
 
-  '@boundaryml/baml-linux-arm64-gnu@0.208.1':
+  '@boundaryml/baml-linux-arm64-gnu@0.209.0':
     optional: true
 
-  '@boundaryml/baml-linux-arm64-musl@0.208.1':
+  '@boundaryml/baml-linux-arm64-musl@0.209.0':
     optional: true
 
-  '@boundaryml/baml-linux-x64-gnu@0.208.1':
+  '@boundaryml/baml-linux-x64-gnu@0.209.0':
     optional: true
 
-  '@boundaryml/baml-linux-x64-musl@0.208.1':
+  '@boundaryml/baml-linux-x64-musl@0.209.0':
     optional: true
 
-  '@boundaryml/baml-win32-x64-msvc@0.208.1':
+  '@boundaryml/baml-win32-x64-msvc@0.209.0':
     optional: true
 
-  '@boundaryml/baml@0.208.1':
+  '@boundaryml/baml@0.209.0':
     dependencies:
       '@scarf/scarf': 1.4.0
     optionalDependencies:
-      '@boundaryml/baml-darwin-arm64': 0.208.1
-      '@boundaryml/baml-darwin-x64': 0.208.1
-      '@boundaryml/baml-linux-arm64-gnu': 0.208.1
-      '@boundaryml/baml-linux-arm64-musl': 0.208.1
-      '@boundaryml/baml-linux-x64-gnu': 0.208.1
-      '@boundaryml/baml-linux-x64-musl': 0.208.1
-      '@boundaryml/baml-win32-x64-msvc': 0.208.1
+      '@boundaryml/baml-darwin-arm64': 0.209.0
+      '@boundaryml/baml-darwin-x64': 0.209.0
+      '@boundaryml/baml-linux-arm64-gnu': 0.209.0
+      '@boundaryml/baml-linux-arm64-musl': 0.209.0
+      '@boundaryml/baml-linux-x64-gnu': 0.209.0
+      '@boundaryml/baml-linux-x64-musl': 0.209.0
+      '@boundaryml/baml-win32-x64-msvc': 0.209.0
 
   '@colors/colors@1.5.0':
     optional: true
@@ -8356,7 +8356,7 @@ snapshots:
     dependencies:
       typescript: 5.9.2
 
-  ts-jest@29.4.4(@babel/core@7.28.4)(@jest/transform@30.1.2)(@jest/types@30.0.5)(babel-jest@30.1.2(@babel/core@7.28.4))(jest-util@30.0.5)(jest@30.1.3(@types/node@22.18.6)(ts-node@10.9.2(@types/node@22.18.6)(typescript@5.9.2)))(typescript@5.9.2):
+  ts-jest@29.4.4(@babel/core@7.28.4)(@jest/types@30.0.5)(babel-jest@30.1.2(@babel/core@7.28.4))(jest@30.1.3(@types/node@22.18.6)(ts-node@10.9.2(@types/node@22.18.6)(typescript@5.9.2)))(typescript@5.9.2):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -8371,10 +8371,8 @@ snapshots:
       yargs-parser: 21.1.1
     optionalDependencies:
       '@babel/core': 7.28.4
-      '@jest/transform': 30.1.2
       '@jest/types': 30.0.5
       babel-jest: 30.1.2(@babel/core@7.28.4)
-      jest-util: 30.0.5
 
   ts-loader@9.5.4(typescript@5.9.2)(webpack@5.100.2):
     dependencies:

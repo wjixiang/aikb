@@ -1,7 +1,12 @@
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import { Embedding, EmbeddingProvider } from './embedding';
 import { EmbeddingManager } from './embedding-manager';
-import { EmbeddingProviderBase, OpenAIEmbeddingProvider, AlibabaEmbeddingProvider, ONNXEmbeddingProvider } from './embedding-providers';
+import {
+  EmbeddingProviderBase,
+  OpenAIEmbeddingProvider,
+  AlibabaEmbeddingProvider,
+  ONNXEmbeddingProvider,
+} from './embedding-providers';
 import { embeddingManager } from './embedding-manager';
 
 // Mock the logger to avoid console output during tests
@@ -57,7 +62,7 @@ describe('Embedding', () => {
 
   afterEach(() => {
     // Clean up environment variables
-    Object.keys(mockEnv).forEach(key => {
+    Object.keys(mockEnv).forEach((key) => {
       delete process.env[key];
     });
     vi.clearAllMocks();
@@ -72,21 +77,27 @@ describe('Embedding', () => {
 
   describe('setProvider', () => {
     it('should set the active provider if available', () => {
-      const mockHasProvider = vi.spyOn(embeddingManager, 'hasProvider').mockReturnValue(true);
+      const mockHasProvider = vi
+        .spyOn(embeddingManager, 'hasProvider')
+        .mockReturnValue(true);
       embedding.setProvider('openai');
       expect(embedding.getProvider()).toBe('openai');
       mockHasProvider.mockRestore();
     });
 
     it('should not set the provider if not available', () => {
-      const mockHasProvider = vi.spyOn(embeddingManager, 'hasProvider').mockReturnValue(false);
+      const mockHasProvider = vi
+        .spyOn(embeddingManager, 'hasProvider')
+        .mockReturnValue(false);
       embedding.setProvider('openai');
       expect(embedding.getProvider()).toBe('alibaba'); // Should remain default
       mockHasProvider.mockRestore();
     });
 
     it('should handle invalid provider types', () => {
-      const mockHasProvider = vi.spyOn(embeddingManager, 'hasProvider').mockReturnValue(false);
+      const mockHasProvider = vi
+        .spyOn(embeddingManager, 'hasProvider')
+        .mockReturnValue(false);
       embedding.setProvider('invalid' as EmbeddingProvider);
       expect(embedding.getProvider()).toBe('alibaba'); // Should remain default
       mockHasProvider.mockRestore();
@@ -102,16 +113,20 @@ describe('Embedding', () => {
   describe('getProviderInstance', () => {
     it('should return the provider instance if available', () => {
       const mockProvider = {} as EmbeddingProviderBase;
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
       const result = embedding.getProviderInstance('alibaba');
       expect(result).toBe(mockProvider);
       mockGetProvider.mockRestore();
     });
 
     it('should return undefined if provider is not available', () => {
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(undefined);
-      
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(undefined);
+
       const result = embedding.getProviderInstance('openai');
       expect(result).toBeUndefined();
       mockGetProvider.mockRestore();
@@ -123,9 +138,11 @@ describe('Embedding', () => {
       const mockProvider = {
         embed: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
       } as unknown as EmbeddingProviderBase;
-      
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
+
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
       const result = await embedding.embed('test text');
       expect(result).toEqual([0.1, 0.2, 0.3]);
       expect(mockProvider.embed).toHaveBeenCalledWith('test text');
@@ -136,9 +153,11 @@ describe('Embedding', () => {
       const mockProvider = {
         embed: vi.fn().mockResolvedValue([0.4, 0.5, 0.6]),
       } as unknown as EmbeddingProviderBase;
-      
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
+
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
       const result = await embedding.embed('test text', 'openai');
       expect(result).toEqual([0.4, 0.5, 0.6]);
       expect(mockProvider.embed).toHaveBeenCalledWith('test text');
@@ -146,8 +165,10 @@ describe('Embedding', () => {
     });
 
     it('should return null if provider is not available', async () => {
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(undefined);
-      
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(undefined);
+
       const result = await embedding.embed('test text');
       expect(result).toBeNull();
       mockGetProvider.mockRestore();
@@ -157,9 +178,11 @@ describe('Embedding', () => {
       const mockProvider = {
         embed: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
       } as unknown as EmbeddingProviderBase;
-      
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
+
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
       const result = await embedding.embed(['text1', 'text2']);
       expect(result).toEqual([0.1, 0.2, 0.3]);
       expect(mockProvider.embed).toHaveBeenCalledWith(['text1', 'text2']);
@@ -170,33 +193,61 @@ describe('Embedding', () => {
   describe('embedBatch', () => {
     it('should call embedBatch on the active provider', async () => {
       const mockProvider = {
-        embedBatch: vi.fn().mockResolvedValue([[0.1, 0.2], [0.3, 0.4]]),
+        embedBatch: vi.fn().mockResolvedValue([
+          [0.1, 0.2],
+          [0.3, 0.4],
+        ]),
       } as unknown as EmbeddingProviderBase;
-      
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
+
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
       const result = await embedding.embedBatch(['text1', 'text2']);
-      expect(result).toEqual([[0.1, 0.2], [0.3, 0.4]]);
-      expect(mockProvider.embedBatch).toHaveBeenCalledWith(['text1', 'text2'], 5);
+      expect(result).toEqual([
+        [0.1, 0.2],
+        [0.3, 0.4],
+      ]);
+      expect(mockProvider.embedBatch).toHaveBeenCalledWith(
+        ['text1', 'text2'],
+        5,
+      );
       mockGetProvider.mockRestore();
     });
 
     it('should use specified provider instead of active provider', async () => {
       const mockProvider = {
-        embedBatch: vi.fn().mockResolvedValue([[0.5, 0.6], [0.7, 0.8]]),
+        embedBatch: vi.fn().mockResolvedValue([
+          [0.5, 0.6],
+          [0.7, 0.8],
+        ]),
       } as unknown as EmbeddingProviderBase;
-      
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
-      const result = await embedding.embedBatch(['text1', 'text2'], 'openai', 2);
-      expect(result).toEqual([[0.5, 0.6], [0.7, 0.8]]);
-      expect(mockProvider.embedBatch).toHaveBeenCalledWith(['text1', 'text2'], 2);
+
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
+      const result = await embedding.embedBatch(
+        ['text1', 'text2'],
+        'openai',
+        2,
+      );
+      expect(result).toEqual([
+        [0.5, 0.6],
+        [0.7, 0.8],
+      ]);
+      expect(mockProvider.embedBatch).toHaveBeenCalledWith(
+        ['text1', 'text2'],
+        2,
+      );
       mockGetProvider.mockRestore();
     });
 
     it('should return array of nulls if provider is not available', async () => {
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(undefined);
-      
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(undefined);
+
       const result = await embedding.embedBatch(['text1', 'text2']);
       expect(result).toEqual([null, null]);
       mockGetProvider.mockRestore();
@@ -204,16 +255,31 @@ describe('Embedding', () => {
 
     it('should handle custom concurrency limit', async () => {
       const mockProvider = {
-        embedBatch: vi.fn().mockResolvedValue([[0.1, 0.2], [0.3, 0.4]]),
+        embedBatch: vi.fn().mockResolvedValue([
+          [0.1, 0.2],
+          [0.3, 0.4],
+        ]),
       } as unknown as EmbeddingProviderBase;
-      
+
       // Use vi.spyOn to properly mock and restore the method
-      const mockGetProvider = vi.spyOn(embeddingManager, 'getProvider').mockReturnValue(mockProvider);
-      
-      const result = await embedding.embedBatch(['text1', 'text2'], undefined, 10);
-      expect(result).toEqual([[0.1, 0.2], [0.3, 0.4]]);
-      expect(mockProvider.embedBatch).toHaveBeenCalledWith(['text1', 'text2'], 10);
-      
+      const mockGetProvider = vi
+        .spyOn(embeddingManager, 'getProvider')
+        .mockReturnValue(mockProvider);
+
+      const result = await embedding.embedBatch(
+        ['text1', 'text2'],
+        undefined,
+        10,
+      );
+      expect(result).toEqual([
+        [0.1, 0.2],
+        [0.3, 0.4],
+      ]);
+      expect(mockProvider.embedBatch).toHaveBeenCalledWith(
+        ['text1', 'text2'],
+        10,
+      );
+
       // Restore the original method
       mockGetProvider.mockRestore();
     });
@@ -236,7 +302,7 @@ describe('EmbeddingManager', () => {
 
   afterEach(() => {
     // Clean up environment variables
-    Object.keys(mockEnv).forEach(key => {
+    Object.keys(mockEnv).forEach((key) => {
       delete process.env[key];
     });
     (EmbeddingManager as any).instance = undefined;
@@ -262,7 +328,7 @@ describe('EmbeddingManager', () => {
     it('should return empty map if not initialized', () => {
       const mockGetProviders = vi.fn().mockReturnValue(new Map());
       manager.getProviders = mockGetProviders as any;
-      
+
       const providers = manager.getProviders();
       expect(providers).toBeInstanceOf(Map);
     });
@@ -272,7 +338,7 @@ describe('EmbeddingManager', () => {
     it('should return undefined if not initialized', () => {
       const mockGetProvider = vi.fn().mockReturnValue(undefined);
       manager.getProvider = mockGetProvider as any;
-      
+
       const provider = manager.getProvider('openai');
       expect(provider).toBeUndefined();
     });
@@ -281,7 +347,7 @@ describe('EmbeddingManager', () => {
       const mockProvider = {} as any;
       const mockGetProvider = vi.fn().mockReturnValue(mockProvider);
       manager.getProvider = mockGetProvider as any;
-      
+
       const provider = manager.getProvider('openai');
       expect(provider).toBe(mockProvider);
     });
@@ -289,7 +355,7 @@ describe('EmbeddingManager', () => {
     it('should return undefined if provider not available', () => {
       const mockGetProvider = vi.fn().mockReturnValue(undefined);
       manager.getProvider = mockGetProvider as any;
-      
+
       const provider = manager.getProvider('openai');
       expect(provider).toBeUndefined();
     });
@@ -299,7 +365,7 @@ describe('EmbeddingManager', () => {
     it('should return false if not initialized', () => {
       const mockHasProvider = vi.fn().mockReturnValue(false);
       manager.hasProvider = mockHasProvider as any;
-      
+
       const hasProvider = manager.hasProvider('openai');
       expect(hasProvider).toBe(false);
     });
@@ -307,7 +373,7 @@ describe('EmbeddingManager', () => {
     it('should return true if provider is available', () => {
       const mockHasProvider = vi.fn().mockReturnValue(true);
       manager.hasProvider = mockHasProvider as any;
-      
+
       const hasProvider = manager.hasProvider('openai');
       expect(hasProvider).toBe(true);
     });
@@ -315,7 +381,7 @@ describe('EmbeddingManager', () => {
     it('should return false if provider not available', () => {
       const mockHasProvider = vi.fn().mockReturnValue(false);
       manager.hasProvider = mockHasProvider as any;
-      
+
       const hasProvider = manager.hasProvider('openai');
       expect(hasProvider).toBe(false);
     });
@@ -325,15 +391,17 @@ describe('EmbeddingManager', () => {
     it('should return empty array if not initialized', () => {
       const mockGetAvailableProviders = vi.fn().mockReturnValue([]);
       manager.getAvailableProviders = mockGetAvailableProviders as any;
-      
+
       const providers = manager.getAvailableProviders();
       expect(providers).toEqual([]);
     });
 
     it('should return array of available providers', () => {
-      const mockGetAvailableProviders = vi.fn().mockReturnValue(['openai', 'alibaba', 'onnx']);
+      const mockGetAvailableProviders = vi
+        .fn()
+        .mockReturnValue(['openai', 'alibaba', 'onnx']);
       manager.getAvailableProviders = mockGetAvailableProviders as any;
-      
+
       const providers = manager.getAvailableProviders();
       expect(providers).toEqual(['openai', 'alibaba', 'onnx']);
     });
@@ -343,7 +411,7 @@ describe('EmbeddingManager', () => {
     it('should return initialization status', () => {
       const mockIsManagerInitialized = vi.fn().mockReturnValue(false);
       manager.isManagerInitialized = mockIsManagerInitialized;
-      
+
       expect(manager.isManagerInitialized()).toBe(false);
     });
   });
