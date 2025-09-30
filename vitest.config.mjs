@@ -11,7 +11,8 @@ export default defineConfig({
       '**/node_modules/**',
       '**/.venv/**',
       '**/dist/**',
-      'src/**/*.integration.test.ts'
+      // '**/*.integration.test.ts',
+      // '**/*.interogated.test.ts'
     ],
     watch: false,
     watchExclude: [

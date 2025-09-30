@@ -79,6 +79,21 @@ services:
     networks:
       - app-network
 
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    restart: unless-stopped
+    ports:
+      - "11235:11235"
+    networks:
+      - app-network
+
+  kafka:
+    image: apache/kafka:4.1.0
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    networks:
+      - app-network
 volumes:
   es-data:
   mongodb-data:
