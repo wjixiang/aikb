@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import WikiSearchApi from './WikiSearchApi';
+import WikiSearchApi, { WikiSearchResult } from './WikiSearchApi';
 import { config } from 'dotenv';
 config();
 
@@ -18,6 +18,12 @@ describe(WikiSearchApi, () => {
     });
   });
 
+  const mockedWikiSearchRes: WikiSearchResult = {
+    title: 'Hypertension',
+    description: '',
+    url: 'https://en.wikipedia.org/wiki/Hypertension',
+  };
+
   describe('use web crawling', () => {
     it.skip('search wiki and get result(scrape html without api)', async () => {
       const searchRes = await wikiProxy.searchWiki({
@@ -32,7 +38,10 @@ describe(WikiSearchApi, () => {
       console.log(mdRes);
     }, 30000);
 
-    it('Get target html data', async () => {});
+    it('Get target html data', async () => {
+      const htmlRes = await wikiProxy.getMarkdown(mockedWikiSearchRes);
+      console.log(htmlRes);
+    });
   });
 
   describe('use wikimedia API', () => {

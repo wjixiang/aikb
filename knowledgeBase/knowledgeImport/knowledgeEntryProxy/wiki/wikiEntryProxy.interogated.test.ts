@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import WikiEntryProxy from './wikiEntryProxy';
+import { config } from 'dotenv';
+config();
 
 describe(WikiEntryProxy, () => {
   it('should search wikipedia and return a summarized result', async () => {
