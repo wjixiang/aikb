@@ -17,7 +17,7 @@ function GenerateWikiSearchPattern(query:string) -> WikiSearchParamsBaml {
     "#
 }
 
-test TestName {
+test TestGenerateWikiSearchPattern {
   functions [GenerateWikiSearchPattern]
   args {
     query #"
@@ -43,6 +43,7 @@ function SummarizeWikiResults(query: string, search_results: string) -> string {
         4. 如果搜索结果之间存在矛盾，请指出并尝试解释
         5. 总结应该简洁明了，大约300-500字
         
-        ---总结---
+        
     "#
 }
+

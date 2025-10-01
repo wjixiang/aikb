@@ -15,6 +15,7 @@ RUN apt-get update && \
     g++ \
     python3-dev \
     wget \
+    curl \
     && npm install -g pnpm \
     && pipx install uv \
     && pipx ensurepath

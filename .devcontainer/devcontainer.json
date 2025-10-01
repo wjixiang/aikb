@@ -11,7 +11,8 @@
 			"extensions": [
 				"boundary.baml-extension",
 				"vitest.explorer",
-				"ms-python.vscode-pylance"
+				"ms-python.vscode-pylance",
+				"rooveterinaryinc.roo-cline"
 			]
 		}
 	}

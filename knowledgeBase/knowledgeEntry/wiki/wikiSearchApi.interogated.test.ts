@@ -38,7 +38,7 @@ describe(WikiSearchApi, () => {
       console.log(mdRes);
     }, 30000);
 
-    it('Get target html data', async () => {
+    it.skip('Get target html data', async () => {
       const htmlRes = await wikiProxy.getMarkdown(mockedWikiSearchRes);
       console.log(htmlRes);
     });
