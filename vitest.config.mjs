@@ -5,14 +5,14 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     hookTimeout: 30000, // Increase timeout for hooks to 30 seconds
+    testTimeout: 10000, // Increase timeout for individual tests to 10 seconds
     setupFiles: ['./test/setup.ts'],
     include: ['./knowledgeBase/**/*.test.ts'],
     exclude: [
       '**/node_modules/**',
       '**/.venv/**',
       '**/dist/**',
-      // '**/*.integration.test.ts',
-      // '**/*.interogated.test.ts'
+      '**/*.integration.test.ts',
     ],
     watch: false,
     watchExclude: [

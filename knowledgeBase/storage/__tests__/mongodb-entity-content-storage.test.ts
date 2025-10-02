@@ -82,6 +82,7 @@ describe('MongodbEntityContentStorage', () => {
       expect(result).toEqual({ ...mockEntity, id: result.id });
       expect(mockCollection.insertOne).toHaveBeenCalledWith({
         ...mockEntity,
+        id: mockId,
         entityName: 'test.entity',
       });
     });
