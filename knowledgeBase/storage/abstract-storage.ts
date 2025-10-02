@@ -251,10 +251,28 @@ export abstract class AbstractKnowledgeContentStorage {
   abstract get_knowledge_content_by_id(
     id: string,
   ): Promise<KnowledgeDataWithId>;
+  abstract update_knowledge_content(
+    id: string,
+    knowledgeData: Partial<KnowledgeData>,
+  ): Promise<KnowledgeDataWithId>;
+  abstract delete_knowledge_content_by_id(id: string): Promise<boolean>;
+  abstract search_knowledge_contents(query: string): Promise<KnowledgeData[]>;
+  abstract list_all_knowledge_contents(): Promise<KnowledgeData[]>;
 }
 
 export abstract class AbstractKnowledgeGraphStorage {
   abstract create_new_link(sourceId: string, targetId: string): Promise<void>;
+  
+  /**
+   * Get knowledge links by source ID
+   * @param sourceId ID of the source entity/knowledge
+   * @returns Promise resolving to array of knowledge links
+   */
+  abstract get_knowledge_links_by_source(sourceId: string): Promise<Array<{
+    sourceId: string;
+    targetId: string;
+    linkType: string;
+  }>>;
 }
 
 export abstract class AbstractKnowledgeVectorStorage {

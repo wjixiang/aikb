@@ -52,10 +52,15 @@ class MockKnowledgeStorage extends AbstractKnowledgeStorage {
   knowledgeContentStorage = {
     create_new_knowledge_content: vi.fn(),
     get_knowledge_content_by_id: vi.fn(),
+    update_knowledge_content: vi.fn(),
+    delete_knowledge_content_by_id: vi.fn(),
+    search_knowledge_contents: vi.fn(),
+    list_all_knowledge_contents: vi.fn(),
   };
   
   knowledgeGraphStorage = {
     create_new_link: vi.fn(),
+    get_knowledge_links_by_source: vi.fn(),
   };
   
   knowledgeVectorStorage = {

@@ -1,8 +1,11 @@
-import { b } from 'baml_client';
+import { b } from '../baml_client';
 import { EntityData, EntityDataWithId, KnowledgeData } from './knowledge.type';
 import createLoggerWithPrefix from './lib/logger';
 import { AbstractEntityStorage, KBStorage } from './storage/storage';
 import { TKnowledge } from './Knowledge';
+import Knowledge from './Knowledge';
+import { AbstractKnowledgeStorage } from './storage/abstract-storage';
+import { KnowledgeCreationWorkflow } from './knowledgeCreation/KnowledgeCreationWorkflow';
 
 export default class Entity {
   logger = createLoggerWithPrefix('Entity');
@@ -61,6 +64,55 @@ export default class Entity {
 
   create_knowledge_with_knowledge_data(data: KnowledgeData): TKnowledge {
     return new TKnowledge(data, this);
+  }
+
+  /**
+   * Create subordinate knowledge from natural language text
+   * @param naturalLanguageText The natural language text to convert to knowledge
+   * @param knowledgeStorage The knowledge storage instance to use
+   * @returns Promise resolving to the created Knowledge instance
+   */
+  async create_subordinate_knowledge_from_text(
+    naturalLanguageText: string,
+    knowledgeStorage: AbstractKnowledgeStorage,
+  ): Promise<Knowledge> {
+    // Import here to avoid circular dependencies
+    // Create workflow instance
+    const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
+    
+    // Process the text and create knowledge hierarchy
+    const knowledgeHierarchy = await workflow.create_knowledge_hierarchy_from_text(
+      naturalLanguageText,
+      this,
+    );
+    
+    return knowledgeHierarchy;
+  }
+
+  /**
+   * Get all subordinate knowledge for this entity
+   * @param knowledgeStorage The knowledge storage instance to use
+   * @returns Promise resolving to array of Knowledge instances
+   */
+  async get_subordinate_knowledge(
+    knowledgeStorage: AbstractKnowledgeStorage,
+  ): Promise<Knowledge[]> {
+    // Get all knowledge linked to this entity from the knowledge graph storage
+    const knowledgeRelations = await knowledgeStorage.knowledgeGraphStorage.get_knowledge_links_by_source(
+      this.id,
+    );
+    
+    const subordinateKnowledge: Knowledge[] = [];
+    
+    for (const relation of knowledgeRelations) {
+      // Try to get knowledge by ID
+      const knowledge = await knowledgeStorage.get_knowledge_by_id(relation.targetId);
+      if (knowledge) {
+        subordinateKnowledge.push(knowledge);
+      }
+    }
+    
+    return subordinateKnowledge;
   }
 }
 

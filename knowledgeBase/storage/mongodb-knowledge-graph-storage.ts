@@ -32,6 +32,35 @@ class MongoKnowledgeGraphStorage extends AbstractKnowledgeGraphStorage {
       throw error;
     }
   }
+
+  async get_knowledge_links_by_source(sourceId: string): Promise<Array<{
+    sourceId: string;
+    targetId: string;
+    linkType: string;
+  }>> {
+    try {
+      const { db } = await connectToDatabase();
+      const collection = db.collection(this.collectionName);
+
+      const links = await collection.find({ sourceId }).toArray();
+      
+      // Remove MongoDB-specific fields before returning
+      const result = links.map(
+        ({ _id, createdAt, updatedAt, ...link }) =>
+          link as {
+            sourceId: string;
+            targetId: string;
+            linkType: string;
+          },
+      );
+      
+      this.logger.info(`Found ${result.length} knowledge links for source ${sourceId}`);
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get knowledge links by source:', error);
+      throw error;
+    }
+  }
 }
 
 export { MongoKnowledgeGraphStorage };

@@ -73,12 +73,17 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
         knowledgeData.childKnowledgeId || [],
       ));
 
-    return new Knowledge(
+    const knowledge = new Knowledge(
       knowledgeData.id,
       knowledgeData.scope,
       knowledgeData.content,
       children,
     );
+    
+    // Set storage reference for future operations
+    (knowledge as any).knowledgeStorage = this;
+    
+    return knowledge;
   }
 
   /**
@@ -138,11 +143,16 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
     );
 
     // Create and return complete Knowledge instance
-    return new Knowledge(
+    const knowledge = new Knowledge(
       knowledgeData.id,
       knowledgeData.scope,
       knowledgeData.content,
       childKnowledge,
     );
+    
+    // Set storage reference for future operations
+    (knowledge as any).knowledgeStorage = this;
+    
+    return knowledge;
   }
 }

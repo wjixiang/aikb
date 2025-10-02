@@ -23,7 +23,7 @@ class MongodbEntityContentStorage extends AbstractEntityContentStorage {
       // const entityId = `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       // Convert name array to a string for unique indexing
       const entityName = entity.name.join('.');
-      const entityWithId = { ...entity, entityName };
+      const entityWithId = { ...entity, id, entityName };
 
       const result = await collection.insertOne(entityWithId);
       this.logger.info(

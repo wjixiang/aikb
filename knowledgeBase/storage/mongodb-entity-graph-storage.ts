@@ -171,6 +171,8 @@ class MongoEntityGraphStorage extends AbstractEntityGraphStorage {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
 
+      console.log(`[DEBUG] Starting path finding from ${sourceId} to ${targetId} with max depth ${maxDepth}`);
+
       const paths: Array<
         Array<{
           entityId: string;
@@ -197,8 +199,11 @@ class MongoEntityGraphStorage extends AbstractEntityGraphStorage {
       while (queue.length > 0) {
         const { currentId, path, visited } = queue.shift()!;
 
+        console.log(`[DEBUG] Processing node: ${currentId}, path length: ${path.length}`);
+
         // If we've reached the target, add this path to results
         if (currentId === targetId) {
+          console.log(`[DEBUG] Found target! Path: ${JSON.stringify(path)}`);
           paths.push([...path]);
           continue;
         }
@@ -208,6 +213,7 @@ class MongoEntityGraphStorage extends AbstractEntityGraphStorage {
         // When path.length is 0, we're at the source node with 0 hops
         // When path.length is 1, we've made 1 hop, etc.
         if (path.length >= maxDepth) {
+          console.log(`[DEBUG] Max depth reached for path: ${JSON.stringify(path)}`);
           continue;
         }
 
@@ -217,6 +223,8 @@ class MongoEntityGraphStorage extends AbstractEntityGraphStorage {
             sourceId: currentId,
           })
           .toArray();
+
+        console.log(`[DEBUG] Found ${outgoingRelations.length} outgoing relations from ${currentId}`);
 
         // Only consider outgoing relations for path finding
         // This ensures we follow the direction of relationships
@@ -242,7 +250,7 @@ class MongoEntityGraphStorage extends AbstractEntityGraphStorage {
           }
 
           // If we haven't reached max depth yet, continue exploring
-          if (path.length < maxDepth - 1) {
+          if (path.length < maxDepth) {
             const newPath = [
               ...path,
               {
