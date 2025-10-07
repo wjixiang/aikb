@@ -326,19 +326,18 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               taskId: result.task_id
             });
           } else {
-            const jsonData = await this.extractJsonFromDownloadedFiles(
-              taskResult.downloadedFiles.filter(file =>
-                file.includes(result.task_id)
-              )
+            const taskIdentifier = result.task_id || result.data_id || result.file_name || 'unknown';
+            const filteredFiles = taskResult.downloadedFiles.filter(file =>
+              file.includes(taskIdentifier)
             );
+            
+            const jsonData = await this.extractJsonFromDownloadedFiles(filteredFiles);
 
             results.push({
               success: true,
               data: jsonData,
-              downloadedFiles: taskResult.downloadedFiles.filter(file =>
-                file.includes(result.task_id)
-              ),
-              taskId: result.task_id
+              downloadedFiles: filteredFiles,
+              taskId: result.task_id || taskIdentifier
             });
           }
         }
@@ -404,26 +403,26 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         // Process each result
         for (const taskResult of batchResult.results.extract_result) {
+          const taskIdentifier = taskResult.task_id || taskResult.data_id || taskResult.file_name || 'unknown';
+          
           if (taskResult.state === 'failed') {
             allResults.push({
               success: false,
               error: taskResult.err_msg || 'Processing failed',
-              taskId: taskResult.task_id
+              taskId: taskResult.task_id || taskIdentifier
             });
           } else {
-            const jsonData = await this.extractJsonFromDownloadedFiles(
-              batchResult.downloadedFiles.filter(file => 
-                file.includes(taskResult.task_id)
-              )
+            const filteredFiles = batchResult.downloadedFiles.filter(file =>
+              file.includes(taskIdentifier)
             );
+            
+            const jsonData = await this.extractJsonFromDownloadedFiles(filteredFiles);
 
             allResults.push({
               success: true,
               data: jsonData,
-              downloadedFiles: batchResult.downloadedFiles.filter(file => 
-                file.includes(taskResult.task_id)
-              ),
-              taskId: taskResult.task_id
+              downloadedFiles: filteredFiles,
+              taskId: taskResult.task_id || taskIdentifier
             });
           }
         }

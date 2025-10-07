@@ -96,8 +96,9 @@ export interface ExtractProgress {
 }
 
 export interface TaskResult {
-  task_id: string;
+  task_id?: string;
   data_id?: string;
+  file_name?: string;
   state: 'done' | 'pending' | 'running' | 'failed' | 'converting' | 'waiting-file';
   full_zip_url?: string;
   err_msg?: string;
@@ -144,7 +145,7 @@ export class MinerUClient {
 
   constructor(config: MinerUConfig) {
     this.config = {
-      baseUrl: 'https://mineru.net/api/v4/extract/task',
+      baseUrl: 'https://mineru.net/api/v4',
       timeout: 30000,
       maxRetries: 3,
       retryDelay: 1000,
@@ -308,18 +309,26 @@ export class MinerUClient {
    * Create a single file parsing task
    */
   async createSingleFileTask(request: SingleFileRequest): Promise<string> {
-    return this.retryRequest(async () => 
+    console.log(`[MinerUClient] Creating single file task with request:`, JSON.stringify(request, null, 2));
+    return this.retryRequest(async () =>
       this.client.post<ApiResponse<SingleFileResponse>>('/extract/task', request)
-    ).then(data => data.task_id);
+    ).then(data => {
+      console.log(`[MinerUClient] Single file task created successfully. Task ID: ${data.task_id}`);
+      return data.task_id;
+    });
   }
 
   /**
    * Get single file task result
    */
   async getTaskResult(taskId: string): Promise<TaskResult> {
+    console.log(`[MinerUClient] Getting task result for ID: ${taskId}`);
     return this.retryRequest(async () =>
       this.client.get<ApiResponse<TaskResult>>(`/extract/task/${taskId}`)
-    );
+    ).then(data => {
+      console.log(`[MinerUClient] Task result received:`, JSON.stringify(data, null, 2));
+      return data;
+    });
   }
 
   /**
@@ -496,18 +505,26 @@ export class MinerUClient {
    * Create batch URL parsing task
    */
   async createBatchUrlTask(request: BatchUrlRequest): Promise<string> {
+    console.log(`[MinerUClient] Creating batch URL task with request:`, JSON.stringify(request, null, 2));
     return this.retryRequest(async () =>
       this.client.post<ApiResponse<BatchUrlResponse>>('/extract/task/batch', request)
-    ).then(data => data.batch_id);
+    ).then(data => {
+      console.log(`[MinerUClient] Batch URL task created successfully. Batch ID: ${data.batch_id}`);
+      return data.batch_id;
+    });
   }
 
   /**
    * Get batch task results
    */
   async getBatchTaskResults(batchId: string): Promise<BatchTaskResult> {
+    console.log(`[MinerUClient] Getting batch task results for ID: ${batchId}`);
     return this.retryRequest(async () =>
       this.client.get<ApiResponse<BatchTaskResult>>(`/extract-results/batch/${batchId}`)
-    );
+    ).then(data => {
+      console.log(`[MinerUClient] Batch task results received:`, JSON.stringify(data, null, 2));
+      return data;
+    });
   }
 
   /**
@@ -541,10 +558,12 @@ export class MinerUClient {
         // Download completed files
         for (const result of results.extract_result) {
           if (result.state === 'done' && result.full_zip_url) {
+            // For batch results, use data_id as the task identifier since task_id is not provided
+            const taskIdentifier = result.data_id || result.file_name || 'unknown';
             const files = await this.downloadResultZip(
               result.full_zip_url,
               downloadDir,
-              result.task_id
+              taskIdentifier
             );
             downloadedFiles.push(...files);
           }

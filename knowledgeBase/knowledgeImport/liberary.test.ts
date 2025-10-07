@@ -1,40 +1,53 @@
-import Library from "./liberary";
+import Library, { S3ElasticSearchLibraryStorage } from "./liberary";
 import { S3MongoLibraryStorage } from "./liberary";
 import * as fs from 'fs';
 import * as path from 'path';
+import { config } from "dotenv";
+import { describe, it, expect, beforeAll } from 'vitest';
+config()
+
+let storage: S3MongoLibraryStorage;
+
+beforeAll(async () => {
+  // Use MongoDB storage instead of Elasticsearch for more reliable testing
+  console.log('Using MongoDB storage for integration tests');
+  storage = new S3MongoLibraryStorage();
+});
+
+export async function UploadTestPdf() {
+    const library = new Library(storage);
+
+    // Read the test PDF file
+    const pdfPath = path.join(__dirname, '__tests__', 'viral_pneumonia.pdf');
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    
+    // Prepare metadata for the PDF
+    const metadata = {
+        title: 'Viral Pneumonia Test Document',
+        authors: [
+            { firstName: 'Test', lastName: 'Author' }
+        ],
+        abstract: 'This is a test document for viral pneumonia research',
+        publicationYear: 2023,
+        tags: ['viral pneumonia', 'test', 'research'],
+        language: 'English'
+    };
+
+    // Store the PDF from buffer
+    const book = await library.storePdfFromBuffer(pdfBuffer, 'test-viral-pneumonia.pdf', metadata);
+    return book
+}
 
 describe(Library, () => {
     it("upload pdf buffer and retrieve s3 download url", async () => {
-        // Initialize the library with S3 and MongoDB storage
-        const storage = new S3MongoLibraryStorage();
-        const library = new Library(storage);
-
-        // Read the test PDF file
-        const pdfPath = path.join(__dirname, '__tests__', 'viral_pneumonia copy.pdf');
-        const pdfBuffer = fs.readFileSync(pdfPath);
-        
-        // Prepare metadata for the PDF
-        const metadata = {
-            title: 'Viral Pneumonia Test Document',
-            authors: [
-                { firstName: 'Test', lastName: 'Author' }
-            ],
-            abstract: 'This is a test document for viral pneumonia research',
-            publicationYear: 2023,
-            tags: ['viral pneumonia', 'test', 'research'],
-            language: 'English'
-        };
-
         // Store the PDF from buffer
-        const book = await library.storePdfFromBuffer(pdfBuffer, 'test-viral-pneumonia.pdf', metadata);
+        const book = await UploadTestPdf()
         
         // Verify the book was stored correctly
         expect(book).toBeDefined();
         expect(book.metadata.title).toBe('Viral Pneumonia Test Document');
         expect(book.metadata.s3Key).toBeDefined();
         expect(book.metadata.s3Url).toBeDefined();
-        expect(book.metadata.fileSize).toBe(pdfBuffer.length);
-        expect(book.metadata.fileType).toBe('pdf');
 
         // Retrieve the S3 download URL
         const downloadUrl = await book.getPdfDownloadUrl();

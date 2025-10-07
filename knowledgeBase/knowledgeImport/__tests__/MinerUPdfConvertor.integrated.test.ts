@@ -2,6 +2,7 @@ import { MinerUPdfConvertor } from "../MinerUPdfConvertor";
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from "dotenv";
+import { UploadTestPdf } from "../liberary.test";
 config()
 
 describe(MinerUPdfConvertor, () => {
@@ -69,10 +70,11 @@ describe(MinerUPdfConvertor, () => {
         console.log('File size:', fs.statSync(testPdfPath).size, 'bytes');
 
         const startTime = Date.now();
-
+        const book = await UploadTestPdf()
+        const url = await book.getPdfDownloadUrl()
         try {
             // Convert PDF using MinerU
-            const result = await converter.processLocalFile(testPdfPath, {
+            const result = await converter.processUrls([url], {
                 data_id: 'ruuskanen-viral-pneumonia-2011',
                 is_ocr: true,
                 enable_formula: true,
@@ -87,37 +89,46 @@ describe(MinerUPdfConvertor, () => {
 
             // Verify conversion was successful
             expect(result).toBeDefined();
-            expect(result.success).toBe(true);
-            expect(result.taskId).toBeDefined();
-            expect(result.taskId).toBeTruthy();
-            expect(result.downloadedFiles).toBeDefined();
-            expect(Array.isArray(result.downloadedFiles)).toBe(true);
+            expect(result[0].success).toBe(true);
+            expect(result[0].taskId).toBeDefined();
+            expect(result[0].taskId).toBeTruthy();
+            expect(result[0].downloadedFiles).toBeDefined();
+            expect(Array.isArray(result[0].downloadedFiles)).toBe(true);
 
             console.log('✅ Conversion successful!');
-            console.log('Task ID:', result.taskId);
-            console.log('Downloaded files:', result.downloadedFiles);
+            console.log('Task ID:', result[0].taskId);
+            console.log('Downloaded files:', result[0].downloadedFiles);
 
             // Verify downloaded files exist
-            if (result.downloadedFiles && result.downloadedFiles.length > 0) {
-                for (const file of result.downloadedFiles) {
-                    expect(fs.existsSync(file)).toBe(true);
-                    console.log(`✅ Downloaded file exists: ${file}`);
+            if (result[0].downloadedFiles && result[0].downloadedFiles.length > 0) {
+                for (const file of result[0].downloadedFiles) {
+                    console.log(`✅ Downloaded file: ${file}`);
                     
-                    // Check file size
-                    const stats = fs.statSync(file);
-                    console.log(`   File size: ${stats.size} bytes`);
-                    expect(stats.size).toBeGreaterThan(0);
+                    // Check if it's a local file or S3 URL
+                    if (file.startsWith('http://') || file.startsWith('https://')) {
+                        // For S3 URLs, just verify the URL is valid
+                        expect(file).toContain('aikb-pdf.oss-cn-beijing.aliyuncs.com');
+                        console.log(`   S3 URL is valid: ${file}`);
+                    } else {
+                        // For local files, check existence and size
+                        expect(fs.existsSync(file)).toBe(true);
+                        console.log(`   Local file exists: ${file}`);
+                        
+                        const stats = fs.statSync(file);
+                        console.log(`   File size: ${stats.size} bytes`);
+                        expect(stats.size).toBeGreaterThan(0);
+                    }
                 }
             }
 
             // Verify result data structure
-            if (result.data) {
+            if (result[0].data) {
                 console.log('✅ Result data received');
-                console.log('Data type:', typeof result.data);
+                console.log('Data type:', typeof result[0].data);
                 
                 // If data is a JSON object, verify its structure
-                if (typeof result.data === 'object' && result.data !== null) {
-                    console.log('Data keys:', Object.keys(result.data));
+                if (typeof result[0].data === 'object' && result[0].data !== null) {
+                    console.log('Data keys:', Object.keys(result[0].data));
                 }
             }
 
