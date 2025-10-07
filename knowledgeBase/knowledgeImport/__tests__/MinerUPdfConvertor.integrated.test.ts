@@ -1,0 +1,212 @@
+import { MinerUPdfConvertor } from "../MinerUPdfConvertor";
+import * as path from 'path';
+import * as fs from 'fs';
+import { config } from "dotenv";
+config()
+
+describe(MinerUPdfConvertor, () => {
+    let converter: MinerUPdfConvertor;
+    const testPdfPath = path.join(__dirname, 'viral_pneumonia.pdf');
+    const downloadDir = path.join(__dirname, 'test-downloads');
+
+    beforeAll(() => {
+        // Check if MINERU_TOKEN is available
+        const token = process.env.MINERU_TOKEN;
+        if (!token) {
+            console.warn('MINERU_TOKEN environment variable not set. Skipping integration tests.');
+            return;
+        }
+
+        // Create converter instance
+        converter = new MinerUPdfConvertor({
+            token: token,
+            downloadDir: downloadDir,
+            defaultOptions: {
+                is_ocr: true,
+                enable_formula: true,
+                enable_table: true,
+                language: 'en',
+                extra_formats: ['docx', 'html']
+            },
+            timeout: 120000, // 2 minutes timeout
+            maxRetries: 3,
+            retryDelay: 5000
+        });
+
+        // Ensure download directory exists
+        if (!fs.existsSync(downloadDir)) {
+            fs.mkdirSync(downloadDir, { recursive: true });
+        }
+    });
+
+    afterAll(async () => {
+        // Cleanup test downloads
+        if (converter && fs.existsSync(downloadDir)) {
+            try {
+                await converter.cleanupDownloadedFiles(0);
+                console.log('Test downloads cleaned up');
+            } catch (error) {
+                console.error('Failed to cleanup test downloads:', error);
+            }
+        }
+    });
+
+    it.only('should convert test PDF to JSON successfully', async () => {
+        // Skip test if token is not available
+        const token = process.env.MINERU_TOKEN;
+        if (!token) {
+            console.warn('Skipping test - MINERU_TOKEN not available');
+            return;
+        }
+
+        // Verify test PDF exists
+        if (!fs.existsSync(testPdfPath)) {
+            throw new Error(`Test PDF not found at: ${testPdfPath}`);
+        }
+
+        console.log('Starting PDF conversion test...');
+        console.log('PDF file:', testPdfPath);
+        console.log('File size:', fs.statSync(testPdfPath).size, 'bytes');
+
+        const startTime = Date.now();
+
+        try {
+            // Convert PDF using MinerU
+            const result = await converter.processLocalFile(testPdfPath, {
+                data_id: 'ruuskanen-viral-pneumonia-2011',
+                is_ocr: true,
+                enable_formula: true,
+                enable_table: true,
+                language: 'en',
+                page_ranges: '1-10', // Process first 10 pages for testing
+                extra_formats: ['docx', 'html']
+            });
+
+            const processingTime = Date.now() - startTime;
+            console.log(`Processing completed in ${processingTime}ms`);
+
+            // Verify conversion was successful
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+            expect(result.taskId).toBeDefined();
+            expect(result.taskId).toBeTruthy();
+            expect(result.downloadedFiles).toBeDefined();
+            expect(Array.isArray(result.downloadedFiles)).toBe(true);
+
+            console.log('✅ Conversion successful!');
+            console.log('Task ID:', result.taskId);
+            console.log('Downloaded files:', result.downloadedFiles);
+
+            // Verify downloaded files exist
+            if (result.downloadedFiles && result.downloadedFiles.length > 0) {
+                for (const file of result.downloadedFiles) {
+                    expect(fs.existsSync(file)).toBe(true);
+                    console.log(`✅ Downloaded file exists: ${file}`);
+                    
+                    // Check file size
+                    const stats = fs.statSync(file);
+                    console.log(`   File size: ${stats.size} bytes`);
+                    expect(stats.size).toBeGreaterThan(0);
+                }
+            }
+
+            // Verify result data structure
+            if (result.data) {
+                console.log('✅ Result data received');
+                console.log('Data type:', typeof result.data);
+                
+                // If data is a JSON object, verify its structure
+                if (typeof result.data === 'object' && result.data !== null) {
+                    console.log('Data keys:', Object.keys(result.data));
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Conversion failed:', error);
+            throw error;
+        }
+    }, 300000); // 5 minutes timeout for the entire test
+
+    it('should handle task status monitoring', async () => {
+        // Skip test if token is not available
+        const token = process.env.MINERU_TOKEN;
+        if (!token) {
+            console.warn('Skipping test - MINERU_TOKEN not available');
+            return;
+        }
+
+        // First, start a conversion
+        const result = await converter.processLocalFile(testPdfPath, {
+            data_id: 'ruuskanen-viral-pneumonia-status-test',
+            is_ocr: true,
+            language: 'en',
+            page_ranges: '1-2' // Small range for faster testing
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.taskId).toBeDefined();
+
+        // Monitor task status
+        const status = await converter.getTaskStatus(result.taskId!);
+        expect(status).toBeDefined();
+        expect(status.task_id).toBe(result.taskId);
+        expect(status.state).toBeDefined();
+        
+        console.log('Task status:', status.state);
+        
+        if (status.extract_progress) {
+            console.log('Progress:', {
+                extracted_pages: status.extract_progress.extracted_pages,
+                total_pages: status.extract_progress.total_pages,
+                start_time: status.extract_progress.start_time
+            });
+        }
+    }, 180000); // 3 minutes timeout
+
+    it('should validate file format before processing', async () => {
+        // Test with invalid file format
+        const invalidPath = path.join(__dirname, 'test.txt');
+        
+        // Create a temporary invalid file
+        fs.writeFileSync(invalidPath, 'This is not a PDF file');
+        
+        try {
+            const result = await converter.processLocalFile(invalidPath);
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Unsupported file format');
+        } finally {
+            // Clean up temporary file
+            if (fs.existsSync(invalidPath)) {
+                fs.unlinkSync(invalidPath);
+            }
+        }
+    });
+
+    it('should handle non-existent file gracefully', async () => {
+        const nonExistentPath = path.join(__dirname, 'non-existent-file.pdf');
+        
+        const result = await converter.processLocalFile(nonExistentPath);
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('File not found');
+    });
+
+    it('should manage download directory correctly', () => {
+        if (!converter) {
+            console.warn('Skipping test - converter not initialized');
+            return;
+        }
+
+        const currentDir = converter.getDownloadDirectory();
+        expect(currentDir).toBeDefined();
+        expect(typeof currentDir).toBe('string');
+        
+        // Set new directory
+        const newDir = path.join(__dirname, 'custom-test-downloads');
+        converter.setDownloadDirectory(newDir);
+        expect(converter.getDownloadDirectory()).toBe(newDir);
+        
+        // Restore original directory
+        converter.setDownloadDirectory(currentDir);
+        expect(converter.getDownloadDirectory()).toBe(currentDir);
+    });
+});
