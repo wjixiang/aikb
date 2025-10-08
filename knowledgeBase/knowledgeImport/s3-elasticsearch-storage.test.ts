@@ -40,11 +40,10 @@ describe('S3ElasticSearchLibraryStorage', () => {
   });
 
   describe('Metadata Operations', () => {
-      it('check existance of document', async()=>{
-        
-        const md = await storage.getMarkdown("68e624929343ced7805027eb")
-        console.log(md)
-    })
+    it('check existance of document', async () => {
+      const md = await storage.getMarkdown('68e624929343ced7805027eb');
+      console.log(md);
+    });
 
     it('should save and retrieve metadata', async () => {
       if (!elasticsearchAvailable) {

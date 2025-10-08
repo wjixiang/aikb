@@ -67,13 +67,15 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     throw new Error(`PDF with S3 key ${s3Key} not found`);
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
+  async saveMetadata(
+    metadata: BookMetadata,
+  ): Promise<BookMetadata & { id: string }> {
     if (!metadata.id) {
       metadata.id = IdUtils.generateId();
     }
 
     this.metadataStore.set(metadata.id, metadata);
-    return metadata as BookMetadata & {id: string};
+    return metadata as BookMetadata & { id: string };
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {

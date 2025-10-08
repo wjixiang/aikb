@@ -1,3 +1,4 @@
+import { app_config } from 'knowledgeBase/config';
 import { MinerUClient } from '../MinerUClient';
 import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
 import { config } from 'dotenv';
@@ -13,18 +14,19 @@ describe('MinerU Client', () => {
 
   describe('Constructor', () => {
     it('should create client with token', () => {
-      const client = new MinerUClient({ token: TEST_TOKEN });
+      const client = new MinerUClient(app_config.MinerU);
       expect(client).toBeInstanceOf(MinerUClient);
     });
 
     it('should throw error without token', () => {
-      expect(() => new MinerUClient({ token: '' })).toThrow(
-        'Token is required',
-      );
+      expect(
+        () => new MinerUClient({ ...app_config.MinerU, token: '' }),
+      ).toThrow('Token is required');
     });
 
     it('should accept custom configuration', () => {
       const client = new MinerUClient({
+        ...app_config.MinerU,
         token: TEST_TOKEN,
         baseUrl: 'https://custom-url.com',
         timeout: 60000,
@@ -102,7 +104,7 @@ describe('Integration tests (requires valid token)', () => {
   let converter: MinerUPdfConvertor;
 
   beforeAll(() => {
-    client = new MinerUClient({ token });
+    client = new MinerUClient(app_config.MinerU);
     converter = new MinerUPdfConvertor({
       token,
       downloadDir: './test-downloads',
@@ -155,7 +157,7 @@ describe('Integration tests (requires valid token)', () => {
 describe('Error handling', () => {
   it('should handle invalid token gracefully', () => {
     expect(() => {
-      new MinerUClient({ token: 'invalid-token-format' });
+      new MinerUClient({ ...app_config.MinerU, token: 'invalid-token-format' });
     }).not.toThrow();
   });
 

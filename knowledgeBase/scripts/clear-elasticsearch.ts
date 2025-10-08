@@ -1,15 +1,7 @@
 #!/usr/bin/env tsx
 
-// 添加File polyfill以解决Node.js兼容性问题
-if (typeof global.File === 'undefined') {
-  (global as any).File = class File {
-    constructor(
-      public chunks: any[],
-      public name: string,
-      public options?: any
-    ) {}
-  };
-}
+// 导入polyfills以解决Node.js兼容性问题
+import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
@@ -31,12 +23,12 @@ const logger = createLoggerWithPrefix('ClearElasticsearch');
 
 // 需要清空的索引列表
 const INDICES_TO_CLEAR = [
-  'entities',           // 实体内容存储
-  'knowledge_vectors',  // 知识向量存储
-  'entity_vectors',     // 实体向量存储
-  'library_metadata',   // 文献元数据存储
+  'entities', // 实体内容存储
+  'knowledge_vectors', // 知识向量存储
+  'entity_vectors', // 实体向量存储
+  'library_metadata', // 文献元数据存储
   'library_collections', // 文献集合存储
-  'library_citations',  // 文献引用存储
+  'library_citations', // 文献引用存储
 ];
 
 // 索引信息接口
@@ -70,7 +62,10 @@ async function getConfirmation(message: string): Promise<boolean> {
 /**
  * 获取索引的文档数量
  */
-async function getIndexDocCount(client: Client, indexName: string): Promise<number> {
+async function getIndexDocCount(
+  client: Client,
+  indexName: string,
+): Promise<number> {
   try {
     const response = await client.count({ index: indexName });
     return response.count;
@@ -81,7 +76,8 @@ async function getIndexDocCount(client: Client, indexName: string): Promise<numb
 }
 
 async function clearElasticsearch(): Promise<void> {
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   const apiKey = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
   logger.info(`连接到Elasticsearch: ${elasticsearchUrl}`);
@@ -131,7 +127,9 @@ async function clearElasticsearch(): Promise<void> {
     }
 
     // 获取用户确认
-    const confirmed = await getConfirmation('确定要清空这些索引吗？此操作不可撤销！');
+    const confirmed = await getConfirmation(
+      '确定要清空这些索引吗？此操作不可撤销！',
+    );
     if (!confirmed) {
       logger.info('操作已取消');
       return;
@@ -141,12 +139,12 @@ async function clearElasticsearch(): Promise<void> {
     for (const index of indicesToClear) {
       try {
         logger.info(`正在清空索引: ${index.name}`);
-        
+
         // 删除索引
         await client.indices.delete({
           index: index.name,
         });
-        
+
         logger.info(`已删除索引: ${index.name} (${index.docCount} 个文档)`);
       } catch (error) {
         logger.error(`删除索引 ${index.name} 失败:`, error);

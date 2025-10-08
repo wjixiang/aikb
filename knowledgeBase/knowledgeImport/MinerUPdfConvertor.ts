@@ -1,4 +1,4 @@
-import { AbstractPdfConvertor } from './PdfConvertor';
+import { AbstractPdfConvertor } from './AbstractPdfConvertor';
 import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,7 +36,7 @@ export interface ConversionResult {
 }
 
 export class MinerUPdfConvertor extends AbstractPdfConvertor {
-  private logger = createLoggerWithPrefix("MinerUPdfConvertor")
+  private logger = createLoggerWithPrefix('MinerUPdfConvertor');
   private client: MinerUClient;
   private config: Omit<MinerUPdfConvertorConfig, 'defaultOptions'> & {
     defaultOptions: Partial<SingleFileRequest>;
@@ -50,7 +50,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
   constructor(config: MinerUPdfConvertorConfig) {
     super();
-    
+
     this.config = {
       token: config.token || app_config.MinerU.token,
       baseUrl: config.baseUrl || 'https://mineru.net/api/v4',
@@ -64,8 +64,8 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         enable_table: true,
         language: 'ch',
         model_version: 'pipeline',
-        ...config.defaultOptions
-      }
+        ...config.defaultOptions,
+      },
     };
 
     this.client = new MinerUClient({
@@ -74,7 +74,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       baseUrl: this.config.baseUrl,
       timeout: this.config.timeout,
       maxRetries: this.config.maxRetries,
-      retryDelay: this.config.retryDelay
+      retryDelay: this.config.retryDelay,
     });
 
     // Ensure download directory exists
@@ -91,24 +91,25 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async convertPdfToMarkdown(
     pdfPath: string,
-    options: Partial<SingleFileRequest> = {}
+    options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult> {
     try {
       console.log(`[MinerUPdfConvertor] convertPdfToJSON: pdfPath=${pdfPath}`);
-      
+
       // Determine if pdfPath is a URL or local file
-      const isUrl = pdfPath.startsWith('http://') || pdfPath.startsWith('https://');
+      const isUrl =
+        pdfPath.startsWith('http://') || pdfPath.startsWith('https://');
       console.log(`[MinerUPdfConvertor] Is URL: ${isUrl}`);
-      
+
       let request: SingleFileRequest;
-      
+
       if (isUrl) {
         // Use URL directly
         console.log(`[MinerUPdfConvertor] Using URL directly: ${pdfPath}`);
         request = {
           url: pdfPath,
           ...this.config.defaultOptions,
-          ...options
+          ...options,
         };
       } else {
         // For local files, we need to handle file upload
@@ -117,56 +118,65 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           console.error(`[MinerUPdfConvertor] File not found: ${pdfPath}`);
           return {
             success: false,
-            error: `File not found: ${pdfPath}`
+            error: `File not found: ${pdfPath}`,
           };
         }
 
         // Validate file format
         if (!MinerUClient.isValidFileFormat(pdfPath)) {
-          console.error(`[MinerUPdfConvertor] Unsupported file format: ${pdfPath}`);
+          console.error(
+            `[MinerUPdfConvertor] Unsupported file format: ${pdfPath}`,
+          );
           return {
             success: false,
-            error: `Unsupported file format: ${pdfPath}`
+            error: `Unsupported file format: ${pdfPath}`,
           };
         }
-        
+
         console.log(`[MinerUPdfConvertor] Uploading to S3...`);
         const s3Url = await uploadPdfFromPath(pdfPath);
         console.log(`[MinerUPdfConvertor] S3 upload successful: ${s3Url}`);
-        
+
         request = {
           url: s3Url,
           ...this.config.defaultOptions,
-          ...options
+          ...options,
         };
 
-        this.logger.debug(`update pdf to s3 successfully: ${JSON.stringify(request)}`)
+        this.logger.debug(
+          `update pdf to s3 successfully: ${JSON.stringify(request)}`,
+        );
       }
 
       console.log(`[MinerUPdfConvertor] Processing file with MinerU...`);
       // Process the file
       const result = await this.client.processSingleFile(request, {
-        downloadDir: this.config.downloadDir
+        downloadDir: this.config.downloadDir,
       });
-      console.log(`[MinerUPdfConvertor] MinerU processing completed, taskId: ${result.result.task_id}`);
+      console.log(
+        `[MinerUPdfConvertor] MinerU processing completed, taskId: ${result.result.task_id}`,
+      );
 
-      console.log(`[MinerUPdfConvertor] Extracting markdown from downloaded files...`);
+      console.log(
+        `[MinerUPdfConvertor] Extracting markdown from downloaded files...`,
+      );
       // Extract and parse the markdown content
-      const markdownData = await this.extractMarkdownFromDownloadedFiles(result.downloadedFiles || []);
+      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+        result.downloadedFiles || [],
+      );
       console.log(`[MinerUPdfConvertor] Markdown extraction completed`);
 
       return {
         success: true,
         data: markdownData,
         downloadedFiles: result.downloadedFiles,
-        taskId: result.result.task_id
+        taskId: result.result.task_id,
       };
-
     } catch (error) {
       console.error(`[MinerUPdfConvertor] Error in convertPdfToJSON:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -179,81 +189,101 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processLocalFile(
     filePath: string,
-    options: Partial<SingleFileRequest> = {}
+    options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult> {
     try {
-      console.log(`[MinerUPdfConvertor] processLocalFile: filePath=${filePath}`);
-      
+      console.log(
+        `[MinerUPdfConvertor] processLocalFile: filePath=${filePath}`,
+      );
+
       if (!fs.existsSync(filePath)) {
         console.error(`[MinerUPdfConvertor] File not found: ${filePath}`);
         return {
           success: false,
-          error: `File not found: ${filePath}`
+          error: `File not found: ${filePath}`,
         };
       }
 
       if (!MinerUClient.isValidFileFormat(filePath)) {
-        console.error(`[MinerUPdfConvertor] Unsupported file format: ${filePath}`);
+        console.error(
+          `[MinerUPdfConvertor] Unsupported file format: ${filePath}`,
+        );
         return {
           success: false,
-          error: `Unsupported file format: ${filePath}`
+          error: `Unsupported file format: ${filePath}`,
         };
       }
 
       console.log(`[MinerUPdfConvertor] Starting batch file upload...`);
       // Process using batch file upload
-      const batchResult = await this.client.processBatchFiles([{
-        filePath,
-        is_ocr: options.is_ocr,
-        data_id: options.data_id,
-        page_ranges: options.page_ranges
-      }], {
-        enable_formula: options.enable_formula ?? this.config.defaultOptions.enable_formula,
-        enable_table: options.enable_table ?? this.config.defaultOptions.enable_table,
-        language: options.language ?? this.config.defaultOptions.language,
-        model_version: options.model_version ?? this.config.defaultOptions.model_version,
-        extra_formats: options.extra_formats,
-        callback: options.callback,
-        seed: options.seed
-      });
-      console.log(`[MinerUPdfConvertor] Batch upload completed, batchId: ${batchResult.batchId}`);
+      const batchResult = await this.client.processBatchFiles(
+        [
+          {
+            filePath,
+            is_ocr: options.is_ocr,
+            data_id: options.data_id,
+            page_ranges: options.page_ranges,
+          },
+        ],
+        {
+          enable_formula:
+            options.enable_formula ?? this.config.defaultOptions.enable_formula,
+          enable_table:
+            options.enable_table ?? this.config.defaultOptions.enable_table,
+          language: options.language ?? this.config.defaultOptions.language,
+          model_version:
+            options.model_version ?? this.config.defaultOptions.model_version,
+          extra_formats: options.extra_formats,
+          callback: options.callback,
+          seed: options.seed,
+        },
+      );
+      console.log(
+        `[MinerUPdfConvertor] Batch upload completed, batchId: ${batchResult.batchId}`,
+      );
 
       console.log(`[MinerUPdfConvertor] Waiting for batch task completion...`);
       // Wait for completion
-      const taskResult = await this.client.waitForBatchTaskCompletion(batchResult.batchId, {
-        downloadDir: this.config.downloadDir
-      });
+      const taskResult = await this.client.waitForBatchTaskCompletion(
+        batchResult.batchId,
+        {
+          downloadDir: this.config.downloadDir,
+        },
+      );
       console.log(`[MinerUPdfConvertor] Batch task completed`);
 
       // Extract results
       const result = taskResult.results.extract_result[0];
       console.log(`[MinerUPdfConvertor] Task result state: ${result.state}`);
-      
+
       if (result.state === 'failed') {
         console.error(`[MinerUPdfConvertor] Task failed: ${result.err_msg}`);
         return {
           success: false,
           error: result.err_msg || 'Processing failed',
-          taskId: result.task_id
+          taskId: result.task_id,
         };
       }
 
-      console.log(`[MinerUPdfConvertor] Extracting markdown from downloaded files...`);
+      console.log(
+        `[MinerUPdfConvertor] Extracting markdown from downloaded files...`,
+      );
       // Extract and parse the markdown content
-      const markdownData = await this.extractMarkdownFromDownloadedFiles(taskResult.downloadedFiles);
+      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+        taskResult.downloadedFiles,
+      );
 
       return {
         success: true,
         data: markdownData,
         downloadedFiles: taskResult.downloadedFiles,
-        taskId: result.task_id
+        taskId: result.task_id,
       };
-
     } catch (error) {
       console.error(`[MinerUPdfConvertor] Error in processLocalFile:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -266,17 +296,17 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processMultipleFiles(
     filePaths: string[],
-    options: Partial<SingleFileRequest> = {}
+    options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult[]> {
     const results: ConversionResult[] = [];
 
     try {
       // Validate all files first
-      const validFiles = filePaths.filter(filePath => {
+      const validFiles = filePaths.filter((filePath) => {
         if (!fs.existsSync(filePath)) {
           results.push({
             success: false,
-            error: `File not found: ${filePath}`
+            error: `File not found: ${filePath}`,
           });
           return false;
         }
@@ -284,7 +314,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         if (!MinerUClient.isValidFileFormat(filePath)) {
           results.push({
             success: false,
-            error: `Unsupported file format: ${filePath}`
+            error: `Unsupported file format: ${filePath}`,
           });
           return false;
         }
@@ -299,33 +329,40 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       // Process files in batches (max 200 per API limit)
       const batchSize = 200;
       const batches: string[][] = [];
-      
+
       for (let i = 0; i < validFiles.length; i += batchSize) {
         batches.push(validFiles.slice(i, i + batchSize));
       }
 
       for (const batch of batches) {
         const batchResult = await this.client.processBatchFiles(
-          batch.map(filePath => ({
+          batch.map((filePath) => ({
             filePath,
             is_ocr: options.is_ocr,
             data_id: options.data_id,
-            page_ranges: options.page_ranges
+            page_ranges: options.page_ranges,
           })),
           {
-            enable_formula: options.enable_formula ?? this.config.defaultOptions.enable_formula,
-            enable_table: options.enable_table ?? this.config.defaultOptions.enable_table,
+            enable_formula:
+              options.enable_formula ??
+              this.config.defaultOptions.enable_formula,
+            enable_table:
+              options.enable_table ?? this.config.defaultOptions.enable_table,
             language: options.language ?? this.config.defaultOptions.language,
-            model_version: options.model_version ?? this.config.defaultOptions.model_version,
+            model_version:
+              options.model_version ?? this.config.defaultOptions.model_version,
             extra_formats: options.extra_formats,
             callback: options.callback,
-            seed: options.seed
-          }
+            seed: options.seed,
+          },
         );
 
-        const taskResult = await this.client.waitForBatchTaskCompletion(batchResult.batchId, {
-          downloadDir: this.config.downloadDir
-        });
+        const taskResult = await this.client.waitForBatchTaskCompletion(
+          batchResult.batchId,
+          {
+            downloadDir: this.config.downloadDir,
+          },
+        );
 
         // Process each result
         for (const result of taskResult.results.extract_result) {
@@ -333,38 +370,39 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
             results.push({
               success: false,
               error: result.err_msg || 'Processing failed',
-              taskId: result.task_id
+              taskId: result.task_id,
             });
           } else {
-            const taskIdentifier = result.task_id || result.data_id || result.file_name || 'unknown';
-            const filteredFiles = taskResult.downloadedFiles.filter(file =>
-              file.includes(taskIdentifier)
+            const taskIdentifier =
+              result.task_id || result.data_id || result.file_name || 'unknown';
+            const filteredFiles = taskResult.downloadedFiles.filter((file) =>
+              file.includes(taskIdentifier),
             );
-            
-            const markdownData = await this.extractMarkdownFromDownloadedFiles(filteredFiles);
+
+            const markdownData =
+              await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
             results.push({
               success: true,
               data: markdownData,
               downloadedFiles: filteredFiles,
-              taskId: result.task_id || taskIdentifier
+              taskId: result.task_id || taskIdentifier,
             });
           }
         }
       }
 
       return results;
-
     } catch (error) {
       // If batch processing fails, return error for remaining files
       const remainingFiles = filePaths.slice(results.length);
-      remainingFiles.forEach(filePath => {
+      remainingFiles.forEach((filePath) => {
         results.push({
           success: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       });
-      
+
       return results;
     }
   }
@@ -377,13 +415,13 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processUrls(
     urls: string[],
-    options: Partial<SingleFileRequest> = {}
+    options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult[]> {
     try {
       // Process URLs in batches (max 200 per API limit)
       const batchSize = 200;
       const batches: string[][] = [];
-      
+
       for (let i = 0; i < urls.length; i += batchSize) {
         batches.push(urls.slice(i, i + batchSize));
       }
@@ -392,58 +430,68 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       for (const batch of batches) {
         const batchId = await this.client.createBatchUrlTask({
-          enable_formula: options.enable_formula ?? this.config.defaultOptions.enable_formula,
-          enable_table: options.enable_table ?? this.config.defaultOptions.enable_table,
+          enable_formula:
+            options.enable_formula ?? this.config.defaultOptions.enable_formula,
+          enable_table:
+            options.enable_table ?? this.config.defaultOptions.enable_table,
           language: options.language ?? this.config.defaultOptions.language,
-          model_version: options.model_version ?? this.config.defaultOptions.model_version,
+          model_version:
+            options.model_version ?? this.config.defaultOptions.model_version,
           extra_formats: options.extra_formats,
           callback: options.callback,
           seed: options.seed,
-          files: batch.map(url => ({
+          files: batch.map((url) => ({
             url,
             is_ocr: options.is_ocr,
             data_id: options.data_id,
-            page_ranges: options.page_ranges
-          }))
+            page_ranges: options.page_ranges,
+          })),
         });
 
-        const batchResult = await this.client.waitForBatchTaskCompletion(batchId, {
-          downloadDir: this.config.downloadDir
-        });
+        const batchResult = await this.client.waitForBatchTaskCompletion(
+          batchId,
+          {
+            downloadDir: this.config.downloadDir,
+          },
+        );
 
         // Process each result
         for (const taskResult of batchResult.results.extract_result) {
-          const taskIdentifier = taskResult.task_id || taskResult.data_id || taskResult.file_name || 'unknown';
-          
+          const taskIdentifier =
+            taskResult.task_id ||
+            taskResult.data_id ||
+            taskResult.file_name ||
+            'unknown';
+
           if (taskResult.state === 'failed') {
             allResults.push({
               success: false,
               error: taskResult.err_msg || 'Processing failed',
-              taskId: taskResult.task_id || taskIdentifier
+              taskId: taskResult.task_id || taskIdentifier,
             });
           } else {
-            const filteredFiles = batchResult.downloadedFiles.filter(file =>
-              file.includes(taskIdentifier)
+            const filteredFiles = batchResult.downloadedFiles.filter((file) =>
+              file.includes(taskIdentifier),
             );
-            
-            const markdownData = await this.extractMarkdownFromDownloadedFiles(filteredFiles);
+
+            const markdownData =
+              await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
             allResults.push({
               success: true,
               data: markdownData,
               downloadedFiles: filteredFiles,
-              taskId: taskResult.task_id || taskIdentifier
+              taskId: taskResult.task_id || taskIdentifier,
             });
           }
         }
       }
 
       return allResults;
-
     } catch (error) {
-      return urls.map(url => ({
+      return urls.map((url) => ({
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }));
     }
   }
@@ -453,7 +501,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    * @param downloadedFiles Array of downloaded file paths
    * @returns Promise<any>
    */
-  private async extractMarkdownFromDownloadedFiles(downloadedFiles: string[]): Promise<any> {
+  private async extractMarkdownFromDownloadedFiles(
+    downloadedFiles: string[],
+  ): Promise<any> {
     for (const filePath of downloadedFiles) {
       if (!filePath.endsWith('.zip')) {
         continue;
@@ -461,20 +511,25 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       try {
         console.log(`[MinerUPdfConvertor] Processing ZIP file: ${filePath}`);
-        
+
         // Extract ZIP file and read full.md content
         const markdownContent = await this.extractFullMdFromZip(filePath);
-        
+
         if (markdownContent) {
-          console.log(`[MinerUPdfConvertor] Successfully extracted markdown from ZIP`);
+          console.log(
+            `[MinerUPdfConvertor] Successfully extracted markdown from ZIP`,
+          );
           return {
             markdown: markdownContent,
             zipFilePath: filePath,
-            extractedAt: new Date().toISOString()
+            extractedAt: new Date().toISOString(),
           };
         }
       } catch (error) {
-        console.error(`[MinerUPdfConvertor] Failed to extract markdown from ${filePath}:`, error);
+        console.error(
+          `[MinerUPdfConvertor] Failed to extract markdown from ${filePath}:`,
+          error,
+        );
       }
     }
 
@@ -510,8 +565,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           // Check if this is the full.md file
           if (entry.fileName.endsWith('full.md')) {
             fullMdFound = true;
-            console.log(`[MinerUPdfConvertor] Found full.md in ZIP: ${entry.fileName}`);
-            
+            console.log(
+              `[MinerUPdfConvertor] Found full.md in ZIP: ${entry.fileName}`,
+            );
+
             // Open the entry stream
             zipfile.openReadStream(entry, (err, readStream) => {
               if (err) {
@@ -519,7 +576,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               }
 
               if (!readStream) {
-                return reject(new Error('Failed to open read stream for full.md'));
+                return reject(
+                  new Error('Failed to open read stream for full.md'),
+                );
               }
 
               let content = '';
@@ -546,7 +605,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           if (fullMdFound) {
             resolve(fullMdContent);
           } else {
-            console.warn(`[MinerUPdfConvertor] full.md not found in ZIP: ${zipPath}`);
+            console.warn(
+              `[MinerUPdfConvertor] full.md not found in ZIP: ${zipPath}`,
+            );
             resolve(null);
           }
         });
@@ -588,12 +649,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   async cleanupDownloadedFiles(olderThanHours: number = 24): Promise<void> {
     try {
       const files = fs.readdirSync(this.config.downloadDir);
-      const cutoffTime = Date.now() - (olderThanHours * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
 
       for (const file of files) {
         const filePath = path.join(this.config.downloadDir, file);
         const stats = fs.statSync(filePath);
-        
+
         if (stats.mtime.getTime() < cutoffTime) {
           fs.unlinkSync(filePath);
           console.log(`Cleaned up old file: ${filePath}`);

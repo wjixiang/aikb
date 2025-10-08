@@ -1,22 +1,14 @@
 #!/usr/bin/env tsx
 
-// 添加File polyfill以解决Node.js兼容性问题
-if (typeof global.File === 'undefined') {
-  (global as any).File = class File {
-    constructor(
-      public chunks: any[],
-      public name: string,
-      public options?: any
-    ) {}
-  };
-}
+// 导入polyfills以解决Node.js兼容性问题
+import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
 
 /**
  * 测试脚本：创建测试索引并验证清空脚本功能
- * 
+ *
  * 使用方法:
  * npx tsx knowledgeBase/scripts/test-clear-elasticsearch.ts
  */
@@ -32,7 +24,8 @@ const TEST_INDICES = [
 ];
 
 async function createTestIndices(): Promise<void> {
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   const apiKey = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
   logger.info(`连接到Elasticsearch: ${elasticsearchUrl}`);
@@ -113,7 +106,8 @@ async function createTestIndices(): Promise<void> {
 }
 
 async function verifyClearedIndices(): Promise<void> {
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   const apiKey = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
   logger.info(`连接到Elasticsearch: ${elasticsearchUrl}`);
@@ -140,14 +134,16 @@ async function verifyClearedIndices(): Promise<void> {
     logger.info(`现有索引: ${existingIndices.join(', ')}`);
 
     // 检查测试索引是否还存在
-    const remainingTestIndices = TEST_INDICES.filter(indexName => 
-      existingIndices.includes(indexName)
+    const remainingTestIndices = TEST_INDICES.filter((indexName) =>
+      existingIndices.includes(indexName),
     );
 
     if (remainingTestIndices.length === 0) {
       logger.info('✅ 所有测试索引已成功清空');
     } else {
-      logger.warn(`⚠️ 仍有 ${remainingTestIndices.length} 个测试索引未清空: ${remainingTestIndices.join(', ')}`);
+      logger.warn(
+        `⚠️ 仍有 ${remainingTestIndices.length} 个测试索引未清空: ${remainingTestIndices.join(', ')}`,
+      );
     }
   } catch (error) {
     logger.error('验证清空结果时出错:', error);
@@ -166,17 +162,23 @@ async function runTest(): Promise<void> {
 
   // 步骤2: 提示用户运行清空脚本
   logger.info('步骤2: 请在另一个终端运行以下命令来清空测试索引:');
-  logger.info('  pnpm run clear:elasticsearch:advanced --pattern "test_*" --dry-run');
+  logger.info(
+    '  pnpm run clear:elasticsearch:advanced --pattern "test_*" --dry-run',
+  );
   logger.info('  # 查看将要删除的索引');
   logger.info('');
   logger.info('  pnpm run clear:elasticsearch:advanced --pattern "test_*"');
   logger.info('  # 实际删除索引');
   logger.info('');
   logger.info('或者运行:');
-  logger.info('  pnpm run clear:elasticsearch:advanced --indices "test_entities,test_knowledge_vectors,test_entity_vectors,test_other_index" --dry-run');
+  logger.info(
+    '  pnpm run clear:elasticsearch:advanced --indices "test_entities,test_knowledge_vectors,test_entity_vectors,test_other_index" --dry-run',
+  );
   logger.info('  # 查看将要删除的索引');
   logger.info('');
-  logger.info('  pnpm run clear:elasticsearch:advanced --indices "test_entities,test_knowledge_vectors,test_entity_vectors,test_other_index"');
+  logger.info(
+    '  pnpm run clear:elasticsearch:advanced --indices "test_entities,test_knowledge_vectors,test_entity_vectors,test_other_index"',
+  );
   logger.info('  # 实际删除索引');
 
   // 步骤3: 等待用户确认

@@ -1,35 +1,27 @@
 #!/usr/bin/env tsx
 
-// 添加File polyfill以解决Node.js兼容性问题
-if (typeof global.File === 'undefined') {
-  (global as any).File = class File {
-    constructor(
-      public chunks: any[],
-      public name: string,
-      public options?: any
-    ) {}
-  };
-}
+// 导入polyfills以解决Node.js兼容性问题
+import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
 import readline from 'readline';
 import { config } from 'dotenv';
-config()
+config();
 
 /**
  * 高级测试辅助脚本：清空Elasticsearch数据库中的索引
- * 
+ *
  * 使用方法:
  * npx tsx knowledgeBase/scripts/clear-elasticsearch-advanced.ts [options]
- * 
+ *
  * 选项:
  * --all                   清空所有索引
  * --pattern <pattern>     清空匹配模式的索引 (支持通配符)
  * --indices <indices>     清空指定的索引 (逗号分隔)
  * --exclude <indices>     排除指定的索引 (逗号分隔)
  * --dry-run              预览将要删除的索引，不实际删除
- * 
+ *
  * 环境变量:
  * ELASTICSEARCH_URL - Elasticsearch服务器地址 (默认: http://elasticsearch:9200)
  * ELASTICSEARCH_URL_API_KEY - Elasticsearch API密钥 (可选)
@@ -40,12 +32,12 @@ const logger = createLoggerWithPrefix('ClearElasticsearchAdvanced');
 
 // 默认需要清空的索引列表
 const DEFAULT_INDICES_TO_CLEAR = [
-  'entities',           // 实体内容存储
-  'knowledge_vectors',  // 知识向量存储
-  'entity_vectors',     // 实体向量存储
-  'library_metadata',   // 文献元数据存储
+  'entities', // 实体内容存储
+  'knowledge_vectors', // 知识向量存储
+  'entity_vectors', // 实体向量存储
+  'library_metadata', // 文献元数据存储
   'library_collections', // 文献集合存储
-  'library_citations',  // 文献引用存储
+  'library_citations', // 文献引用存储
 ];
 
 // 索引信息接口
@@ -95,10 +87,10 @@ function parseArguments(): ClearOptions {
         options.pattern = args[++i];
         break;
       case '--indices':
-        options.indices = args[++i].split(',').map(s => s.trim());
+        options.indices = args[++i].split(',').map((s) => s.trim());
         break;
       case '--exclude':
-        options.exclude = args[++i].split(',').map(s => s.trim());
+        options.exclude = args[++i].split(',').map((s) => s.trim());
         break;
       case '--dry-run':
         options.dryRun = true;
@@ -167,7 +159,10 @@ async function getConfirmation(message: string): Promise<boolean> {
 /**
  * 获取索引的文档数量
  */
-async function getIndexDocCount(client: Client, indexName: string): Promise<number> {
+async function getIndexDocCount(
+  client: Client,
+  indexName: string,
+): Promise<number> {
   try {
     const response = await client.count({ index: indexName });
     return response.count;
@@ -182,9 +177,7 @@ async function getIndexDocCount(client: Client, indexName: string): Promise<numb
  */
 function matchesPattern(indexName: string, pattern: string): boolean {
   // 简单的通配符匹配
-  const regexPattern = pattern
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.');
+  const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
   return new RegExp(`^${regexPattern}$`).test(indexName);
 }
 
@@ -193,7 +186,7 @@ function matchesPattern(indexName: string, pattern: string): boolean {
  */
 function determineIndicesToClear(
   existingIndices: string[],
-  options: ClearOptions
+  options: ClearOptions,
 ): string[] {
   let indicesToClear: string[] = [];
 
@@ -202,38 +195,39 @@ function determineIndicesToClear(
     indicesToClear = [...existingIndices];
   } else if (options.pattern) {
     // 清空匹配模式的索引
-    indicesToClear = existingIndices.filter(index => 
-      matchesPattern(index, options.pattern!)
+    indicesToClear = existingIndices.filter((index) =>
+      matchesPattern(index, options.pattern!),
     );
   } else if (options.indices && options.indices.length > 0) {
     // 清空指定的索引
-    indicesToClear = options.indices.filter(index => 
-      existingIndices.includes(index)
+    indicesToClear = options.indices.filter((index) =>
+      existingIndices.includes(index),
     );
   } else {
     // 使用默认索引列表
-    indicesToClear = DEFAULT_INDICES_TO_CLEAR.filter(index => 
-      existingIndices.includes(index)
+    indicesToClear = DEFAULT_INDICES_TO_CLEAR.filter((index) =>
+      existingIndices.includes(index),
     );
   }
 
   // 排除指定的索引
   if (options.exclude && options.exclude.length > 0) {
-    indicesToClear = indicesToClear.filter(index => 
-      !options.exclude!.includes(index)
+    indicesToClear = indicesToClear.filter(
+      (index) => !options.exclude!.includes(index),
     );
   }
 
   // 默认排除系统索引
-  indicesToClear = indicesToClear.filter(index => 
-    !SYSTEM_INDICES.includes(index)
+  indicesToClear = indicesToClear.filter(
+    (index) => !SYSTEM_INDICES.includes(index),
   );
 
   return indicesToClear;
 }
 
 async function clearElasticsearch(options: ClearOptions): Promise<void> {
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   const apiKey = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
   logger.info(`连接到Elasticsearch: ${elasticsearchUrl}`);
@@ -287,7 +281,9 @@ async function clearElasticsearch(options: ClearOptions): Promise<void> {
     }
 
     // 获取用户确认
-    const confirmed = await getConfirmation('确定要清空这些索引吗？此操作不可撤销！');
+    const confirmed = await getConfirmation(
+      '确定要清空这些索引吗？此操作不可撤销！',
+    );
     if (!confirmed) {
       logger.info('操作已取消');
       return;
@@ -297,12 +293,12 @@ async function clearElasticsearch(options: ClearOptions): Promise<void> {
     for (const index of indexInfos) {
       try {
         logger.info(`正在清空索引: ${index.name}`);
-        
+
         // 删除索引
         await client.indices.delete({
           index: index.name,
         });
-        
+
         logger.info(`已删除索引: ${index.name} (${index.docCount} 个文档)`);
       } catch (error) {
         logger.error(`删除索引 ${index.name} 失败:`, error);

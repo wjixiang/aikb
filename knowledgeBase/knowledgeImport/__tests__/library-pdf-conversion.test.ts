@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { HashUtils } from '../liberary';
 import { S3MongoLibraryStorage } from '../liberary';
 import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Mock the MinerUPdfConvertor for testing
 vi.mock('../MinerUPdfConvertor');
@@ -78,6 +76,8 @@ describe('Library PDF Conversion Workflow', () => {
   it('should upload PDF to S3 and convert to Markdown', async () => {
     // Arrange
     const pdfPath = '/path/to/test.pdf';
+    const pdfBuffer = Buffer.from('test pdf content');
+    const fileName = 'test.pdf';
     const metadata = {
       title: 'Test Document',
       authors: [{ firstName: 'John', lastName: 'Doe' }],
@@ -85,15 +85,15 @@ describe('Library PDF Conversion Workflow', () => {
     };
 
     // Mock the hash generation
-    vi.spyOn(HashUtils, 'generateHashFromPath').mockResolvedValue('hash-123');
+    vi.spyOn(HashUtils, 'generateHashFromBuffer').mockReturnValue('hash-123');
 
     // Act
-    const result = await library.storePdf(pdfPath, metadata);
+    const result = await library.storePdf(pdfBuffer, fileName, metadata);
 
     // Assert
-    expect(mockStorage.uploadPdfFromPath).toHaveBeenCalledWith(pdfPath);
+    expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
-    expect(mockPdfConvertor.convertPdfToMarkdown).toHaveBeenCalledWith(pdfPath);
+    expect(mockPdfConvertor.convertPdfToMarkdown).toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).toHaveBeenCalled();
     expect(result.metadata.title).toBe('Test Document');
   });
@@ -101,6 +101,8 @@ describe('Library PDF Conversion Workflow', () => {
   it('should handle conversion errors gracefully', async () => {
     // Arrange
     const pdfPath = '/path/to/test.pdf';
+    const pdfBuffer = Buffer.from('test pdf content');
+    const fileName = 'test.pdf';
     const metadata = {
       title: 'Test Document',
       authors: [{ firstName: 'John', lastName: 'Doe' }],
@@ -114,13 +116,13 @@ describe('Library PDF Conversion Workflow', () => {
     });
 
     // Mock the hash generation
-    vi.spyOn(HashUtils, 'generateHashFromPath').mockResolvedValue('hash-123');
+    vi.spyOn(HashUtils, 'generateHashFromBuffer').mockReturnValue('hash-123');
 
     // Act
-    const result = await library.storePdf(pdfPath, metadata);
+    const result = await library.storePdf(pdfBuffer, fileName, metadata);
 
     // Assert
-    expect(mockStorage.uploadPdfFromPath).toHaveBeenCalledWith(pdfPath);
+    expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
     expect(result.metadata.title).toBe('Test Document');
@@ -130,6 +132,8 @@ describe('Library PDF Conversion Workflow', () => {
     // Arrange
     const libraryWithoutConverter = new Library(mockStorage);
     const pdfPath = '/path/to/test.pdf';
+    const pdfBuffer = Buffer.from('test pdf content');
+    const fileName = 'test.pdf';
     const metadata = {
       title: 'Test Document',
       authors: [{ firstName: 'John', lastName: 'Doe' }],
@@ -137,13 +141,17 @@ describe('Library PDF Conversion Workflow', () => {
     };
 
     // Mock the hash generation
-    vi.spyOn(HashUtils, 'generateHashFromPath').mockResolvedValue('hash-123');
+    vi.spyOn(HashUtils, 'generateHashFromBuffer').mockReturnValue('hash-123');
 
     // Act
-    const result = await libraryWithoutConverter.storePdf(pdfPath, metadata);
+    const result = await libraryWithoutConverter.storePdf(
+      pdfBuffer,
+      fileName,
+      metadata,
+    );
 
     // Assert
-    expect(mockStorage.uploadPdfFromPath).toHaveBeenCalledWith(pdfPath);
+    expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
     expect(result.metadata.title).toBe('Test Document');
@@ -152,6 +160,8 @@ describe('Library PDF Conversion Workflow', () => {
   it('should return existing item if duplicate content hash is found', async () => {
     // Arrange
     const pdfPath = '/path/to/test.pdf';
+    const pdfBuffer = Buffer.from('test pdf content');
+    const fileName = 'test.pdf';
     const metadata = {
       title: 'Test Document',
       authors: [{ firstName: 'John', lastName: 'Doe' }],
@@ -167,13 +177,13 @@ describe('Library PDF Conversion Workflow', () => {
     mockStorage.getMetadataByHash.mockResolvedValue(existingItem);
 
     // Mock the hash generation
-    vi.spyOn(HashUtils, 'generateHashFromPath').mockResolvedValue('hash-123');
+    vi.spyOn(HashUtils, 'generateHashFromBuffer').mockReturnValue('hash-123');
 
     // Act
-    const result = await library.storePdf(pdfPath, metadata);
+    const result = await library.storePdf(pdfBuffer, fileName, metadata);
 
     // Assert
-    expect(mockStorage.uploadPdfFromPath).not.toHaveBeenCalled();
+    expect(mockStorage.uploadPdf).not.toHaveBeenCalled();
     expect(mockStorage.saveMetadata).not.toHaveBeenCalled();
     expect(mockPdfConvertor.convertPdfToMarkdown).not.toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();

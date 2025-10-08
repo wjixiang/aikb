@@ -5,7 +5,6 @@ import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from './MinerUPdfConvertor';
 
-
 let storage: S3MongoLibraryStorage;
 
 beforeAll(async () => {
@@ -17,7 +16,7 @@ beforeAll(async () => {
 export async function UploadTestPdf() {
   const testMinerUPdfConvertor = new MinerUPdfConvertor({
     token: process.env.MINERU_TOKEN as string,
-    downloadDir: path.join('test'),
+    downloadDir: 'test/download',
     defaultOptions: {
       is_ocr: true,
       enable_formula: true,
@@ -32,7 +31,7 @@ export async function UploadTestPdf() {
   const library = new Library(storage, testMinerUPdfConvertor);
 
   // Read the test PDF file
-  const pdfPath = "test/ACEI.pdf";
+  const pdfPath = 'test/ACEI.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
 
   // Prepare metadata for the PDF
@@ -46,10 +45,7 @@ export async function UploadTestPdf() {
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(
-    pdfBuffer,
-    metadata
-  );
+  const book = await library.storePdf(pdfBuffer, 'ACEI.pdf', metadata);
   return book;
 }
 
@@ -81,8 +77,15 @@ describe(Library, () => {
     console.log(`Download URL: ${downloadUrl}`);
 
     // Read markdown content from Library storage
-    const mdContent = await book.getMarkdown()
-    console.log(`md content read from Library (100 str): ${JSON.stringify(mdContent.substring(0,100))}`)
+    const mdContent = await book.getMarkdown();
+    console.log(
+      `md content read from Library (100 str): ${JSON.stringify(mdContent.substring(0, 100))}`,
+    );
+
+    console.log(`re-extract markdown`)
+    await book.extractMarkdown()
+    const mdContent2 = await book.getMarkdown();
+    console.log(`re-extracted md content (100 str): ${JSON.stringify(mdContent2.substring(0, 100))}`)
 
   }, 30000); // Increase timeout to 30 seconds for S3 operations
 });

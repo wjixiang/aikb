@@ -54,6 +54,7 @@ describe('S3Service', () => {
     process.env.OSS_ACCESS_KEY_ID = 'test-key';
     process.env.OSS_SECRET_ACCESS_KEY = 'test-secret';
     process.env.PDF_OSS_BUCKET_NAME = 'test-bucket';
+    process.env.S3_ENDPOINT='aliyuncs.com';
     process.env.OSS_REGION = 'us-east-1';
   });
 
@@ -69,7 +70,7 @@ describe('S3Service', () => {
       const result = await uploadToS3(buffer, fileName, contentType);
 
       expect(result).toBe(
-        'https://test-bucket.s3.us-east-1.amazonaws.com/test-file.txt',
+        `https://test-bucket.${process.env.OSS_REGION}.${process.env.S3_ENDPOINT}/test-file.txt`,
       );
     });
 

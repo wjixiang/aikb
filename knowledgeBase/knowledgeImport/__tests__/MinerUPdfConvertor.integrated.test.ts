@@ -5,25 +5,11 @@ import { config } from 'dotenv';
 import { UploadTestPdf } from '../liberary.test';
 config();
 
-export const testMinerUPdfConvertor = new MinerUPdfConvertor({
-  token: process.env.MINERU_TOKEN as string,
-  downloadDir: path.join(__dirname, 'test-downloads'),
-  defaultOptions: {
-    is_ocr: true,
-    enable_formula: true,
-    enable_table: true,
-    language: 'en',
-    extra_formats: ['docx', 'html'],
-  },
-  timeout: 120000, // 2 minutes timeout
-  maxRetries: 3,
-  retryDelay: 5000,
-});
 
 describe(MinerUPdfConvertor, () => {
   let converter: MinerUPdfConvertor;
-  const testPdfPath = path.join(__dirname, 'viral_pneumonia.pdf');
-  const downloadDir = path.join(__dirname, 'test-downloads');
+  const testPdfPath = 'test/viral_pneumonia.pdf';
+  const downloadDir = "test"
 
   beforeAll(() => {
     // Check if MINERU_TOKEN is available

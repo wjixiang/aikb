@@ -2,6 +2,19 @@
 
 这个目录包含用于清空Elasticsearch数据库的测试辅助脚本。
 
+## Node.js兼容性说明
+
+这些脚本使用了浏览器API（如File、Blob等），在Node.js环境中运行时可能会遇到兼容性问题。为了解决这个问题，我们提供了以下解决方案：
+
+1. **Polyfills文件** - [`polyfills.ts`](knowledgeBase/scripts/polyfills.ts) 包含了必要的浏览器API polyfills
+2. **包装脚本** - [`run-with-polyfills.js`](knowledgeBase/scripts/run-with-polyfills.js) 确保在任何模块加载之前设置polyfills
+3. **NPM脚本** - 所有命令都通过包装脚本运行，自动处理兼容性问题
+
+如果您直接运行脚本（不通过npm命令），请确保使用包装脚本：
+```bash
+node knowledgeBase/scripts/run-with-polyfills.js clear-library.ts --dry-run
+```
+
 ## clear-elasticsearch.ts
 
 这是一个用于清空Elasticsearch数据库中特定索引的测试辅助脚本。

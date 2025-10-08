@@ -21,10 +21,7 @@
     "baml:generate": "pnpm exec baml-cli generate",
     "doc": "npx typedoc --entryPointStrategy Expand ./knowledgeBase",
     "cli": "node knowledgeBase/cli/simple-cli.js",
-    "clear:elasticsearch": "npx tsx knowledgeBase/scripts/clear-elasticsearch.ts",
-    "clear:elasticsearch:advanced": "npx tsx knowledgeBase/scripts/clear-elasticsearch-advanced.ts",
-    "clear:library": "npx tsx knowledgeBase/scripts/clear-library.ts",
-    "test:clear:elasticsearch": "npx tsx knowledgeBase/scripts/test-clear-elasticsearch.ts"
+    "clear:library:indices": "knowledgeBase/scripts/clear-library-indices.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",

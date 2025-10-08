@@ -23,12 +23,12 @@ export interface MinerUConfig {
   retryDelay?: number;
   downloadDir: string;
   defaultOptions: {
-    is_ocr: boolean,
-    enable_formula: boolean,
-    enable_table: boolean,
-    language: 'en'|'ch',
-    model_version: 'pipeline',
-  },
+    is_ocr: boolean;
+    enable_formula: boolean;
+    enable_table: boolean;
+    language: 'en' | 'ch';
+    model_version: 'pipeline';
+  };
 }
 
 export interface SingleFileRequest {
@@ -168,7 +168,7 @@ export const MinerUDefaultConfig: MinerUConfig = {
     language: 'ch',
     model_version: 'pipeline',
   },
-  token: process.env.MINERU_TOKEN as string
+  token: process.env.MINERU_TOKEN as string,
 };
 
 // ==================== Main Client Class ====================
@@ -509,9 +509,12 @@ export class MinerUClient {
   ): Promise<{ result: TaskResult; downloadedFiles?: string[] }> {
     const taskId = await this.createSingleFileTask(request);
 
-    const { result, downloadedFiles } = await this.waitForTaskCompletion(taskId, options);
-    
-    return { result, downloadedFiles }
+    const { result, downloadedFiles } = await this.waitForTaskCompletion(
+      taskId,
+      options,
+    );
+
+    return { result, downloadedFiles };
   }
 
   // ==================== Batch File Upload and Parsing ====================

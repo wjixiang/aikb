@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
-import { MinerUPdfConvertor } from './MinerUPdfConvertor';
+import { MinerUPdfConvertor, createMinerUConvertorFromEnv } from './PdfConvertor';
 
 // Enhanced metadata interfaces for Zotero-like functionality
 export interface Author {
@@ -137,11 +137,14 @@ export class IdUtils {
    * Generate a UUID-like ID (without using crypto.randomUUID for compatibility)
    */
   static generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+      /[xy]/g,
+      function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      },
+    );
   }
 }
 
@@ -151,38 +154,27 @@ export class IdUtils {
 export default class Library {
   constructor(
     private storage: AbstractLibraryStorage,
-    private pdfConvertor: MinerUPdfConvertor,
+    private pdfConvertor?: MinerUPdfConvertor,
   ) {}
 
   /**
-   * Store a PDF file from either a local path or a buffer
-   * @param pdfInput Either a file path (string) or a buffer (Buffer)
-   * @param fileName Optional file name (required when using buffer)
+   * Store a PDF file from a buffer
+   * @param pdfBuffer The PDF file buffer
+   * @param fileName The file name
    * @param metadata PDF metadata
    */
   async storePdf(
-    pdfInput: string | Buffer,
+    pdfBuffer: Buffer,
+    fileName: string,
     metadata: Partial<BookMetadata>,
-    fileName?: string,
   ): Promise<LibraryItem> {
-    // Determine if input is a path or buffer
-    const isBuffer = Buffer.isBuffer(pdfInput);
-    const pdfPath = isBuffer ? undefined : (pdfInput as string);
-    const pdfBuffer = isBuffer ? (pdfInput as Buffer) : undefined;
-
     // Validate inputs
-    if (isBuffer && !fileName) {
+    if (!fileName) {
       throw new Error('File name is required when providing a buffer');
     }
 
-    if (!isBuffer && !fs.existsSync(pdfPath!)) {
-      throw new Error(`PDF file not found at path: ${pdfPath}`);
-    }
-
     // Generate hash from file content
-    const contentHash = isBuffer
-      ? HashUtils.generateHashFromBuffer(pdfBuffer!)
-      : await HashUtils.generateHashFromPath(pdfPath!);
+    const contentHash = HashUtils.generateHashFromBuffer(pdfBuffer);
 
     // Check if item with same hash already exists
     const existingItem = await this.storage.getMetadataByHash(contentHash);
@@ -194,23 +186,14 @@ export default class Library {
     }
 
     // Upload to S3
-    let pdfInfo: AbstractPdf;
-    let effectiveFileName: string;
-
-    if (isBuffer) {
-      pdfInfo = await this.storage.uploadPdf(pdfBuffer!, fileName!);
-      effectiveFileName = fileName!;
-    } else {
-      pdfInfo = await this.storage.uploadPdfFromPath(pdfPath!);
-      effectiveFileName = path.basename(pdfPath!);
-    }
+    const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
 
     const fullMetadata: BookMetadata = {
       ...metadata,
-      title: metadata.title || path.basename(effectiveFileName, '.pdf'),
+      title: metadata.title || path.basename(fileName, '.pdf'),
       s3Key: pdfInfo.s3Key,
       s3Url: pdfInfo.url,
-      fileSize: isBuffer ? pdfBuffer!.length : pdfInfo.fileSize!,
+      fileSize: pdfBuffer.length,
       contentHash,
       dateAdded: new Date(),
       dateModified: new Date(),
@@ -227,31 +210,23 @@ export default class Library {
     // Convert to Markdown if MinerUPdfConvertor is available
     if (this.pdfConvertor) {
       try {
-        // For buffer input, we need to save it to a temporary file first
-        let conversionPath: string;
-        if (isBuffer) {
-          // Create a temporary file for conversion
-          const tempDir = require('os').tmpdir();
-          conversionPath = path.join(tempDir, `temp-pdf-${Date.now()}.pdf`);
-          fs.writeFileSync(conversionPath, pdfBuffer!);
-        } else {
-          conversionPath = pdfPath!;
-        }
+        // Create a temporary file for conversion
+        const tempDir = require('os').tmpdir();
+        const conversionPath = path.join(tempDir, `temp-pdf-${Date.now()}.pdf`);
+        fs.writeFileSync(conversionPath, pdfBuffer);
 
         console.log(`Converting PDF to Markdown: ${conversionPath}`);
         const conversionResult =
           await this.pdfConvertor.convertPdfToMarkdown(conversionPath);
 
-        // Clean up temporary file if we created one
-        if (isBuffer) {
-          try {
-            fs.unlinkSync(conversionPath);
-          } catch (error) {
-            console.warn(
-              `Failed to clean up temporary file: ${conversionPath}`,
-              error,
-            );
-          }
+        // Clean up temporary file
+        try {
+          fs.unlinkSync(conversionPath);
+        } catch (error) {
+          console.warn(
+            `Failed to clean up temporary file: ${conversionPath}`,
+            error,
+          );
         }
 
         if (conversionResult.success && conversionResult.data) {
@@ -297,37 +272,45 @@ export default class Library {
     return libraryItem;
   }
 
-  // /**
-  //  * Store an article with metadata
-  //  */
-  // async storeArticle(metadata: Partial<BookMetadata>): Promise<LibraryItem> {
-  //   // Generate hash from metadata fields
-  //   const contentHash = HashUtils.generateHashFromMetadata(metadata);
-
-  //   // Check if item with same hash already exists
-  //   const existingItem = await this.storage.getMetadataByHash(contentHash);
-  //   if (existingItem) {
-  //     console.log(
-  //       `Article with same content already exists (ID: ${existingItem.id}), returning existing item`,
-  //     );
-  //     return new LibraryItem(existingItem, this.storage);
-  //   }
-
-  //   const fullMetadata: BookMetadata = {
-  //     ...metadata,
-  //     title: metadata.title || 'Untitled Article',
-  //     contentHash,
-  //     dateAdded: new Date(),
-  //     dateModified: new Date(),
-  //     tags: metadata.tags || [],
-  //     collections: metadata.collections || [],
-  //     authors: metadata.authors || [],
-  //     fileType: 'article',
-  //   };
-
-  //   const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-  //   return new LibraryItem(savedMetadata, this.storage);
-  // }
+  async reExtractMarkdown(itemId?: string): Promise<void> {
+    try {
+      if (itemId) {
+        // Re-extract markdown for a specific item
+        const item = await this.getBook(itemId);
+        if (!item) {
+          throw new Error(`Item with ID ${itemId} not found`);
+        }
+        
+        console.log(`Re-extracting markdown for item: ${itemId}`);
+        await item.extractMarkdown();
+        console.log(`Successfully re-extracted markdown for item: ${itemId}`);
+      } else {
+        // Re-extract markdown for all items that have PDFs
+        console.log('Re-extracting markdown for all items with PDFs...');
+        
+        // Get all items with PDF files
+        const allItems = await this.searchItems({ fileType: ['pdf'] });
+        
+        for (const item of allItems) {
+          if (item.hasPdf()) {
+            try {
+              console.log(`Re-extracting markdown for item: ${item.metadata.id}`);
+              await item.extractMarkdown();
+              console.log(`Successfully re-extracted markdown for item: ${item.metadata.id}`);
+            } catch (error) {
+              console.error(`Failed to re-extract markdown for item ${item.metadata.id}:`, error);
+              // Continue with other items even if one fails
+            }
+          }
+        }
+        
+        console.log('Completed re-extraction of markdown for all items');
+      }
+    } catch (error) {
+      console.error('Error in reExtractMarkdown:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get a book by ID
@@ -465,14 +448,14 @@ export default class Library {
   async deleteItemsInCollection(collectionId: string): Promise<number> {
     const items = await this.searchItems({ collections: [collectionId] });
     let deletedCount = 0;
-    
+
     for (const item of items) {
       const success = await this.deleteBook(item.metadata.id!);
       if (success) {
         deletedCount++;
       }
     }
-    
+
     return deletedCount;
   }
 }
@@ -573,6 +556,55 @@ export class LibraryItem {
       await this.updateMetadata({ collections: this.metadata.collections });
     }
   }
+
+  async extractMarkdown(): Promise<void> {
+    // Check if this item has an associated PDF file
+    if (!this.hasPdf()) {
+      throw new Error('No PDF file associated with this item');
+    }
+
+    try {
+      // Get the PDF download URL
+      const pdfUrl = await this.getPdfDownloadUrl();
+      
+      // Create a new MinerUPdfConvertor instance
+      const pdfConvertor = createMinerUConvertorFromEnv();
+      
+      // Convert the PDF to markdown using the MinerUPdfConvertor
+      const conversionResult = await pdfConvertor.convertPdfToMarkdown(pdfUrl);
+      
+      if (!conversionResult.success) {
+        throw new Error(`Failed to convert PDF to markdown: ${conversionResult.error}`);
+      }
+
+      // Extract markdown content from the conversion result
+      let markdownContent = '';
+      
+      if (typeof conversionResult.data === 'string') {
+        markdownContent = conversionResult.data;
+      } else if (conversionResult.data && conversionResult.data.markdown) {
+        markdownContent = conversionResult.data.markdown;
+      } else if (conversionResult.data && conversionResult.data.content) {
+        markdownContent = conversionResult.data.content;
+      } else {
+        throw new Error('No markdown content found in conversion result');
+      }
+
+      // Save the markdown content to storage
+      await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
+      
+      // Update the metadata with the markdown content and timestamp
+      await this.updateMetadata({
+        markdownContent,
+        markdownUpdatedDate: new Date()
+      });
+
+      console.log(`Successfully extracted and saved markdown for item: ${this.metadata.id}`);
+    } catch (error) {
+      console.error(`Error extracting markdown for item ${this.metadata.id}:`, error);
+      throw error;
+    }
+  }
 }
 
 interface AbstractPdf {
@@ -589,7 +621,9 @@ export abstract class AbstractLibraryStorage {
   abstract uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
   abstract getPdfDownloadUrl(s3Key: string): Promise<string>;
   abstract getPdf(s3Key: string): Promise<Buffer>;
-  abstract saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}>;
+  abstract saveMetadata(
+    metadata: BookMetadata,
+  ): Promise<BookMetadata & { id: string }>;
   abstract getMetadata(id: string): Promise<BookMetadata | null>;
   abstract getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
   abstract updateMetadata(metadata: BookMetadata): Promise<void>;
@@ -715,7 +749,9 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     throw new Error('Direct PDF download not implemented');
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
+  async saveMetadata(
+    metadata: BookMetadata,
+  ): Promise<BookMetadata & { id: string }> {
     if (!metadata.id) {
       metadata.id = IdUtils.generateId();
     }
@@ -724,7 +760,7 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
       .collection(this.metadataCollection)
       .updateOne({ id: metadata.id }, { $set: metadata }, { upsert: true });
 
-    return metadata as BookMetadata & {id: string};
+    return metadata as BookMetadata & { id: string };
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {
@@ -874,29 +910,28 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     const result = await db
       .collection(this.metadataCollection)
       .deleteOne({ id });
-    
+
     // Also delete associated citations
     await this.deleteCitations(id);
-    
+
     return result.deletedCount > 0;
   }
 
   async deleteCollection(id: string): Promise<boolean> {
     const { db } = await connectToDatabase();
-    
+
     // First, remove this collection from all items
     await db
       .collection(this.metadataCollection)
-      .updateMany(
-        { collections: id },
-        { $pull: { collections: { $in: [id] } } } as any
-      );
-    
+      .updateMany({ collections: id }, {
+        $pull: { collections: { $in: [id] } },
+      } as any);
+
     // Then delete the collection
     const result = await db
       .collection(this.collectionsCollection)
       .deleteOne({ id });
-    
+
     return result.deletedCount > 0;
   }
 
@@ -905,7 +940,7 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     const result = await db
       .collection(this.citationsCollection)
       .deleteMany({ itemId });
-    
+
     return result.deletedCount > 0;
   }
 }
@@ -1125,7 +1160,9 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     throw new Error('Direct PDF download not implemented');
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
+  async saveMetadata(
+    metadata: BookMetadata,
+  ): Promise<BookMetadata & { id: string }> {
     await this.checkInitialized();
 
     if (!metadata.id) {
@@ -1139,7 +1176,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       refresh: true, // Refresh index to make document immediately available
     } as any);
 
-    return metadata as BookMetadata & {id: string};
+    return metadata as BookMetadata & { id: string };
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {

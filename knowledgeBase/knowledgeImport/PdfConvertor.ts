@@ -1,8 +1,5 @@
 import { MinerUPdfConvertor } from './MinerUPdfConvertor';
-
-export abstract class AbstractPdfConvertor {
-  abstract convertPdfToMarkdown(pdfPath: string);
-}
+import { AbstractPdfConvertor } from './AbstractPdfConvertor';
 
 /**
  * Factory function to create a MinerU PDF converter

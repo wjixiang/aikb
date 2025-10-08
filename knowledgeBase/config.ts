@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
-import { MinerUConfig, MinerUDefaultConfig } from './knowledgeImport/MinerUClient';
+import {
+  MinerUConfig,
+  MinerUDefaultConfig,
+} from './knowledgeImport/MinerUClient';
 dotenv.config();
 
 export interface AppConfig {
@@ -13,7 +16,7 @@ export interface AppConfig {
       password: string;
     };
   };
-  MinerU: MinerUConfig
+  MinerU: MinerUConfig;
 }
 
 export const app_config: AppConfig = {
@@ -23,20 +26,21 @@ export const app_config: AppConfig = {
       ? process.env.KAFKA_BROKERS.split(',')
       : ['kafka:9092'],
     ssl: process.env.KAFKA_SSL === 'true',
-    sasl: process.env.KAFKA_SASL_MECHANISM &&
+    sasl:
+      process.env.KAFKA_SASL_MECHANISM &&
       process.env.KAFKA_SASL_USERNAME &&
       process.env.KAFKA_SASL_PASSWORD
-      ? {
-        mechanism: process.env.KAFKA_SASL_MECHANISM as 'plain' |
-          'scram-sha-256' |
-          'scram-sha-512',
-        username: process.env.KAFKA_SASL_USERNAME,
-        password: process.env.KAFKA_SASL_PASSWORD,
-      }
-      : undefined,
+        ? {
+            mechanism: process.env.KAFKA_SASL_MECHANISM as
+              | 'plain'
+              | 'scram-sha-256'
+              | 'scram-sha-512',
+            username: process.env.KAFKA_SASL_USERNAME,
+            password: process.env.KAFKA_SASL_PASSWORD,
+          }
+        : undefined,
   },
   MinerU: {
-    ...MinerUDefaultConfig
-  }
+    ...MinerUDefaultConfig,
+  },
 };
-

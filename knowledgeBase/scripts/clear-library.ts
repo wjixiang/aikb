@@ -1,34 +1,26 @@
 #!/usr/bin/env tsx
 
-// 添加File polyfill以解决Node.js兼容性问题
-if (typeof global.File === 'undefined') {
-  (global as any).File = class File {
-    constructor(
-      public chunks: any[],
-      public name: string,
-      public options?: any
-    ) {}
-  };
-}
+// 导入polyfills以解决Node.js兼容性问题
+import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
 import { connectToDatabase } from '../lib/mongodb';
 import createLoggerWithPrefix from '../lib/logger';
 import readline from 'readline';
 import { config } from 'dotenv';
-config()
+config();
 
 /**
  * 测试辅助脚本：清空文献存储记录
- * 
+ *
  * 使用方法:
  * npx tsx knowledgeBase/scripts/clear-library.ts [options]
- * 
+ *
  * 选项:
  * --elasticsearch-only  仅清空Elasticsearch中的文献数据
  * --mongodb-only        仅清空MongoDB中的文献数据
  * --dry-run            预览将要删除的数据，不实际删除
- * 
+ *
  * 环境变量:
  * ELASTICSEARCH_URL - Elasticsearch服务器地址 (默认: http://elasticsearch:9200)
  * ELASTICSEARCH_URL_API_KEY - Elasticsearch API密钥 (可选)
@@ -133,7 +125,9 @@ async function getConfirmation(message: string): Promise<boolean> {
 /**
  * 获取MongoDB集合的文档数量
  */
-async function getMongoCollectionCount(collectionName: string): Promise<number> {
+async function getMongoCollectionCount(
+  collectionName: string,
+): Promise<number> {
   try {
     const { db } = await connectToDatabase();
     const count = await db.collection(collectionName).countDocuments();
@@ -149,7 +143,7 @@ async function getMongoCollectionCount(collectionName: string): Promise<number> 
  */
 async function getElasticsearchIndexCount(
   client: Client,
-  indexName: string
+  indexName: string,
 ): Promise<number> {
   try {
     const response = await client.count({ index: indexName });
@@ -165,7 +159,7 @@ async function getElasticsearchIndexCount(
  */
 async function clearMongoCollections(
   collections: string[],
-  dryRun: boolean = false
+  dryRun: boolean = false,
 ): Promise<void> {
   logger.info('开始清空MongoDB文献数据');
   const { db } = await connectToDatabase();
@@ -173,15 +167,17 @@ async function clearMongoCollections(
   for (const collectionName of collections) {
     try {
       const count = await getMongoCollectionCount(collectionName);
-      
+
       if (count > 0) {
         logger.info(`MongoDB集合 ${collectionName} 包含 ${count} 个文档`);
-        
+
         if (!dryRun) {
           await db.collection(collectionName).deleteMany({});
           logger.info(`已清空MongoDB集合: ${collectionName}`);
         } else {
-          logger.info(`[预览] 将清空MongoDB集合: ${collectionName} (${count} 个文档)`);
+          logger.info(
+            `[预览] 将清空MongoDB集合: ${collectionName} (${count} 个文档)`,
+          );
         }
       } else {
         logger.info(`MongoDB集合 ${collectionName} 为空，跳过`);
@@ -198,7 +194,7 @@ async function clearMongoCollections(
 async function clearElasticsearchIndexes(
   client: Client,
   indexes: string[],
-  dryRun: boolean = false
+  dryRun: boolean = false,
 ): Promise<void> {
   logger.info('开始清空Elasticsearch文献数据');
 
@@ -214,17 +210,19 @@ async function clearElasticsearchIndexes(
     if (existingIndices.includes(indexName)) {
       try {
         const count = await getElasticsearchIndexCount(client, indexName);
-        
+
         if (count > 0) {
           logger.info(`Elasticsearch索引 ${indexName} 包含 ${count} 个文档`);
-          
+
           if (!dryRun) {
             await client.indices.delete({
               index: indexName,
             });
             logger.info(`已删除Elasticsearch索引: ${indexName}`);
           } else {
-            logger.info(`[预览] 将删除Elasticsearch索引: ${indexName} (${count} 个文档)`);
+            logger.info(
+              `[预览] 将删除Elasticsearch索引: ${indexName} (${count} 个文档)`,
+            );
           }
         } else {
           logger.info(`Elasticsearch索引 ${indexName} 为空，跳过`);
@@ -239,14 +237,17 @@ async function clearElasticsearchIndexes(
 }
 
 async function clearLibraryData(options: ClearOptions): Promise<void> {
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   const apiKey = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
   // 确定要清空的数据源
   const clearElasticsearch = !options.mongodbOnly;
   const clearMongoDB = !options.elasticsearchOnly;
 
-  logger.info(`清空选项: Elasticsearch=${clearElasticsearch}, MongoDB=${clearMongoDB}`);
+  logger.info(
+    `清空选项: Elasticsearch=${clearElasticsearch}, MongoDB=${clearMongoDB}`,
+  );
 
   // 统计将要删除的数据
   let totalMongoDocs = 0;
@@ -307,7 +308,9 @@ async function clearLibraryData(options: ClearOptions): Promise<void> {
   }
 
   // 获取用户确认
-  const confirmed = await getConfirmation('确定要清空这些文献数据吗？此操作不可撤销！');
+  const confirmed = await getConfirmation(
+    '确定要清空这些文献数据吗？此操作不可撤销！',
+  );
   if (!confirmed) {
     logger.info('操作已取消');
     return;
@@ -325,7 +328,11 @@ async function clearLibraryData(options: ClearOptions): Promise<void> {
     });
 
     try {
-      await clearElasticsearchIndexes(client, ELASTICSEARCH_INDICES, options.dryRun);
+      await clearElasticsearchIndexes(
+        client,
+        ELASTICSEARCH_INDICES,
+        options.dryRun,
+      );
     } finally {
       await client.close();
     }
