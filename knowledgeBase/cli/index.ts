@@ -4,7 +4,10 @@ import { Command } from 'commander';
 import { createEntityCommand } from './commands/create-entity';
 import { createKnowledgeCommand } from './commands/create-knowledge';
 import { renderMarkdownCommand } from './commands/render-markdown';
-import { checkDatabaseConnection, displayDatabaseStatus } from './utils/storage';
+import {
+  checkDatabaseConnection,
+  displayDatabaseStatus,
+} from './utils/storage';
 import createLoggerWithPrefix from '../lib/logger';
 
 const logger = createLoggerWithPrefix('CLI-Main');
@@ -13,7 +16,9 @@ const program = new Command();
 
 program
   .name('knowledge-cli')
-  .description('CLI for creating and managing knowledge base entities and knowledge')
+  .description(
+    'CLI for creating and managing knowledge base entities and knowledge',
+  )
   .version('1.0.0');
 
 // Add status command
@@ -50,11 +55,11 @@ async function main() {
   try {
     // Log startup information
     logger.info('启动知识库CLI工具...');
-    
+
     // Get the command being executed
     const args = process.argv.slice(2);
     const command = args[0];
-    
+
     // Skip database connection check for status command
     if (command !== 'status') {
       logger.info('检查数据库连接...');

@@ -20,18 +20,20 @@ export async function createKafkaTopics(): Promise<boolean> {
       clientId: 'aikb-topic-setup',
       brokers: config.producer.brokers,
       ssl: config.producer.ssl,
-      sasl: config.producer.sasl ? {
-        mechanism: config.producer.sasl.mechanism as any,
-        username: config.producer.sasl.username,
-        password: config.producer.sasl.password,
-      } : undefined,
+      sasl: config.producer.sasl
+        ? {
+            mechanism: config.producer.sasl.mechanism as any,
+            username: config.producer.sasl.username,
+            password: config.producer.sasl.password,
+          }
+        : undefined,
       connectionTimeout: config.producer.connectionTimeout,
       requestTimeout: config.producer.requestTimeout,
       retry: config.producer.retry,
     });
 
     const admin = kafka.admin();
-    
+
     try {
       await admin.connect();
       logger.info('Connected to Kafka admin client');
@@ -42,10 +44,10 @@ export async function createKafkaTopics(): Promise<boolean> {
 
       // Create topics configuration
       const topicsToCreate = createTopicsConfig();
-      
+
       // Filter out topics that already exist
-      const newTopics = topicsToCreate.filter(topicConfig => 
-        !existingTopics.includes(topicConfig.topic)
+      const newTopics = topicsToCreate.filter(
+        (topicConfig) => !existingTopics.includes(topicConfig.topic),
       );
 
       if (newTopics.length === 0) {
@@ -54,7 +56,9 @@ export async function createKafkaTopics(): Promise<boolean> {
         return true;
       }
 
-      logger.info(`Creating ${newTopics.length} new topics: ${newTopics.map(t => t.topic).join(', ')}`);
+      logger.info(
+        `Creating ${newTopics.length} new topics: ${newTopics.map((t) => t.topic).join(', ')}`,
+      );
 
       // Create new topics
       await admin.createTopics({
@@ -63,20 +67,24 @@ export async function createKafkaTopics(): Promise<boolean> {
       });
 
       logger.info('Successfully created Kafka topics');
-      
+
       // Verify topics were created
       const updatedTopics = await admin.listTopics();
-      const createdTopics = newTopics.filter(topicConfig => 
-        updatedTopics.includes(topicConfig.topic)
+      const createdTopics = newTopics.filter((topicConfig) =>
+        updatedTopics.includes(topicConfig.topic),
       );
 
       if (createdTopics.length === newTopics.length) {
-        logger.info(`All topics created successfully: ${createdTopics.map(t => t.topic).join(', ')}`);
-      } else {
-        const failedTopics = newTopics.filter(topicConfig => 
-          !updatedTopics.includes(topicConfig.topic)
+        logger.info(
+          `All topics created successfully: ${createdTopics.map((t) => t.topic).join(', ')}`,
         );
-        logger.error(`Failed to create topics: ${failedTopics.map(t => t.topic).join(', ')}`);
+      } else {
+        const failedTopics = newTopics.filter(
+          (topicConfig) => !updatedTopics.includes(topicConfig.topic),
+        );
+        logger.error(
+          `Failed to create topics: ${failedTopics.map((t) => t.topic).join(', ')}`,
+        );
       }
 
       await admin.disconnect();
@@ -107,28 +115,30 @@ export async function deleteKafkaTopics(): Promise<boolean> {
       clientId: 'aikb-topic-cleanup',
       brokers: config.producer.brokers,
       ssl: config.producer.ssl,
-      sasl: config.producer.sasl ? {
-        mechanism: config.producer.sasl.mechanism as any,
-        username: config.producer.sasl.username,
-        password: config.producer.sasl.password,
-      } : undefined,
+      sasl: config.producer.sasl
+        ? {
+            mechanism: config.producer.sasl.mechanism as any,
+            username: config.producer.sasl.username,
+            password: config.producer.sasl.password,
+          }
+        : undefined,
       connectionTimeout: config.producer.connectionTimeout,
       requestTimeout: config.producer.requestTimeout,
       retry: config.producer.retry,
     });
 
     const admin = kafka.admin();
-    
+
     try {
       await admin.connect();
       logger.info('Connected to Kafka admin client for cleanup');
 
       // Get existing topics
       const existingTopics = await admin.listTopics();
-      
+
       // Filter for our application topics
-      const topicsToDelete = Object.values(KAFKA_TOPICS).filter(topic => 
-        existingTopics.includes(topic)
+      const topicsToDelete = Object.values(KAFKA_TOPICS).filter((topic) =>
+        existingTopics.includes(topic),
       );
 
       if (topicsToDelete.length === 0) {
@@ -137,7 +147,9 @@ export async function deleteKafkaTopics(): Promise<boolean> {
         return true;
       }
 
-      logger.info(`Deleting ${topicsToDelete.length} topics: ${topicsToDelete.join(', ')}`);
+      logger.info(
+        `Deleting ${topicsToDelete.length} topics: ${topicsToDelete.join(', ')}`,
+      );
 
       // Delete topics
       await admin.deleteTopics({
@@ -145,7 +157,7 @@ export async function deleteKafkaTopics(): Promise<boolean> {
       });
 
       logger.info('Successfully deleted Kafka topics');
-      
+
       await admin.disconnect();
       return true;
     } catch (error) {
@@ -174,29 +186,31 @@ export async function checkKafkaTopics(): Promise<boolean> {
       clientId: 'aikb-topic-check',
       brokers: config.producer.brokers,
       ssl: config.producer.ssl,
-      sasl: config.producer.sasl ? {
-        mechanism: config.producer.sasl.mechanism as any,
-        username: config.producer.sasl.username,
-        password: config.producer.sasl.password,
-      } : undefined,
+      sasl: config.producer.sasl
+        ? {
+            mechanism: config.producer.sasl.mechanism as any,
+            username: config.producer.sasl.username,
+            password: config.producer.sasl.password,
+          }
+        : undefined,
       connectionTimeout: config.producer.connectionTimeout,
       requestTimeout: config.producer.requestTimeout,
       retry: config.producer.retry,
     });
 
     const admin = kafka.admin();
-    
+
     try {
       await admin.connect();
       logger.info('Connected to Kafka admin client for topic check');
 
       // Get existing topics
       const existingTopics = await admin.listTopics();
-      
+
       // Check if all required topics exist
       const requiredTopics = Object.values(KAFKA_TOPICS);
-      const missingTopics = requiredTopics.filter(topic => 
-        !existingTopics.includes(topic)
+      const missingTopics = requiredTopics.filter(
+        (topic) => !existingTopics.includes(topic),
       );
 
       if (missingTopics.length === 0) {

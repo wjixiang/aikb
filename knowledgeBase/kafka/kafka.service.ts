@@ -1,6 +1,16 @@
-import { KafkaProducerService, initializeKafkaProducer } from './kafka-producer.service';
-import { KafkaConsumerService, initializeKafkaConsumer, KafkaConsumerFactory } from './kafka-consumer.service';
-import { KafkaEntityStorage, KafkaEntityProcessorFactory } from './kafka-entity-storage';
+import {
+  KafkaProducerService,
+  initializeKafkaProducer,
+} from './kafka-producer.service';
+import {
+  KafkaConsumerService,
+  initializeKafkaConsumer,
+  KafkaConsumerFactory,
+} from './kafka-consumer.service';
+import {
+  KafkaEntityStorage,
+  KafkaEntityProcessorFactory,
+} from './kafka-entity-storage';
 import { getValidatedKafkaConfig } from './kafka.config';
 import {
   AbstractEntityContentStorage,
@@ -48,15 +58,15 @@ export class KafkaService {
 
       // Initialize consumers
       this.contentConsumer = await initializeKafkaConsumer(
-        KafkaConsumerFactory.createEntityContentProcessor(config.consumer)
+        KafkaConsumerFactory.createEntityContentProcessor(config.consumer),
       );
-      
+
       this.graphConsumer = await initializeKafkaConsumer(
-        KafkaConsumerFactory.createEntityGraphProcessor(config.consumer)
+        KafkaConsumerFactory.createEntityGraphProcessor(config.consumer),
       );
-      
+
       this.vectorConsumer = await initializeKafkaConsumer(
-        KafkaConsumerFactory.createEntityVectorProcessor(config.consumer)
+        KafkaConsumerFactory.createEntityVectorProcessor(config.consumer),
       );
 
       logger.info('Kafka consumers initialized');
@@ -86,14 +96,15 @@ export class KafkaService {
 
     try {
       // Start all processors
-      this.processors = await KafkaEntityProcessorFactory.createAndStartProcessors(
-        this.contentConsumer,
-        this.graphConsumer,
-        this.vectorConsumer,
-        this.entityContentStorage,
-        this.entityGraphStorage,
-        this.entityVectorStorage,
-      );
+      this.processors =
+        await KafkaEntityProcessorFactory.createAndStartProcessors(
+          this.contentConsumer,
+          this.graphConsumer,
+          this.vectorConsumer,
+          this.entityContentStorage,
+          this.entityGraphStorage,
+          this.entityVectorStorage,
+        );
 
       logger.info('All Kafka processors started');
     } catch (error) {
@@ -108,7 +119,11 @@ export class KafkaService {
   async stop(): Promise<void> {
     try {
       // Stop all processors
-      if (this.processors.contentProcessor && this.processors.graphProcessor && this.processors.vectorProcessor) {
+      if (
+        this.processors.contentProcessor &&
+        this.processors.graphProcessor &&
+        this.processors.vectorProcessor
+      ) {
         await KafkaEntityProcessorFactory.stopProcessors(
           this.processors.contentProcessor,
           this.processors.graphProcessor,
@@ -163,17 +178,24 @@ export class KafkaService {
    * Check if the service is initialized
    */
   isInitialized(): boolean {
-    return !!(this.producer && this.contentConsumer && this.graphConsumer && this.vectorConsumer);
+    return !!(
+      this.producer &&
+      this.contentConsumer &&
+      this.graphConsumer &&
+      this.vectorConsumer
+    );
   }
 
   /**
    * Check if the service is running
    */
   isRunning(): boolean {
-    return !!(this.producer?.isProducerConnected() && 
-              this.contentConsumer?.isConsumerRunning() && 
-              this.graphConsumer?.isConsumerRunning() && 
-              this.vectorConsumer?.isConsumerRunning());
+    return !!(
+      this.producer?.isProducerConnected() &&
+      this.contentConsumer?.isConsumerRunning() &&
+      this.graphConsumer?.isConsumerRunning() &&
+      this.vectorConsumer?.isConsumerRunning()
+    );
   }
 
   /**
@@ -195,7 +217,9 @@ export class KafkaService {
       vectorConsumer: this.vectorConsumer?.isConsumerConnected() ?? false,
     };
 
-    const status = Object.values(details).every(connected => connected) ? 'healthy' : 'unhealthy';
+    const status = Object.values(details).every((connected) => connected)
+      ? 'healthy'
+      : 'unhealthy';
 
     return { status, details };
   }
@@ -216,7 +240,9 @@ export function getKafkaService(
 ): KafkaService | null {
   if (!kafkaServiceInstance) {
     if (!entityContentStorage || !entityGraphStorage || !entityVectorStorage) {
-      throw new Error('All storage implementations are required for first initialization');
+      throw new Error(
+        'All storage implementations are required for first initialization',
+      );
     }
     kafkaServiceInstance = new KafkaService(
       entityContentStorage,
@@ -235,15 +261,19 @@ export async function initializeAndStartKafkaService(
   entityGraphStorage: AbstractEntityGraphStorage,
   entityVectorStorage: AbstractEntityVectorStorage,
 ): Promise<KafkaService> {
-  const service = getKafkaService(entityContentStorage, entityGraphStorage, entityVectorStorage);
-  
+  const service = getKafkaService(
+    entityContentStorage,
+    entityGraphStorage,
+    entityVectorStorage,
+  );
+
   if (!service) {
     throw new Error('Failed to create Kafka service instance');
   }
 
   await service.initialize();
   await service.start();
-  
+
   return service;
 }
 

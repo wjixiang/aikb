@@ -47,13 +47,13 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
    */
   async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     const entityId = AbstractEntityStorage.generate_entity_id();
-    
+
     try {
       // Send entity created event to Kafka
       await this.kafkaProducer.sendEntityCreatedEvent(entityId, entity);
-      
+
       logger.info(`Entity creation event sent for ID: ${entityId}`);
-      
+
       // Return the entity with ID immediately (async processing will handle storage)
       return {
         ...entity,
@@ -68,13 +68,20 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
   /**
    * Update an entity by publishing an event to Kafka
    */
-  async update_entity(oldEntity: EntityDataWithId, newEntityData: EntityData): Promise<EntityDataWithId> {
+  async update_entity(
+    oldEntity: EntityDataWithId,
+    newEntityData: EntityData,
+  ): Promise<EntityDataWithId> {
     try {
       // Send entity updated event to Kafka
-      await this.kafkaProducer.sendEntityUpdatedEvent(oldEntity.id, oldEntity, newEntityData);
-      
+      await this.kafkaProducer.sendEntityUpdatedEvent(
+        oldEntity.id,
+        oldEntity,
+        newEntityData,
+      );
+
       logger.info(`Entity update event sent for ID: ${oldEntity.id}`);
-      
+
       // Return the updated entity immediately (async processing will handle storage)
       return {
         ...newEntityData,
@@ -92,8 +99,9 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
   async delete_entity(entityId: string): Promise<boolean> {
     try {
       // First get the entity data to include in the event
-      const entityData = await this.entityContentStorage.get_entity_by_id(entityId);
-      
+      const entityData =
+        await this.entityContentStorage.get_entity_by_id(entityId);
+
       if (!entityData) {
         logger.warn(`Entity not found for deletion: ${entityId}`);
         return false;
@@ -101,7 +109,7 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
 
       // Send entity deleted event to Kafka
       await this.kafkaProducer.sendEntityDeletedEvent(entityId, entityData);
-      
+
       logger.info(`Entity deletion event sent for ID: ${entityId}`);
       return true;
     } catch (error) {
@@ -121,9 +129,16 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
   ): Promise<void> {
     try {
       // Send entity relation created event to Kafka
-      await this.kafkaProducer.sendEntityRelationCreatedEvent(sourceId, targetId, relationType, properties);
-      
-      logger.info(`Entity relation creation event sent: ${sourceId} -> ${targetId} (${relationType})`);
+      await this.kafkaProducer.sendEntityRelationCreatedEvent(
+        sourceId,
+        targetId,
+        relationType,
+        properties,
+      );
+
+      logger.info(
+        `Entity relation creation event sent: ${sourceId} -> ${targetId} (${relationType})`,
+      );
     } catch (error) {
       logger.error('Failed to send entity relation creation event:', error);
       throw error;
@@ -133,11 +148,19 @@ export class KafkaEntityStorage extends AbstractEntityStorage {
   /**
    * Generate and store vector for an entity by publishing an event to Kafka
    */
-  async generate_entity_vector(entityId: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async generate_entity_vector(
+    entityId: string,
+    vector: number[],
+    metadata?: Record<string, any>,
+  ): Promise<void> {
     try {
       // Send entity vector generated event to Kafka
-      await this.kafkaProducer.sendEntityVectorGeneratedEvent(entityId, vector, metadata);
-      
+      await this.kafkaProducer.sendEntityVectorGeneratedEvent(
+        entityId,
+        vector,
+        metadata,
+      );
+
       logger.info(`Entity vector generation event sent for ID: ${entityId}`);
     } catch (error) {
       logger.error('Failed to send entity vector generation event:', error);
@@ -161,38 +184,50 @@ export class EntityContentProcessor {
     // Handle entity creation
     this.consumer.registerEventHandler<EntityCreatedEvent>(
       'ENTITY_CREATED',
-      this.handleEntityCreated.bind(this)
+      this.handleEntityCreated.bind(this),
     );
 
     // Handle entity updates
     this.consumer.registerEventHandler<EntityUpdatedEvent>(
       'ENTITY_UPDATED',
-      this.handleEntityUpdated.bind(this)
+      this.handleEntityUpdated.bind(this),
     );
 
     // Handle entity deletion
     this.consumer.registerEventHandler<EntityDeletedEvent>(
       'ENTITY_DELETED',
-      this.handleEntityDeleted.bind(this)
+      this.handleEntityDeleted.bind(this),
     );
   }
 
   private async handleEntityCreated(event: EntityCreatedEvent): Promise<void> {
     try {
-      await this.entityContentStorage.create_new_entity_content(event.entityData, event.entityId);
+      await this.entityContentStorage.create_new_entity_content(
+        event.entityData,
+        event.entityId,
+      );
       logger.info(`Entity content stored for ID: ${event.entityId}`);
     } catch (error) {
-      logger.error(`Failed to store entity content for ID: ${event.entityId}`, error);
+      logger.error(
+        `Failed to store entity content for ID: ${event.entityId}`,
+        error,
+      );
       throw error;
     }
   }
 
   private async handleEntityUpdated(event: EntityUpdatedEvent): Promise<void> {
     try {
-      await this.entityContentStorage.update_entity(event.oldEntityData, event.newEntityData);
+      await this.entityContentStorage.update_entity(
+        event.oldEntityData,
+        event.newEntityData,
+      );
       logger.info(`Entity content updated for ID: ${event.entityId}`);
     } catch (error) {
-      logger.error(`Failed to update entity content for ID: ${event.entityId}`, error);
+      logger.error(
+        `Failed to update entity content for ID: ${event.entityId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -202,7 +237,10 @@ export class EntityContentProcessor {
       await this.entityContentStorage.delete_entity_by_id(event.entityId);
       logger.info(`Entity content deleted for ID: ${event.entityId}`);
     } catch (error) {
-      logger.error(`Failed to delete entity content for ID: ${event.entityId}`, error);
+      logger.error(
+        `Failed to delete entity content for ID: ${event.entityId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -241,21 +279,28 @@ export class EntityGraphProcessor {
     // Handle entity relation creation
     this.consumer.registerEventHandler<EntityRelationCreatedEvent>(
       'ENTITY_RELATION_CREATED',
-      this.handleRelationCreated.bind(this)
+      this.handleRelationCreated.bind(this),
     );
   }
 
-  private async handleRelationCreated(event: EntityRelationCreatedEvent): Promise<void> {
+  private async handleRelationCreated(
+    event: EntityRelationCreatedEvent,
+  ): Promise<void> {
     try {
       await this.entityGraphStorage.create_relation(
         event.sourceId,
         event.targetId,
         event.relationType,
-        event.properties
+        event.properties,
       );
-      logger.info(`Entity relation stored: ${event.sourceId} -> ${event.targetId} (${event.relationType})`);
+      logger.info(
+        `Entity relation stored: ${event.sourceId} -> ${event.targetId} (${event.relationType})`,
+      );
     } catch (error) {
-      logger.error(`Failed to store entity relation: ${event.sourceId} -> ${event.targetId}`, error);
+      logger.error(
+        `Failed to store entity relation: ${event.sourceId} -> ${event.targetId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -294,16 +339,25 @@ export class EntityVectorProcessor {
     // Handle entity vector generation
     this.consumer.registerEventHandler<EntityVectorGeneratedEvent>(
       'ENTITY_VECTOR_GENERATED',
-      this.handleVectorGenerated.bind(this)
+      this.handleVectorGenerated.bind(this),
     );
   }
 
-  private async handleVectorGenerated(event: EntityVectorGeneratedEvent): Promise<void> {
+  private async handleVectorGenerated(
+    event: EntityVectorGeneratedEvent,
+  ): Promise<void> {
     try {
-      await this.entityVectorStorage.store_vector(event.entityId, event.vector, event.metadata);
+      await this.entityVectorStorage.store_vector(
+        event.entityId,
+        event.vector,
+        event.metadata,
+      );
       logger.info(`Entity vector stored for ID: ${event.entityId}`);
     } catch (error) {
-      logger.error(`Failed to store entity vector for ID: ${event.entityId}`, error);
+      logger.error(
+        `Failed to store entity vector for ID: ${event.entityId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -346,9 +400,18 @@ export class KafkaEntityProcessorFactory {
     graphProcessor: EntityGraphProcessor;
     vectorProcessor: EntityVectorProcessor;
   }> {
-    const contentProcessor = new EntityContentProcessor(contentConsumer, entityContentStorage);
-    const graphProcessor = new EntityGraphProcessor(graphConsumer, entityGraphStorage);
-    const vectorProcessor = new EntityVectorProcessor(vectorConsumer, entityVectorStorage);
+    const contentProcessor = new EntityContentProcessor(
+      contentConsumer,
+      entityContentStorage,
+    );
+    const graphProcessor = new EntityGraphProcessor(
+      graphConsumer,
+      entityGraphStorage,
+    );
+    const vectorProcessor = new EntityVectorProcessor(
+      vectorConsumer,
+      entityVectorStorage,
+    );
 
     // Start all processors
     await Promise.all([

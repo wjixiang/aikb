@@ -22,7 +22,7 @@ export class EntityExtractor {
       return entity;
     } catch (error) {
       this.logger.warn('BAML client failed, using fallback extraction', error);
-      
+
       // Fallback extraction when BAML client fails
       return this.extractMainEntityFallback(text);
     }
@@ -35,33 +35,42 @@ export class EntityExtractor {
    */
   private extractMainEntityFallback(text: string): EntityExtractResult {
     this.logger.info('Using fallback entity extraction');
-    
+
     // Simple heuristic extraction
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
     // Look for the first non-empty line that looks like a title/heading
     for (const line of lines) {
       // Check if line ends with colon or looks like a heading
       if (line.endsWith(':') || /^[A-Z\u4e00-\u9fff]/.test(line)) {
         const title = line.replace(/:$/, '').trim();
-        const content = lines.slice(lines.indexOf(line) + 1).join(' ').trim();
-        
+        const content = lines
+          .slice(lines.indexOf(line) + 1)
+          .join(' ')
+          .trim();
+
         return {
           name: title,
           category: 'General',
-          abstract: content.substring(0, 200) + (content.length > 200 ? '...' : '')
+          abstract:
+            content.substring(0, 200) + (content.length > 200 ? '...' : ''),
         };
       }
     }
-    
+
     // If no clear heading found, use the first line as title
     const firstLine = lines[0] || 'Unknown Entity';
     const remainingContent = lines.slice(1).join(' ').trim();
-    
+
     return {
       name: firstLine,
       category: 'General',
-      abstract: remainingContent.substring(0, 200) + (remainingContent.length > 200 ? '...' : '')
+      abstract:
+        remainingContent.substring(0, 200) +
+        (remainingContent.length > 200 ? '...' : ''),
     };
   }
 
@@ -71,22 +80,27 @@ export class EntityExtractor {
    * @param mainEntityName The main entity name to filter related entities
    * @returns Promise resolving to array of related entities
    */
-  async extractRelatedEntities(text: string, mainEntityName?: string): Promise<EntityExtractResult[]> {
-    this.logger.info('Extracting related entities', { 
+  async extractRelatedEntities(
+    text: string,
+    mainEntityName?: string,
+  ): Promise<EntityExtractResult[]> {
+    this.logger.info('Extracting related entities', {
       textLength: text.length,
-      mainEntityName 
+      mainEntityName,
     });
 
     try {
       // For now, we'll use the main entity extraction multiple times
       // In a more advanced implementation, this could use a different BAML function
       const mainEntity = await this.extractMainEntity(text);
-      
+
       // Return the main entity as the only related entity for now
       // This could be enhanced to extract multiple entities in the future
       const relatedEntities = [mainEntity];
-      
-      this.logger.info('Related entities extracted', { count: relatedEntities.length });
+
+      this.logger.info('Related entities extracted', {
+        count: relatedEntities.length,
+      });
       return relatedEntities;
     } catch (error) {
       this.logger.error('Error extracting related entities', error);
@@ -103,15 +117,17 @@ export class EntityExtractor {
   async extractRelationships(
     text: string,
     entities: EntityExtractResult[],
-  ): Promise<Array<{
-    source: string;
-    target: string;
-    relationType: string;
-    confidence: number;
-  }>> {
-    this.logger.info('Extracting relationships', { 
+  ): Promise<
+    Array<{
+      source: string;
+      target: string;
+      relationType: string;
+      confidence: number;
+    }>
+  > {
+    this.logger.info('Extracting relationships', {
       textLength: text.length,
-      entityCount: entities.length 
+      entityCount: entities.length,
     });
 
     try {
@@ -126,32 +142,38 @@ export class EntityExtractor {
 
       // Simple heuristic: if entity names appear close together in text, they might be related
       const words = text.toLowerCase().split(/\s+/);
-      
+
       for (let i = 0; i < entities.length; i++) {
         for (let j = i + 1; j < entities.length; j++) {
           const entity1 = entities[i].name.toLowerCase();
           const entity2 = entities[j].name.toLowerCase();
-          
-          const entity1Index = words.findIndex(word => word.includes(entity1));
-          const entity2Index = words.findIndex(word => word.includes(entity2));
-          
+
+          const entity1Index = words.findIndex((word) =>
+            word.includes(entity1),
+          );
+          const entity2Index = words.findIndex((word) =>
+            word.includes(entity2),
+          );
+
           if (entity1Index !== -1 && entity2Index !== -1) {
             const distance = Math.abs(entity1Index - entity2Index);
-            
+
             // If entities are close in the text, consider them related
             if (distance < 20) {
               relationships.push({
                 source: entities[i].name,
                 target: entities[j].name,
                 relationType: 'related_to',
-                confidence: Math.max(0.1, 1 - (distance / 20)),
+                confidence: Math.max(0.1, 1 - distance / 20),
               });
             }
           }
         }
       }
 
-      this.logger.info('Relationships extracted', { count: relationships.length });
+      this.logger.info('Relationships extracted', {
+        count: relationships.length,
+      });
       return relationships;
     } catch (error) {
       this.logger.error('Error extracting relationships', error);
@@ -164,12 +186,14 @@ export class EntityExtractor {
    * @param text The text to analyze
    * @returns Promise resolving to array of potential sections
    */
-  async analyzeTextStructure(text: string): Promise<Array<{
-    title: string;
-    content: string;
-    startPosition: number;
-    endPosition: number;
-  }>> {
+  async analyzeTextStructure(text: string): Promise<
+    Array<{
+      title: string;
+      content: string;
+      startPosition: number;
+      endPosition: number;
+    }>
+  > {
     this.logger.info('Analyzing text structure', { textLength: text.length });
 
     try {
@@ -193,23 +217,24 @@ export class EntityExtractor {
 
       for (const line of lines) {
         const trimmedLine = line.trim();
-        
+
         // Check if this line looks like a heading
-        if (trimmedLine.length > 0 && (
-          trimmedLine.endsWith(':') ||
-          /^[A-Z]/.test(trimmedLine) ||
-          trimmedLine.length < 50
-        )) {
+        if (
+          trimmedLine.length > 0 &&
+          (trimmedLine.endsWith(':') ||
+            /^[A-Z]/.test(trimmedLine) ||
+            trimmedLine.length < 50)
+        ) {
           // Save previous section if it exists
           if (currentSection) {
             currentSection.endPosition = currentPosition;
             sections.push(currentSection);
           }
-          
+
           // Start new section - extract only the title part before the colon
           const titleMatch = trimmedLine.match(/^([^:]+):?/);
           const title = titleMatch ? titleMatch[1].trim() : trimmedLine;
-          
+
           currentSection = {
             title: title,
             content: '',
@@ -220,7 +245,7 @@ export class EntityExtractor {
           // Add content to current section
           currentSection.content += line + '\n';
         }
-        
+
         currentPosition += line.length + 1; // +1 for newline
       }
 
@@ -230,7 +255,9 @@ export class EntityExtractor {
         sections.push(currentSection);
       }
 
-      this.logger.info('Text structure analyzed', { sectionCount: sections.length });
+      this.logger.info('Text structure analyzed', {
+        sectionCount: sections.length,
+      });
       return sections;
     } catch (error) {
       this.logger.error('Error analyzing text structure', error);

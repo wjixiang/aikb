@@ -20,12 +20,15 @@
     "coverage": "vitest run --coverage",
     "baml:generate": "pnpm exec baml-cli generate",
     "doc": "npx typedoc --entryPointStrategy Expand ./knowledgeBase",
-    "cli": "node knowledgeBase/cli/simple-cli.js"
+    "cli": "node knowledgeBase/cli/simple-cli.js",
+    "clear:elasticsearch": "npx tsx knowledgeBase/scripts/clear-elasticsearch.ts",
+    "clear:elasticsearch:advanced": "npx tsx knowledgeBase/scripts/clear-elasticsearch-advanced.ts",
+    "clear:library": "npx tsx knowledgeBase/scripts/clear-library.ts",
+    "test:clear:elasticsearch": "npx tsx knowledgeBase/scripts/test-clear-elasticsearch.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/s3-request-presigner": "^3.901.0",
-    "@boundaryml/baml": "^0.209.0",
     "@elastic/elasticsearch": "^9.1.1",
     "@inquirer/prompts": "^7.8.6",
     "@nestjs/common": "^11.0.1",
@@ -42,9 +45,11 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "uuid": "^13.0.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "yauzl": "^3.2.0"
   },
   "devDependencies": {
+    "@boundaryml/baml": "^0.211.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -54,6 +59,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "@types/yauzl": "^2.10.3",
     "@vitest/coverage-v8": "3.2.4",
     "commitizen": "^4.3.1",
     "eslint": "^9.18.0",

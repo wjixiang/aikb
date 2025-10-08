@@ -64,7 +64,7 @@ describe('ElasticsearchEntityContentStorage Integration Tests', () => {
 
   beforeAll(async () => {
     // Connect to ElasticSearch
-    const esUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+    const esUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
 
     // Check if ElasticSearch is available
     elasticSearchAvailable = await isElasticSearchAvailable(esUrl);

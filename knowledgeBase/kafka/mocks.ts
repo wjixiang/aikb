@@ -1,4 +1,8 @@
-import { AbstractEntityContentStorage, AbstractEntityGraphStorage, AbstractEntityVectorStorage } from '../storage/abstract-storage';
+import {
+  AbstractEntityContentStorage,
+  AbstractEntityGraphStorage,
+  AbstractEntityVectorStorage,
+} from '../storage/abstract-storage';
 import { EntityData, EntityDataWithId } from '../knowledge.type';
 
 /**
@@ -7,7 +11,10 @@ import { EntityData, EntityDataWithId } from '../knowledge.type';
 export class MockEntityContentStorage extends AbstractEntityContentStorage {
   private entities: Map<string, EntityDataWithId> = new Map();
 
-  async create_new_entity_content(entity: EntityData, id: string): Promise<EntityDataWithId> {
+  async create_new_entity_content(
+    entity: EntityData,
+    id: string,
+  ): Promise<EntityDataWithId> {
     const entityWithId = { ...entity, id };
     this.entities.set(id, entityWithId);
     return entityWithId;
@@ -26,7 +33,10 @@ export class MockEntityContentStorage extends AbstractEntityContentStorage {
     return this.entities.get(id) || null;
   }
 
-  async update_entity(oldEntity: EntityDataWithId, newEntityData: EntityData): Promise<EntityDataWithId> {
+  async update_entity(
+    oldEntity: EntityDataWithId,
+    newEntityData: EntityData,
+  ): Promise<EntityDataWithId> {
     const updatedEntity = { ...newEntityData, id: oldEntity.id };
     this.entities.set(oldEntity.id, updatedEntity);
     return updatedEntity;
@@ -41,9 +51,13 @@ export class MockEntityContentStorage extends AbstractEntityContentStorage {
     const results: EntityData[] = [];
     for (const entity of this.entities.values()) {
       if (
-        entity.name.some(name => name.toLowerCase().includes(query.toLowerCase())) ||
+        entity.name.some((name) =>
+          name.toLowerCase().includes(query.toLowerCase()),
+        ) ||
         entity.definition.toLowerCase().includes(query.toLowerCase()) ||
-        entity.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
+        entity.tags.some((tag) =>
+          tag.toLowerCase().includes(query.toLowerCase()),
+        )
       ) {
         const { id, ...entityData } = entity;
         results.push(entityData);
@@ -100,15 +114,18 @@ export class MockEntityGraphStorage extends AbstractEntityGraphStorage {
   async get_entity_relations(
     entityId: string,
     relationType?: string,
-  ): Promise<Array<{
-    sourceId: string;
-    targetId: string;
-    relationType: string;
-    properties?: Record<string, any>;
-  }>> {
-    return this.relations.filter(r => 
-      (r.sourceId === entityId || r.targetId === entityId) &&
-      (!relationType || r.relationType === relationType)
+  ): Promise<
+    Array<{
+      sourceId: string;
+      targetId: string;
+      relationType: string;
+      properties?: Record<string, any>;
+    }>
+  > {
+    return this.relations.filter(
+      (r) =>
+        (r.sourceId === entityId || r.targetId === entityId) &&
+        (!relationType || r.relationType === relationType),
     );
   }
 
@@ -118,8 +135,11 @@ export class MockEntityGraphStorage extends AbstractEntityGraphStorage {
     relationType: string,
     properties: Record<string, any>,
   ): Promise<void> {
-    const relation = this.relations.find(r => 
-      r.sourceId === sourceId && r.targetId === targetId && r.relationType === relationType
+    const relation = this.relations.find(
+      (r) =>
+        r.sourceId === sourceId &&
+        r.targetId === targetId &&
+        r.relationType === relationType,
     );
     if (relation) {
       relation.properties = properties;
@@ -131,8 +151,11 @@ export class MockEntityGraphStorage extends AbstractEntityGraphStorage {
     targetId: string,
     relationType: string,
   ): Promise<boolean> {
-    const index = this.relations.findIndex(r => 
-      r.sourceId === sourceId && r.targetId === targetId && r.relationType === relationType
+    const index = this.relations.findIndex(
+      (r) =>
+        r.sourceId === sourceId &&
+        r.targetId === targetId &&
+        r.relationType === relationType,
     );
     if (index !== -1) {
       this.relations.splice(index, 1);
@@ -166,10 +189,13 @@ export class MockEntityGraphStorage extends AbstractEntityGraphStorage {
  * Mock implementation of EntityVectorStorage for testing and examples
  */
 export class MockEntityVectorStorage extends AbstractEntityVectorStorage {
-  private vectors: Map<string, {
-    vector: number[];
-    metadata?: Record<string, any>;
-  }> = new Map();
+  private vectors: Map<
+    string,
+    {
+      vector: number[];
+      metadata?: Record<string, any>;
+    }
+  > = new Map();
 
   async store_vector(
     entityId: string,
@@ -202,11 +228,13 @@ export class MockEntityVectorStorage extends AbstractEntityVectorStorage {
     vector: number[],
     limit?: number,
     threshold?: number,
-  ): Promise<Array<{
-    entityId: string;
-    similarity: number;
-    metadata?: Record<string, any>;
-  }>> {
+  ): Promise<
+    Array<{
+      entityId: string;
+      similarity: number;
+      metadata?: Record<string, any>;
+    }>
+  > {
     // Simple mock implementation - returns empty array
     // In a real implementation, this would use vector similarity algorithms
     return [];
@@ -249,7 +277,9 @@ export function createMockStorages() {
 /**
  * Helper function to create test entity data
  */
-export function createTestEntityData(overrides: Partial<EntityData> = {}): EntityData {
+export function createTestEntityData(
+  overrides: Partial<EntityData> = {},
+): EntityData {
   return {
     name: ['Test Entity'],
     tags: ['test'],

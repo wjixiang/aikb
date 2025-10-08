@@ -1,11 +1,17 @@
-import { KafkaConfig, KafkaProducerConfig, KafkaConsumerConfig } from './kafka.types';
+import {
+  KafkaConfig,
+  KafkaProducerConfig,
+  KafkaConsumerConfig,
+} from './kafka.types';
 
 /**
  * Default Kafka configuration
  */
 export const defaultKafkaConfig: KafkaConfig = {
   clientId: 'aikb-kafka-client',
-  brokers: process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(',') : ['kafka:9092'],
+  brokers: process.env.KAFKA_BROKERS
+    ? process.env.KAFKA_BROKERS.split(',')
+    : ['kafka:9092'],
   ssl: process.env.KAFKA_SSL === 'true',
   connectionTimeout: parseInt(process.env.KAFKA_CONNECTION_TIMEOUT || '10000'),
   requestTimeout: parseInt(process.env.KAFKA_REQUEST_TIMEOUT || '30000'),
@@ -13,11 +19,19 @@ export const defaultKafkaConfig: KafkaConfig = {
     initialRetryTime: parseInt(process.env.KAFKA_RETRY_INITIAL_TIME || '100'),
     retries: parseInt(process.env.KAFKA_RETRY_COUNT || '8'),
   },
-  sasl: process.env.KAFKA_SASL_MECHANISM && process.env.KAFKA_SASL_USERNAME && process.env.KAFKA_SASL_PASSWORD ? {
-    mechanism: process.env.KAFKA_SASL_MECHANISM as 'plain' | 'scram-sha-256' | 'scram-sha-512',
-    username: process.env.KAFKA_SASL_USERNAME,
-    password: process.env.KAFKA_SASL_PASSWORD,
-  } : undefined,
+  sasl:
+    process.env.KAFKA_SASL_MECHANISM &&
+    process.env.KAFKA_SASL_USERNAME &&
+    process.env.KAFKA_SASL_PASSWORD
+      ? {
+          mechanism: process.env.KAFKA_SASL_MECHANISM as
+            | 'plain'
+            | 'scram-sha-256'
+            | 'scram-sha-512',
+          username: process.env.KAFKA_SASL_USERNAME,
+          password: process.env.KAFKA_SASL_PASSWORD,
+        }
+      : undefined,
 };
 
 /**
@@ -25,8 +39,12 @@ export const defaultKafkaConfig: KafkaConfig = {
  */
 export const defaultKafkaProducerConfig: KafkaProducerConfig = {
   ...defaultKafkaConfig,
-  transactionTimeout: parseInt(process.env.KAFKA_PRODUCER_TRANSACTION_TIMEOUT || '60000'),
-  maxInFlightRequests: parseInt(process.env.KAFKA_PRODUCER_MAX_IN_FLIGHT || '5'),
+  transactionTimeout: parseInt(
+    process.env.KAFKA_PRODUCER_TRANSACTION_TIMEOUT || '60000',
+  ),
+  maxInFlightRequests: parseInt(
+    process.env.KAFKA_PRODUCER_MAX_IN_FLIGHT || '5',
+  ),
   idempotent: process.env.KAFKA_PRODUCER_IDEMPOTENT !== 'false',
 };
 
@@ -36,11 +54,20 @@ export const defaultKafkaProducerConfig: KafkaProducerConfig = {
 export const defaultKafkaConsumerConfig: KafkaConsumerConfig = {
   ...defaultKafkaConfig,
   groupId: process.env.KAFKA_CONSUMER_GROUP_ID || 'aikb-consumer-group',
-  sessionTimeout: parseInt(process.env.KAFKA_CONSUMER_SESSION_TIMEOUT || '30000'),
-  heartbeatInterval: parseInt(process.env.KAFKA_CONSUMER_HEARTBEAT_INTERVAL || '3000'),
+  sessionTimeout: parseInt(
+    process.env.KAFKA_CONSUMER_SESSION_TIMEOUT || '30000',
+  ),
+  heartbeatInterval: parseInt(
+    process.env.KAFKA_CONSUMER_HEARTBEAT_INTERVAL || '3000',
+  ),
   maxWaitTimeInMs: parseInt(process.env.KAFKA_CONSUMER_MAX_WAIT_TIME || '5000'),
-  allowAutoTopicCreation: process.env.KAFKA_CONSUMER_AUTO_TOPIC_CREATION !== 'false',
-  autoOffsetReset: process.env.KAFKA_CONSUMER_AUTO_OFFSET_RESET as 'earliest' | 'latest' | 'none' || 'latest',
+  allowAutoTopicCreation:
+    process.env.KAFKA_CONSUMER_AUTO_TOPIC_CREATION !== 'false',
+  autoOffsetReset:
+    (process.env.KAFKA_CONSUMER_AUTO_OFFSET_RESET as
+      | 'earliest'
+      | 'latest'
+      | 'none') || 'latest',
 };
 
 /**
@@ -90,11 +117,15 @@ export const kafkaConfigs = {
 /**
  * Get Kafka configuration for the current environment
  */
-export function getKafkaConfig(env: string = process.env.NODE_ENV || 'development'): {
+export function getKafkaConfig(
+  env: string = process.env.NODE_ENV || 'development',
+): {
   producer: KafkaProducerConfig;
   consumer: KafkaConsumerConfig;
 } {
-  return kafkaConfigs[env as keyof typeof kafkaConfigs] || kafkaConfigs.development;
+  return (
+    kafkaConfigs[env as keyof typeof kafkaConfigs] || kafkaConfigs.development
+  );
 }
 
 /**
@@ -108,7 +139,9 @@ export function validateKafkaConfig(config: KafkaConfig): boolean {
 
   if (config.sasl) {
     if (!config.sasl.username || !config.sasl.password) {
-      console.error('Kafka SASL username and password are required when SASL is enabled');
+      console.error(
+        'Kafka SASL username and password are required when SASL is enabled',
+      );
       return false;
     }
   }
@@ -124,8 +157,11 @@ export function getValidatedKafkaConfig(env?: string): {
   consumer: KafkaConsumerConfig;
 } | null {
   const config = getKafkaConfig(env);
-  
-  if (!validateKafkaConfig(config.producer) || !validateKafkaConfig(config.consumer)) {
+
+  if (
+    !validateKafkaConfig(config.producer) ||
+    !validateKafkaConfig(config.consumer)
+  ) {
     return null;
   }
 
@@ -137,28 +173,55 @@ export function getValidatedKafkaConfig(env?: string): {
  */
 export const kafkaTopicConfigs = {
   'entity-events': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_ENTITY_EVENTS_PARTITIONS || '3'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_ENTITY_EVENTS_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_EVENTS_PARTITIONS || '3',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_EVENTS_REPLICATION_FACTOR || '1',
+    ),
   },
   'knowledge-events': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_KNOWLEDGE_EVENTS_PARTITIONS || '3'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_KNOWLEDGE_EVENTS_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_KNOWLEDGE_EVENTS_PARTITIONS || '3',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_KNOWLEDGE_EVENTS_REPLICATION_FACTOR || '1',
+    ),
   },
   'entity-vector-processing': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_ENTITY_VECTOR_PROCESSING_PARTITIONS || '6'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_ENTITY_VECTOR_PROCESSING_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_VECTOR_PROCESSING_PARTITIONS || '6',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_VECTOR_PROCESSING_REPLICATION_FACTOR ||
+        '1',
+    ),
   },
   'knowledge-vector-processing': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_KNOWLEDGE_VECTOR_PROCESSING_PARTITIONS || '6'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_KNOWLEDGE_VECTOR_PROCESSING_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_KNOWLEDGE_VECTOR_PROCESSING_PARTITIONS || '6',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_KNOWLEDGE_VECTOR_PROCESSING_REPLICATION_FACTOR ||
+        '1',
+    ),
   },
   'entity-relation-processing': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_ENTITY_RELATION_PROCESSING_PARTITIONS || '3'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_ENTITY_RELATION_PROCESSING_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_RELATION_PROCESSING_PARTITIONS || '3',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_ENTITY_RELATION_PROCESSING_REPLICATION_FACTOR ||
+        '1',
+    ),
   },
   'dead-letter-queue': {
-    partitions: parseInt(process.env.KAFKA_TOPIC_DEAD_LETTER_QUEUE_PARTITIONS || '3'),
-    replicationFactor: parseInt(process.env.KAFKA_TOPIC_DEAD_LETTER_QUEUE_REPLICATION_FACTOR || '1'),
+    partitions: parseInt(
+      process.env.KAFKA_TOPIC_DEAD_LETTER_QUEUE_PARTITIONS || '3',
+    ),
+    replicationFactor: parseInt(
+      process.env.KAFKA_TOPIC_DEAD_LETTER_QUEUE_REPLICATION_FACTOR || '1',
+    ),
   },
 };
 
@@ -191,6 +254,8 @@ export const kafkaHealthCheckConfig = {
  */
 export const kafkaMonitoringConfig = {
   enabled: process.env.KAFKA_MONITORING_ENABLED === 'true',
-  metricsInterval: parseInt(process.env.KAFKA_MONITORING_METRICS_INTERVAL || '60000'),
+  metricsInterval: parseInt(
+    process.env.KAFKA_MONITORING_METRICS_INTERVAL || '60000',
+  ),
   logLevel: process.env.KAFKA_MONITORING_LOG_LEVEL || 'info',
 };

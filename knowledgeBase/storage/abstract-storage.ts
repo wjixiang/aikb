@@ -262,17 +262,19 @@ export abstract class AbstractKnowledgeContentStorage {
 
 export abstract class AbstractKnowledgeGraphStorage {
   abstract create_new_link(sourceId: string, targetId: string): Promise<void>;
-  
+
   /**
    * Get knowledge links by source ID
    * @param sourceId ID of the source entity/knowledge
    * @returns Promise resolving to array of knowledge links
    */
-  abstract get_knowledge_links_by_source(sourceId: string): Promise<Array<{
-    sourceId: string;
-    targetId: string;
-    linkType: string;
-  }>>;
+  abstract get_knowledge_links_by_source(sourceId: string): Promise<
+    Array<{
+      sourceId: string;
+      targetId: string;
+      linkType: string;
+    }>
+  >;
 }
 
 export abstract class AbstractKnowledgeVectorStorage {

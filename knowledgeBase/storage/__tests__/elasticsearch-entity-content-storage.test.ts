@@ -76,7 +76,7 @@ describe('ElasticsearchEntityContentStorage', () => {
 
     // Create storage instance
     elasticsearchStorage = new ElasticsearchEntityContentStorage(
-      'http://localhost:9200',
+      'http://elasticsearch:9200',
     );
 
     // Mock the logger instance on the storage class
@@ -95,7 +95,7 @@ describe('ElasticsearchEntityContentStorage', () => {
       // Assert
       expect(storage).toBeInstanceOf(ElasticsearchEntityContentStorage);
       expect(MockClient).toHaveBeenCalledWith({
-        node: 'http://localhost:9200',
+        node: 'http://elasticsearch:9200',
         auth: {
           apiKey: '',
         },

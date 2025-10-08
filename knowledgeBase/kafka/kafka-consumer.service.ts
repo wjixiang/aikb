@@ -1,13 +1,26 @@
-import { Kafka, Consumer, ConsumerSubscribeTopic, ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
+import {
+  Kafka,
+  Consumer,
+  ConsumerSubscribeTopic,
+  ConsumerRunConfig,
+  EachMessagePayload,
+} from 'kafkajs';
 import createLoggerWithPrefix from '../lib/logger';
-import { KafkaEvent, KafkaConsumerConfig, KAFKA_TOPICS, KAFKA_CONSUMER_GROUPS } from './kafka.types';
+import {
+  KafkaEvent,
+  KafkaConsumerConfig,
+  KAFKA_TOPICS,
+  KAFKA_CONSUMER_GROUPS,
+} from './kafka.types';
 
 const logger = createLoggerWithPrefix('KafkaConsumer');
 
 /**
  * Event handler function type
  */
-export type EventHandler<T extends KafkaEvent = KafkaEvent> = (event: T) => Promise<void>;
+export type EventHandler<T extends KafkaEvent = KafkaEvent> = (
+  event: T,
+) => Promise<void>;
 
 /**
  * Event handler registry
@@ -31,11 +44,13 @@ export class KafkaConsumerService {
       clientId: config.clientId,
       brokers: config.brokers,
       ssl: config.ssl,
-      sasl: config.sasl ? {
-        mechanism: config.sasl.mechanism as any,
-        username: config.sasl.username,
-        password: config.sasl.password,
-      } : undefined,
+      sasl: config.sasl
+        ? {
+            mechanism: config.sasl.mechanism as any,
+            username: config.sasl.username,
+            password: config.sasl.password,
+          }
+        : undefined,
       connectionTimeout: config.connectionTimeout,
       requestTimeout: config.requestTimeout,
       retry: config.retry,
@@ -96,7 +111,10 @@ export class KafkaConsumerService {
   /**
    * Register an event handler for a specific event type
    */
-  registerEventHandler<T extends KafkaEvent>(eventType: string, handler: EventHandler<T>): void {
+  registerEventHandler<T extends KafkaEvent>(
+    eventType: string,
+    handler: EventHandler<T>,
+  ): void {
     if (!this.eventHandlers[eventType]) {
       this.eventHandlers[eventType] = [];
     }
@@ -197,11 +215,11 @@ export class KafkaConsumerService {
       const event: KafkaEvent = JSON.parse(message.value.toString());
       const eventType = event.eventType;
 
-      logger.debug(`Processing event: ${eventType}`, { 
-        eventId: event.eventId, 
-        topic, 
+      logger.debug(`Processing event: ${eventType}`, {
+        eventId: event.eventId,
+        topic,
         partition,
-        offset: message.offset 
+        offset: message.offset,
       });
 
       const handlers = this.eventHandlers[eventType];
@@ -212,19 +230,30 @@ export class KafkaConsumerService {
             try {
               await handler(event);
             } catch (handlerError) {
-              logger.error(`Error in event handler for ${eventType}:`, handlerError);
+              logger.error(
+                `Error in event handler for ${eventType}:`,
+                handlerError,
+              );
               // Continue processing other handlers even if one fails
             }
-          })
+          }),
         );
 
-        logger.debug(`Successfully processed event: ${eventType}`, { eventId: event.eventId });
+        logger.debug(`Successfully processed event: ${eventType}`, {
+          eventId: event.eventId,
+        });
       } else {
-        logger.warn(`No handlers registered for event type: ${eventType}`, { eventId: event.eventId });
+        logger.warn(`No handlers registered for event type: ${eventType}`, {
+          eventId: event.eventId,
+        });
       }
     } catch (error) {
-      logger.error('Failed to process message:', error, { topic, partition, offset: message.offset });
-      
+      logger.error('Failed to process message:', error, {
+        topic,
+        partition,
+        offset: message.offset,
+      });
+
       // Send to dead letter queue for failed messages
       await this.sendToDeadLetterQueue(topic, message, error as Error);
     }
@@ -233,7 +262,11 @@ export class KafkaConsumerService {
   /**
    * Send failed message to dead letter queue
    */
-  private async sendToDeadLetterQueue(originalTopic: string, message: any, error: Error): Promise<void> {
+  private async sendToDeadLetterQueue(
+    originalTopic: string,
+    message: any,
+    error: Error,
+  ): Promise<void> {
     try {
       // This would require a producer instance to send to DLQ
       // For now, just log the error
@@ -295,7 +328,9 @@ export class KafkaConsumerFactory {
   /**
    * Create entity content processor consumer
    */
-  static createEntityContentProcessor(config: KafkaConsumerConfig): KafkaConsumerService {
+  static createEntityContentProcessor(
+    config: KafkaConsumerConfig,
+  ): KafkaConsumerService {
     const consumer = new KafkaConsumerService({
       ...config,
       groupId: KAFKA_CONSUMER_GROUPS.ENTITY_CONTENT_PROCESSOR,
@@ -306,7 +341,9 @@ export class KafkaConsumerFactory {
   /**
    * Create entity graph processor consumer
    */
-  static createEntityGraphProcessor(config: KafkaConsumerConfig): KafkaConsumerService {
+  static createEntityGraphProcessor(
+    config: KafkaConsumerConfig,
+  ): KafkaConsumerService {
     const consumer = new KafkaConsumerService({
       ...config,
       groupId: KAFKA_CONSUMER_GROUPS.ENTITY_GRAPH_PROCESSOR,
@@ -317,7 +354,9 @@ export class KafkaConsumerFactory {
   /**
    * Create entity vector processor consumer
    */
-  static createEntityVectorProcessor(config: KafkaConsumerConfig): KafkaConsumerService {
+  static createEntityVectorProcessor(
+    config: KafkaConsumerConfig,
+  ): KafkaConsumerService {
     const consumer = new KafkaConsumerService({
       ...config,
       groupId: KAFKA_CONSUMER_GROUPS.ENTITY_VECTOR_PROCESSOR,
@@ -328,7 +367,9 @@ export class KafkaConsumerFactory {
   /**
    * Create knowledge content processor consumer
    */
-  static createKnowledgeContentProcessor(config: KafkaConsumerConfig): KafkaConsumerService {
+  static createKnowledgeContentProcessor(
+    config: KafkaConsumerConfig,
+  ): KafkaConsumerService {
     const consumer = new KafkaConsumerService({
       ...config,
       groupId: KAFKA_CONSUMER_GROUPS.KNOWLEDGE_CONTENT_PROCESSOR,
@@ -339,7 +380,9 @@ export class KafkaConsumerFactory {
   /**
    * Create knowledge vector processor consumer
    */
-  static createKnowledgeVectorProcessor(config: KafkaConsumerConfig): KafkaConsumerService {
+  static createKnowledgeVectorProcessor(
+    config: KafkaConsumerConfig,
+  ): KafkaConsumerService {
     const consumer = new KafkaConsumerService({
       ...config,
       groupId: KAFKA_CONSUMER_GROUPS.KNOWLEDGE_VECTOR_PROCESSOR,
@@ -351,7 +394,9 @@ export class KafkaConsumerFactory {
 /**
  * Initialize and connect a Kafka consumer
  */
-export async function initializeKafkaConsumer(consumer: KafkaConsumerService): Promise<KafkaConsumerService> {
+export async function initializeKafkaConsumer(
+  consumer: KafkaConsumerService,
+): Promise<KafkaConsumerService> {
   await consumer.connect();
   return consumer;
 }

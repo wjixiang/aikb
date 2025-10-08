@@ -5,7 +5,7 @@ import {
   promptForEntityCreation,
   displaySuccess,
   displayError,
-  displayInfo
+  displayInfo,
 } from '../utils/prompts';
 import createLoggerWithPrefix from '../../lib/logger';
 
@@ -26,9 +26,9 @@ export const createEntityCommand = new Command('create-entity')
       logger.info('开始创建实体...');
       const storage = await initializeStorage();
       logger.info('存储系统初始化成功');
-      
+
       let entityData;
-      
+
       if (options.interactive) {
         // Interactive mode - prompt for entity data
         entityData = await promptForEntityCreation();
@@ -38,33 +38,36 @@ export const createEntityCommand = new Command('create-entity')
           displayError('在非交互模式下，必须提供 --name 和 --definition 选项');
           process.exit(1);
         }
-        
-        const tags = options.tags 
-          ? options.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
+
+        const tags = options.tags
+          ? options.tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== '')
           : [];
-        
+
         entityData = {
           name: [options.name],
           tags,
           definition: options.definition,
         };
       }
-      
+
       displayInfo('正在创建实体...');
       logger.info(`创建实体: ${entityData.name.join(', ')}`);
-      
+
       // Create temporary entity using static method
       const tempEntity = Entity.create_entity_with_entity_data(entityData);
-      
+
       // Save entity to storage
       logger.info('保存实体到数据库...');
       const savedEntity = await tempEntity.save(storage.entityStorage);
       logger.info(`实体保存成功，ID: ${savedEntity.get_id()}`);
-      
+
       displaySuccess(`实体创建成功！`);
       displayInfo(`实体ID: ${savedEntity.get_id()}`);
       displayInfo(`实体名称: ${savedEntity.get_definition()}`);
-      
+
       // Display entity details
       console.log('\n📋 实体详情:');
       console.log(`  ID: ${savedEntity.get_id()}`);
@@ -73,19 +76,21 @@ export const createEntityCommand = new Command('create-entity')
         console.log(`  标签: ${entityData.tags.join(', ')}`);
       }
       console.log(`  定义: ${entityData.definition}`);
-      
     } catch (error: any) {
       logger.error('创建实体失败:', error.message);
       displayError(`创建实体失败: ${error.message}`);
-      
+
       // Provide more helpful error messages
-      if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+      if (
+        error.message.includes('ECONNREFUSED') ||
+        error.message.includes('ENOTFOUND')
+      ) {
         displayError('💡 提示: 请确保MongoDB服务正在运行，并且连接地址正确');
         displayError('   预期连接地址: mongodb://mongodb:27017');
       } else if (error.message.includes('duplicate key')) {
         displayError('💡 提示: 实体名称已存在，请使用不同的名称');
       }
-      
+
       process.exit(1);
     }
   });

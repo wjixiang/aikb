@@ -14,7 +14,7 @@ class ElasticsearchVectorStorage extends AbstractEntityVectorStorage {
   logger = createLoggerWithPrefix('ElasticsearchVectorStorage');
 
   constructor(
-    elasticsearchUrl: string = 'http://localhost:9200',
+    elasticsearchUrl: string = 'http://elasticsearch:9200',
     vectorDimensions: number = 1536,
   ) {
     super();

@@ -1,7 +1,7 @@
 import { MinerUClient } from '../MinerUClient';
 import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
 import { config } from 'dotenv';
-config()
+config();
 
 /**
  * Basic tests for MinerU client and converter
@@ -18,7 +18,9 @@ describe('MinerU Client', () => {
     });
 
     it('should throw error without token', () => {
-      expect(() => new MinerUClient({ token: '' })).toThrow('Token is required');
+      expect(() => new MinerUClient({ token: '' })).toThrow(
+        'Token is required',
+      );
     });
 
     it('should accept custom configuration', () => {
@@ -26,7 +28,7 @@ describe('MinerU Client', () => {
         token: TEST_TOKEN,
         baseUrl: 'https://custom-url.com',
         timeout: 60000,
-        maxRetries: 5
+        maxRetries: 5,
       });
       expect(client).toBeInstanceOf(MinerUClient);
     });
@@ -67,8 +69,8 @@ describe('MinerU PDF Converter', () => {
         defaultOptions: {
           is_ocr: true,
           enable_formula: false,
-          language: 'en'
-        }
+          language: 'en',
+        },
       });
       expect(converter).toBeInstanceOf(MinerUPdfConvertor);
     });
@@ -77,10 +79,10 @@ describe('MinerU PDF Converter', () => {
   describe('File management', () => {
     it('should manage download directory', () => {
       const converter = new MinerUPdfConvertor({ token: TEST_TOKEN });
-      
+
       const originalDir = converter.getDownloadDirectory();
       expect(typeof originalDir).toBe('string');
-      
+
       const newDir = './custom-downloads';
       converter.setDownloadDirectory(newDir);
       expect(converter.getDownloadDirectory()).toBe(newDir);
@@ -90,7 +92,7 @@ describe('MinerU PDF Converter', () => {
 
 describe('Integration tests (requires valid token)', () => {
   const token = process.env.MINERU_TOKEN;
-  
+
   if (!token) {
     console.warn('Skipping integration tests - MINERU_TOKEN not set');
     return;
@@ -101,9 +103,9 @@ describe('Integration tests (requires valid token)', () => {
 
   beforeAll(() => {
     client = new MinerUClient({ token });
-    converter = new MinerUPdfConvertor({ 
+    converter = new MinerUPdfConvertor({
       token,
-      downloadDir: './test-downloads'
+      downloadDir: './test-downloads',
     });
   });
 
@@ -120,7 +122,7 @@ describe('Integration tests (requires valid token)', () => {
 
     // Note: These tests would require actual API calls
     // They are commented out to avoid hitting the API during testing
-    
+
     /*
     it('should create single file task', async () => {
       const taskId = await client.createSingleFileTask({
@@ -159,7 +161,7 @@ describe('Error handling', () => {
 
   it('should create converter with minimal config', () => {
     const converter = new MinerUPdfConvertor({
-      token: 'test-token'
+      token: 'test-token',
     });
     expect(converter).toBeInstanceOf(MinerUPdfConvertor);
   });

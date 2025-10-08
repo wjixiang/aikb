@@ -76,7 +76,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
     // Create storage instance
     elasticsearchStorage = new ElasticsearchVectorStorage(
-      'http://localhost:9200',
+      'http://elasticsearch:9200',
       5,
     );
 
@@ -96,7 +96,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
       // Assert
       expect(storage).toBeInstanceOf(ElasticsearchVectorStorage);
       expect(MockClient).toHaveBeenCalledWith({
-        node: 'http://localhost:9200',
+        node: 'http://elasticsearch:9200',
         auth: {
           apiKey: '',
         },

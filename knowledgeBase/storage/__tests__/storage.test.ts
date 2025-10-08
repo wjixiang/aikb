@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KBStorage, StorageConfig } from '../storage';
-import { AbstractEntityStorage, AbstractKnowledgeStorage } from '../abstract-storage';
-import { EntityData, EntityDataWithId, KnowledgeData, KnowledgeDataWithId } from '../../knowledge.type';
+import {
+  AbstractEntityStorage,
+  AbstractKnowledgeStorage,
+} from '../abstract-storage';
+import {
+  EntityData,
+  EntityDataWithId,
+  KnowledgeData,
+  KnowledgeDataWithId,
+} from '../../knowledge.type';
 import Knowledge from '../../Knowledge';
 
 // Mock the logger
@@ -24,7 +32,7 @@ class MockEntityStorage extends AbstractEntityStorage {
     search_entities: vi.fn(),
     list_all_entities: vi.fn(),
   };
-  
+
   entityGraphStorage = {
     create_relation: vi.fn(),
     get_entity_relations: vi.fn(),
@@ -32,7 +40,7 @@ class MockEntityStorage extends AbstractEntityStorage {
     delete_relation: vi.fn(),
     find_paths: vi.fn(),
   };
-  
+
   entityVectorStorage = {
     store_vector: vi.fn(),
     get_vector: vi.fn(),
@@ -41,7 +49,7 @@ class MockEntityStorage extends AbstractEntityStorage {
     find_similar_vectors: vi.fn(),
     batch_store_vectors: vi.fn(),
   };
-  
+
   async create_new_entity(entity: EntityData): Promise<EntityDataWithId> {
     const id = AbstractEntityStorage.generate_entity_id();
     return { ...entity, id };
@@ -57,12 +65,12 @@ class MockKnowledgeStorage extends AbstractKnowledgeStorage {
     search_knowledge_contents: vi.fn(),
     list_all_knowledge_contents: vi.fn(),
   };
-  
+
   knowledgeGraphStorage = {
     create_new_link: vi.fn(),
     get_knowledge_links_by_source: vi.fn(),
   };
-  
+
   knowledgeVectorStorage = {
     store_knowledge_vector: vi.fn(),
     get_knowledge_vector: vi.fn(),
@@ -71,26 +79,46 @@ class MockKnowledgeStorage extends AbstractKnowledgeStorage {
     find_similar_knowledge_vectors: vi.fn(),
     batch_store_knowledge_vectors: vi.fn(),
   };
-  
-  async create_new_knowledge(knowledge: KnowledgeData, sourceId: string): Promise<KnowledgeDataWithId> {
+
+  async create_new_knowledge(
+    knowledge: KnowledgeData,
+    sourceId: string,
+  ): Promise<KnowledgeDataWithId> {
     const id = AbstractKnowledgeStorage.generate_knowledge_id();
     return { ...knowledge, id };
   }
-  
-  async create_knowledge_instance(knowledgeData: KnowledgeDataWithId, childKnowledge?: Knowledge[]): Promise<Knowledge> {
-    return new Knowledge(knowledgeData.id, knowledgeData.scope, knowledgeData.content, childKnowledge || []);
+
+  async create_knowledge_instance(
+    knowledgeData: KnowledgeDataWithId,
+    childKnowledge?: Knowledge[],
+  ): Promise<Knowledge> {
+    return new Knowledge(
+      knowledgeData.id,
+      knowledgeData.scope,
+      knowledgeData.content,
+      childKnowledge || [],
+    );
   }
-  
-  async resolve_child_knowledge(childKnowledgeIds: string[]): Promise<Knowledge[]> {
+
+  async resolve_child_knowledge(
+    childKnowledgeIds: string[],
+  ): Promise<Knowledge[]> {
     return [];
   }
-  
+
   async get_knowledge_by_id(knowledgeId: string): Promise<Knowledge | null> {
     return null;
   }
-  
-  async process_knowledge_with_children(knowledgeData: KnowledgeDataWithId): Promise<Knowledge> {
-    return new Knowledge(knowledgeData.id, knowledgeData.scope, knowledgeData.content, []);
+
+  async process_knowledge_with_children(
+    knowledgeData: KnowledgeDataWithId,
+  ): Promise<Knowledge> {
+    return new Knowledge(
+      knowledgeData.id,
+      knowledgeData.scope,
+      knowledgeData.content,
+      [],
+    );
   }
 }
 
@@ -98,14 +126,14 @@ describe('KBStorage', () => {
   let mockEntityStorage: MockEntityStorage;
   let mockKnowledgeStorage: MockKnowledgeStorage;
   let kbStorage: KBStorage;
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockEntityStorage = new MockEntityStorage();
     mockKnowledgeStorage = new MockKnowledgeStorage();
     kbStorage = new KBStorage(mockEntityStorage, mockKnowledgeStorage);
   });
-  
+
   describe('constructor', () => {
     it('should create a KBStorage instance with entityStorage and knowledgeStorage', () => {
       // Assert
@@ -113,7 +141,7 @@ describe('KBStorage', () => {
       expect(kbStorage.entityStorage).toBe(mockEntityStorage);
       expect(kbStorage.knowledgeStorage).toBe(mockKnowledgeStorage);
     });
-    
+
     it('should store the provided storage instances as public properties', () => {
       // Assert
       expect(kbStorage.entityStorage).toBeDefined();
@@ -126,14 +154,14 @@ describe('KBStorage Methods', () => {
   let mockEntityStorage: MockEntityStorage;
   let mockKnowledgeStorage: MockKnowledgeStorage;
   let kbStorage: KBStorage;
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockEntityStorage = new MockEntityStorage();
     mockKnowledgeStorage = new MockKnowledgeStorage();
     kbStorage = new KBStorage(mockEntityStorage, mockKnowledgeStorage);
   });
-  
+
   describe('storeEntity', () => {
     it('should store an entity successfully', async () => {
       // Arrange
@@ -146,17 +174,21 @@ describe('KBStorage Methods', () => {
         ...mockEntity,
         id: 'entity_123',
       };
-      mockEntityStorage.create_new_entity = vi.fn().mockResolvedValue(expectedEntityWithId);
-      
+      mockEntityStorage.create_new_entity = vi
+        .fn()
+        .mockResolvedValue(expectedEntityWithId);
+
       // Act
       const result = await kbStorage.storeEntity(mockEntity);
-      
+
       // Assert
       expect(result).toEqual(expectedEntityWithId);
-      expect(mockEntityStorage.create_new_entity).toHaveBeenCalledWith(mockEntity);
+      expect(mockEntityStorage.create_new_entity).toHaveBeenCalledWith(
+        mockEntity,
+      );
     });
   });
-  
+
   describe('storeKnowledge', () => {
     it('should store knowledge successfully', async () => {
       // Arrange
@@ -170,69 +202,89 @@ describe('KBStorage Methods', () => {
         ...mockKnowledge,
         id: 'knowledge_456',
       };
-      mockKnowledgeStorage.create_new_knowledge = vi.fn().mockResolvedValue(expectedKnowledgeWithId);
-      
+      mockKnowledgeStorage.create_new_knowledge = vi
+        .fn()
+        .mockResolvedValue(expectedKnowledgeWithId);
+
       // Act
       const result = await kbStorage.storeKnowledge(mockKnowledge, sourceId);
-      
+
       // Assert
       expect(result).toEqual(expectedKnowledgeWithId);
-      expect(mockKnowledgeStorage.create_new_knowledge).toHaveBeenCalledWith(mockKnowledge, sourceId);
+      expect(mockKnowledgeStorage.create_new_knowledge).toHaveBeenCalledWith(
+        mockKnowledge,
+        sourceId,
+      );
     });
   });
-  
+
   describe('getKnowledge', () => {
     it('should retrieve knowledge by ID', async () => {
       // Arrange
       const knowledgeId = 'knowledge_456';
-      const mockKnowledge = new Knowledge('knowledge_456', 'test scope', 'test content', []);
-      mockKnowledgeStorage.get_knowledge_by_id = vi.fn().mockResolvedValue(mockKnowledge);
-      
+      const mockKnowledge = new Knowledge(
+        'knowledge_456',
+        'test scope',
+        'test content',
+        [],
+      );
+      mockKnowledgeStorage.get_knowledge_by_id = vi
+        .fn()
+        .mockResolvedValue(mockKnowledge);
+
       // Act
       const result = await kbStorage.getKnowledge(knowledgeId);
-      
+
       // Assert
       expect(result).toEqual(mockKnowledge);
-      expect(mockKnowledgeStorage.get_knowledge_by_id).toHaveBeenCalledWith(knowledgeId);
+      expect(mockKnowledgeStorage.get_knowledge_by_id).toHaveBeenCalledWith(
+        knowledgeId,
+      );
     });
-    
+
     it('should return null if knowledge is not found', async () => {
       // Arrange
       const knowledgeId = 'nonexistent_knowledge';
-      mockKnowledgeStorage.get_knowledge_by_id = vi.fn().mockResolvedValue(null);
-      
+      mockKnowledgeStorage.get_knowledge_by_id = vi
+        .fn()
+        .mockResolvedValue(null);
+
       // Act
       const result = await kbStorage.getKnowledge(knowledgeId);
-      
+
       // Assert
       expect(result).toBeNull();
-      expect(mockKnowledgeStorage.get_knowledge_by_id).toHaveBeenCalledWith(knowledgeId);
+      expect(mockKnowledgeStorage.get_knowledge_by_id).toHaveBeenCalledWith(
+        knowledgeId,
+      );
     });
   });
-  
+
   describe('initialize', () => {
     it('should initialize without errors', async () => {
       // Arrange
       const config: StorageConfig = {};
-      
+
       // Act & Assert
       await expect(kbStorage.initialize(config)).resolves.not.toThrow();
     });
-    
+
     it('should initialize with custom config', async () => {
       // Arrange
-      const config: StorageConfig = { /* custom config options */ };
-      
+      const config: StorageConfig = {
+        /* custom config options */
+      };
+
       // Act & Assert
       await expect(kbStorage.initialize(config)).resolves.not.toThrow();
     });
   });
-  
+
   describe('getStorageStats', () => {
     it('should return storage statistics', async () => {
       // Act
       const stats = await kbStorage.getStorageStats();
-      
+
       // Assert
       expect(stats).toEqual({
         entityCount: 0,

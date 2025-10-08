@@ -1,4 +1,9 @@
-import { EntityData, EntityDataWithId, KnowledgeData, KnowledgeDataWithId } from '../knowledge.type';
+import {
+  EntityData,
+  EntityDataWithId,
+  KnowledgeData,
+  KnowledgeDataWithId,
+} from '../knowledge.type';
 
 /**
  * Base interface for all Kafka events
@@ -115,7 +120,7 @@ export interface KnowledgeVectorGeneratedEvent extends BaseKafkaEvent {
 /**
  * Union type for all entity events
  */
-export type EntityEvent = 
+export type EntityEvent =
   | EntityCreatedEvent
   | EntityUpdatedEvent
   | EntityDeletedEvent
@@ -129,7 +134,7 @@ export type EntityEvent =
 /**
  * Union type for all knowledge events
  */
-export type KnowledgeEvent = 
+export type KnowledgeEvent =
   | KnowledgeCreatedEvent
   | KnowledgeUpdatedEvent
   | KnowledgeDeletedEvent
@@ -201,7 +206,7 @@ export const KAFKA_TOPICS = {
   ENTITY_VECTOR_PROCESSING: 'entity-vector-processing',
   KNOWLEDGE_VECTOR_PROCESSING: 'knowledge-vector-processing',
   ENTITY_RELATION_PROCESSING: 'entity-relation-processing',
-  DEAD_LETTER_QUEUE: 'dead-letter-queue'
+  DEAD_LETTER_QUEUE: 'dead-letter-queue',
 } as const;
 
 /**
@@ -212,5 +217,5 @@ export const KAFKA_CONSUMER_GROUPS = {
   ENTITY_GRAPH_PROCESSOR: 'entity-graph-processor',
   ENTITY_VECTOR_PROCESSOR: 'entity-vector-processor',
   KNOWLEDGE_CONTENT_PROCESSOR: 'knowledge-content-processor',
-  KNOWLEDGE_VECTOR_PROCESSOR: 'knowledge-vector-processor'
+  KNOWLEDGE_VECTOR_PROCESSOR: 'knowledge-vector-processor',
 } as const;

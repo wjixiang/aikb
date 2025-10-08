@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
 const ELASTICSEARCH_API_KEY = process.env.ELASTICSEARCH_URL_API_KEY || '';
 
 async function checkElasticsearch() {
@@ -67,7 +67,7 @@ KIBANA_LOCAL_CONTAINER_NAME=dev-kibana
 KIBANA_LOCAL_PORT=5601
 KIBANA_LOCAL_PASSWORD=changeme
 KIBANA_ENCRYPTION_KEY=32_characters_long_string_here
-ES_LOCAL_URL=http://localhost:9200
+ES_LOCAL_URL=http://elasticsearch:9200
 ES_LOCAL_API_KEY=
 ES_LOCAL_LICENSE=basic`;
       

@@ -42,7 +42,7 @@ class MongodbKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage {
 
       // Check if vector already exists and replace it
       const existingVector = await collection.findOne({ knowledgeId });
-      
+
       if (existingVector) {
         await collection.replaceOne(
           { knowledgeId },
@@ -51,7 +51,9 @@ class MongodbKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage {
             createdAt: existingVector.createdAt, // Preserve original creation time
           },
         );
-        this.logger.info(`Replaced existing vector for knowledge ID: ${knowledgeId}`);
+        this.logger.info(
+          `Replaced existing vector for knowledge ID: ${knowledgeId}`,
+        );
       } else {
         await collection.insertOne(vectorDocument);
         this.logger.info(`Stored vector for knowledge ID: ${knowledgeId}`);
@@ -203,8 +205,11 @@ class MongodbKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage {
       const similarVectors = allVectors
         .map((vectorDoc) => {
           const { _id, ...vectorData } = vectorDoc;
-          const similarity = this.calculateCosineSimilarity(vector, vectorData.vector);
-          
+          const similarity = this.calculateCosineSimilarity(
+            vector,
+            vectorData.vector,
+          );
+
           // Apply threshold filter
           if (similarity < threshold) {
             return null;
@@ -227,9 +232,7 @@ class MongodbKnowledgeVectorStorage extends AbstractKnowledgeVectorStorage {
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, limit);
 
-      this.logger.info(
-        `Found ${result.length} similar knowledge vectors`,
-      );
+      this.logger.info(`Found ${result.length} similar knowledge vectors`);
       return result;
     } catch (error) {
       this.logger.error('Failed to find similar knowledge vectors:', error);

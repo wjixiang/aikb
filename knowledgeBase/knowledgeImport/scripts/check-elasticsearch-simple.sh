@@ -5,7 +5,7 @@
 
 set -e
 
-ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-"http://localhost:9200"}
+ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-"http://elasticsearch:9200"}
 ELASTICSEARCH_HOST=$(echo "$ELASTICSEARCH_URL" | sed 's|^https\?://||' | sed 's|:.*||')
 ELASTICSEARCH_PORT=$(echo "$ELASTICSEARCH_URL" | sed 's|^https\?://[^:]*:||' | sed 's|/.*||')
 
@@ -53,7 +53,7 @@ KIBANA_LOCAL_CONTAINER_NAME=dev-kibana
 KIBANA_LOCAL_PORT=5601
 KIBANA_LOCAL_PASSWORD=changeme
 KIBANA_ENCRYPTION_KEY=32_characters_long_string_here
-ES_LOCAL_URL=http://localhost:9200
+ES_LOCAL_URL=http://elasticsearch:9200
 ES_LOCAL_API_KEY=
 ES_LOCAL_LICENSE=basic
 EOF

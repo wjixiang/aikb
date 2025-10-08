@@ -21,18 +21,18 @@ describe('Knowledge Creation Tests', () => {
     const knowledgeContentStorage = new MongodbKnowledgeContentStorage();
     const knowledgeVectorStorage = new MongodbKnowledgeVectorStorage();
     const knowledgeGraphStorage = new MongoKnowledgeGraphStorage();
-    
+
     const entityContentStorage = new MongodbEntityContentStorage();
     const entityGraphStorage = new MongoEntityGraphStorage();
     const entityVectorStorage = new ElasticsearchVectorStorage();
-    
+
     // Create storage instances
     knowledgeStorage = new KnowledgeStorage(
       knowledgeContentStorage,
       knowledgeGraphStorage,
       knowledgeVectorStorage,
     );
-    
+
     entityStorage = new EntityStorage(
       entityContentStorage,
       entityGraphStorage,
@@ -45,16 +45,20 @@ describe('Knowledge Creation Tests', () => {
       tags: ['test'],
       definition: 'A test entity for testing knowledge creation functionality.',
     };
-    
-    testEntity = await Entity.create_entity_with_entity_data(entityData).save(entityStorage);
+
+    testEntity =
+      await Entity.create_entity_with_entity_data(entityData).save(
+        entityStorage,
+      );
   });
 
   describe('EntityExtractor', () => {
     it('should extract main entity from text', async () => {
       const extractor = new EntityExtractor();
-      const text = 'Machine learning is a subset of artificial intelligence that enables systems to learn from data.';
+      const text =
+        'Machine learning is a subset of artificial intelligence that enables systems to learn from data.';
       const result = await extractor.extractMainEntity(text);
-      
+
       expect(result).toBeDefined();
       expect(result.name).toBeDefined();
       expect(result.category).toBeDefined();
@@ -68,9 +72,9 @@ describe('Knowledge Creation Tests', () => {
       Main Content: This is the main content of the text.
       Conclusion: This is the conclusion section.
       `;
-      
+
       const sections = await extractor.analyzeTextStructure(text);
-      
+
       expect(sections).toBeDefined();
       expect(sections.length).toBeGreaterThan(0);
     });
@@ -81,13 +85,13 @@ describe('Knowledge Creation Tests', () => {
       const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
       const text = 'This is a simple knowledge item for testing.';
       const scope = 'Test Knowledge';
-      
+
       const knowledge = await workflow.create_simple_knowledge_from_text(
         text,
         testEntity,
         scope,
       );
-      
+
       expect(knowledge).toBeDefined();
       expect(knowledge.getData().scope).toBe(scope);
       expect(knowledge.getData().content).toBe(text);
@@ -106,19 +110,20 @@ describe('Knowledge Creation Tests', () => {
       Unsupervised Learning:
       Unsupervised learning finds patterns in unlabeled data.
       `;
-      
+
       const knowledge = await testEntity.create_subordinate_knowledge_from_text(
         text,
         knowledgeStorage,
       );
-      
+
       expect(knowledge).toBeDefined();
       expect(knowledge.getData().scope).toBeDefined();
     });
 
     it('should retrieve subordinate knowledge', async () => {
-      const subordinateKnowledge = await testEntity.get_subordinate_knowledge(knowledgeStorage);
-      
+      const subordinateKnowledge =
+        await testEntity.get_subordinate_knowledge(knowledgeStorage);
+
       expect(subordinateKnowledge).toBeDefined();
       expect(subordinateKnowledge.length).toBeGreaterThan(0);
     });
@@ -131,14 +136,14 @@ describe('Knowledge Creation Tests', () => {
       Child Topic:
       This is a child topic.
       `;
-      
+
       const knowledge = await testEntity.create_subordinate_knowledge_from_text(
         text,
         knowledgeStorage,
       );
-      
+
       const markdown = knowledge.render_to_markdown_string();
-      
+
       expect(markdown).toBeDefined();
       expect(markdown.length).toBeGreaterThan(0);
     });
@@ -156,15 +161,16 @@ describe('Knowledge Creation Tests', () => {
       Child Topic 2:
       This is the second child topic.
       `;
-      
-      const rootKnowledge = await testEntity.create_subordinate_knowledge_from_text(
-        text,
-        knowledgeStorage,
-      );
-      
+
+      const rootKnowledge =
+        await testEntity.create_subordinate_knowledge_from_text(
+          text,
+          knowledgeStorage,
+        );
+
       expect(rootKnowledge).toBeDefined();
       expect(rootKnowledge.getChildren().length).toBeGreaterThan(0);
-      
+
       // Render as markdown to verify structure
       const markdown = rootKnowledge.render_to_markdown_string();
       expect(markdown).toBeDefined();
@@ -176,9 +182,12 @@ describe('Knowledge Creation Tests', () => {
     it('should handle empty text gracefully', async () => {
       const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
       const text = '';
-      
+
       try {
-        const knowledge = await workflow.create_simple_knowledge_from_text(text, testEntity);
+        const knowledge = await workflow.create_simple_knowledge_from_text(
+          text,
+          testEntity,
+        );
         // Should not throw an error for empty text
         expect(knowledge).toBeDefined();
       } catch (error) {
@@ -191,7 +200,7 @@ describe('Knowledge Creation Tests', () => {
       const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
       const text = 'Test text';
       const invalidEntity = null as any;
-      
+
       try {
         await workflow.create_simple_knowledge_from_text(text, invalidEntity);
         // Should not reach here
@@ -207,22 +216,22 @@ describe('Knowledge Creation Tests', () => {
     it('should handle multiple knowledge creation efficiently', async () => {
       const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
       const startTime = Date.now();
-      
+
       const promises: Promise<any>[] = [];
       for (let i = 0; i < 5; i++) {
         const promise = workflow.create_simple_knowledge_from_text(
           `Performance test knowledge ${i}`,
           testEntity,
-          `Performance Test ${i}`
+          `Performance Test ${i}`,
         );
         promises.push(promise);
       }
-      
+
       const results = await Promise.all(promises);
       const duration = Date.now() - startTime;
-      
+
       expect(results.length).toBe(5);
-      expect(results.every(result => result !== null)).toBe(true);
+      expect(results.every((result) => result !== null)).toBe(true);
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
     });
   });
@@ -242,21 +251,23 @@ describe('Knowledge Creation Tests', () => {
       Deep Subtopic:
       This is a deeply nested subtopic for testing hierarchy.
       `;
-      
+
       // Create knowledge
-      const rootKnowledge = await testEntity.create_subordinate_knowledge_from_text(
-        text,
-        knowledgeStorage,
-      );
-      
+      const rootKnowledge =
+        await testEntity.create_subordinate_knowledge_from_text(
+          text,
+          knowledgeStorage,
+        );
+
       // Verify structure
       expect(rootKnowledge).toBeDefined();
       expect(rootKnowledge.getChildren().length).toBeGreaterThan(0);
-      
+
       // Retrieve and verify
-      const retrievedKnowledge = await testEntity.get_subordinate_knowledge(knowledgeStorage);
+      const retrievedKnowledge =
+        await testEntity.get_subordinate_knowledge(knowledgeStorage);
       expect(retrievedKnowledge.length).toBeGreaterThan(0);
-      
+
       // Verify markdown rendering
       const markdown = rootKnowledge.render_to_markdown_string();
       expect(markdown).toBeDefined();

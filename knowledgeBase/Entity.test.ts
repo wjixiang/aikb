@@ -90,7 +90,7 @@ describe('Entity.create_entity_with_ai', () => {
   it.skip('use real elasticsearch content storage to create&save entity', async () => {
     const storage = new EntityStorage(
       new ElasticsearchEntityContentStorage(
-        process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+        process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200',
       ),
       {} as unknown as AbstractEntityGraphStorage,
       {} as unknown as AbstractEntityVectorStorage,

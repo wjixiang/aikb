@@ -51,7 +51,7 @@ The following environment variables are required:
 
 ```bash
 # Elasticsearch configuration
-ELASTICSEARCH_URL=http://localhost:9200
+ELASTICSEARCH_URL=http://elasticsearch:9200
 ELASTICSEARCH_URL_API_KEY=your-api-key
 
 # S3 configuration
@@ -110,7 +110,7 @@ docker run -d \
 You can verify Elasticsearch is running by:
 
 ```bash
-curl http://localhost:9200
+curl http://elasticsearch:9200
 ```
 
 Or by running the check script:
@@ -127,7 +127,7 @@ node knowledgeBase/knowledgeImport/scripts/check-elasticsearch.js
 import Library, { S3ElasticSearchLibraryStorage } from './liberary';
 
 // Initialize the storage
-const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
 const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
 
 // Create a library instance

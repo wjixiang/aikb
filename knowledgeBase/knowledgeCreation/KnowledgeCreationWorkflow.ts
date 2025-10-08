@@ -40,7 +40,9 @@ export class KnowledgeCreationWorkflow {
 
       // Extract knowledge scopes from text
       const scopes = await this.extractKnowledgeScopes(mainEntity.name, text);
-      this.logger.info('Extracted knowledge scopes', { scopeCount: scopes.length });
+      this.logger.info('Extracted knowledge scopes', {
+        scopeCount: scopes.length,
+      });
 
       // Create root knowledge
       const rootKnowledgeData: KnowledgeData = {
@@ -49,9 +51,12 @@ export class KnowledgeCreationWorkflow {
         childKnowledgeId: [],
       };
 
-      const tempRootKnowledge = parentEntity.create_knowledge_with_knowledge_data(rootKnowledgeData);
+      const tempRootKnowledge =
+        parentEntity.create_knowledge_with_knowledge_data(rootKnowledgeData);
       const rootKnowledge = await tempRootKnowledge.save(this.knowledgeStorage);
-      this.logger.info('Created root knowledge', { knowledgeId: rootKnowledge.get_id() });
+      this.logger.info('Created root knowledge', {
+        knowledgeId: rootKnowledge.get_id(),
+      });
 
       // Create a hierarchical structure by analyzing the text for nested patterns
       await this.createHierarchicalKnowledge(rootKnowledge, text, scopes);
@@ -73,18 +78,21 @@ export class KnowledgeCreationWorkflow {
   private async createHierarchicalKnowledge(
     parentKnowledge: Knowledge,
     text: string,
-    scopes: ScopeExtractResult[]
+    scopes: ScopeExtractResult[],
   ): Promise<void> {
     // Group scopes by hierarchy level based on content analysis
     const hierarchyLevels = this.analyzeHierarchyLevels(scopes);
-    
+
     // Create knowledge nodes for each level
     for (let level = 0; level < hierarchyLevels.length; level++) {
       const levelScopes = hierarchyLevels[level];
-      
+
       for (const scope of levelScopes) {
-        const childKnowledge = await this.createChildKnowledge(parentKnowledge, scope);
-        
+        const childKnowledge = await this.createChildKnowledge(
+          parentKnowledge,
+          scope,
+        );
+
         // Create sub-knowledge for this scope if it contains nested content
         if (level < hierarchyLevels.length - 1) {
           await this.createSubKnowledgeForScope(childKnowledge, scope, text);
@@ -98,20 +106,27 @@ export class KnowledgeCreationWorkflow {
    * @param scopes Array of scopes to analyze
    * @returns Array of arrays, each containing scopes at the same hierarchy level
    */
-  private analyzeHierarchyLevels(scopes: ScopeExtractResult[]): ScopeExtractResult[][] {
+  private analyzeHierarchyLevels(
+    scopes: ScopeExtractResult[],
+  ): ScopeExtractResult[][] {
     const hierarchyLevels: ScopeExtractResult[][] = [];
-    
+
     // Simple heuristic: categorize scopes by content length and complexity
-    const sortedScopes = scopes.sort((a, b) => b.abstract.length - a.abstract.length);
-    
+    const sortedScopes = scopes.sort(
+      (a, b) => b.abstract.length - a.abstract.length,
+    );
+
     // Create 3 levels of hierarchy
     const level1Count = Math.ceil(sortedScopes.length * 0.3);
     const level2Count = Math.ceil(sortedScopes.length * 0.4);
-    
+
     hierarchyLevels[0] = sortedScopes.slice(0, level1Count);
-    hierarchyLevels[1] = sortedScopes.slice(level1Count, level1Count + level2Count);
+    hierarchyLevels[1] = sortedScopes.slice(
+      level1Count,
+      level1Count + level2Count,
+    );
     hierarchyLevels[2] = sortedScopes.slice(level1Count + level2Count);
-    
+
     return hierarchyLevels;
   }
 
@@ -124,25 +139,30 @@ export class KnowledgeCreationWorkflow {
   private async createSubKnowledgeForScope(
     parentKnowledge: Knowledge,
     scope: ScopeExtractResult,
-    originalText: string
+    originalText: string,
   ): Promise<void> {
     // Split the scope content into smaller pieces
-    const sentences = scope.abstract.split(/[。！？.!?]/).filter(s => s.trim().length > 0);
-    
+    const sentences = scope.abstract
+      .split(/[。！？.!?]/)
+      .filter((s) => s.trim().length > 0);
+
     // Create sub-knowledge for each sentence or group of sentences
     const subKnowledgeCount = Math.min(3, Math.ceil(sentences.length / 2));
-    
+
     for (let i = 0; i < subKnowledgeCount; i++) {
       const startIdx = i * Math.ceil(sentences.length / subKnowledgeCount);
-      const endIdx = Math.min(startIdx + Math.ceil(sentences.length / subKnowledgeCount), sentences.length);
+      const endIdx = Math.min(
+        startIdx + Math.ceil(sentences.length / subKnowledgeCount),
+        sentences.length,
+      );
       const subContent = sentences.slice(startIdx, endIdx).join('。') + '。';
-      
+
       if (subContent.trim().length > 10) {
         const subScopeData: ScopeExtractResult = {
           name: `${scope.name} - 子项 ${i + 1}`,
           abstract: subContent.trim(),
         };
-        
+
         await this.createChildKnowledge(parentKnowledge, subScopeData);
       }
     }
@@ -188,8 +208,11 @@ export class KnowledgeCreationWorkflow {
       const scopes = await b.ExtractScopes(mainEntity, text);
       return scopes;
     } catch (error) {
-      this.logger.warn('BAML client failed for scope extraction, using fallback', error);
-      
+      this.logger.warn(
+        'BAML client failed for scope extraction, using fallback',
+        error,
+      );
+
       // Fallback scope extraction when BAML client fails
       return this.extractKnowledgeScopesFallback(mainEntity, text);
     }
@@ -206,22 +229,34 @@ export class KnowledgeCreationWorkflow {
     text: string,
   ): ScopeExtractResult[] {
     this.logger.info('Using fallback scope extraction');
-    
+
     const scopes: ScopeExtractResult[] = [];
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
     // Track hierarchy levels using indentation patterns
-    let currentHierarchy: { level: number; title: string; content: string; parent: number | null }[] = [];
-    
+    let currentHierarchy: {
+      level: number;
+      title: string;
+      content: string;
+      parent: number | null;
+    }[] = [];
+
     for (const line of lines) {
       // Determine indentation level
       const indentMatch = line.match(/^(\s*)/);
       const indentLevel = indentMatch ? indentMatch[1].length : 0;
-      
+
       // Check if line looks like a heading (ends with colon or has specific pattern)
-      if (line.endsWith(':') || /^[A-Z\u4e00-\u9fff]/.test(line) || indentLevel > 0) {
+      if (
+        line.endsWith(':') ||
+        /^[A-Z\u4e00-\u9fff]/.test(line) ||
+        indentLevel > 0
+      ) {
         const title = line.replace(/:$/, '').trim();
-        
+
         // Find parent based on indentation
         let parentIndex = -1;
         for (let i = currentHierarchy.length - 1; i >= 0; i--) {
@@ -230,7 +265,7 @@ export class KnowledgeCreationWorkflow {
             break;
           }
         }
-        
+
         // Add to hierarchy
         currentHierarchy.push({
           level: indentLevel,
@@ -243,7 +278,7 @@ export class KnowledgeCreationWorkflow {
         currentHierarchy[currentHierarchy.length - 1].content += line + ' ';
       }
     }
-    
+
     // Convert hierarchy to scopes, preserving structure
     for (const item of currentHierarchy) {
       if (item.content.trim().length > 0) {
@@ -253,7 +288,7 @@ export class KnowledgeCreationWorkflow {
         });
       }
     }
-    
+
     // If no sections were found, create a default scope
     if (scopes.length === 0) {
       scopes.push({
@@ -261,7 +296,7 @@ export class KnowledgeCreationWorkflow {
         abstract: text.trim(),
       });
     }
-    
+
     this.logger.info(`Fallback extraction found ${scopes.length} scopes`);
     return scopes;
   }
@@ -300,10 +335,13 @@ export class KnowledgeCreationWorkflow {
         childKnowledgeId: [],
       };
 
-      const tempKnowledge = parentEntity.create_knowledge_with_knowledge_data(knowledgeData);
+      const tempKnowledge =
+        parentEntity.create_knowledge_with_knowledge_data(knowledgeData);
       const knowledge = await tempKnowledge.save(this.knowledgeStorage);
 
-      this.logger.info('Simple knowledge created', { knowledgeId: knowledge.get_id() });
+      this.logger.info('Simple knowledge created', {
+        knowledgeId: knowledge.get_id(),
+      });
       return knowledge;
     } catch (error) {
       this.logger.error('Error creating simple knowledge', error);
@@ -329,7 +367,10 @@ export class KnowledgeCreationWorkflow {
     try {
       // Extract new scopes from the text
       const currentScope = knowledge.getData().scope;
-      const newScopes = await this.extractKnowledgeScopes(currentScope, newText);
+      const newScopes = await this.extractKnowledgeScopes(
+        currentScope,
+        newText,
+      );
 
       // Update the main content
       await knowledge.update({

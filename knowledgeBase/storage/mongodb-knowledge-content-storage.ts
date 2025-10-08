@@ -20,9 +20,9 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
 
       // Generate a unique ID
       const knowledgeId = `knowledge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const knowledgeWithId = { 
-        ...knowledge, 
+
+      const knowledgeWithId = {
+        ...knowledge,
         id: knowledgeId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -33,8 +33,8 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
         `Created knowledge with _id: ${JSON.stringify(result.insertedId)}`,
       );
 
-      return { 
-        ...knowledge, 
+      return {
+        ...knowledge,
         id: knowledgeId,
         childKnowledgeId: knowledge.childKnowledgeId || [],
       };
@@ -44,9 +44,7 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
     }
   }
 
-  async get_knowledge_content_by_id(
-    id: string,
-  ): Promise<KnowledgeDataWithId> {
+  async get_knowledge_content_by_id(id: string): Promise<KnowledgeDataWithId> {
     try {
       const { db } = await connectToDatabase();
       const collection = db.collection(this.collectionName);
@@ -91,7 +89,7 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
       }
 
       this.logger.info(`Updated knowledge with ID: ${id}`);
-      
+
       // Get the updated knowledge
       return await this.get_knowledge_content_by_id(id);
     } catch (error) {
@@ -140,7 +138,8 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
 
       // Remove MongoDB-specific fields before returning
       const result = knowledgeItems.map(
-        ({ _id, id, createdAt, updatedAt, ...knowledgeData }) => knowledgeData as KnowledgeData,
+        ({ _id, id, createdAt, updatedAt, ...knowledgeData }) =>
+          knowledgeData as KnowledgeData,
       );
 
       this.logger.info(
@@ -162,7 +161,8 @@ class MongodbKnowledgeContentStorage extends AbstractKnowledgeContentStorage {
 
       // Remove MongoDB-specific fields before returning
       const result = knowledgeItems.map(
-        ({ _id, id, createdAt, updatedAt, ...knowledgeData }) => knowledgeData as KnowledgeData,
+        ({ _id, id, createdAt, updatedAt, ...knowledgeData }) =>
+          knowledgeData as KnowledgeData,
       );
 
       this.logger.info(`Listed ${result.length} knowledge items`);

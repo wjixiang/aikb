@@ -1,4 +1,10 @@
-import Library, { AbstractLibraryStorage, BookMetadata, Collection, Citation } from './liberary';
+import Library, {
+  AbstractLibraryStorage,
+  BookMetadata,
+  Collection,
+  Citation,
+  IdUtils,
+} from './liberary';
 
 // Define AbstractPdf interface locally since it's not exported
 interface AbstractPdf {
@@ -9,8 +15,6 @@ interface AbstractPdf {
   fileSize?: number;
   createDate: Date;
 }
-import { ObjectId } from 'mongodb';
-
 /**
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
@@ -19,20 +23,21 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
   private pdfStore: Map<string, AbstractPdf> = new Map();
   private collectionStore: Map<string, Collection> = new Map();
   private citationStore: Map<string, Citation[]> = new Map();
+  private markdownStore: Map<string, string> = new Map();
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
-    const id = new ObjectId().toString();
+    const id = IdUtils.generateId();
     const s3Key = `mock/pdfs/${id}-${fileName}`;
-    
+
     const pdfInfo: AbstractPdf = {
       id,
       name: fileName,
       s3Key,
       url: `mock-url/${s3Key}`,
       fileSize: pdfData.length,
-      createDate: new Date()
+      createDate: new Date(),
     };
-    
+
     this.pdfStore.set(id, pdfInfo);
     return pdfInfo;
   }
@@ -42,7 +47,7 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     const path = await import('path');
     const fileName = path.basename(pdfPath);
     const fileBuffer = fs.readFileSync(pdfPath);
-    
+
     return this.uploadPdf(fileBuffer, fileName);
   }
 
@@ -52,7 +57,8 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
 
   async getPdf(s3Key: string): Promise<Buffer> {
     // Find PDF by s3Key
-    for (const pdf of this.pdfStore.values()) {
+    const pdfs = Array.from(this.pdfStore.values());
+    for (const pdf of pdfs) {
       if (pdf.s3Key === s3Key) {
         // Return mock buffer
         return Buffer.from('Mock PDF content');
@@ -61,13 +67,13 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     throw new Error(`PDF with S3 key ${s3Key} not found`);
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata> {
+  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
     if (!metadata.id) {
-      metadata.id = new ObjectId().toString();
+      metadata.id = IdUtils.generateId();
     }
-    
+
     this.metadataStore.set(metadata.id, metadata);
-    return metadata;
+    return metadata as BookMetadata & {id: string};
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {
@@ -75,7 +81,8 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
   }
 
   async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
-    for (const metadata of this.metadataStore.values()) {
+    const metadataList = Array.from(this.metadataStore.values());
+    for (const metadata of metadataList) {
       if (metadata.contentHash === contentHash) {
         return metadata;
       }
@@ -91,58 +98,66 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
 
   async searchMetadata(filter: any): Promise<BookMetadata[]> {
     const results: BookMetadata[] = [];
-    
-    for (const metadata of this.metadataStore.values()) {
+    const metadataList = Array.from(this.metadataStore.values());
+
+    for (const metadata of metadataList) {
       let matches = true;
-      
+
       if (filter.query) {
         const query = filter.query.toLowerCase();
         const titleMatch = metadata.title.toLowerCase().includes(query);
-        const abstractMatch = metadata.abstract?.toLowerCase().includes(query) || false;
-        const notesMatch = metadata.notes?.toLowerCase().includes(query) || false;
-        const hashMatch = metadata.contentHash?.toLowerCase().includes(query) || false;
-        
+        const abstractMatch =
+          metadata.abstract?.toLowerCase().includes(query) || false;
+        const notesMatch =
+          metadata.notes?.toLowerCase().includes(query) || false;
+        const hashMatch =
+          metadata.contentHash?.toLowerCase().includes(query) || false;
+
         if (!titleMatch && !abstractMatch && !notesMatch && !hashMatch) {
           matches = false;
         }
       }
-      
+
       if (filter.tags && filter.tags.length > 0) {
-        const hasTag = filter.tags.some((tag: string) => metadata.tags.includes(tag));
+        const hasTag = filter.tags.some((tag: string) =>
+          metadata.tags.includes(tag),
+        );
         if (!hasTag) matches = false;
       }
-      
+
       if (filter.collections && filter.collections.length > 0) {
-        const inCollection = filter.collections.some((colId: string) => metadata.collections.includes(colId));
+        const inCollection = filter.collections.some((colId: string) =>
+          metadata.collections.includes(colId),
+        );
         if (!inCollection) matches = false;
       }
-      
+
       if (filter.authors && filter.authors.length > 0) {
-        const hasAuthor = filter.authors.some((author: string) => 
-          metadata.authors.some(a => a.lastName === author)
+        const hasAuthor = filter.authors.some((author: string) =>
+          metadata.authors.some((a) => a.lastName === author),
         );
         if (!hasAuthor) matches = false;
       }
-      
+
       if (filter.fileType && filter.fileType.length > 0) {
         if (!filter.fileType.includes(metadata.fileType)) {
           matches = false;
         }
       }
-      
+
       if (matches) {
         results.push(metadata);
       }
     }
-    
+
     return results;
   }
 
   async saveCollection(collection: Collection): Promise<Collection> {
     if (!collection.id) {
-      collection.id = new ObjectId().toString();
+      collection.id = IdUtils.generateId();
     }
-    
+
     this.collectionStore.set(collection.id, collection);
     return collection;
   }
@@ -151,7 +166,10 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     return Array.from(this.collectionStore.values());
   }
 
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> {
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     const metadata = this.metadataStore.get(itemId);
     if (metadata && !metadata.collections.includes(collectionId)) {
       metadata.collections.push(collectionId);
@@ -159,7 +177,10 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     }
   }
 
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> {
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     const metadata = this.metadataStore.get(itemId);
     if (metadata) {
       const index = metadata.collections.indexOf(collectionId);
@@ -181,12 +202,21 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     return this.citationStore.get(itemId) || [];
   }
 
+  async saveMarkdown(itemId: string, markdownContent: string): Promise<void> {
+    this.markdownStore.set(itemId, markdownContent);
+  }
+
+  async getMarkdown(itemId: string): Promise<string | null> {
+    return this.markdownStore.get(itemId) || null;
+  }
+
   // Helper methods for testing
   clearAll(): void {
     this.metadataStore.clear();
     this.pdfStore.clear();
     this.collectionStore.clear();
     this.citationStore.clear();
+    this.markdownStore.clear();
   }
 
   getAllMetadata(): BookMetadata[] {

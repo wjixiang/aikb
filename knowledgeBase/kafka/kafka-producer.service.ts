@@ -1,6 +1,11 @@
 import { Kafka, Producer, ProducerRecord, Message } from 'kafkajs';
 import createLoggerWithPrefix from '../lib/logger';
-import { KafkaEvent, KafkaMessage, KafkaProducerConfig, KAFKA_TOPICS } from './kafka.types';
+import {
+  KafkaEvent,
+  KafkaMessage,
+  KafkaProducerConfig,
+  KAFKA_TOPICS,
+} from './kafka.types';
 
 const logger = createLoggerWithPrefix('KafkaProducer');
 
@@ -17,11 +22,13 @@ export class KafkaProducerService {
       clientId: config.clientId,
       brokers: config.brokers,
       ssl: config.ssl,
-      sasl: config.sasl ? {
-        mechanism: config.sasl.mechanism as any,
-        username: config.sasl.username,
-        password: config.sasl.password,
-      } : undefined,
+      sasl: config.sasl
+        ? {
+            mechanism: config.sasl.mechanism as any,
+            username: config.sasl.username,
+            password: config.sasl.password,
+          }
+        : undefined,
       connectionTimeout: config.connectionTimeout,
       requestTimeout: config.requestTimeout,
       retry: config.retry,
@@ -94,7 +101,10 @@ export class KafkaProducerService {
       };
 
       await this.producer.send(record);
-      logger.debug(`Event sent to topic ${topic}:`, { eventId: event.eventId, eventType: event.eventType });
+      logger.debug(`Event sent to topic ${topic}:`, {
+        eventId: event.eventId,
+        eventType: event.eventType,
+      });
     } catch (error) {
       logger.error(`Failed to send event to topic ${topic}:`, error);
       throw error;
@@ -110,7 +120,7 @@ export class KafkaProducerService {
     }
 
     try {
-      const messages: Message[] = events.map(event => ({
+      const messages: Message[] = events.map((event) => ({
         key: event.eventId,
         value: JSON.stringify(event),
         headers: {
@@ -126,7 +136,9 @@ export class KafkaProducerService {
       };
 
       await this.producer.send(record);
-      logger.debug(`Batch events sent to topic ${topic}:`, { count: events.length });
+      logger.debug(`Batch events sent to topic ${topic}:`, {
+        count: events.length,
+      });
     } catch (error) {
       logger.error(`Failed to send batch events to topic ${topic}:`, error);
       throw error;
@@ -136,7 +148,10 @@ export class KafkaProducerService {
   /**
    * Send entity created event
    */
-  async sendEntityCreatedEvent(entityId: string, entityData: any): Promise<void> {
+  async sendEntityCreatedEvent(
+    entityId: string,
+    entityData: any,
+  ): Promise<void> {
     const event = {
       eventType: 'ENTITY_CREATED' as const,
       timestamp: Date.now(),
@@ -151,7 +166,11 @@ export class KafkaProducerService {
   /**
    * Send entity updated event
    */
-  async sendEntityUpdatedEvent(entityId: string, oldEntityData: any, newEntityData: any): Promise<void> {
+  async sendEntityUpdatedEvent(
+    entityId: string,
+    oldEntityData: any,
+    newEntityData: any,
+  ): Promise<void> {
     const event = {
       eventType: 'ENTITY_UPDATED' as const,
       timestamp: Date.now(),
@@ -167,7 +186,10 @@ export class KafkaProducerService {
   /**
    * Send entity deleted event
    */
-  async sendEntityDeletedEvent(entityId: string, entityData: any): Promise<void> {
+  async sendEntityDeletedEvent(
+    entityId: string,
+    entityData: any,
+  ): Promise<void> {
     const event = {
       eventType: 'ENTITY_DELETED' as const,
       timestamp: Date.now(),
@@ -182,7 +204,12 @@ export class KafkaProducerService {
   /**
    * Send entity relation created event
    */
-  async sendEntityRelationCreatedEvent(sourceId: string, targetId: string, relationType: string, properties?: Record<string, any>): Promise<void> {
+  async sendEntityRelationCreatedEvent(
+    sourceId: string,
+    targetId: string,
+    relationType: string,
+    properties?: Record<string, any>,
+  ): Promise<void> {
     const event = {
       eventType: 'ENTITY_RELATION_CREATED' as const,
       timestamp: Date.now(),
@@ -199,7 +226,11 @@ export class KafkaProducerService {
   /**
    * Send entity vector generated event
    */
-  async sendEntityVectorGeneratedEvent(entityId: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async sendEntityVectorGeneratedEvent(
+    entityId: string,
+    vector: number[],
+    metadata?: Record<string, any>,
+  ): Promise<void> {
     const event = {
       eventType: 'ENTITY_VECTOR_GENERATED' as const,
       timestamp: Date.now(),
@@ -215,7 +246,11 @@ export class KafkaProducerService {
   /**
    * Send knowledge created event
    */
-  async sendKnowledgeCreatedEvent(knowledgeId: string, knowledgeData: any, sourceId: string): Promise<void> {
+  async sendKnowledgeCreatedEvent(
+    knowledgeId: string,
+    knowledgeData: any,
+    sourceId: string,
+  ): Promise<void> {
     const event = {
       eventType: 'KNOWLEDGE_CREATED' as const,
       timestamp: Date.now(),
@@ -231,7 +266,11 @@ export class KafkaProducerService {
   /**
    * Send knowledge vector generated event
    */
-  async sendKnowledgeVectorGeneratedEvent(knowledgeId: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async sendKnowledgeVectorGeneratedEvent(
+    knowledgeId: string,
+    vector: number[],
+    metadata?: Record<string, any>,
+  ): Promise<void> {
     const event = {
       eventType: 'KNOWLEDGE_VECTOR_GENERATED' as const,
       timestamp: Date.now(),
@@ -247,14 +286,16 @@ export class KafkaProducerService {
   /**
    * Execute a transaction with multiple events
    */
-  async sendTransaction(events: Array<{ topic: string; event: KafkaEvent }>): Promise<void> {
+  async sendTransaction(
+    events: Array<{ topic: string; event: KafkaEvent }>,
+  ): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Kafka producer is not connected');
     }
 
     try {
       const transaction = await this.producer.transaction();
-      
+
       try {
         for (const { topic, event } of events) {
           const message: Message = {
@@ -274,7 +315,9 @@ export class KafkaProducerService {
         }
 
         await transaction.commit();
-        logger.debug('Transaction committed successfully:', { eventCount: events.length });
+        logger.debug('Transaction committed successfully:', {
+          eventCount: events.length,
+        });
       } catch (error) {
         await transaction.abort();
         logger.error('Transaction aborted due to error:', error);
@@ -295,10 +338,14 @@ let kafkaProducerInstance: KafkaProducerService | null = null;
 /**
  * Get or create the Kafka producer singleton instance
  */
-export function getKafkaProducer(config?: KafkaProducerConfig): KafkaProducerService {
+export function getKafkaProducer(
+  config?: KafkaProducerConfig,
+): KafkaProducerService {
   if (!kafkaProducerInstance) {
     if (!config) {
-      throw new Error('Kafka producer config is required for first initialization');
+      throw new Error(
+        'Kafka producer config is required for first initialization',
+      );
     }
     kafkaProducerInstance = new KafkaProducerService(config);
   }
@@ -308,7 +355,9 @@ export function getKafkaProducer(config?: KafkaProducerConfig): KafkaProducerSer
 /**
  * Initialize and connect the Kafka producer
  */
-export async function initializeKafkaProducer(config: KafkaProducerConfig): Promise<KafkaProducerService> {
+export async function initializeKafkaProducer(
+  config: KafkaProducerConfig,
+): Promise<KafkaProducerService> {
   const producer = getKafkaProducer(config);
   await producer.connect();
   return producer;

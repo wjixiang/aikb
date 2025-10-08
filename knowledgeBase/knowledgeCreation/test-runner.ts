@@ -20,18 +20,18 @@ async function runTests() {
   const knowledgeContentStorage = new MongodbKnowledgeContentStorage();
   const knowledgeVectorStorage = new MongodbKnowledgeVectorStorage();
   const knowledgeGraphStorage = new MongoKnowledgeGraphStorage();
-  
+
   const entityContentStorage = new MongodbEntityContentStorage();
   const entityGraphStorage = new MongoEntityGraphStorage();
   const entityVectorStorage = new ElasticsearchVectorStorage();
-  
+
   // Create storage instances
   const knowledgeStorage = new KnowledgeStorage(
     knowledgeContentStorage,
     knowledgeGraphStorage,
     knowledgeVectorStorage,
   );
-  
+
   const entityStorage = new EntityStorage(
     entityContentStorage,
     entityGraphStorage,
@@ -66,8 +66,11 @@ async function runTests() {
       tags: ['test'],
       definition: 'A test entity for testing knowledge creation functionality.',
     };
-    
-    testEntity = await Entity.create_entity_with_entity_data(entityData).save(entityStorage);
+
+    testEntity =
+      await Entity.create_entity_with_entity_data(entityData).save(
+        entityStorage,
+      );
     console.log(`Created test entity with ID: ${testEntity.get_id()}\n`);
   } catch (error) {
     console.error('Failed to create test entity:', error);
@@ -75,17 +78,21 @@ async function runTests() {
   }
 
   // Test 1: EntityExtractor - Extract main entity
-  await runTest('EntityExtractor should extract main entity from text', async () => {
-    const extractor = new EntityExtractor();
-    const text = 'Machine learning is a subset of artificial intelligence that enables systems to learn from data.';
-    const result = await extractor.extractMainEntity(text);
-    
-    if (!result || !result.name || !result.category || !result.abstract) {
-      throw new Error('Entity extraction failed or returned incomplete data');
-    }
-    
-    console.log(`   Extracted entity: ${result.name} (${result.category})`);
-  });
+  await runTest(
+    'EntityExtractor should extract main entity from text',
+    async () => {
+      const extractor = new EntityExtractor();
+      const text =
+        'Machine learning is a subset of artificial intelligence that enables systems to learn from data.';
+      const result = await extractor.extractMainEntity(text);
+
+      if (!result || !result.name || !result.category || !result.abstract) {
+        throw new Error('Entity extraction failed or returned incomplete data');
+      }
+
+      console.log(`   Extracted entity: ${result.name} (${result.category})`);
+    },
+  );
 
   // Test 2: EntityExtractor - Analyze text structure
   await runTest('EntityExtractor should analyze text structure', async () => {
@@ -95,38 +102,47 @@ async function runTests() {
     Main Content: This is the main content of the text.
     Conclusion: This is the conclusion section.
     `;
-    
+
     const sections = await extractor.analyzeTextStructure(text);
-    
+
     if (!sections || sections.length === 0) {
       throw new Error('Text structure analysis failed');
     }
-    
+
     console.log(`   Analyzed ${sections.length} sections`);
   });
 
   // Test 3: KnowledgeCreationWorkflow - Create simple knowledge
-  await runTest('KnowledgeCreationWorkflow should create simple knowledge', async () => {
-    const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
-    const text = 'This is a simple knowledge item for testing.';
-    const scope = 'Test Knowledge';
-    
-    const knowledge = await workflow.create_simple_knowledge_from_text(
-      text,
-      testEntity,
-      scope,
-    );
-    
-    if (!knowledge || knowledge.getData().scope !== scope || knowledge.getData().content !== text) {
-      throw new Error('Simple knowledge creation failed');
-    }
-    
-    console.log(`   Created knowledge with ID: ${knowledge.get_id()}`);
-  });
+  await runTest(
+    'KnowledgeCreationWorkflow should create simple knowledge',
+    async () => {
+      const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
+      const text = 'This is a simple knowledge item for testing.';
+      const scope = 'Test Knowledge';
+
+      const knowledge = await workflow.create_simple_knowledge_from_text(
+        text,
+        testEntity,
+        scope,
+      );
+
+      if (
+        !knowledge ||
+        knowledge.getData().scope !== scope ||
+        knowledge.getData().content !== text
+      ) {
+        throw new Error('Simple knowledge creation failed');
+      }
+
+      console.log(`   Created knowledge with ID: ${knowledge.get_id()}`);
+    },
+  );
 
   // Test 4: Entity - Create subordinate knowledge from text
-  await runTest('Entity should create subordinate knowledge from text', async () => {
-    const text = `
+  await runTest(
+    'Entity should create subordinate knowledge from text',
+    async () => {
+      const text = `
     Machine Learning Overview:
     Machine learning is a subset of artificial intelligence.
     
@@ -136,30 +152,36 @@ async function runTests() {
     Unsupervised Learning:
     Unsupervised learning finds patterns in unlabeled data.
     `;
-    
-    const knowledge = await testEntity.create_subordinate_knowledge_from_text(
-      text,
-      knowledgeStorage,
-    );
-    
-    if (!knowledge || !knowledge.getData().scope) {
-      throw new Error('Subordinate knowledge creation failed');
-    }
-    
-    console.log(`   Created subordinate knowledge with ID: ${knowledge.get_id()}`);
-    console.log(`   Root scope: ${knowledge.getData().scope}`);
-    console.log(`   Children count: ${knowledge.getChildren().length}`);
-  });
+
+      const knowledge = await testEntity.create_subordinate_knowledge_from_text(
+        text,
+        knowledgeStorage,
+      );
+
+      if (!knowledge || !knowledge.getData().scope) {
+        throw new Error('Subordinate knowledge creation failed');
+      }
+
+      console.log(
+        `   Created subordinate knowledge with ID: ${knowledge.get_id()}`,
+      );
+      console.log(`   Root scope: ${knowledge.getData().scope}`);
+      console.log(`   Children count: ${knowledge.getChildren().length}`);
+    },
+  );
 
   // Test 5: Entity - Retrieve subordinate knowledge
   await runTest('Entity should retrieve subordinate knowledge', async () => {
-    const subordinateKnowledge = await testEntity.get_subordinate_knowledge(knowledgeStorage);
-    
+    const subordinateKnowledge =
+      await testEntity.get_subordinate_knowledge(knowledgeStorage);
+
     if (!subordinateKnowledge || subordinateKnowledge.length === 0) {
       throw new Error('Failed to retrieve subordinate knowledge');
     }
-    
-    console.log(`   Retrieved ${subordinateKnowledge.length} subordinate knowledge items`);
+
+    console.log(
+      `   Retrieved ${subordinateKnowledge.length} subordinate knowledge items`,
+    );
   });
 
   // Test 6: Knowledge - Render as markdown
@@ -171,18 +193,18 @@ async function runTests() {
     Child Topic:
     This is a child topic.
     `;
-    
+
     const knowledge = await testEntity.create_subordinate_knowledge_from_text(
       text,
       knowledgeStorage,
     );
-    
+
     const markdown = knowledge.render_to_markdown_string();
-    
+
     if (!markdown || !markdown.includes('Root Topic')) {
       throw new Error('Markdown rendering failed');
     }
-    
+
     console.log(`   Rendered markdown with ${markdown.length} characters`);
   });
 
@@ -192,13 +214,19 @@ async function runTests() {
   console.log(`Total: ${testResults.total}`);
   console.log(`Passed: ${testResults.passed}`);
   console.log(`Failed: ${testResults.failed}`);
-  console.log(`Success Rate: ${((testResults.passed / testResults.total) * 100).toFixed(1)}%`);
+  console.log(
+    `Success Rate: ${((testResults.passed / testResults.total) * 100).toFixed(1)}%`,
+  );
   console.log('='.repeat(50));
 
   if (testResults.failed === 0) {
-    console.log('\n🎉 All tests passed! Knowledge creation functionality is working correctly.');
+    console.log(
+      '\n🎉 All tests passed! Knowledge creation functionality is working correctly.',
+    );
   } else {
-    console.log(`\n⚠️  ${testResults.failed} test(s) failed. Please check the implementation.`);
+    console.log(
+      `\n⚠️  ${testResults.failed} test(s) failed. Please check the implementation.`,
+    );
   }
 }
 

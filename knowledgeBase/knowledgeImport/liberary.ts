@@ -1,5 +1,9 @@
-
-import { uploadToS3, uploadPdfFromPath, getSignedUploadUrl, getSignedUrlForDownload } from '../lib/s3Service/S3Service';
+import {
+  uploadToS3,
+  uploadPdfFromPath,
+  getSignedUploadUrl,
+  getSignedUrlForDownload,
+} from '../lib/s3Service/S3Service';
 import { connectToDatabase } from '../lib/mongodb';
 import { ObjectId } from 'mongodb';
 import * as fs from 'fs';
@@ -7,6 +11,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
+import { MinerUPdfConvertor } from './MinerUPdfConvertor';
 
 // Enhanced metadata interfaces for Zotero-like functionality
 export interface Author {
@@ -37,6 +42,8 @@ export interface BookMetadata {
   pageCount?: number;
   language?: string;
   contentHash?: string; // Hash of the content for deduplication
+  markdownContent?: string; // Converted markdown content from PDF
+  markdownUpdatedDate?: Date; // When the markdown was last updated
 }
 
 export interface Collection {
@@ -93,18 +100,48 @@ export class HashUtils {
   static generateHashFromMetadata(metadata: Partial<BookMetadata>): string {
     const hashInput = {
       title: metadata.title || '',
-      authors: metadata.authors?.map(author =>
-        `${author.lastName},${author.firstName}${author.middleName ? ',' + author.middleName : ''}`
-      ).sort().join('|') || '',
+      authors:
+        metadata.authors
+          ?.map(
+            (author) =>
+              `${author.lastName},${author.firstName}${author.middleName ? ',' + author.middleName : ''}`,
+          )
+          .sort()
+          .join('|') || '',
       abstract: metadata.abstract || '',
       publicationYear: metadata.publicationYear || 0,
       publisher: metadata.publisher || '',
       doi: metadata.doi || '',
-      isbn: metadata.isbn || ''
+      isbn: metadata.isbn || '',
     };
-    
+
     const hashString = JSON.stringify(hashInput);
     return crypto.createHash('sha256').update(hashString).digest('hex');
+  }
+}
+
+/**
+ * Utility functions for generating IDs without database dependency
+ */
+export class IdUtils {
+  /**
+   * Generate a unique ID using timestamp and random string
+   */
+  static generateId(): string {
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}-${randomStr}`;
+  }
+
+  /**
+   * Generate a UUID-like ID (without using crypto.randomUUID for compatibility)
+   */
+  static generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 }
 
@@ -112,105 +149,185 @@ export class HashUtils {
  * Manage overall storage & retrieve of books/literatures/articles
  */
 export default class Library {
-  constructor(private storage: AbstractLibraryStorage) {}
+  constructor(
+    private storage: AbstractLibraryStorage,
+    private pdfConvertor: MinerUPdfConvertor,
+  ) {}
 
   /**
-   * Store a PDF file from local path
+   * Store a PDF file from either a local path or a buffer
+   * @param pdfInput Either a file path (string) or a buffer (Buffer)
+   * @param fileName Optional file name (required when using buffer)
+   * @param metadata PDF metadata
    */
-  async storePdf(pdfPath: string, metadata: Partial<BookMetadata>): Promise<LibraryItem> {
+  async storePdf(
+    pdfInput: string | Buffer,
+    metadata: Partial<BookMetadata>,
+    fileName?: string,
+  ): Promise<LibraryItem> {
+    // Determine if input is a path or buffer
+    const isBuffer = Buffer.isBuffer(pdfInput);
+    const pdfPath = isBuffer ? undefined : (pdfInput as string);
+    const pdfBuffer = isBuffer ? (pdfInput as Buffer) : undefined;
+
+    // Validate inputs
+    if (isBuffer && !fileName) {
+      throw new Error('File name is required when providing a buffer');
+    }
+
+    if (!isBuffer && !fs.existsSync(pdfPath!)) {
+      throw new Error(`PDF file not found at path: ${pdfPath}`);
+    }
+
     // Generate hash from file content
-    const contentHash = await HashUtils.generateHashFromPath(pdfPath);
-    
+    const contentHash = isBuffer
+      ? HashUtils.generateHashFromBuffer(pdfBuffer!)
+      : await HashUtils.generateHashFromPath(pdfPath!);
+
     // Check if item with same hash already exists
     const existingItem = await this.storage.getMetadataByHash(contentHash);
     if (existingItem) {
-      console.log(`Item with same content already exists (ID: ${existingItem.id}), returning existing item`);
+      console.log(
+        `Item with same content already exists (ID: ${existingItem.id}), returning existing item`,
+      );
       return new LibraryItem(existingItem, this.storage);
     }
-    
-    const pdfInfo = await this.storage.uploadPdfFromPath(pdfPath);
+
+    // Upload to S3
+    let pdfInfo: AbstractPdf;
+    let effectiveFileName: string;
+
+    if (isBuffer) {
+      pdfInfo = await this.storage.uploadPdf(pdfBuffer!, fileName!);
+      effectiveFileName = fileName!;
+    } else {
+      pdfInfo = await this.storage.uploadPdfFromPath(pdfPath!);
+      effectiveFileName = path.basename(pdfPath!);
+    }
+
     const fullMetadata: BookMetadata = {
       ...metadata,
-      title: metadata.title || path.basename(pdfPath, '.pdf'),
+      title: metadata.title || path.basename(effectiveFileName, '.pdf'),
       s3Key: pdfInfo.s3Key,
       s3Url: pdfInfo.url,
-      fileSize: pdfInfo.fileSize,
+      fileSize: isBuffer ? pdfBuffer!.length : pdfInfo.fileSize!,
       contentHash,
       dateAdded: new Date(),
       dateModified: new Date(),
       tags: metadata.tags || [],
       collections: metadata.collections || [],
       authors: metadata.authors || [],
-      fileType: 'pdf'
+      fileType: 'pdf',
     };
-    
+
+    // Save metadata first to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    return new LibraryItem(savedMetadata, this.storage);
+    const libraryItem = new LibraryItem(savedMetadata, this.storage);
+
+    // Convert to Markdown if MinerUPdfConvertor is available
+    if (this.pdfConvertor) {
+      try {
+        // For buffer input, we need to save it to a temporary file first
+        let conversionPath: string;
+        if (isBuffer) {
+          // Create a temporary file for conversion
+          const tempDir = require('os').tmpdir();
+          conversionPath = path.join(tempDir, `temp-pdf-${Date.now()}.pdf`);
+          fs.writeFileSync(conversionPath, pdfBuffer!);
+        } else {
+          conversionPath = pdfPath!;
+        }
+
+        console.log(`Converting PDF to Markdown: ${conversionPath}`);
+        const conversionResult =
+          await this.pdfConvertor.convertPdfToMarkdown(conversionPath);
+
+        // Clean up temporary file if we created one
+        if (isBuffer) {
+          try {
+            fs.unlinkSync(conversionPath);
+          } catch (error) {
+            console.warn(
+              `Failed to clean up temporary file: ${conversionPath}`,
+              error,
+            );
+          }
+        }
+
+        if (conversionResult.success && conversionResult.data) {
+          // Extract markdown content from the conversion result
+          // Note: The actual extraction logic depends on the structure of conversionResult.data
+          // For now, we'll assume it contains a markdown string or can be converted to one
+          let markdownContent = '';
+
+          if (typeof conversionResult.data === 'string') {
+            markdownContent = conversionResult.data;
+          } else if (conversionResult.data.markdown) {
+            markdownContent = conversionResult.data.markdown;
+          } else if (conversionResult.data.content) {
+            markdownContent = conversionResult.data.content;
+          } else {
+            // If it's a complex object, stringify it for now
+            // In a real implementation, you would parse the structure properly
+            markdownContent = JSON.stringify(conversionResult.data, null, 2);
+          }
+
+          // Save the converted Markdown content
+          await this.storage.saveMarkdown(savedMetadata.id!, markdownContent);
+          console.log(
+            `Successfully saved Markdown content for item: ${savedMetadata.id}`,
+          );
+
+          // Update the library item's metadata to include the markdown content
+          libraryItem.metadata.markdownContent = markdownContent;
+          libraryItem.metadata.markdownUpdatedDate = new Date();
+        } else {
+          console.warn(
+            `Failed to convert PDF to Markdown: ${conversionResult.error}`,
+          );
+        }
+      } catch (error) {
+        console.error(`Error converting PDF to Markdown:`, error);
+        // Don't fail the entire operation if conversion fails
+      }
+    } else {
+      console.log('No PDF converter provided, skipping Markdown conversion');
+    }
+
+    return libraryItem;
   }
 
-  /**
-   * Store a PDF from buffer
-   */
-  async storePdfFromBuffer(pdfBuffer: Buffer, fileName: string, metadata: Partial<BookMetadata>): Promise<LibraryItem> {
-    // Generate hash from file content
-    const contentHash = HashUtils.generateHashFromBuffer(pdfBuffer);
-    
-    // Check if item with same hash already exists
-    const existingItem = await this.storage.getMetadataByHash(contentHash);
-    if (existingItem) {
-      console.log(`Item with same content already exists (ID: ${existingItem.id}), returning existing item`);
-      return new LibraryItem(existingItem, this.storage);
-    }
-    
-    const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
-    const fullMetadata: BookMetadata = {
-      ...metadata,
-      title: metadata.title || path.basename(fileName, '.pdf'),
-      s3Key: pdfInfo.s3Key,
-      s3Url: pdfInfo.url,
-      fileSize: pdfBuffer.length,
-      contentHash,
-      dateAdded: new Date(),
-      dateModified: new Date(),
-      tags: metadata.tags || [],
-      collections: metadata.collections || [],
-      authors: metadata.authors || [],
-      fileType: 'pdf'
-    };
-    
-    const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    return new LibraryItem(savedMetadata, this.storage);
-  }
+  // /**
+  //  * Store an article with metadata
+  //  */
+  // async storeArticle(metadata: Partial<BookMetadata>): Promise<LibraryItem> {
+  //   // Generate hash from metadata fields
+  //   const contentHash = HashUtils.generateHashFromMetadata(metadata);
 
-  /**
-   * Store an article with metadata
-   */
-  async storeArticle(metadata: Partial<BookMetadata>): Promise<LibraryItem> {
-    // Generate hash from metadata fields
-    const contentHash = HashUtils.generateHashFromMetadata(metadata);
-    
-    // Check if item with same hash already exists
-    const existingItem = await this.storage.getMetadataByHash(contentHash);
-    if (existingItem) {
-      console.log(`Article with same content already exists (ID: ${existingItem.id}), returning existing item`);
-      return new LibraryItem(existingItem, this.storage);
-    }
-    
-    const fullMetadata: BookMetadata = {
-      ...metadata,
-      title: metadata.title || 'Untitled Article',
-      contentHash,
-      dateAdded: new Date(),
-      dateModified: new Date(),
-      tags: metadata.tags || [],
-      collections: metadata.collections || [],
-      authors: metadata.authors || [],
-      fileType: 'article'
-    };
-    
-    const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    return new LibraryItem(savedMetadata, this.storage);
-  }
+  //   // Check if item with same hash already exists
+  //   const existingItem = await this.storage.getMetadataByHash(contentHash);
+  //   if (existingItem) {
+  //     console.log(
+  //       `Article with same content already exists (ID: ${existingItem.id}), returning existing item`,
+  //     );
+  //     return new LibraryItem(existingItem, this.storage);
+  //   }
+
+  //   const fullMetadata: BookMetadata = {
+  //     ...metadata,
+  //     title: metadata.title || 'Untitled Article',
+  //     contentHash,
+  //     dateAdded: new Date(),
+  //     dateModified: new Date(),
+  //     tags: metadata.tags || [],
+  //     collections: metadata.collections || [],
+  //     authors: metadata.authors || [],
+  //     fileType: 'article',
+  //   };
+
+  //   const savedMetadata = await this.storage.saveMetadata(fullMetadata);
+  //   return new LibraryItem(savedMetadata, this.storage);
+  // }
 
   /**
    * Get a book by ID
@@ -221,27 +338,32 @@ export default class Library {
     return new LibraryItem(metadata, this.storage);
   }
 
-
   /**
    * Search for items with filters
    */
   async searchItems(filter: SearchFilter): Promise<LibraryItem[]> {
     const metadataList = await this.storage.searchMetadata(filter);
-    return metadataList.map(metadata => new LibraryItem(metadata, this.storage));
+    return metadataList.map(
+      (metadata) => new LibraryItem(metadata, this.storage),
+    );
   }
 
   /**
    * Create a new collection
    */
-  async createCollection(name: string, description?: string, parentCollectionId?: string): Promise<Collection> {
+  async createCollection(
+    name: string,
+    description?: string,
+    parentCollectionId?: string,
+  ): Promise<Collection> {
     const collection: Collection = {
       name,
       description,
       parentCollectionId,
       dateAdded: new Date(),
-      dateModified: new Date()
+      dateModified: new Date(),
     };
-    
+
     return await this.storage.saveCollection(collection);
   }
 
@@ -255,14 +377,20 @@ export default class Library {
   /**
    * Add item to collection
    */
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> {
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.storage.addItemToCollection(itemId, collectionId);
   }
 
   /**
    * Remove item from collection
    */
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> {
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.storage.removeItemFromCollection(itemId, collectionId);
   }
 
@@ -274,28 +402,31 @@ export default class Library {
     if (!metadata) {
       throw new Error(`Item with ID ${itemId} not found`);
     }
-    
+
     // This is a simplified citation generator
     // In a real implementation, you would use a proper citation library
     const citationText = this.formatCitation(metadata, style);
-    
+
     const citation: Citation = {
-      id: new ObjectId().toString(),
+      id: IdUtils.generateId(),
       itemId,
       citationStyle: style,
       citationText,
-      dateGenerated: new Date()
+      dateGenerated: new Date(),
     };
-    
+
     await this.storage.saveCitation(citation);
     return citation;
   }
 
   private formatCitation(metadata: BookMetadata, style: string): string {
-    const authors = metadata.authors.map(author =>
-      `${author.lastName}, ${author.firstName}${author.middleName ? ' ' + author.middleName[0] + '.' : ''}`
-    ).join(', ');
-    
+    const authors = metadata.authors
+      .map(
+        (author) =>
+          `${author.lastName}, ${author.firstName}${author.middleName ? ' ' + author.middleName[0] + '.' : ''}`,
+      )
+      .join(', ');
+
     switch (style.toLowerCase()) {
       case 'apa':
         return `${authors} (${metadata.publicationYear}). ${metadata.title}. ${metadata.publisher || ''}.`;
@@ -307,10 +438,50 @@ export default class Library {
         return `${authors}. ${metadata.title}. ${metadata.publicationYear}.`;
     }
   }
+
+  /**
+   * Delete a book by ID
+   */
+  async deleteBook(id: string): Promise<boolean> {
+    const metadata = await this.storage.getMetadata(id);
+    if (!metadata) {
+      return false;
+    }
+
+    // Delete from storage
+    return await this.storage.deleteMetadata(id);
+  }
+
+  /**
+   * Delete a collection by ID
+   */
+  async deleteCollection(id: string): Promise<boolean> {
+    return await this.storage.deleteCollection(id);
+  }
+
+  /**
+   * Delete all items in a collection
+   */
+  async deleteItemsInCollection(collectionId: string): Promise<number> {
+    const items = await this.searchItems({ collections: [collectionId] });
+    let deletedCount = 0;
+    
+    for (const item of items) {
+      const success = await this.deleteBook(item.metadata.id!);
+      if (success) {
+        deletedCount++;
+      }
+    }
+    
+    return deletedCount;
+  }
 }
 
 export class LibraryItem {
-  constructor(public metadata: BookMetadata, private storage: AbstractLibraryStorage) {}
+  constructor(
+    public metadata: BookMetadata,
+    private storage: AbstractLibraryStorage,
+  ) {}
 
   /**
    * Check if this item has an associated PDF file
@@ -343,16 +514,14 @@ export class LibraryItem {
    * Get markdown representation of the item
    */
   async getMarkdown(): Promise<string> {
-    // This would integrate with a PDF to markdown converter if PDF is available
-    // For now, return a placeholder
-    return `# ${this.metadata.title}\n\n${this.metadata.abstract || ''}`;
-  }
+    // First try to get stored markdown content
+    const storedMarkdown = await this.storage.getMarkdown(this.metadata.id!);
+    if (storedMarkdown) {
+      return storedMarkdown;
+    }
 
-  /**
-   * Get JSON representation of the item
-   */
-  async getJSON(): Promise<BookMetadata> {
-    return this.metadata;
+    // If no stored markdown, return a placeholder
+    return `# ${this.metadata.title}\n\n${this.metadata.abstract || ''}`;
   }
 
   /**
@@ -406,8 +575,6 @@ export class LibraryItem {
   }
 }
 
-
-
 interface AbstractPdf {
   id: string;
   name: string;
@@ -418,21 +585,32 @@ interface AbstractPdf {
 }
 
 export abstract class AbstractLibraryStorage {
-  abstract uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>
-  abstract uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>
-  abstract getPdfDownloadUrl(s3Key: string): Promise<string>
-  abstract getPdf(s3Key: string): Promise<Buffer>
-  abstract saveMetadata(metadata: BookMetadata): Promise<BookMetadata>
-  abstract getMetadata(id: string): Promise<BookMetadata | null>
-  abstract getMetadataByHash(contentHash: string): Promise<BookMetadata | null>
-  abstract updateMetadata(metadata: BookMetadata): Promise<void>
-  abstract searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>
-  abstract saveCollection(collection: Collection): Promise<Collection>
-  abstract getCollections(): Promise<Collection[]>
-  abstract addItemToCollection(itemId: string, collectionId: string): Promise<void>
-  abstract removeItemFromCollection(itemId: string, collectionId: string): Promise<void>
-  abstract saveCitation(citation: Citation): Promise<Citation>
-  abstract getCitations(itemId: string): Promise<Citation[]>
+  abstract uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
+  abstract uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
+  abstract getPdfDownloadUrl(s3Key: string): Promise<string>;
+  abstract getPdf(s3Key: string): Promise<Buffer>;
+  abstract saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}>;
+  abstract getMetadata(id: string): Promise<BookMetadata | null>;
+  abstract getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
+  abstract updateMetadata(metadata: BookMetadata): Promise<void>;
+  abstract searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>;
+  abstract saveCollection(collection: Collection): Promise<Collection>;
+  abstract getCollections(): Promise<Collection[]>;
+  abstract addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void>;
+  abstract removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void>;
+  abstract saveCitation(citation: Citation): Promise<Citation>;
+  abstract getCitations(itemId: string): Promise<Citation[]>;
+  abstract saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
+  abstract getMarkdown(itemId: string): Promise<string | null>;
+  abstract deleteMetadata(id: string): Promise<boolean>;
+  abstract deleteCollection(id: string): Promise<boolean>;
+  abstract deleteCitations(itemId: string): Promise<boolean>;
 }
 
 export class S3MongoLibraryStorage extends AbstractLibraryStorage {
@@ -451,41 +629,43 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
    */
   private async ensureIndexes(): Promise<void> {
     try {
-      const {db} = await connectToDatabase();
+      const { db } = await connectToDatabase();
       const collection = db.collection(this.metadataCollection);
-      
+
       // Create index on contentHash for fast duplicate detection
-      await collection.createIndex({ contentHash: 1 }, { unique: false, sparse: true });
-      
+      await collection.createIndex(
+        { contentHash: 1 },
+        { unique: false, sparse: true },
+      );
+
       // Create text index on title for text search
       await collection.createIndex({ title: 'text' });
-      
+
       // Create index on authors.lastName for author-based searches (using wildcard for array)
       await collection.createIndex({ 'authors.lastName': 1 });
-      
+
       // Create compound index on title and publicationYear for common searches
       await collection.createIndex({ title: 1, publicationYear: -1 });
-      
+
       console.log('Library storage indexes created successfully');
     } catch (error) {
       console.warn('Failed to create library storage indexes:', error);
     }
   }
 
-
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
     const url = await uploadToS3(pdfData, s3Key, 'application/pdf');
-    
+
     const pdfInfo: AbstractPdf = {
-      id: new ObjectId().toString(),
+      id: IdUtils.generateId(),
       name: fileName,
       s3Key,
       url,
       fileSize: pdfData.length,
-      createDate: new Date()
+      createDate: new Date(),
     };
-    const {db} = await connectToDatabase()
+    const { db } = await connectToDatabase();
     // Save to database
     await db.collection(this.pdfCollection).insertOne(pdfInfo);
     return pdfInfo;
@@ -495,20 +675,20 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     const fileName = path.basename(pdfPath);
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
     const url = await uploadPdfFromPath(pdfPath, s3Key);
-    
+
     const stats = fs.statSync(pdfPath);
-    
+
     const pdfInfo: AbstractPdf = {
-      id: new ObjectId().toString(),
+      id: IdUtils.generateId(),
       name: fileName,
       s3Key,
       url,
       fileSize: stats.size,
-      createDate: new Date()
+      createDate: new Date(),
     };
-    
+
     // Save to database
-    const {db} = await connectToDatabase()
+    const { db } = await connectToDatabase();
     await db.collection(this.pdfCollection).insertOne(pdfInfo);
     return pdfInfo;
   }
@@ -516,13 +696,16 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
   async getPdfDownloadUrl(s3Key: string): Promise<string> {
     // In a real implementation, you would generate a presigned URL
     // For now, return the stored URL
-    const {db} = await connectToDatabase()
+    const { db } = await connectToDatabase();
     const pdfInfo = await db.collection(this.pdfCollection).findOne({ s3Key });
     if (!pdfInfo) {
       throw new Error(`PDF with S3 key ${s3Key} not found`);
     }
 
-    const url = await getSignedUrlForDownload(process.env.PDF_OSS_BUCKET_NAME as string, s3Key)
+    const url = await getSignedUrlForDownload(
+      process.env.PDF_OSS_BUCKET_NAME as string,
+      s3Key,
+    );
     return url;
   }
 
@@ -532,130 +715,198 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     throw new Error('Direct PDF download not implemented');
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata> {
+  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
     if (!metadata.id) {
-      metadata.id = new ObjectId().toString();
+      metadata.id = IdUtils.generateId();
     }
-    const {db} = await connectToDatabase()
-    await db.collection(this.metadataCollection).updateOne(
-      { id: metadata.id },
-      { $set: metadata },
-      { upsert: true }
-    );
-    
-    return metadata;
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.metadataCollection)
+      .updateOne({ id: metadata.id }, { $set: metadata }, { upsert: true });
+
+    return metadata as BookMetadata & {id: string};
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {
-    const {db} = await connectToDatabase()
-    const metadata = await db.collection<BookMetadata>(this.metadataCollection).findOne({ id });
-    return metadata as BookMetadata || null;
+    const { db } = await connectToDatabase();
+    const metadata = await db
+      .collection<BookMetadata>(this.metadataCollection)
+      .findOne({ id });
+    return (metadata as BookMetadata) || null;
   }
 
   async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
-    const {db} = await connectToDatabase()
-    const metadata = await db.collection<BookMetadata>(this.metadataCollection).findOne({ contentHash });
-    return metadata as BookMetadata || null;
+    const { db } = await connectToDatabase();
+    const metadata = await db
+      .collection<BookMetadata>(this.metadataCollection)
+      .findOne({ contentHash });
+    return (metadata as BookMetadata) || null;
   }
 
   async updateMetadata(metadata: BookMetadata): Promise<void> {
-    const {db} = await connectToDatabase()
-    await db.collection(this.metadataCollection).updateOne(
-      { id: metadata.id },
-      { $set: metadata }
-    );
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.metadataCollection)
+      .updateOne({ id: metadata.id }, { $set: metadata });
   }
 
   async searchMetadata(filter: SearchFilter): Promise<BookMetadata[]> {
     const query: any = {};
-    
+
     if (filter.query) {
       query.$or = [
         { title: { $regex: filter.query, $options: 'i' } },
         { abstract: { $regex: filter.query, $options: 'i' } },
         { notes: { $regex: filter.query, $options: 'i' } },
-        { contentHash: { $regex: filter.query, $options: 'i' } }
+        { contentHash: { $regex: filter.query, $options: 'i' } },
       ];
     }
-    
+
     if (filter.tags && filter.tags.length > 0) {
       query.tags = { $in: filter.tags };
     }
-    
+
     if (filter.collections && filter.collections.length > 0) {
       query.collections = { $in: filter.collections };
     }
-    
+
     if (filter.authors && filter.authors.length > 0) {
       query['authors.lastName'] = { $in: filter.authors };
     }
-    
+
     if (filter.dateRange) {
       query.publicationYear = {
         $gte: filter.dateRange.start.getFullYear(),
-        $lte: filter.dateRange.end.getFullYear()
+        $lte: filter.dateRange.end.getFullYear(),
       };
     }
-    
+
     if (filter.fileType && filter.fileType.length > 0) {
       query.fileType = { $in: filter.fileType };
     }
-    const {db} = await connectToDatabase()
-    const results = await db.collection<BookMetadata>(this.metadataCollection).find(query).toArray();
+    const { db } = await connectToDatabase();
+    const results = await db
+      .collection<BookMetadata>(this.metadataCollection)
+      .find(query)
+      .toArray();
     return results as BookMetadata[];
   }
 
   async saveCollection(collection: Collection): Promise<Collection> {
     if (!collection.id) {
-      collection.id = new ObjectId().toString();
+      collection.id = IdUtils.generateId();
     }
-    const {db} = await connectToDatabase()
-    await db.collection(this.collectionsCollection).updateOne(
-      { id: collection.id },
-      { $set: collection },
-      { upsert: true }
-    );
-    
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.collectionsCollection)
+      .updateOne({ id: collection.id }, { $set: collection }, { upsert: true });
+
     return collection;
   }
 
   async getCollections(): Promise<Collection[]> {
-    const {db} = await connectToDatabase()
-    const results = await db.collection<Collection>(this.collectionsCollection).find({}).toArray();
+    const { db } = await connectToDatabase();
+    const results = await db
+      .collection<Collection>(this.collectionsCollection)
+      .find({})
+      .toArray();
     return results as Collection[];
   }
 
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> {
-    const {db} = await connectToDatabase()
-    await db.collection(this.metadataCollection).updateOne(
-      { id: itemId },
-      { $addToSet: { collections: collectionId } }
-    );
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.metadataCollection)
+      .updateOne({ id: itemId }, { $addToSet: { collections: collectionId } });
   }
 
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> {
-    const {db} = await connectToDatabase()
-    await db.collection(this.metadataCollection).updateOne(
-      { id: itemId },
-      { $pull: { collections: collectionId } } as any
-    );
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
+    const { db } = await connectToDatabase();
+    await db.collection(this.metadataCollection).updateOne({ id: itemId }, {
+      $pull: { collections: collectionId },
+    } as any);
   }
 
   async saveCitation(citation: Citation): Promise<Citation> {
-    const {db} = await connectToDatabase()
-    await db.collection(this.citationsCollection).updateOne(
-      { id: citation.id },
-      { $set: citation },
-      { upsert: true }
-    );
-    
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.citationsCollection)
+      .updateOne({ id: citation.id }, { $set: citation }, { upsert: true });
+
     return citation;
   }
 
   async getCitations(itemId: string): Promise<Citation[]> {
-    const {db} = await connectToDatabase()
-    const results = await db.collection<Citation>(this.citationsCollection).find({ itemId }).toArray();
+    const { db } = await connectToDatabase();
+    const results = await db
+      .collection<Citation>(this.citationsCollection)
+      .find({ itemId })
+      .toArray();
     return results as Citation[];
+  }
+
+  async saveMarkdown(itemId: string, markdownContent: string): Promise<void> {
+    const { db } = await connectToDatabase();
+    await db
+      .collection(this.metadataCollection)
+      .updateOne(
+        { id: itemId },
+        { $set: { markdownContent, markdownUpdatedDate: new Date() } },
+      );
+  }
+
+  async getMarkdown(itemId: string): Promise<string | null> {
+    const { db } = await connectToDatabase();
+    const metadata = await db
+      .collection(this.metadataCollection)
+      .findOne({ id: itemId }, { projection: { markdownContent: 1 } });
+    return metadata?.markdownContent || null;
+  }
+
+  async deleteMetadata(id: string): Promise<boolean> {
+    const { db } = await connectToDatabase();
+    const result = await db
+      .collection(this.metadataCollection)
+      .deleteOne({ id });
+    
+    // Also delete associated citations
+    await this.deleteCitations(id);
+    
+    return result.deletedCount > 0;
+  }
+
+  async deleteCollection(id: string): Promise<boolean> {
+    const { db } = await connectToDatabase();
+    
+    // First, remove this collection from all items
+    await db
+      .collection(this.metadataCollection)
+      .updateMany(
+        { collections: id },
+        { $pull: { collections: { $in: [id] } } } as any
+      );
+    
+    // Then delete the collection
+    const result = await db
+      .collection(this.collectionsCollection)
+      .deleteOne({ id });
+    
+    return result.deletedCount > 0;
+  }
+
+  async deleteCitations(itemId: string): Promise<boolean> {
+    const { db } = await connectToDatabase();
+    const result = await db
+      .collection(this.citationsCollection)
+      .deleteMany({ itemId });
+    
+    return result.deletedCount > 0;
   }
 }
 
@@ -668,7 +919,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   logger = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
 
-  constructor(elasticsearchUrl: string = 'http://localhost:9200') {
+  constructor(elasticsearchUrl: string = 'http://elasticsearch:9200') {
     super();
     this.client = new Client({
       node: elasticsearchUrl,
@@ -707,16 +958,19 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               title: {
                 type: 'text',
                 fields: {
-                  keyword: { type: 'keyword' }
-                }
+                  keyword: { type: 'keyword' },
+                },
               },
               authors: {
                 type: 'nested',
                 properties: {
                   firstName: { type: 'text' },
-                  lastName: { type: 'text', fields: { keyword: { type: 'keyword' } } },
-                  middleName: { type: 'text' }
-                }
+                  lastName: {
+                    type: 'text',
+                    fields: { keyword: { type: 'keyword' } },
+                  },
+                  middleName: { type: 'text' },
+                },
               },
               abstract: { type: 'text' },
               publicationYear: { type: 'integer' },
@@ -735,9 +989,9 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               fileSize: { type: 'long' },
               pageCount: { type: 'integer' },
               language: { type: 'keyword' },
-              contentHash: { type: 'keyword' }
-            }
-          }
+              contentHash: { type: 'keyword' },
+            },
+          },
         } as any);
         this.logger.info(`Created metadata index: ${this.metadataIndexName}`);
       }
@@ -756,17 +1010,19 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               name: {
                 type: 'text',
                 fields: {
-                  keyword: { type: 'keyword' }
-                }
+                  keyword: { type: 'keyword' },
+                },
               },
               description: { type: 'text' },
               parentCollectionId: { type: 'keyword' },
               dateAdded: { type: 'date' },
-              dateModified: { type: 'date' }
-            }
-          }
+              dateModified: { type: 'date' },
+            },
+          },
         } as any);
-        this.logger.info(`Created collections index: ${this.collectionsIndexName}`);
+        this.logger.info(
+          `Created collections index: ${this.collectionsIndexName}`,
+        );
       }
 
       // Initialize citations index
@@ -783,21 +1039,27 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               itemId: { type: 'keyword' },
               citationStyle: { type: 'keyword' },
               citationText: { type: 'text' },
-              dateGenerated: { type: 'date' }
-            }
-          }
+              dateGenerated: { type: 'date' },
+            },
+          },
         } as any);
         this.logger.info(`Created citations index: ${this.citationsIndexName}`);
       }
     } catch (error: any) {
-      if (error?.meta?.body?.error?.type === 'resource_already_exists_exception') {
+      if (
+        error?.meta?.body?.error?.type === 'resource_already_exists_exception'
+      ) {
         this.logger.info('Indexes already exist, continuing');
         this.isInitialized = true;
         return;
       }
       if (error.meta?.statusCode === 0 || error.code === 'ECONNREFUSED') {
-        this.logger.error('Elasticsearch is not available. Please ensure Elasticsearch is running.');
-        throw new Error('Elasticsearch is not available. Please check your configuration and ensure Elasticsearch is running.');
+        this.logger.error(
+          'Elasticsearch is not available. Please ensure Elasticsearch is running.',
+        );
+        throw new Error(
+          'Elasticsearch is not available. Please check your configuration and ensure Elasticsearch is running.',
+        );
       }
       this.logger.error('Failed to initialize indexes:', error);
       throw error;
@@ -817,16 +1079,16 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
     const url = await uploadToS3(pdfData, s3Key, 'application/pdf');
-    
+
     const pdfInfo: AbstractPdf = {
-      id: new ObjectId().toString(),
+      id: IdUtils.generateId(),
       name: fileName,
       s3Key,
       url,
       fileSize: pdfData.length,
-      createDate: new Date()
+      createDate: new Date(),
     };
-    
+
     return pdfInfo;
   }
 
@@ -834,23 +1096,26 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     const fileName = path.basename(pdfPath);
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
     const url = await uploadPdfFromPath(pdfPath, s3Key);
-    
+
     const stats = fs.statSync(pdfPath);
-    
+
     const pdfInfo: AbstractPdf = {
-      id: new ObjectId().toString(),
+      id: IdUtils.generateId(),
       name: fileName,
       s3Key,
       url,
       fileSize: stats.size,
-      createDate: new Date()
+      createDate: new Date(),
     };
-    
+
     return pdfInfo;
   }
 
   async getPdfDownloadUrl(s3Key: string): Promise<string> {
-    const url = await getSignedUrlForDownload(process.env.PDF_OSS_BUCKET_NAME as string, s3Key);
+    const url = await getSignedUrlForDownload(
+      process.env.PDF_OSS_BUCKET_NAME as string,
+      s3Key,
+    );
     return url;
   }
 
@@ -860,26 +1125,26 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     throw new Error('Direct PDF download not implemented');
   }
 
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata> {
+  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & {id: string}> {
     await this.checkInitialized();
-    
+
     if (!metadata.id) {
-      metadata.id = new ObjectId().toString();
+      metadata.id = IdUtils.generateId();
     }
-    
+
     await this.client.index({
       index: this.metadataIndexName,
       id: metadata.id,
       body: metadata,
       refresh: true, // Refresh index to make document immediately available
     } as any);
-    
-    return metadata;
+
+    return metadata as BookMetadata & {id: string};
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {
     await this.checkInitialized();
-    
+
     try {
       const result = await this.client.get({
         index: this.metadataIndexName,
@@ -900,17 +1165,17 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
     await this.checkInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.metadataIndexName,
         body: {
           query: {
             term: {
-              contentHash: contentHash
-            }
-          }
-        }
+              contentHash: contentHash,
+            },
+          },
+        },
       } as any);
 
       const hits = result.hits.hits;
@@ -928,12 +1193,12 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   async updateMetadata(metadata: BookMetadata): Promise<void> {
     await this.checkInitialized();
-    
+
     await this.client.update({
       index: this.metadataIndexName,
       id: metadata.id!,
       body: {
-        doc: metadata
+        doc: metadata,
       },
       refresh: true, // Refresh index to make update immediately available
     } as any);
@@ -941,38 +1206,38 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   async searchMetadata(filter: SearchFilter): Promise<BookMetadata[]> {
     await this.checkInitialized();
-    
+
     const query: any = {};
-    
+
     if (filter.query) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         multi_match: {
           query: filter.query,
           fields: ['title', 'abstract', 'notes'],
-          fuzziness: 'AUTO'
-        }
+          fuzziness: 'AUTO',
+        },
       });
     }
-    
+
     if (filter.tags && filter.tags.length > 0) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         terms: {
-          tags: filter.tags
-        }
+          tags: filter.tags,
+        },
       });
     }
-    
+
     if (filter.collections && filter.collections.length > 0) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         terms: {
-          collections: filter.collections
-        }
+          collections: filter.collections,
+        },
       });
     }
-    
+
     if (filter.authors && filter.authors.length > 0) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
@@ -980,50 +1245,50 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
           path: 'authors',
           query: {
             terms: {
-              'authors.lastName': filter.authors
-            }
-          }
-        }
+              'authors.lastName': filter.authors,
+            },
+          },
+        },
       });
     }
-    
+
     if (filter.dateRange) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         range: {
           publicationYear: {
             gte: filter.dateRange.start.getFullYear(),
-            lte: filter.dateRange.end.getFullYear()
-          }
-        }
+            lte: filter.dateRange.end.getFullYear(),
+          },
+        },
       });
     }
-    
+
     if (filter.fileType && filter.fileType.length > 0) {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         terms: {
-          fileType: filter.fileType
-        }
+          fileType: filter.fileType,
+        },
       });
     }
-    
+
     // If no filters specified, match all
     if (!query.bool) {
       query.match_all = {};
     }
-    
+
     try {
       const result = await this.client.search({
         index: this.metadataIndexName,
         body: {
           query,
-          size: 10000 // Adjust based on expected results
-        }
+          size: 10000, // Adjust based on expected results
+        },
       } as any);
 
       const hits = result.hits.hits;
-      return hits.map(hit => hit._source as BookMetadata);
+      return hits.map((hit) => hit._source as BookMetadata);
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
         return [];
@@ -1034,37 +1299,37 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   async saveCollection(collection: Collection): Promise<Collection> {
     await this.checkInitialized();
-    
+
     if (!collection.id) {
-      collection.id = new ObjectId().toString();
+      collection.id = IdUtils.generateId();
     }
-    
+
     await this.client.index({
       index: this.collectionsIndexName,
       id: collection.id,
       body: collection,
       refresh: true, // Refresh index to make collection immediately available
     } as any);
-    
+
     return collection;
   }
 
   async getCollections(): Promise<Collection[]> {
     await this.checkInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.collectionsIndexName,
         body: {
           query: {
-            match_all: {}
+            match_all: {},
           },
-          size: 10000
-        }
+          size: 10000,
+        },
       } as any);
 
       const hits = result.hits.hits;
-      return hits.map(hit => hit._source as Collection);
+      return hits.map((hit) => hit._source as Collection);
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
         return [];
@@ -1073,28 +1338,34 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     }
   }
 
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> {
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.checkInitialized();
-    
+
     const metadata = await this.getMetadata(itemId);
     if (!metadata) {
       throw new Error(`Item with ID ${itemId} not found`);
     }
-    
+
     if (!metadata.collections.includes(collectionId)) {
       metadata.collections.push(collectionId);
       await this.updateMetadata(metadata);
     }
   }
 
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> {
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.checkInitialized();
-    
+
     const metadata = await this.getMetadata(itemId);
     if (!metadata) {
       throw new Error(`Item with ID ${itemId} not found`);
     }
-    
+
     const index = metadata.collections.indexOf(collectionId);
     if (index > -1) {
       metadata.collections.splice(index, 1);
@@ -1104,37 +1375,167 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
   async saveCitation(citation: Citation): Promise<Citation> {
     await this.checkInitialized();
-    
+
     await this.client.index({
       index: this.citationsIndexName,
       id: citation.id,
       body: citation,
       refresh: true, // Refresh index to make citation immediately available
     } as any);
-    
+
     return citation;
   }
 
   async getCitations(itemId: string): Promise<Citation[]> {
     await this.checkInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.citationsIndexName,
         body: {
           query: {
             term: {
-              itemId: itemId
-            }
-          }
-        }
+              itemId: itemId,
+            },
+          },
+        },
       } as any);
 
       const hits = result.hits.hits;
-      return hits.map(hit => hit._source as Citation);
+      return hits.map((hit) => hit._source as Citation);
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
         return [];
+      }
+      throw error;
+    }
+  }
+
+  async saveMarkdown(itemId: string, markdownContent: string): Promise<void> {
+    await this.checkInitialized();
+
+    await this.client.update({
+      index: this.metadataIndexName,
+      id: itemId,
+      body: {
+        doc: {
+          markdownContent,
+          markdownUpdatedDate: new Date(),
+        },
+      },
+      refresh: true, // Refresh index to make update immediately available
+    } as any);
+  }
+
+  async getMarkdown(itemId: string): Promise<string | null> {
+    await this.checkInitialized();
+
+    try {
+      const result = await this.client.get({
+        index: this.metadataIndexName,
+        id: itemId,
+        _source: ['markdownContent'],
+      });
+
+      if (result.found) {
+        const source = result._source as any;
+        return source?.markdownContent || null;
+      }
+      return null;
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async deleteMetadata(id: string): Promise<boolean> {
+    await this.checkInitialized();
+
+    try {
+      // Delete the metadata document
+      const result = await this.client.delete({
+        index: this.metadataIndexName,
+        id: id,
+        refresh: true, // Refresh index to make deletion immediately available
+      } as any);
+
+      // Also delete associated citations
+      await this.deleteCitations(id);
+
+      return result.result === 'deleted';
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        return false; // Document not found
+      }
+      throw error;
+    }
+  }
+
+  async deleteCollection(id: string): Promise<boolean> {
+    await this.checkInitialized();
+
+    try {
+      // First, remove this collection from all items
+      const searchResult = await this.client.search({
+        index: this.metadataIndexName,
+        body: {
+          query: {
+            term: {
+              collections: id,
+            },
+          },
+          size: 10000, // Adjust based on expected number of items
+        },
+      } as any);
+
+      // Update each item to remove the collection
+      for (const hit of searchResult.hits.hits) {
+        const metadata = hit._source as BookMetadata;
+        const index = metadata.collections.indexOf(id);
+        if (index > -1) {
+          metadata.collections.splice(index, 1);
+          await this.updateMetadata(metadata);
+        }
+      }
+
+      // Then delete the collection
+      const result = await this.client.delete({
+        index: this.collectionsIndexName,
+        id: id,
+        refresh: true, // Refresh index to make deletion immediately available
+      } as any);
+
+      return result.result === 'deleted';
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        return false; // Collection not found
+      }
+      throw error;
+    }
+  }
+
+  async deleteCitations(itemId: string): Promise<boolean> {
+    await this.checkInitialized();
+
+    try {
+      const result = await this.client.deleteByQuery({
+        index: this.citationsIndexName,
+        body: {
+          query: {
+            term: {
+              itemId: itemId,
+            },
+          },
+        },
+        refresh: true, // Refresh index to make deletion immediately available
+      } as any);
+
+      return (result.deleted || 0) > 0;
+    } catch (error) {
+      if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
+        return false; // Index not found
       }
       throw error;
     }
@@ -1143,6 +1544,4 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
 export interface BookChunk {}
 
-export abstract class AbstractTextSplitter {
-
-}
+export abstract class AbstractTextSplitter {}

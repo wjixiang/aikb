@@ -1,14 +1,16 @@
 import { AbstractPdfConvertor } from './PdfConvertor';
 import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { createWriteStream } from 'fs';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 import * as zlib from 'zlib';
-import { uploadPdfFromPath } from 'knowledgeBase/lib/s3Service/S3Service';
-import createLoggerWithPrefix from 'knowledgeBase/lib/logger';
+import * as yauzl from 'yauzl';
+import { uploadPdfFromPath } from '../lib/s3Service/S3Service';
+import createLoggerWithPrefix from '../lib/logger';
+import { app_config } from 'knowledgeBase/config';
 
 /**
  * MinerU-based PDF converter implementation
@@ -16,7 +18,7 @@ import createLoggerWithPrefix from 'knowledgeBase/lib/logger';
  */
 
 export interface MinerUPdfConvertorConfig {
-  token: string;
+  token?: string;
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;
@@ -36,30 +38,38 @@ export interface ConversionResult {
 export class MinerUPdfConvertor extends AbstractPdfConvertor {
   private logger = createLoggerWithPrefix("MinerUPdfConvertor")
   private client: MinerUClient;
-  private config: Required<Omit<MinerUPdfConvertorConfig, 'defaultOptions'>> & {
+  private config: Omit<MinerUPdfConvertorConfig, 'defaultOptions'> & {
     defaultOptions: Partial<SingleFileRequest>;
+    token: string;
+    baseUrl: string;
+    timeout: number;
+    maxRetries: number;
+    retryDelay: number;
+    downloadDir: string;
   };
 
   constructor(config: MinerUPdfConvertorConfig) {
     super();
     
     this.config = {
-      baseUrl: 'https://mineru.net/api/v4',
-      timeout: 30000,
-      maxRetries: 3,
-      retryDelay: 1000,
-      downloadDir: './mineru-downloads',
+      token: config.token || app_config.MinerU.token,
+      baseUrl: config.baseUrl || 'https://mineru.net/api/v4',
+      timeout: config.timeout || 30000,
+      maxRetries: config.maxRetries || 3,
+      retryDelay: config.retryDelay || 1000,
+      downloadDir: config.downloadDir || './mineru-downloads',
       defaultOptions: {
         is_ocr: false,
         enable_formula: true,
         enable_table: true,
         language: 'ch',
-        model_version: 'pipeline'
-      },
-      ...config
+        model_version: 'pipeline',
+        ...config.defaultOptions
+      }
     };
 
     this.client = new MinerUClient({
+      ...app_config.MinerU,
       token: this.config.token,
       baseUrl: this.config.baseUrl,
       timeout: this.config.timeout,
@@ -79,7 +89,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    * @param options Conversion options
    * @returns Promise<ConversionResult>
    */
-  async convertPdfToJSON(
+  async convertPdfToMarkdown(
     pdfPath: string,
     options: Partial<SingleFileRequest> = {}
   ): Promise<ConversionResult> {
@@ -140,14 +150,14 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       });
       console.log(`[MinerUPdfConvertor] MinerU processing completed, taskId: ${result.result.task_id}`);
 
-      console.log(`[MinerUPdfConvertor] Extracting JSON from downloaded files...`);
-      // Extract and parse the JSON content
-      const jsonData = await this.extractJsonFromDownloadedFiles(result.downloadedFiles || []);
-      console.log(`[MinerUPdfConvertor] JSON extraction completed`);
+      console.log(`[MinerUPdfConvertor] Extracting markdown from downloaded files...`);
+      // Extract and parse the markdown content
+      const markdownData = await this.extractMarkdownFromDownloadedFiles(result.downloadedFiles || []);
+      console.log(`[MinerUPdfConvertor] Markdown extraction completed`);
 
       return {
         success: true,
-        data: jsonData,
+        data: markdownData,
         downloadedFiles: result.downloadedFiles,
         taskId: result.result.task_id
       };
@@ -228,13 +238,13 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         };
       }
 
-      console.log(`[MinerUPdfConvertor] Extracting JSON from downloaded files...`);
-      // Extract and parse the JSON content
-      const jsonData = await this.extractJsonFromDownloadedFiles(taskResult.downloadedFiles);
+      console.log(`[MinerUPdfConvertor] Extracting markdown from downloaded files...`);
+      // Extract and parse the markdown content
+      const markdownData = await this.extractMarkdownFromDownloadedFiles(taskResult.downloadedFiles);
 
       return {
         success: true,
-        data: jsonData,
+        data: markdownData,
         downloadedFiles: taskResult.downloadedFiles,
         taskId: result.task_id
       };
@@ -331,11 +341,11 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               file.includes(taskIdentifier)
             );
             
-            const jsonData = await this.extractJsonFromDownloadedFiles(filteredFiles);
+            const markdownData = await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
             results.push({
               success: true,
-              data: jsonData,
+              data: markdownData,
               downloadedFiles: filteredFiles,
               taskId: result.task_id || taskIdentifier
             });
@@ -416,11 +426,11 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               file.includes(taskIdentifier)
             );
             
-            const jsonData = await this.extractJsonFromDownloadedFiles(filteredFiles);
+            const markdownData = await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
             allResults.push({
               success: true,
-              data: jsonData,
+              data: markdownData,
               downloadedFiles: filteredFiles,
               taskId: taskResult.task_id || taskIdentifier
             });
@@ -439,38 +449,116 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   }
 
   /**
-   * Extract JSON content from downloaded ZIP files
+   * Extract markdown content from downloaded ZIP files
    * @param downloadedFiles Array of downloaded file paths
    * @returns Promise<any>
    */
-  private async extractJsonFromDownloadedFiles(downloadedFiles: string[]): Promise<any> {
-    const jsonFiles: any[] = [];
-
+  private async extractMarkdownFromDownloadedFiles(downloadedFiles: string[]): Promise<any> {
     for (const filePath of downloadedFiles) {
       if (!filePath.endsWith('.zip')) {
         continue;
       }
 
       try {
-        // For now, we'll return the file path as the data
-        // In a real implementation, you would extract the ZIP and parse JSON
-        // This requires a ZIP extraction library like yauzl or node-stream-zip
-        console.log(`ZIP file downloaded: ${filePath}`);
-        console.log('Note: JSON extraction from ZIP requires additional implementation');
+        console.log(`[MinerUPdfConvertor] Processing ZIP file: ${filePath}`);
         
-        // Return a placeholder structure
-        jsonFiles.push({
-          zipFilePath: filePath,
-          extractedAt: new Date().toISOString(),
-          message: 'JSON extraction from ZIP requires additional implementation with a ZIP library'
-        });
+        // Extract ZIP file and read full.md content
+        const markdownContent = await this.extractFullMdFromZip(filePath);
+        
+        if (markdownContent) {
+          console.log(`[MinerUPdfConvertor] Successfully extracted markdown from ZIP`);
+          return {
+            markdown: markdownContent,
+            zipFilePath: filePath,
+            extractedAt: new Date().toISOString()
+          };
+        }
       } catch (error) {
-        console.error(`Failed to extract JSON from ${filePath}:`, error);
+        console.error(`[MinerUPdfConvertor] Failed to extract markdown from ${filePath}:`, error);
       }
     }
 
-    // Return the first JSON file if multiple, or merge if needed
-    return jsonFiles.length > 0 ? jsonFiles[0] : null;
+    return null;
+  }
+
+  /**
+   * Extract full.md content from a ZIP file
+   * @param zipPath Path to the ZIP file
+   * @returns Promise<string|null> The markdown content or null if not found
+   */
+  private async extractFullMdFromZip(zipPath: string): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          return reject(err);
+        }
+
+        if (!zipfile) {
+          return reject(new Error('Failed to open ZIP file'));
+        }
+
+        let fullMdContent = '';
+        let fullMdFound = false;
+
+        zipfile.on('entry', (entry) => {
+          if (/\/$/.test(entry.fileName)) {
+            // Directory entry, skip
+            zipfile.readEntry();
+            return;
+          }
+
+          // Check if this is the full.md file
+          if (entry.fileName.endsWith('full.md')) {
+            fullMdFound = true;
+            console.log(`[MinerUPdfConvertor] Found full.md in ZIP: ${entry.fileName}`);
+            
+            // Open the entry stream
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                return reject(err);
+              }
+
+              if (!readStream) {
+                return reject(new Error('Failed to open read stream for full.md'));
+              }
+
+              let content = '';
+              readStream.on('data', (chunk) => {
+                content += chunk.toString();
+              });
+
+              readStream.on('end', () => {
+                fullMdContent = content;
+                zipfile.readEntry();
+              });
+
+              readStream.on('error', (err) => {
+                reject(err);
+              });
+            });
+          } else {
+            // Skip other files
+            zipfile.readEntry();
+          }
+        });
+
+        zipfile.on('end', () => {
+          if (fullMdFound) {
+            resolve(fullMdContent);
+          } else {
+            console.warn(`[MinerUPdfConvertor] full.md not found in ZIP: ${zipPath}`);
+            resolve(null);
+          }
+        });
+
+        zipfile.on('error', (err) => {
+          reject(err);
+        });
+
+        // Start reading entries
+        zipfile.readEntry();
+      });
+    });
   }
 
   /**

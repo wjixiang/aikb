@@ -1,13 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { KafkaService, initializeAndStartKafkaService, stopKafkaService } from '../kafka.service';
+import {
+  KafkaService,
+  initializeAndStartKafkaService,
+  stopKafkaService,
+} from '../kafka.service';
 import { KafkaProducerService } from '../kafka-producer.service';
-import { KafkaConsumerService, KafkaConsumerFactory } from '../kafka-consumer.service';
+import {
+  KafkaConsumerService,
+  KafkaConsumerFactory,
+} from '../kafka-consumer.service';
 import { getValidatedKafkaConfig } from '../kafka.config';
 import { KAFKA_TOPICS } from '../kafka.types';
-import { MockEntityContentStorage, MockEntityGraphStorage, MockEntityVectorStorage } from '../mocks';
+import {
+  MockEntityContentStorage,
+  MockEntityGraphStorage,
+  MockEntityVectorStorage,
+} from '../mocks';
 import { createKafkaTopics, deleteKafkaTopics } from '../kafka-topic-setup';
 import { config } from 'dotenv';
-config()
+config();
 
 describe('Kafka Integration Tests', () => {
   let kafkaService: KafkaService;
@@ -101,7 +112,7 @@ describe('Kafka Integration Tests', () => {
     };
 
     const result = await entityStorage.create_new_entity(entityData);
-    
+
     expect(result).toBeDefined();
     expect(result.id).toBeDefined();
     expect(result.name).toEqual(entityData.name);
@@ -109,7 +120,7 @@ describe('Kafka Integration Tests', () => {
     expect(result.definition).toEqual(entityData.definition);
 
     // Wait a bit for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Check if entity was stored
     const storedEntity = await mockContentStorage.get_entity_by_id(result.id);
@@ -142,18 +153,18 @@ describe('Kafka Integration Tests', () => {
     const entity2 = await entityStorage.create_new_entity(entity2Data);
 
     // Wait a bit for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Create relation
     await entityStorage.create_entity_relation(
       entity1.id,
       entity2.id,
       'related_to',
-      { strength: 0.8 }
+      { strength: 0.8 },
     );
 
     // Wait a bit for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Check if relation was stored
     const relations = await mockGraphStorage.get_entity_relations(entity1.id);
@@ -180,14 +191,16 @@ describe('Kafka Integration Tests', () => {
     const entity = await entityStorage.create_new_entity(entityData);
 
     // Wait a bit for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Generate vector
     const testVector = [0.1, 0.2, 0.3, 0.4, 0.5];
-    await entityStorage.generate_entity_vector(entity.id, testVector, { model: 'test-model' });
+    await entityStorage.generate_entity_vector(entity.id, testVector, {
+      model: 'test-model',
+    });
 
     // Wait a bit for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Check if vector was stored
     const storedVector = await mockVectorStorage.get_vector(entity.id);

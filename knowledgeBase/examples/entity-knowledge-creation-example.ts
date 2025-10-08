@@ -22,18 +22,18 @@ async function entityKnowledgeCreationExample() {
   const knowledgeContentStorage = new MongodbKnowledgeContentStorage();
   const knowledgeVectorStorage = new MongodbKnowledgeVectorStorage();
   const knowledgeGraphStorage = new MongoKnowledgeGraphStorage();
-  
+
   const entityContentStorage = new MongodbEntityContentStorage();
   const entityGraphStorage = new MongoEntityGraphStorage();
   const entityVectorStorage = new ElasticsearchVectorStorage();
-  
+
   // Create storage instances
   const knowledgeStorage = new KnowledgeStorage(
     knowledgeContentStorage,
     knowledgeGraphStorage,
     knowledgeVectorStorage,
   );
-  
+
   const entityStorage = new EntityStorage(
     entityContentStorage,
     entityGraphStorage,
@@ -45,10 +45,14 @@ async function entityKnowledgeCreationExample() {
     const entityData = {
       name: ['Machine Learning'],
       tags: ['AI', 'Computer Science', 'Data Science'],
-      definition: 'Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed.',
+      definition:
+        'Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed.',
     };
-    
-    const entity = await Entity.create_entity_with_entity_data(entityData).save(entityStorage);
+
+    const entity =
+      await Entity.create_entity_with_entity_data(entityData).save(
+        entityStorage,
+      );
     console.log(`Created entity with ID: ${entity.get_id()}`);
 
     // Example 1: Create knowledge hierarchy from natural language text
@@ -63,11 +67,14 @@ async function entityKnowledgeCreationExample() {
     `;
 
     console.log('Creating knowledge hierarchy from natural language text...');
-    const knowledgeHierarchy = await entity.create_subordinate_knowledge_from_text(
-      mlText,
-      knowledgeStorage,
+    const knowledgeHierarchy =
+      await entity.create_subordinate_knowledge_from_text(
+        mlText,
+        knowledgeStorage,
+      );
+    console.log(
+      `Created knowledge hierarchy with root ID: ${knowledgeHierarchy.get_id()}`,
     );
-    console.log(`Created knowledge hierarchy with root ID: ${knowledgeHierarchy.get_id()}`);
 
     // Render the knowledge hierarchy as markdown
     const markdown = knowledgeHierarchy.render_to_markdown_string();
@@ -87,7 +94,9 @@ async function entityKnowledgeCreationExample() {
       simpleText,
       knowledgeStorage,
     );
-    console.log(`Created simple knowledge with ID: ${simpleKnowledge.get_id()}`);
+    console.log(
+      `Created simple knowledge with ID: ${simpleKnowledge.get_id()}`,
+    );
 
     // Example 3: Use EntityExtractor directly
     const extractor = new EntityExtractor();
@@ -95,16 +104,25 @@ async function entityKnowledgeCreationExample() {
     const mainEntity = await extractor.extractMainEntity(mlText);
     console.log('Extracted main entity:', mainEntity);
 
-    const relatedEntities = await extractor.extractRelatedEntities(mlText, mainEntity.name);
+    const relatedEntities = await extractor.extractRelatedEntities(
+      mlText,
+      mainEntity.name,
+    );
     console.log('Extracted related entities:', relatedEntities);
 
-    const relationships = await extractor.extractRelationships(mlText, relatedEntities);
+    const relationships = await extractor.extractRelationships(
+      mlText,
+      relatedEntities,
+    );
     console.log('Extracted relationships:', relationships);
 
     // Example 4: Get all subordinate knowledge for the entity
     console.log('Retrieving all subordinate knowledge...');
-    const subordinateKnowledge = await entity.get_subordinate_knowledge(knowledgeStorage);
-    console.log(`Found ${subordinateKnowledge.length} subordinate knowledge items`);
+    const subordinateKnowledge =
+      await entity.get_subordinate_knowledge(knowledgeStorage);
+    console.log(
+      `Found ${subordinateKnowledge.length} subordinate knowledge items`,
+    );
 
     // Example 5: Update existing knowledge with new text
     console.log('Updating knowledge with new text...');
@@ -122,7 +140,7 @@ async function entityKnowledgeCreationExample() {
     // Example 6: Use KnowledgeCreationWorkflow directly
     console.log('Using KnowledgeCreationWorkflow directly...');
     const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
-    
+
     const directText = `
     Natural Language Processing (NLP): A branch of artificial intelligence that helps computers understand, interpret and manipulate human language.
     
@@ -137,7 +155,9 @@ async function entityKnowledgeCreationExample() {
       directText,
       entity,
     );
-    console.log(`Created knowledge directly with ID: ${directKnowledge.get_id()}`);
+    console.log(
+      `Created knowledge directly with ID: ${directKnowledge.get_id()}`,
+    );
 
     // Render the final knowledge hierarchy
     const finalMarkdown = directKnowledge.render_to_markdown_string();
@@ -160,18 +180,18 @@ async function advancedEntityKnowledgeExample() {
   const knowledgeContentStorage = new MongodbKnowledgeContentStorage();
   const knowledgeVectorStorage = new MongodbKnowledgeVectorStorage();
   const knowledgeGraphStorage = new MongoKnowledgeGraphStorage();
-  
+
   const entityContentStorage = new MongodbEntityContentStorage();
   const entityGraphStorage = new MongoEntityGraphStorage();
   const entityVectorStorage = new ElasticsearchVectorStorage();
-  
+
   // Create storage instances
   const knowledgeStorage = new KnowledgeStorage(
     knowledgeContentStorage,
     knowledgeGraphStorage,
     knowledgeVectorStorage,
   );
-  
+
   const entityStorage = new EntityStorage(
     entityContentStorage,
     entityGraphStorage,
@@ -189,13 +209,15 @@ async function advancedEntityKnowledgeExample() {
     const aiEntity = await Entity.create_entity_with_entity_data({
       name: ['Artificial Intelligence'],
       tags: ['Computer Science', 'Technology'],
-      definition: 'The simulation of human intelligence in machines that are programmed to think and learn.',
+      definition:
+        'The simulation of human intelligence in machines that are programmed to think and learn.',
     }).save(entityStorage);
 
     const mlEntity = await Entity.create_entity_with_entity_data({
       name: ['Machine Learning'],
       tags: ['AI', 'Computer Science'],
-      definition: 'A subset of AI that enables systems to learn and improve from experience.',
+      definition:
+        'A subset of AI that enables systems to learn and improve from experience.',
     }).save(entityStorage);
 
     console.log('Created multiple related entities');
@@ -205,14 +227,14 @@ async function advancedEntityKnowledgeExample() {
       computerScienceEntity.get_id(),
       aiEntity.get_id(),
       'includes',
-      { strength: 0.9 }
+      { strength: 0.9 },
     );
 
     await entityGraphStorage.create_relation(
       aiEntity.get_id(),
       mlEntity.get_id(),
       'includes',
-      { strength: 0.95 }
+      { strength: 0.95 },
     );
 
     console.log('Created entity relationships');
@@ -233,10 +255,11 @@ async function advancedEntityKnowledgeExample() {
     It has applications in prediction, classification, clustering, and decision-making.
     `;
 
-    const csKnowledge = await computerScienceEntity.create_subordinate_knowledge_from_text(
-      csText,
-      knowledgeStorage,
-    );
+    const csKnowledge =
+      await computerScienceEntity.create_subordinate_knowledge_from_text(
+        csText,
+        knowledgeStorage,
+      );
 
     const aiKnowledge = await aiEntity.create_subordinate_knowledge_from_text(
       aiText,
@@ -275,18 +298,27 @@ async function advancedEntityKnowledgeExample() {
 
     // Demonstrate entity-knowledge-entity relationship
     console.log('Demonstrating entity-knowledge-entity relationships...');
-    
+
     // Get all knowledge for Computer Science entity
-    const csKnowledgeItems = await computerScienceEntity.get_subordinate_knowledge(knowledgeStorage);
-    console.log(`Computer Science has ${csKnowledgeItems.length} knowledge items`);
+    const csKnowledgeItems =
+      await computerScienceEntity.get_subordinate_knowledge(knowledgeStorage);
+    console.log(
+      `Computer Science has ${csKnowledgeItems.length} knowledge items`,
+    );
 
     // Get all knowledge for AI entity
-    const aiKnowledgeItems = await aiEntity.get_subordinate_knowledge(knowledgeStorage);
-    console.log(`Artificial Intelligence has ${aiKnowledgeItems.length} knowledge items`);
+    const aiKnowledgeItems =
+      await aiEntity.get_subordinate_knowledge(knowledgeStorage);
+    console.log(
+      `Artificial Intelligence has ${aiKnowledgeItems.length} knowledge items`,
+    );
 
     // Get all knowledge for ML entity
-    const mlKnowledgeItems = await mlEntity.get_subordinate_knowledge(knowledgeStorage);
-    console.log(`Machine Learning has ${mlKnowledgeItems.length} knowledge items`);
+    const mlKnowledgeItems =
+      await mlEntity.get_subordinate_knowledge(knowledgeStorage);
+    console.log(
+      `Machine Learning has ${mlKnowledgeItems.length} knowledge items`,
+    );
 
     console.log('Advanced Entity Knowledge Example completed successfully!');
   } catch (error) {

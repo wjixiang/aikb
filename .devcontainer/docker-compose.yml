@@ -111,9 +111,21 @@ services:
       - KAFKA_SOCKET_REQUEST_MAX_BYTES=104857600
     networks:
       - app-network
+  rabbitmq:
+    image: rabbitmq:3.13.6-management
+    ports:
+      - "5672:5672"
+      - "8080:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+      - RABBITMQ_DEFAULT_VHOST=my_vhost
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
 volumes:
   es-data:
   mongodb-data:
+  rabbitmq-data:
 
 networks:
   app-network:

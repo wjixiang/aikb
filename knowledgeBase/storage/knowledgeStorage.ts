@@ -79,10 +79,10 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
       knowledgeData.content,
       children,
     );
-    
+
     // Set storage reference for future operations
     (knowledge as any).knowledgeStorage = this;
-    
+
     return knowledge;
   }
 
@@ -149,10 +149,10 @@ export default class KnowledgeStorage extends AbstractKnowledgeStorage {
       knowledgeData.content,
       childKnowledge,
     );
-    
+
     // Set storage reference for future operations
     (knowledge as any).knowledgeStorage = this;
-    
+
     return knowledge;
   }
 }

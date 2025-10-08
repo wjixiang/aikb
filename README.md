@@ -28,5 +28,11 @@ A knowledge management system intergated with agent
 
 ## 知识创建过程
 
+## 文献资料管理
+```mermaid
+flowchart TD
+start(接受pdf数据)-->a1("储存基本信息到LibraryStorage")-->使用minerU作为pdf_convertor将pdf转换为标准的Markdown格式-->将下载得到的Markdown纯文本原始数据保存到libraryStorage-->c{{"长度大于阈值?"}}
+```
+
 ## Target
 - [ ] Replicate basic functions of common knowledge managment system (e.g. Obsidian)   

@@ -13,7 +13,7 @@ import { ElasticsearchEntityContentStorage } from '../knowledgeBase/storage/elas
       provide: 'ENTITY_STORAGE',
       useFactory: () => {
         const elasticsearchUrl =
-          process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+          process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
         return new ElasticsearchEntityContentStorage(elasticsearchUrl);
       },
     },

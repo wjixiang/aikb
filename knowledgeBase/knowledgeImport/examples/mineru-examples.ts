@@ -11,7 +11,7 @@ const MINERU_TOKEN = process.env.MINERU_TOKEN || 'your-token-here';
 
 async function basicSingleFileConversion() {
   console.log('=== Basic Single File Conversion ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: MINERU_TOKEN,
     downloadDir: './downloads',
@@ -19,8 +19,8 @@ async function basicSingleFileConversion() {
       is_ocr: true,
       enable_formula: true,
       enable_table: true,
-      language: 'ch'
-    }
+      language: 'ch',
+    },
   });
 
   try {
@@ -29,15 +29,18 @@ async function basicSingleFileConversion() {
       'https://cdn-mineru.openxlab.org.cn/demo/example.pdf',
       {
         data_id: 'example-doc',
-        extra_formats: ['docx', 'html']
-      }
+        extra_formats: ['docx', 'html'],
+      },
     );
 
     if (result.success) {
       console.log('✅ Conversion successful!');
       console.log('Task ID:', result.taskId);
       console.log('Downloaded files:', result.downloadedFiles);
-      console.log('Data preview:', JSON.stringify(result.data, null, 2).substring(0, 200) + '...');
+      console.log(
+        'Data preview:',
+        JSON.stringify(result.data, null, 2).substring(0, 200) + '...',
+      );
     } else {
       console.error('❌ Conversion failed:', result.error);
     }
@@ -48,10 +51,10 @@ async function basicSingleFileConversion() {
 
 async function localFileConversion() {
   console.log('\n=== Local File Conversion ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: MINERU_TOKEN,
-    downloadDir: './downloads'
+    downloadDir: './downloads',
   });
 
   const localFilePath = './sample.pdf'; // Replace with actual file path
@@ -60,7 +63,7 @@ async function localFileConversion() {
     const result = await converter.processLocalFile(localFilePath, {
       is_ocr: true,
       data_id: 'local-sample',
-      page_ranges: '1-5'
+      page_ranges: '1-5',
     });
 
     if (result.success) {
@@ -77,23 +80,19 @@ async function localFileConversion() {
 
 async function multipleFilesConversion() {
   console.log('\n=== Multiple Files Conversion ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: MINERU_TOKEN,
-    downloadDir: './downloads'
+    downloadDir: './downloads',
   });
 
-  const filePaths = [
-    './document1.pdf',
-    './document2.pdf',
-    './document3.pdf'
-  ]; // Replace with actual file paths
+  const filePaths = ['./document1.pdf', './document2.pdf', './document3.pdf']; // Replace with actual file paths
 
   try {
     const results = await converter.processMultipleFiles(filePaths, {
       is_ocr: true,
       enable_formula: false,
-      language: 'en'
+      language: 'en',
     });
 
     results.forEach((result, index) => {
@@ -111,15 +110,15 @@ async function multipleFilesConversion() {
 
 async function batchUrlConversion() {
   console.log('\n=== Batch URL Conversion ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: MINERU_TOKEN,
-    downloadDir: './downloads'
+    downloadDir: './downloads',
   });
 
   const urls = [
     'https://cdn-mineru.openxlab.org.cn/demo/example.pdf',
-    'https://cdn-mineru.openxlab.org.cn/demo/example2.pdf'
+    'https://cdn-mineru.openxlab.org.cn/demo/example2.pdf',
   ];
 
   try {
@@ -127,7 +126,7 @@ async function batchUrlConversion() {
       is_ocr: true,
       enable_table: true,
       language: 'ch',
-      extra_formats: ['html']
+      extra_formats: ['html'],
     });
 
     results.forEach((result, index) => {
@@ -145,9 +144,9 @@ async function batchUrlConversion() {
 
 async function taskStatusMonitoring() {
   console.log('\n=== Task Status Monitoring ===');
-  
+
   const converter = new MinerUPdfConvertor({
-    token: MINERU_TOKEN
+    token: MINERU_TOKEN,
   });
 
   const taskId = 'your-task-id-here'; // Replace with actual task ID
@@ -156,7 +155,7 @@ async function taskStatusMonitoring() {
     const status = await converter.getTaskStatus(taskId);
     console.log('Task Status:', status.state);
     console.log('Progress:', status.extract_progress);
-    
+
     if (status.state === 'done') {
       console.log('✅ Task completed!');
       console.log('Result URL:', status.full_zip_url);
@@ -172,12 +171,12 @@ async function taskStatusMonitoring() {
 
 async function advancedClientUsage() {
   console.log('\n=== Advanced Client Usage ===');
-  
+
   const client = new MinerUClient({
     token: MINERU_TOKEN,
     maxRetries: 5,
     retryDelay: 2000,
-    timeout: 60000
+    timeout: 60000,
   });
 
   try {
@@ -190,7 +189,7 @@ async function advancedClientUsage() {
       language: 'ch',
       data_id: 'advanced-example',
       extra_formats: ['docx', 'html', 'latex'],
-      model_version: 'vlm'
+      model_version: 'vlm',
     });
 
     console.log('Task created:', taskId);
@@ -199,12 +198,11 @@ async function advancedClientUsage() {
     const result = await client.waitForTaskCompletion(taskId, {
       pollInterval: 3000,
       timeout: 600000,
-      downloadDir: './advanced-downloads'
+      downloadDir: './advanced-downloads',
     });
 
     console.log('✅ Task completed!');
     console.log('Downloaded files:', result.downloadedFiles);
-
   } catch (error) {
     console.error('❌ Error:', error);
   }
@@ -212,15 +210,15 @@ async function advancedClientUsage() {
 
 async function errorHandlingExample() {
   console.log('\n=== Error Handling Example ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: 'invalid-token', // This will cause an error
-    downloadDir: './downloads'
+    downloadDir: './downloads',
   });
 
   try {
     const result = await converter.convertPdfToJSON(
-      'https://invalid-url.com/file.pdf'
+      'https://invalid-url.com/file.pdf',
     );
 
     if (!result.success) {
@@ -233,10 +231,10 @@ async function errorHandlingExample() {
 
 async function cleanupExample() {
   console.log('\n=== Cleanup Example ===');
-  
+
   const converter = new MinerUPdfConvertor({
     token: MINERU_TOKEN,
-    downloadDir: './downloads'
+    downloadDir: './downloads',
   });
 
   try {
@@ -254,7 +252,9 @@ async function runExamples() {
 
   // Check if token is available
   if (MINERU_TOKEN === 'your-token-here') {
-    console.log('⚠️  Please set your MinerU token in the MINERU_TOKEN environment variable');
+    console.log(
+      '⚠️  Please set your MinerU token in the MINERU_TOKEN environment variable',
+    );
     console.log('   or replace the placeholder in the code.\n');
     return;
   }
@@ -282,7 +282,7 @@ export {
   advancedClientUsage,
   errorHandlingExample,
   cleanupExample,
-  runExamples
+  runExamples,
 };
 
 // Run if this file is executed directly

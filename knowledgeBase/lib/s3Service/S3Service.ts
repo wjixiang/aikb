@@ -1,24 +1,35 @@
-import { S3Client, PutObjectCommand, ObjectCannedACL, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  S3Client,
+  PutObjectCommand,
+  ObjectCannedACL,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { config } from 'dotenv';
-config()
+config();
 
 // Validate required environment variables
-const requiredEnvVars = ['OSS_ACCESS_KEY_ID', 'OSS_SECRET_ACCESS_KEY', 'PDF_OSS_BUCKET_NAME'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+const requiredEnvVars = [
+  'OSS_ACCESS_KEY_ID',
+  'OSS_SECRET_ACCESS_KEY',
+  'PDF_OSS_BUCKET_NAME',
+];
+const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  throw new Error(
+    `Missing required environment variables: ${missingVars.join(', ')}`,
+  );
 }
 
 /**
  * S3 client instance configured with environment variables
  */
 const s3Client = new S3Client({
-  region: process.env.OSS_REGION ,
+  region: process.env.OSS_REGION,
   endpoint: `https://${process.env.OSS_REGION}.${process.env.S3_ENDPOINT}`,
   credentials: {
     accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
@@ -26,7 +37,7 @@ const s3Client = new S3Client({
   },
   forcePathStyle: false, // Use virtual hosted style for Aliyun OSS
   // Add custom configuration for Aliyun OSS
-  signingRegion: process.env.OSS_REGION || "us-east-1",
+  signingRegion: process.env.OSS_REGION || 'us-east-1',
 });
 
 /**
@@ -55,11 +66,13 @@ export async function uploadToS3(
   buffer: Buffer,
   fileName: string,
   contentType: string,
-  acl: ObjectCannedACL = "private", // Changed default to private for better security
+  acl: ObjectCannedACL = 'private', // Changed default to private for better security
 ): Promise<string> {
   try {
-    console.log(`[S3Service] Uploading to S3: bucket=${BUCKET_NAME}, key=${fileName}, contentType=${contentType}`);
-    
+    console.log(
+      `[S3Service] Uploading to S3: bucket=${BUCKET_NAME}, key=${fileName}, contentType=${contentType}`,
+    );
+
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: fileName,
@@ -73,19 +86,21 @@ export async function uploadToS3(
     console.log(`[S3Service] Upload successful`);
 
     // Use virtual hosted style URL for Aliyun OSS
-    const endpoint = `${process.env.OSS_REGION}.${process.env.S3_ENDPOINT}`
+    const endpoint = `${process.env.OSS_REGION}.${process.env.S3_ENDPOINT}`;
     const url = `https://${BUCKET_NAME}.${endpoint}/${fileName}`;
     console.log(`[S3Service] Generated URL: ${url}`);
     return url;
   } catch (error) {
-    console.error("[S3Service] Error uploading to S3:", error);
+    console.error('[S3Service] Error uploading to S3:', error);
     // Provide more specific error information
     if (error instanceof Error) {
-      console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+      console.error(
+        `[S3Service] Error details: ${error.name} - ${error.message}`,
+      );
       throw new Error(`Failed to upload file to S3: ${error.message}`);
     }
-    console.error("[S3Service] Unknown error type");
-    throw new Error("Failed to upload file to S3: Unknown error");
+    console.error('[S3Service] Unknown error type');
+    throw new Error('Failed to upload file to S3: Unknown error');
   }
 }
 
@@ -109,11 +124,13 @@ export async function getSignedUploadUrl(
   s3Key: string,
   contentType: string,
   expiresIn: number = 3600,
-  acl: ObjectCannedACL = "private", // Changed default to private for better security
+  acl: ObjectCannedACL = 'private', // Changed default to private for better security
 ): Promise<string> {
   try {
-    console.log(`[S3Service] Generating signed URL: bucket=${BUCKET_NAME}, key=${s3Key}, expiresIn=${expiresIn}`);
-    
+    console.log(
+      `[S3Service] Generating signed URL: bucket=${BUCKET_NAME}, key=${s3Key}, expiresIn=${expiresIn}`,
+    );
+
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: s3Key,
@@ -125,14 +142,16 @@ export async function getSignedUploadUrl(
     console.log(`[S3Service] Signed URL generated successfully`);
     return signedUrl;
   } catch (error) {
-    console.error("[S3Service] Error generating signed URL:", error);
+    console.error('[S3Service] Error generating signed URL:', error);
     // Provide more specific error information
     if (error instanceof Error) {
-      console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+      console.error(
+        `[S3Service] Error details: ${error.name} - ${error.message}`,
+      );
       throw new Error(`Failed to generate signed URL: ${error.message}`);
     }
-    console.error("[S3Service] Unknown error type");
-    throw new Error("Failed to generate signed URL: Unknown error");
+    console.error('[S3Service] Unknown error type');
+    throw new Error('Failed to generate signed URL: Unknown error');
   }
 }
 
@@ -157,11 +176,13 @@ export async function getSignedUploadUrl(
 export async function uploadPdfFromPath(
   pdfPath: string,
   s3Key?: string,
-  acl: ObjectCannedACL = "private"
+  acl: ObjectCannedACL = 'private',
 ): Promise<string> {
   try {
-    console.log(`[S3Service] uploadPdfFromPath: path=${pdfPath}, s3Key=${s3Key}`);
-    
+    console.log(
+      `[S3Service] uploadPdfFromPath: path=${pdfPath}, s3Key=${s3Key}`,
+    );
+
     // Check if file exists
     if (!fs.existsSync(pdfPath)) {
       throw new Error(`PDF file not found at path: ${pdfPath}`);
@@ -176,28 +197,38 @@ export async function uploadPdfFromPath(
     // Read the PDF file
     const pdfBuffer = fs.readFileSync(pdfPath);
     console.log(`[S3Service] Read PDF file: ${pdfBuffer.length} bytes`);
-    
+
     // Use filename from path if s3Key is not provided
     const fileName = s3Key || path.basename(pdfPath);
     console.log(`[S3Service] Using fileName: ${fileName}`);
-    
+
     // Upload to S3 using the existing uploadToS3 function
-    const result = await uploadToS3(pdfBuffer, fileName, 'application/pdf', acl);
+    const result = await uploadToS3(
+      pdfBuffer,
+      fileName,
+      'application/pdf',
+      acl,
+    );
     console.log(`[S3Service] uploadPdfFromPath successful: ${result}`);
     return result;
   } catch (error) {
-    console.error("[S3Service] Error uploading PDF from path:", error);
+    console.error('[S3Service] Error uploading PDF from path:', error);
     if (error instanceof Error) {
-      console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+      console.error(
+        `[S3Service] Error details: ${error.name} - ${error.message}`,
+      );
       throw new Error(`Failed to upload PDF from path: ${error.message}`);
     }
-    console.error("[S3Service] Unknown error type");
-    throw new Error("Failed to upload PDF from path: Unknown error");
+    console.error('[S3Service] Unknown error type');
+    throw new Error('Failed to upload PDF from path: Unknown error');
   }
 }
 
-
-export async function getSignedUrlForDownload(bucketName: string, s3Key: string, expiresInSeconds = 3600) {
+export async function getSignedUrlForDownload(
+  bucketName: string,
+  s3Key: string,
+  expiresInSeconds = 3600,
+) {
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: s3Key,

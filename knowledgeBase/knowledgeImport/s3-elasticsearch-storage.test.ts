@@ -4,7 +4,8 @@ import { BookMetadata, Collection, Citation } from './liberary';
 
 describe('S3ElasticSearchLibraryStorage', () => {
   let storage: S3ElasticSearchLibraryStorage;
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   let elasticsearchAvailable = false;
 
   beforeAll(async () => {
@@ -23,9 +24,13 @@ describe('S3ElasticSearchLibraryStorage', () => {
     } catch (error) {
       console.log('Elasticsearch is not available, skipping integration tests');
       console.log('To run these tests, start Elasticsearch using:');
-      console.log('  ./knowledgeBase/knowledgeImport/scripts/check-elasticsearch-simple.sh');
+      console.log(
+        '  ./knowledgeBase/knowledgeImport/scripts/check-elasticsearch-simple.sh',
+      );
       console.log('Or: cd elastic-start-local && ./start.sh');
-      console.log('Or: node knowledgeBase/knowledgeImport/scripts/check-elasticsearch.js');
+      console.log(
+        'Or: node knowledgeBase/knowledgeImport/scripts/check-elasticsearch.js',
+      );
     }
 
     if (elasticsearchAvailable) {
@@ -35,6 +40,12 @@ describe('S3ElasticSearchLibraryStorage', () => {
   });
 
   describe('Metadata Operations', () => {
+      it('check existance of document', async()=>{
+        
+        const md = await storage.getMarkdown("68e624929343ced7805027eb")
+        console.log(md)
+    })
+
     it('should save and retrieve metadata', async () => {
       if (!elasticsearchAvailable) {
         console.log('Skipping test - Elasticsearch not available');
@@ -42,9 +53,7 @@ describe('S3ElasticSearchLibraryStorage', () => {
       }
       const metadata: BookMetadata = {
         title: 'Test Book',
-        authors: [
-          { firstName: 'John', lastName: 'Doe' }
-        ],
+        authors: [{ firstName: 'John', lastName: 'Doe' }],
         abstract: 'This is a test book',
         publicationYear: 2023,
         publisher: 'Test Publisher',
@@ -52,7 +61,7 @@ describe('S3ElasticSearchLibraryStorage', () => {
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'book'
+        fileType: 'book',
       };
 
       const savedMetadata = await storage.saveMetadata(metadata);
@@ -71,15 +80,13 @@ describe('S3ElasticSearchLibraryStorage', () => {
       }
       const metadata: BookMetadata = {
         title: 'Hash Test Book',
-        authors: [
-          { firstName: 'Jane', lastName: 'Smith' }
-        ],
+        authors: [{ firstName: 'Jane', lastName: 'Smith' }],
         contentHash: 'test-hash-123',
         tags: ['hash-test'],
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'book'
+        fileType: 'book',
       };
 
       await storage.saveMetadata(metadata);
@@ -96,23 +103,21 @@ describe('S3ElasticSearchLibraryStorage', () => {
       }
       const metadata: BookMetadata = {
         title: 'Original Title',
-        authors: [
-          { firstName: 'Original', lastName: 'Author' }
-        ],
+        authors: [{ firstName: 'Original', lastName: 'Author' }],
         tags: ['original'],
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'book'
+        fileType: 'book',
       };
 
       const savedMetadata = await storage.saveMetadata(metadata);
-      
+
       // Update the metadata
       const updatedMetadata: BookMetadata = {
         ...savedMetadata,
         title: 'Updated Title',
-        dateModified: new Date()
+        dateModified: new Date(),
       };
 
       await storage.updateMetadata(updatedMetadata);
@@ -129,26 +134,22 @@ describe('S3ElasticSearchLibraryStorage', () => {
       // Create test metadata
       const metadata1: BookMetadata = {
         title: 'Search Test Book 1',
-        authors: [
-          { firstName: 'Search', lastName: 'Author1' }
-        ],
+        authors: [{ firstName: 'Search', lastName: 'Author1' }],
         tags: ['search', 'test1'],
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'book'
+        fileType: 'book',
       };
 
       const metadata2: BookMetadata = {
         title: 'Search Test Book 2',
-        authors: [
-          { firstName: 'Search', lastName: 'Author2' }
-        ],
+        authors: [{ firstName: 'Search', lastName: 'Author2' }],
         tags: ['search', 'test2'],
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'article'
+        fileType: 'article',
       };
 
       await storage.saveMetadata(metadata1);
@@ -156,22 +157,24 @@ describe('S3ElasticSearchLibraryStorage', () => {
 
       // Search by title
       const titleResults = await storage.searchMetadata({
-        query: 'Search Test'
+        query: 'Search Test',
       });
       expect(titleResults.length).toBeGreaterThanOrEqual(2);
 
       // Search by tags
       const tagResults = await storage.searchMetadata({
-        tags: ['search']
+        tags: ['search'],
       });
       expect(tagResults.length).toBeGreaterThanOrEqual(2);
 
       // Search by file type
       const typeResults = await storage.searchMetadata({
-        fileType: ['book']
+        fileType: ['book'],
       });
       expect(typeResults.length).toBeGreaterThanOrEqual(1);
-      expect(typeResults.some(item => item.title === 'Search Test Book 1')).toBe(true);
+      expect(
+        typeResults.some((item) => item.title === 'Search Test Book 1'),
+      ).toBe(true);
     });
   });
 
@@ -185,7 +188,7 @@ describe('S3ElasticSearchLibraryStorage', () => {
         name: 'Test Collection',
         description: 'A test collection',
         dateAdded: new Date(),
-        dateModified: new Date()
+        dateModified: new Date(),
       };
 
       const savedCollection = await storage.saveCollection(collection);
@@ -193,7 +196,7 @@ describe('S3ElasticSearchLibraryStorage', () => {
 
       const collections = await storage.getCollections();
       expect(collections.length).toBeGreaterThanOrEqual(1);
-      expect(collections.some(c => c.name === 'Test Collection')).toBe(true);
+      expect(collections.some((c) => c.name === 'Test Collection')).toBe(true);
     });
   });
 
@@ -208,14 +211,14 @@ describe('S3ElasticSearchLibraryStorage', () => {
         itemId: 'test-item-id',
         citationStyle: 'APA',
         citationText: 'Doe, J. (2023). Test Book. Test Publisher.',
-        dateGenerated: new Date()
+        dateGenerated: new Date(),
       };
 
       await storage.saveCitation(citation);
 
       const citations = await storage.getCitations('test-item-id');
       expect(citations.length).toBeGreaterThanOrEqual(1);
-      expect(citations.some(c => c.id === 'test-citation-id')).toBe(true);
+      expect(citations.some((c) => c.id === 'test-citation-id')).toBe(true);
     });
   });
 
@@ -228,14 +231,12 @@ describe('S3ElasticSearchLibraryStorage', () => {
       // Create a test item
       const metadata: BookMetadata = {
         title: 'Collection Test Item',
-        authors: [
-          { firstName: 'Collection', lastName: 'Test' }
-        ],
+        authors: [{ firstName: 'Collection', lastName: 'Test' }],
         tags: ['collection-test'],
         collections: [],
         dateAdded: new Date(),
         dateModified: new Date(),
-        fileType: 'book'
+        fileType: 'book',
       };
 
       const savedMetadata = await storage.saveMetadata(metadata);
@@ -244,7 +245,7 @@ describe('S3ElasticSearchLibraryStorage', () => {
       const collection: Collection = {
         name: 'Test Collection for Items',
         dateAdded: new Date(),
-        dateModified: new Date()
+        dateModified: new Date(),
       };
 
       const savedCollection = await storage.saveCollection(collection);
@@ -257,7 +258,10 @@ describe('S3ElasticSearchLibraryStorage', () => {
       expect(updatedMetadata?.collections).toContain(savedCollection.id);
 
       // Remove item from collection
-      await storage.removeItemFromCollection(savedMetadata.id!, savedCollection.id!);
+      await storage.removeItemFromCollection(
+        savedMetadata.id!,
+        savedCollection.id!,
+      );
 
       // Verify item is no longer in collection
       const finalMetadata = await storage.getMetadata(savedMetadata.id!);

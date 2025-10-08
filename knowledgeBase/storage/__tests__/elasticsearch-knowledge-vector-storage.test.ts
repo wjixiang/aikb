@@ -69,7 +69,7 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
 
     // Create storage instance
     elasticsearchStorage = new ElasticsearchKnowledgeVectorStorage(
-      'http://localhost:9200',
+      'http://elasticsearch:9200',
       5,
     );
 
@@ -89,7 +89,7 @@ describe('ElasticsearchKnowledgeVectorStorage', () => {
       // Assert
       expect(storage).toBeInstanceOf(ElasticsearchKnowledgeVectorStorage);
       expect(MockClient).toHaveBeenCalledWith({
-        node: 'http://localhost:9200',
+        node: 'http://elasticsearch:9200',
         auth: {
           apiKey: '',
         },

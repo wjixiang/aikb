@@ -79,13 +79,14 @@ export default class Entity {
     // Import here to avoid circular dependencies
     // Create workflow instance
     const workflow = new KnowledgeCreationWorkflow(knowledgeStorage);
-    
+
     // Process the text and create knowledge hierarchy
-    const knowledgeHierarchy = await workflow.create_knowledge_hierarchy_from_text(
-      naturalLanguageText,
-      this,
-    );
-    
+    const knowledgeHierarchy =
+      await workflow.create_knowledge_hierarchy_from_text(
+        naturalLanguageText,
+        this,
+      );
+
     return knowledgeHierarchy;
   }
 
@@ -98,20 +99,23 @@ export default class Entity {
     knowledgeStorage: AbstractKnowledgeStorage,
   ): Promise<Knowledge[]> {
     // Get all knowledge linked to this entity from the knowledge graph storage
-    const knowledgeRelations = await knowledgeStorage.knowledgeGraphStorage.get_knowledge_links_by_source(
-      this.id,
-    );
-    
+    const knowledgeRelations =
+      await knowledgeStorage.knowledgeGraphStorage.get_knowledge_links_by_source(
+        this.id,
+      );
+
     const subordinateKnowledge: Knowledge[] = [];
-    
+
     for (const relation of knowledgeRelations) {
       // Try to get knowledge by ID
-      const knowledge = await knowledgeStorage.get_knowledge_by_id(relation.targetId);
+      const knowledge = await knowledgeStorage.get_knowledge_by_id(
+        relation.targetId,
+      );
       if (knowledge) {
         subordinateKnowledge.push(knowledge);
       }
     }
-    
+
     return subordinateKnowledge;
   }
 }

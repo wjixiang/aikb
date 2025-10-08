@@ -7,7 +7,12 @@ import {
   AbstractEntityStorage,
   AbstractKnowledgeStorage,
 } from './abstract-storage';
-import { EntityData, EntityDataWithId, KnowledgeData, KnowledgeDataWithId } from '../knowledge.type';
+import {
+  EntityData,
+  EntityDataWithId,
+  KnowledgeData,
+  KnowledgeDataWithId,
+} from '../knowledge.type';
 import Knowledge from '../Knowledge';
 
 interface StorageConfig {
@@ -21,7 +26,7 @@ interface StorageConfig {
  */
 class KBStorage {
   private logger = createLoggerWithPrefix('KBStorage');
-  
+
   constructor(
     public entityStorage: AbstractEntityStorage,
     public knowledgeStorage: AbstractKnowledgeStorage,
@@ -43,9 +48,15 @@ class KBStorage {
    * @param sourceId The ID of the source entity or knowledge
    * @returns Promise resolving to the stored knowledge with ID
    */
-  async storeKnowledge(knowledge: KnowledgeData, sourceId: string): Promise<KnowledgeDataWithId> {
+  async storeKnowledge(
+    knowledge: KnowledgeData,
+    sourceId: string,
+  ): Promise<KnowledgeDataWithId> {
     this.logger.info('Storing knowledge', { scope: knowledge.scope, sourceId });
-    return await this.knowledgeStorage.create_new_knowledge(knowledge, sourceId);
+    return await this.knowledgeStorage.create_new_knowledge(
+      knowledge,
+      sourceId,
+    );
   }
 
   /**
@@ -91,5 +102,5 @@ export {
   MongodbEntityContentStorage,
   MongodbKnowledgeContentStorage,
   MongodbKnowledgeVectorStorage,
-  MongoKnowledgeGraphStorage
+  MongoKnowledgeGraphStorage,
 };

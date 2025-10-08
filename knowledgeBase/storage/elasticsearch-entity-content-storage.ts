@@ -17,7 +17,7 @@ class ElasticsearchEntityContentStorage extends AbstractEntityContentStorage {
 
   logger = createLoggerWithPrefix('ElasticsearchEntityContentStorage');
 
-  constructor(elasticsearchUrl: string = 'http://localhost:9200') {
+  constructor(elasticsearchUrl: string = 'http://elasticsearch:9200') {
     super();
     this.client = new Client({
       node: elasticsearchUrl,
