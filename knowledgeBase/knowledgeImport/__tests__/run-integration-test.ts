@@ -1,4 +1,4 @@
-import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';
@@ -89,7 +89,7 @@ async function runIntegrationTest() {
     const startTime = Date.now();
 
     // Convert the PDF
-    const result = await converter.convertPdfToJSON(testPdfPath, {
+    const result = await converter.convertPdfToMarkdown(testPdfPath, {
       data_id: 'ruuskanen-viral-pneumonia-2011',
       is_ocr: true,
       enable_formula: true,

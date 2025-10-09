@@ -1,4 +1,4 @@
-import { MinerUPdfConvertor } from './MinerUPdfConvertor';
+import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 import { AbstractPdfConvertor } from './AbstractPdfConvertor';
 
 /**
@@ -62,18 +62,10 @@ export function createMinerUConvertorFromEnv(
 }
 
 // Re-export MinerU classes for convenience
-export { MinerUPdfConvertor } from './MinerUPdfConvertor';
-export { MinerUClient } from './MinerUClient';
-export type {
-  MinerUConfig,
-  SingleFileRequest,
-  BatchFileRequest,
-  BatchUrlRequest,
-  TaskResult,
-} from './MinerUClient';
+export { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 
 // Export types from MinerUPdfConvertor
 export type {
   ConversionResult,
   MinerUPdfConvertorConfig,
-} from './MinerUPdfConvertor';
+} from './MinerU/MinerUPdfConvertor';

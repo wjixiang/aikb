@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { HashUtils } from '../liberary';
 import { S3MongoLibraryStorage } from '../liberary';
-import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 
 // Mock the MinerUPdfConvertor for testing
 vi.mock('../MinerUPdfConvertor');

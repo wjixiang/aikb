@@ -1,6 +1,6 @@
 import { app_config } from 'knowledgeBase/config';
-import { MinerUClient } from '../MinerUClient';
-import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
+import { MinerUClient } from '../MinerU/MinerUClient';
+import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import { config } from 'dotenv';
 config();
 

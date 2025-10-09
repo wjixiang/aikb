@@ -47,6 +47,12 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface BamlMdOutline {
+  level: number
+  title: string
+  
+}
+
 export interface EntityExtractResult {
   name: string
   category: string

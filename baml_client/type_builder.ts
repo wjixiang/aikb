@@ -27,6 +27,8 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    BamlMdOutline: ClassViewer<'BamlMdOutline', "level" | "title">;
+    
     EntityExtractResult: ClassViewer<'EntityExtractResult', "name" | "category" | "abstract">;
     
     Entity_Plain_Definition: ClassViewer<'Entity_Plain_Definition', "definition">;
@@ -40,13 +42,17 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "EntityExtractResult","Entity_Plain_Definition","ScopeExtractResult","WikiSearchParamsBaml",
+            "BamlMdOutline","EntityExtractResult","Entity_Plain_Definition","ScopeExtractResult","WikiSearchParamsBaml",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.BamlMdOutline = this.tb.classViewer("BamlMdOutline", [
+          "level","title",
+        ]);
         
         this.EntityExtractResult = this.tb.classViewer("EntityExtractResult", [
           "name","category","abstract",

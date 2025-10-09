@@ -55,6 +55,7 @@ pids
 __pycache__
 .venv
 .roo
+doc
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

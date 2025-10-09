@@ -3,7 +3,7 @@ import { S3MongoLibraryStorage } from './liberary';
 import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { MinerUPdfConvertor } from './MinerUPdfConvertor';
+import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 
 let storage: S3MongoLibraryStorage;
 

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  EntityExtractResult,  Entity_Plain_Definition,  ScopeExtractResult,  WikiSearchParamsBaml } from "./types"
+import type {  BamlMdOutline,  EntityExtractResult,  Entity_Plain_Definition,  ScopeExtractResult,  WikiSearchParamsBaml } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,6 +36,10 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface BamlMdOutline {
+      level?: number | null
+      title?: string | null
+    }
     export interface EntityExtractResult {
       name?: string | null
       category?: string | null

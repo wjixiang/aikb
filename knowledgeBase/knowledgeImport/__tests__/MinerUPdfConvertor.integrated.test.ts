@@ -1,8 +1,8 @@
-import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';
-import { UploadTestPdf } from '../liberary.test';
+import { UploadTestPdf } from '../liberary.integrated.test';
 config();
 
 
