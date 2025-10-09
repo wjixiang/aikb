@@ -3,6 +3,8 @@ import Library, {
   BookMetadata,
   Collection,
   Citation,
+  BookChunk,
+  ChunkSearchFilter,
   IdUtils,
 } from './liberary';
 
@@ -19,11 +21,21 @@ interface AbstractPdf {
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
 export class MockLibraryStorage extends AbstractLibraryStorage {
+  deleteMetadata(id: string): Promise<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  deleteCollection(id: string): Promise<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  deleteCitations(itemId: string): Promise<boolean> {
+    throw new Error('Method not implemented.');
+  }
   private metadataStore: Map<string, BookMetadata> = new Map();
   private pdfStore: Map<string, AbstractPdf> = new Map();
   private collectionStore: Map<string, Collection> = new Map();
   private citationStore: Map<string, Citation[]> = new Map();
   private markdownStore: Map<string, string> = new Map();
+  private chunkStore: Map<string, BookChunk> = new Map();
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
     const id = IdUtils.generateId();
@@ -212,6 +224,134 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     return this.markdownStore.get(itemId) || null;
   }
 
+  // Chunk-related methods implementation
+  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+    if (!chunk.id) {
+      chunk.id = IdUtils.generateId();
+    }
+
+    this.chunkStore.set(chunk.id, chunk);
+    return chunk;
+  }
+
+  async getChunk(chunkId: string): Promise<BookChunk | null> {
+    return this.chunkStore.get(chunkId) || null;
+  }
+
+  async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
+    const chunks = Array.from(this.chunkStore.values());
+    return chunks
+      .filter(chunk => chunk.itemId === itemId)
+      .sort((a, b) => a.index - b.index);
+  }
+
+  async updateChunk(chunk: BookChunk): Promise<void> {
+    if (chunk.id) {
+      chunk.updatedAt = new Date();
+      this.chunkStore.set(chunk.id, chunk);
+    }
+  }
+
+  async deleteChunk(chunkId: string): Promise<boolean> {
+    return this.chunkStore.delete(chunkId);
+  }
+
+  async deleteChunksByItemId(itemId: string): Promise<number> {
+    const chunks = Array.from(this.chunkStore.values());
+    const chunksToDelete = chunks.filter(chunk => chunk.itemId === itemId);
+    
+    for (const chunk of chunksToDelete) {
+      this.chunkStore.delete(chunk.id);
+    }
+    
+    return chunksToDelete.length;
+  }
+
+  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+    const results: BookChunk[] = [];
+    const chunkList = Array.from(this.chunkStore.values());
+
+    for (const chunk of chunkList) {
+      let matches = true;
+
+      if (filter.query) {
+        const query = filter.query.toLowerCase();
+        const titleMatch = chunk.title.toLowerCase().includes(query);
+        const contentMatch = chunk.content.toLowerCase().includes(query);
+
+        if (!titleMatch && !contentMatch) {
+          matches = false;
+        }
+      }
+
+      if (filter.itemId && chunk.itemId !== filter.itemId) {
+        matches = false;
+      }
+
+      if (filter.itemIds && !filter.itemIds.includes(chunk.itemId)) {
+        matches = false;
+      }
+
+      if (filter.chunkType && chunk.metadata?.chunkType !== filter.chunkType) {
+        matches = false;
+      }
+
+      if (matches) {
+        results.push(chunk);
+      }
+    }
+
+    return results.slice(0, filter.limit || 100);
+  }
+
+  async findSimilarChunks(
+    queryVector: number[],
+    limit: number = 10,
+    threshold: number = 0.7,
+    itemIds?: string[],
+  ): Promise<Array<BookChunk & { similarity: number }>> {
+    const chunks = Array.from(this.chunkStore.values());
+    const similarChunks: Array<BookChunk & { similarity: number }> = [];
+    
+    for (const chunk of chunks) {
+      if (itemIds && !itemIds.includes(chunk.itemId)) continue;
+      if (!chunk.embedding) continue;
+      
+      // Simple cosine similarity calculation
+      let dotProduct = 0;
+      let normA = 0;
+      let normB = 0;
+      
+      for (let i = 0; i < queryVector.length; i++) {
+        dotProduct += queryVector[i] * (chunk.embedding[i] || 0);
+        normA += queryVector[i] * queryVector[i];
+        normB += (chunk.embedding[i] || 0) * (chunk.embedding[i] || 0);
+      }
+      
+      const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+      
+      if (similarity >= threshold) {
+        similarChunks.push({
+          ...chunk,
+          similarity,
+        });
+      }
+    }
+
+    // Sort by similarity and limit
+    similarChunks.sort((a, b) => b.similarity - a.similarity);
+    return similarChunks.slice(0, limit);
+  }
+
+  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+    for (const chunk of chunks) {
+      if (!chunk.id) {
+        chunk.id = IdUtils.generateId();
+      }
+      this.chunkStore.set(chunk.id, chunk);
+    }
+  }
+
   // Helper methods for testing
   clearAll(): void {
     this.metadataStore.clear();
@@ -219,9 +359,14 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     this.collectionStore.clear();
     this.citationStore.clear();
     this.markdownStore.clear();
+    this.chunkStore.clear();
   }
 
   getAllMetadata(): BookMetadata[] {
     return Array.from(this.metadataStore.values());
+  }
+
+  getAllChunks(): BookChunk[] {
+    return Array.from(this.chunkStore.values());
   }
 }
