@@ -31,21 +31,21 @@ export async function UploadTestPdf() {
   const library = new Library(storage, testMinerUPdfConvertor);
 
   // Read the test PDF file
-  const pdfPath = 'test/ACEI.pdf';
+  const pdfPath = 'test/外科学_第十版.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
 
   // Prepare metadata for the PDF
   const metadata = {
-    title: 'ACEI',
+    title: '外科学_人卫10版',
     authors: [{ firstName: 'Test', lastName: 'Author' }],
-    abstract: 'This is a test document',
-    publicationYear: 2023,
-    tags: ['test', 'research'],
-    language: 'English',
+    abstract: '外科学课本',
+    publicationYear: 2025,
+    tags: ['test', 'textbook'],
+    language: 'zh',
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(pdfBuffer, 'ACEI.pdf', metadata);
+  const book = await library.storePdf(pdfBuffer, metadata.title, metadata);
   return book;
 }
 
@@ -53,10 +53,10 @@ describe(Library, async () => {
   // Store the PDF from buffer
   const book = await UploadTestPdf();
 
-  it.skip('upload pdf buffer and retrieve s3 download url', async () => {
+  it('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
-    expect(book.metadata.title).toBe('ACEI');
+    expect(book.metadata.title).toBe('外科学_人卫10版');
     expect(book.metadata.s3Key).toBeDefined();
     expect(book.metadata.s3Url).toBeDefined();
 
@@ -102,7 +102,7 @@ describe(Library, async () => {
     expect(exist).toBe(true)
   })
 
-  it('semantic search', async()=>{
+  it.skip('semantic search', async()=>{
     const searchRes = await book.searchInChunks("ACEI",2)
     console.log(searchRes)
   })

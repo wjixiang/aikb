@@ -198,9 +198,9 @@ export abstract class AbstractLibrary {
   abstract reExtractMarkdown(itemId?: string): Promise<void>;
 
   /**
-   * Get a book by ID
+   * Get a item by ID
    */
-  abstract getBook(id: string): Promise<LibraryItem | null>;
+  abstract getItem(id: string): Promise<LibraryItem | null>;
 
   /**
    * Search for items with filters
@@ -418,24 +418,9 @@ export default class Library extends AbstractLibrary {
     // Convert to Markdown if MinerUPdfConvertor is available
     if (this.pdfConvertor) {
       try {
-        // Create a temporary file for conversion
-        const tempDir = require('os').tmpdir();
-        const conversionPath = path.join(tempDir, `temp-pdf-${Date.now()}.pdf`);
-        fs.writeFileSync(conversionPath, pdfBuffer);
-
-        console.log(`Converting PDF to Markdown: ${conversionPath}`);
+        console.log(`Converting PDF to Markdown using S3 URL: ${pdfInfo.url}`);
         const conversionResult =
-          await this.pdfConvertor.convertPdfToMarkdown(conversionPath);
-
-        // Clean up temporary file
-        try {
-          fs.unlinkSync(conversionPath);
-        } catch (error) {
-          console.warn(
-            `Failed to clean up temporary file: ${conversionPath}`,
-            error,
-          );
-        }
+          await this.pdfConvertor.convertPdfToMarkdownFromS3(pdfInfo.url);
 
         if (conversionResult.success && conversionResult.data) {
           // Extract markdown content from the conversion result
@@ -503,7 +488,7 @@ export default class Library extends AbstractLibrary {
     try {
       if (itemId) {
         // Re-extract markdown for a specific item
-        const item = await this.getBook(itemId);
+        const item = await this.getItem(itemId);
         if (!item) {
           throw new Error(`Item with ID ${itemId} not found`);
         }
@@ -549,7 +534,7 @@ export default class Library extends AbstractLibrary {
   /**
    * Get a book by ID
    */
-  async getBook(id: string): Promise<LibraryItem | null> {
+  async getItem(id: string): Promise<LibraryItem | null> {
     const metadata = await this.storage.getMetadata(id);
     if (!metadata) return null;
     return new LibraryItem(metadata, this.storage);
@@ -680,7 +665,7 @@ export default class Library extends AbstractLibrary {
   ): Promise<void> {
     try {
       // Get the item metadata
-      const item = await this.getBook(itemId);
+      const item = await this.getItem(itemId);
       if (!item) {
         throw new Error(`Item with ID ${itemId} not found`);
       }
@@ -973,20 +958,27 @@ export class LibraryItem {
   }
 
   async extractMarkdown(): Promise<void> {
+    console.log(`[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`);
+    
     // Check if this item has an associated PDF file
     if (!this.hasPdf()) {
       throw new Error('No PDF file associated with this item');
     }
 
     try {
+      console.log(`[LibraryItem.extractMarkdown] Getting PDF download URL...`);
       // Get the PDF download URL
       const pdfUrl = await this.getPdfDownloadUrl();
+      console.log(`[LibraryItem.extractMarkdown] PDF URL obtained: ${pdfUrl}`);
 
+      console.log(`[LibraryItem.extractMarkdown] Creating MinerUPdfConvertor instance...`);
       // Create a new MinerUPdfConvertor instance
       const pdfConvertor = createMinerUConvertorFromEnv();
 
+      console.log(`[LibraryItem.extractMarkdown] Converting PDF to markdown...`);
       // Convert the PDF to markdown using the MinerUPdfConvertor
       const conversionResult = await pdfConvertor.convertPdfToMarkdown(pdfUrl);
+      console.log(`[LibraryItem.extractMarkdown] Conversion completed. Success: ${conversionResult.success}`);
 
       if (!conversionResult.success) {
         throw new Error(
@@ -994,22 +986,29 @@ export class LibraryItem {
         );
       }
 
+      console.log(`[LibraryItem.extractMarkdown] Extracting markdown content from result...`);
       // Extract markdown content from the conversion result
       let markdownContent = '';
 
       if (typeof conversionResult.data === 'string') {
         markdownContent = conversionResult.data;
+        console.log(`[LibraryItem.extractMarkdown] Markdown extracted as string (${markdownContent.length} chars)`);
       } else if (conversionResult.data && conversionResult.data.markdown) {
         markdownContent = conversionResult.data.markdown;
+        console.log(`[LibraryItem.extractMarkdown] Markdown extracted from data.markdown (${markdownContent.length} chars)`);
       } else if (conversionResult.data && conversionResult.data.content) {
         markdownContent = conversionResult.data.content;
+        console.log(`[LibraryItem.extractMarkdown] Markdown extracted from data.content (${markdownContent.length} chars)`);
       } else {
+        console.error(`[LibraryItem.extractMarkdown] No markdown content found in conversion result:`, conversionResult.data);
         throw new Error('No markdown content found in conversion result');
       }
 
+      console.log(`[LibraryItem.extractMarkdown] Saving markdown content to storage...`);
       // Save the markdown content to storage
       await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
 
+      console.log(`[LibraryItem.extractMarkdown] Updating metadata...`);
       // Update the metadata with the markdown content and timestamp
       await this.updateMetadata({
         markdownContent,

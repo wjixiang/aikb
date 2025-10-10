@@ -261,7 +261,7 @@ async function main() {
     logger.info('Example 10: LibraryItem-level chunking and embedding');
 
     // Get the LibraryItem instance
-    const libraryItem = await library.getBook(item.metadata.id!);
+    const libraryItem = await library.getItem(item.metadata.id!);
     if (!libraryItem) {
       throw new Error('Could not retrieve library item');
     }

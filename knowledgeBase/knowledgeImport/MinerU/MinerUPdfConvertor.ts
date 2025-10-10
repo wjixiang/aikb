@@ -84,7 +84,60 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   }
 
   /**
-   * Convert PDF file to JSON using MinerU API
+   * Convert PDF to markdown using S3 download URL
+   * @param s3Url The S3 download URL of the PDF
+   * @param options Conversion options
+   * @returns Promise<ConversionResult>
+   */
+  async convertPdfToMarkdownFromS3(
+    s3Url: string,
+    options: Partial<SingleFileRequest> = {},
+  ): Promise<ConversionResult> {
+    try {
+      this.logger.info(`convertPdfToMarkdownFromS3: s3Url=${s3Url}`);
+      
+      // Use the S3 URL directly
+      const request: SingleFileRequest = {
+        url: s3Url,
+        ...this.config.defaultOptions,
+        ...options,
+      };
+
+      this.logger.info(`Processing file with MinerU...`);
+      // Process the file
+      const result = await this.client.processSingleFile(request, {
+        downloadDir: this.config.downloadDir,
+      });
+      this.logger.info(
+        `MinerU processing completed, taskId: ${result.result.task_id}`,
+      );
+
+      this.logger.info(
+        `Extracting markdown from downloaded files...`,
+      );
+      // Extract and parse the markdown content
+      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+        result.downloadedFiles || [],
+      );
+      this.logger.info(`Markdown extraction completed`);
+
+      return {
+        success: true,
+        data: markdownData,
+        downloadedFiles: result.downloadedFiles,
+        taskId: result.result.task_id,
+      };
+    } catch (error) {
+      this.logger.error(`Error in convertPdfToMarkdownFromS3:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Convert PDF file to JSON using MinerU API from local
    * @param pdfPath Path to the PDF file or URL
    * @param options Conversion options
    * @returns Promise<ConversionResult>
@@ -94,18 +147,18 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult> {
     try {
-      console.log(`[MinerUPdfConvertor] convertPdfToJSON: pdfPath=${pdfPath}`);
+      this.logger.info(`convertPdfToJSON: pdfPath=${pdfPath}`);
 
       // Determine if pdfPath is a URL or local file
       const isUrl =
         pdfPath.startsWith('http://') || pdfPath.startsWith('https://');
-      console.log(`[MinerUPdfConvertor] Is URL: ${isUrl}`);
+      this.logger.info(`Is URL: ${isUrl}`);
 
       let request: SingleFileRequest;
 
       if (isUrl) {
         // Use URL directly
-        console.log(`[MinerUPdfConvertor] Using URL directly: ${pdfPath}`);
+        this.logger.info(`Using URL directly: ${pdfPath}`);
         request = {
           url: pdfPath,
           ...this.config.defaultOptions,
@@ -113,9 +166,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         };
       } else {
         // For local files, we need to handle file upload
-        console.log(`[MinerUPdfConvertor] Processing local file: ${pdfPath}`);
+        this.logger.info(`Processing local file: ${pdfPath}`);
         if (!fs.existsSync(pdfPath)) {
-          console.error(`[MinerUPdfConvertor] File not found: ${pdfPath}`);
+          this.logger.error(`File not found: ${pdfPath}`);
           return {
             success: false,
             error: `File not found: ${pdfPath}`,
@@ -124,8 +177,8 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         // Validate file format
         if (!MinerUClient.isValidFileFormat(pdfPath)) {
-          console.error(
-            `[MinerUPdfConvertor] Unsupported file format: ${pdfPath}`,
+          this.logger.error(
+            `Unsupported file format: ${pdfPath}`,
           );
           return {
             success: false,
@@ -133,9 +186,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           };
         }
 
-        console.log(`[MinerUPdfConvertor] Uploading to S3...`);
+        this.logger.info(`Uploading to S3...`);
         const s3Url = await uploadPdfFromPath(pdfPath);
-        console.log(`[MinerUPdfConvertor] S3 upload successful: ${s3Url}`);
+        this.logger.info(`S3 upload successful: ${s3Url}`);
 
         request = {
           url: s3Url,
@@ -148,23 +201,23 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         );
       }
 
-      console.log(`[MinerUPdfConvertor] Processing file with MinerU...`);
+      this.logger.info(`Processing file with MinerU...`);
       // Process the file
       const result = await this.client.processSingleFile(request, {
         downloadDir: this.config.downloadDir,
       });
-      console.log(
-        `[MinerUPdfConvertor] MinerU processing completed, taskId: ${result.result.task_id}`,
+      this.logger.info(
+        `MinerU processing completed, taskId: ${result.result.task_id}`,
       );
 
-      console.log(
-        `[MinerUPdfConvertor] Extracting markdown from downloaded files...`,
+      this.logger.info(
+        `Extracting markdown from downloaded files...`,
       );
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
       );
-      console.log(`[MinerUPdfConvertor] Markdown extraction completed`);
+      this.logger.info(`Markdown extraction completed`);
 
       return {
         success: true,
@@ -173,7 +226,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         taskId: result.result.task_id,
       };
     } catch (error) {
-      console.error(`[MinerUPdfConvertor] Error in convertPdfToJSON:`, error);
+      this.logger.error(`Error in convertPdfToJSON:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -192,12 +245,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult> {
     try {
-      console.log(
-        `[MinerUPdfConvertor] processLocalFile: filePath=${filePath}`,
+      this.logger.info(
+        `processLocalFile: filePath=${filePath}`,
       );
 
       if (!fs.existsSync(filePath)) {
-        console.error(`[MinerUPdfConvertor] File not found: ${filePath}`);
+        this.logger.error(`File not found: ${filePath}`);
         return {
           success: false,
           error: `File not found: ${filePath}`,
@@ -205,8 +258,8 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       }
 
       if (!MinerUClient.isValidFileFormat(filePath)) {
-        console.error(
-          `[MinerUPdfConvertor] Unsupported file format: ${filePath}`,
+        this.logger.error(
+          `Unsupported file format: ${filePath}`,
         );
         return {
           success: false,
@@ -214,7 +267,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         };
       }
 
-      console.log(`[MinerUPdfConvertor] Starting batch file upload...`);
+      this.logger.info(`Starting batch file upload...`);
       // Process using batch file upload
       const batchResult = await this.client.processBatchFiles(
         [
@@ -238,11 +291,11 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           seed: options.seed,
         },
       );
-      console.log(
-        `[MinerUPdfConvertor] Batch upload completed, batchId: ${batchResult.batchId}`,
+      this.logger.info(
+        `Batch upload completed, batchId: ${batchResult.batchId}`,
       );
 
-      console.log(`[MinerUPdfConvertor] Waiting for batch task completion...`);
+      this.logger.info(`Waiting for batch task completion...`);
       // Wait for completion
       const taskResult = await this.client.waitForBatchTaskCompletion(
         batchResult.batchId,
@@ -250,14 +303,14 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           downloadDir: this.config.downloadDir,
         },
       );
-      console.log(`[MinerUPdfConvertor] Batch task completed`);
+      this.logger.info(`Batch task completed`);
 
       // Extract results
       const result = taskResult.results.extract_result[0];
-      console.log(`[MinerUPdfConvertor] Task result state: ${result.state}`);
+      this.logger.info(`Task result state: ${result.state}`);
 
       if (result.state === 'failed') {
-        console.error(`[MinerUPdfConvertor] Task failed: ${result.err_msg}`);
+        this.logger.error(`Task failed: ${result.err_msg}`);
         return {
           success: false,
           error: result.err_msg || 'Processing failed',
@@ -265,8 +318,8 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         };
       }
 
-      console.log(
-        `[MinerUPdfConvertor] Extracting markdown from downloaded files...`,
+      this.logger.info(
+        `Extracting markdown from downloaded files...`,
       );
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
@@ -280,7 +333,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         taskId: result.task_id,
       };
     } catch (error) {
-      console.error(`[MinerUPdfConvertor] Error in processLocalFile:`, error);
+      this.logger.error(`Error in processLocalFile:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -499,120 +552,118 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   /**
    * Extract markdown content from downloaded ZIP files
    * @param downloadedFiles Array of downloaded file paths
-   * @returns Promise<any>
+   * @returns Promise<any> The extracted markdown content
    */
   private async extractMarkdownFromDownloadedFiles(
     downloadedFiles: string[],
   ): Promise<any> {
-    for (const filePath of downloadedFiles) {
-      if (!filePath.endsWith('.zip')) {
-        continue;
+    try {
+      this.logger.info(
+        `Extracting markdown from ${downloadedFiles.length} files`,
+      );
+
+      // Find the ZIP file in the downloaded files
+      const zipFile = downloadedFiles.find((file) => file.endsWith('.zip'));
+      if (!zipFile) {
+        this.logger.error(`No ZIP file found in downloaded files`);
+        return null;
       }
 
-      try {
-        console.log(`[MinerUPdfConvertor] Processing ZIP file: ${filePath}`);
+      this.logger.info(`Processing ZIP file: ${zipFile}`);
 
-        // Extract ZIP file and read full.md content
-        const markdownContent = await this.extractFullMdFromZip(filePath);
-
-        if (markdownContent) {
-          console.log(
-            `[MinerUPdfConvertor] Successfully extracted markdown from ZIP`,
-          );
-          return {
-            markdown: markdownContent,
-            zipFilePath: filePath,
-            extractedAt: new Date().toISOString(),
-          };
-        }
-      } catch (error) {
-        console.error(
-          `[MinerUPdfConvertor] Failed to extract markdown from ${filePath}:`,
-          error,
-        );
+      // Extract markdown from the ZIP file
+      const markdownContent = await this.extractFullMdFromZip(zipFile);
+      if (!markdownContent) {
+        this.logger.error(`Failed to extract markdown from ZIP`);
+        return null;
       }
+
+      this.logger.info(
+        `Successfully extracted markdown (${markdownContent.length} characters)`,
+      );
+      return markdownContent;
+    } catch (error) {
+      this.logger.error(
+        `Error extracting markdown from downloaded files:`,
+        error,
+      );
+      return null;
     }
-
-    return null;
   }
 
   /**
    * Extract full.md content from a ZIP file
    * @param zipPath Path to the ZIP file
-   * @returns Promise<string|null> The markdown content or null if not found
+   * @returns Promise<string | null> The extracted markdown content
    */
   private async extractFullMdFromZip(zipPath: string): Promise<string | null> {
     return new Promise((resolve, reject) => {
+      this.logger.info(`Opening ZIP file: ${zipPath}`);
+      
       yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
         if (err) {
+          this.logger.error(`Error opening ZIP file:`, err);
           return reject(err);
         }
 
-        if (!zipfile) {
-          return reject(new Error('Failed to open ZIP file'));
-        }
-
-        let fullMdContent = '';
-        let fullMdFound = false;
+        this.logger.info(`ZIP file opened successfully`);
+        let markdownContent = '';
+        let foundMarkdown = false;
 
         zipfile.on('entry', (entry) => {
-          if (/\/$/.test(entry.fileName)) {
-            // Directory entry, skip
-            zipfile.readEntry();
-            return;
-          }
+          this.logger.info(`Processing entry: ${entry.fileName}`);
+          
+          // Check if this is the markdown file we're looking for
+          if (entry.fileName.endsWith('.md') || entry.fileName.endsWith('.markdown')) {
+            this.logger.info(`Found markdown file: ${entry.fileName}`);
+            foundMarkdown = true;
 
-          // Check if this is the full.md file
-          if (entry.fileName.endsWith('full.md')) {
-            fullMdFound = true;
-            console.log(
-              `[MinerUPdfConvertor] Found full.md in ZIP: ${entry.fileName}`,
-            );
-
-            // Open the entry stream
             zipfile.openReadStream(entry, (err, readStream) => {
               if (err) {
+                this.logger.error(`Error opening entry:`, err);
                 return reject(err);
               }
 
-              if (!readStream) {
-                return reject(
-                  new Error('Failed to open read stream for full.md'),
-                );
-              }
-
-              let content = '';
+              this.logger.info(`Reading markdown content...`);
+              const chunks: Buffer[] = [];
+              
               readStream.on('data', (chunk) => {
-                content += chunk.toString();
+                chunks.push(chunk);
               });
 
               readStream.on('end', () => {
-                fullMdContent = content;
+                markdownContent = Buffer.concat(chunks).toString('utf8');
+                this.logger.info(`Markdown content read successfully`);
+                this.logger.info(`Content length: ${markdownContent.length} characters`);
+                // Continue reading next entries
                 zipfile.readEntry();
               });
 
               readStream.on('error', (err) => {
+                this.logger.error(`Error reading entry:`, err);
                 reject(err);
               });
             });
           } else {
-            // Skip other files
+            // Skip other entries
             zipfile.readEntry();
           }
         });
 
         zipfile.on('end', () => {
-          if (fullMdFound) {
-            resolve(fullMdContent);
+          this.logger.info(`ZIP file processing completed`);
+          this.logger.info(`Found markdown: ${foundMarkdown}`);
+          if (foundMarkdown) {
+            this.logger.info(`Resolving with markdown content (${markdownContent.length} chars)`);
+            resolve(markdownContent);
           } else {
-            console.warn(
-              `[MinerUPdfConvertor] full.md not found in ZIP: ${zipPath}`,
-            );
+            this.logger.error(`No markdown file found in ZIP`);
             resolve(null);
           }
         });
 
         zipfile.on('error', (err) => {
+          this.logger.error(`ZIP file error:`, err);
           reject(err);
         });
 
@@ -623,78 +674,107 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   }
 
   /**
-   * Get task status
-   * @param taskId Task ID
-   * @returns Promise<TaskResult>
+   * Cancel a running task
+   * @param taskId The ID of the task to cancel
+   * @returns Promise<boolean> True if cancellation was successful
+   */
+  async cancelTask(taskId: string): Promise<boolean> {
+    try {
+      this.logger.info(`Cancelling task: ${taskId}`);
+      const result = await this.client.cancelTask(taskId);
+      this.logger.info(`Task cancellation result:`, result);
+      return result;
+    } catch (error) {
+      this.logger.error(`Error cancelling task:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get the status of a task
+   * @param taskId The ID of the task to check
+   * @returns Promise<TaskResult> The task result
    */
   async getTaskStatus(taskId: string): Promise<TaskResult> {
     return this.client.getTaskResult(taskId);
   }
 
   /**
-   * Cancel a task (if supported by API)
-   * @param taskId Task ID
-   * @returns Promise<boolean>
-   */
-  async cancelTask(taskId: string): Promise<boolean> {
-    // Note: MinerU API doesn't seem to have a cancel endpoint
-    // This is a placeholder for future implementation
-    throw new Error('Task cancellation not supported by MinerU API');
-  }
-
-  /**
-   * Clean up downloaded files
-   * @param olderThanHours Remove files older than specified hours
-   */
-  async cleanupDownloadedFiles(olderThanHours: number = 24): Promise<void> {
-    try {
-      const files = fs.readdirSync(this.config.downloadDir);
-      const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
-
-      for (const file of files) {
-        const filePath = path.join(this.config.downloadDir, file);
-        const stats = fs.statSync(filePath);
-
-        if (stats.mtime.getTime() < cutoffTime) {
-          fs.unlinkSync(filePath);
-          console.log(`Cleaned up old file: ${filePath}`);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to cleanup downloaded files:', error);
-    }
-  }
-
-  /**
-   * Get download directory
-   */
-  getDownloadDirectory(): string {
-    return this.config.downloadDir;
-  }
-
-  /**
-   * Set download directory
-   */
-  setDownloadDirectory(directory: string): void {
-    if (!fs.existsSync(directory)) {
-      fs.mkdirSync(directory, { recursive: true });
-    }
-    this.config.downloadDir = directory;
-  }
-
-  /**
-   * Validate the API token
-   * @returns Promise<boolean> - true if token is valid
+   * Validate the MinerU API token
+   * @returns Promise<boolean> True if token is valid
    */
   async validateToken(): Promise<boolean> {
     return this.client.validateToken();
   }
 
   /**
-   * Get account information
-   * @returns Promise<any> - Account information
+   * Clean up downloaded files older than specified hours
+   * @param olderThanHours Age in hours for files to be considered old
    */
-  async getAccountInfo(): Promise<any> {
-    return this.client.getAccountInfo();
+  async cleanupDownloadedFiles(olderThanHours: number = 24): Promise<void> {
+    try {
+      this.logger.info(
+        `Cleaning up files older than ${olderThanHours} hours`,
+      );
+      const downloadDir = this.config.downloadDir;
+      
+      if (!fs.existsSync(downloadDir)) {
+        this.logger.info(`Download directory does not exist: ${downloadDir}`);
+        return;
+      }
+
+      const files = fs.readdirSync(downloadDir);
+      const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
+      let deletedCount = 0;
+
+      for (const file of files) {
+        const filePath = path.join(downloadDir, file);
+        const stats = fs.statSync(filePath);
+        
+        if (stats.mtime.getTime() < cutoffTime) {
+          try {
+            if (stats.isDirectory()) {
+              // Recursively delete directory
+              fs.rmSync(filePath, { recursive: true, force: true });
+              this.logger.info(`Deleted old directory: ${file}`);
+            } else {
+              // Delete file
+              fs.unlinkSync(filePath);
+              this.logger.info(`Deleted old file: ${file}`);
+            }
+            deletedCount++;
+          } catch (error) {
+            this.logger.error(`Error deleting ${file}:`, error);
+          }
+        }
+      }
+
+      this.logger.info(`Cleanup completed. Deleted ${deletedCount} files.`);
+    } catch (error) {
+      this.logger.error(`Error during cleanup:`, error);
+    }
+  }
+
+  /**
+   * Get the current download directory
+   * @returns The current download directory path
+   */
+  getDownloadDirectory(): string {
+    return this.config.downloadDir;
+  }
+
+  /**
+   * Set the download directory
+   * @param directory The new download directory
+   */
+  setDownloadDirectory(directory: string): void {
+    this.logger.info(`Setting download directory to: ${directory}`);
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory, { recursive: true });
+    }
+    
+    this.config.downloadDir = directory;
   }
 }

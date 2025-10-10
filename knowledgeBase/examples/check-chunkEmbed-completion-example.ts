@@ -51,7 +51,7 @@ async function checkSpecificItem(itemId: string) {
   const library = new Library(storage);
 
   try {
-    const item = await library.getBook(itemId);
+    const item = await library.getItem(itemId);
     if (!item) {
       console.log(`Item with ID ${itemId} not found`);
       return;

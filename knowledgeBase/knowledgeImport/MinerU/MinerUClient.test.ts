@@ -101,7 +101,7 @@ describe(MinerUClient, () => {
         url: 'https://example.com/test-document.pdf',
       };
 
-      const defaultDownloadDir = path.resolve('./mineru-downloads');
+      const defaultDownloadDir = path.resolve('./test/mineru-downloads');
       const expectedZipPath = path.join(
         defaultDownloadDir,
         `${testTaskId}.zip`,

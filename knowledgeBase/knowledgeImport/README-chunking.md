@@ -93,7 +93,7 @@ The LibraryItem class provides methods for self-contained chunk processing:
 
 ```typescript
 // Get the LibraryItem instance
-const item = await library.getBook(itemId);
+const item = await library.getItem(itemId);
 
 // Process chunks using the LibraryItem method
 const chunks = await item.chunkEmbed('h1', true); // forceReprocess=true

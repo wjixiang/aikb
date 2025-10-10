@@ -382,6 +382,29 @@ export class MinerUClient {
   }
 
   /**
+   * Cancel a running task
+   * @param taskId The ID of the task to cancel
+   * @returns Promise<boolean> True if cancellation was successful
+   */
+  async cancelTask(taskId: string): Promise<boolean> {
+    console.log(`[MinerUClient] Cancelling task: ${taskId}`);
+    try {
+      return this.retryRequest(async () =>
+        this.client.delete<ApiResponse<{ cancelled: boolean }>>(`/extract/task/${taskId}`),
+      ).then((data) => {
+        console.log(
+          `[MinerUClient] Task ${taskId} cancellation result:`,
+          JSON.stringify(data, null, 2),
+        );
+        return data.cancelled;
+      });
+    } catch (error) {
+      console.error(`[MinerUClient] Error cancelling task ${taskId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Wait for single file task completion and download result
    */
   async waitForTaskCompletion(

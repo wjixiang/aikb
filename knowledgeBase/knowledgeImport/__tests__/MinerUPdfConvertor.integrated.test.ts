@@ -8,7 +8,7 @@ config();
 describe(MinerUPdfConvertor, () => {
   let converter: MinerUPdfConvertor;
   const testPdfPath = 'test/viral_pneumonia.pdf';
-  const downloadDir = 'test';
+  const downloadDir = 'test/download';
 
   beforeAll(() => {
     // Check if MINERU_TOKEN is available

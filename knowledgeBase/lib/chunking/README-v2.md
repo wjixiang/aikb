@@ -191,7 +191,7 @@ chunkingManager.registerStrategy(new CustomChunkingStrategy());
 
 ```typescript
 // 使用LibraryItem的高级chunking方法
-const item = await library.getBook(itemId);
+const item = await library.getItem(itemId);
 const chunks = await item.chunkEmbedAdvanced('h1', true, {
   maxChunkSize: 600,
   minChunkSize: 80

@@ -63,6 +63,11 @@ describe('Library PDF Conversion Workflow', () => {
         data: '# Test Document\n\nThis is the converted markdown content from PDF.',
         taskId: 'task-123',
       }),
+      convertPdfToMarkdownFromS3: vi.fn().mockResolvedValue({
+        success: true,
+        data: '# Test Document\n\nThis is the converted markdown content from PDF.',
+        taskId: 'task-123',
+      }),
     };
 
     // Create the library instance
@@ -93,7 +98,7 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
-    expect(mockPdfConvertor.convertPdfToMarkdown).toHaveBeenCalled();
+    expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).toHaveBeenCalled();
     expect(result.metadata.title).toBe('Test Document');
   });
@@ -110,7 +115,7 @@ describe('Library PDF Conversion Workflow', () => {
     };
 
     // Mock conversion failure
-    mockPdfConvertor.convertPdfToMarkdown.mockResolvedValue({
+    mockPdfConvertor.convertPdfToMarkdownFromS3.mockResolvedValue({
       success: false,
       error: 'Conversion failed',
     });
@@ -185,7 +190,7 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).not.toHaveBeenCalled();
     expect(mockStorage.saveMetadata).not.toHaveBeenCalled();
-    expect(mockPdfConvertor.convertPdfToMarkdown).not.toHaveBeenCalled();
+    expect(mockPdfConvertor.convertPdfToMarkdownFromS3).not.toHaveBeenCalled();
     expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
     expect(result.metadata.id).toBe('existing-123');
   });
