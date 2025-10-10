@@ -97,7 +97,7 @@ export class ChunkingManager {
     if (strategyName) {
       const foundStrategy = this.getStrategy(strategyName);
       if (!foundStrategy) {
-        throw new Error(`Chunking strategy '${strategyName}' not found`);
+        throw new Error(`Unsupported chunking strategy: ${strategyName}`);
       }
       strategy = foundStrategy;
     } else {

@@ -42,7 +42,7 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
     }
 
     // 如果没有配置最大块大小，直接返回每个段落作为一个块
-    if (!maxChunkSize) {
+    if (maxChunkSize === undefined || maxChunkSize === null) {
       return paragraphs.map((paragraph, index) => ({
         content: paragraph,
         index,
@@ -216,7 +216,8 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
 
   getDefaultConfig(): ChunkingConfig {
     return {
-      maxChunkSize: 500,
+      // Don't set a default maxChunkSize to allow each paragraph to be returned as a separate chunk
+      maxChunkSize: undefined,
       minChunkSize: 50,
       overlap: 25,
     };
