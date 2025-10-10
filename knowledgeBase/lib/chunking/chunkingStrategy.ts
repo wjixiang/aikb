@@ -4,6 +4,14 @@
  */
 
 /**
+ * 切片策略类型枚举
+ */
+export enum ChunkingStrategyType {
+  H1 = 'h1',
+  PARAGRAPH = 'paragraph',
+}
+
+/**
  * 基础的chunk结果接口
  */
 export interface BaseChunkResult {

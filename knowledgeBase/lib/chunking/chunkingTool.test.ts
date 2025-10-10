@@ -6,7 +6,7 @@ import {
   validateStrategyConfig,
   canStrategyHandle,
   getStrategiesForText,
-} from './chunkingToolV2';
+} from './chunkingTool';
 
 // 测试用例
 describe('ChunkingToolV2', () => {

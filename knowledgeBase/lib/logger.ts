@@ -1,4 +1,4 @@
-import winston from 'winston';
+import winston, { level } from 'winston';
 
 const createLoggerWithPrefix = (prefix: string) => {
   return winston.createLogger({
@@ -8,7 +8,9 @@ const createLoggerWithPrefix = (prefix: string) => {
       winston.format.prettyPrint(),
     ),
     transports: [
-      new winston.transports.Console(),
+      new winston.transports.Console({
+        level: process.env.SYSTEM_LOG_LEVEL
+      }),
       new winston.transports.File({ filename: 'combined.log' }),
     ],
   });

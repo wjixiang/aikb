@@ -1,6 +1,6 @@
-# 统一文本切片工具 V2 (Unified Text Chunking Tool V2)
+# 统一文本切片工具 (Unified Text Chunking Tool)
 
-这是文本切片工具的第二个版本，提供了统一的策略接口，方便实现和管理不同的chunking策略。
+这是文本切片工具，提供了统一的策略接口，方便实现和管理不同的chunking策略。
 
 ## 主要特性
 
@@ -26,13 +26,12 @@
 knowledgeBase/lib/chunking/
 ├── chunkingStrategy.ts          # 策略接口和基类
 ├── chunkingManager.ts           # 策略管理器
-├── chunkingToolV2.ts            # 统一的chunking工具（向后兼容）
+├── chunkingTool.ts              # 统一的chunking工具（向后兼容）
 ├── strategies/
 │   ├── h1ChunkingStrategy.ts    # H1标题切片策略
 │   └── paragraphChunkingStrategy.ts # 段落切片策略
 ├── advancedExample.ts           # 高级使用示例
-├── chunkingToolV2.test.ts       # 测试文件
-├── chunkingTool.ts              # 原有chunking工具
+├── chunkingTool.test.ts         # 测试文件
 └── README-v2.md                 # 本文档
 ```
 
@@ -41,11 +40,11 @@ knowledgeBase/lib/chunking/
 ### 基本使用
 
 ```typescript
-import { 
-  chunkTextAdvanced, 
-  getAvailableStrategies, 
-  autoSelectStrategy 
-} from './chunkingToolV2';
+import {
+  chunkTextAdvanced,
+  getAvailableStrategies,
+  autoSelectStrategy
+} from './chunkingTool';
 
 // 自动选择策略进行切片
 const chunks = chunkTextAdvanced(text);
@@ -66,7 +65,7 @@ const customChunks = chunkTextAdvanced(text, 'paragraph', customConfig);
 ### 策略管理
 
 ```typescript
-import { chunkingManager } from './chunkingToolV2';
+import { chunkingManager } from './chunkingTool';
 
 // 获取所有可用策略
 const strategies = chunkingManager.getAvailableStrategies();
@@ -213,17 +212,17 @@ const config = item.getChunkingStrategyDefaultConfig('paragraph');
 
 ## 迁移指南
 
-### 从V1迁移到V2
+### 迁移指南
 
-如果你之前使用的是V1版本的chunking工具，可以按照以下步骤迁移：
+如果你之前使用的是旧版本的chunking工具，可以按照以下步骤迁移：
 
 1. **更新导入**：
    ```typescript
    // 旧版本
-   import { h1Chunking, paragraphChunking } from './chunkingTool';
+   import { h1Chunking, paragraphChunking } from './chunkingToolV2';
    
    // 新版本（向后兼容）
-   import { h1Chunking, paragraphChunking } from './chunkingToolV2';
+   import { h1Chunking, paragraphChunking } from './chunkingTool';
    ```
 
 2. **使用新API**：
@@ -252,8 +251,8 @@ const config = item.getChunkingStrategyDefaultConfig('paragraph');
 运行测试以验证功能：
 
 ```bash
-# 运行V2测试
-npx tsx knowledgeBase/lib/chunking/chunkingToolV2.test.ts
+# 运行测试
+npx tsx knowledgeBase/lib/chunking/chunkingTool.test.ts
 
 # 运行示例
 npx tsx knowledgeBase/lib/chunking/advancedExample.ts

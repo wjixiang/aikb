@@ -5,7 +5,7 @@ import {
   getStrategyDefaultConfig,
   validateStrategyConfig,
   chunkingManager,
-} from './chunkingToolV2';
+} from './chunkingTool';
 
 // 示例markdown文本，所有大纲均为H1
 const sampleMarkdown = `# 人工智能简介

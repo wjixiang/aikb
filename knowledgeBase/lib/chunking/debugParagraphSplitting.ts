@@ -1,5 +1,5 @@
 // 调试段落切分问题
-import { chunkTextAdvanced } from './chunkingToolV2';
+import { chunkTextAdvanced } from './chunkingTool';
 
 const plainText = `这是一段没有标题的普通文本。
 它包含多个段落，但没有使用markdown的H1标题格式。

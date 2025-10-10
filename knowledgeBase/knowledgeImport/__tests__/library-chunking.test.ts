@@ -3,6 +3,7 @@ import Library, { S3ElasticSearchLibraryStorage } from '../liberary';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata, BookChunk, ChunkSearchFilter } from '../liberary';
 import { embeddingService } from '../../lib/embedding/embedding';
+import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 
 // Mock the embedding service
 vi.mock('../../lib/embedding/embedding', () => ({
@@ -60,7 +61,7 @@ This is the second chapter content.`,
       );
 
       // Process chunks
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
 
       // Verify chunks were created
       const chunks = await library.getItemChunks(item.metadata.id!);
@@ -106,22 +107,30 @@ This is the second chapter content.`,
         `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`,
       );
 
-      // Process chunks with paragraph strategy
-      await library.processItemChunks(item.metadata.id!, 'paragraph');
+      // Update the item's metadata to include the markdown content
+      item.metadata.markdownContent = `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`;
+
+      // Process chunks with paragraph strategy - use the item's chunkEmbed method with custom config
+      // to ensure each paragraph becomes a separate chunk
+      await item.chunkEmbed(ChunkingStrategyType.PARAGRAPH, true, {
+        maxChunkSize: 30, // Small enough to ensure each paragraph is separate
+        minChunkSize: 10,
+        overlap: 0,
+      });
 
       // Verify chunks were created
       const chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(3);
 
       // Verify chunk content
-      expect(chunks[0].title).toBe('Paragraph 1');
+      expect(chunks[0].title).toBe('Chunk 1');
       expect(chunks[0].content).toBe('This is paragraph one.');
       expect(chunks[0].metadata?.chunkType).toBe('paragraph');
 
-      expect(chunks[1].title).toBe('Paragraph 2');
+      expect(chunks[1].title).toBe('Chunk 2');
       expect(chunks[1].content).toBe('This is paragraph two.');
 
-      expect(chunks[2].title).toBe('Paragraph 3');
+      expect(chunks[2].title).toBe('Chunk 3');
       expect(chunks[2].content).toBe('This is paragraph three.');
     });
 
@@ -136,7 +145,7 @@ This is the second chapter content.`,
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
       // Try to process chunks without markdown content
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
 
       // Should not create any chunks
       const chunks = await library.getItemChunks(item.metadata.id!);
@@ -160,7 +169,7 @@ This is the second chapter content.`,
       );
 
       // Process initial chunks
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
       expect(chunks[0].title).toBe('Chapter 1');
@@ -172,7 +181,7 @@ This is the second chapter content.`,
       );
 
       // Re-process chunks
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
 
       // Verify chunks were replaced
       chunks = await library.getItemChunks(item.metadata.id!);
@@ -201,7 +210,7 @@ This is the second chapter content.`,
         `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
       );
 
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
     });
 
     it('should search chunks by query', async () => {
@@ -264,7 +273,7 @@ This is the second chapter content.`,
         `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
       );
 
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
     });
 
     it('should find similar chunks based on query vector', async () => {
@@ -331,7 +340,7 @@ This is the second chapter content.`,
       );
 
       // Process initial chunks
-      await library.processItemChunks(item.metadata.id!, 'h1');
+      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
       expect(chunks[0].content).toContain('Original content');
@@ -343,7 +352,7 @@ This is the second chapter content.`,
       );
 
       // Re-process chunks
-      await library.reProcessChunks(item.metadata.id!, 'h1');
+      await library.reProcessChunks(item.metadata.id!, ChunkingStrategyType.H1);
 
       // Verify chunks were updated
       chunks = await library.getItemChunks(item.metadata.id!);

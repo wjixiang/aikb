@@ -19,13 +19,14 @@ import {
 import {
   chunkTextAdvanced,
   getAvailableStrategies,
-} from '../lib/chunking/chunkingToolV2';
+} from '../lib/chunking/chunkingTool';
 import {
   h1Chunking,
   paragraphChunking,
   chunkText,
   ChunkResult,
 } from '../lib/chunking/chunkingTool';
+import { ChunkingStrategyType } from '../lib/chunking/chunkingStrategy';
 import { embeddingService } from '../lib/embedding/embedding';
 
 // Enhanced metadata interfaces for Zotero-like functionality
@@ -260,11 +261,11 @@ export abstract class AbstractLibrary {
   /**
    * Process markdown content into chunks and generate embeddings
    * @param itemId The ID of the item to process
-   * @param chunkingStrategy The chunking strategy to use ('h1' or 'paragraph')
+   * @param chunkingStrategy The chunking strategy to use
    */
   abstract processItemChunks(
     itemId: string,
-    chunkingStrategy?: 'h1' | 'paragraph',
+    chunkingStrategy?: ChunkingStrategyType,
   ): Promise<void>;
 
   /**
@@ -326,7 +327,7 @@ export abstract class AbstractLibrary {
    */
   abstract reProcessChunks(
     itemId?: string,
-    chunkingStrategy?: 'h1' | 'paragraph',
+    chunkingStrategy?: ChunkingStrategyType,
   ): Promise<void>;
 
   /**
@@ -482,7 +483,7 @@ export default class Library extends AbstractLibrary {
         console.log(
           `Processing chunks and embeddings for item: ${savedMetadata.id}`,
         );
-        await this.processItemChunks(savedMetadata.id!, 'h1'); // Default to H1 chunking
+        await this.processItemChunks(savedMetadata.id!, ChunkingStrategyType.H1); // Default to H1 chunking
         console.log(
           `Successfully processed chunks and embeddings for item: ${savedMetadata.id}`,
         );
@@ -675,7 +676,7 @@ export default class Library extends AbstractLibrary {
   // Chunk-related methods implementation
   async processItemChunks(
     itemId: string,
-    chunkingStrategy: 'h1' | 'paragraph' = 'h1',
+    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
   ): Promise<void> {
     try {
       // Get the item metadata
@@ -707,7 +708,7 @@ export default class Library extends AbstractLibrary {
 
       // Chunk the markdown content
       let chunkResults: ChunkResult[] | string[];
-      if (chunkingStrategy === 'h1') {
+      if (chunkingStrategy === ChunkingStrategyType.H1) {
         chunkResults = h1Chunking(markdownContent);
       } else {
         chunkResults = paragraphChunking(markdownContent);
@@ -738,7 +739,7 @@ export default class Library extends AbstractLibrary {
           content = chunkResult;
         } else {
           // H1 chunking
-          title = chunkResult.title;
+          title = chunkResult.title || `Chunk ${i + 1}`;
           content = chunkResult.content;
         }
 
@@ -829,7 +830,7 @@ export default class Library extends AbstractLibrary {
 
   async reProcessChunks(
     itemId?: string,
-    chunkingStrategy: 'h1' | 'paragraph' = 'h1',
+    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
   ): Promise<void> {
     try {
       if (itemId) {
@@ -1123,13 +1124,13 @@ export class LibraryItem {
 
   /**
    * Advanced chunk embedding using the new unified chunking interface
-   * @param chunkingStrategy The chunking strategy name
+   * @param chunkingStrategy The chunking strategy to use
    * @param forceReprocess Whether to force reprocessing existing chunks
    * @param chunkingConfig Optional chunking configuration
    * @returns Array of created chunks
    */
   async chunkEmbed(
-    chunkingStrategy: string = 'h1',
+    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
     forceReprocess: boolean = false,
     chunkingConfig?: any,
   ): Promise<BookChunk[]> {
@@ -1268,7 +1269,7 @@ export class LibraryItem {
    * @param strategyName The strategy name
    * @returns Default configuration
    */
-  getChunkingStrategyDefaultConfig(strategyName: string): any {
+  getChunkingStrategyDefaultConfig(strategyName: ChunkingStrategyType): any {
     // Import dynamically to avoid circular dependencies
     const {
       getStrategyDefaultConfig,

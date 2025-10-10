@@ -1,4 +1,5 @@
-import { h1Chunking, paragraphChunking, chunkText } from './chunkingToolV2';
+import { h1Chunking, paragraphChunking, chunkText } from './chunkingTool';
+import { ChunkingStrategyType } from './chunkingStrategy';
 
 // 测试向后兼容性
 console.log('=== 测试向后兼容性 ===\n');
@@ -36,10 +37,10 @@ paragraphs.forEach((para, index) => {
 });
 
 console.log('\n3. 测试chunkText函数:');
-const h1Results = chunkText(markdownText, 'h1') as any[];
+const h1Results = chunkText(markdownText, ChunkingStrategyType.H1) as any[];
 console.log(`H1策略生成了 ${h1Results.length} 个块`);
 
-const paragraphResults = chunkText(plainText, 'paragraph') as string[];
+const paragraphResults = chunkText(plainText, ChunkingStrategyType.PARAGRAPH) as string[];
 console.log(`段落策略生成了 ${paragraphResults.length} 个块`);
 
 console.log('\n4. 测试自动策略选择:');
