@@ -31,12 +31,12 @@ export async function UploadTestPdf() {
   const library = new Library(storage, testMinerUPdfConvertor);
 
   // Read the test PDF file
-  const pdfPath = 'test/ACEI.pdf';
+  const pdfPath = 'test/viral_pneumonia.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
 
   // Prepare metadata for the PDF
   const metadata = {
-    title: 'ACEI',
+    title: 'viral_pneumonia',
     authors: [{ firstName: 'Test', lastName: 'Author' }],
     abstract: 'This is a test document',
     publicationYear: 2023,
@@ -45,7 +45,7 @@ export async function UploadTestPdf() {
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(pdfBuffer, 'ACEI.pdf', metadata);
+  const book = await library.storePdf(pdfBuffer, 'viral_pneumonia', metadata);
   return book;
 }
 
@@ -56,7 +56,7 @@ describe(Library, async () => {
   it.skip('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
-    expect(book.metadata.title).toBe('ACEI');
+    expect(book.metadata.title).toBe('viral_pneumonia');
     expect(book.metadata.s3Key).toBeDefined();
     expect(book.metadata.s3Url).toBeDefined();
 

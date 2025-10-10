@@ -28,6 +28,13 @@ import {
 } from '../lib/chunking/chunkingTool';
 import { ChunkingStrategyType } from '../lib/chunking/chunkingStrategy';
 import { embeddingService } from '../lib/embedding/embedding';
+import {
+  PdfProcessingStatus,
+  PdfAnalysisRequestMessage,
+  PDF_PROCESSING_CONFIG,
+} from '../lib/rabbitmq/message.types';
+import { getRabbitMQService } from '../lib/rabbitmq/rabbitmq.service';
+import { v4 as uuidv4 } from 'uuid';
 
 // Enhanced metadata interfaces for Zotero-like functionality
 export interface Author {
@@ -60,6 +67,43 @@ export interface BookMetadata {
   contentHash?: string; // Hash of the content for deduplication
   markdownContent?: string; // Converted markdown content from PDF
   markdownUpdatedDate?: Date; // When the markdown was last updated
+  
+  // PDF processing status fields
+  pdfProcessingStatus?: PdfProcessingStatus; // Current processing status
+  pdfProcessingStartedAt?: Date; // When processing started
+  pdfProcessingCompletedAt?: Date; // When processing completed
+  pdfProcessingError?: string; // Error message if processing failed
+  pdfProcessingRetryCount?: number; // Number of retry attempts
+  pdfProcessingProgress?: number; // Processing progress (0-100)
+  pdfProcessingMessage?: string; // Current processing message
+  pdfProcessingMergingStartedAt?: Date; // When merging started
+  
+  // PDF splitting fields (for large files)
+  pdfSplittingInfo?: {
+    itemId: string;
+    originalFileName: string;
+    totalParts: number;
+    parts: Array<{
+      partIndex: number;
+      startPage: number;
+      endPage: number;
+      pageCount: number;
+      s3Key: string;
+      s3Url: string;
+      status: string;
+      processingTime?: number;
+      error?: string;
+    }>;
+    processingTime: number;
+  };
+  
+  // PDF part processing status
+  pdfPartStatuses?: Record<number, {
+    status: string;
+    message: string;
+    error?: string;
+    updatedAt: Date;
+  }>;
 }
 
 export interface Collection {
@@ -358,6 +402,8 @@ export abstract class AbstractLibrary {
  * Default implementation of Library
  */
 export default class Library extends AbstractLibrary {
+  private rabbitMQService = getRabbitMQService();
+
   constructor(
     storage: AbstractLibraryStorage,
     pdfConvertor?: MinerUPdfConvertor,
@@ -388,7 +434,7 @@ export default class Library extends AbstractLibrary {
     const existingItem = await this.storage.getMetadataByHash(contentHash);
     if (existingItem) {
       console.log(
-        `Item with same content already exists (ID: ${existingItem.id}), returning existing item`,
+        `Item with same content already exists (ID: ${existingItem.id}), returning existing item. Status: ${existingItem.pdfProcessingStatus}`,
       );
       return new LibraryItem(existingItem, this.storage);
     }
@@ -409,79 +455,191 @@ export default class Library extends AbstractLibrary {
       collections: metadata.collections || [],
       authors: metadata.authors || [],
       fileType: 'pdf',
+      // Initialize processing status fields
+      pdfProcessingStatus: PdfProcessingStatus.PENDING,
+      pdfProcessingStartedAt: new Date(),
+      pdfProcessingRetryCount: 0,
+      pdfProcessingProgress: 0,
+      pdfProcessingMessage: 'Queued for processing',
     };
 
     // Save metadata first to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
     const libraryItem = new LibraryItem(savedMetadata, this.storage);
 
-    // Convert to Markdown if MinerUPdfConvertor is available
-    if (this.pdfConvertor) {
-      try {
-        console.log(`Converting PDF to Markdown using S3 URL: ${pdfInfo.url}`);
-        const conversionResult =
-          await this.pdfConvertor.convertPdfToMarkdownFromS3(pdfInfo.url);
+    // Send PDF analysis request to RabbitMQ for async processing
+    try {
+      console.log(`Sending PDF analysis request to RabbitMQ for item: ${savedMetadata.id}`);
+      
+      const analysisRequest: PdfAnalysisRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'PDF_ANALYSIS_REQUEST',
+        itemId: savedMetadata.id!,
+        s3Url: pdfInfo.url,
+        s3Key: pdfInfo.s3Key,
+        fileName,
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+      };
 
-        if (conversionResult.success && conversionResult.data) {
-          // Extract markdown content from the conversion result
-          // Note: The actual extraction logic depends on the structure of conversionResult.data
-          // For now, we'll assume it contains a markdown string or can be converted to one
-          let markdownContent = '';
-
-          if (typeof conversionResult.data === 'string') {
-            markdownContent = conversionResult.data;
-          } else if (conversionResult.data.markdown) {
-            markdownContent = conversionResult.data.markdown;
-          } else if (conversionResult.data.content) {
-            markdownContent = conversionResult.data.content;
-          } else {
-            // If it's a complex object, stringify it for now
-            // In a real implementation, you would parse the structure properly
-            markdownContent = JSON.stringify(conversionResult.data, null, 2);
-          }
-
-          // Save the converted Markdown content
-          await this.storage.saveMarkdown(savedMetadata.id!, markdownContent);
-          console.log(
-            `Successfully saved Markdown content for item: ${savedMetadata.id}`,
-          );
-
-          // Update the library item's metadata to include the markdown content
-          libraryItem.metadata.markdownContent = markdownContent;
-          libraryItem.metadata.markdownUpdatedDate = new Date();
-        } else {
-          console.warn(
-            `Failed to convert PDF to Markdown: ${conversionResult.error}`,
-          );
-        }
-      } catch (error) {
-        console.error(`Error converting PDF to Markdown:`, error);
-        // Don't fail the entire operation if conversion fails
-      }
-    } else {
-      console.log('No PDF converter provided, skipping Markdown conversion');
-    }
-
-    // Process chunks and embeddings after markdown conversion
-    if (libraryItem.metadata.markdownContent) {
-      try {
-        console.log(
-          `Processing chunks and embeddings for item: ${savedMetadata.id}`,
-        );
-        await this.processItemChunks(savedMetadata.id!, ChunkingStrategyType.H1); // Default to H1 chunking
-        console.log(
-          `Successfully processed chunks and embeddings for item: ${savedMetadata.id}`,
-        );
-      } catch (error) {
-        console.error(
-          `Error processing chunks for item ${savedMetadata.id}:`,
-          error,
-        );
-        // Don't fail the entire operation if chunking fails
-      }
+      await this.rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
+      
+      // Don't update status to processing here - keep it as pending until the worker starts processing
+      // The status will be updated to 'processing' by the worker when it starts processing
+      
+      console.log(`PDF analysis request sent successfully for item: ${savedMetadata.id}`);
+    } catch (error) {
+      console.error(`Failed to send PDF analysis request for item ${savedMetadata.id}:`, error);
+      
+      // Update status to failed
+      await this.updateProcessingStatus(
+        savedMetadata.id!,
+        PdfProcessingStatus.FAILED,
+        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        0,
+        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
+      // Don't fail the entire operation, but log the error
     }
 
     return libraryItem;
+  }
+
+  /**
+   * Update processing status for a library item
+   */
+  private async updateProcessingStatus(
+    itemId: string,
+    status: PdfProcessingStatus,
+    message?: string,
+    progress?: number,
+    error?: string
+  ): Promise<void> {
+    try {
+      const item = await this.getItem(itemId);
+      if (!item) {
+        console.warn(`Item ${itemId} not found for status update`);
+        return;
+      }
+
+      const updates: Partial<BookMetadata> = {
+        pdfProcessingStatus: status,
+        pdfProcessingMessage: message,
+        pdfProcessingProgress: progress,
+        pdfProcessingError: error,
+        dateModified: new Date(),
+      };
+
+      // Update timestamps based on status
+      if (status === PdfProcessingStatus.PROCESSING && !item.metadata.pdfProcessingStartedAt) {
+        updates.pdfProcessingStartedAt = new Date();
+      } else if (status === PdfProcessingStatus.COMPLETED) {
+        updates.pdfProcessingCompletedAt = new Date();
+        updates.pdfProcessingProgress = 100;
+      } else if (status === PdfProcessingStatus.FAILED) {
+        updates.pdfProcessingRetryCount = (item.metadata.pdfProcessingRetryCount || 0) + 1;
+      }
+
+      await item.updateMetadata(updates);
+      console.log(`Updated processing status for item ${itemId}: ${status}${message ? ` - ${message}` : ''}`);
+    } catch (error) {
+      console.error(`Failed to update processing status for item ${itemId}:`, error);
+    }
+  }
+
+  /**
+   * Get processing status for a library item
+   */
+  async getProcessingStatus(itemId: string): Promise<{
+    status: PdfProcessingStatus;
+    progress?: number;
+    message?: string;
+    error?: string;
+    startedAt?: Date;
+    completedAt?: Date;
+    retryCount?: number;
+  } | null> {
+    try {
+      const item = await this.getItem(itemId);
+      if (!item) {
+        return null;
+      }
+
+      return {
+        status: item.metadata.pdfProcessingStatus || PdfProcessingStatus.PENDING,
+        progress: item.metadata.pdfProcessingProgress,
+        message: item.metadata.pdfProcessingMessage,
+        error: item.metadata.pdfProcessingError,
+        startedAt: item.metadata.pdfProcessingStartedAt,
+        completedAt: item.metadata.pdfProcessingCompletedAt,
+        retryCount: item.metadata.pdfProcessingRetryCount,
+      };
+    } catch (error) {
+      console.error(`Failed to get processing status for item ${itemId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if PDF processing is completed for an item
+   */
+  async isProcessingCompleted(itemId: string): Promise<boolean> {
+    const status = await this.getProcessingStatus(itemId);
+    return status?.status === PdfProcessingStatus.COMPLETED;
+  }
+
+  /**
+   * Check if PDF processing failed for an item
+   */
+  async isProcessingFailed(itemId: string): Promise<boolean> {
+    const status = await this.getProcessingStatus(itemId);
+    return status?.status === PdfProcessingStatus.FAILED;
+  }
+
+  /**
+   * Wait for PDF processing to complete (with timeout)
+   */
+  async waitForProcessingCompletion(
+    itemId: string,
+    timeoutMs: number = 300000, // 5 minutes default
+    intervalMs: number = 2000 // 2 seconds default
+  ): Promise<{
+    success: boolean;
+    status?: PdfProcessingStatus;
+    error?: string;
+  }> {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeoutMs) {
+      const status = await this.getProcessingStatus(itemId);
+      
+      if (!status) {
+        return { success: false, error: 'Item not found' };
+      }
+      
+      if (status.status === PdfProcessingStatus.COMPLETED) {
+        return { success: true, status: status.status };
+      }
+      
+      if (status.status === PdfProcessingStatus.FAILED) {
+        return {
+          success: false,
+          status: status.status,
+          error: status.error || 'Processing failed'
+        };
+      }
+      
+      // Wait before checking again
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+    
+    return {
+      success: false,
+      error: `Processing timeout after ${timeoutMs}ms`
+    };
   }
 
   async reExtractMarkdown(itemId?: string): Promise<void> {
