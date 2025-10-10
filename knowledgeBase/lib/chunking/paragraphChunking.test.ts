@@ -1,4 +1,9 @@
-import { h1Chunking, paragraphChunking, chunkText, ChunkResult } from './chunkingTool';
+import {
+  h1Chunking,
+  paragraphChunking,
+  chunkText,
+  ChunkResult,
+} from './chunkingTool';
 
 describe('Chunking Tool Tests', () => {
   describe('h1Chunking', () => {
@@ -13,21 +18,23 @@ This is the first chapter content.
 This is the second chapter content.`;
 
       const result = h1Chunking(markdown);
-      
+
       expect(result).toHaveLength(3);
       expect(result[0].title).toBe('Introduction');
       expect(result[0].content).toContain('# Introduction');
       expect(result[0].content).toContain('This is the introduction content.');
       expect(result[0].index).toBe(0);
-      
+
       expect(result[1].title).toBe('Chapter 1');
       expect(result[1].content).toContain('# Chapter 1');
       expect(result[1].content).toContain('This is the first chapter content.');
       expect(result[1].index).toBe(1);
-      
+
       expect(result[2].title).toBe('Chapter 2');
       expect(result[2].content).toContain('# Chapter 2');
-      expect(result[2].content).toContain('This is the second chapter content.');
+      expect(result[2].content).toContain(
+        'This is the second chapter content.',
+      );
       expect(result[2].index).toBe(2);
     });
 
@@ -40,7 +47,7 @@ This is the second chapter content.`;
     it('should handle text without H1 headings', () => {
       const text = 'This is plain text without any H1 headings.';
       const result = h1Chunking(text);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Untitled');
       expect(result[0].content).toBe(text);
@@ -58,7 +65,7 @@ Content for chapter 2.
 Reference content.`;
 
       const result = h1Chunking(markdown);
-      
+
       expect(result).toHaveLength(3);
       expect(result[0].title).toBe('Chapter 1: Getting Started');
       expect(result[1].title).toBe('Chapter 2 - Advanced Topics');
@@ -79,7 +86,7 @@ This is a subsection.
 This is the conclusion.`;
 
       const result = h1Chunking(markdown);
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].content).toContain('## Subsection');
       expect(result[0].content).toContain('- List item 1');
@@ -96,7 +103,7 @@ This is paragraph 2.
 This is paragraph 3.`;
 
       const result = paragraphChunking(text);
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toBe('This is paragraph 1.');
       expect(result[1]).toBe('This is paragraph 2.');
@@ -112,7 +119,7 @@ This is paragraph 3.`;
     it('should handle various line break patterns', () => {
       const text = `Paragraph 1.\n\nParagraph 2.\n\nParagraph 3.\r\n\r\nParagraph 4.`;
       const result = paragraphChunking(text);
-      
+
       expect(result).toHaveLength(4);
       expect(result[0]).toBe('Paragraph 1.');
       expect(result[1]).toBe('Paragraph 2.');
@@ -123,7 +130,7 @@ This is paragraph 3.`;
     it('should filter out empty paragraphs', () => {
       const text = `Paragraph 1.\n\n\n\nParagraph 2.\n\n   \nParagraph 3.`;
       const result = paragraphChunking(text);
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toBe('Paragraph 1.');
       expect(result[1]).toBe('Paragraph 2.');
@@ -140,7 +147,7 @@ Intro content.
 Chapter content.`;
 
       const result = chunkText(markdown) as ChunkResult[];
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].title).toBe('Introduction');
       expect(result[1].title).toBe('Chapter 1');
@@ -151,7 +158,7 @@ Chapter content.`;
 Intro content.`;
 
       const result = chunkText(markdown, 'h1') as ChunkResult[];
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Introduction');
     });
@@ -160,7 +167,7 @@ Intro content.`;
       const text = `Paragraph 1.\n\nParagraph 2.`;
 
       const result = chunkText(text, 'paragraph') as string[];
-      
+
       expect(result).toHaveLength(2);
       expect(result[0]).toBe('Paragraph 1.');
       expect(result[1]).toBe('Paragraph 2.');

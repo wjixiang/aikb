@@ -11,10 +11,21 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
-import { MinerUPdfConvertor, createMinerUConvertorFromEnv } from './PdfConvertor';
+import {
+  MinerUPdfConvertor,
+  createMinerUConvertorFromEnv,
+} from './PdfConvertor';
 // 导入新的统一chunking接口
-import { chunkTextAdvanced, getAvailableStrategies } from '../lib/chunking/chunkingToolV2';
-import { h1Chunking, paragraphChunking, chunkText, ChunkResult } from '../lib/chunking/chunkingTool';
+import {
+  chunkTextAdvanced,
+  getAvailableStrategies,
+} from '../lib/chunking/chunkingToolV2';
+import {
+  h1Chunking,
+  paragraphChunking,
+  chunkText,
+  ChunkResult,
+} from '../lib/chunking/chunkingTool';
 import { embeddingService } from '../lib/embedding/embedding';
 
 // Enhanced metadata interfaces for Zotero-like functionality
@@ -159,7 +170,10 @@ export abstract class AbstractLibrary {
   protected storage: AbstractLibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 
-  constructor(storage: AbstractLibraryStorage, pdfConvertor?: MinerUPdfConvertor) {
+  constructor(
+    storage: AbstractLibraryStorage,
+    pdfConvertor?: MinerUPdfConvertor,
+  ) {
     this.storage = storage;
     this.pdfConvertor = pdfConvertor;
   }
@@ -248,7 +262,10 @@ export abstract class AbstractLibrary {
    * @param itemId The ID of the item to process
    * @param chunkingStrategy The chunking strategy to use ('h1' or 'paragraph')
    */
-  abstract processItemChunks(itemId: string, chunkingStrategy?: 'h1' | 'paragraph'): Promise<void>;
+  abstract processItemChunks(
+    itemId: string,
+    chunkingStrategy?: 'h1' | 'paragraph',
+  ): Promise<void>;
 
   /**
    * Get chunks for a specific item
@@ -307,7 +324,10 @@ export abstract class AbstractLibrary {
    * @param itemId Optional ID of the item to re-process
    * @param chunkingStrategy The chunking strategy to use
    */
-  abstract reProcessChunks(itemId?: string, chunkingStrategy?: 'h1' | 'paragraph'): Promise<void>;
+  abstract reProcessChunks(
+    itemId?: string,
+    chunkingStrategy?: 'h1' | 'paragraph',
+  ): Promise<void>;
 
   /**
    * Helper method to format citation
@@ -459,11 +479,18 @@ export default class Library extends AbstractLibrary {
     // Process chunks and embeddings after markdown conversion
     if (libraryItem.metadata.markdownContent) {
       try {
-        console.log(`Processing chunks and embeddings for item: ${savedMetadata.id}`);
+        console.log(
+          `Processing chunks and embeddings for item: ${savedMetadata.id}`,
+        );
         await this.processItemChunks(savedMetadata.id!, 'h1'); // Default to H1 chunking
-        console.log(`Successfully processed chunks and embeddings for item: ${savedMetadata.id}`);
+        console.log(
+          `Successfully processed chunks and embeddings for item: ${savedMetadata.id}`,
+        );
       } catch (error) {
-        console.error(`Error processing chunks for item ${savedMetadata.id}:`, error);
+        console.error(
+          `Error processing chunks for item ${savedMetadata.id}:`,
+          error,
+        );
         // Don't fail the entire operation if chunking fails
       }
     }
@@ -479,30 +506,37 @@ export default class Library extends AbstractLibrary {
         if (!item) {
           throw new Error(`Item with ID ${itemId} not found`);
         }
-        
+
         console.log(`Re-extracting markdown for item: ${itemId}`);
         await item.extractMarkdown();
         console.log(`Successfully re-extracted markdown for item: ${itemId}`);
       } else {
         // Re-extract markdown for all items that have PDFs
         console.log('Re-extracting markdown for all items with PDFs...');
-        
+
         // Get all items with PDF files
         const allItems = await this.searchItems({ fileType: ['pdf'] });
-        
+
         for (const item of allItems) {
           if (item.hasPdf()) {
             try {
-              console.log(`Re-extracting markdown for item: ${item.metadata.id}`);
+              console.log(
+                `Re-extracting markdown for item: ${item.metadata.id}`,
+              );
               await item.extractMarkdown();
-              console.log(`Successfully re-extracted markdown for item: ${item.metadata.id}`);
+              console.log(
+                `Successfully re-extracted markdown for item: ${item.metadata.id}`,
+              );
             } catch (error) {
-              console.error(`Failed to re-extract markdown for item ${item.metadata.id}:`, error);
+              console.error(
+                `Failed to re-extract markdown for item ${item.metadata.id}:`,
+                error,
+              );
               // Continue with other items even if one fails
             }
           }
         }
-        
+
         console.log('Completed re-extraction of markdown for all items');
       }
     } catch (error) {
@@ -639,7 +673,10 @@ export default class Library extends AbstractLibrary {
   }
 
   // Chunk-related methods implementation
-  async processItemChunks(itemId: string, chunkingStrategy: 'h1' | 'paragraph' = 'h1'): Promise<void> {
+  async processItemChunks(
+    itemId: string,
+    chunkingStrategy: 'h1' | 'paragraph' = 'h1',
+  ): Promise<void> {
     try {
       // Get the item metadata
       const item = await this.getBook(itemId);
@@ -650,162 +687,191 @@ export default class Library extends AbstractLibrary {
       // Get the markdown content
       const markdownContent = await item.getMarkdown();
       if (!markdownContent) {
-            console.warn(`No markdown content found for item: ${itemId}`);
-            return;
-          }
-    
-          console.log(`Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`);
-    
-          // Delete existing chunks for this item
-          await this.storage.deleteChunksByItemId(itemId);
-    
-          // Chunk the markdown content
-          let chunkResults: ChunkResult[] | string[];
-          if (chunkingStrategy === 'h1') {
-            chunkResults = h1Chunking(markdownContent);
-          } else {
-            chunkResults = paragraphChunking(markdownContent);
-          }
-    
-          if (chunkResults.length === 0) {
-            console.warn(`No chunks generated for item: ${itemId}`);
-            return;
-          }
-    
-          console.log(`Generated ${chunkResults.length} chunks for item: ${itemId}`);
-    
-          // Prepare chunks for storage
-          const chunks: BookChunk[] = [];
-          const chunkTexts: string[] = [];
-    
-          for (let i = 0; i < chunkResults.length; i++) {
-            const chunkResult = chunkResults[i];
-            
-            let title: string;
-            let content: string;
-            
-            if (typeof chunkResult === 'string') {
-              // Paragraph chunking
-              title = `Paragraph ${i + 1}`;
-              content = chunkResult;
-            } else {
-              // H1 chunking
-              title = chunkResult.title;
-              content = chunkResult.content;
-            }
-    
-            const chunk: BookChunk = {
-              id: IdUtils.generateId(),
-              itemId,
-              title,
-              content,
-              index: i,
-              metadata: {
-                chunkType: chunkingStrategy,
-                wordCount: content.split(/\s+/).length,
-              },
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            };
-    
-            chunks.push(chunk);
-            chunkTexts.push(content);
-          }
-    
-          // Generate embeddings for all chunks
-          console.log(`Generating embeddings for ${chunkTexts.length} chunks`);
-          const embeddings = await embeddingService.embedBatch(chunkTexts);
-          
-          // Assign embeddings to chunks
-          for (let i = 0; i < chunks.length; i++) {
-            if (embeddings[i]) {
-              chunks[i].embedding = embeddings[i] || undefined;
-            }
-          }
-    
-          // Save chunks to storage
-          await this.storage.batchSaveChunks(chunks);
-          console.log(`Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`);
-    
-        } catch (error) {
-          console.error(`Error processing chunks for item ${itemId}:`, error);
-          throw error;
+        console.warn(`No markdown content found for item: ${itemId}`);
+        return;
+      }
+
+      // Check if the markdown content is just a placeholder (no actual markdown was stored)
+      const storedMarkdown = await this.storage.getMarkdown(itemId);
+      if (!storedMarkdown) {
+        console.warn(`No actual markdown content stored for item: ${itemId}, skipping chunking`);
+        return;
+      }
+
+      console.log(
+        `Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`,
+      );
+
+      // Delete existing chunks for this item
+      await this.storage.deleteChunksByItemId(itemId);
+
+      // Chunk the markdown content
+      let chunkResults: ChunkResult[] | string[];
+      if (chunkingStrategy === 'h1') {
+        chunkResults = h1Chunking(markdownContent);
+      } else {
+        chunkResults = paragraphChunking(markdownContent);
+      }
+
+      if (chunkResults.length === 0) {
+        console.warn(`No chunks generated for item: ${itemId}`);
+        return;
+      }
+
+      console.log(
+        `Generated ${chunkResults.length} chunks for item: ${itemId}`,
+      );
+
+      // Prepare chunks for storage
+      const chunks: BookChunk[] = [];
+      const chunkTexts: string[] = [];
+
+      for (let i = 0; i < chunkResults.length; i++) {
+        const chunkResult = chunkResults[i];
+
+        let title: string;
+        let content: string;
+
+        if (typeof chunkResult === 'string') {
+          // Paragraph chunking
+          title = `Paragraph ${i + 1}`;
+          content = chunkResult;
+        } else {
+          // H1 chunking
+          title = chunkResult.title;
+          content = chunkResult.content;
         }
-      }
 
-      async getItemChunks(itemId: string): Promise<BookChunk[]> {
-        return await this.storage.getChunksByItemId(itemId);
-      }
-
-      async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
-        return await this.storage.searchChunks(filter);
-      }
-
-      async findSimilarChunks(
-        queryVector: number[],
-        limit: number = 10,
-        threshold: number = 0.7,
-        itemIds?: string[],
-      ): Promise<Array<BookChunk & { similarity: number }>> {
-        return await this.storage.findSimilarChunks(queryVector, limit, threshold, itemIds);
-      }
-
-      async findSimilarChunksInItem(
-        itemId: string,
-        queryVector: number[],
-        limit: number = 10,
-        threshold: number = 0.7,
-      ): Promise<Array<BookChunk & { similarity: number }>> {
-        return await this.findSimilarChunks(queryVector, limit, threshold, [itemId]);
-      }
-
-      async searchChunksInItem(
-        itemId: string,
-        query: string,
-        limit: number = 10,
-      ): Promise<BookChunk[]> {
-        return await this.searchChunks({
-          query,
+        const chunk: BookChunk = {
+          id: IdUtils.generateId(),
           itemId,
-          limit,
-        });
+          title,
+          content,
+          index: i,
+          metadata: {
+            chunkType: chunkingStrategy,
+            wordCount: content.split(/\s+/).length,
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        chunks.push(chunk);
+        chunkTexts.push(content);
       }
 
-      async reProcessChunks(itemId?: string, chunkingStrategy: 'h1' | 'paragraph' = 'h1'): Promise<void> {
-        try {
-          if (itemId) {
-            // Re-process chunks for a specific item
-            console.log(`Re-processing chunks for item: ${itemId}`);
-            await this.processItemChunks(itemId, chunkingStrategy);
-            console.log(`Successfully re-processed chunks for item: ${itemId}`);
-          } else {
-            // Re-process chunks for all items that have markdown content
-            console.log('Re-processing chunks for all items with markdown content...');
-            
-            // Get all items
-            const allItems = await this.searchItems({});
-            
-            for (const item of allItems) {
-              try {
-                const markdownContent = await item.getMarkdown();
-                if (markdownContent) {
-                  console.log(`Re-processing chunks for item: ${item.metadata.id}`);
-                  await this.processItemChunks(item.metadata.id!, chunkingStrategy);
-                  console.log(`Successfully re-processed chunks for item: ${item.metadata.id}`);
-                }
-              } catch (error) {
-                console.error(`Failed to re-process chunks for item ${item.metadata.id}:`, error);
-                // Continue with other items even if one fails
-              }
-            }
-            
-            console.log('Completed re-processing of chunks for all items');
-          }
-        } catch (error) {
-          console.error('Error in reProcessChunks:', error);
-          throw error;
+      // Generate embeddings for all chunks
+      console.log(`Generating embeddings for ${chunkTexts.length} chunks`);
+      const embeddings = await embeddingService.embedBatch(chunkTexts);
+
+      // Assign embeddings to chunks
+      for (let i = 0; i < chunks.length; i++) {
+        if (embeddings[i]) {
+          chunks[i].embedding = embeddings[i] || undefined;
         }
       }
+
+      // Save chunks to storage
+      await this.storage.batchSaveChunks(chunks);
+      console.log(
+        `Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`,
+      );
+    } catch (error) {
+      console.error(`Error processing chunks for item ${itemId}:`, error);
+      throw error;
+    }
+  }
+
+  async getItemChunks(itemId: string): Promise<BookChunk[]> {
+    return await this.storage.getChunksByItemId(itemId);
+  }
+
+  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+    return await this.storage.searchChunks(filter);
+  }
+
+  async findSimilarChunks(
+    queryVector: number[],
+    limit: number = 10,
+    threshold: number = 0.7,
+    itemIds?: string[],
+  ): Promise<Array<BookChunk & { similarity: number }>> {
+    return await this.storage.findSimilarChunks(
+      queryVector,
+      limit,
+      threshold,
+      itemIds,
+    );
+  }
+
+  async findSimilarChunksInItem(
+    itemId: string,
+    queryVector: number[],
+    limit: number = 10,
+    threshold: number = 0.7,
+  ): Promise<Array<BookChunk & { similarity: number }>> {
+    return await this.findSimilarChunks(queryVector, limit, threshold, [
+      itemId,
+    ]);
+  }
+
+  async searchChunksInItem(
+    itemId: string,
+    query: string,
+    limit: number = 10,
+  ): Promise<BookChunk[]> {
+    return await this.searchChunks({
+      query,
+      itemId,
+      limit,
+    });
+  }
+
+  async reProcessChunks(
+    itemId?: string,
+    chunkingStrategy: 'h1' | 'paragraph' = 'h1',
+  ): Promise<void> {
+    try {
+      if (itemId) {
+        // Re-process chunks for a specific item
+        console.log(`Re-processing chunks for item: ${itemId}`);
+        await this.processItemChunks(itemId, chunkingStrategy);
+        console.log(`Successfully re-processed chunks for item: ${itemId}`);
+      } else {
+        // Re-process chunks for all items that have markdown content
+        console.log(
+          'Re-processing chunks for all items with markdown content...',
+        );
+
+        // Get all items
+        const allItems = await this.searchItems({});
+
+        for (const item of allItems) {
+          try {
+            const markdownContent = await item.getMarkdown();
+            if (markdownContent) {
+              console.log(`Re-processing chunks for item: ${item.metadata.id}`);
+              await this.processItemChunks(item.metadata.id!, chunkingStrategy);
+              console.log(
+                `Successfully re-processed chunks for item: ${item.metadata.id}`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Failed to re-process chunks for item ${item.metadata.id}:`,
+              error,
+            );
+            // Continue with other items even if one fails
+          }
+        }
+
+        console.log('Completed re-processing of chunks for all items');
+      }
+    } catch (error) {
+      console.error('Error in reProcessChunks:', error);
+      throw error;
+    }
+  }
 }
 
 export class LibraryItem {
@@ -914,20 +980,22 @@ export class LibraryItem {
     try {
       // Get the PDF download URL
       const pdfUrl = await this.getPdfDownloadUrl();
-      
+
       // Create a new MinerUPdfConvertor instance
       const pdfConvertor = createMinerUConvertorFromEnv();
-      
+
       // Convert the PDF to markdown using the MinerUPdfConvertor
       const conversionResult = await pdfConvertor.convertPdfToMarkdown(pdfUrl);
-      
+
       if (!conversionResult.success) {
-        throw new Error(`Failed to convert PDF to markdown: ${conversionResult.error}`);
+        throw new Error(
+          `Failed to convert PDF to markdown: ${conversionResult.error}`,
+        );
       }
 
       // Extract markdown content from the conversion result
       let markdownContent = '';
-      
+
       if (typeof conversionResult.data === 'string') {
         markdownContent = conversionResult.data;
       } else if (conversionResult.data && conversionResult.data.markdown) {
@@ -940,125 +1008,21 @@ export class LibraryItem {
 
       // Save the markdown content to storage
       await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
-      
+
       // Update the metadata with the markdown content and timestamp
       await this.updateMetadata({
         markdownContent,
-        markdownUpdatedDate: new Date()
+        markdownUpdatedDate: new Date(),
       });
 
-      console.log(`Successfully extracted and saved markdown for item: ${this.metadata.id}`);
+      console.log(
+        `Successfully extracted and saved markdown for item: ${this.metadata.id}`,
+      );
     } catch (error) {
-      console.error(`Error extracting markdown for item ${this.metadata.id}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Process this item's markdown content into chunks and generate embeddings
-   * @param chunkingStrategy The chunking strategy to use ('h1' or 'paragraph')
-   * @param forceReprocess Whether to force re-processing even if chunks already exist
-   */
-  async chunkEmbed(
-    chunkingStrategy: 'h1' | 'paragraph' = 'h1',
-    forceReprocess: boolean = false
-  ): Promise<BookChunk[]> {
-    try {
-      // Check if this item has markdown content
-      const markdownContent = await this.getMarkdown();
-      if (!markdownContent) {
-        throw new Error('No markdown content found for this item. Please extract markdown first.');
-      }
-
-      console.log(`Chunking and embedding content for item: ${this.metadata.id} using strategy: ${chunkingStrategy}`);
-
-      // Check if chunks already exist and forceReprocess is false
-      if (!forceReprocess) {
-        const existingChunks = await this.storage.getChunksByItemId(this.metadata.id!);
-        if (existingChunks.length > 0) {
-          console.log(`Item ${this.metadata.id} already has ${existingChunks.length} chunks. Use forceReprocess=true to override.`);
-          return existingChunks;
-        }
-      }
-
-      // Delete existing chunks for this item
-      await this.storage.deleteChunksByItemId(this.metadata.id!);
-
-      // Import chunking functions
-      const { h1Chunking, paragraphChunking } = await import('../lib/chunking/chunkingTool.js');
-      const { embeddingService } = await import('../lib/embedding/embedding.js');
-
-      // Chunk the markdown content
-      let chunkResults: any[];
-      if (chunkingStrategy === 'h1') {
-        chunkResults = h1Chunking(markdownContent);
-      } else {
-        chunkResults = paragraphChunking(markdownContent);
-      }
-
-      if (chunkResults.length === 0) {
-        console.warn(`No chunks generated for item: ${this.metadata.id}`);
-        return [];
-      }
-
-      console.log(`Generated ${chunkResults.length} chunks for item: ${this.metadata.id}`);
-
-      // Prepare chunks for storage
-      const chunks: BookChunk[] = [];
-      const chunkTexts: string[] = [];
-
-      for (let i = 0; i < chunkResults.length; i++) {
-        const chunkResult = chunkResults[i];
-        
-        let title: string;
-        let content: string;
-        
-        if (typeof chunkResult === 'string') {
-          // Paragraph chunking
-          title = `Paragraph ${i + 1}`;
-          content = chunkResult;
-        } else {
-          // H1 chunking
-          title = chunkResult.title;
-          content = chunkResult.content;
-        }
-
-        const chunk: BookChunk = {
-          id: IdUtils.generateId(),
-          itemId: this.metadata.id!,
-          title,
-          content,
-          index: i,
-          metadata: {
-            chunkType: chunkingStrategy,
-            wordCount: content.split(/\s+/).length,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        chunks.push(chunk);
-        chunkTexts.push(content);
-      }
-
-      // Generate embeddings for all chunks
-      console.log(`Generating embeddings for ${chunkTexts.length} chunks`);
-      const embeddings = await embeddingService.embedBatch(chunkTexts);
-      
-      // Assign embeddings to chunks
-      for (let i = 0; i < chunks.length; i++) {
-        if (embeddings[i]) {
-          chunks[i].embedding = embeddings[i] || undefined;
-        }
-      }
-
-      // Save chunks to storage
-      await this.storage.batchSaveChunks(chunks);
-      console.log(`Successfully saved ${chunks.length} chunks to storage for item: ${this.metadata.id}`);
-
-      return chunks;
-    } catch (error) {
-      console.error(`Error processing chunks for item ${this.metadata.id}:`, error);
+      console.error(
+        `Error extracting markdown for item ${this.metadata.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1067,7 +1031,11 @@ export class LibraryItem {
    * Get all chunks for this item
    */
   async getChunks(): Promise<BookChunk[]> {
-    return await this.storage.getChunksByItemId(this.metadata.id!);
+    const logger = createLoggerWithPrefix('LibraryItem.getChunks');
+    logger.info(`Retrieving chunks for item: ${this.metadata.id}`);
+    const chunks = await this.storage.getChunksByItemId(this.metadata.id!);
+    logger.info(`Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`);
+    return chunks;
   }
 
   /**
@@ -1075,7 +1043,10 @@ export class LibraryItem {
    * @param query The search query
    * @param limit Maximum number of results
    */
-  async searchInChunks(query: string, limit: number = 10): Promise<BookChunk[]> {
+  async searchInChunks(
+    query: string,
+    limit: number = 10,
+  ): Promise<BookChunk[]> {
     return await this.storage.searchChunks({
       query,
       itemId: this.metadata.id!,
@@ -1094,7 +1065,9 @@ export class LibraryItem {
     limit: number = 10,
     threshold: number = 0.7,
   ): Promise<Array<BookChunk & { similarity: number }>> {
-    return await this.storage.findSimilarChunks(queryVector, limit, threshold, [this.metadata.id!]);
+    return await this.storage.findSimilarChunks(queryVector, limit, threshold, [
+      this.metadata.id!,
+    ]);
   }
 
   /**
@@ -1115,7 +1088,7 @@ export class LibraryItem {
     lastUpdated: Date | null;
   }> {
     const chunks = await this.getChunks();
-    
+
     if (chunks.length === 0) {
       return {
         totalChunks: 0,
@@ -1126,12 +1099,18 @@ export class LibraryItem {
       };
     }
 
-    const totalWords = chunks.reduce((sum, chunk) =>
-      sum + (chunk.metadata?.wordCount || chunk.content.split(/\s+/).length), 0
+    const totalWords = chunks.reduce(
+      (sum, chunk) =>
+        sum + (chunk.metadata?.wordCount || chunk.content.split(/\s+/).length),
+      0,
     );
 
-    const chunkTypes = new Set(chunks.map(chunk => chunk.metadata?.chunkType).filter(Boolean));
-    const lastUpdated = new Date(Math.max(...chunks.map(chunk => chunk.updatedAt.getTime())));
+    const chunkTypes = new Set(
+      chunks.map((chunk) => chunk.metadata?.chunkType).filter(Boolean),
+    );
+    const lastUpdated = new Date(
+      Math.max(...chunks.map((chunk) => chunk.updatedAt.getTime())),
+    );
 
     return {
       totalChunks: chunks.length,
@@ -1149,46 +1128,60 @@ export class LibraryItem {
    * @param chunkingConfig Optional chunking configuration
    * @returns Array of created chunks
    */
-  async chunkEmbedAdvanced(
+  async chunkEmbed(
     chunkingStrategy: string = 'h1',
     forceReprocess: boolean = false,
     chunkingConfig?: any,
   ): Promise<BookChunk[]> {
+    const logger = createLoggerWithPrefix('LibraryItem.chunkEmbed');
     try {
+      logger.info(`Starting chunkEmbed for item: ${this.metadata.id}, strategy: ${chunkingStrategy}, forceReprocess: ${forceReprocess}`);
+      
       // Check if markdown content exists
       if (!this.metadata.markdownContent) {
-        throw new Error(`No markdown content available for item: ${this.metadata.id}. Please extract markdown first.`);
+        throw new Error(
+          `No markdown content available for item: ${this.metadata.id}. Please extract markdown first.`,
+        );
       }
 
-      // Check if chunks already exist and forceReprocess is false
-      if (!forceReprocess) {
-        const existingChunks = await this.getChunks();
-        if (existingChunks.length > 0) {
-          console.log(`Chunks already exist for item: ${this.metadata.id}, returning existing chunks`);
+      logger.info(`Markdown content length: ${this.metadata.markdownContent.length} characters`);
+
+      // Check if chunks already exist
+      const existingChunks = await this.getChunks();
+      logger.info(`Found ${existingChunks.length} existing chunks for item: ${this.metadata.id}`);
+      
+      if (existingChunks.length > 0) {
+        if (!forceReprocess) {
+          logger.info(
+            `Chunks already exist for item: ${this.metadata.id}, returning existing chunks`,
+          );
           return existingChunks;
         }
-      }
 
-      // Delete existing chunks if force reprocessing
-      if (forceReprocess) {
+        // Always clear existing chunks before processing new ones
+        logger.info(`Clearing existing chunks for item: ${this.metadata.id}`);
         await this.deleteChunks();
       }
 
-      console.log(`Processing chunks for item: ${this.metadata.id} using strategy: ${chunkingStrategy}`);
+      logger.info(
+        `Processing chunks for item: ${this.metadata.id} using strategy: ${chunkingStrategy}`,
+      );
 
       // Use the new unified chunking interface
       const chunkResults = chunkTextAdvanced(
         this.metadata.markdownContent,
         chunkingStrategy,
-        chunkingConfig
+        chunkingConfig,
       );
 
       if (!chunkResults || chunkResults.length === 0) {
-        console.warn(`No chunks generated for item: ${this.metadata.id}`);
+        logger.warn(`No chunks generated for item: ${this.metadata.id}`);
         return [];
       }
 
-      console.log(`Generated ${chunkResults.length} chunks for item: ${this.metadata.id}`);
+      logger.info(
+        `Generated ${chunkResults.length} chunks for item: ${this.metadata.id}`,
+      );
 
       // Prepare chunks for storage
       const chunks: BookChunk[] = [];
@@ -1196,7 +1189,7 @@ export class LibraryItem {
 
       for (let i = 0; i < chunkResults.length; i++) {
         const chunkResult = chunkResults[i];
-        
+
         const title = chunkResult.title || `Chunk ${i + 1}`;
         const content = chunkResult.content;
 
@@ -1209,7 +1202,9 @@ export class LibraryItem {
           metadata: {
             chunkType: chunkingStrategy,
             wordCount: content.split(/\s+/).length,
-            chunkingConfig: chunkingConfig ? JSON.stringify(chunkingConfig) : undefined,
+            chunkingConfig: chunkingConfig
+              ? JSON.stringify(chunkingConfig)
+              : undefined,
           },
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1219,24 +1214,39 @@ export class LibraryItem {
         chunkTexts.push(content);
       }
 
+      logger.info(`Prepared ${chunks.length} chunks for embedding generation`);
+
       // Generate embeddings for all chunks
-      console.log(`Generating embeddings for ${chunkTexts.length} chunks`);
+      logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
       const embeddings = await embeddingService.embedBatch(chunkTexts);
       
+      logger.info(`Generated ${embeddings.length} embeddings`);
+      const validEmbeddings = embeddings.filter(e => e !== null && e.length > 0);
+      logger.info(`Valid embeddings: ${validEmbeddings.length}/${embeddings.length}`);
+
       // Assign embeddings to chunks
       for (let i = 0; i < chunks.length; i++) {
         if (embeddings[i]) {
           chunks[i].embedding = embeddings[i] || undefined;
+          logger.debug(`Chunk ${i} embedding assigned, dimensions: ${embeddings[i]!.length}`);
+        } else {
+          logger.warn(`Failed to generate embedding for chunk ${i}`);
         }
       }
 
       // Save chunks to storage
+      logger.info(`Saving ${chunks.length} chunks to storage`);
       await this.storage.batchSaveChunks(chunks);
-      console.log(`Successfully saved ${chunks.length} chunks to storage for item: ${this.metadata.id}`);
+      logger.info(
+        `Successfully saved ${chunks.length} chunks to storage for item: ${this.metadata.id}`,
+      );
 
       return chunks;
     } catch (error) {
-      console.error(`Error processing chunks for item ${this.metadata.id}:`, error);
+      logger.error(
+        `Error processing chunks for item ${this.metadata.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1260,8 +1270,51 @@ export class LibraryItem {
    */
   getChunkingStrategyDefaultConfig(strategyName: string): any {
     // Import dynamically to avoid circular dependencies
-    const { getStrategyDefaultConfig } = require('../lib/chunking/chunkingToolV2');
+    const {
+      getStrategyDefaultConfig,
+    } = require('../lib/chunking/chunkingToolV2');
     return getStrategyDefaultConfig(strategyName);
+  }
+
+  /**
+   * Check if this item has completed chunkEmbed (has chunks with embeddings)
+   * @returns Promise<boolean> - true if the item has chunks with embeddings, false otherwise
+   */
+  async hasCompletedChunkEmbed(): Promise<boolean> {
+    const logger = createLoggerWithPrefix('LibraryItem.hasCompletedChunkEmbed');
+    try {
+      logger.info(`Checking chunkEmbed completion for item: ${this.metadata.id}`);
+      
+      // Get all chunks for this item
+      const chunks = await this.getChunks();
+      logger.info(`Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`);
+      
+      // If no chunks exist, chunkEmbed has not been completed
+      if (chunks.length === 0) {
+        logger.warn(`No chunks found for item: ${this.metadata.id}`);
+        return false;
+      }
+      
+      // Log chunk details
+      chunks.forEach((chunk, index) => {
+        logger.debug(`Chunk ${index}: id=${chunk.id}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`);
+      });
+      
+      // Check if all chunks have embeddings
+      const chunksWithEmbeddings = chunks.filter(chunk =>
+        chunk.embedding && chunk.embedding.length > 0
+      );
+      
+      logger.info(`Chunks with embeddings: ${chunksWithEmbeddings.length}/${chunks.length}`);
+      
+      // Return true only if all chunks have embeddings
+      const result = chunksWithEmbeddings.length === chunks.length;
+      logger.info(`ChunkEmbed completion status for item ${this.metadata.id}: ${result}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error checking chunkEmbed completion for item ${this.metadata.id}:`, error);
+      return false;
+    }
   }
 }
 
@@ -1303,7 +1356,7 @@ export abstract class AbstractLibraryStorage {
   abstract deleteMetadata(id: string): Promise<boolean>;
   abstract deleteCollection(id: string): Promise<boolean>;
   abstract deleteCitations(itemId: string): Promise<boolean>;
-  
+
   // Chunk-related methods
   abstract saveChunk(chunk: BookChunk): Promise<BookChunk>;
   abstract getChunk(chunkId: string): Promise<BookChunk | null>;
@@ -1665,9 +1718,9 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
       {
         $set: {
           ...chunk,
-          updatedAt: new Date()
-        }
-      }
+          updatedAt: new Date(),
+        },
+      },
     );
   }
 
@@ -1727,7 +1780,7 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     // MongoDB doesn't have native vector similarity search like Elasticsearch
     // This is a simplified implementation that would need to be enhanced
     // with a proper vector search solution (e.g., MongoDB Atlas Vector Search)
-    
+
     const query: any = {};
     if (itemIds && itemIds.length > 0) {
       query.itemId = { $in: itemIds };
@@ -1742,23 +1795,23 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
 
     // Calculate cosine similarity manually (this is inefficient and should be replaced with proper vector search)
     const similarChunks: Array<BookChunk & { similarity: number }> = [];
-    
+
     for (const chunk of chunks) {
       if (!chunk.embedding) continue;
-      
+
       // Simple cosine similarity calculation
       let dotProduct = 0;
       let normA = 0;
       let normB = 0;
-      
+
       for (let i = 0; i < queryVector.length; i++) {
         dotProduct += queryVector[i] * (chunk.embedding[i] || 0);
         normA += queryVector[i] * queryVector[i];
         normB += (chunk.embedding[i] || 0) * (chunk.embedding[i] || 0);
       }
-      
+
       const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-      
+
       if (similarity >= threshold) {
         similarChunks.push({
           ...chunk,
@@ -1774,7 +1827,7 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
 
   async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
     const { db } = await connectToDatabase();
-    
+
     // Ensure all chunks have IDs
     for (const chunk of chunks) {
       if (!chunk.id) {
@@ -1941,7 +1994,37 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         index: this.chunksIndexName,
       });
 
-      if (!chunksExists) {
+      let needsToCreateChunksIndex = !chunksExists;
+      
+      // If index exists, check if vector dimensions match
+      if (chunksExists) {
+        try {
+          const indexMapping = await this.client.indices.getMapping({
+            index: this.chunksIndexName,
+          });
+          
+          const currentDims = (indexMapping[this.chunksIndexName]?.mappings?.properties?.embedding as any)?.dims;
+          
+          if (currentDims && currentDims !== this.vectorDimensions) {
+            this.logger.warn(
+              `Existing chunks index has ${currentDims} dimensions, but ${this.vectorDimensions} are required. Recreating index...`
+            );
+            
+            // Delete the existing index
+            await this.client.indices.delete({
+              index: this.chunksIndexName,
+            });
+            
+            needsToCreateChunksIndex = true;
+          }
+        } catch (error) {
+          this.logger.error('Error checking chunks index mapping:', error);
+          // If we can't check the mapping, try to recreate the index
+          needsToCreateChunksIndex = true;
+        }
+      }
+
+      if (needsToCreateChunksIndex) {
         await this.client.indices.create({
           index: this.chunksIndexName,
           mappings: {
@@ -2530,9 +2613,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               itemId: itemId,
             },
           },
-          sort: [
-            { index: { order: 'asc' } },
-          ],
+          sort: [{ index: { order: 'asc' } }],
           size: 10000, // Adjust based on expected number of chunks
         },
       } as any);
@@ -2598,7 +2679,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         refresh: true, // Refresh index to make deletion immediately available
       } as any);
 
-      return (result.deleted || 0);
+      return result.deleted || 0;
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
         return 0; // Index not found
@@ -2752,8 +2833,11 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+    const logger = createLoggerWithPrefix('S3ElasticSearchLibraryStorage.batchSaveChunks');
     await this.checkInitialized();
 
+    logger.info(`Starting batch save for ${chunks.length} chunks`);
+    
     // Ensure all chunks have IDs
     for (const chunk of chunks) {
       if (!chunk.id) {
@@ -2762,25 +2846,42 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     }
 
     // Validate all embeddings have correct dimensions
+    let embeddingsValid = true;
     for (const chunk of chunks) {
       if (chunk.embedding && chunk.embedding.length !== this.vectorDimensions) {
-        throw new Error(
-          `Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`,
-        );
+        logger.error(`Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`);
+        embeddingsValid = false;
       }
     }
+    
+    if (!embeddingsValid) {
+      throw new Error(`Vector dimensions mismatch detected. Expected: ${this.vectorDimensions}`);
+    }
+
+    // Log chunk details before saving
+    chunks.forEach((chunk, index) => {
+      logger.debug(`Chunk ${index}: id=${chunk.id}, itemId=${chunk.itemId}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`);
+    });
 
     const body = chunks.flatMap((chunk) => [
       { index: { _index: this.chunksIndexName, _id: chunk.id } },
       chunk,
     ]);
 
-    await this.client.bulk({
+    logger.info(`Executing bulk operation on index: ${this.chunksIndexName}`);
+    const bulkResponse = await this.client.bulk({
       body,
       refresh: true, // Refresh index to make chunks immediately available
     });
 
-    this.logger.info(`Batch saved ${chunks.length} chunks`);
+    // Check for errors in bulk response
+    if ((bulkResponse as any).errors) {
+      logger.error('Bulk operation had errors:', (bulkResponse as any).items?.filter((item: any) => item.index?.error));
+    } else {
+      logger.info(`Bulk operation completed successfully`);
+    }
+
+    logger.info(`Batch saved ${chunks.length} chunks to index: ${this.chunksIndexName}`);
   }
 }
 

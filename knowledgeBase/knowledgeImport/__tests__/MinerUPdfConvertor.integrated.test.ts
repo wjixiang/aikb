@@ -5,11 +5,10 @@ import { config } from 'dotenv';
 import { UploadTestPdf } from '../liberary.integrated.test';
 config();
 
-
 describe(MinerUPdfConvertor, () => {
   let converter: MinerUPdfConvertor;
   const testPdfPath = 'test/viral_pneumonia.pdf';
-  const downloadDir = "test"
+  const downloadDir = 'test';
 
   beforeAll(() => {
     // Check if MINERU_TOKEN is available

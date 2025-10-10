@@ -1,5 +1,8 @@
 import { chunkingManager } from './chunkingManager';
-import { ChunkingConfig as BaseChunkingConfig, ChunkResult as BaseChunkResult } from './chunkingStrategy';
+import {
+  ChunkingConfig as BaseChunkingConfig,
+  ChunkResult as BaseChunkResult,
+} from './chunkingStrategy';
 
 /**
  * 统一的文本切片工具 V2
@@ -8,7 +11,7 @@ import { ChunkingConfig as BaseChunkingConfig, ChunkResult as BaseChunkResult } 
 
 // 重新导出类型以保持向后兼容
 export interface ChunkResult {
-  title?: string;  // 可选标题，用于向后兼容
+  title?: string; // 可选标题，用于向后兼容
   content: string;
   index: number;
 }
@@ -23,10 +26,10 @@ export type ChunkingConfig = BaseChunkingConfig;
  */
 export function h1Chunking(text: string): ChunkResult[] {
   const results = chunkingManager.chunkWithStrategy(text, 'h1');
-  return results.map(result => ({
+  return results.map((result) => ({
     title: 'title' in result ? result.title : undefined,
     content: result.content,
-    index: result.index
+    index: result.index,
   }));
 }
 
@@ -37,7 +40,7 @@ export function h1Chunking(text: string): ChunkResult[] {
  */
 export function paragraphChunking(text: string): string[] {
   const results = chunkingManager.chunkWithStrategy(text, 'paragraph');
-  return results.map(result => result.content);
+  return results.map((result) => result.content);
 }
 
 /**
@@ -48,21 +51,21 @@ export function paragraphChunking(text: string): string[] {
  * @returns 切分结果
  */
 export function chunkText(
-  text: string, 
+  text: string,
   strategy: 'h1' | 'paragraph' = 'h1',
-  config?: ChunkingConfig
+  config?: ChunkingConfig,
 ): ChunkResult[] | string[] {
   const results = chunkingManager.chunkWithStrategy(text, strategy, config);
-  
+
   if (strategy === 'paragraph') {
     // 对于段落策略，返回字符串数组以保持向后兼容
-    return results.map(result => result.content);
+    return results.map((result) => result.content);
   } else {
     // 对于H1策略，返回ChunkResult数组
-    return results.map(result => ({
+    return results.map((result) => ({
       title: 'title' in result ? result.title : undefined,
       content: result.content,
-      index: result.index
+      index: result.index,
     }));
   }
 }
@@ -77,13 +80,13 @@ export function chunkText(
 export function chunkTextAdvanced(
   text: string,
   strategyName?: string,
-  config?: ChunkingConfig
+  config?: ChunkingConfig,
 ): ChunkResult[] {
   const results = chunkingManager.chunkWithStrategy(text, strategyName, config);
-  return results.map(result => ({
+  return results.map((result) => ({
     title: 'title' in result ? result.title : undefined,
     content: result.content,
-    index: result.index
+    index: result.index,
   }));
 }
 
@@ -95,10 +98,10 @@ export function getAvailableStrategies(): Array<{
   description: string;
   version: string;
 }> {
-  return chunkingManager.getAvailableStrategies().map(strategy => ({
+  return chunkingManager.getAvailableStrategies().map((strategy) => ({
     name: strategy.name,
     description: strategy.description,
-    version: strategy.version
+    version: strategy.version,
   }));
 }
 
@@ -139,7 +142,7 @@ export function getStrategyDefaultConfig(strategyName: string): ChunkingConfig {
  */
 export function validateStrategyConfig(
   strategyName: string,
-  config: ChunkingConfig
+  config: ChunkingConfig,
 ): { valid: boolean; errors: string[] } {
   return chunkingManager.validateStrategyConfig(strategyName, config);
 }
@@ -150,11 +153,16 @@ export function validateStrategyConfig(
  * @returns 策略名称列表
  */
 export function getStrategiesForText(text: string): string[] {
-  return chunkingManager.getStrategiesForText(text).map(strategy => strategy.name);
+  return chunkingManager
+    .getStrategiesForText(text)
+    .map((strategy) => strategy.name);
 }
 
 // 导出chunkingManager实例，供高级用户使用
 export { chunkingManager };
 
 // 导出类型定义
-export type { BaseChunkingStrategy, TitledChunkResult } from './chunkingStrategy';
+export type {
+  BaseChunkingStrategy,
+  TitledChunkResult,
+} from './chunkingStrategy';

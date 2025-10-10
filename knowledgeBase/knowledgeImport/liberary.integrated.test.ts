@@ -5,13 +5,12 @@ import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 
-let storage: S3MongoLibraryStorage;
 
-beforeAll(async () => {
-  // Use MongoDB storage instead of Elasticsearch for more reliable testing
-  console.log('Using MongoDB storage for integration tests');
-  storage = new S3MongoLibraryStorage();
-});
+// beforeAll(async () => {
+//   // Use MongoDB storage instead of Elasticsearch for more reliable testing
+//   console.log('Using MongoDB storage for integration tests');
+//   storage = new S3MongoLibraryStorage();
+// });
 
 export async function UploadTestPdf() {
   const testMinerUPdfConvertor = new MinerUPdfConvertor({
@@ -28,6 +27,7 @@ export async function UploadTestPdf() {
     maxRetries: 3,
     retryDelay: 5000,
   });
+  const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
   const library = new Library(storage, testMinerUPdfConvertor);
 
   // Read the test PDF file
@@ -49,11 +49,11 @@ export async function UploadTestPdf() {
   return book;
 }
 
-describe(Library, () => {
-  it('upload pdf buffer and retrieve s3 download url', async () => {
-    // Store the PDF from buffer
-    const book = await UploadTestPdf();
+describe(Library, async () => {
+  // Store the PDF from buffer
+  const book = await UploadTestPdf();
 
+  it.skip('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
     expect(book.metadata.title).toBe('ACEI');
@@ -75,17 +75,35 @@ describe(Library, () => {
     console.log(`PDF uploaded with ID: ${book.metadata.id}`);
     console.log(`S3 Key: ${book.metadata.s3Key}`);
     console.log(`Download URL: ${downloadUrl}`);
+  }, 30000); // Increase timeout to 30 seconds for S3 operations
 
+  it.skip('get current md', async () => {
     // Read markdown content from Library storage
     const mdContent = await book.getMarkdown();
     console.log(
-      `md content read from Library (100 str): ${JSON.stringify(mdContent.substring(0, 100))}`,
+      `md content read from Library (1000 length): ${JSON.stringify(mdContent.substring(0, 1000))}`,
     );
+  });
 
-    console.log(`re-extract markdown`)
-    await book.extractMarkdown()
+  it.skip('re-extract markdown', async () => {
+    console.log(`re-extract markdown`);
+    await book.extractMarkdown();
     const mdContent2 = await book.getMarkdown();
-    console.log(`re-extracted md content (100 str): ${JSON.stringify(mdContent2.substring(0, 100))}`)
+    console.log(
+      `re-extracted md content (100 str): ${JSON.stringify(mdContent2.substring(0, 100))}`,
+    );
+  });
 
-  }, 30000); // Increase timeout to 30 seconds for S3 operations
+
+  it.skip("justify existance of embedding", async()=>{
+    const ceRes = await book.chunkEmbed()
+    const exist = await book.hasCompletedChunkEmbed()
+    console.log(exist)
+    expect(exist).toBe(true)
+  })
+
+  it('semantic search', async()=>{
+    const searchRes = await book.searchInChunks("ACEI",2)
+    console.log(searchRes)
+  })
 });

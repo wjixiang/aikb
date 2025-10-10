@@ -18,7 +18,7 @@ describe('Library Chunking and Embedding', () => {
   beforeEach(() => {
     mockStorage = new MockLibraryStorage();
     library = new Library(mockStorage);
-    
+
     // Mock embedding service to return predictable vectors
     vi.mocked(embeddingService.embedBatch).mockResolvedValue([
       [0.1, 0.2, 0.3],
@@ -44,7 +44,9 @@ describe('Library Chunking and Embedding', () => {
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
       // Manually set markdown content for testing
-      await mockStorage.saveMarkdown(item.metadata.id!, `# Introduction
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Introduction
 
 This is the introduction paragraph.
 
@@ -54,7 +56,8 @@ This is the first chapter content.
 
 # Chapter 2
 
-This is the second chapter content.`);
+This is the second chapter content.`,
+      );
 
       // Process chunks
       await library.processItemChunks(item.metadata.id!, 'h1');
@@ -98,8 +101,10 @@ This is the second chapter content.`);
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
       // Set markdown content without H1 headers
-      await mockStorage.saveMarkdown(item.metadata.id!, 
-        `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`,
+      );
 
       // Process chunks with paragraph strategy
       await library.processItemChunks(item.metadata.id!, 'paragraph');
@@ -149,7 +154,10 @@ This is the second chapter content.`);
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
       // Set initial markdown content
-      await mockStorage.saveMarkdown(item.metadata.id!, `# Chapter 1\nContent 1`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Chapter 1\nContent 1`,
+      );
 
       // Process initial chunks
       await library.processItemChunks(item.metadata.id!, 'h1');
@@ -158,8 +166,10 @@ This is the second chapter content.`);
       expect(chunks[0].title).toBe('Chapter 1');
 
       // Update markdown content
-      await mockStorage.saveMarkdown(item.metadata.id!, 
-        `# Chapter 1\nUpdated content 1\n\n# Chapter 2\nNew content 2`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Chapter 1\nUpdated content 1\n\n# Chapter 2\nNew content 2`,
+      );
 
       // Re-process chunks
       await library.processItemChunks(item.metadata.id!, 'h1');
@@ -186,8 +196,10 @@ This is the second chapter content.`);
       const pdfBuffer = Buffer.from('mock pdf content');
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
-      await mockStorage.saveMarkdown(item.metadata.id!, 
-        `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
+      );
 
       await library.processItemChunks(item.metadata.id!, 'h1');
     });
@@ -247,8 +259,10 @@ This is the second chapter content.`);
       const pdfBuffer = Buffer.from('mock pdf content');
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
-      await mockStorage.saveMarkdown(item.metadata.id!, 
-        `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
+      );
 
       await library.processItemChunks(item.metadata.id!, 'h1');
     });
@@ -267,24 +281,36 @@ This is the second chapter content.`);
       const itemId = items[0].metadata.id!;
 
       const queryVector = [0.1, 0.2, 0.3];
-      const results = await library.findSimilarChunks(queryVector, 10, 0.5, [itemId]);
-      
+      const results = await library.findSimilarChunks(queryVector, 10, 0.5, [
+        itemId,
+      ]);
+
       // All results should be from the specified item
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.itemId).toBe(itemId);
       });
     });
 
     it('should respect similarity threshold', async () => {
       const queryVector = [0.1, 0.2, 0.3];
-      
+
       // High threshold should return fewer results
-      const highThresholdResults = await library.findSimilarChunks(queryVector, 10, 0.9);
-      
+      const highThresholdResults = await library.findSimilarChunks(
+        queryVector,
+        10,
+        0.9,
+      );
+
       // Low threshold should return more results
-      const lowThresholdResults = await library.findSimilarChunks(queryVector, 10, 0.1);
-      
-      expect(lowThresholdResults.length).toBeGreaterThanOrEqual(highThresholdResults.length);
+      const lowThresholdResults = await library.findSimilarChunks(
+        queryVector,
+        10,
+        0.1,
+      );
+
+      expect(lowThresholdResults.length).toBeGreaterThanOrEqual(
+        highThresholdResults.length,
+      );
     });
   });
 
@@ -299,7 +325,10 @@ This is the second chapter content.`);
       const pdfBuffer = Buffer.from('mock pdf content');
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
-      await mockStorage.saveMarkdown(item.metadata.id!, `# Chapter 1\nOriginal content`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Chapter 1\nOriginal content`,
+      );
 
       // Process initial chunks
       await library.processItemChunks(item.metadata.id!, 'h1');
@@ -308,7 +337,10 @@ This is the second chapter content.`);
       expect(chunks[0].content).toContain('Original content');
 
       // Update markdown content
-      await mockStorage.saveMarkdown(item.metadata.id!, `# Chapter 1\nUpdated content\n\n# Chapter 2\nNew chapter`);
+      await mockStorage.saveMarkdown(
+        item.metadata.id!,
+        `# Chapter 1\nUpdated content\n\n# Chapter 2\nNew chapter`,
+      );
 
       // Re-process chunks
       await library.reProcessChunks(item.metadata.id!, 'h1');

@@ -7,15 +7,15 @@
  * 基础的chunk结果接口
  */
 export interface BaseChunkResult {
-  content: string;  // 切片内容
-  index: number;    // 切片在文档中的索引位置
+  content: string; // 切片内容
+  index: number; // 切片在文档中的索引位置
 }
 
 /**
  * 带标题的chunk结果接口（用于基于标题的切片）
  */
 export interface TitledChunkResult extends BaseChunkResult {
-  title: string;    // 切片标题
+  title: string; // 切片标题
 }
 
 /**
@@ -27,10 +27,10 @@ export type ChunkResult = BaseChunkResult | TitledChunkResult;
  * 切片策略配置接口
  */
 export interface ChunkingConfig {
-  maxChunkSize?: number;     // 最大切片大小（字符数）
-  minChunkSize?: number;     // 最小切片大小（字符数）
-  overlap?: number;          // 切片之间的重叠字符数
-  strategy?: string;         // 策略特定参数
+  maxChunkSize?: number; // 最大切片大小（字符数）
+  minChunkSize?: number; // 最小切片大小（字符数）
+  overlap?: number; // 切片之间的重叠字符数
+  strategy?: string; // 策略特定参数
 }
 
 /**
@@ -42,12 +42,12 @@ export interface ChunkingStrategy {
    * 策略名称，用于标识和选择策略
    */
   readonly name: string;
-  
+
   /**
    * 策略描述
    */
   readonly description: string;
-  
+
   /**
    * 策略版本
    */
@@ -103,40 +103,43 @@ export abstract class BaseChunkingStrategy implements ChunkingStrategy {
 
   validateConfig(config: ChunkingConfig): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     if (config.maxChunkSize !== undefined) {
       if (typeof config.maxChunkSize !== 'number' || config.maxChunkSize <= 0) {
         errors.push('maxChunkSize must be a positive number');
       }
     }
-    
+
     if (config.minChunkSize !== undefined) {
       if (typeof config.minChunkSize !== 'number' || config.minChunkSize <= 0) {
         errors.push('minChunkSize must be a positive number');
       }
     }
-    
+
     if (config.overlap !== undefined) {
       if (typeof config.overlap !== 'number' || config.overlap < 0) {
         errors.push('overlap must be a non-negative number');
       }
     }
-    
-    if (config.maxChunkSize !== undefined && config.minChunkSize !== undefined) {
+
+    if (
+      config.maxChunkSize !== undefined &&
+      config.minChunkSize !== undefined
+    ) {
       if (config.minChunkSize > config.maxChunkSize) {
         errors.push('minChunkSize cannot be greater than maxChunkSize');
       }
     }
-    
+
     if (config.maxChunkSize !== undefined && config.overlap !== undefined) {
       if (config.overlap >= config.maxChunkSize) {
         errors.push('overlap should be less than maxChunkSize');
       }
     }
-    
+
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

@@ -25,8 +25,8 @@ paragraphs.forEach((para, i) => {
 
 console.log('\n修剪后的段落:');
 const trimmedParagraphs = paragraphs
-  .map(p => p.trim())
-  .filter(p => p.length > 0);
+  .map((p) => p.trim())
+  .filter((p) => p.length > 0);
 console.log('修剪后段落数:', trimmedParagraphs.length);
 trimmedParagraphs.forEach((para, i) => {
   console.log(`段落 ${i}: "${para}" (长度: ${para.length})`);

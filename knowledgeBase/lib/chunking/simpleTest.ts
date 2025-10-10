@@ -1,8 +1,4 @@
-import { 
-  h1Chunking, 
-  paragraphChunking, 
-  chunkText 
-} from './chunkingToolV2';
+import { h1Chunking, paragraphChunking, chunkText } from './chunkingToolV2';
 
 // 测试向后兼容性
 console.log('=== 测试向后兼容性 ===\n');
@@ -25,14 +21,18 @@ console.log('1. 测试h1Chunking函数:');
 const h1Chunks = h1Chunking(markdownText);
 console.log(`生成了 ${h1Chunks.length} 个H1块`);
 h1Chunks.forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`,
+  );
 });
 
 console.log('\n2. 测试paragraphChunking函数:');
 const paragraphs = paragraphChunking(plainText);
 console.log(`生成了 ${paragraphs.length} 个段落`);
 paragraphs.forEach((para, index) => {
-  console.log(`段落 ${index + 1}: "${para.substring(0, 20)}..." (${para.length} 字符)`);
+  console.log(
+    `段落 ${index + 1}: "${para.substring(0, 20)}..." (${para.length} 字符)`,
+  );
 });
 
 console.log('\n3. 测试chunkText函数:');

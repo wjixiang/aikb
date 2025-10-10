@@ -54,7 +54,7 @@ describe('S3Service', () => {
     process.env.OSS_ACCESS_KEY_ID = 'test-key';
     process.env.OSS_SECRET_ACCESS_KEY = 'test-secret';
     process.env.PDF_OSS_BUCKET_NAME = 'test-bucket';
-    process.env.S3_ENDPOINT='aliyuncs.com';
+    process.env.S3_ENDPOINT = 'aliyuncs.com';
     process.env.OSS_REGION = 'us-east-1';
   });
 

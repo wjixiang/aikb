@@ -1,4 +1,8 @@
-import { ChunkingStrategy, ChunkingConfig, ChunkResult } from './chunkingStrategy';
+import {
+  ChunkingStrategy,
+  ChunkingConfig,
+  ChunkResult,
+} from './chunkingStrategy';
 import { H1ChunkingStrategy } from './strategies/h1ChunkingStrategy';
 import { ParagraphChunkingStrategy } from './strategies/paragraphChunkingStrategy';
 
@@ -61,20 +65,22 @@ export class ChunkingManager {
   autoSelectStrategy(text: string): ChunkingStrategy {
     // 按优先级检查策略
     const strategyPriority = ['h1', 'paragraph'];
-    
+
     for (const strategyName of strategyPriority) {
       const strategy = this.strategies.get(strategyName);
       if (strategy && strategy.canHandle(text)) {
         return strategy;
       }
     }
-    
+
     // 如果没有策略能处理，返回默认策略
     const defaultStrategy = this.strategies.get(this.defaultStrategy);
     if (!defaultStrategy) {
-      throw new Error('No suitable chunking strategy found and no default strategy available');
+      throw new Error(
+        'No suitable chunking strategy found and no default strategy available',
+      );
     }
-    
+
     return defaultStrategy;
   }
 
@@ -82,12 +88,12 @@ export class ChunkingManager {
    * 使用指定策略进行文本切片
    */
   chunkWithStrategy(
-    text: string, 
-    strategyName?: string, 
-    config?: ChunkingConfig
+    text: string,
+    strategyName?: string,
+    config?: ChunkingConfig,
   ): ChunkResult[] {
     let strategy: ChunkingStrategy;
-    
+
     if (strategyName) {
       const foundStrategy = this.getStrategy(strategyName);
       if (!foundStrategy) {
@@ -97,15 +103,17 @@ export class ChunkingManager {
     } else {
       strategy = this.autoSelectStrategy(text);
     }
-    
+
     // 验证配置
     const finalConfig = { ...strategy.getDefaultConfig(), ...config };
     const validation = strategy.validateConfig(finalConfig);
-    
+
     if (!validation.valid) {
-      throw new Error(`Invalid chunking configuration: ${validation.errors.join(', ')}`);
+      throw new Error(
+        `Invalid chunking configuration: ${validation.errors.join(', ')}`,
+      );
     }
-    
+
     return strategy.chunk(text, finalConfig);
   }
 
@@ -117,7 +125,7 @@ export class ChunkingManager {
     if (!strategy) {
       throw new Error(`Chunking strategy '${strategyName}' not found`);
     }
-    
+
     return strategy.getDefaultConfig();
   }
 
@@ -125,17 +133,17 @@ export class ChunkingManager {
    * 验证策略配置
    */
   validateStrategyConfig(
-    strategyName: string, 
-    config: ChunkingConfig
+    strategyName: string,
+    config: ChunkingConfig,
   ): { valid: boolean; errors: string[] } {
     const strategy = this.getStrategy(strategyName);
     if (!strategy) {
       return {
         valid: false,
-        errors: [`Chunking strategy '${strategyName}' not found`]
+        errors: [`Chunking strategy '${strategyName}' not found`],
       };
     }
-    
+
     return strategy.validateConfig(config);
   }
 
@@ -147,7 +155,7 @@ export class ChunkingManager {
     if (!strategy) {
       return false;
     }
-    
+
     return strategy.canHandle(text);
   }
 
@@ -165,13 +173,13 @@ export class ChunkingManager {
     if (!strategy) {
       return null;
     }
-    
+
     return {
       name: strategy.name,
       description: strategy.description,
       version: strategy.version,
       canHandle: strategy.canHandle.bind(strategy), // 绑定this上下文
-      defaultConfig: strategy.getDefaultConfig()
+      defaultConfig: strategy.getDefaultConfig(),
     };
   }
 
@@ -179,8 +187,8 @@ export class ChunkingManager {
    * 列出所有可以处理指定文本的策略
    */
   getStrategiesForText(text: string): ChunkingStrategy[] {
-    return this.getAvailableStrategies().filter(strategy => 
-      strategy.canHandle(text)
+    return this.getAvailableStrategies().filter((strategy) =>
+      strategy.canHandle(text),
     );
   }
 }

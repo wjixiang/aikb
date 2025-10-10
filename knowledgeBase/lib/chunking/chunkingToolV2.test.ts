@@ -1,11 +1,11 @@
-import { 
-  chunkTextAdvanced, 
-  getAvailableStrategies, 
+import {
+  chunkTextAdvanced,
+  getAvailableStrategies,
   autoSelectStrategy,
   getStrategyDefaultConfig,
   validateStrategyConfig,
   canStrategyHandle,
-  getStrategiesForText
+  getStrategiesForText,
 } from './chunkingToolV2';
 
 // 测试用例
@@ -105,14 +105,17 @@ describe('ChunkingToolV2', () => {
       const validConfig = {
         maxChunkSize: 1000,
         minChunkSize: 100,
-        overlap: 50
+        overlap: 50,
       };
 
       const h1Validation = validateStrategyConfig('h1', validConfig);
       expect(h1Validation.valid).toBe(true);
       expect(h1Validation.errors).toHaveLength(0);
 
-      const paragraphValidation = validateStrategyConfig('paragraph', validConfig);
+      const paragraphValidation = validateStrategyConfig(
+        'paragraph',
+        validConfig,
+      );
       expect(paragraphValidation.valid).toBe(true);
       expect(paragraphValidation.errors).toHaveLength(0);
     });
@@ -121,7 +124,7 @@ describe('ChunkingToolV2', () => {
       const invalidConfig = {
         maxChunkSize: -100,
         minChunkSize: 1000,
-        overlap: 50
+        overlap: 50,
       };
 
       const validation = validateStrategyConfig('h1', invalidConfig);
@@ -134,13 +137,13 @@ describe('ChunkingToolV2', () => {
     it('should chunk markdown text with h1 strategy', () => {
       const chunks = chunkTextAdvanced(sampleMarkdown, 'h1');
       expect(chunks.length).toBe(3); // 3 H1 sections
-      
+
       chunks.forEach((chunk, index) => {
         expect(chunk).toHaveProperty('title');
         expect(chunk).toHaveProperty('content');
         expect(chunk).toHaveProperty('index');
         expect(chunk.index).toBe(index);
-        
+
         if (index === 0) {
           expect(chunk.title).toBe('人工智能简介');
         } else if (index === 1) {
@@ -156,10 +159,10 @@ describe('ChunkingToolV2', () => {
       const chunks = chunkTextAdvanced(plainText, 'paragraph', {
         maxChunkSize: 50, // 设置较小的最大块大小
         minChunkSize: 10,
-        overlap: 0
+        overlap: 0,
       });
       expect(chunks.length).toBeGreaterThanOrEqual(2); // At least 2 chunks (some may be merged)
-      
+
       chunks.forEach((chunk, index) => {
         expect(chunk).toHaveProperty('content');
         expect(chunk).toHaveProperty('index');
@@ -170,11 +173,11 @@ describe('ChunkingToolV2', () => {
     it('should auto-select strategy when not specified', () => {
       const markdownChunks = chunkTextAdvanced(sampleMarkdown);
       expect(markdownChunks.length).toBe(3); // Should use h1 strategy
-      
+
       const plainTextChunks = chunkTextAdvanced(plainText, 'paragraph', {
         maxChunkSize: 50, // 设置较小的最大块大小
         minChunkSize: 10,
-        overlap: 0
+        overlap: 0,
       });
       expect(plainTextChunks.length).toBeGreaterThanOrEqual(2); // At least 2 chunks (some may be merged)
     });
@@ -182,14 +185,14 @@ describe('ChunkingToolV2', () => {
     it('should use custom configuration', () => {
       const customConfig = {
         maxChunkSize: 200,
-        minChunkSize: 50
+        minChunkSize: 50,
       };
 
       const chunks = chunkTextAdvanced(sampleMarkdown, 'h1', customConfig);
       expect(chunks.length).toBeGreaterThan(0);
-      
+
       // Check that chunks respect max size
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         expect(chunk.content.length).toBeLessThanOrEqual(200 + 50); // Allow some tolerance
       });
     });
@@ -210,7 +213,7 @@ describe('ChunkingToolV2', () => {
 // 运行测试的函数
 export function runTests() {
   console.log('Running ChunkingToolV2 tests...\n');
-  
+
   // 定义测试数据（在函数内部以确保可用）
   const testMarkdown = `# 人工智能简介
 人工智能（Artificial Intelligence，AI）是计算机科学的一个分支。
@@ -220,42 +223,46 @@ export function runTests() {
 
   const testPlainText = `这是一段没有标题的普通文本。
 它包含多个段落，但没有使用markdown的H1标题格式。`;
-  
+
   try {
     // 测试获取可用策略
     const strategies = getAvailableStrategies();
     console.log(`✓ Found ${strategies.length} available strategies`);
-    
+
     // 测试自动策略选择
     const markdownStrategy = autoSelectStrategy(testMarkdown);
     console.log(`✓ Auto-selected strategy for markdown: ${markdownStrategy}`);
-    
+
     const plainTextStrategy = autoSelectStrategy(testPlainText);
-    console.log(`✓ Auto-selected strategy for plain text: ${plainTextStrategy}`);
-    
+    console.log(
+      `✓ Auto-selected strategy for plain text: ${plainTextStrategy}`,
+    );
+
     // 测试策略能力检查
     const h1CanHandleMarkdown = canStrategyHandle('h1', testMarkdown);
     console.log(`✓ H1 strategy can handle markdown: ${h1CanHandleMarkdown}`);
-    
+
     const h1CanHandlePlain = canStrategyHandle('h1', testPlainText);
     console.log(`✓ H1 strategy can handle plain text: ${h1CanHandlePlain}`);
-    
+
     // 测试切分功能
     const h1Chunks = chunkTextAdvanced(testMarkdown, 'h1');
     console.log(`✓ H1 chunking produced ${h1Chunks.length} chunks`);
-    
+
     const paragraphChunks = chunkTextAdvanced(testPlainText, 'paragraph');
-    console.log(`✓ Paragraph chunking produced ${paragraphChunks.length} chunks`);
-    
+    console.log(
+      `✓ Paragraph chunking produced ${paragraphChunks.length} chunks`,
+    );
+
     // 测试配置验证
     const validConfig = getStrategyDefaultConfig('h1');
     const validation = validateStrategyConfig('h1', validConfig);
     console.log(`✓ Default H1 config validation: ${validation.valid}`);
-    
+
     const invalidConfig = { maxChunkSize: -100 };
     const invalidValidation = validateStrategyConfig('h1', invalidConfig);
     console.log(`✓ Invalid config validation: ${!invalidValidation.valid}`);
-    
+
     console.log('\nAll tests passed! ✓');
   } catch (error) {
     console.error('Test failed:', error);

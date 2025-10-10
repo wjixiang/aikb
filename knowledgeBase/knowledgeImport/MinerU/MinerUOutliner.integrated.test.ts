@@ -1,5 +1,5 @@
-import { h1Chunking } from "knowledgeBase/lib/chunking/chunkingTool"
-import { MinerUOutliner } from "./MinerUOutliner"
+import { h1Chunking } from 'knowledgeBase/lib/chunking/chunkingTool';
+import { MinerUOutliner } from './MinerUOutliner';
 
 const testMd = `
 # 第九章感觉器官的功能
@@ -21,15 +21,15 @@ const testMd = `
 
 # （三） 感受器的编码功能
 感受器在将外界刺激转换为传入神经动作电位时，不仅发生了能量的转换，也将刺激所包含的环图 9-1 感受器电位转变为传入神经纤维上动作电位的示意图 A. 当感受器（图中示感觉神经游离末梢）接受机械、化学和温度等刺激时，在感受器部位只能产生等级性的感受器电位，该电位随传播距离增大而衰减，而在传入纤维的第一个郎飞结处转变为可传播的动作电位，虽然感受器电位在传到第一个郎飞结处时更小（图中未显示），但它足以达阈电位而引起动作电位爆发； B. 电压门控钠通道的密度在每个郎飞结处明显高于感受器部位，所以在感受器部位只能产生感受器电位，而在第一个郎飞结处才爆发动作电位。第九章感觉器官的功能 244 境变化信息转移到了动作电位的序列中，起到了信息的转移作用，这就是感受器的编码（coding）功能。目前认为，感觉系统将刺激信号转变为可识别的感觉信号，主要包括刺激的类型、部位、强度和持续时间四种基本属性。由于不同的感受器具有不同的适宜刺激，感受特殊形式能量的感受器，对特定范围的能量带宽敏感，这样就决定了感受器对刺激类型的识别，从而允许机体感知许多种类的机械、热、化学和电磁刺激等。感受器对刺激部位的编码涉及感觉单位和感受野的概念。感觉单位（sensory unit）是指一个感觉轴突及其所有的外周分支。对一个感觉单位来说，它所有的感觉轴突分支末梢所分布的空间范围，就称为它的感受野（receptive field）。落在这个空间范围内的适宜刺激达到阈值，就能引起这个感觉单位兴奋，并产生相应的感觉传入冲动。由于刺激总是作用于不同的部位，因而作用于特定部位的适宜刺激就很容易被感觉系统所识别。另外，一个感觉单位的感受野通常与其他感觉单位的感受野之间有重叠并呈犬齿交错状，这在对刺激强度的编码中具有重要意义。刺激的强度和持续时间则是由感受器电位的幅度和时程以及被激活的感受器数目来反映的。刺激强度与感受器电位的大小有关，后者又与感觉神经上动作电位频率的高低有关（图 9-2）。刺激的时间特征则是由脉冲序列的动态变化来反映的。声音、视觉图像、形状、质地、味道和气味等复杂的刺激类型要求大量的感受器被激活，每一个感受器都传递一个特定的刺激属性。
-`
+`;
 
-describe(MinerUOutliner, ()=>{
-    it("add outline level", async()=>{
-        const worker = new MinerUOutliner()
-        const chunks = h1Chunking(testMd)
-        console.log(`${JSON.stringify(chunks,null,2)}`)
+describe(MinerUOutliner, () => {
+  it('add outline level', async () => {
+    const worker = new MinerUOutliner();
+    const chunks = h1Chunking(testMd);
+    console.log(`${JSON.stringify(chunks, null, 2)}`);
 
-        const result = await worker.generateOutline(chunks)
-        console.log(JSON.stringify(result,null,2))
-    },99999)
-})
+    const result = await worker.generateOutline(chunks);
+    console.log(JSON.stringify(result, null, 2));
+  }, 99999);
+});

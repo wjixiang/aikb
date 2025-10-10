@@ -241,7 +241,7 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
   async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
     const chunks = Array.from(this.chunkStore.values());
     return chunks
-      .filter(chunk => chunk.itemId === itemId)
+      .filter((chunk) => chunk.itemId === itemId)
       .sort((a, b) => a.index - b.index);
   }
 
@@ -258,12 +258,12 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
 
   async deleteChunksByItemId(itemId: string): Promise<number> {
     const chunks = Array.from(this.chunkStore.values());
-    const chunksToDelete = chunks.filter(chunk => chunk.itemId === itemId);
-    
+    const chunksToDelete = chunks.filter((chunk) => chunk.itemId === itemId);
+
     for (const chunk of chunksToDelete) {
       this.chunkStore.delete(chunk.id);
     }
-    
+
     return chunksToDelete.length;
   }
 
@@ -312,24 +312,24 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
   ): Promise<Array<BookChunk & { similarity: number }>> {
     const chunks = Array.from(this.chunkStore.values());
     const similarChunks: Array<BookChunk & { similarity: number }> = [];
-    
+
     for (const chunk of chunks) {
       if (itemIds && !itemIds.includes(chunk.itemId)) continue;
       if (!chunk.embedding) continue;
-      
+
       // Simple cosine similarity calculation
       let dotProduct = 0;
       let normA = 0;
       let normB = 0;
-      
+
       for (let i = 0; i < queryVector.length; i++) {
         dotProduct += queryVector[i] * (chunk.embedding[i] || 0);
         normA += queryVector[i] * queryVector[i];
         normB += (chunk.embedding[i] || 0) * (chunk.embedding[i] || 0);
       }
-      
+
       const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-      
+
       if (similarity >= threshold) {
         similarChunks.push({
           ...chunk,

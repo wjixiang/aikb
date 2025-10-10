@@ -1,10 +1,10 @@
-import { 
-  chunkTextAdvanced, 
-  getAvailableStrategies, 
+import {
+  chunkTextAdvanced,
+  getAvailableStrategies,
   autoSelectStrategy,
   getStrategyDefaultConfig,
   validateStrategyConfig,
-  chunkingManager 
+  chunkingManager,
 } from './chunkingToolV2';
 
 // 示例markdown文本，所有大纲均为H1
@@ -41,7 +41,9 @@ console.log('=== 高级文本切片示例 ===\n');
 console.log('1. 可用的切片策略:');
 const strategies = getAvailableStrategies();
 strategies.forEach((strategy, index) => {
-  console.log(`${index + 1}. ${strategy.name} (v${strategy.version}): ${strategy.description}`);
+  console.log(
+    `${index + 1}. ${strategy.name} (v${strategy.version}): ${strategy.description}`,
+  );
 });
 
 // 2. 自动选择最适合的策略
@@ -54,26 +56,36 @@ console.log('\n3. 使用H1策略切片:');
 const h1Chunks = chunkTextAdvanced(sampleMarkdown, 'h1');
 console.log(`H1策略产生了 ${h1Chunks.length} 个块`);
 h1Chunks.forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`,
+  );
 });
 
 console.log('\n4. 使用段落策略切片:');
 const paragraphChunks = chunkTextAdvanced(sampleMarkdown, 'paragraph');
 console.log(`段落策略产生了 ${paragraphChunks.length} 个块`);
 paragraphChunks.forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`,
+  );
 });
 
 // 5. 使用自定义配置
 console.log('\n5. 使用自定义配置:');
 const customConfig = getStrategyDefaultConfig('paragraph');
 customConfig.maxChunkSize = 200; // 限制最大块大小
-customConfig.minChunkSize = 50;  // 限制最小块大小
+customConfig.minChunkSize = 50; // 限制最小块大小
 
-const customChunks = chunkTextAdvanced(sampleMarkdown, 'paragraph', customConfig);
+const customChunks = chunkTextAdvanced(
+  sampleMarkdown,
+  'paragraph',
+  customConfig,
+);
 console.log(`自定义配置的段落策略产生了 ${customChunks.length} 个块`);
 customChunks.forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`,
+  );
 });
 
 // 6. 验证配置
@@ -81,14 +93,14 @@ console.log('\n6. 配置验证:');
 const invalidConfig = {
   maxChunkSize: -100, // 无效值
   minChunkSize: 1000, // 大于maxChunkSize
-  overlap: 50
+  overlap: 50,
 };
 
 const validation = validateStrategyConfig('paragraph', invalidConfig);
 console.log(`配置验证结果: ${validation.valid ? '有效' : '无效'}`);
 if (!validation.valid) {
   console.log('错误信息:');
-  validation.errors.forEach(error => console.log(`- ${error}`));
+  validation.errors.forEach((error) => console.log(`- ${error}`));
 }
 
 // 7. 直接使用chunkingManager进行高级操作
@@ -104,7 +116,7 @@ manager.registerStrategy({
   getDefaultConfig: () => ({
     maxChunkSize: 300,
     minChunkSize: 50,
-    overlap: 20
+    overlap: 20,
   }),
   validateConfig: (config) => {
     const errors: string[] = [];
@@ -115,31 +127,34 @@ manager.registerStrategy({
   },
   chunk: (text: string, config) => {
     const maxChunkSize = config?.maxChunkSize || 300;
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
     const chunks: Array<{ content: string; index: number }> = [];
     let currentChunk = '';
-    
+
     for (const sentence of sentences) {
-      if (currentChunk.length + sentence.length > maxChunkSize && currentChunk.length > 0) {
+      if (
+        currentChunk.length + sentence.length > maxChunkSize &&
+        currentChunk.length > 0
+      ) {
         chunks.push({
           content: currentChunk.trim() + '.',
-          index: chunks.length
+          index: chunks.length,
         });
         currentChunk = sentence;
       } else {
         currentChunk += (currentChunk ? ' ' : '') + sentence;
       }
     }
-    
+
     if (currentChunk.trim()) {
       chunks.push({
         content: currentChunk.trim() + '.',
-        index: chunks.length
+        index: chunks.length,
       });
     }
-    
+
     return chunks;
-  }
+  },
 });
 
 console.log('注册了新的句子策略');
@@ -148,13 +163,17 @@ console.log('注册了新的句子策略');
 const sentenceChunks = chunkTextAdvanced(sampleMarkdown, 'sentence');
 console.log(`句子策略产生了 ${sentenceChunks.length} 个块`);
 sentenceChunks.slice(0, 3).forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`,
+  );
 });
 
 // 8. 检查哪些策略可以处理特定文本
 console.log('\n8. 策略兼容性检查:');
 const strategiesForText = manager.getStrategiesForText(sampleMarkdown);
-console.log(`可以处理示例文本的策略: ${strategiesForText.map(s => s.name).join(', ')}`);
+console.log(
+  `可以处理示例文本的策略: ${strategiesForText.map((s) => s.name).join(', ')}`,
+);
 
 // 测试没有H1标题的文本
 const plainText = `这是一段没有标题的普通文本。
@@ -162,6 +181,11 @@ const plainText = `这是一段没有标题的普通文本。
 这种情况下，H1策略可能不是最佳选择。
 我们可以使用段落策略或句子策略来处理这种文本。`;
 
-console.log(`可以处理普通文本的策略: ${manager.getStrategiesForText(plainText).map(s => s.name).join(', ')}`);
+console.log(
+  `可以处理普通文本的策略: ${manager
+    .getStrategiesForText(plainText)
+    .map((s) => s.name)
+    .join(', ')}`,
+);
 
 console.log('\n=== 示例完成 ===');
