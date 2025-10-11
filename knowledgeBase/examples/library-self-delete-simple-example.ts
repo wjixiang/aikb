@@ -1,5 +1,5 @@
-import Library, { S3MongoLibraryStorage, LibraryItem } from '../knowledgeImport/liberary';
-import { BookMetadata } from '../knowledgeImport/liberary';
+import Library, { S3MongoLibraryStorage, LibraryItem } from '../knowledgeImport/library';
+import { BookMetadata } from '../knowledgeImport/library';
 import * as fs from 'fs';
 import * as path from 'path';
 

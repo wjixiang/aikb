@@ -8,7 +8,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage } from '../../knowledgeImport/liberary';
+import { AbstractLibraryStorage } from '../../knowledgeImport/library';
 import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';

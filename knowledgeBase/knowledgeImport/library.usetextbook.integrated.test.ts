@@ -1,5 +1,5 @@
-import Library, { S3ElasticSearchLibraryStorage } from './liberary';
-import { S3MongoLibraryStorage } from './liberary';
+import Library, { S3ElasticSearchLibraryStorage } from './library';
+import { S3MongoLibraryStorage } from './library';
 import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';

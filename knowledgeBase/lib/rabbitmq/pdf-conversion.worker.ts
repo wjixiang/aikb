@@ -16,7 +16,7 @@ import {
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
 } from '../../knowledgeImport/PdfConvertor';
-import { AbstractLibraryStorage } from '../../knowledgeImport/liberary';
+import { AbstractLibraryStorage } from '../../knowledgeImport/library';
 import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../../lib/logger';
 import { v4 as uuidv4 } from 'uuid';

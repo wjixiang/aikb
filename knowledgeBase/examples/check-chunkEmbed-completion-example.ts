@@ -1,5 +1,5 @@
-import Library, { S3MongoLibraryStorage } from '../knowledgeImport/liberary';
-import { BookMetadata } from '../knowledgeImport/liberary';
+import Library, { S3MongoLibraryStorage } from '../knowledgeImport/library';
+import { BookMetadata } from '../knowledgeImport/library';
 
 /**
  * Example demonstrating how to use the hasCompletedChunkEmbed method

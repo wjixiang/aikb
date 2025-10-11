@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LibraryItem, BookMetadata, BookChunk } from '../liberary';
+import { LibraryItem, BookMetadata, BookChunk } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 
 describe('LibraryItem.hasCompletedChunkEmbed', () => {

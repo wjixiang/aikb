@@ -1,10 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Library, { HashUtils } from '../liberary';
-import { S3MongoLibraryStorage } from '../liberary';
+import Library, { HashUtils } from '../library';
+import { S3MongoLibraryStorage } from '../library';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
+import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
 
 // Mock the MinerUPdfConvertor for testing
 vi.mock('../MinerUPdfConvertor');
+
+// Mock RabbitMQ service
+const mockRabbitMQService = {
+  isConnected: vi.fn(() => true),
+  initialize: vi.fn(() => Promise.resolve()),
+  publishPdfAnalysisRequest: vi.fn(() => Promise.resolve(true)),
+  publishPdfConversionRequest: vi.fn(() => Promise.resolve(true)),
+  consumeMessages: vi.fn(() => Promise.resolve('test-consumer-tag')),
+  stopConsuming: vi.fn(() => Promise.resolve()),
+  close: vi.fn(() => Promise.resolve()),
+};
+
+vi.mock('../../lib/rabbitmq/rabbitmq.service', () => ({
+  getRabbitMQService: vi.fn(() => mockRabbitMQService),
+}));
 
 describe('Library PDF Conversion Workflow', () => {
   let library: Library;
@@ -24,7 +41,7 @@ describe('Library PDF Conversion Workflow', () => {
       }),
       saveMetadata: vi
         .fn()
-        .mockImplementation((metadata) => Promise.resolve(metadata)),
+        .mockImplementation((metadata) => Promise.resolve({ ...metadata, id: 'test-item-id' })),
       getMetadataByHash: vi.fn().mockResolvedValue(null),
       saveMarkdown: vi.fn().mockResolvedValue(undefined),
       getMarkdown: vi
@@ -43,7 +60,18 @@ describe('Library PDF Conversion Workflow', () => {
         .fn()
         .mockResolvedValue('https://s3.amazonaws.com/test.pdf'),
       getPdf: vi.fn().mockResolvedValue(Buffer.from('test')),
-      getMetadata: vi.fn().mockResolvedValue(null),
+      getMetadata: vi.fn().mockImplementation((id) => {
+        // Return the item with the updated status for the error test
+        if (id === 'test-item-id') {
+          return Promise.resolve({
+            id: 'test-item-id',
+            title: 'Test Document',
+            pdfProcessingStatus: PdfProcessingStatus.FAILED,
+            pdfProcessingError: 'Failed to queue for processing: RabbitMQ unavailable',
+          });
+        }
+        return Promise.resolve(null);
+      }),
       updateMetadata: vi.fn().mockResolvedValue(undefined),
       searchMetadata: vi.fn().mockResolvedValue([]),
       saveCollection: vi
@@ -78,7 +106,7 @@ describe('Library PDF Conversion Workflow', () => {
     vi.clearAllMocks();
   });
 
-  it('should upload PDF to S3 and convert to Markdown', async () => {
+  it('should upload PDF to S3 and queue for async processing', async () => {
     // Arrange
     const pdfPath = '/path/to/test.pdf';
     const pdfBuffer = Buffer.from('test pdf content');
@@ -98,12 +126,30 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
-    expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalled();
-    expect(mockStorage.saveMarkdown).toHaveBeenCalled();
+    
+    // Verify RabbitMQ service was called
+    expect(mockRabbitMQService.publishPdfAnalysisRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'PDF_ANALYSIS_REQUEST',
+        itemId: result.metadata.id,
+        fileName,
+        s3Url: result.metadata.s3Url,
+        s3Key: result.metadata.s3Key,
+      })
+    );
+    
+    // Verify the item is in pending status
+    expect(result.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.PENDING);
+    expect(result.metadata.pdfProcessingMessage).toBe('Queued for processing');
+    expect(result.metadata.pdfProcessingProgress).toBe(0);
     expect(result.metadata.title).toBe('Test Document');
+    
+    // The PDF converter should NOT be called directly in storePdf (it's called async)
+    expect(mockPdfConvertor.convertPdfToMarkdownFromS3).not.toHaveBeenCalled();
+    expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
   });
 
-  it('should handle conversion errors gracefully', async () => {
+  it('should handle RabbitMQ service failure gracefully', async () => {
     // Arrange
     const pdfPath = '/path/to/test.pdf';
     const pdfBuffer = Buffer.from('test pdf content');
@@ -114,11 +160,8 @@ describe('Library PDF Conversion Workflow', () => {
       tags: ['test'],
     };
 
-    // Mock conversion failure
-    mockPdfConvertor.convertPdfToMarkdownFromS3.mockResolvedValue({
-      success: false,
-      error: 'Conversion failed',
-    });
+    // Mock RabbitMQ failure
+    mockRabbitMQService.publishPdfAnalysisRequest.mockRejectedValueOnce(new Error('RabbitMQ unavailable'));
 
     // Mock the hash generation
     vi.spyOn(HashUtils, 'generateHashFromBuffer').mockReturnValue('hash-123');
@@ -129,8 +172,14 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
-    expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
-    expect(result.metadata.title).toBe('Test Document');
+    
+    // Wait a bit for the async status update to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Refresh the item to get the updated status
+    const updatedItem = await library.getItem(result.metadata.id!);
+    expect(updatedItem?.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.FAILED);
+    expect(updatedItem?.metadata.pdfProcessingError).toContain('Failed to queue for processing');
   });
 
   it('should work without a PDF converter', async () => {
@@ -158,7 +207,10 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).toHaveBeenCalledWith(pdfBuffer, fileName);
     expect(mockStorage.saveMetadata).toHaveBeenCalled();
-    expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
+    expect(mockRabbitMQService.publishPdfAnalysisRequest).toHaveBeenCalled();
+    
+    // Should still queue for processing even without a converter
+    expect(result.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.PENDING);
     expect(result.metadata.title).toBe('Test Document');
   });
 
@@ -190,8 +242,7 @@ describe('Library PDF Conversion Workflow', () => {
     // Assert
     expect(mockStorage.uploadPdf).not.toHaveBeenCalled();
     expect(mockStorage.saveMetadata).not.toHaveBeenCalled();
-    expect(mockPdfConvertor.convertPdfToMarkdownFromS3).not.toHaveBeenCalled();
-    expect(mockStorage.saveMarkdown).not.toHaveBeenCalled();
+    expect(mockRabbitMQService.publishPdfAnalysisRequest).not.toHaveBeenCalled();
     expect(result.metadata.id).toBe('existing-123');
   });
 });

@@ -1,7 +1,7 @@
 import Library, {
   S3MongoLibraryStorage,
   BookMetadata,
-} from '../liberary';
+} from '../library';
 import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
 import {
   PdfAnalyzerService,

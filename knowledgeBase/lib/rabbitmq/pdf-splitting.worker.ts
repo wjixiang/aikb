@@ -10,7 +10,7 @@ import {
   PdfPartStatus,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage } from '../../knowledgeImport/liberary';
+import { AbstractLibraryStorage } from '../../knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import * as axios from 'axios';

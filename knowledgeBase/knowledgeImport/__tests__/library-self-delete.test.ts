@@ -1,38 +1,58 @@
-import Library, { LibraryItem, S3MongoLibraryStorage } from '../liberary';
-import { BookMetadata } from '../liberary';
-import * as fs from 'fs';
-import * as path from 'path';
+import Library, { LibraryItem, S3MongoLibraryStorage } from '../library';
+import { BookMetadata } from '../library';
+import { MockLibraryStorage } from '../MockLibraryStorage';
+import { deleteFromS3 } from '../../lib/s3Service/S3Service';
+import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
+// Mock the S3Service to avoid real S3 operations
+vi.mock('../../lib/s3Service/S3Service', () => ({
+  deleteFromS3: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock the MinerU PDF converter to avoid real PDF conversion
+vi.mock('../../lib/chunking/chunkingTool', () => ({
+  chunkTextAdvanced: vi.fn().mockResolvedValue([
+    {
+      index: 0,
+      content: 'Test chunk content',
+      title: 'Test chunk',
+      metadata: { chunkType: 'text' }
+    }
+  ]),
+  getAvailableStrategies: vi.fn().mockReturnValue(['paragraph']),
+}));
+
+// Mock the embedding service
+vi.mock('../../lib/embedding/embedding', () => ({
+  embeddingService: {
+    generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3, 0.4, 0.5])
+  }
+}));
 
 describe('LibraryItem.selfDelete', () => {
   let library: Library;
-  let storage: S3MongoLibraryStorage;
+  let storage: MockLibraryStorage;
   let testItem: LibraryItem;
+  let mockDeleteFromS3: any;
 
   beforeAll(async () => {
-    storage = new S3MongoLibraryStorage();
+    storage = new MockLibraryStorage();
     library = new Library(storage);
+    mockDeleteFromS3 = deleteFromS3 as any;
   });
 
   afterAll(async () => {
     // Clean up any test data
+    vi.restoreAllMocks();
   });
 
   beforeEach(async () => {
-    // Create a test item for each test
-    const testPdfPath = path.join(__dirname, '../../__tests__/fixtures/sample.pdf');
+    // Reset mocks before each test
+    mockDeleteFromS3.mockClear();
     
-    // Create a simple test PDF if it doesn't exist
-    if (!fs.existsSync(path.dirname(testPdfPath))) {
-      fs.mkdirSync(path.dirname(testPdfPath), { recursive: true });
-    }
+    // Create a test PDF buffer directly without file system operations
+    const minimalPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n>>\nendobj\n4 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Test PDF) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000204 00000 n\ntrailer\n<<\n/Size 5\n/Root 1 0 R\n>>\nstartxref\n299\n%%EOF');
     
-    if (!fs.existsSync(testPdfPath)) {
-      // Create a minimal PDF for testing
-      const minimalPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n>>\nendobj\n4 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Test PDF) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000204 00000 n\ntrailer\n<<\n/Size 5\n/Root 1 0 R\n>>\nstartxref\n299\n%%EOF');
-      fs.writeFileSync(testPdfPath, minimalPdf);
-    }
-
-    const pdfBuffer = fs.readFileSync(testPdfPath);
     const metadata: Partial<BookMetadata> = {
       title: 'Test Document for Self Delete',
       authors: [
@@ -42,11 +62,23 @@ describe('LibraryItem.selfDelete', () => {
       abstract: 'This is a test document for testing the selfDelete functionality'
     };
 
-    testItem = await library.storePdf(pdfBuffer, 'test-self-delete.pdf', metadata);
+    testItem = await library.storePdf(minimalPdf, 'test-self-delete.pdf', metadata);
     
-    // Add some markdown content and chunks to test complete deletion
-    await testItem.extractMarkdown();
-    await testItem.chunkEmbed();
+    // Manually add markdown content to avoid PDF conversion
+    await storage.saveMarkdown(testItem.metadata.id!, '# Test Document\n\nThis is a test document for self-delete functionality.');
+    
+    // Manually add chunks to avoid chunkEmbed process
+    await storage.saveChunk({
+      id: 'test-chunk-id',
+      itemId: testItem.metadata.id!,
+      index: 0,
+      content: 'Test chunk content',
+      title: 'Test chunk',
+      metadata: { chunkType: 'text' },
+      embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
   });
 
   afterEach(async () => {
@@ -92,8 +124,8 @@ describe('LibraryItem.selfDelete', () => {
     const deletedChunks = await storage.getChunksByItemId(itemId);
     expect(deletedChunks.length).toBe(0);
     
-    // Note: We can't easily verify S3 deletion without additional methods,
-    // but the metadata deletion should be sufficient for the test
+    // Verify S3 delete was called
+    expect(mockDeleteFromS3).toHaveBeenCalledWith(testItem.metadata.s3Key);
   });
 
   it('should handle deletion of item without PDF', async () => {
@@ -128,6 +160,9 @@ describe('LibraryItem.selfDelete', () => {
     // Verify the item no longer exists
     const deletedItem = await library.getItem(itemWithoutPdf.metadata.id!);
     expect(deletedItem).toBeNull();
+    
+    // Verify S3 delete was not called since there's no PDF
+    expect(mockDeleteFromS3).not.toHaveBeenCalled();
   });
 
   it('should handle deletion of item with PDF splitting info', async () => {
@@ -171,5 +206,10 @@ describe('LibraryItem.selfDelete', () => {
     // Verify the item no longer exists
     const deletedItem = await library.getItem(itemId);
     expect(deletedItem).toBeNull();
+    
+    // Verify S3 delete was called for the main PDF and split parts
+    expect(mockDeleteFromS3).toHaveBeenCalledWith(testItem.metadata.s3Key);
+    expect(mockDeleteFromS3).toHaveBeenCalledWith('test-split-part-1.pdf');
+    expect(mockDeleteFromS3).toHaveBeenCalledWith('test-split-part-2.pdf');
   });
 });

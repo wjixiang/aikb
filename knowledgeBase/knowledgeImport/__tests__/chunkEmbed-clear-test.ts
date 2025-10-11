@@ -1,6 +1,6 @@
-import Library, { LibraryItem } from '../liberary';
+import Library, { LibraryItem } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
-import { BookMetadata } from '../liberary';
+import { BookMetadata } from '../library';
 
 describe('chunkEmbed clear existing chunks test', () => {
   let library: Library;

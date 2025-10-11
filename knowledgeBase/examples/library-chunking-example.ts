@@ -5,7 +5,7 @@
 
 import Library, {
   S3ElasticSearchLibraryStorage,
-} from '../knowledgeImport/liberary';
+} from '../knowledgeImport/library';
 import { createMinerUConvertorFromEnv } from '../knowledgeImport/PdfConvertor';
 import createLoggerWithPrefix from '../lib/logger';
 

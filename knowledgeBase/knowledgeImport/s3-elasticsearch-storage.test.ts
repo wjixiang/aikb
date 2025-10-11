@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { S3ElasticSearchLibraryStorage } from './liberary';
-import { BookMetadata, Collection, Citation } from './liberary';
+import { S3ElasticSearchLibraryStorage } from './library';
+import { BookMetadata, Collection, Citation } from './library';
 
 describe('S3ElasticSearchLibraryStorage', () => {
   let storage: S3ElasticSearchLibraryStorage;

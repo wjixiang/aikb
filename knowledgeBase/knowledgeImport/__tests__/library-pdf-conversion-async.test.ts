@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Library from '../liberary';
-import { S3MongoLibraryStorage } from '../liberary';
+import Library from '../library';
+import { S3MongoLibraryStorage } from '../library';
 import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
 import { createPdfConversionWorker } from '../../lib/rabbitmq/pdf-conversion.worker';
