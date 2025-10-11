@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   ObjectCannedACL,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
@@ -234,4 +235,44 @@ export async function getSignedUrlForDownload(
     Key: s3Key,
   });
   return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
+}
+
+/**
+ * Deletes a file from S3
+ *
+ * @param s3Key - The key/name of the file in S3 to delete
+ * @returns Promise resolving to true if deletion was successful, false otherwise
+ * @throws Error if deletion fails due to AWS S3 issues
+ *
+ * @example
+ * ```typescript
+ * const success = await deleteFromS3('documents/doc.pdf');
+ * console.log('File deleted:', success);
+ * ```
+ */
+export async function deleteFromS3(s3Key: string): Promise<boolean> {
+  try {
+    console.log(`[S3Service] Deleting from S3: bucket=${BUCKET_NAME}, key=${s3Key}`);
+
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    console.log(`[S3Service] Sending delete command to S3...`);
+    await s3Client.send(command);
+    console.log(`[S3Service] Delete successful`);
+    return true;
+  } catch (error) {
+    console.error('[S3Service] Error deleting from S3:', error);
+    // Provide more specific error information
+    if (error instanceof Error) {
+      console.error(
+        `[S3Service] Error details: ${error.name} - ${error.message}`,
+      );
+      throw new Error(`Failed to delete file from S3: ${error.message}`);
+    }
+    console.error('[S3Service] Unknown error type');
+    throw new Error('Failed to delete file from S3: Unknown error');
+  }
 }

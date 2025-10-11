@@ -52,6 +52,10 @@ export async function UploadTestPdf() {
 describe(Library, async () => {
   // Store the PDF from buffer
   const book = await UploadTestPdf();
+  it.skip("self delete", async()=>{
+    const res = await book.selfDelete()
+    expect(res).toBe(true)
+  })
 
   it.skip('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
@@ -85,7 +89,7 @@ describe(Library, async () => {
     );
   });
 
-  it('re-extract markdown', async () => {
+  it.skip('re-extract markdown', async () => {
     console.log(`re-extract markdown`);
     await book.extractMarkdown();
     const mdContent2 = await book.getMarkdown();

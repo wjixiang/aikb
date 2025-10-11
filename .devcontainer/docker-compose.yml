@@ -19,6 +19,7 @@ services:
       - app-network
     depends_on:
       - elasticsearch
+      - rabbitmq
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.1.3
@@ -122,6 +123,8 @@ services:
       - RABBITMQ_DEFAULT_VHOST=my_vhost
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app-network
 volumes:
   es-data:
   mongodb-data:

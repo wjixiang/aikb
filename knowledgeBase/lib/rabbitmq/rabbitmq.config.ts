@@ -4,12 +4,12 @@ import { RabbitMQConfig, RabbitMQQueueConfig, RabbitMQExchangeConfig } from './m
  * Default RabbitMQ configuration
  */
 export const defaultRabbitMQConfig: RabbitMQConfig = {
-  url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
-  hostname: process.env.RABBITMQ_HOSTNAME || 'localhost',
+  url: process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672',
+  hostname: process.env.RABBITMQ_HOSTNAME || 'rabbitmq',
   port: parseInt(process.env.RABBITMQ_PORT || '5672'),
-  username: process.env.RABBITMQ_USERNAME || 'guest',
-  password: process.env.RABBITMQ_PASSWORD || 'guest',
-  vhost: process.env.RABBITMQ_VHOST || '/',
+  username: process.env.RABBITMQ_USERNAME || 'admin',
+  password: process.env.RABBITMQ_PASSWORD || 'admin123',
+  vhost: process.env.RABBITMQ_VHOST || 'my_vhost',
   frameMax: parseInt(process.env.RABBITMQ_FRAME_MAX || '0'),
   heartbeat: parseInt(process.env.RABBITMQ_HEARTBEAT || '60'),
   locale: process.env.RABBITMQ_LOCALE || 'en_US',
@@ -21,16 +21,16 @@ export const defaultRabbitMQConfig: RabbitMQConfig = {
 export const rabbitMQConfigs = {
   development: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_DEV || 'amqp://localhost:5672',
+    url: process.env.RABBITMQ_URL_DEV || 'amqp://rabbitmq:5672',
   },
   production: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_PROD || 'amqp://localhost:5672',
+    url: process.env.RABBITMQ_URL_PROD || 'amqp://rabbitmq:5672',
     heartbeat: 120,
   },
   test: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_TEST || 'amqp://localhost:5672',
+    url: process.env.RABBITMQ_URL_TEST || 'amqp://rabbitmq:5672',
     heartbeat: 30,
   },
 };

@@ -3,6 +3,7 @@ import {
   uploadPdfFromPath,
   getSignedUploadUrl,
   getSignedUrlForDownload,
+  deleteFromS3,
 } from '../lib/s3Service/S3Service';
 import { connectToDatabase } from '../lib/mongodb';
 import { ObjectId } from 'mongodb';
@@ -1474,6 +1475,82 @@ export class LibraryItem {
       return false;
     }
   }
+
+  /**
+   * Delete this item and all associated data including:
+   * - PDF file from S3
+   * - Metadata from database
+   * - Markdown content
+   * - All chunks and embeddings
+   * - Citations
+   * @returns Promise<boolean> - true if deletion was successful, false otherwise
+   */
+  async selfDelete(): Promise<boolean> {
+    const logger = createLoggerWithPrefix('LibraryItem.selfDelete');
+    try {
+      logger.info(`Starting self-delete for item: ${this.metadata.id}`);
+      
+      if (!this.metadata.id) {
+        throw new Error('Cannot delete item without ID');
+      }
+
+      // Step 1: Delete all chunks and embeddings
+      logger.info(`Deleting chunks for item: ${this.metadata.id}`);
+      const deletedChunksCount = await this.deleteChunks();
+      logger.info(`Deleted ${deletedChunksCount} chunks for item: ${this.metadata.id}`);
+
+      // Step 2: Delete citations
+      logger.info(`Deleting citations for item: ${this.metadata.id}`);
+      await this.storage.deleteCitations(this.metadata.id);
+      logger.info(`Deleted citations for item: ${this.metadata.id}`);
+
+      // Step 3: Delete markdown content
+      logger.info(`Deleting markdown content for item: ${this.metadata.id}`);
+      await this.storage.deleteMarkdown(this.metadata.id);
+      logger.info(`Deleted markdown content for item: ${this.metadata.id}`);
+
+      // Step 4: Delete PDF file from S3 if it exists
+      if (this.metadata.s3Key) {
+        logger.info(`Deleting PDF file from S3: ${this.metadata.s3Key}`);
+        try {
+          await deleteFromS3(this.metadata.s3Key);
+          logger.info(`Deleted PDF file from S3: ${this.metadata.s3Key}`);
+        } catch (error) {
+          logger.error(`Failed to delete PDF file from S3: ${this.metadata.s3Key}`, error);
+          // Continue with other deletions even if S3 deletion fails
+        }
+      }
+
+      // Step 5: Delete PDF split parts if they exist
+      if (this.metadata.pdfSplittingInfo) {
+        logger.info(`Deleting PDF split parts for item: ${this.metadata.id}`);
+        for (const part of this.metadata.pdfSplittingInfo.parts) {
+          try {
+            await deleteFromS3(part.s3Key);
+            logger.info(`Deleted PDF part from S3: ${part.s3Key}`);
+          } catch (error) {
+            logger.error(`Failed to delete PDF part from S3: ${part.s3Key}`, error);
+            // Continue with other deletions even if S3 deletion fails
+          }
+        }
+      }
+
+      // Step 6: Delete metadata (this should be the last step)
+      logger.info(`Deleting metadata for item: ${this.metadata.id}`);
+      const metadataDeleted = await this.storage.deleteMetadata(this.metadata.id);
+      
+      if (metadataDeleted) {
+        logger.info(`Successfully deleted all data for item: ${this.metadata.id}`);
+        return true;
+      } else {
+        logger.warn(`Failed to delete metadata for item: ${this.metadata.id}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error(`Error during self-delete for item ${this.metadata.id}:`, error);
+      throw error;
+    }
+  }
 }
 
 interface AbstractPdf {
@@ -1511,6 +1588,7 @@ export abstract class AbstractLibraryStorage {
   abstract getCitations(itemId: string): Promise<Citation[]>;
   abstract saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
   abstract getMarkdown(itemId: string): Promise<string | null>;
+  abstract deleteMarkdown(itemId: string): Promise<boolean>;
   abstract deleteMetadata(id: string): Promise<boolean>;
   abstract deleteCollection(id: string): Promise<boolean>;
   abstract deleteCitations(itemId: string): Promise<boolean>;
@@ -1796,6 +1874,21 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
       .collection(this.metadataCollection)
       .findOne({ id: itemId }, { projection: { markdownContent: 1 } });
     return metadata?.markdownContent || null;
+  }
+
+  async deleteMarkdown(itemId: string): Promise<boolean> {
+    const { db } = await connectToDatabase();
+    const result = await db
+      .collection(this.metadataCollection)
+      .updateOne(
+        { id: itemId },
+        {
+          $unset: { markdownContent: 1, markdownUpdatedDate: 1 },
+          $set: { dateModified: new Date() }
+        }
+      );
+
+    return result.modifiedCount > 0;
   }
 
   async deleteMetadata(id: string): Promise<boolean> {
@@ -2624,6 +2717,37 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     } catch (error) {
       if (error?.meta?.statusCode === 404) {
         return null;
+      }
+      throw error;
+    }
+  }
+
+  async deleteMarkdown(itemId: string): Promise<boolean> {
+    await this.checkInitialized();
+
+    try {
+      const result = await this.client.update({
+        index: this.metadataIndexName,
+        id: itemId,
+        body: {
+          script: {
+            source: `
+              ctx._source.remove('markdownContent');
+              ctx._source.remove('markdownUpdatedDate');
+              ctx._source.dateModified = params.dateModified;
+            `,
+            params: {
+              dateModified: new Date().toISOString()
+            }
+          }
+        },
+        refresh: true
+      } as any);
+
+      return result.result === 'updated';
+    } catch (error) {
+      if (error?.meta?.statusCode === 404) {
+        return false; // Document not found
       }
       throw error;
     }
