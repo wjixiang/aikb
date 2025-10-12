@@ -1,0 +1,2258 @@
+[
+  {
+    "name": "PDF Analysis Worker",
+    "pid": 542953,
+    "process": {
+      "_events": {},
+      "_eventsCount": 2,
+      "_closesNeeded": 3,
+      "_closesGot": 0,
+      "connected": false,
+      "signalCode": null,
+      "exitCode": null,
+      "killed": false,
+      "spawnfile": "pnpm",
+      "_handle": {
+        "pid": 542953
+      },
+      "spawnargs": [
+        "pnpm",
+        "tsx",
+        "knowledgeBase/lib/rabbitmq/pdf-analysis.worker.ts"
+      ],
+      "pid": 542953,
+      "stdin": null,
+      "stdout": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-analysis-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stderr": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-analysis-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stdio": [
+        null,
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-analysis-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        },
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-analysis-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "PDF Processing Coordinator Worker",
+    "pid": 542958,
+    "process": {
+      "_events": {},
+      "_eventsCount": 2,
+      "_closesNeeded": 3,
+      "_closesGot": 0,
+      "connected": false,
+      "signalCode": null,
+      "exitCode": null,
+      "killed": false,
+      "spawnfile": "pnpm",
+      "_handle": {
+        "pid": 542958
+      },
+      "spawnargs": [
+        "pnpm",
+        "tsx",
+        "knowledgeBase/lib/rabbitmq/pdf-processing-coordinator.worker.ts"
+      ],
+      "pid": 542958,
+      "stdin": null,
+      "stdout": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-processing-coordinator-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stderr": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-processing-coordinator-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stdio": [
+        null,
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-processing-coordinator-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        },
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-processing-coordinator-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "PDF Conversion Worker",
+    "pid": 542959,
+    "process": {
+      "_events": {},
+      "_eventsCount": 2,
+      "_closesNeeded": 3,
+      "_closesGot": 0,
+      "connected": false,
+      "signalCode": null,
+      "exitCode": null,
+      "killed": false,
+      "spawnfile": "pnpm",
+      "_handle": {
+        "pid": 542959
+      },
+      "spawnargs": [
+        "pnpm",
+        "tsx",
+        "knowledgeBase/lib/rabbitmq/pdf-conversion.worker.ts"
+      ],
+      "pid": 542959,
+      "stdin": null,
+      "stdout": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-conversion-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stderr": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/pdf-conversion-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stdio": [
+        null,
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-conversion-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        },
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/pdf-conversion-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "Markdown Storage Worker",
+    "pid": 542960,
+    "process": {
+      "_events": {},
+      "_eventsCount": 2,
+      "_closesNeeded": 3,
+      "_closesGot": 0,
+      "connected": false,
+      "signalCode": null,
+      "exitCode": null,
+      "killed": false,
+      "spawnfile": "pnpm",
+      "_handle": {
+        "pid": 542960
+      },
+      "spawnargs": [
+        "pnpm",
+        "tsx",
+        "knowledgeBase/lib/rabbitmq/markdown-storage.worker.ts"
+      ],
+      "pid": 542960,
+      "stdin": null,
+      "stdout": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/markdown-storage-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stderr": {
+        "connecting": false,
+        "_hadError": false,
+        "_parent": null,
+        "_host": null,
+        "_closeAfterHandlingError": false,
+        "_readableState": {
+          "state": 4184,
+          "highWaterMark": 16384,
+          "buffer": {
+            "head": null,
+            "tail": null,
+            "length": 0
+          },
+          "length": 0,
+          "pipes": [
+            {
+              "fd": null,
+              "path": "/workspace/logs/markdown-storage-worker.log",
+              "flags": "a",
+              "mode": 438,
+              "bytesWritten": 0,
+              "_writableState": {
+                "objectMode": false,
+                "highWaterMark": 16384,
+                "finalCalled": false,
+                "needDrain": false,
+                "ending": false,
+                "ended": false,
+                "finished": false,
+                "destroyed": false,
+                "decodeStrings": true,
+                "defaultEncoding": "utf8",
+                "length": 0,
+                "writing": false,
+                "corked": 0,
+                "sync": true,
+                "bufferProcessing": false,
+                "writecb": null,
+                "writelen": 0,
+                "afterWriteTickInfo": null,
+                "buffered": [],
+                "bufferedIndex": 0,
+                "allBuffers": true,
+                "allNoop": true,
+                "pendingcb": 0,
+                "constructed": false,
+                "prefinished": false,
+                "errorEmitted": false,
+                "emitClose": true,
+                "autoDestroy": true,
+                "errored": null,
+                "closed": false,
+                "closeEmitted": false
+              },
+              "_events": {
+                "unpipe": [
+                  null,
+                  null
+                ],
+                "error": [
+                  null,
+                  null
+                ],
+                "close": [
+                  null,
+                  null
+                ],
+                "finish": [
+                  null,
+                  null
+                ]
+              },
+              "_eventsCount": 5
+            }
+          ],
+          "flowing": true,
+          "errored": null,
+          "defaultEncoding": "utf8",
+          "awaitDrainWriters": null,
+          "decoder": null,
+          "encoding": null
+        },
+        "_events": {
+          "end": [
+            null,
+            null
+          ],
+          "data": [
+            null,
+            null
+          ]
+        },
+        "_eventsCount": 3,
+        "_writableState": {
+          "objectMode": false,
+          "highWaterMark": 16384,
+          "finalCalled": false,
+          "needDrain": false,
+          "ending": false,
+          "ended": false,
+          "finished": false,
+          "destroyed": false,
+          "decodeStrings": false,
+          "defaultEncoding": "utf8",
+          "length": 0,
+          "writing": false,
+          "corked": 0,
+          "sync": true,
+          "bufferProcessing": false,
+          "writecb": null,
+          "writelen": 0,
+          "afterWriteTickInfo": null,
+          "buffered": [],
+          "bufferedIndex": 0,
+          "allBuffers": true,
+          "allNoop": true,
+          "pendingcb": 0,
+          "constructed": true,
+          "prefinished": false,
+          "errorEmitted": false,
+          "emitClose": false,
+          "autoDestroy": true,
+          "errored": null,
+          "closed": false,
+          "closeEmitted": false
+        },
+        "allowHalfOpen": false,
+        "_sockname": null,
+        "_pendingData": null,
+        "_pendingEncoding": "",
+        "server": null,
+        "_server": null
+      },
+      "stdio": [
+        null,
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/markdown-storage-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        },
+        {
+          "connecting": false,
+          "_hadError": false,
+          "_parent": null,
+          "_host": null,
+          "_closeAfterHandlingError": false,
+          "_readableState": {
+            "state": 4184,
+            "highWaterMark": 16384,
+            "buffer": {
+              "head": null,
+              "tail": null,
+              "length": 0
+            },
+            "length": 0,
+            "pipes": [
+              {
+                "fd": null,
+                "path": "/workspace/logs/markdown-storage-worker.log",
+                "flags": "a",
+                "mode": 438,
+                "bytesWritten": 0,
+                "_writableState": {
+                  "objectMode": false,
+                  "highWaterMark": 16384,
+                  "finalCalled": false,
+                  "needDrain": false,
+                  "ending": false,
+                  "ended": false,
+                  "finished": false,
+                  "destroyed": false,
+                  "decodeStrings": true,
+                  "defaultEncoding": "utf8",
+                  "length": 0,
+                  "writing": false,
+                  "corked": 0,
+                  "sync": true,
+                  "bufferProcessing": false,
+                  "writecb": null,
+                  "writelen": 0,
+                  "afterWriteTickInfo": null,
+                  "buffered": [],
+                  "bufferedIndex": 0,
+                  "allBuffers": true,
+                  "allNoop": true,
+                  "pendingcb": 0,
+                  "constructed": false,
+                  "prefinished": false,
+                  "errorEmitted": false,
+                  "emitClose": true,
+                  "autoDestroy": true,
+                  "errored": null,
+                  "closed": false,
+                  "closeEmitted": false
+                },
+                "_events": {
+                  "unpipe": [
+                    null,
+                    null
+                  ],
+                  "error": [
+                    null,
+                    null
+                  ],
+                  "close": [
+                    null,
+                    null
+                  ],
+                  "finish": [
+                    null,
+                    null
+                  ]
+                },
+                "_eventsCount": 5
+              }
+            ],
+            "flowing": true,
+            "errored": null,
+            "defaultEncoding": "utf8",
+            "awaitDrainWriters": null,
+            "decoder": null,
+            "encoding": null
+          },
+          "_events": {
+            "end": [
+              null,
+              null
+            ],
+            "data": [
+              null,
+              null
+            ]
+          },
+          "_eventsCount": 3,
+          "_writableState": {
+            "objectMode": false,
+            "highWaterMark": 16384,
+            "finalCalled": false,
+            "needDrain": false,
+            "ending": false,
+            "ended": false,
+            "finished": false,
+            "destroyed": false,
+            "decodeStrings": false,
+            "defaultEncoding": "utf8",
+            "length": 0,
+            "writing": false,
+            "corked": 0,
+            "sync": true,
+            "bufferProcessing": false,
+            "writecb": null,
+            "writelen": 0,
+            "afterWriteTickInfo": null,
+            "buffered": [],
+            "bufferedIndex": 0,
+            "allBuffers": true,
+            "allNoop": true,
+            "pendingcb": 0,
+            "constructed": true,
+            "prefinished": false,
+            "errorEmitted": false,
+            "emitClose": false,
+            "autoDestroy": true,
+            "errored": null,
+            "closed": false,
+            "closeEmitted": false
+          },
+          "allowHalfOpen": false,
+          "_sockname": null,
+          "_pendingData": null,
+          "_pendingEncoding": "",
+          "server": null,
+          "_server": null
+        }
+      ]
+    }
+  }
+]

@@ -304,3 +304,45 @@ export async function startMarkdownStorageWorker(storage: AbstractLibraryStorage
 export async function stopMarkdownStorageWorker(worker: MarkdownStorageWorker): Promise<void> {
   await worker.stop();
 }
+
+// Direct execution support
+if (require.main === module) {
+  const { S3ElasticSearchLibraryStorage } = require('../../knowledgeImport/library');
+  
+  async function main() {
+    try {
+      // Create storage instance
+      const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+      const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl, 1024);
+      
+      // Create and start worker
+      const worker = await startMarkdownStorageWorker(storage);
+      logger.info('Markdown Storage Worker started successfully');
+      
+      // Handle graceful shutdown
+      process.on('SIGINT', async () => {
+        logger.info('Received SIGINT, shutting down gracefully...');
+        await worker.stop();
+        process.exit(0);
+      });
+      
+      process.on('SIGTERM', async () => {
+        logger.info('Received SIGTERM, shutting down gracefully...');
+        await worker.stop();
+        process.exit(0);
+      });
+      
+      // Keep the process running
+      logger.info('Markdown Storage Worker is running. Press Ctrl+C to stop.');
+      
+    } catch (error) {
+      logger.error('Failed to start Markdown Storage Worker:', error);
+      process.exit(1);
+    }
+  }
+  
+  main().catch((error) => {
+    logger.error('Unhandled error:', error);
+    process.exit(1);
+  });
+}

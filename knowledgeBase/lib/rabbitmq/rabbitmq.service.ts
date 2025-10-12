@@ -228,11 +228,29 @@ export class RabbitMQService {
         RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_REQUEST
       );
 
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_COMPLETED
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.PDF_ANALYSIS_FAILED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED
+      );
+
       // Bind PDF splitting queues
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_SPLITTING_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
         RABBITMQ_ROUTING_KEYS.PDF_SPLITTING_REQUEST
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.PDF_SPLITTING_COMPLETED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.PDF_SPLITTING_COMPLETED
       );
 
       // Bind PDF part conversion queues

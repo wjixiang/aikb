@@ -688,12 +688,14 @@ export class PdfConversionWorker {
     consumerTag: string | null;
     partConsumerTag: string | null;
     rabbitMQConnected: boolean;
+    pdfConvertorAvailable: boolean;
   }> {
     return {
       isRunning: this.isRunning,
       consumerTag: this.consumerTag,
       partConsumerTag: this.partConsumerTag,
       rabbitMQConnected: this.rabbitMQService.isConnected(),
+      pdfConvertorAvailable: this.pdfConvertor !== null,
     };
   }
 }
@@ -714,4 +716,40 @@ export async function createPdfConversionWorker(
  */
 export async function stopPdfConversionWorker(worker: PdfConversionWorker): Promise<void> {
   await worker.stop();
+}
+
+// Direct execution support
+if (require.main === module) {
+  async function main() {
+    try {
+      // Create and start worker
+      const worker = await createPdfConversionWorker();
+      logger.info('PDF Conversion Worker started successfully');
+      
+      // Handle graceful shutdown
+      process.on('SIGINT', async () => {
+        logger.info('Received SIGINT, shutting down gracefully...');
+        await worker.stop();
+        process.exit(0);
+      });
+      
+      process.on('SIGTERM', async () => {
+        logger.info('Received SIGTERM, shutting down gracefully...');
+        await worker.stop();
+        process.exit(0);
+      });
+      
+      // Keep the process running
+      logger.info('PDF Conversion Worker is running. Press Ctrl+C to stop.');
+      
+    } catch (error) {
+      logger.error('Failed to start PDF Conversion Worker:', error);
+      process.exit(1);
+    }
+  }
+  
+  main().catch((error) => {
+    logger.error('Unhandled error:', error);
+    process.exit(1);
+  });
 }

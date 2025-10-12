@@ -1,9 +1,20 @@
+import { config } from 'dotenv';
+// Load environment variables from .env file
+config({ path: '.env' });
+
 import Library, { S3ElasticSearchLibraryStorage } from './library';
 import { S3MongoLibraryStorage } from './library';
 import * as fs from 'fs';
 import * as path from 'path';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
+
+import { createPdfConversionWorker } from 'knowledgeBase/lib/rabbitmq/pdf-conversion.worker';
+import { createPdfAnalysisWorker } from 'knowledgeBase/lib/rabbitmq/pdf-analysis.worker';
+import { createPdfProcessingCoordinatorWorker } from 'knowledgeBase/lib/rabbitmq/pdf-processing-coordinator.worker';
+import { startMarkdownStorageWorker } from 'knowledgeBase/lib/rabbitmq/markdown-storage.worker';
+import { getRabbitMQService, initializeRabbitMQService } from 'knowledgeBase/lib/rabbitmq/rabbitmq.service';
+
 
 
 // beforeAll(async () => {
@@ -50,8 +61,52 @@ export async function UploadTestPdf() {
 }
 
 describe(Library, async () => {
+  let book;
+  
+  // Option 1: With default PDF converter
+  beforeAll(async()=>{
+    try {
+      // Initialize the singleton RabbitMQ service that Library will use
+      const rabbitMQService = getRabbitMQService();
+      await rabbitMQService.initialize();
+      console.log('✅ RabbitMQ service initialized successfully');
+      
+      // Create storage instance for workers
+      const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+      
+      // Start workers
+      await createPdfAnalysisWorker(storage);
+      console.log('✅ PDF analysis worker started');
+      
+      await createPdfProcessingCoordinatorWorker(storage);
+      console.log('✅ PDF processing coordinator worker started');
+      
+      await createPdfConversionWorker();
+      console.log('✅ PDF conversion worker started');
+      
+      await startMarkdownStorageWorker(storage);
+      console.log('✅ Markdown storage worker started');
+      
+      // Upload test PDF after workers are ready
+      book = await UploadTestPdf();
+      console.log('✅ Test PDF uploaded');
+    } catch (error) {
+      console.error('❌ Failed to initialize test environment:', error);
+      throw error;
+    }
+  }, 60000) // Increase timeout for setup
+
+  // afterAll(async()=>{
+  //   try {
+  //     if (book) {
+  //       await book.selfDelete();
+  //       console.log('✅ Test cleanup completed');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Cleanup failed:', error);
+  //   }
+  // })
   // Store the PDF from buffer
-  const book = await UploadTestPdf();
   it.skip("self delete", async()=>{
     const res = await book.selfDelete()
     expect(res).toBe(true)
@@ -81,7 +136,7 @@ describe(Library, async () => {
     console.log(`Download URL: ${downloadUrl}`);
   }, 30000); // Increase timeout to 30 seconds for S3 operations
 
-  it.skip('get current md', async () => {
+  it('get current md', async () => {
     // Read markdown content from Library storage
     const mdContent = await book.getMarkdown();
     console.log(

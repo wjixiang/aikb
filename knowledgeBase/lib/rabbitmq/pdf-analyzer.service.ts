@@ -68,6 +68,8 @@ export class PdfAnalyzerService {
         logger.info(`PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`);
       } else {
         logger.info(`PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`);
+
+        
       }
 
       // Update item metadata with analysis results

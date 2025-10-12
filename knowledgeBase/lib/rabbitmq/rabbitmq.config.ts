@@ -141,6 +141,26 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
       'x-max-length': 5000, // Maximum 5,000 messages
     },
   },
+  'pdf-analysis-completed': {
+    name: 'pdf-analysis-completed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 3600000, // 1 hour in milliseconds
+      'x-max-length': 10000, // Maximum 10,000 messages
+    },
+  },
+  'pdf-analysis-failed': {
+    name: 'pdf-analysis-failed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 604800000, // 7 days in milliseconds
+      'x-max-length': 5000, // Maximum 5,000 messages
+    },
+  },
   'pdf-splitting-request': {
     name: 'pdf-splitting-request',
     durable: true,
@@ -149,6 +169,16 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
     arguments: {
       'x-dead-letter-exchange': 'pdf-conversion-dlx',
       'x-dead-letter-routing-key': 'pdf.conversion.dlq',
+      'x-message-ttl': 3600000, // 1 hour in milliseconds
+      'x-max-length': 1000, // Maximum 1,000 messages
+    },
+  },
+  'pdf-splitting-completed': {
+    name: 'pdf-splitting-completed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
       'x-message-ttl': 3600000, // 1 hour in milliseconds
       'x-max-length': 1000, // Maximum 1,000 messages
     },
@@ -245,6 +275,16 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
     arguments: {
       'x-message-ttl': 604800000, // 7 days in milliseconds
       'x-max-length': 10000, // Maximum 10,000 messages
+    },
+  },
+  'health-check': {
+    name: 'health-check',
+    durable: false, // Health check queue doesn't need to be durable
+    exclusive: false,
+    autoDelete: true, // Auto-delete when no consumers
+    arguments: {
+      'x-message-ttl': 60000, // 1 minute in milliseconds
+      'x-max-length': 10, // Keep only a few health check messages
     },
   },
 };
