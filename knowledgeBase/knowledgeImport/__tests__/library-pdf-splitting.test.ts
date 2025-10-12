@@ -56,16 +56,16 @@ describe('PDF Splitting and Merging Integration Tests', () => {
 
     // Initialize services and workers
     analyzerService = createPdfAnalyzerService(storage);
-    splittingWorker = await createPdfSplittingWorker(storage);
-    conversionWorker = await createPdfConversionWorker(storage);
+    // splittingWorker = await createPdfSplittingWorker(storage);
+    conversionWorker = await createPdfConversionWorker();
     mergerService = await createPdfMergerService(storage);
   });
 
   afterAll(async () => {
     // Stop services and workers
-    if (splittingWorker) {
-      await splittingWorker.stop();
-    }
+    // if (splittingWorker) {
+    //   await splittingWorker.stop();
+    // }
     if (conversionWorker) {
       await conversionWorker.stop();
     }

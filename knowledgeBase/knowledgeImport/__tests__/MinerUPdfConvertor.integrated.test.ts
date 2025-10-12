@@ -2,7 +2,7 @@ import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';
-import { UploadTestPdf } from '../liberary.integrated.test';
+import { UploadTestPdf } from '../library.integrated.test';
 config();
 
 describe(MinerUPdfConvertor, () => {

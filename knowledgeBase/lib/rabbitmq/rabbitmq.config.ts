@@ -4,7 +4,9 @@ import { RabbitMQConfig, RabbitMQQueueConfig, RabbitMQExchangeConfig } from './m
  * Default RabbitMQ configuration
  */
 export const defaultRabbitMQConfig: RabbitMQConfig = {
-  url: process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672',
+  url: process.env.RABBITMQ_URL && process.env.RABBITMQ_URL !== 'amqp://rabbitmq:5672'
+    ? process.env.RABBITMQ_URL
+    : `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
   hostname: process.env.RABBITMQ_HOSTNAME || 'rabbitmq',
   port: parseInt(process.env.RABBITMQ_PORT || '5672'),
   username: process.env.RABBITMQ_USERNAME || 'admin',
@@ -30,7 +32,7 @@ export const rabbitMQConfigs = {
   },
   test: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_TEST || 'amqp://rabbitmq:5672',
+    url: process.env.RABBITMQ_URL_TEST || `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
     heartbeat: 30,
   },
 };
@@ -99,11 +101,12 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
   },
   'pdf-conversion-progress': {
     name: 'pdf-conversion-progress',
-    durable: false, // Progress messages are transient
+    durable: true, // Changed to true to match existing queue
     exclusive: false,
-    autoDelete: true,
+    autoDelete: false, // Changed to false to match existing queue
     arguments: {
-      'x-message-ttl': 300000, // 5 minutes in milliseconds
+      // Remove x-message-ttl to match existing queue configuration
+      // 'x-message-ttl': 300000, // 5 minutes in milliseconds
     },
   },
   'pdf-conversion-completed': {
@@ -210,6 +213,38 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
     autoDelete: false,
     arguments: {
       'x-message-ttl': 2592000000, // 30 days in milliseconds
+    },
+  },
+  'markdown-storage-request': {
+    name: 'markdown-storage-request',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-dead-letter-exchange': 'pdf-conversion-dlx',
+      'x-dead-letter-routing-key': 'pdf.conversion.dlq',
+      'x-message-ttl': 3600000, // 1 hour in milliseconds
+      'x-max-length': 5000, // Maximum 5,000 messages
+    },
+  },
+  'markdown-storage-completed': {
+    name: 'markdown-storage-completed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 86400000, // 24 hours in milliseconds
+      'x-max-length': 50000, // Maximum 50,000 messages
+    },
+  },
+  'markdown-storage-failed': {
+    name: 'markdown-storage-failed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 604800000, // 7 days in milliseconds
+      'x-max-length': 10000, // Maximum 10,000 messages
     },
   },
 };

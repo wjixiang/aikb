@@ -15,6 +15,9 @@ import {
   PdfPartConversionFailedMessage,
   PdfMergingRequestMessage,
   PdfMergingProgressMessage,
+  MarkdownStorageRequestMessage,
+  MarkdownStorageCompletedMessage,
+  MarkdownStorageFailedMessage,
   RabbitMQMessageOptions,
   RABBITMQ_QUEUES,
   RABBITMQ_EXCHANGES,
@@ -67,7 +70,7 @@ export class RabbitMQService {
       }
 
       logger.info('Connecting to RabbitMQ...');
-      this.connection = await amqp.connect(config.url || config);
+      this.connection = await amqp.connect(config);
       
       logger.info('Creating RabbitMQ channel...');
       if (this.connection) {
@@ -123,16 +126,56 @@ export class RabbitMQService {
       // Setup queues
       const queueConfigs = getAllQueueConfigs();
       for (const queueConfig of queueConfigs) {
-        const queueResult = await this.channel.assertQueue(
-          queueConfig.name,
-          {
+        try {
+          logger.info(`Attempting to declare queue: ${queueConfig.name}`, {
             durable: queueConfig.durable,
             exclusive: queueConfig.exclusive,
             autoDelete: queueConfig.autoDelete,
             arguments: queueConfig.arguments,
+          });
+          
+          const queueResult = await this.channel.assertQueue(
+            queueConfig.name,
+            {
+              durable: queueConfig.durable,
+              exclusive: queueConfig.exclusive,
+              autoDelete: queueConfig.autoDelete,
+              arguments: queueConfig.arguments,
+            }
+          );
+          logger.info(`Queue ${queueConfig.name} created/verified successfully`, {
+            messageCount: queueResult.messageCount,
+            consumerCount: queueResult.consumerCount,
+          });
+        } catch (queueError: any) {
+          logger.error(`Failed to declare queue ${queueConfig.name}:`, {
+            error: queueError.message,
+            code: queueError.code,
+            queueConfig: {
+              name: queueConfig.name,
+              arguments: queueConfig.arguments,
+            },
+          });
+          
+          // If it's a PRECONDITION-FAILED error, try to check existing queue configuration
+          if (queueError.code === 406) {
+            logger.warn(`Attempting to check existing queue configuration for ${queueConfig.name}...`);
+            try {
+              const existingQueue = await this.channel.checkQueue(queueConfig.name);
+              logger.info(`Existing queue ${queueConfig.name} found:`, {
+                messageCount: existingQueue.messageCount,
+                consumerCount: existingQueue.consumerCount,
+              });
+              
+              // Try passive declaration to see current configuration
+              logger.warn(`Queue ${queueConfig.name} already exists with different configuration. Consider deleting the queue manually or updating the configuration to match.`);
+            } catch (checkError: any) {
+              logger.error(`Failed to check existing queue ${queueConfig.name}:`, checkError.message);
+            }
           }
-        );
-        logger.info(`Queue ${queueConfig.name} created/verified`);
+          
+          throw queueError;
+        }
       }
 
       // Setup queue bindings
@@ -222,6 +265,25 @@ export class RabbitMQService {
         RABBITMQ_QUEUES.PDF_MERGING_PROGRESS,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
         RABBITMQ_ROUTING_KEYS.PDF_MERGING_PROGRESS
+      );
+
+      // Bind markdown storage queues
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_STORAGE_COMPLETED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_STORAGE_FAILED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED
       );
 
       // Bind DLQ to DLX
@@ -552,6 +614,46 @@ export class RabbitMQService {
       {
         persistent: false, // Progress messages are transient
         expiration: '300000', // 5 minutes
+      }
+    );
+  }
+
+  /**
+   * Publish markdown storage request
+   */
+  async publishMarkdownStorageRequest(request: MarkdownStorageRequestMessage): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST,
+      request,
+      {
+        persistent: true,
+        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      }
+    );
+  }
+
+  /**
+   * Publish markdown storage completed
+   */
+  async publishMarkdownStorageCompleted(completed: MarkdownStorageCompletedMessage): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED,
+      completed,
+      {
+        persistent: true,
+      }
+    );
+  }
+
+  /**
+   * Publish markdown storage failed
+   */
+  async publishMarkdownStorageFailed(failed: MarkdownStorageFailedMessage): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED,
+      failed,
+      {
+        persistent: true,
       }
     );
   }

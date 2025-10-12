@@ -237,6 +237,56 @@ export interface PdfMergingProgressMessage extends BaseRabbitMQMessage {
 }
 
 /**
+ * Markdown storage request message
+ */
+export interface MarkdownStorageRequestMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_STORAGE_REQUEST';
+  itemId: string;
+  markdownContent: string;
+  metadata?: {
+    pageCount?: number;
+    extractedTitle?: string;
+    extractedAuthors?: Array<{
+      firstName: string;
+      lastName: string;
+      middleName?: string;
+    }>;
+    language?: string;
+    processingTime?: number;
+    partIndex?: number;
+    isPart?: boolean;
+  };
+  priority?: 'low' | 'normal' | 'high';
+  retryCount?: number;
+  maxRetries?: number;
+}
+
+/**
+ * Markdown storage completed message
+ */
+export interface MarkdownStorageCompletedMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_STORAGE_COMPLETED';
+  itemId: string;
+  status: PdfProcessingStatus.COMPLETED;
+  processingTime: number;
+}
+
+/**
+ * Markdown storage failed message
+ */
+export interface MarkdownStorageFailedMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_STORAGE_FAILED';
+  itemId: string;
+  status: PdfProcessingStatus.FAILED;
+  error: string;
+  errorCode?: string;
+  retryCount: number;
+  maxRetries: number;
+  canRetry: boolean;
+  processingTime: number;
+}
+
+/**
  * Union type for all PDF conversion messages
  */
 export type PdfConversionMessage =
@@ -252,7 +302,10 @@ export type PdfConversionMessage =
   | PdfPartConversionCompletedMessage
   | PdfPartConversionFailedMessage
   | PdfMergingRequestMessage
-  | PdfMergingProgressMessage;
+  | PdfMergingProgressMessage
+  | MarkdownStorageRequestMessage
+  | MarkdownStorageCompletedMessage
+  | MarkdownStorageFailedMessage;
 
 /**
  * PDF part information
@@ -345,6 +398,9 @@ export const RABBITMQ_QUEUES = {
   PDF_PART_CONVERSION_FAILED: 'pdf-part-conversion-failed',
   PDF_MERGING_REQUEST: 'pdf-merging-request',
   PDF_MERGING_PROGRESS: 'pdf-merging-progress',
+  MARKDOWN_STORAGE_REQUEST: 'markdown-storage-request',
+  MARKDOWN_STORAGE_COMPLETED: 'markdown-storage-completed',
+  MARKDOWN_STORAGE_FAILED: 'markdown-storage-failed',
   DEAD_LETTER_QUEUE: 'pdf-conversion-dlq',
 } as const;
 
@@ -373,6 +429,9 @@ export const RABBITMQ_ROUTING_KEYS = {
   PDF_PART_CONVERSION_FAILED: 'pdf.part.conversion.failed',
   PDF_MERGING_REQUEST: 'pdf.merging.request',
   PDF_MERGING_PROGRESS: 'pdf.merging.progress',
+  MARKDOWN_STORAGE_REQUEST: 'markdown.storage.request',
+  MARKDOWN_STORAGE_COMPLETED: 'markdown.storage.completed',
+  MARKDOWN_STORAGE_FAILED: 'markdown.storage.failed',
   DEAD_LETTER: 'pdf.conversion.dlq',
 } as const;
 
@@ -385,8 +444,10 @@ export const RABBITMQ_CONSUMER_TAGS = {
   PDF_ANALYSIS_WORKER: 'pdf-analysis-worker',
   PDF_SPLITTING_WORKER: 'pdf-splitting-worker',
   PDF_PART_CONVERSION_WORKER: 'pdf-part-conversion-worker',
-  PDF_MERGING_WORKER: 'pdf-merging-worker',
+  PDF_MERGING_WORKER: 'pdf-merger-worker',
+  MARKDOWN_STORAGE_WORKER: 'markdown-storage-worker',
 } as const;
+
 
 /**
  * PDF processing configuration

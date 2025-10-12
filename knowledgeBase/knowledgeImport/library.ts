@@ -186,26 +186,17 @@ export class HashUtils {
  */
 export class IdUtils {
   /**
-   * Generate a unique ID using timestamp and random string
+   * Generate a unique ID using uuidv4
    */
   static generateId(): string {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substring(2, 15);
-    return `${timestamp}-${randomStr}`;
+    return uuidv4();
   }
 
   /**
-   * Generate a UUID-like ID (without using crypto.randomUUID for compatibility)
+   * Generate a UUID using uuidv4
    */
   static generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-      /[xy]/g,
-      function (c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      },
-    );
+    return uuidv4();
   }
 }
 

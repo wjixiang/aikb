@@ -240,7 +240,7 @@ describe('Library Async PDF Conversion', () => {
 
   describe('PDF conversion worker', () => {
     it('should create and start worker successfully', async () => {
-      const worker = await createPdfConversionWorker(storage, mockPdfConvertor);
+      const worker = await createPdfConversionWorker(mockPdfConvertor);
       
       expect(worker).toBeDefined();
       expect(worker.isWorkerRunning()).toBe(true);
@@ -254,7 +254,7 @@ describe('Library Async PDF Conversion', () => {
     });
 
     it('should handle worker stop correctly', async () => {
-      const worker = await createPdfConversionWorker(storage, mockPdfConvertor);
+      const worker = await createPdfConversionWorker(mockPdfConvertor);
       expect(worker.isWorkerRunning()).toBe(true);
 
       await worker.stop();
