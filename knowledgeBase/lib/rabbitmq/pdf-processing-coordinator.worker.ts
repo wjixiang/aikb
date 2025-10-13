@@ -6,6 +6,7 @@ import {
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
+  PdfMetadata,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeImport/library';
@@ -118,7 +119,9 @@ export class PdfProcessingCoordinatorWorker {
 
       // Get Item directly
       if(!itemMetadata?.s3Key) throw new Error(`s3 key not found for library item: ${itemMetadata?.id}`)
-      const s3Url = await this.storage.getPdfDownloadUrl(itemMetadata?.s3Key)
+      
+      // Use the S3 URL from the analysis message if available, otherwise get a new one
+      const s3Url = message.s3Url || await this.storage.getPdfDownloadUrl(itemMetadata?.s3Key)
 
       if (!itemMetadata) {
         logger.error(`Item ${message.itemId} not found`);
@@ -142,6 +145,7 @@ export class PdfProcessingCoordinatorWorker {
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
+          pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
         };
 
         await this.rabbitMQService.publishPdfSplittingRequest(splittingRequest);
@@ -167,6 +171,7 @@ export class PdfProcessingCoordinatorWorker {
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
+          pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
         };
 
         await this.rabbitMQService.publishPdfConversionRequest(conversionRequest);

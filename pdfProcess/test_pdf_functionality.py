@@ -8,6 +8,10 @@ import sys
 import tempfile
 from PyPDF2 import PdfReader, PdfWriter
 from config import Config
+from logger import create_logger_with_prefix
+
+# Create logger for test
+logger = create_logger_with_prefix('PdfFunctionalityTest')
 
 def create_test_pdf(output_path: str, num_pages: int = 10):
     """Create a simple test PDF with multiple pages"""

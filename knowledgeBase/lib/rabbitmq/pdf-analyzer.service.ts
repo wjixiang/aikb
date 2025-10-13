@@ -4,6 +4,7 @@ import {
   PdfAnalysisFailedMessage,
   PdfProcessingStatus,
   PDF_PROCESSING_CONFIG,
+  PdfMetadata,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeImport/library';
@@ -39,13 +40,14 @@ export class PdfAnalyzerService {
       // Update item status to analyzing
       await this.updateItemStatus(request.itemId, PdfProcessingStatus.ANALYZING, 'Analyzing PDF structure');
 
-      // Download PDF from S3
+      // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
       const pdfBuffer = await this.downloadPdfFromS3(request.s3Url);
 
-      // Analyze PDF to get page count
-      logger.info(`Analyzing PDF page count for item: ${request.itemId}`);
+      // Analyze PDF to get page count and metadata
+      logger.info(`Analyzing PDF page count and metadata for item: ${request.itemId}`);
       const pageCount = await this.getPageCount(pdfBuffer);
+      const pdfMetadata = await this.extractPdfMetadata(pdfBuffer, request.s3Url);
 
       if (pageCount <= 0) {
         throw new Error(`Invalid page count detected: ${pageCount}`);
@@ -81,9 +83,9 @@ export class PdfAnalyzerService {
         dateModified: new Date(),
       });
 
-      // Publish analysis completed message
+      // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
-      await this.publishAnalysisCompleted(request.itemId, pageCount, requiresSplitting, suggestedSplitSize, processingTime);
+      await this.publishAnalysisCompleted(request.itemId, pageCount, requiresSplitting, suggestedSplitSize, processingTime, pdfMetadata, request.s3Url, request.s3Key);
 
       logger.info(`PDF analysis completed for item: ${request.itemId}, pages: ${pageCount}, requires splitting: ${requiresSplitting}`);
 
@@ -189,6 +191,62 @@ export class PdfAnalyzerService {
   }
 
   /**
+   * Extract PDF metadata from buffer
+   * This is a simplified implementation - in production, you would use a proper PDF library
+   */
+  private async extractPdfMetadata(pdfBuffer: Buffer, s3Url: string): Promise<PdfMetadata> {
+    try {
+      // For now, we'll use a simple heuristic to extract basic metadata
+      // In a real implementation, you would use a PDF parsing library like pdf-parse or pdf2pic
+      
+      const pdfString = pdfBuffer.toString('latin1');
+      
+      // Extract page count (reuse existing logic)
+      const pageCount = await this.getPageCount(pdfBuffer);
+      
+      // Extract title if available
+      let title = '';
+      const titleMatch = pdfString.match(/\/Title\s*\(([^)]+)\)/);
+      if (titleMatch && titleMatch[1]) {
+        title = titleMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) => 
+          String.fromCharCode(parseInt(hex, 16))
+        );
+      }
+      
+      // Extract author if available
+      let author = '';
+      const authorMatch = pdfString.match(/\/Author\s*\(([^)]+)\)/);
+      if (authorMatch && authorMatch[1]) {
+        author = authorMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) => 
+          String.fromCharCode(parseInt(hex, 16))
+        );
+      }
+      
+      // Extract creation date if available
+      let creationDate = '';
+      const creationDateMatch = pdfString.match(/\/CreationDate\s*\(([^)]+)\)/);
+      if (creationDateMatch && creationDateMatch[1]) {
+        creationDate = creationDateMatch[1];
+      }
+      
+      return {
+        pageCount,
+        fileSize: pdfBuffer.length,
+        title: title || undefined,
+        author: author || undefined,
+        creationDate: creationDate || undefined,
+      };
+    } catch (error) {
+      logger.error('Failed to extract PDF metadata:', error);
+      // Return basic metadata if extraction fails
+      return {
+        pageCount: await this.getPageCount(pdfBuffer),
+        fileSize: pdfBuffer.length,
+      };
+    }
+  }
+
+  /**
    * Update item status in storage
    */
   private async updateItemStatus(
@@ -233,7 +291,10 @@ export class PdfAnalyzerService {
     pageCount: number,
     requiresSplitting: boolean,
     suggestedSplitSize: number,
-    processingTime: number
+    processingTime: number,
+    pdfMetadata?: PdfMetadata,
+    s3Url?: string,
+    s3Key?: string
   ): Promise<void> {
     try {
       const completedMessage: PdfAnalysisCompletedMessage = {
@@ -245,6 +306,9 @@ export class PdfAnalyzerService {
         requiresSplitting,
         suggestedSplitSize,
         processingTime,
+        pdfMetadata,
+        s3Url,
+        s3Key,
       };
 
       await this.rabbitMQService.publishPdfAnalysisCompleted(completedMessage);

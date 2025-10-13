@@ -6,7 +6,6 @@ This worker is designed to work with the existing RabbitMQ-based distributed sys
 
 import asyncio
 import json
-import logging
 import os
 import tempfile
 import uuid
@@ -19,12 +18,11 @@ import aiohttp
 import pika
 from PyPDF2 import PdfReader, PdfWriter
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('PdfSplittingWorker')
+# Import unified logger
+from logger import create_logger_with_prefix
+
+# Create logger with unified configuration
+logger = create_logger_with_prefix('PdfSplittingWorker')
 
 
 class MessageTypes:
@@ -79,11 +77,23 @@ class RabbitMQClient:
             self.connection = pika.BlockingConnection(pika.URLParameters(url))
             self.channel = self.connection.channel()
             
-            # Declare queues
-            self.channel.queue_declare(queue='pdf-splitting-request', durable=True)
-            self.channel.queue_declare(queue='pdf-part-conversion-request', durable=True)
-            self.channel.queue_declare(queue='pdf-conversion-progress', durable=True)
-            self.channel.queue_declare(queue='pdf-conversion-failed', durable=True)
+            # Verify queues exist using passive declaration
+            # This avoids configuration conflicts with existing queues created by TypeScript
+            queues = [
+                'pdf-splitting-request',
+                'pdf-part-conversion-request',
+                'pdf-conversion-progress',
+                'pdf-conversion-failed'
+            ]
+            
+            for queue_name in queues:
+                logger.info(f"Checking if queue '{queue_name}' exists...")
+                try:
+                    result = self.channel.queue_declare(queue=queue_name, durable=True, passive=True)
+                    logger.info(f"✅ Queue '{queue_name}' exists and is accessible, message count: {result.method.message_count}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to access queue '{queue_name}': {e}")
+                    raise
             
             logger.info("Connected to RabbitMQ successfully")
         except Exception as e:
@@ -193,14 +203,19 @@ class PDFSplitter:
 
 
 class S3StorageClient:
-    """Mock S3 storage client for uploading split parts"""
+    """S3/OSS storage client for uploading split parts"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
+        self.bucket = config.get('bucket', 'aikb-pdf')
+        self.region = config.get('region', 'oss-cn-beijing')
+        self.access_key = config.get('access_key', '')
+        self.secret_key = config.get('secret_key', '')
+        self.endpoint = config.get('endpoint', 'aliyuncs.com')
     
     async def upload_part(self, file_path: str, item_id: str, part_index: int) -> Dict[str, str]:
         """
-        Upload a PDF part to S3 storage
+        Upload a PDF part to S3/OSS storage
         
         Args:
             file_path: Path to the file to upload
@@ -214,17 +229,39 @@ class S3StorageClient:
             # Generate S3 key
             s3_key = f"pdf-parts/{item_id}/part_{part_index + 1}.pdf"
             
-            # In a real implementation, you would upload to S3 here
-            # For now, we'll simulate the upload
-            async with aiofiles.open(file_path, 'rb') as f:
-                content = await f.read()
-                # Simulate upload delay
-                await asyncio.sleep(0.1)
-            
-            # Generate mock URL
-            s3_url = f"https://mock-s3-bucket.s3.amazonaws.com/{s3_key}"
-            
-            logger.info(f"Uploaded part {part_index + 1} to S3: {s3_key}")
+            # Check if we have real S3 credentials
+            if self.access_key and self.secret_key:
+                # Real S3/OSS upload implementation
+                try:
+                    import oss2
+                    # Create OSS client
+                    auth = oss2.Auth(self.access_key, self.secret_key)
+                    endpoint = f"https://{self.bucket}.{self.endpoint}"
+                    bucket = oss2.Bucket(auth, endpoint, self.bucket)
+                    
+                    # Upload file
+                    bucket.put_object_from_file(s3_key, file_path)
+                    
+                    # Generate URL
+                    s3_url = f"https://{self.bucket}.{self.endpoint}/{s3_key}"
+                    
+                    logger.info(f"Uploaded part {part_index + 1} to OSS: {s3_key}")
+                    
+                except ImportError:
+                    logger.warning("OSS2 library not available, falling back to mock upload")
+                    # Fallback to mock upload
+                    async with aiofiles.open(file_path, 'rb') as f:
+                        content = await f.read()
+                        await asyncio.sleep(0.1)
+                    s3_url = f"https://{self.bucket}.{self.endpoint}/{s3_key}"
+                    logger.info(f"Mock uploaded part {part_index + 1} to S3: {s3_key}")
+            else:
+                # Mock upload for testing
+                async with aiofiles.open(file_path, 'rb') as f:
+                    content = await f.read()
+                    await asyncio.sleep(0.1)
+                s3_url = f"https://{self.bucket}.{self.endpoint}/{s3_key}"
+                logger.info(f"Mock uploaded part {part_index + 1} to S3: {s3_key}")
             
             return {
                 's3_key': s3_key,
@@ -299,11 +336,74 @@ class PdfSplittingWorker:
             
             logger.info(f"Processing PDF splitting request for item: {item_id}")
             
+            # Check if we're already in an event loop and handle accordingly
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context, schedule the processing as a task
+                asyncio.create_task(
+                    self._process_pdf_splitting_async(item_id, message, start_time, channel, method)
+                )
+                # Don't wait here - let the async task handle acknowledgment
+                return
+            except RuntimeError:
+                # No running event loop, use asyncio.run() for backward compatibility
+                asyncio.run(self._process_pdf_splitting_async(item_id, message, start_time, channel, method))
+                # Acknowledge message
+                channel.basic_ack(delivery_tag=method.delivery_tag)
+            
+        except Exception as e:
+            processing_time = (datetime.now() - start_time).total_seconds() * 1000
+            error_message = str(e)
+            item_id = message.get('itemId') if 'message' in locals() else 'unknown'
+            
+            logger.error(f"PDF splitting failed for item {item_id}: {e}")
+            
+            # Update status with error
+            self.update_item_status(
+                item_id,
+                MessageTypes.FAILED,
+                f"PDF splitting failed: {error_message}",
+                error=error_message
+            )
+            
+            # Check if should retry
+            if 'message' in locals():
+                retry_count = message.get('retryCount', 0)
+                max_retries = message.get('maxRetries', 3)
+                should_retry = retry_count < max_retries
+                
+                if should_retry:
+                    logger.info(
+                        f"Retrying PDF splitting for item {item_id} "
+                        f"(attempt {retry_count + 1}/{max_retries})"
+                    )
+                    
+                    # Republish the request with incremented retry count
+                    retry_request = {
+                        **message,
+                        'messageId': str(uuid.uuid4()),
+                        'timestamp': int(datetime.now().timestamp()),
+                        'retryCount': retry_count + 1,
+                    }
+                    
+                    self.rabbitmq_client.publish_message(
+                        'pdf-splitting-request',
+                        retry_request
+                    )
+                else:
+                    logger.error(f"Max retries reached for PDF splitting of item {item_id}")
+            
+            # Negative acknowledge message
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+    
+    async def _process_pdf_splitting_async(self, item_id: str, message: Dict, start_time: datetime, channel, method):
+        """Async processing method for PDF splitting"""
+        try:
             # Create temporary directory
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Download PDF from S3
                 pdf_path = os.path.join(temp_dir, 'original.pdf')
-                asyncio.run(self.download_pdf_from_s3(message['s3Url'], pdf_path))
+                await self.download_pdf_from_s3(message['s3Url'], pdf_path)
                 
                 # Update status to splitting
                 self.update_item_status(
@@ -317,9 +417,7 @@ class PdfSplittingWorker:
                 parts_info = PDFSplitter.split_pdf(pdf_path, temp_dir, split_size)
                 
                 # Upload parts to S3
-                uploaded_parts = asyncio.run(
-                    self.upload_parts_to_s3(parts_info, item_id, temp_dir)
-                )
+                uploaded_parts = await self.upload_parts_to_s3(parts_info, item_id, temp_dir)
                 
                 # Update status to processing
                 self.update_item_status(
@@ -329,9 +427,7 @@ class PdfSplittingWorker:
                 )
                 
                 # Send part conversion requests
-                asyncio.run(
-                    self.send_part_conversion_requests(item_id, uploaded_parts, message)
-                )
+                await self.send_part_conversion_requests(item_id, uploaded_parts, message)
                 
                 processing_time = (datetime.now() - start_time).total_seconds() * 1000
                 logger.info(
@@ -386,19 +482,28 @@ class PdfSplittingWorker:
             channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
     
     async def download_pdf_from_s3(self, s3_url: str, output_path: str):
-        """Download PDF from S3 URL"""
+        """Download PDF from S3/OSS URL"""
         try:
-            async with aiohttp.ClientSession() as session:
+            # Add headers to handle potential authentication
+            headers = {
+                'User-Agent': 'PDF-Splitting-Worker/1.0'
+            }
+            
+            async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(s3_url, timeout=60) as response:
                     if response.status == 200:
                         content = await response.read()
                         async with aiofiles.open(output_path, 'wb') as f:
                             await f.write(content)
-                        logger.info(f"Downloaded PDF from S3: {s3_url}")
+                        logger.info(f"Downloaded PDF from S3/OSS: {s3_url}")
                     else:
-                        raise Exception(f"Failed to download PDF: HTTP {response.status}")
+                        error_text = await response.text()
+                        raise Exception(f"Failed to download PDF: HTTP {response.status} - {error_text}")
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout downloading PDF from S3/OSS: {s3_url}")
+            raise Exception(f"Timeout downloading PDF from S3/OSS: {s3_url}")
         except Exception as e:
-            logger.error(f"Failed to download PDF from S3: {e}")
+            logger.error(f"Failed to download PDF from S3/OSS: {e}")
             raise
     
     async def upload_parts_to_s3(self, parts_info: List[Dict], item_id: str, temp_dir: str) -> List[Dict]:
@@ -489,19 +594,12 @@ class PdfSplittingWorker:
 
 async def main():
     """Main function to run the PDF splitting worker"""
-    # Configuration
-    rabbitmq_config = {
-        'host': os.getenv('RABBITMQ_HOST', 'localhost'),
-        'port': int(os.getenv('RABBITMQ_PORT', 5672)),
-        'username': os.getenv('RABBITMQ_USERNAME', 'guest'),
-        'password': os.getenv('RABBITMQ_PASSWORD', 'guest'),
-        'virtual_host': os.getenv('RABBITMQ_VHOST', '/'),
-    }
+    # Import configuration
+    from config import Config
     
-    s3_config = {
-        'bucket': os.getenv('S3_BUCKET', 'mock-bucket'),
-        'region': os.getenv('S3_REGION', 'us-east-1'),
-    }
+    # Get configuration from Config class
+    rabbitmq_config = Config.get_rabbitmq_config()
+    s3_config = Config.get_s3_config()
     
     # Create and start worker
     worker = PdfSplittingWorker(rabbitmq_config, s3_config)

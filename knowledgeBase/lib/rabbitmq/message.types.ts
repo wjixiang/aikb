@@ -52,6 +52,7 @@ export interface PdfConversionRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
+  pdfMetadata?: PdfMetadata; // PDF metadata from analysis phase
 }
 
 /**
@@ -119,6 +120,21 @@ export interface PdfAnalysisRequestMessage extends BaseRabbitMQMessage {
 }
 
 /**
+ * PDF metadata information
+ */
+export interface PdfMetadata {
+  pageCount: number;
+  fileSize: number;
+  title?: string;
+  author?: string;
+  subject?: string;
+  creator?: string;
+  producer?: string;
+  creationDate?: string;
+  modificationDate?: string;
+}
+
+/**
  * PDF analysis completed message
  */
 export interface PdfAnalysisCompletedMessage extends BaseRabbitMQMessage {
@@ -128,6 +144,9 @@ export interface PdfAnalysisCompletedMessage extends BaseRabbitMQMessage {
   requiresSplitting: boolean;
   suggestedSplitSize?: number;
   processingTime: number;
+  pdfMetadata?: PdfMetadata;
+  s3Url?: string; // Pass along the S3 URL for reuse
+  s3Key?: string; // Pass along the S3 key for reuse
 }
 
 /**
@@ -158,6 +177,7 @@ export interface PdfSplittingRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
+  pdfMetadata?: PdfMetadata; // PDF metadata from analysis phase
 }
 
 /**
@@ -176,6 +196,7 @@ export interface PdfPartConversionRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
+  pdfMetadata?: PdfMetadata; // PDF metadata from analysis phase
 }
 
 /**

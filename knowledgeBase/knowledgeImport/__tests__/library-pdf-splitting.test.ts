@@ -7,10 +7,8 @@ import {
   PdfAnalyzerService,
   createPdfAnalyzerService,
 } from '../../lib/rabbitmq/pdf-analyzer.service';
-import {
-  PdfSplittingWorker,
-  createPdfSplittingWorker,
-} from '../../lib/rabbitmq/pdf-splitting.worker';
+// TypeScript PDF splitter has been replaced with Python implementation
+// No longer need to import PdfSplittingWorker
 import {
   PdfMergerService,
   createPdfMergerService,
@@ -39,7 +37,6 @@ describe('PDF Splitting and Merging Integration Tests', () => {
   let storage: S3MongoLibraryStorage;
   let rabbitMQService = getRabbitMQService();
   let analyzerService: PdfAnalyzerService;
-  let splittingWorker: PdfSplittingWorker;
   let conversionWorker: PdfConversionWorker;
   let mergerService: PdfMergerService;
 
@@ -56,16 +53,14 @@ describe('PDF Splitting and Merging Integration Tests', () => {
 
     // Initialize services and workers
     analyzerService = createPdfAnalyzerService(storage);
-    // splittingWorker = await createPdfSplittingWorker(storage);
+    // Python PDF splitting worker is now used instead of TypeScript
     conversionWorker = await createPdfConversionWorker();
     mergerService = await createPdfMergerService(storage);
   });
 
   afterAll(async () => {
     // Stop services and workers
-    // if (splittingWorker) {
-    //   await splittingWorker.stop();
-    // }
+    // Python PDF splitting worker is managed separately
     if (conversionWorker) {
       await conversionWorker.stop();
     }
@@ -100,8 +95,8 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        s3Url: item.metadata.s3Url!,
         s3Key: item.metadata.s3Key!,
+        s3Url:await item.getPdfDownloadUrl(),
         fileName: 'small-test.pdf',
         priority: 'normal',
         retryCount: 0,
@@ -154,7 +149,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        s3Url: item.metadata.s3Url!,
+        s3Url: await item.getPdfDownloadUrl(),
         s3Key: item.metadata.s3Key!,
         fileName: 'large-test.pdf',
         priority: 'normal',
@@ -267,7 +262,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        s3Url: item.metadata.s3Url!,
+        s3Url: await item.getPdfDownloadUrl(),
         s3Key: item.metadata.s3Key!,
         fileName: 'invalid-test.pdf',
         priority: 'normal',
@@ -332,7 +327,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
           timestamp: Date.now(),
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: item.metadata.id!,
-          s3Url: item.metadata.s3Url!,
+          s3Url: await item.getPdfDownloadUrl(),
           s3Key: item.metadata.s3Key!,
           fileName: `concurrent-test-${i}.pdf`,
           priority: 'normal',

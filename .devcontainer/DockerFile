@@ -30,7 +30,7 @@ RUN apt-get update && \
     python3-dev \
     wget \
     curl \
-    && npm install -g pnpm tsx\
+    && npm install -g pnpm tsx pm2@latest\
     && pipx install uv \
     && pipx ensurepath
 

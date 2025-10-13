@@ -319,22 +319,6 @@ if (require.main === module) {
       const worker = await startMarkdownStorageWorker(storage);
       logger.info('Markdown Storage Worker started successfully');
       
-      // Handle graceful shutdown
-      process.on('SIGINT', async () => {
-        logger.info('Received SIGINT, shutting down gracefully...');
-        await worker.stop();
-        process.exit(0);
-      });
-      
-      process.on('SIGTERM', async () => {
-        logger.info('Received SIGTERM, shutting down gracefully...');
-        await worker.stop();
-        process.exit(0);
-      });
-      
-      // Keep the process running
-      logger.info('Markdown Storage Worker is running. Press Ctrl+C to stop.');
-      
     } catch (error) {
       logger.error('Failed to start Markdown Storage Worker:', error);
       process.exit(1);

@@ -1,204 +1,258 @@
-# PDF Processing Workers
+# Python PDF Splitting Worker
 
-This directory contains Python-based workers for processing PDF files in a distributed RabbitMQ-based system.
+This Python-based PDF splitting worker replaces the TypeScript implementation to provide better performance and reliability for splitting large PDF files into smaller parts for parallel processing.
 
-## Components
+## Overview
 
-### 1. PDF Splitting Worker (`pdf_splitting_worker.py`)
+The Python PDF Splitting Worker is part of the distributed PDF processing system. It listens for PDF splitting requests via RabbitMQ, downloads PDF files from S3/OSS storage, splits them into smaller parts, uploads the parts back to storage, and sends part conversion requests to continue the processing pipeline.
 
-A Python implementation of the PDF splitting worker that can replace or complement the existing TypeScript version. This worker:
+## Features
 
-- Consumes PDF splitting requests from RabbitMQ
-- Downloads PDF files from S3
-- Splits large PDFs into smaller parts using PyPDF2
-- Uploads split parts back to S3
-- Sends part conversion requests for further processing
-- Handles retries and error cases
+- **Asynchronous Processing**: Uses asyncio for efficient concurrent operations
+- **RabbitMQ Integration**: Compatible with existing RabbitMQ message queues
+- **S3/OSS Storage Support**: Works with both AWS S3 and Alibaba Cloud OSS
+- **Error Handling & Retry Logic**: Robust error handling with configurable retry mechanisms
+- **Configurable Splitting**: Flexible split size configuration
+- **Progress Tracking**: Sends progress updates during processing
+- **Docker Support**: Containerized deployment with Docker and Docker Compose
 
-### 2. Configuration (`config.py`)
+## Architecture
 
-Centralized configuration management for all PDF processing workers. Supports environment variables for:
-
-- RabbitMQ connection settings
-- S3 storage configuration
-- PDF processing parameters
-- Worker settings
-
-### 3. Startup Script (`start_pdf_splitting_worker.py`)
-
-A production-ready startup script that:
-
-- Sets up proper logging
-- Handles graceful shutdown signals
-- Manages worker lifecycle
-- Provides error handling and recovery
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ PDF Processing  │───▶│ RabbitMQ         │───▶│ Python PDF      │
+│ Coordinator     │    │ Message Queue    │    │ Splitting Worker│
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ PDF Part        │◀───│ RabbitMQ         │◀───│ S3/OSS Storage  │
+│ Conversion      │    │ Message Queue    │    │                 │
+│ Workers         │    └──────────────────┘    └─────────────────┘
+└─────────────────┘
+```
 
 ## Installation
 
-1. Install dependencies using uv:
+### Prerequisites
+
+- Python 3.11 or higher
+- RabbitMQ server
+- S3/OSS storage (optional, can use mock storage for testing)
+
+### Dependencies
+
+Install the required Python packages:
 
 ```bash
-uv sync
+pip install -r requirements.txt
 ```
 
-2. Set up environment variables (see Configuration section below)
+### Environment Configuration
 
-3. Run the worker:
+Create a `.env` file or set the following environment variables:
 
 ```bash
-python pdfProcess/start_pdf_splitting_worker.py
+# RabbitMQ Configuration
+RABBITMQ_HOSTNAME=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_USERNAME=admin
+RABBITMQ_PASSWORD=admin123
+RABBITMQ_VHOST=my_vhost
+
+# S3/OSS Configuration
+PDF_OSS_BUCKET_NAME=aikb-pdf
+OSS_REGION=oss-cn-beijing
+OSS_ACCESS_KEY_ID=your_access_key
+OSS_SECRET_ACCESS_KEY=your_secret_key
+S3_ENDPOINT=aliyuncs.com
+
+# Worker Configuration
+SYSTEM_LOG_LEVEL=INFO
+MAX_RETRIES=3
+TEMP_DIR=/tmp/pdf-processing
+```
+
+## Usage
+
+### Running the Worker
+
+#### Direct Execution
+
+```bash
+python start_pdf_splitting_worker.py
+```
+
+#### Using Docker
+
+```bash
+# Build the Docker image
+docker build -f Dockerfile.pdf-splitter -t pdf-splitting-worker .
+
+# Run with Docker Compose
+docker-compose up pdf-splitting-worker
+
+# Or run directly
+docker run -d \
+  --name pdf-splitting-worker \
+  -e RABBITMQ_HOSTNAME=rabbitmq \
+  -e RABBITMQ_USERNAME=admin \
+  -e RABBITMQ_PASSWORD=admin123 \
+  pdf-splitting-worker
+```
+
+#### Using Docker Compose
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f pdf-splitting-worker
+
+# Stop services
+docker-compose down
+```
+
+### Testing
+
+#### Integration Tests
+
+Run the integration tests to verify the worker is functioning correctly:
+
+```bash
+python test_pdf_splitting_integration.py
+```
+
+#### Unit Tests
+
+```bash
+python test_pdf_functionality.py
+```
+
+#### RabbitMQ Connection Test
+
+```bash
+python test_rabbitmq_connection.py
 ```
 
 ## Configuration
 
-The worker can be configured using environment variables:
+The worker can be configured through the `config.py` file or environment variables:
 
-### RabbitMQ Configuration
+- `DEFAULT_SPLIT_SIZE`: Number of pages per split part (default: 25)
+- `MAX_SPLIT_SIZE`: Maximum pages per part (default: 100)
+- `MIN_SPLIT_SIZE`: Minimum pages per part (default: 10)
+- `CONCURRENT_PART_PROCESSING`: Number of parts to process concurrently (default: 3)
 
-- `RABBITMQ_HOST`: RabbitMQ server host (default: localhost)
-- `RABBITMQ_PORT`: RabbitMQ server port (default: 5672)
-- `RABBITMQ_USERNAME`: RabbitMQ username (default: guest)
-- `RABBITMQ_PASSWORD`: RabbitMQ password (default: guest)
-- `RABBITMQ_VHOST`: RabbitMQ virtual host (default: /)
+## Message Flow
 
-### S3 Configuration
+1. **Receive Splitting Request**: Worker listens to `pdf-splitting-request` queue
+2. **Download PDF**: Downloads the original PDF from S3/OSS
+3. **Update Status**: Sends progress update to `pdf-conversion-progress` queue
+4. **Split PDF**: Splits the PDF into smaller parts using PyPDF2
+5. **Upload Parts**: Uploads each part to S3/OSS storage
+6. **Send Part Requests**: Sends part conversion requests to `pdf-part-conversion-request` queue
+7. **Update Final Status**: Sends final progress update
 
-- `S3_BUCKET`: S3 bucket name (default: pdf-processing-bucket)
-- `S3_REGION`: S3 region (default: us-east-1)
-- `S3_ACCESS_KEY`: S3 access key (optional)
-- `S3_SECRET_KEY`: S3 secret key (optional)
-- `S3_ENDPOINT`: S3 endpoint URL (optional, for S3-compatible services)
+## Error Handling
 
-### PDF Processing Configuration
+The worker implements comprehensive error handling:
 
-- `PDF_SPLIT_SIZE`: Default number of pages per split (default: 25)
-- `PDF_MAX_SPLIT_SIZE`: Maximum pages per part (default: 100)
-- `PDF_MIN_SPLIT_SIZE`: Minimum pages per part (default: 10)
-- `PDF_CONCURRENT_PART_PROCESSING`: Number of parts to process concurrently (default: 3)
+- **Download Failures**: Retries with exponential backoff
+- **Splitting Errors**: Validates PDF integrity before processing
+- **Upload Failures**: Implements retry logic for storage operations
+- **Message Processing**: Uses manual acknowledgments for reliable message processing
 
-### Worker Configuration
+## Monitoring
 
-- `WORKER_ID`: Unique worker identifier (default: auto-generated)
-- `LOG_LEVEL`: Logging level (default: INFO)
-- `MAX_RETRIES`: Maximum retry attempts (default: 3)
-- `TEMP_DIR`: Temporary directory for processing (default: /tmp/pdf-processing)
+### Logs
 
-## Integration with Existing System
-
-This Python worker is designed to be compatible with the existing TypeScript-based system:
-
-1. **Message Format**: Uses the same message format as the TypeScript workers
-2. **Queue Names**: Consumes from the same RabbitMQ queues
-3. **Status Updates**: Sends status updates to the same progress queues
-4. **Error Handling**: Implements the same retry logic and error reporting
-
-## Usage Examples
-
-### Running the Worker
+The worker provides detailed logging for monitoring and debugging:
 
 ```bash
-# Basic usage
-python pdfProcess/start_pdf_splitting_worker.py
+# View logs in real-time
+tail -f logs/pdf-splitting-worker.log
 
-# With custom configuration
-RABBITMQ_HOST=rabbitmq.example.com \
-S3_BUCKET=my-pdf-bucket \
-LOG_LEVEL=DEBUG \
-python pdfProcess/start_pdf_splitting_worker.py
+# Docker logs
+docker logs -f pdf-splitting-worker
 ```
 
-### Docker Deployment
+### RabbitMQ Management
 
-```dockerfile
-FROM python:3.12-slim
+Access the RabbitMQ management interface at `http://localhost:15672` (username/password: admin/admin123) to monitor:
+- Queue depths
+- Message rates
+- Consumer connections
 
-WORKDIR /app
-COPY . .
+## Performance Considerations
 
-RUN pip install uv && uv sync
-
-ENV RABBITMQ_HOST=rabbitmq
-ENV S3_BUCKET=pdf-processing
-
-CMD ["python", "pdfProcess/start_pdf_splitting_worker.py"]
-```
-
-### Docker Compose
-
-```yaml
-version: '3.8'
-services:
-  pdf-splitting-worker:
-    build: .
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - S3_BUCKET=pdf-processing
-      - LOG_LEVEL=INFO
-    depends_on:
-      - rabbitmq
-    restart: unless-stopped
-```
-
-## Monitoring and Logging
-
-- Logs are written to both stdout and a file in `/tmp/{worker_id}.log`
-- Worker status and progress are reported through RabbitMQ messages
-- Errors are logged and sent to the appropriate error queues
-
-## Development
-
-### Running Tests
-
-```bash
-# Install test dependencies
-uv sync --dev
-
-# Run tests
-python -m pytest tests/
-```
-
-### Code Style
-
-This project follows PEP 8 style guidelines. Use the following tools:
-
-```bash
-# Format code
-black pdfProcess/
-
-# Lint code
-flake8 pdfProcess/
-
-# Type checking
-mypy pdfProcess/
-```
+- **Memory Usage**: The worker processes one PDF at a time to manage memory efficiently
+- **Concurrent Processing**: Parts are uploaded concurrently (configurable limit)
+- **Temporary Storage**: Uses system temp directory for intermediate files
+- **Cleanup**: Automatically cleans up temporary files after processing
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **RabbitMQ Connection Failed**
-   - Check RabbitMQ server is running
-   - Verify connection parameters
-   - Ensure network connectivity
+1. **RabbitMQ Connection Failures**
+   - Check RabbitMQ is running and accessible
+   - Verify connection parameters in configuration
+   - Check network connectivity and firewall settings
 
-2. **S3 Upload Failed**
-   - Check S3 credentials
-   - Verify bucket exists and has proper permissions
-   - Check network connectivity to S3 endpoint
+2. **S3/OSS Upload Failures**
+   - Verify storage credentials and permissions
+   - Check bucket exists and is accessible
+   - Ensure endpoint URL is correct
 
-3. **PDF Processing Failed**
-   - Verify PDF file is not corrupted
-   - Check file permissions
-   - Ensure sufficient disk space in temp directory
+3. **PDF Processing Errors**
+   - Verify PDF files are not corrupted
+   - Check file permissions and disk space
+   - Review error logs for specific issues
 
 ### Debug Mode
 
-Run the worker with debug logging:
+Enable debug logging for detailed troubleshooting:
 
 ```bash
-LOG_LEVEL=DEBUG python pdfProcess/start_pdf_splitting_worker.py
+export SYSTEM_LOG_LEVEL=DEBUG
+python start_pdf_splitting_worker.py
 ```
+
+## Migration from TypeScript
+
+This Python worker is a drop-in replacement for the TypeScript PDF splitting worker. The migration process:
+
+1. ✅ **Removed TypeScript Implementation**: Deleted `pdf-splitting.worker.ts` and related test files
+2. ✅ **Updated References**: Modified test files to remove TypeScript worker imports
+3. ✅ **Enhanced Python Implementation**: Added full feature parity with TypeScript version
+4. ✅ **Maintained Compatibility**: Uses same message queues and formats
+5. ✅ **Improved Performance**: Better memory management and concurrent processing
+
+## Development
+
+### Project Structure
+
+```
+pdfProcess/
+├── pdf_splitting_worker.py    # Main worker implementation
+├── config.py                  # Configuration management
+├── start_pdf_splitting_worker.py  # Startup script
+├── requirements.txt           # Python dependencies
+├── Dockerfile.pdf-splitter    # Docker configuration
+├── docker-compose.yml         # Docker Compose configuration
+├── test_*.py                  # Test files
+└── README.md                  # This file
+```
+
+### Contributing
+
+1. Follow PEP 8 style guidelines
+2. Add appropriate tests for new features
+3. Update documentation as needed
+4. Ensure all tests pass before submitting
 
 ## License
 
-This project is part of the larger knowledge base system and follows the same licensing terms.
+This project is part of the larger PDF processing system and follows the same license terms.

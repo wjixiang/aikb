@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
 config(); // Inject  env variables
 
+console.log(new Date())
+
 // Mock browser globals that @elastic/elasticsearch expects
 global.File = class File {
   constructor() {}

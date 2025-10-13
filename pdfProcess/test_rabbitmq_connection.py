@@ -7,6 +7,10 @@ import sys
 import os
 import pika
 from config import Config
+from logger import create_logger_with_prefix
+
+# Create logger for test
+logger = create_logger_with_prefix('RabbitMQConnectionTest')
 
 def test_rabbitmq_connection():
     """Test basic RabbitMQ connection"""

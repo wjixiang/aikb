@@ -12,6 +12,10 @@ from pathlib import Path
 
 from PyPDF2 import PdfReader, PdfWriter
 from pdf_splitting_worker import PDFSplitter, RabbitMQClient, S3StorageClient
+from logger import create_logger_with_prefix
+
+# Create logger for test
+logger = create_logger_with_prefix('PdfSplittingTest')
 
 
 def create_test_pdf(output_path: str, num_pages: int = 10):

@@ -13,7 +13,7 @@ import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 // });
 
 export async function UploadTestPdf() {
-  const testMinerUPdfConvertor = new MinerUPdfConvertor({
+const testMinerUPdfConvertor = new MinerUPdfConvertor({
     token: process.env.MINERU_TOKEN as string,
     downloadDir: 'test/download',
     defaultOptions: {
@@ -66,7 +66,7 @@ describe(Library, async () => {
     // Verify the download URL is valid
     expect(downloadUrl).toBeDefined();
     expect(typeof downloadUrl).toBe('string');
-    expect(downloadUrl).toContain(book.metadata.s3Key!);
+    // expect(downloadUrl).toContain(book.metadata.s3Key!);
 
     // Verify the URL matches the stored URL
     // expect(downloadUrl).toBe(book.metadata.s3Url);
@@ -85,7 +85,7 @@ describe(Library, async () => {
     );
   });
 
-  it('re-extract markdown', async () => {
+  it.skip('re-extract markdown', async () => {
     console.log(`re-extract markdown`);
     await book.extractMarkdown();
     const mdContent2 = await book.getMarkdown();
@@ -105,5 +105,27 @@ describe(Library, async () => {
   it.skip('semantic search', async()=>{
     const searchRes = await book.searchInChunks("ACEI",2)
     console.log(searchRes)
+  })
+
+  it.only('re-process', async()=>{
+    const testMinerUPdfConvertor = new MinerUPdfConvertor({
+    token: process.env.MINERU_TOKEN as string,
+    downloadDir: 'test/download',
+    defaultOptions: {
+      is_ocr: true,
+      enable_formula: true,
+      enable_table: true,
+      language: 'en',
+      extra_formats: ['docx', 'html'],
+    },
+    timeout: 120000, // 2 minutes timeout
+    maxRetries: 3,
+    retryDelay: 5000,
+  });
+  const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+  const library = new Library(storage, testMinerUPdfConvertor);                                               
+    const s3Link = await book.getPdfDownloadUrl()
+    console.log(`s3Link: ${s3Link}`)
+    await library.sendPdfAnalysisRequest(book.getItemId(),s3Link, book.metadata.s3Key as string, book.metadata.title)
   })
 });

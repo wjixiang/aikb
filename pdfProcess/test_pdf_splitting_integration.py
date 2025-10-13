@@ -1,293 +1,288 @@
 #!/usr/bin/env python3
 """
-Integration test for PDF Splitting Worker with real S3 PDF
+Integration test for the Python PDF Splitting Worker
+This script tests the integration between the Python PDF splitter and the existing RabbitMQ system.
 """
 
 import asyncio
 import json
 import os
 import tempfile
+import time
 import uuid
 from pathlib import Path
-import sys
-import subprocess
+from typing import Dict, Any
 
-# Add the current directory to Python path
-sys.path.insert(0, str(Path(__file__).parent))
+import pika
+from PyPDF2 import PdfReader, PdfWriter
+from logger import create_logger_with_prefix
 
-from config import Config
-from pdf_splitting_worker import PDFSplitter, RabbitMQClient, S3StorageClient
+# Create logger with unified configuration
+logger = create_logger_with_prefix('PdfSplittingIntegrationTest')
 
 
-async def upload_test_pdf_and_get_url():
-    """
-    Upload the test PDF using the existing TypeScript library function
-    and return the S3 URL
-    """
-    print("Uploading test PDF using existing library...")
+class PDFSplittingIntegrationTest:
+    """Integration test class for PDF splitting"""
     
-    # Create a temporary TypeScript file to call the UploadTestPdf function
-    test_script = """
-import { UploadTestPdf } from './knowledgeBase/knowledgeImport/library.integrated.test';
-
-async function main() {
-  try {
-    const book = await UploadTestPdf();
-    const downloadUrl = await book.getPdfDownloadUrl();
+    def __init__(self):
+        self.rabbitmq_config = {
+            'host': os.getenv('RABBITMQ_HOSTNAME', 'localhost'),
+            'port': int(os.getenv('RABBITMQ_PORT', 5672)),
+            'username': os.getenv('RABBITMQ_USERNAME', 'admin'),
+            'password': os.getenv('RABBITMQ_PASSWORD', 'admin123'),
+            'virtual_host': os.getenv('RABBITMQ_VHOST', 'my_vhost'),
+        }
+        self.connection = None
+        self.channel = None
+        self.test_results = []
+        
+    def create_test_pdf(self, num_pages: int, output_path: str) -> None:
+        """Create a test PDF with specified number of pages"""
+        writer = PdfWriter()
+        
+        for i in range(num_pages):
+            # Create a simple page
+            page = PdfReader(
+                BytesIO(
+                    b'%PDF-1.4\n1 0 obj\n<<\n/Type /Page\n/MediaBox [0 0 612 792]\n/Contents 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Page %d) Tj\nET\nendstream\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000010 00000 n\n0000000079 00000 n\ntrailer\n<<\n/Size 3\n/Root 1 0 R\n>>\nstartxref\n164\n%%EOF' % (i + 1)
+                )
+            ).pages[0]
+            writer.add_page(page)
+        
+        with open(output_path, 'wb') as f:
+            writer.write(f)
     
-    console.log('PDF uploaded successfully!');
-    console.log('ID:', book.metadata.id);
-    console.log('S3 Key:', book.metadata.s3Key);
-    console.log('S3 URL:', book.metadata.s3Url);
-    console.log('Download URL:', downloadUrl);
+    def connect_to_rabbitmq(self):
+        """Connect to RabbitMQ"""
+        try:
+            url = f"amqp://{self.rabbitmq_config['username']}:{self.rabbitmq_config['password']}@{self.rabbitmq_config['host']}:{self.rabbitmq_config['port']}/{self.rabbitmq_config['virtual_host']}"
+            self.connection = pika.BlockingConnection(pika.URLParameters(url))
+            self.channel = self.connection.channel()
+            
+            # Declare queues
+            self.channel.queue_declare(queue='pdf-splitting-request', durable=True)
+            self.channel.queue_declare(queue='pdf-conversion-progress', durable=True)
+            self.channel.queue_declare(queue='pdf-part-conversion-request', durable=True)
+            
+            logger.info("Connected to RabbitMQ successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to RabbitMQ: {e}")
+            return False
     
-    // Output as JSON for easy parsing
-    console.log('---JSON-START---');
-    console.log(JSON.stringify({
-      id: book.metadata.id,
-      s3Key: book.metadata.s3Key,
-      s3Url: book.metadata.s3Url,
-      downloadUrl: downloadUrl,
-      pageCount: book.metadata.pageCount
-    }));
-    console.log('---JSON-END---');
-  } catch (error) {
-    console.error('Error:', error);
-    process.exit(1);
-  }
-}
-
-main();
-"""
+    def disconnect_from_rabbitmq(self):
+        """Disconnect from RabbitMQ"""
+        if self.connection and not self.connection.is_closed:
+            self.connection.close()
+            logger.info("Disconnected from RabbitMQ")
     
-    # Write the test script to the workspace root
-    with open('/workspace/test_upload_pdf.ts', 'w') as f:
-        f.write(test_script)
+    def send_splitting_request(self, test_data: Dict[str, Any]) -> str:
+        """Send a PDF splitting request"""
+        try:
+            message_id = str(uuid.uuid4())
+            message = {
+                'messageId': message_id,
+                'timestamp': int(time.time()),
+                'eventType': 'PDF_SPLITTING_REQUEST',
+                'itemId': test_data['item_id'],
+                's3Url': test_data['s3_url'],
+                's3Key': test_data['s3_key'],
+                'fileName': test_data['file_name'],
+                'pageCount': test_data['page_count'],
+                'splitSize': test_data.get('split_size', 25),
+                'priority': 'normal',
+                'retryCount': 0,
+                'maxRetries': 3,
+            }
+            
+            self.channel.basic_publish(
+                exchange='',
+                routing_key='pdf-splitting-request',
+                body=json.dumps(message),
+                properties=pika.BasicProperties(
+                    delivery_mode=2,  # Make message persistent
+                    message_id=message_id,
+                    timestamp=int(time.time())
+                )
+            )
+            
+            logger.info(f"Sent splitting request: {message_id}")
+            return message_id
+        except Exception as e:
+            logger.error(f"Failed to send splitting request: {e}")
+            raise
     
-    try:
-        # Run the TypeScript script using npx tsx from workspace root
-        result = subprocess.run(
-            ['npx', 'tsx', 'test_upload_pdf.ts'],
-            cwd='/workspace',
-            capture_output=True,
-            text=True,
-            timeout=60000  # 60 seconds timeout
+    def listen_for_responses(self, timeout: int = 60) -> Dict[str, Any]:
+        """Listen for responses from the worker"""
+        responses = {}
+        start_time = time.time()
+        
+        def callback(ch, method, properties, body):
+            try:
+                message = json.loads(body.decode('utf-8'))
+                message_id = message.get('messageId')
+                event_type = message.get('eventType')
+                
+                logger.info(f"Received message: {event_type} - {message_id}")
+                
+                if message_id not in responses:
+                    responses[message_id] = []
+                
+                responses[message_id].append(message)
+                
+                # Acknowledge the message
+                ch.basic_ack(delivery_tag=method.delivery_tag)
+            except Exception as e:
+                logger.error(f"Error processing message: {e}")
+                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+        
+        # Start consuming
+        self.channel.basic_consume(
+            queue='pdf-conversion-progress',
+            on_message_callback=callback,
+            auto_ack=False
         )
         
-        if result.returncode != 0:
-            print(f"Error running upload script: {result.stderr}")
-            return None
+        self.channel.basic_consume(
+            queue='pdf-part-conversion-request',
+            on_message_callback=callback,
+            auto_ack=False
+        )
         
-        # Parse the JSON output
-        output_lines = result.stdout.split('\n')
-        json_start = None
-        json_end = None
-        
-        for i, line in enumerate(output_lines):
-            if line.strip() == '---JSON-START---':
-                json_start = i + 1
-            elif line.strip() == '---JSON-END---':
-                json_end = i
+        # Wait for responses or timeout
+        while time.time() - start_time < timeout:
+            if self.connection and not self.connection.is_closed:
+                self.connection.process_data_events(time_limit=1)
+            else:
                 break
         
-        if json_start is not None and json_end is not None and json_end > json_start:
-            json_data = '\n'.join(output_lines[json_start:json_end])
-            return json.loads(json_data)
-        else:
-            print("Could not find JSON output in script result")
-            print("Script output:", result.stdout)
-            return None
+        return responses
+    
+    def run_test(self, test_name: str, num_pages: int, split_size: int = 25) -> bool:
+        """Run a single integration test"""
+        logger.info(f"Running test: {test_name}")
+        
+        try:
+            # Create test PDF
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+                self.create_test_pdf(num_pages, tmp_file.name)
+                pdf_path = tmp_file.name
             
-    finally:
-        # Clean up temporary file
-        if os.path.exists('/workspace/test_upload_pdf.ts'):
-            os.unlink('/workspace/test_upload_pdf.ts')
-
-
-async def test_real_pdf_splitting():
-    """Test PDF splitting with a real PDF from S3"""
-    print("Testing PDF splitting with real S3 PDF...")
-    
-    # Get the PDF info from the existing library
-    pdf_info = await upload_test_pdf_and_get_url()
-    if not pdf_info:
-        print("Failed to get PDF info from library")
-        return False
-    
-    print(f"PDF Info: {pdf_info}")
-    
-    # Download the PDF from S3
-    import aiohttp
-    async with aiohttp.ClientSession() as session:
-        async with session.get(pdf_info['downloadUrl'], timeout=60) as response:
-            if response.status == 200:
-                pdf_content = await response.read()
-                print(f"Downloaded PDF: {len(pdf_content)} bytes")
-            else:
-                print(f"Failed to download PDF: HTTP {response.status}")
-                return False
-    
-    # Test splitting with the real PDF
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Save the PDF to a temporary file
-        pdf_path = os.path.join(temp_dir, 'test.pdf')
-        with open(pdf_path, 'wb') as f:
-            f.write(pdf_content)
-        
-        # Get page count first
-        from PyPDF2 import PdfReader
-        with open(pdf_path, 'rb') as f:
-            reader = PdfReader(f)
-            page_count = len(reader.pages)
-        
-        print(f"PDF has {page_count} pages")
-        
-        # Test different split sizes
-        test_split_sizes = [5, 10, 20]
-        
-        for split_size in test_split_sizes:
-            if split_size >= page_count:
-                continue
-                
-            print(f"\nTesting split size: {split_size}")
+            # Prepare test data
+            test_data = {
+                'item_id': f"test-{uuid.uuid4()}",
+                's3_url': f"file://{pdf_path}",  # Use file:// for local testing
+                's3_key': f"test/{os.path.basename(pdf_path)}",
+                'file_name': f"{test_name}.pdf",
+                'page_count': num_pages,
+                'split_size': split_size,
+            }
             
-            try:
-                # Split the PDF
-                parts = PDFSplitter.split_pdf(pdf_path, temp_dir, split_size)
+            # Send splitting request
+            message_id = self.send_splitting_request(test_data)
+            
+            # Listen for responses
+            responses = self.listen_for_responses(timeout=30)
+            
+            # Analyze results
+            if message_id in responses:
+                messages = responses[message_id]
+                progress_messages = [m for m in messages if m.get('eventType') == 'PDF_CONVERSION_PROGRESS']
+                part_requests = [m for m in messages if m.get('eventType') == 'PDF_PART_CONVERSION_REQUEST']
                 
-                print(f"Split PDF into {len(parts)} parts:")
-                
-                total_pages = 0
-                for part in parts:
-                    print(f"  Part {part['part_index'] + 1}: pages {part['start_page']}-{part['end_page']} ({part['page_count']} pages)")
+                # Check if we received progress updates
+                if progress_messages:
+                    # Check if processing completed or failed
+                    final_status = progress_messages[-1].get('status')
                     
-                    # Verify the part exists and has the correct number of pages
-                    if os.path.exists(part['path']):
-                        with open(part['path'], 'rb') as f:
-                            part_reader = PdfReader(f)
-                            actual_pages = len(part_reader.pages)
-                            expected_pages = part['page_count']
-                            
-                            if actual_pages != expected_pages:
-                                print(f"    ❌ Error: Expected {expected_pages} pages, got {actual_pages}")
-                                return False
-                            else:
-                                print(f"    ✓ Verified {actual_pages} pages")
-                            total_pages += actual_pages
+                    if final_status == 'processing':
+                        expected_parts = (num_pages + split_size - 1) // split_size
+                        actual_parts = len(part_requests)
+                        
+                        if actual_parts == expected_parts:
+                            logger.info(f"✅ Test '{test_name}' PASSED: {actual_parts} parts created")
+                            result = True
+                        else:
+                            logger.error(f"❌ Test '{test_name}' FAILED: Expected {expected_parts} parts, got {actual_parts}")
+                            result = False
+                    elif final_status == 'failed':
+                        logger.error(f"❌ Test '{test_name}' FAILED: Processing failed - {progress_messages[-1].get('error', 'Unknown error')}")
+                        result = False
                     else:
-                        print(f"    ❌ Error: Part file not found: {part['path']}")
-                        return False
-                
-                # Verify total pages match
-                if total_pages != page_count:
-                    print(f"    ❌ Error: Total pages mismatch. Expected {page_count}, got {total_pages}")
-                    return False
+                        logger.error(f"❌ Test '{test_name}' FAILED: Unexpected final status: {final_status}")
+                        result = False
                 else:
-                    print(f"    ✓ Total pages match: {total_pages}")
-                
-            except Exception as e:
-                print(f"    ❌ Error splitting PDF: {e}")
-                return False
-    
-    print("\n✅ Real PDF splitting test passed!")
-    return True
-
-
-async def test_message_flow_compatibility():
-    """Test that our Python worker can handle the same message format as TypeScript"""
-    print("\nTesting message flow compatibility...")
-    
-    # Get the PDF info from the existing library
-    pdf_info = await upload_test_pdf_and_get_url()
-    if not pdf_info:
-        print("Failed to get PDF info from library")
-        return False
-    
-    # Create a message similar to what the TypeScript system would send
-    test_message = {
-        'messageId': str(uuid.uuid4()),
-        'timestamp': int(asyncio.get_event_loop().time()),
-        'eventType': 'PDF_SPLITTING_REQUEST',
-        'itemId': pdf_info['id'],
-        's3Url': pdf_info['downloadUrl'],
-        's3Key': pdf_info['s3Key'],
-        'fileName': 'viral_pneumonia.pdf',
-        'pageCount': pdf_info.get('pageCount', 0),
-        'splitSize': 10,
-        'priority': 'normal',
-        'retryCount': 0,
-        'maxRetries': 3
-    }
-    
-    print(f"Test message: {json.dumps(test_message, indent=2)}")
-    
-    # Verify the message can be serialized and deserialized
-    message_json = json.dumps(test_message)
-    parsed_message = json.loads(message_json)
-    
-    # Check all required fields are present and have correct types
-    required_fields = {
-        'messageId': str,
-        'timestamp': int,
-        'eventType': str,
-        'itemId': str,
-        's3Url': str,
-        's3Key': str,
-        'fileName': str,
-        'pageCount': int,
-        'splitSize': int,
-        'priority': str,
-        'retryCount': int,
-        'maxRetries': int
-    }
-    
-    for field, expected_type in required_fields.items():
-        if field not in parsed_message:
-            print(f"❌ Missing required field: {field}")
-            return False
-        
-        if not isinstance(parsed_message[field], expected_type):
-            print(f"❌ Field {field} has wrong type. Expected {expected_type}, got {type(parsed_message[field])}")
+                    logger.error(f"❌ Test '{test_name}' FAILED: No progress messages received")
+                    result = False
+            else:
+                logger.error(f"❌ Test '{test_name}' FAILED: No responses received")
+                result = False
+            
+            # Cleanup
+            os.unlink(pdf_path)
+            self.test_results.append({'test': test_name, 'passed': result})
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Test '{test_name}' ERROR: {e}")
+            self.test_results.append({'test': test_name, 'passed': False, 'error': str(e)})
             return False
     
-    print("✅ Message format compatibility test passed!")
-    return True
+    def run_all_tests(self) -> bool:
+        """Run all integration tests"""
+        logger.info("Starting PDF Splitting Integration Tests")
+        
+        if not self.connect_to_rabbitmq():
+            logger.error("Cannot connect to RabbitMQ, aborting tests")
+            return False
+        
+        try:
+            # Test cases
+            test_cases = [
+                ("Small PDF", 10, 5),
+                ("Medium PDF", 50, 25),
+                ("Large PDF", 100, 25),
+                ("Very Large PDF", 200, 25),
+            ]
+            
+            all_passed = True
+            for test_name, num_pages, split_size in test_cases:
+                passed = self.run_test(test_name, num_pages, split_size)
+                all_passed = all_passed and passed
+                time.sleep(2)  # Small delay between tests
+            
+            # Print summary
+            logger.info("\n=== Test Summary ===")
+            passed_count = sum(1 for result in self.test_results if result['passed'])
+            total_count = len(self.test_results)
+            
+            for result in self.test_results:
+                status = "✅ PASSED" if result['passed'] else "❌ FAILED"
+                error_info = f" - {result.get('error', '')}" if not result['passed'] and 'error' in result else ""
+                logger.info(f"{result['test']}: {status}{error_info}")
+            
+            logger.info(f"\nOverall: {passed_count}/{total_count} tests passed")
+            
+            return all_passed
+            
+        finally:
+            self.disconnect_from_rabbitmq()
 
 
-async def run_integration_tests():
-    """Run all integration tests"""
-    print("Running PDF Splitting Worker Integration Tests...\n")
+def main():
+    """Main function"""
+    test = PDFSplittingIntegrationTest()
+    success = test.run_all_tests()
     
-    try:
-        # Test configuration
-        print("Testing configuration...")
-        rabbitmq_config = Config.get_rabbitmq_config()
-        s3_config = Config.get_s3_config()
-        pdf_config = Config.get_pdf_processing_config()
-        
-        print(f"RabbitMQ config: {rabbitmq_config}")
-        print(f"S3 config: {s3_config}")
-        print(f"PDF config: {pdf_config}")
-        print("✓ Configuration test passed\n")
-        
-        # Test message flow compatibility
-        if not await test_message_flow_compatibility():
-            return False
-        
-        # Test real PDF splitting
-        if not await test_real_pdf_splitting():
-            return False
-        
-        print("\n✅ All integration tests passed!")
-        return True
-        
-    except Exception as e:
-        print(f"\n❌ Integration test failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+    if success:
+        logger.info("🎉 All integration tests passed!")
+        return 0
+    else:
+        logger.error("💥 Some integration tests failed!")
+        return 1
 
 
 if __name__ == "__main__":
-    success = asyncio.run(run_integration_tests())
-    exit(0 if success else 1)
+    import sys
+    from io import BytesIO
+    sys.exit(main())

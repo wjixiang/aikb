@@ -127,21 +127,32 @@ export class PdfConversionWorker {
       // Update status to processing
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 0, 'Starting PDF conversion');
 
-      // We no longer need to get item metadata from storage since we're not updating it directly
-      // All status updates will be sent via RabbitMQ messages
+      // Log PDF metadata if available (optimization: no need to re-analyze)
+      if (message.pdfMetadata) {
+        logger.info(`Using PDF metadata from analysis phase for item ${message.itemId}:`, {
+          pageCount: message.pdfMetadata.pageCount,
+          fileSize: message.pdfMetadata.fileSize,
+          title: message.pdfMetadata.title,
+          author: message.pdfMetadata.author,
+        });
+        logger.info(`OPTIMIZATION: Skipping PDF analysis for item ${message.itemId} - using metadata from previous analysis`);
+      } else {
+        logger.info(`No PDF metadata available for item ${message.itemId} - will analyze during conversion`);
+      }
 
       if (!this.pdfConvertor) {
         throw new Error('PDF converter not available');
       }
 
       // Publish progress
-      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 10, 'Downloading PDF from S3');
+      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 10, 'Preparing PDF conversion');
 
       // Convert PDF to Markdown
       logger.info(`Converting PDF to Markdown for item: ${message.itemId}, S3 URL: ${message.s3Url}`);
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 30, 'Converting PDF to Markdown');
 
       logger.info(`Starting PDF conversion with S3 URL: ${message.s3Url}`);
+      logger.info(`OPTIMIZATION: Using S3 URL from analysis phase to avoid re-generation for item ${message.itemId}`);
       
       let conversionResult;
       try {
@@ -264,12 +275,24 @@ export class PdfConversionWorker {
       // Update part status to processing
       await this.updatePartStatus(message.itemId, message.partIndex, 'processing', 'Converting PDF part to Markdown');
 
+      // Log PDF metadata if available (optimization: no need to re-analyze)
+      if (message.pdfMetadata) {
+        logger.info(`Using PDF metadata from analysis phase for item ${message.itemId}, part ${message.partIndex + 1}:`, {
+          pageCount: message.pdfMetadata.pageCount,
+          fileSize: message.pdfMetadata.fileSize,
+          title: message.pdfMetadata.title,
+          author: message.pdfMetadata.author,
+        });
+        logger.info(`OPTIMIZATION: Skipping PDF analysis for item ${message.itemId}, part ${message.partIndex + 1} - using metadata from previous analysis`);
+      }
+
       if (!this.pdfConvertor) {
         throw new Error('PDF converter not available');
       }
 
       // Convert PDF part to Markdown
       logger.info(`Converting PDF part ${message.partIndex + 1} to Markdown for item: ${message.itemId}`);
+      logger.info(`OPTIMIZATION: Using S3 URL from analysis phase to avoid re-generation for item ${message.itemId}, part ${message.partIndex + 1}`);
       
       let conversionResult;
       try {

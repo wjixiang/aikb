@@ -2,11 +2,9 @@ import { AbstractPdfConvertor } from '../AbstractPdfConvertor';
 import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createWriteStream } from 'fs';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
-import * as zlib from 'zlib';
 import * as yauzl from 'yauzl';
 import { uploadPdfFromPath } from '../../lib/s3Service/S3Service';
 import createLoggerWithPrefix from '../../lib/logger';
@@ -84,6 +82,39 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   }
 
   /**
+   * Extract task ID from result with fallback options
+   * @param result The result object containing task information
+   * @returns A valid task ID string
+   */
+  private extractTaskId(result: any): string {
+    // Try direct task_id first
+    if (result?.task_id) {
+      return result.task_id;
+    }
+    
+    // Try alternative field names
+    if (result && typeof result === 'object') {
+      const taskIdCandidates = ['taskId', 'task_id', 'id', 'taskid'];
+      for (const candidate of taskIdCandidates) {
+        if (result[candidate]) {
+          return result[candidate];
+        }
+      }
+      
+      // Use other identifiers as fallbacks
+      if (result.data_id) {
+        return `data-${result.data_id}`;
+      }
+      if (result.file_name) {
+        return `file-${result.file_name}`;
+      }
+    }
+    
+    // Generate a unique fallback identifier
+    return `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
    * Convert PDF to markdown using S3 download URL
    * @param s3Url The S3 download URL of the PDF
    * @param options Conversion options
@@ -109,80 +140,17 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         downloadDir: this.config.downloadDir,
       });
       
-      // Enhanced diagnostic logging to identify task_id issue
-      this.logger.info(`MinerU processing completed. Full result structure: ${JSON.stringify({
-        hasResult: !!result.result,
-        resultType: typeof result.result,
-        resultIsNullOrUndefined: result.result == null,
-        resultKeys: result.result ? Object.keys(result.result) : [],
-        resultString: JSON.stringify(result.result),
-        downloadedFilesCount: result.downloadedFiles?.length || 0,
-        fullResultStructure: JSON.stringify(result, null, 2)
-      })}`);
+      this.logger.info(`MinerU processing completed`);
+      this.logger.info(`Extracting markdown from downloaded files...`);
       
-      if (result.result) {
-        this.logger.info(`Result details: ${JSON.stringify({
-          task_id: result.result?.task_id || 'undefined',
-          task_idType: typeof result.result?.task_id,
-          state: result.result?.state || 'undefined',
-          data_id: result.result?.data_id || 'undefined',
-          file_name: result.result?.file_name || 'undefined',
-          err_msg: result.result?.err_msg || 'undefined'
-        })}`);
-      } else {
-        this.logger.error(`CRITICAL: result.result is undefined or null. This is likely the source of the task_id error.`);
-        this.logger.error(`Result object structure: ${JSON.stringify(result, null, 2)}`);
-      }
-      
-      this.logger.info(
-        `MinerU processing completed, taskId: ${result.result?.task_id || 'unknown'}`,
-      );
-
-      this.logger.info(
-        `Extracting markdown from downloaded files...`,
-      );
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
       );
       this.logger.info(`Markdown extraction completed`);
 
-      // Robust task_id extraction with multiple fallbacks
-      let taskId = 'unknown';
-      
-      if (result.result && result.result.task_id) {
-        taskId = result.result.task_id;
-      } else if (result.result && typeof result.result === 'object') {
-        // Try to find task_id in the result object
-        const resultKeys = Object.keys(result.result);
-        this.logger.info(`Available result keys: ${resultKeys.join(', ')}`);
-        
-        // Check for alternative field names that might contain the task ID
-        const taskIdCandidates = ['taskId', 'task_id', 'id', 'task_id', 'taskid'];
-        for (const candidate of taskIdCandidates) {
-          if (result.result[candidate]) {
-            taskId = result.result[candidate];
-            this.logger.info(`Found task ID in alternative field: ${candidate} = ${taskId}`);
-            break;
-          }
-        }
-        
-        // If still no task_id, check if we can use other identifiers
-        if (taskId === 'unknown') {
-          if (result.result.data_id) {
-            taskId = `data-${result.result.data_id}`;
-            this.logger.info(`Using data_id as fallback identifier: ${taskId}`);
-          } else if (result.result.file_name) {
-            taskId = `file-${result.result.file_name}`;
-            this.logger.info(`Using file_name as fallback identifier: ${taskId}`);
-          }
-        }
-      } else {
-        this.logger.warn(`result.result is undefined or null. Using fallback identifier generation.`);
-        // Generate a unique identifier based on timestamp and random string
-        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        this.logger.info(`Generated fallback task ID: ${taskId}`);
-      }
+      // Extract task ID using the helper method
+      const taskId = this.extractTaskId(result.result);
       
       return {
         success: true,
@@ -270,79 +238,17 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         downloadDir: this.config.downloadDir,
       });
       
-      // Enhanced diagnostic logging for convertPdfToMarkdown method
-      this.logger.info(`MinerU processing completed. Full result structure: ${JSON.stringify({
-        hasResult: !!result.result,
-        resultType: typeof result.result,
-        resultIsNullOrUndefined: result.result == null,
-        resultKeys: result.result ? Object.keys(result.result) : [],
-        downloadedFilesCount: result.downloadedFiles?.length || 0,
-        fullResultStructure: JSON.stringify(result, null, 2)
-      })}`);
+      this.logger.info(`MinerU processing completed`);
+      this.logger.info(`Extracting markdown from downloaded files...`);
       
-      if (result.result) {
-        this.logger.info(`Result details: ${JSON.stringify({
-          task_id: result.result?.task_id || 'undefined',
-          task_idType: typeof result.result?.task_id,
-          state: result.result?.state || 'undefined',
-          data_id: result.result?.data_id || 'undefined',
-          file_name: result.result?.file_name || 'undefined',
-          err_msg: result.result?.err_msg || 'undefined'
-        })}`);
-      } else {
-        this.logger.error(`CRITICAL: result.result is undefined or null in convertPdfToMarkdown method.`);
-        this.logger.error(`Result object structure: ${JSON.stringify(result, null, 2)}`);
-      }
-      
-      this.logger.info(
-        `MinerU processing completed, taskId: ${result.result?.task_id || 'unknown'}`,
-      );
-
-      this.logger.info(
-        `Extracting markdown from downloaded files...`,
-      );
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
       );
       this.logger.info(`Markdown extraction completed`);
 
-      // Robust task_id extraction with multiple fallbacks
-      let taskId = 'unknown';
-      
-      if (result.result && result.result.task_id) {
-        taskId = result.result.task_id;
-      } else if (result.result && typeof result.result === 'object') {
-        // Try to find task_id in the result object
-        const resultKeys = Object.keys(result.result);
-        this.logger.info(`Available result keys: ${resultKeys.join(', ')}`);
-        
-        // Check for alternative field names that might contain the task ID
-        const taskIdCandidates = ['taskId', 'task_id', 'id', 'task_id', 'taskid'];
-        for (const candidate of taskIdCandidates) {
-          if (result.result[candidate]) {
-            taskId = result.result[candidate];
-            this.logger.info(`Found task ID in alternative field: ${candidate} = ${taskId}`);
-            break;
-          }
-        }
-        
-        // If still no task_id, check if we can use other identifiers
-        if (taskId === 'unknown') {
-          if (result.result.data_id) {
-            taskId = `data-${result.result.data_id}`;
-            this.logger.info(`Using data_id as fallback identifier: ${taskId}`);
-          } else if (result.result.file_name) {
-            taskId = `file-${result.result.file_name}`;
-            this.logger.info(`Using file_name as fallback identifier: ${taskId}`);
-          }
-        }
-      } else {
-        this.logger.warn(`result.result is undefined or null. Using fallback identifier generation.`);
-        // Generate a unique identifier based on timestamp and random string
-        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        this.logger.info(`Generated fallback task ID: ${taskId}`);
-      }
+      // Extract task ID using the helper method
+      const taskId = this.extractTaskId(result.result);
       
       return {
         success: true,
@@ -437,44 +343,21 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       if (result.state === 'failed') {
         this.logger.error(`Task failed: ${result.err_msg}`);
         
-        // Robust task_id extraction for error case
-        let taskId = 'unknown';
-        if (result && result.task_id) {
-          taskId = result.task_id;
-        } else if (result && result.data_id) {
-          taskId = `data-${result.data_id}`;
-        } else if (result && result.file_name) {
-          taskId = `file-${result.file_name}`;
-        } else {
-          taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        }
-        
         return {
           success: false,
           error: result.err_msg || 'Processing failed',
-          taskId: taskId,
+          taskId: this.extractTaskId(result),
         };
       }
 
-      this.logger.info(
-        `Extracting markdown from downloaded files...`,
-      );
+      this.logger.info(`Extracting markdown from downloaded files...`);
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         taskResult.downloadedFiles,
       );
 
-      // Robust task_id extraction for successful case
-      let taskId = 'unknown';
-      if (result && result.task_id) {
-        taskId = result.task_id;
-      } else if (result && result.data_id) {
-        taskId = `data-${result.data_id}`;
-      } else if (result && result.file_name) {
-        taskId = `file-${result.file_name}`;
-      } else {
-        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      }
+      // Extract task ID using the helper method
+      const taskId = this.extractTaskId(result);
       
       return {
         success: true,
@@ -570,35 +453,13 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         // Process each result
         for (const result of taskResult.results.extract_result) {
           if (result.state === 'failed') {
-            // Robust task_id extraction for error case
-            let taskId = 'unknown';
-            if (result && result.task_id) {
-              taskId = result.task_id;
-            } else if (result && result.data_id) {
-              taskId = `data-${result.data_id}`;
-            } else if (result && result.file_name) {
-              taskId = `file-${result.file_name}`;
-            } else {
-              taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            }
-            
             results.push({
               success: false,
               error: result.err_msg || 'Processing failed',
-              taskId: taskId,
+              taskId: this.extractTaskId(result),
             });
           } else {
-            // Enhanced task identifier extraction
-            let taskIdentifier = 'unknown';
-            if (result.task_id) {
-              taskIdentifier = result.task_id;
-            } else if (result.data_id) {
-              taskIdentifier = `data-${result.data_id}`;
-            } else if (result.file_name) {
-              taskIdentifier = `file-${result.file_name}`;
-            } else {
-              taskIdentifier = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            }
+            const taskIdentifier = this.extractTaskId(result);
             const filteredFiles = taskResult.downloadedFiles.filter((file) =>
               file.includes(taskIdentifier),
             );
@@ -606,7 +467,6 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
             const markdownData =
               await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
-            // Use the robust taskIdentifier instead of directly accessing result.task_id
             results.push({
               success: true,
               data: markdownData,
@@ -682,23 +542,13 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         // Process each result
         for (const taskResult of batchResult.results.extract_result) {
-          // Enhanced task identifier extraction
-          let taskIdentifier = 'unknown';
-          if (taskResult.task_id) {
-            taskIdentifier = taskResult.task_id;
-          } else if (taskResult.data_id) {
-            taskIdentifier = `data-${taskResult.data_id}`;
-          } else if (taskResult.file_name) {
-            taskIdentifier = `file-${taskResult.file_name}`;
-          } else {
-            taskIdentifier = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          }
+          const taskIdentifier = this.extractTaskId(taskResult);
 
           if (taskResult.state === 'failed') {
             allResults.push({
               success: false,
               error: taskResult.err_msg || 'Processing failed',
-              taskId: taskIdentifier, // Use the robust taskIdentifier
+              taskId: taskIdentifier,
             });
           } else {
             const filteredFiles = batchResult.downloadedFiles.filter((file) =>
@@ -708,7 +558,6 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
             const markdownData =
               await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
-            // Use the robust taskIdentifier instead of directly accessing taskResult.task_id
             allResults.push({
               success: true,
               data: markdownData,

@@ -4,6 +4,13 @@ Configuration module for PDF processing workers
 
 import os
 from typing import Dict, Any
+from pathlib import Path
+
+# Load environment variables from .env file
+env_file = Path(__file__).parent.parent / '.env'
+if env_file.exists():
+    from dotenv import load_dotenv
+    load_dotenv(env_file)
 
 
 class Config:
@@ -37,6 +44,19 @@ class Config:
     
     # Temporary directory configuration
     TEMP_DIR = os.getenv('TEMP_DIR', '/tmp/pdf-processing')
+    
+    # Elasticsearch configuration
+    ELASTICSEARCH_LOGGING_ENABLED = os.getenv('ELASTICSEARCH_LOGGING_ENABLED', 'false').lower() == 'true'
+    ELASTICSEARCH_LOG_LEVEL = os.getenv('ELASTICSEARCH_LOG_LEVEL', LOG_LEVEL.lower())
+    ELASTICSEARCH_URL = os.getenv('ELASTICSEARCH_URL', 'http://localhost:9200')
+    ELASTICSEARCH_USERNAME = os.getenv('ELASTICSEARCH_USERNAME', 'elastic')
+    ELASTICSEARCH_PASSWORD = os.getenv('ELASTICSEARCH_PASSWORD', 'changeme')
+    ELASTICSEARCH_API_KEY = os.getenv('ELASTICSEARCH_API_KEY', '')
+    ELASTICSEARCH_VERIFY_SSL = os.getenv('ELASTICSEARCH_VERIFY_SSL', 'true').lower() == 'true'
+    ELASTICSEARCH_LOG_INDEX = os.getenv('ELASTICSEARCH_LOG_INDEX', 'logs')
+    ELASTICSEARCH_LOG_INDEX_PATTERN = os.getenv('ELASTICSEARCH_LOG_INDEX_PATTERN', 'logs-YYYY.MM.DD')
+    SERVICE_NAME = os.getenv('SERVICE_NAME', 'pdf-splitting-worker')
+    ENVIRONMENT = os.getenv('NODE_ENV', 'development')
     
     @classmethod
     def get_rabbitmq_config(cls) -> Dict[str, Any]:
@@ -79,4 +99,21 @@ class Config:
             'log_level': cls.LOG_LEVEL,
             'max_retries': cls.MAX_RETRIES,
             'temp_dir': cls.TEMP_DIR,
+        }
+    
+    @classmethod
+    def get_elasticsearch_config(cls) -> Dict[str, Any]:
+        """Get Elasticsearch configuration as a dictionary"""
+        return {
+            'enabled': cls.ELASTICSEARCH_LOGGING_ENABLED,
+            'log_level': cls.ELASTICSEARCH_LOG_LEVEL,
+            'url': cls.ELASTICSEARCH_URL,
+            'username': cls.ELASTICSEARCH_USERNAME,
+            'password': cls.ELASTICSEARCH_PASSWORD,
+            'api_key': cls.ELASTICSEARCH_API_KEY,
+            'verify_ssl': cls.ELASTICSEARCH_VERIFY_SSL,
+            'index_name': cls.ELASTICSEARCH_LOG_INDEX,
+            'index_pattern': cls.ELASTICSEARCH_LOG_INDEX_PATTERN,
+            'service_name': cls.SERVICE_NAME,
+            'environment': cls.ENVIRONMENT,
         }
