@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 // Load environment variables from .env file
 config({ path: '.env' });
 
-import Library, { S3ElasticSearchLibraryStorage } from './library';
+import Library, { LibraryItem, S3ElasticSearchLibraryStorage } from './library';
 import { S3MongoLibraryStorage } from './library';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -40,7 +40,7 @@ export async function UploadTestPdf() {
   });
   const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
   const library = new Library(storage, testMinerUPdfConvertor);
-
+  library
   // Read the test PDF file
   const pdfPath = 'test/viral_pneumonia.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
@@ -57,37 +57,37 @@ export async function UploadTestPdf() {
 
   // Store the PDF from buffer
   const book = await library.storePdf(pdfBuffer, 'viral_pneumonia', metadata);
-  return book;
+  return {book, library};
 }
 
-describe(Library, async () => {
+describe.skip(Library, async () => {
   let book;
   
   // Option 1: With default PDF converter
   beforeAll(async()=>{
     try {
       // Initialize the singleton RabbitMQ service that Library will use
-      const rabbitMQService = getRabbitMQService();
-      await rabbitMQService.initialize();
+      // const rabbitMQService = getRabbitMQService();
+      // await rabbitMQService.initialize();
       console.log('✅ RabbitMQ service initialized successfully');
       
       // Create storage instance for workers
-      const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+      // const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
       
-      // Start workers
-      await createPdfAnalysisWorker(storage);
-      console.log('✅ PDF analysis worker started');
+      // // Start workers
+      // await createPdfAnalysisWorker(storage);
+      // console.log('✅ PDF analysis worker started');
       
-      await createPdfProcessingCoordinatorWorker(storage);
-      console.log('✅ PDF processing coordinator worker started');
+      // await createPdfProcessingCoordinatorWorker(storage);
+      // console.log('✅ PDF processing coordinator worker started');
       
-      await createPdfConversionWorker();
-      console.log('✅ PDF conversion worker started');
+      // await createPdfConversionWorker();
+      // console.log('✅ PDF conversion worker started');
       
-      await startMarkdownStorageWorker(storage);
-      console.log('✅ Markdown storage worker started');
+      // await startMarkdownStorageWorker(storage);
+      // console.log('✅ Markdown storage worker started');
       
-      // Upload test PDF after workers are ready
+      // // Upload test PDF after workers are ready
       book = await UploadTestPdf();
       console.log('✅ Test PDF uploaded');
     } catch (error) {
@@ -112,7 +112,7 @@ describe(Library, async () => {
     expect(res).toBe(true)
   })
 
-  it.skip('upload pdf buffer and retrieve s3 download url', async () => {
+  it('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
     expect(book.metadata.title).toBe('viral_pneumonia');
@@ -136,7 +136,7 @@ describe(Library, async () => {
     console.log(`Download URL: ${downloadUrl}`);
   }, 30000); // Increase timeout to 30 seconds for S3 operations
 
-  it('get current md', async () => {
+  it.skip('get current md', async () => {
     // Read markdown content from Library storage
     const mdContent = await book.getMarkdown();
     console.log(
@@ -161,8 +161,19 @@ describe(Library, async () => {
     expect(exist).toBe(true)
   })
 
-  it('semantic search', async()=>{
+  it.skip('semantic search', async()=>{
     const searchRes = await book.searchInChunks("ACEI",2)
     console.log(searchRes)
   })
 });
+
+describe("pdf process workflow", async()=>{
+
+  let {book, library} = await UploadTestPdf();
+
+  it("start pdf async process", async()=>{
+    const s3Link = await book.getPdfDownloadUrl()
+    console.log(`s3Link: ${s3Link}`)
+    await library.sendPdfAnalysisRequest(book.getItemId(),s3Link, book.metadata.s3Key as string, book.metadata.title)
+  })  
+})

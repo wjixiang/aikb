@@ -102,7 +102,7 @@ describe('Library Async PDF Conversion', () => {
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: result.metadata.id,
           fileName,
-          s3Url: result.metadata.s3Url,
+  
           s3Key: result.metadata.s3Key,
         })
       );

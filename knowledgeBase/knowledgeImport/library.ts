@@ -12,6 +12,9 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../lib/logger';
+
+// Create a global logger for the Library module
+const logger = createLoggerWithPrefix('Library');
 import {
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
@@ -61,7 +64,6 @@ export interface BookMetadata {
   dateModified: Date;
   fileType: 'pdf' | 'article' | 'book' | 'other';
   s3Key?: string;
-  s3Url?: string;
   fileSize?: number;
   pageCount?: number;
   language?: string;
@@ -401,6 +403,10 @@ export default class Library extends AbstractLibrary {
     pdfConvertor?: MinerUPdfConvertor,
   ) {
     super(storage, pdfConvertor);
+    logger.debug('Library constructor - RabbitMQ service instance', {
+      serviceId: this.rabbitMQService.constructor.name,
+      isConnected: this.rabbitMQService.isConnected()
+    });
   }
 
   /**
@@ -425,7 +431,7 @@ export default class Library extends AbstractLibrary {
     // Check if item with same hash already exists
     const existingItem = await this.storage.getMetadataByHash(contentHash);
     if (existingItem) {
-      console.log(
+      logger.info(
         `Item with same content already exists (ID: ${existingItem.id}), returning existing item. Status: ${existingItem.pdfProcessingStatus}`,
       );
       return new LibraryItem(existingItem, this.storage);
@@ -438,7 +444,6 @@ export default class Library extends AbstractLibrary {
       ...metadata,
       title: metadata.title || path.basename(fileName, '.pdf'),
       s3Key: pdfInfo.s3Key,
-      s3Url: pdfInfo.url,
       fileSize: pdfBuffer.length,
       contentHash,
       dateAdded: new Date(),
@@ -460,42 +465,9 @@ export default class Library extends AbstractLibrary {
     const libraryItem = new LibraryItem(savedMetadata, this.storage);
 
     // Send PDF analysis request to RabbitMQ for async processing
-    try {
-      console.log(`Sending PDF analysis request to RabbitMQ for item: ${savedMetadata.id}`);
-      
-      const analysisRequest: PdfAnalysisRequestMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'PDF_ANALYSIS_REQUEST',
-        itemId: savedMetadata.id!,
-        s3Url: pdfInfo.url,
-        s3Key: pdfInfo.s3Key,
-        fileName,
-        priority: 'normal',
-        retryCount: 0,
-        maxRetries: 3,
-      };
-
-      await this.rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
-      
-      // Don't update status to processing here - keep it as pending until the worker starts processing
-      // The status will be updated to 'processing' by the worker when it starts processing
-      
-      console.log(`PDF analysis request sent successfully for item: ${savedMetadata.id}`);
-    } catch (error) {
-      console.error(`Failed to send PDF analysis request for item ${savedMetadata.id}:`, error);
-      
-      // Update status to failed
-      await this.updateProcessingStatus(
-        savedMetadata.id!,
-        PdfProcessingStatus.FAILED,
-        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        0,
-        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-      
-      // Don't fail the entire operation, but log the error
-    }
+    // Generate a presigned URL for the PDF analysis worker
+    const presignedUrl = await this.storage.getPdfDownloadUrl(pdfInfo.s3Key);
+    await this.sendPdfAnalysisRequest(savedMetadata.id!, presignedUrl, pdfInfo.s3Key, fileName);
 
     return libraryItem;
   }
@@ -513,7 +485,7 @@ export default class Library extends AbstractLibrary {
     try {
       const item = await this.getItem(itemId);
       if (!item) {
-        console.warn(`Item ${itemId} not found for status update`);
+        logger.warn(`Item ${itemId} not found for status update`);
         return;
       }
 
@@ -536,9 +508,68 @@ export default class Library extends AbstractLibrary {
       }
 
       await item.updateMetadata(updates);
-      console.log(`Updated processing status for item ${itemId}: ${status}${message ? ` - ${message}` : ''}`);
+      logger.info(`Updated processing status for item ${itemId}: ${status}${message ? ` - ${message}` : ''}`);
     } catch (error) {
-      console.error(`Failed to update processing status for item ${itemId}:`, error);
+      logger.error(`Failed to update processing status for item ${itemId}:`, error);
+    }
+  }
+
+  /**
+   * Send PDF analysis request to RabbitMQ for async processing
+   */
+  async sendPdfAnalysisRequest(
+    itemId: string,
+    s3Url: string,
+    s3Key: string,
+    fileName: string
+  ): Promise<void> {
+    try {
+      logger.info(`Sending PDF analysis request to RabbitMQ for item: ${itemId}`);
+      
+      // Ensure RabbitMQ service is initialized before publishing
+      if (!this.rabbitMQService.isConnected()) {
+        logger.info('RabbitMQ service not connected, initializing...');
+        await this.rabbitMQService.initialize();
+        logger.info('RabbitMQ service initialized successfully');
+      }
+      
+      const analysisRequest: PdfAnalysisRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'PDF_ANALYSIS_REQUEST',
+        itemId,
+        s3Url,
+        s3Key,
+        fileName,
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+      };
+
+      logger.debug('About to publish PDF analysis request', {
+        itemId,
+        serviceConnected: this.rabbitMQService.isConnected()
+      });
+      
+      await this.rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
+      
+      // Don't update status to processing here - keep it as pending until the worker starts processing
+      // The status will be updated to 'processing' by the worker when it starts processing
+      
+      logger.info(`PDF analysis request sent successfully for item: ${itemId}`);
+    } catch (error) {
+      logger.error(`Failed to send PDF analysis request for item ${itemId}:`, error);
+      
+      // Update status to failed
+      await this.updateProcessingStatus(
+        itemId,
+        PdfProcessingStatus.FAILED,
+        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        0,
+        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
+      // Don't fail the entire operation, but log the error
     }
   }
 
@@ -570,7 +601,7 @@ export default class Library extends AbstractLibrary {
         retryCount: item.metadata.pdfProcessingRetryCount,
       };
     } catch (error) {
-      console.error(`Failed to get processing status for item ${itemId}:`, error);
+      logger.error(`Failed to get processing status for item ${itemId}:`, error);
       return null;
     }
   }
@@ -643,12 +674,12 @@ export default class Library extends AbstractLibrary {
           throw new Error(`Item with ID ${itemId} not found`);
         }
 
-        console.log(`Re-extracting markdown for item: ${itemId}`);
+        logger.info(`Re-extracting markdown for item: ${itemId}`);
         await item.extractMarkdown();
-        console.log(`Successfully re-extracted markdown for item: ${itemId}`);
+        logger.info(`Successfully re-extracted markdown for item: ${itemId}`);
       } else {
         // Re-extract markdown for all items that have PDFs
-        console.log('Re-extracting markdown for all items with PDFs...');
+        logger.info('Re-extracting markdown for all items with PDFs...');
 
         // Get all items with PDF files
         const allItems = await this.searchItems({ fileType: ['pdf'] });
@@ -656,15 +687,15 @@ export default class Library extends AbstractLibrary {
         for (const item of allItems) {
           if (item.hasPdf()) {
             try {
-              console.log(
+              logger.info(
                 `Re-extracting markdown for item: ${item.metadata.id}`,
               );
               await item.extractMarkdown();
-              console.log(
+              logger.info(
                 `Successfully re-extracted markdown for item: ${item.metadata.id}`,
               );
             } catch (error) {
-              console.error(
+              logger.error(
                 `Failed to re-extract markdown for item ${item.metadata.id}:`,
                 error,
               );
@@ -673,10 +704,10 @@ export default class Library extends AbstractLibrary {
           }
         }
 
-        console.log('Completed re-extraction of markdown for all items');
+        logger.info('Completed re-extraction of markdown for all items');
       }
     } catch (error) {
-      console.error('Error in reExtractMarkdown:', error);
+      logger.error('Error in reExtractMarkdown:', error);
       throw error;
     }
   }
@@ -823,18 +854,18 @@ export default class Library extends AbstractLibrary {
       // Get the markdown content
       const markdownContent = await item.getMarkdown();
       if (!markdownContent) {
-        console.warn(`No markdown content found for item: ${itemId}`);
+        logger.warn(`No markdown content found for item: ${itemId}`);
         return;
       }
 
       // Check if the markdown content is just a placeholder (no actual markdown was stored)
       const storedMarkdown = await this.storage.getMarkdown(itemId);
       if (!storedMarkdown) {
-        console.warn(`No actual markdown content stored for item: ${itemId}, skipping chunking`);
+        logger.warn(`No actual markdown content stored for item: ${itemId}, skipping chunking`);
         return;
       }
 
-      console.log(
+      logger.info(
         `Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`,
       );
 
@@ -850,11 +881,11 @@ export default class Library extends AbstractLibrary {
       }
 
       if (chunkResults.length === 0) {
-        console.warn(`No chunks generated for item: ${itemId}`);
+        logger.warn(`No chunks generated for item: ${itemId}`);
         return;
       }
 
-      console.log(
+      logger.info(
         `Generated ${chunkResults.length} chunks for item: ${itemId}`,
       );
 
@@ -897,7 +928,7 @@ export default class Library extends AbstractLibrary {
       }
 
       // Generate embeddings for all chunks
-      console.log(`Generating embeddings for ${chunkTexts.length} chunks`);
+      logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
       const embeddings = await embeddingService.embedBatch(chunkTexts);
 
       // Assign embeddings to chunks
@@ -909,11 +940,11 @@ export default class Library extends AbstractLibrary {
 
       // Save chunks to storage
       await this.storage.batchSaveChunks(chunks);
-      console.log(
+      logger.info(
         `Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`,
       );
     } catch (error) {
-      console.error(`Error processing chunks for item ${itemId}:`, error);
+      logger.error(`Error processing chunks for item ${itemId}:`, error);
       throw error;
     }
   }
@@ -970,12 +1001,12 @@ export default class Library extends AbstractLibrary {
     try {
       if (itemId) {
         // Re-process chunks for a specific item
-        console.log(`Re-processing chunks for item: ${itemId}`);
+        logger.info(`Re-processing chunks for item: ${itemId}`);
         await this.processItemChunks(itemId, chunkingStrategy);
-        console.log(`Successfully re-processed chunks for item: ${itemId}`);
+        logger.info(`Successfully re-processed chunks for item: ${itemId}`);
       } else {
         // Re-process chunks for all items that have markdown content
-        console.log(
+        logger.info(
           'Re-processing chunks for all items with markdown content...',
         );
 
@@ -986,14 +1017,14 @@ export default class Library extends AbstractLibrary {
           try {
             const markdownContent = await item.getMarkdown();
             if (markdownContent) {
-              console.log(`Re-processing chunks for item: ${item.metadata.id}`);
+              logger.info(`Re-processing chunks for item: ${item.metadata.id}`);
               await this.processItemChunks(item.metadata.id!, chunkingStrategy);
-              console.log(
+              logger.info(
                 `Successfully re-processed chunks for item: ${item.metadata.id}`,
               );
             }
           } catch (error) {
-            console.error(
+            logger.error(
               `Failed to re-process chunks for item ${item.metadata.id}:`,
               error,
             );
@@ -1001,10 +1032,10 @@ export default class Library extends AbstractLibrary {
           }
         }
 
-        console.log('Completed re-processing of chunks for all items');
+        logger.info('Completed re-processing of chunks for all items');
       }
     } catch (error) {
-      console.error('Error in reProcessChunks:', error);
+      logger.error('Error in reProcessChunks:', error);
       throw error;
     }
   }
@@ -1015,6 +1046,16 @@ export class LibraryItem {
     public metadata: BookMetadata,
     private storage: AbstractLibraryStorage,
   ) {}
+
+  /**
+   * Get the ID of this library item
+   */
+  getItemId(): string {
+    if (!this.metadata.id) {
+      throw new Error('Library item does not have an ID');
+    }
+    return this.metadata.id;
+  }
 
   /**
    * Check if this item has an associated PDF file
@@ -1108,7 +1149,7 @@ export class LibraryItem {
   }
 
   async extractMarkdown(): Promise<void> {
-    console.log(`[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`);
+    logger.info(`[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`);
     
     // Check if this item has an associated PDF file
     if (!this.hasPdf()) {
@@ -1116,19 +1157,19 @@ export class LibraryItem {
     }
 
     try {
-      console.log(`[LibraryItem.extractMarkdown] Getting PDF download URL...`);
+      logger.info(`[LibraryItem.extractMarkdown] Getting PDF download URL...`);
       // Get the PDF download URL
       const pdfUrl = await this.getPdfDownloadUrl();
-      console.log(`[LibraryItem.extractMarkdown] PDF URL obtained: ${pdfUrl}`);
+      logger.info(`[LibraryItem.extractMarkdown] PDF URL obtained: ${pdfUrl}`);
 
-      console.log(`[LibraryItem.extractMarkdown] Creating MinerUPdfConvertor instance...`);
+      logger.info(`[LibraryItem.extractMarkdown] Creating MinerUPdfConvertor instance...`);
       // Create a new MinerUPdfConvertor instance
       const pdfConvertor = createMinerUConvertorFromEnv();
 
-      console.log(`[LibraryItem.extractMarkdown] Converting PDF to markdown...`);
+      logger.info(`[LibraryItem.extractMarkdown] Converting PDF to markdown...`);
       // Convert the PDF to markdown using the MinerUPdfConvertor
       const conversionResult = await pdfConvertor.convertPdfToMarkdown(pdfUrl);
-      console.log(`[LibraryItem.extractMarkdown] Conversion completed. Success: ${conversionResult.success}`);
+      logger.info(`[LibraryItem.extractMarkdown] Conversion completed. Success: ${conversionResult.success}`);
 
       if (!conversionResult.success) {
         throw new Error(
@@ -1136,40 +1177,40 @@ export class LibraryItem {
         );
       }
 
-      console.log(`[LibraryItem.extractMarkdown] Extracting markdown content from result...`);
+      logger.info(`[LibraryItem.extractMarkdown] Extracting markdown content from result...`);
       // Extract markdown content from the conversion result
       let markdownContent = '';
 
       if (typeof conversionResult.data === 'string') {
         markdownContent = conversionResult.data;
-        console.log(`[LibraryItem.extractMarkdown] Markdown extracted as string (${markdownContent.length} chars)`);
+        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted as string (${markdownContent.length} chars)`);
       } else if (conversionResult.data && conversionResult.data.markdown) {
         markdownContent = conversionResult.data.markdown;
-        console.log(`[LibraryItem.extractMarkdown] Markdown extracted from data.markdown (${markdownContent.length} chars)`);
+        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted from data.markdown (${markdownContent.length} chars)`);
       } else if (conversionResult.data && conversionResult.data.content) {
         markdownContent = conversionResult.data.content;
-        console.log(`[LibraryItem.extractMarkdown] Markdown extracted from data.content (${markdownContent.length} chars)`);
+        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted from data.content (${markdownContent.length} chars)`);
       } else {
-        console.error(`[LibraryItem.extractMarkdown] No markdown content found in conversion result:`, conversionResult.data);
+        logger.error(`[LibraryItem.extractMarkdown] No markdown content found in conversion result:`, conversionResult.data);
         throw new Error('No markdown content found in conversion result');
       }
 
-      console.log(`[LibraryItem.extractMarkdown] Saving markdown content to storage...`);
+      logger.info(`[LibraryItem.extractMarkdown] Saving markdown content to storage...`);
       // Save the markdown content to storage
       await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
 
-      console.log(`[LibraryItem.extractMarkdown] Updating metadata...`);
+      logger.info(`[LibraryItem.extractMarkdown] Updating metadata...`);
       // Update the metadata with the markdown content and timestamp
       await this.updateMetadata({
         markdownContent,
         markdownUpdatedDate: new Date(),
       });
 
-      console.log(
+      logger.info(
         `Successfully extracted and saved markdown for item: ${this.metadata.id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `Error extracting markdown for item ${this.metadata.id}:`,
         error,
       );
@@ -1643,9 +1684,9 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
       await chunksCollection.createIndex({ itemId: 1, index: 1 });
       await chunksCollection.createIndex({ content: 'text' });
 
-      console.log('Library storage indexes created successfully');
+      logger.info('Library storage indexes created successfully');
     } catch (error) {
-      console.warn('Failed to create library storage indexes:', error);
+      logger.warn('Failed to create library storage indexes:', error);
     }
   }
 

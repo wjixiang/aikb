@@ -4,6 +4,7 @@ import {
   chunkText,
   ChunkResult,
 } from './chunkingTool';
+import { ChunkingStrategyType } from './chunkingStrategy';
 
 describe('Chunking Tool Tests', () => {
   describe('h1Chunking', () => {
@@ -157,7 +158,7 @@ Chapter content.`;
       const markdown = `# Introduction
 Intro content.`;
 
-      const result = chunkText(markdown, 'h1') as ChunkResult[];
+      const result = chunkText(markdown, ChunkingStrategyType.H1) as ChunkResult[];
 
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Introduction');
@@ -166,7 +167,7 @@ Intro content.`;
     it('should use paragraph strategy when specified', () => {
       const text = `Paragraph 1.\n\nParagraph 2.`;
 
-      const result = chunkText(text, 'paragraph') as string[];
+      const result = chunkText(text, ChunkingStrategyType.PARAGRAPH) as string[];
 
       expect(result).toHaveLength(2);
       expect(result[0]).toBe('Paragraph 1.');

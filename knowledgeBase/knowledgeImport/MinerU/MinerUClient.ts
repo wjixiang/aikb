@@ -359,9 +359,44 @@ export class MinerUClient {
       ),
     ).then((data) => {
       console.log(
+        `[MinerUClient] Single file task response received:`,
+        JSON.stringify(data, null, 2),
+      );
+      
+      if (!data.task_id) {
+        console.error(`[MinerUClient] No task_id in response. Response data:`, data);
+        
+        // Try to find alternative identifiers
+        const alternativeIds = ['id', 'taskId', 'taskid', 'identifier'];
+        let foundId = null;
+        
+        for (const altId of alternativeIds) {
+          if (data[altId]) {
+            foundId = data[altId];
+            console.log(`[MinerUClient] Found alternative identifier: ${altId} = ${foundId}`);
+            break;
+          }
+        }
+        
+        if (foundId) {
+          // Use the alternative ID as task_id
+          data.task_id = foundId;
+          console.log(`[MinerUClient] Using alternative identifier as task_id: ${foundId}`);
+        } else {
+          // Generate a fallback task_id
+          const fallbackId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          data.task_id = fallbackId;
+          console.warn(`[MinerUClient] Generated fallback task_id: ${fallbackId}`);
+        }
+      }
+      
+      console.log(
         `[MinerUClient] Single file task created successfully. Task ID: ${data.task_id}`,
       );
       return data.task_id;
+    }).catch((error) => {
+      console.error(`[MinerUClient] Failed to create single file task:`, error);
+      throw error;
     });
   }
 
@@ -373,10 +408,23 @@ export class MinerUClient {
     return this.retryRequest(async () =>
       this.client.get<ApiResponse<TaskResult>>(`/extract/task/${taskId}`),
     ).then((data) => {
-      console.log(
-        `[MinerUClient] Task result received:`,
-        JSON.stringify(data, null, 2),
-      );
+      // Enhanced diagnostic logging for task result
+      console.log(`[MinerUClient] Task result received. Enhanced diagnostics:`, {
+        taskId: taskId,
+        dataType: typeof data,
+        dataIsNullOrUndefined: data == null,
+        dataKeys: data ? Object.keys(data) : [],
+        task_id: data?.task_id || 'undefined',
+        task_idType: typeof data?.task_id,
+        state: data?.state || 'undefined',
+        fullDataStructure: JSON.stringify(data, null, 2)
+      });
+      
+      if (!data || data.task_id === undefined) {
+        console.error(`[MinerUClient] CRITICAL: Task result missing task_id. TaskId: ${taskId}`);
+        console.error(`[MinerUClient] Full response data:`, JSON.stringify(data, null, 2));
+      }
+      
       return data;
     });
   }
@@ -425,8 +473,19 @@ export class MinerUClient {
 
     while (Date.now() - startTime < timeout) {
       const result = await this.getTaskResult(taskId);
+      
+      console.log(`[MinerUClient] Task ${taskId} status check:`, {
+        state: result.state,
+        hasTaskId: !!result.task_id,
+        taskId: result.task_id,
+        hasFullZipUrl: !!result.full_zip_url,
+        hasErrorMsg: !!result.err_msg,
+        errorMsg: result.err_msg,
+        elapsed: Date.now() - startTime
+      });
 
       if (result.state === 'done') {
+        console.log(`[MinerUClient] Task ${taskId} completed successfully`);
         if (result.full_zip_url) {
           const downloadedFiles = await this.downloadResultZip(
             result.full_zip_url,
@@ -437,6 +496,7 @@ export class MinerUClient {
         }
         return { result };
       } else if (result.state === 'failed') {
+        console.log(`[MinerUClient] Task ${taskId} failed:`, result.err_msg);
         throw new MinerUApiError(
           'TASK_FAILED',
           result.err_msg || 'Task processing failed',

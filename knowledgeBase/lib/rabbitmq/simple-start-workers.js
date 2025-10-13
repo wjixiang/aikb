@@ -124,14 +124,23 @@ async function startAllWorkers() {
     logger.info(`Found ${workers.length} workers to start`);
 
     // Start workers sequentially to avoid overwhelming the system
-    for (const worker of workers) {
+    await Promise.all(workers.map(async(worker)=>{
       try {
         await startWorker(worker);
       } catch (error) {
         logger.error(`Failed to start ${worker.name}: ${error.message}`);
         // Continue with other workers even if one fails
       }
-    }
+    }))
+
+    // for (const worker of workers) {
+    //   try {
+    //     await startWorker(worker);
+    //   } catch (error) {
+    //     logger.error(`Failed to start ${worker.name}: ${error.message}`);
+    //     // Continue with other workers even if one fails
+    //   }
+    // }
 
     logger.info(`🎉 Workers startup completed. ${workerProcesses.length} workers running.`);
     

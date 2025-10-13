@@ -412,7 +412,20 @@ export class RabbitMQService {
     message: BaseRabbitMQMessage,
     options: RabbitMQMessageOptions = {}
   ): Promise<boolean> {
+    logger.debug('publishMessage called', {
+      routingKey,
+      isInitialized: this.isInitialized,
+      hasChannel: !!this.channel,
+      hasConnection: !!this.connection
+    });
+    
     if (!this.isInitialized || !this.channel) {
+      logger.error('RabbitMQ service not initialized when attempting to publish', {
+        isInitialized: this.isInitialized,
+        hasChannel: !!this.channel,
+        hasConnection: !!this.connection,
+        routingKey
+      });
       throw new Error('RabbitMQ service not initialized');
     }
 
@@ -850,7 +863,12 @@ let rabbitMQServiceInstance: RabbitMQService | null = null;
  */
 export function getRabbitMQService(configPath?: string): RabbitMQService {
   if (!rabbitMQServiceInstance) {
+    logger.info('Creating new RabbitMQ service instance');
     rabbitMQServiceInstance = new RabbitMQService(configPath);
+  } else {
+    logger.debug('Returning existing RabbitMQ service instance', {
+      isConnected: rabbitMQServiceInstance.isConnected()
+    });
   }
   return rabbitMQServiceInstance;
 }

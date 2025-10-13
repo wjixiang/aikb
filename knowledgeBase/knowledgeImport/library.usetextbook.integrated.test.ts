@@ -58,7 +58,7 @@ describe(Library, async () => {
     expect(book).toBeDefined();
     expect(book.metadata.title).toBe('外科学_人卫10版');
     expect(book.metadata.s3Key).toBeDefined();
-    expect(book.metadata.s3Url).toBeDefined();
+
 
     // Retrieve the S3 download URL
     const downloadUrl = await book.getPdfDownloadUrl();

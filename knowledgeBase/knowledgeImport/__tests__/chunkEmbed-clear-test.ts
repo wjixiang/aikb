@@ -1,6 +1,7 @@
 import Library, { LibraryItem } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata } from '../library';
+import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 
 describe('chunkEmbed clear existing chunks test', () => {
   let library: Library;
@@ -36,7 +37,7 @@ This is chapter 2 content.`,
 
   it('should clear existing chunks before creating new ones when forceReprocess is true', async () => {
     // First, create some chunks
-    const initialChunks = await testItem.chunkEmbed('h1');
+    const initialChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1);
     expect(initialChunks.length).toBe(3); // Should have 3 chunks (Introduction, Chapter 1, Chapter 2)
 
     // Verify chunks exist
@@ -51,7 +52,7 @@ This is the updated introduction.
 This is the updated chapter 1 content.`;
 
     // Re-process with forceReprocess=true
-    const newChunks = await testItem.chunkEmbed('h1', true);
+    const newChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1, true);
 
     // Should have 2 chunks now (New Introduction, New Chapter 1)
     expect(newChunks.length).toBe(2);
@@ -65,11 +66,11 @@ This is the updated chapter 1 content.`;
 
   it('should return existing chunks when forceReprocess is false', async () => {
     // First, create some chunks
-    const initialChunks = await testItem.chunkEmbed('h1');
+    const initialChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1);
     expect(initialChunks.length).toBe(3);
 
     // Try to re-process with forceReprocess=false (default)
-    const returnedChunks = await testItem.chunkEmbed('h1', false);
+    const returnedChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1, false);
 
     // Should return the same chunks without creating new ones
     expect(returnedChunks.length).toBe(3);
@@ -84,14 +85,14 @@ This is the updated chapter 1 content.`;
 
   it('should clear existing chunks when forceReprocess is true even if no new chunks are created', async () => {
     // First, create some chunks
-    const initialChunks = await testItem.chunkEmbed('h1');
+    const initialChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1);
     expect(initialChunks.length).toBe(3);
 
     // Set empty markdown content
     testItem.metadata.markdownContent = '';
 
     // Re-process with forceReprocess=true
-    const newChunks = await testItem.chunkEmbed('h1', true);
+    const newChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1, true);
 
     // Should have no chunks
     expect(newChunks.length).toBe(0);

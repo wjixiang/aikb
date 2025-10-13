@@ -2,12 +2,26 @@
 FROM ubuntu:latest
 ENV UV_HTTP_TIMEOUT=10000
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ARG NODE_VERSION=20
+RUN apt update && apt install curl -y
+# install nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# set env
+ENV NVM_DIR=/root/.nvm
+
+# install node
+RUN bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION"
+
+# set ENTRYPOINT for reloading nvm-environment
+ENTRYPOINT ["bash", "-c", "source $NVM_DIR/nvm.sh && exec \"$@\"", "--"]
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y \
     build-essential \
     pipx \
-    nodejs \
     npm \
     git \
     python3 \

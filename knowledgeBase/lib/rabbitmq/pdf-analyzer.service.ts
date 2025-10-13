@@ -131,14 +131,25 @@ export class PdfAnalyzerService {
    */
   private async downloadPdfFromS3(s3Url: string): Promise<Buffer> {
     try {
+      logger.info(`Attempting to download PDF from presigned S3 URL: ${s3Url}`);
+      
+      // The s3Url should now be a presigned URL that includes authentication
+      // No need for AWS SDK credentials, just use axios to download
       const response = await axios.default.get(s3Url, {
         responseType: 'arraybuffer',
         timeout: 30000, // 30 seconds timeout
       });
 
+      logger.info(`Successfully downloaded PDF from presigned S3 URL, size: ${response.data.byteLength} bytes`);
       return Buffer.from(response.data);
     } catch (error) {
-      logger.error('Failed to download PDF from S3:', error);
+      logger.error('Failed to download PDF from presigned S3 URL:', {
+        url: s3Url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        status: (error as any)?.response?.status,
+        statusText: (error as any)?.response?.statusText,
+        headers: (error as any)?.response?.headers
+      });
       throw new Error(`Failed to download PDF from S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

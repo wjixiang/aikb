@@ -138,12 +138,46 @@ export class PdfConversionWorker {
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 10, 'Downloading PDF from S3');
 
       // Convert PDF to Markdown
-      logger.info(`Converting PDF to Markdown for item: ${message.itemId}`);
+      logger.info(`Converting PDF to Markdown for item: ${message.itemId}, S3 URL: ${message.s3Url}`);
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 30, 'Converting PDF to Markdown');
 
-      const conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+      logger.info(`Starting PDF conversion with S3 URL: ${message.s3Url}`);
+      
+      let conversionResult;
+      try {
+        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+        
+        // Enhanced diagnostic logging for conversion result
+        logger.info(`PDF conversion completed for item ${message.itemId}. Enhanced result diagnostics: ${JSON.stringify({
+          success: conversionResult.success,
+          hasData: !!conversionResult.data,
+          hasError: !!conversionResult.error,
+          error: conversionResult.error,
+          taskId: conversionResult.taskId,
+          taskIdType: typeof conversionResult.taskId,
+          downloadedFilesCount: conversionResult.downloadedFiles?.length || 0,
+          fullConversionResult: JSON.stringify(conversionResult, null, 2)
+        }, null , 2)}`);
+        
+        if (!conversionResult.taskId || conversionResult.taskId === 'unknown') {
+          logger.error(`CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}`);
+          logger.error(`Full conversion result:`, JSON.stringify(conversionResult, null, 2));
+        }
+      } catch (conversionError) {
+        logger.error(`PDF conversion failed with error for item ${message.itemId}:`, conversionError);
+        logger.error(`Error type:`, typeof conversionError);
+        logger.error(`Error message:`, conversionError instanceof Error ? conversionError.message : String(conversionError));
+        logger.error(`Error stack:`, conversionError instanceof Error ? conversionError.stack : 'No stack trace');
+        throw conversionError;
+      }
 
       if (!conversionResult.success || !conversionResult.data) {
+        logger.error(`PDF conversion failed for item ${message.itemId}:`, {
+          success: conversionResult.success,
+          hasData: !!conversionResult.data,
+          error: conversionResult.error,
+          taskId: conversionResult.taskId
+        });
         throw new Error(conversionResult.error || 'PDF conversion failed');
       }
 
@@ -182,7 +216,7 @@ export class PdfConversionWorker {
       const processingTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      logger.error(`PDF conversion failed for item ${message.itemId}:`, error);
+      logger.error(`PDF conversion failed for item ${message.itemId}: ${JSON.stringify(error)}`);
 
       // Update status via message instead of updating storage directly
       await this.publishProgressMessage(
@@ -236,7 +270,34 @@ export class PdfConversionWorker {
 
       // Convert PDF part to Markdown
       logger.info(`Converting PDF part ${message.partIndex + 1} to Markdown for item: ${message.itemId}`);
-      const conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+      
+      let conversionResult;
+      try {
+        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+        
+        // Enhanced diagnostic logging for part conversion result
+        logger.info(`PDF part conversion completed for item ${message.itemId}, part ${message.partIndex + 1}. Enhanced diagnostics:`, {
+          success: conversionResult.success,
+          hasData: !!conversionResult.data,
+          hasError: !!conversionResult.error,
+          error: conversionResult.error,
+          taskId: conversionResult.taskId,
+          taskIdType: typeof conversionResult.taskId,
+          downloadedFilesCount: conversionResult.downloadedFiles?.length || 0,
+          fullConversionResult: JSON.stringify(conversionResult, null, 2)
+        });
+        
+        if (!conversionResult.taskId || conversionResult.taskId === 'unknown') {
+          logger.error(`CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}, part ${message.partIndex + 1}`);
+          logger.error(`Full conversion result:`, JSON.stringify(conversionResult, null, 2));
+        }
+      } catch (conversionError) {
+        logger.error(`PDF part conversion failed with error for item ${message.itemId}, part ${message.partIndex + 1}:`, conversionError);
+        logger.error(`Error type:`, typeof conversionError);
+        logger.error(`Error message:`, conversionError instanceof Error ? conversionError.message : String(conversionError));
+        logger.error(`Error stack:`, conversionError instanceof Error ? conversionError.stack : 'No stack trace');
+        throw conversionError;
+      }
 
       if (!conversionResult.success || !conversionResult.data) {
         throw new Error(conversionResult.error || 'PDF part conversion failed');

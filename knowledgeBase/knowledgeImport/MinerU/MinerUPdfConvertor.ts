@@ -103,13 +103,39 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         ...options,
       };
 
-      this.logger.info(`Processing file with MinerU...`);
+      this.logger.info(`Processing file with MinerU... Request: ${JSON.stringify(request)}`);
       // Process the file
       const result = await this.client.processSingleFile(request, {
         downloadDir: this.config.downloadDir,
       });
+      
+      // Enhanced diagnostic logging to identify task_id issue
+      this.logger.info(`MinerU processing completed. Full result structure: ${JSON.stringify({
+        hasResult: !!result.result,
+        resultType: typeof result.result,
+        resultIsNullOrUndefined: result.result == null,
+        resultKeys: result.result ? Object.keys(result.result) : [],
+        resultString: JSON.stringify(result.result),
+        downloadedFilesCount: result.downloadedFiles?.length || 0,
+        fullResultStructure: JSON.stringify(result, null, 2)
+      })}`);
+      
+      if (result.result) {
+        this.logger.info(`Result details: ${JSON.stringify({
+          task_id: result.result?.task_id || 'undefined',
+          task_idType: typeof result.result?.task_id,
+          state: result.result?.state || 'undefined',
+          data_id: result.result?.data_id || 'undefined',
+          file_name: result.result?.file_name || 'undefined',
+          err_msg: result.result?.err_msg || 'undefined'
+        })}`);
+      } else {
+        this.logger.error(`CRITICAL: result.result is undefined or null. This is likely the source of the task_id error.`);
+        this.logger.error(`Result object structure: ${JSON.stringify(result, null, 2)}`);
+      }
+      
       this.logger.info(
-        `MinerU processing completed, taskId: ${result.result.task_id}`,
+        `MinerU processing completed, taskId: ${result.result?.task_id || 'unknown'}`,
       );
 
       this.logger.info(
@@ -121,11 +147,48 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       );
       this.logger.info(`Markdown extraction completed`);
 
+      // Robust task_id extraction with multiple fallbacks
+      let taskId = 'unknown';
+      
+      if (result.result && result.result.task_id) {
+        taskId = result.result.task_id;
+      } else if (result.result && typeof result.result === 'object') {
+        // Try to find task_id in the result object
+        const resultKeys = Object.keys(result.result);
+        this.logger.info(`Available result keys: ${resultKeys.join(', ')}`);
+        
+        // Check for alternative field names that might contain the task ID
+        const taskIdCandidates = ['taskId', 'task_id', 'id', 'task_id', 'taskid'];
+        for (const candidate of taskIdCandidates) {
+          if (result.result[candidate]) {
+            taskId = result.result[candidate];
+            this.logger.info(`Found task ID in alternative field: ${candidate} = ${taskId}`);
+            break;
+          }
+        }
+        
+        // If still no task_id, check if we can use other identifiers
+        if (taskId === 'unknown') {
+          if (result.result.data_id) {
+            taskId = `data-${result.result.data_id}`;
+            this.logger.info(`Using data_id as fallback identifier: ${taskId}`);
+          } else if (result.result.file_name) {
+            taskId = `file-${result.result.file_name}`;
+            this.logger.info(`Using file_name as fallback identifier: ${taskId}`);
+          }
+        }
+      } else {
+        this.logger.warn(`result.result is undefined or null. Using fallback identifier generation.`);
+        // Generate a unique identifier based on timestamp and random string
+        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        this.logger.info(`Generated fallback task ID: ${taskId}`);
+      }
+      
       return {
         success: true,
         data: markdownData,
         downloadedFiles: result.downloadedFiles,
-        taskId: result.result.task_id,
+        taskId: taskId,
       };
     } catch (error) {
       this.logger.error(`Error in convertPdfToMarkdownFromS3:`, error);
@@ -206,8 +269,33 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       const result = await this.client.processSingleFile(request, {
         downloadDir: this.config.downloadDir,
       });
+      
+      // Enhanced diagnostic logging for convertPdfToMarkdown method
+      this.logger.info(`MinerU processing completed. Full result structure: ${JSON.stringify({
+        hasResult: !!result.result,
+        resultType: typeof result.result,
+        resultIsNullOrUndefined: result.result == null,
+        resultKeys: result.result ? Object.keys(result.result) : [],
+        downloadedFilesCount: result.downloadedFiles?.length || 0,
+        fullResultStructure: JSON.stringify(result, null, 2)
+      })}`);
+      
+      if (result.result) {
+        this.logger.info(`Result details: ${JSON.stringify({
+          task_id: result.result?.task_id || 'undefined',
+          task_idType: typeof result.result?.task_id,
+          state: result.result?.state || 'undefined',
+          data_id: result.result?.data_id || 'undefined',
+          file_name: result.result?.file_name || 'undefined',
+          err_msg: result.result?.err_msg || 'undefined'
+        })}`);
+      } else {
+        this.logger.error(`CRITICAL: result.result is undefined or null in convertPdfToMarkdown method.`);
+        this.logger.error(`Result object structure: ${JSON.stringify(result, null, 2)}`);
+      }
+      
       this.logger.info(
-        `MinerU processing completed, taskId: ${result.result.task_id}`,
+        `MinerU processing completed, taskId: ${result.result?.task_id || 'unknown'}`,
       );
 
       this.logger.info(
@@ -219,11 +307,48 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       );
       this.logger.info(`Markdown extraction completed`);
 
+      // Robust task_id extraction with multiple fallbacks
+      let taskId = 'unknown';
+      
+      if (result.result && result.result.task_id) {
+        taskId = result.result.task_id;
+      } else if (result.result && typeof result.result === 'object') {
+        // Try to find task_id in the result object
+        const resultKeys = Object.keys(result.result);
+        this.logger.info(`Available result keys: ${resultKeys.join(', ')}`);
+        
+        // Check for alternative field names that might contain the task ID
+        const taskIdCandidates = ['taskId', 'task_id', 'id', 'task_id', 'taskid'];
+        for (const candidate of taskIdCandidates) {
+          if (result.result[candidate]) {
+            taskId = result.result[candidate];
+            this.logger.info(`Found task ID in alternative field: ${candidate} = ${taskId}`);
+            break;
+          }
+        }
+        
+        // If still no task_id, check if we can use other identifiers
+        if (taskId === 'unknown') {
+          if (result.result.data_id) {
+            taskId = `data-${result.result.data_id}`;
+            this.logger.info(`Using data_id as fallback identifier: ${taskId}`);
+          } else if (result.result.file_name) {
+            taskId = `file-${result.result.file_name}`;
+            this.logger.info(`Using file_name as fallback identifier: ${taskId}`);
+          }
+        }
+      } else {
+        this.logger.warn(`result.result is undefined or null. Using fallback identifier generation.`);
+        // Generate a unique identifier based on timestamp and random string
+        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        this.logger.info(`Generated fallback task ID: ${taskId}`);
+      }
+      
       return {
         success: true,
         data: markdownData,
         downloadedFiles: result.downloadedFiles,
-        taskId: result.result.task_id,
+        taskId: taskId,
       };
     } catch (error) {
       this.logger.error(`Error in convertPdfToJSON:`, error);
@@ -311,10 +436,23 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       if (result.state === 'failed') {
         this.logger.error(`Task failed: ${result.err_msg}`);
+        
+        // Robust task_id extraction for error case
+        let taskId = 'unknown';
+        if (result && result.task_id) {
+          taskId = result.task_id;
+        } else if (result && result.data_id) {
+          taskId = `data-${result.data_id}`;
+        } else if (result && result.file_name) {
+          taskId = `file-${result.file_name}`;
+        } else {
+          taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+        
         return {
           success: false,
           error: result.err_msg || 'Processing failed',
-          taskId: result.task_id,
+          taskId: taskId,
         };
       }
 
@@ -326,11 +464,23 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         taskResult.downloadedFiles,
       );
 
+      // Robust task_id extraction for successful case
+      let taskId = 'unknown';
+      if (result && result.task_id) {
+        taskId = result.task_id;
+      } else if (result && result.data_id) {
+        taskId = `data-${result.data_id}`;
+      } else if (result && result.file_name) {
+        taskId = `file-${result.file_name}`;
+      } else {
+        taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
       return {
         success: true,
         data: markdownData,
         downloadedFiles: taskResult.downloadedFiles,
-        taskId: result.task_id,
+        taskId: taskId,
       };
     } catch (error) {
       this.logger.error(`Error in processLocalFile:`, error);
@@ -420,14 +570,35 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         // Process each result
         for (const result of taskResult.results.extract_result) {
           if (result.state === 'failed') {
+            // Robust task_id extraction for error case
+            let taskId = 'unknown';
+            if (result && result.task_id) {
+              taskId = result.task_id;
+            } else if (result && result.data_id) {
+              taskId = `data-${result.data_id}`;
+            } else if (result && result.file_name) {
+              taskId = `file-${result.file_name}`;
+            } else {
+              taskId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+            
             results.push({
               success: false,
               error: result.err_msg || 'Processing failed',
-              taskId: result.task_id,
+              taskId: taskId,
             });
           } else {
-            const taskIdentifier =
-              result.task_id || result.data_id || result.file_name || 'unknown';
+            // Enhanced task identifier extraction
+            let taskIdentifier = 'unknown';
+            if (result.task_id) {
+              taskIdentifier = result.task_id;
+            } else if (result.data_id) {
+              taskIdentifier = `data-${result.data_id}`;
+            } else if (result.file_name) {
+              taskIdentifier = `file-${result.file_name}`;
+            } else {
+              taskIdentifier = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
             const filteredFiles = taskResult.downloadedFiles.filter((file) =>
               file.includes(taskIdentifier),
             );
@@ -435,11 +606,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
             const markdownData =
               await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
+            // Use the robust taskIdentifier instead of directly accessing result.task_id
             results.push({
               success: true,
               data: markdownData,
               downloadedFiles: filteredFiles,
-              taskId: result.task_id || taskIdentifier,
+              taskId: taskIdentifier,
             });
           }
         }
@@ -510,17 +682,23 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         // Process each result
         for (const taskResult of batchResult.results.extract_result) {
-          const taskIdentifier =
-            taskResult.task_id ||
-            taskResult.data_id ||
-            taskResult.file_name ||
-            'unknown';
+          // Enhanced task identifier extraction
+          let taskIdentifier = 'unknown';
+          if (taskResult.task_id) {
+            taskIdentifier = taskResult.task_id;
+          } else if (taskResult.data_id) {
+            taskIdentifier = `data-${taskResult.data_id}`;
+          } else if (taskResult.file_name) {
+            taskIdentifier = `file-${taskResult.file_name}`;
+          } else {
+            taskIdentifier = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
 
           if (taskResult.state === 'failed') {
             allResults.push({
               success: false,
               error: taskResult.err_msg || 'Processing failed',
-              taskId: taskResult.task_id || taskIdentifier,
+              taskId: taskIdentifier, // Use the robust taskIdentifier
             });
           } else {
             const filteredFiles = batchResult.downloadedFiles.filter((file) =>
@@ -530,11 +708,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
             const markdownData =
               await this.extractMarkdownFromDownloadedFiles(filteredFiles);
 
+            // Use the robust taskIdentifier instead of directly accessing taskResult.task_id
             allResults.push({
               success: true,
               data: markdownData,
               downloadedFiles: filteredFiles,
-              taskId: taskResult.task_id || taskIdentifier,
+              taskId: taskIdentifier,
             });
           }
         }
@@ -559,13 +738,13 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   ): Promise<any> {
     try {
       this.logger.info(
-        `Extracting markdown from ${downloadedFiles.length} files`,
+        `Extracting markdown from ${downloadedFiles.length} files: ${downloadedFiles.join(', ')}`,
       );
 
       // Find the ZIP file in the downloaded files
       const zipFile = downloadedFiles.find((file) => file.endsWith('.zip'));
       if (!zipFile) {
-        this.logger.error(`No ZIP file found in downloaded files`);
+        this.logger.error(`No ZIP file found in downloaded files. Available files: ${downloadedFiles.join(', ')}`);
         return null;
       }
 

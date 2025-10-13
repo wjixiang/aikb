@@ -115,6 +115,11 @@ export class PdfProcessingCoordinatorWorker {
     try {
       // Get the item metadata
       const itemMetadata = await this.storage.getMetadata(message.itemId);
+
+      // Get Item directly
+      if(!itemMetadata?.s3Key) throw new Error(`s3 key not found for library item: ${itemMetadata?.id}`)
+      const s3Url = await this.storage.getPdfDownloadUrl(itemMetadata?.s3Key)
+
       if (!itemMetadata) {
         logger.error(`Item ${message.itemId} not found`);
         return;
@@ -129,7 +134,7 @@ export class PdfProcessingCoordinatorWorker {
           timestamp: Date.now(),
           eventType: 'PDF_SPLITTING_REQUEST',
           itemId: message.itemId,
-          s3Url: itemMetadata.s3Url!,
+          s3Url: s3Url,
           s3Key: itemMetadata.s3Key!,
           fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
           pageCount: message.pageCount,
@@ -150,7 +155,7 @@ export class PdfProcessingCoordinatorWorker {
           timestamp: Date.now(),
           eventType: 'PDF_CONVERSION_REQUEST',
           itemId: message.itemId,
-          s3Url: itemMetadata.s3Url!,
+          s3Url: s3Url,
           s3Key: itemMetadata.s3Key!,
           fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
           metadata: {
@@ -165,7 +170,7 @@ export class PdfProcessingCoordinatorWorker {
         };
 
         await this.rabbitMQService.publishPdfConversionRequest(conversionRequest);
-        logger.info(`PDF conversion request sent for item: ${message.itemId}`);
+        logger.info(`PDF conversion request sent for item: ${message.itemId} \n s3Url: ${s3Url}`);
       }
 
       // Update item status
