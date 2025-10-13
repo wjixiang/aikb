@@ -58,6 +58,13 @@ class Config:
     SERVICE_NAME = os.getenv('SERVICE_NAME', 'pdf-splitting-worker')
     ENVIRONMENT = os.getenv('NODE_ENV', 'development')
     
+    # Enhanced logging configuration
+    DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
+    DEBUG_LOG_LEVEL = os.getenv('DEBUG_LOG_LEVEL', 'DEBUG')
+    INCLUDE_CONTEXT_IN_CONSOLE = os.getenv('INCLUDE_CONTEXT_IN_CONSOLE', 'true').lower() == 'true'
+    PERFORMANCE_TRACKING = os.getenv('PERFORMANCE_TRACKING', 'true').lower() == 'true'
+    LOG_PERFORMANCE_THRESHOLD = float(os.getenv('LOG_PERFORMANCE_THRESHOLD', '1000.0'))  # ms
+    
     @classmethod
     def get_rabbitmq_config(cls) -> Dict[str, Any]:
         """Get RabbitMQ configuration as a dictionary"""
@@ -116,4 +123,15 @@ class Config:
             'index_pattern': cls.ELASTICSEARCH_LOG_INDEX_PATTERN,
             'service_name': cls.SERVICE_NAME,
             'environment': cls.ENVIRONMENT,
+        }
+    
+    @classmethod
+    def get_enhanced_logging_config(cls) -> Dict[str, Any]:
+        """Get enhanced logging configuration as a dictionary"""
+        return {
+            'debug_mode': cls.DEBUG_MODE,
+            'debug_log_level': cls.DEBUG_LOG_LEVEL,
+            'include_context_in_console': cls.INCLUDE_CONTEXT_IN_CONSOLE,
+            'performance_tracking': cls.PERFORMANCE_TRACKING,
+            'performance_threshold': cls.LOG_PERFORMANCE_THRESHOLD,
         }

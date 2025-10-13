@@ -30,7 +30,7 @@ module.exports = {
   },
   {
     name: 'PDF spliting worker',
-    script: 'uv run ./pdfProcess/start_pdf_splitting_worker.py',
+    script: 'uv run ./pdfProcess/pdf_splitting_worker.py',
     out_file: '/workspace/logs/pdf_splitting_worker.out.log',
     error_file: '/workspace/logs/pdf_splitting_worker.error.log',
     log_file: '/workspace/logs/pdf_splitting_worker.log'
