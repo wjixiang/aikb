@@ -5,7 +5,7 @@ import { ElasticsearchTransport } from '../elasticsearch-transport';
 describe('Elasticsearch Transport Fields', () => {
   let mockClient: any;
   let transport: ElasticsearchTransport;
-  
+
   beforeEach(() => {
     // Mock the Elasticsearch client
     mockClient = {
@@ -15,7 +15,7 @@ describe('Elasticsearch Transport Fields', () => {
       },
       index: vi.fn().mockResolvedValue({}),
     };
-    
+
     // Create transport with mocked client
     transport = new ElasticsearchTransport({
       client: mockClient,
@@ -63,7 +63,9 @@ describe('Elasticsearch Transport Fields', () => {
     expect(sentBody).not.toHaveProperty('unmappedField1');
     expect(sentBody).not.toHaveProperty('anotherUnmappedField');
     // Check that the symbol key was not converted to a string property
-    const hasSymbolKey = Object.keys(sentBody).some(key => key.includes('level') && !['level'].includes(key));
+    const hasSymbolKey = Object.keys(sentBody).some(
+      (key) => key.includes('level') && !['level'].includes(key),
+    );
     expect(hasSymbolKey).toBe(false);
   });
 

@@ -9,23 +9,28 @@ export class ElasticsearchTransport extends Transport {
   private indexName: string;
   private indexPattern: string;
 
-  constructor(options: any & {
-    elasticsearchUrl?: string;
-    indexName?: string;
-    indexPattern?: string;
-    client?: Client;
-  }) {
+  constructor(
+    options: any & {
+      elasticsearchUrl?: string;
+      indexName?: string;
+      indexPattern?: string;
+      client?: Client;
+    },
+  ) {
     super(options);
-    
+
     this.indexName = options.indexName || 'logs';
     this.indexPattern = options.indexPattern || 'logs-YYYY.MM.DD';
-    
+
     // Use provided client or create a new one
     if (options.client) {
       this.client = options.client;
     } else {
-      const elasticsearchUrl = options.elasticsearchUrl || process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
-      
+      const elasticsearchUrl =
+        options.elasticsearchUrl ||
+        process.env.ELASTICSEARCH_URL ||
+        'http://localhost:9200';
+
       this.client = new Client({
         node: elasticsearchUrl,
         auth: {
@@ -71,6 +76,7 @@ export class ElasticsearchTransport extends Transport {
                 },
                 meta: {
                   type: 'object',
+                  dynamic: true,
                 },
                 service: {
                   type: 'keyword',
@@ -83,7 +89,10 @@ export class ElasticsearchTransport extends Transport {
           } as any);
         } catch (createError: any) {
           // If index already exists (race condition), just continue
-          if (createError?.meta?.body?.error?.type === 'resource_already_exists_exception') {
+          if (
+            createError?.meta?.body?.error?.type ===
+            'resource_already_exists_exception'
+          ) {
             // Index already exists, continue
             return;
           }
@@ -102,7 +111,11 @@ export class ElasticsearchTransport extends Transport {
    * Get the appropriate index name based on the pattern
    */
   private getIndexName(): string {
-    if (this.indexPattern.includes('YYYY') || this.indexPattern.includes('MM') || this.indexPattern.includes('DD')) {
+    if (
+      this.indexPattern.includes('YYYY') ||
+      this.indexPattern.includes('MM') ||
+      this.indexPattern.includes('DD')
+    ) {
       const now = new Date();
       return this.indexPattern
         .replace('YYYY', now.getFullYear().toString())
@@ -121,7 +134,7 @@ export class ElasticsearchTransport extends Transport {
       await this.initializeIndex();
 
       const indexName = this.getIndexName();
-      
+
       // Extract only the fields that are defined in the mapping
       // Avoid using spread operator to prevent unmapped fields
       const document = {
@@ -134,6 +147,14 @@ export class ElasticsearchTransport extends Transport {
         environment: process.env.NODE_ENV || 'development',
       };
 
+      // Ensure meta is properly serialized and flattened for Elasticsearch
+      if (document.meta && typeof document.meta === 'object') {
+        // Flatten nested objects for better searchability in Elasticsearch
+        const flattenedMeta: any = {};
+        this.flattenObject(document.meta, flattenedMeta);
+        document.meta = flattenedMeta;
+      }
+
       // Index the document with only mapped fields
       await this.client.index({
         index: indexName,
@@ -145,6 +166,26 @@ export class ElasticsearchTransport extends Transport {
       // Log the error but don't fail the operation
       console.error('Failed to log to Elasticsearch:', error);
       callback();
+    }
+  }
+
+  /**
+   * Flatten nested objects for Elasticsearch indexing
+   */
+  private flattenObject(obj: any, result: any = '', prefix: string = ''): void {
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          // Recursively flatten nested objects
+          this.flattenObject(obj[key], result, newKey);
+        } else {
+          // Convert arrays and primitives to string for Elasticsearch
+          const value = Array.isArray(obj[key]) ? obj[key].join(', ') : obj[key];
+          result[newKey] = value;
+        }
+      }
     }
   }
 }

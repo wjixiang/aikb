@@ -3,7 +3,10 @@ import { PdfPartTrackerImpl } from '../pdf-part-tracker-impl';
 import { PdfPartTrackerElasticsearchImpl } from '../pdf-part-tracker-impl-elasticsearch';
 import { IPdfPartTracker } from '../pdf-part-tracker';
 import { PdfPartStatus } from '../message.types';
-import { PdfPartTrackerFactory, getPdfPartTrackerWithStorage } from '../pdf-part-tracker-factory';
+import {
+  PdfPartTrackerFactory,
+  getPdfPartTrackerWithStorage,
+} from '../pdf-part-tracker-factory';
 
 describe('PdfPartTracker', () => {
   let tracker: IPdfPartTracker;
@@ -27,7 +30,7 @@ describe('PdfPartTracker', () => {
   describe('initializePdfProcessing', () => {
     it('should initialize PDF processing with correct number of parts', async () => {
       await tracker.initializePdfProcessing(testItemId, testTotalParts);
-      
+
       const status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status).toBeDefined();
       expect(status!.itemId).toBe(testItemId);
@@ -43,10 +46,10 @@ describe('PdfPartTracker', () => {
       // Initialize once
       await tracker.initializePdfProcessing(testItemId, testTotalParts);
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
+
       // Initialize again
       await tracker.initializePdfProcessing(testItemId, testTotalParts);
-      
+
       const status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status!.completedParts).toHaveLength(0);
       expect(status!.status).toBe('pending');
@@ -60,7 +63,7 @@ describe('PdfPartTracker', () => {
 
     it('should update part status to processing', async () => {
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.PROCESSING);
       expect(allParts[0].startTime).toBeDefined();
@@ -69,24 +72,29 @@ describe('PdfPartTracker', () => {
     it('should update part status to completed', async () => {
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.COMPLETED);
       expect(allParts[0].endTime).toBeDefined();
-      
+
       const completedParts = await tracker.getCompletedParts(testItemId);
       expect(completedParts).toContain(0);
     });
 
     it('should update part status to failed', async () => {
       const errorMessage = 'Test error';
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED, errorMessage);
-      
+      await tracker.updatePartStatus(
+        testItemId,
+        0,
+        PdfPartStatus.FAILED,
+        errorMessage,
+      );
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.FAILED);
       expect(allParts[0].error).toBe(errorMessage);
       expect(allParts[0].endTime).toBeDefined();
-      
+
       const failedParts = await tracker.getFailedParts(testItemId);
       expect(failedParts).toContain(0);
     });
@@ -96,18 +104,18 @@ describe('PdfPartTracker', () => {
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
       let status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status!.status).toBe('processing');
-      
+
       // Complete a part
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
       status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status!.status).toBe('processing');
       expect(status!.completedParts).toContain(0);
-      
+
       // Complete all parts
       for (let i = 1; i < testTotalParts; i++) {
         await tracker.updatePartStatus(testItemId, i, PdfPartStatus.COMPLETED);
       }
-      
+
       status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status!.status).toBe('completed');
       expect(status!.completedParts).toHaveLength(testTotalParts);
@@ -166,11 +174,11 @@ describe('PdfPartTracker', () => {
       // Fail some parts
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED);
       await tracker.updatePartStatus(testItemId, 1, PdfPartStatus.FAILED);
-      
+
       const retriedParts = await tracker.retryFailedParts(testItemId);
       expect(retriedParts).toContain(0);
       expect(retriedParts).toContain(1);
-      
+
       // Check that parts are now pending
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.PENDING);
@@ -187,8 +195,13 @@ describe('PdfPartTracker', () => {
 
     it('should return details of failed parts', async () => {
       const errorMessage = 'Test error';
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED, errorMessage);
-      
+      await tracker.updatePartStatus(
+        testItemId,
+        0,
+        PdfPartStatus.FAILED,
+        errorMessage,
+      );
+
       const failedParts = await tracker.getFailedPartsDetails(testItemId);
       expect(failedParts).toHaveLength(1);
       expect(failedParts[0].partIndex).toBe(0);
@@ -200,12 +213,12 @@ describe('PdfPartTracker', () => {
     it('should clean up PDF processing status', async () => {
       await tracker.initializePdfProcessing(testItemId, testTotalParts);
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
+
       await tracker.cleanupPdfProcessing(testItemId);
-      
+
       const status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status).toBeNull();
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts).toHaveLength(0);
     });
@@ -232,14 +245,14 @@ describe('PdfPartTrackerFactory', () => {
   it('should return Elasticsearch instance when environment variable is set', () => {
     // Save original env var
     const originalEnv = process.env.PDF_PART_TRACKER_STORAGE;
-    
+
     try {
       // Set environment variable
       process.env.PDF_PART_TRACKER_STORAGE = 'elasticsearch';
-      
+
       // Reset factory to pick up new env var
       PdfPartTrackerFactory.resetInstance();
-      
+
       const tracker = PdfPartTrackerFactory.getInstance();
       expect(tracker).toBeInstanceOf(PdfPartTrackerElasticsearchImpl);
     } finally {
@@ -251,7 +264,7 @@ describe('PdfPartTrackerFactory', () => {
   it('should allow setting custom instance', () => {
     const customTracker = new PdfPartTrackerImpl();
     PdfPartTrackerFactory.setInstance(customTracker);
-    
+
     const tracker = PdfPartTrackerFactory.getInstance();
     expect(tracker).toBe(customTracker);
   });
@@ -259,7 +272,7 @@ describe('PdfPartTrackerFactory', () => {
   it('should allow resetting instance', () => {
     const tracker1 = PdfPartTrackerFactory.getInstance();
     PdfPartTrackerFactory.resetInstance();
-    
+
     const tracker2 = PdfPartTrackerFactory.getInstance();
     expect(tracker1).not.toBe(tracker2);
   });
@@ -270,13 +283,17 @@ describe('PdfPartTrackerFactory', () => {
   });
 
   it('should create Elasticsearch instance with getInstanceWithStorage', () => {
-    const tracker = PdfPartTrackerFactory.getInstanceWithStorage('elasticsearch');
+    const tracker =
+      PdfPartTrackerFactory.getInstanceWithStorage('elasticsearch');
     expect(tracker).toBeInstanceOf(PdfPartTrackerElasticsearchImpl);
   });
 
   it('should create Elasticsearch instance with custom URL', () => {
     const customUrl = 'http://custom-elasticsearch:9200';
-    const tracker = PdfPartTrackerFactory.getInstanceWithStorage('elasticsearch', customUrl);
+    const tracker = PdfPartTrackerFactory.getInstanceWithStorage(
+      'elasticsearch',
+      customUrl,
+    );
     expect(tracker).toBeInstanceOf(PdfPartTrackerElasticsearchImpl);
   });
 });

@@ -1,4 +1,8 @@
-import { IPdfPartTracker, PdfPartStatusInfo, PdfProcessingStatusInfo } from './pdf-part-tracker';
+import {
+  IPdfPartTracker,
+  PdfPartStatusInfo,
+  PdfProcessingStatusInfo,
+} from './pdf-part-tracker';
 import { PdfPartStatus } from './message.types';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../logger';
@@ -35,10 +39,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
     try {
       // 初始化PDF处理状态索引
       await this.initializeProcessingIndex();
-      
+
       // 初始化PDF部分状态索引
       await this.initializePartIndex();
-      
+
       this.isInitialized = true;
       logger.info('PDF part tracker initialized successfully');
     } catch (error) {
@@ -96,7 +100,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
             },
           } as any,
         });
-        
+
         // 创建索引以提高查询性能
         await this.client.indices.putMapping({
           index: this.processingIndexName,
@@ -108,15 +112,18 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
             },
           },
         } as any);
-        
+
         logger.info(`Created index: ${this.processingIndexName}`);
       }
     } catch (error) {
       if (
-        error?.meta?.body?.error?.type === 'resource_already_exists_exception' ||
+        error?.meta?.body?.error?.type ===
+          'resource_already_exists_exception' ||
         error?.meta?.statusCode === 400
       ) {
-        logger.info(`Index ${this.processingIndexName} already exists, continuing`);
+        logger.info(
+          `Index ${this.processingIndexName} already exists, continuing`,
+        );
         return;
       }
       logger.error('Failed to initialize processing index:', error);
@@ -170,7 +177,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
             },
           } as any,
         });
-        
+
         // 创建索引以提高查询性能
         await this.client.indices.putMapping({
           index: this.partIndexName,
@@ -188,12 +195,13 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
             },
           },
         } as any);
-        
+
         logger.info(`Created index: ${this.partIndexName}`);
       }
     } catch (error) {
       if (
-        error?.meta?.body?.error?.type === 'resource_already_exists_exception' ||
+        error?.meta?.body?.error?.type ===
+          'resource_already_exists_exception' ||
         error?.meta?.statusCode === 400
       ) {
         logger.info(`Index ${this.partIndexName} already exists, continuing`);
@@ -216,25 +224,33 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * 初始化PDF处理状态
    */
-  async initializePdfProcessing(itemId: string, totalParts: number): Promise<void> {
+  async initializePdfProcessing(
+    itemId: string,
+    totalParts: number,
+  ): Promise<void> {
     await this.ensureInitialized();
-    
+
     try {
       const now = new Date().toISOString();
-      
+
       // 检查是否已存在
       const existingStatus = await this.getPdfProcessingStatus(itemId);
       if (existingStatus) {
-        logger.warn(`PDF processing status already exists for item ${itemId}, resetting...`);
+        logger.warn(
+          `PDF processing status already exists for item ${itemId}, resetting...`,
+        );
         await this.cleanupPdfProcessing(itemId);
       }
 
       // 创建PDF处理状态记录
-      const processingStatus: Omit<PdfProcessingStatusInfo, 'completedParts' | 'failedParts' | 'processingParts' | 'pendingParts'> = {
+      const processingStatus: Omit<
+        PdfProcessingStatusInfo,
+        'completedParts' | 'failedParts' | 'processingParts' | 'pendingParts'
+      > = {
         itemId,
         totalParts,
         startTime: new Date(now).getTime(),
-        status: 'pending'
+        status: 'pending',
       };
 
       await this.client.index({
@@ -245,25 +261,33 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
           completedParts: [],
           failedParts: [],
           processingParts: [],
-          pendingParts: Array.from({ length: totalParts }, (_, i) => i)
+          pendingParts: Array.from({ length: totalParts }, (_, i) => i),
         },
       });
 
       // 创建所有部分的状态记录
-      const partStatuses: Omit<PdfPartStatusInfo, 'startTime' | 'endTime' | 'error' | 'retryCount' | 'maxRetries'>[] = [];
+      const partStatuses: Omit<
+        PdfPartStatusInfo,
+        'startTime' | 'endTime' | 'error' | 'retryCount' | 'maxRetries'
+      >[] = [];
       for (let i = 0; i < totalParts; i++) {
         partStatuses.push({
           itemId,
           partIndex: i,
           totalParts,
-          status: PdfPartStatus.PENDING
+          status: PdfPartStatus.PENDING,
         });
       }
 
       if (partStatuses.length > 0) {
         const body = partStatuses.flatMap((partStatus) => [
-          { index: { _index: this.partIndexName, _id: `${itemId}_${partStatus.partIndex}` } },
-          partStatus
+          {
+            index: {
+              _index: this.partIndexName,
+              _id: `${itemId}_${partStatus.partIndex}`,
+            },
+          },
+          partStatus,
         ]);
 
         await this.client.bulk({
@@ -271,9 +295,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         });
       }
 
-      logger.info(`Initialized PDF processing for item ${itemId} with ${totalParts} parts`);
+      logger.info(
+        `Initialized PDF processing for item ${itemId} with ${totalParts} parts`,
+      );
     } catch (error) {
-      logger.error(`Failed to initialize PDF processing for item ${itemId}:`, error);
+      logger.error(
+        `Failed to initialize PDF processing for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -281,16 +310,21 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * 更新部分状态
    */
-  async updatePartStatus(itemId: string, partIndex: number, status: PdfPartStatus, error?: string): Promise<void> {
+  async updatePartStatus(
+    itemId: string,
+    partIndex: number,
+    status: PdfPartStatus,
+    error?: string,
+  ): Promise<void> {
     await this.ensureInitialized();
-    
+
     try {
       const now = new Date().toISOString();
       const updateData: any = {
         status,
         ...(status === PdfPartStatus.PROCESSING && { startTime: now }),
         ...(status === PdfPartStatus.COMPLETED && { endTime: now }),
-        ...(status === PdfPartStatus.FAILED && { endTime: now, error })
+        ...(status === PdfPartStatus.FAILED && { endTime: now, error }),
       };
 
       // 更新部分状态
@@ -313,9 +347,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       // 更新整体处理状态
       await this.updateOverallStatus(itemId);
 
-      logger.debug(`Updated part ${partIndex} status to ${status} for item ${itemId}`);
+      logger.debug(
+        `Updated part ${partIndex} status to ${status} for item ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to update part status for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to update part status for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -330,33 +369,33 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         body: {
           query: {
             term: {
-              itemId: itemId
-            }
+              itemId: itemId,
+            },
           },
           size: 10000, // 假设不会超过10000个部分
         } as any,
       });
 
       const allParts = result.hits.hits.map((hit: any) => hit._source);
-      
+
       const completedParts = allParts
         .filter((part: any) => part.status === PdfPartStatus.COMPLETED)
         .map((part: any) => part.partIndex);
-      
+
       const failedParts = allParts
         .filter((part: any) => part.status === PdfPartStatus.FAILED)
         .map((part: any) => part.partIndex);
-      
+
       const processingParts = allParts
         .filter((part: any) => part.status === PdfPartStatus.PROCESSING)
         .map((part: any) => part.partIndex);
-      
+
       const pendingParts = allParts
         .filter((part: any) => part.status === PdfPartStatus.PENDING)
         .map((part: any) => part.partIndex);
 
       let overallStatus: 'pending' | 'processing' | 'completed' | 'failed';
-      
+
       if (failedParts.length > 0 && completedParts.length === 0) {
         overallStatus = 'failed';
       } else if (completedParts.length === allParts.length) {
@@ -372,7 +411,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         failedParts,
         processingParts,
         pendingParts,
-        status: overallStatus
+        status: overallStatus,
       };
 
       if (overallStatus === 'completed' || overallStatus === 'failed') {
@@ -387,9 +426,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         } as any,
       });
 
-      logger.debug(`Updated overall status to ${overallStatus} for item ${itemId}`);
+      logger.debug(
+        `Updated overall status to ${overallStatus} for item ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to update overall status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to update overall status for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -397,9 +441,11 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * 获取PDF处理状态
    */
-  async getPdfProcessingStatus(itemId: string): Promise<PdfProcessingStatusInfo | null> {
+  async getPdfProcessingStatus(
+    itemId: string,
+  ): Promise<PdfProcessingStatusInfo | null> {
     await this.ensureInitialized();
-    
+
     try {
       const result = await this.client.get({
         index: this.processingIndexName,
@@ -416,7 +462,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       if (error?.meta?.statusCode === 404) {
         return null;
       }
-      logger.error(`Failed to get PDF processing status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get PDF processing status for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -426,22 +475,22 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async getAllPartStatuses(itemId: string): Promise<PdfPartStatusInfo[]> {
     await this.ensureInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.partIndexName,
         body: {
           query: {
             term: {
-              itemId: itemId
-            }
+              itemId: itemId,
+            },
           },
           sort: [
             {
               partIndex: {
-                order: 'asc'
-              }
-            }
+                order: 'asc',
+              },
+            },
           ],
           size: 10000, // 假设不会超过10000个部分
         } as any,
@@ -450,7 +499,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       const hits = result.hits.hits;
       return hits.map((hit: any) => hit._source as PdfPartStatusInfo);
     } catch (error) {
-      logger.error(`Failed to get all part statuses for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get all part statuses for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -460,16 +512,19 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async areAllPartsCompleted(itemId: string): Promise<boolean> {
     await this.ensureInitialized();
-    
+
     try {
       const status = await this.getPdfProcessingStatus(itemId);
       if (!status) {
         return false;
       }
-      
+
       return status.completedParts.length === status.totalParts;
     } catch (error) {
-      logger.error(`Failed to check if all parts are completed for item ${itemId}:`, error);
+      logger.error(
+        `Failed to check if all parts are completed for item ${itemId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -479,16 +534,19 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async hasAnyPartFailed(itemId: string): Promise<boolean> {
     await this.ensureInitialized();
-    
+
     try {
       const status = await this.getPdfProcessingStatus(itemId);
       if (!status) {
         return false;
       }
-      
+
       return status.failedParts.length > 0;
     } catch (error) {
-      logger.error(`Failed to check if any part failed for item ${itemId}:`, error);
+      logger.error(
+        `Failed to check if any part failed for item ${itemId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -498,7 +556,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async getCompletedParts(itemId: string): Promise<number[]> {
     await this.ensureInitialized();
-    
+
     try {
       const status = await this.getPdfProcessingStatus(itemId);
       return status?.completedParts || [];
@@ -513,7 +571,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async getFailedParts(itemId: string): Promise<number[]> {
     await this.ensureInitialized();
-    
+
     try {
       const status = await this.getPdfProcessingStatus(itemId);
       return status?.failedParts || [];
@@ -528,7 +586,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async cleanupPdfProcessing(itemId: string): Promise<void> {
     await this.ensureInitialized();
-    
+
     try {
       // 删除处理状态
       await this.client.deleteByQuery({
@@ -536,9 +594,9 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         body: {
           query: {
             term: {
-              itemId: itemId
-            }
-          }
+              itemId: itemId,
+            },
+          },
         } as any,
       });
 
@@ -548,15 +606,18 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         body: {
           query: {
             term: {
-              itemId: itemId
-            }
-          }
+              itemId: itemId,
+            },
+          },
         } as any,
       });
-      
+
       logger.info(`Cleaned up PDF processing status for item ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to cleanup PDF processing status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to cleanup PDF processing status for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -566,15 +627,15 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async getAllProcessingPdfs(): Promise<string[]> {
     await this.ensureInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.processingIndexName,
         body: {
           query: {
             terms: {
-              status: ['pending', 'processing']
-            }
+              status: ['pending', 'processing'],
+            },
           },
           _source: ['itemId'],
           size: 10000, // 假设不会超过10000个正在处理的PDF
@@ -594,7 +655,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async getFailedPartsDetails(itemId: string): Promise<PdfPartStatusInfo[]> {
     await this.ensureInitialized();
-    
+
     try {
       const result = await this.client.search({
         index: this.partIndexName,
@@ -603,16 +664,16 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
             bool: {
               must: [
                 { term: { itemId: itemId } },
-                { term: { status: PdfPartStatus.FAILED } }
-              ]
-            }
+                { term: { status: PdfPartStatus.FAILED } },
+              ],
+            },
           },
           sort: [
             {
               partIndex: {
-                order: 'asc'
-              }
-            }
+                order: 'asc',
+              },
+            },
           ],
           size: 10000, // 假设不会超过10000个部分
         } as any,
@@ -621,7 +682,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       const hits = result.hits.hits;
       return hits.map((hit: any) => hit._source as PdfPartStatusInfo);
     } catch (error) {
-      logger.error(`Failed to get failed parts details for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get failed parts details for item ${itemId}:`,
+        error,
+      );
       return [];
     }
   }
@@ -631,11 +695,11 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
    */
   async retryFailedParts(itemId: string): Promise<number[]> {
     await this.ensureInitialized();
-    
+
     try {
       const failedParts = await this.getFailedPartsDetails(itemId);
       const retriedParts: number[] = [];
-      
+
       for (const part of failedParts) {
         // 重置部分状态为pending
         await this.client.update({
@@ -647,18 +711,20 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
               startTime: null,
               endTime: null,
               error: null,
-              retryCount: (part.retryCount || 0) + 1
-            }
+              retryCount: (part.retryCount || 0) + 1,
+            },
           } as any,
         });
         retriedParts.push(part.partIndex);
       }
-      
+
       if (retriedParts.length > 0) {
         await this.updateOverallStatus(itemId);
-        logger.info(`Retried ${retriedParts.length} failed parts for item ${itemId}`);
+        logger.info(
+          `Retried ${retriedParts.length} failed parts for item ${itemId}`,
+        );
       }
-      
+
       return retriedParts;
     } catch (error) {
       logger.error(`Failed to retry failed parts for item ${itemId}:`, error);

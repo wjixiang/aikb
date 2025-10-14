@@ -1,5 +1,14 @@
 import { config } from 'dotenv';
-import { describe, beforeAll, afterAll, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import {
+  describe,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  it,
+  expect,
+  vi,
+} from 'vitest';
 import { PdfConversionWorker } from '../pdf-conversion.worker';
 import { getRabbitMQService } from '../rabbitmq.service';
 import {
@@ -36,21 +45,25 @@ const waitForMockCall = (mock: any, expectedCallCount = 1, timeout = 10000) => {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
     const initialCallCount = mock.mock.calls.length;
-    
+
     const checkMock = () => {
       if (mock.mock.calls.length >= initialCallCount + expectedCallCount) {
         resolve(mock.mock.calls);
         return;
       }
-      
+
       if (Date.now() - startTime > timeout) {
-        reject(new Error(`Mock was not called ${expectedCallCount} times within ${timeout}ms`));
+        reject(
+          new Error(
+            `Mock was not called ${expectedCallCount} times within ${timeout}ms`,
+          ),
+        );
         return;
       }
-      
+
       setTimeout(checkMock, 100);
     };
-    
+
     checkMock();
   });
 };
@@ -77,10 +90,10 @@ describe('PdfConversionWorker', () => {
   beforeEach(async () => {
     // Clear all mocks including call history
     vi.clearAllMocks();
-    
+
     // Create a new worker with mocked PDF converter
     worker = new PdfConversionWorker(mockPdfConvertor);
-    
+
     // Mock the getPdfDownloadUrl function to return test URLs
     const mockGetPdfDownloadUrl = vi.mocked(getPdfDownloadUrl);
     mockGetPdfDownloadUrl.mockImplementation((s3Key: string) => {
@@ -88,26 +101,38 @@ describe('PdfConversionWorker', () => {
       if (s3Key === 'test.pdf') {
         return Promise.resolve('https://test-bucket.s3.amazonaws.com/test.pdf');
       } else if (s3Key === 'test-part-0.pdf') {
-        return Promise.resolve('https://test-bucket.s3.amazonaws.com/test-part-0.pdf');
+        return Promise.resolve(
+          'https://test-bucket.s3.amazonaws.com/test-part-0.pdf',
+        );
       } else if (s3Key === 'test-part-1.pdf') {
-        return Promise.resolve('https://test-bucket.s3.amazonaws.com/test-part-1.pdf');
+        return Promise.resolve(
+          'https://test-bucket.s3.amazonaws.com/test-part-1.pdf',
+        );
       } else {
         return Promise.resolve(`https://test-bucket.s3.amazonaws.com/${s3Key}`);
       }
     });
-    
+
     // Start the worker
     await worker.start();
-    
+
     // Purge queues to ensure test isolation
     try {
       await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
-      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST);
+      await rabbitMQService.purgeQueue(
+        RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST,
+      );
       await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS);
-      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED);
+      await rabbitMQService.purgeQueue(
+        RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED,
+      );
       await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_FAILED);
-      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED);
-      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED);
+      await rabbitMQService.purgeQueue(
+        RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
+      );
+      await rabbitMQService.purgeQueue(
+        RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED,
+      );
     } catch (error) {
       console.warn('Failed to purge queues:', error);
     }
@@ -124,16 +149,20 @@ describe('PdfConversionWorker', () => {
     it('should start the worker successfully', async () => {
       await worker.start();
       const stats = await worker.getWorkerStats();
-      
+
       expect(stats.isRunning).toBe(true);
-      expect(stats.consumerTag).toBe(RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER);
-      expect(stats.partConsumerTag).toBe(RABBITMQ_CONSUMER_TAGS.PDF_PART_CONVERSION_WORKER);
+      expect(stats.consumerTag).toBe(
+        RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER,
+      );
+      expect(stats.partConsumerTag).toBe(
+        RABBITMQ_CONSUMER_TAGS.PDF_PART_CONVERSION_WORKER,
+      );
     });
 
     it('should stop the worker successfully', async () => {
       await worker.start();
       await worker.stop();
-      
+
       const stats = await worker.getWorkerStats();
       expect(stats.isRunning).toBe(false);
       expect(stats.consumerTag).toBeNull();
@@ -143,7 +172,7 @@ describe('PdfConversionWorker', () => {
     it('should handle multiple start calls gracefully', async () => {
       await worker.start();
       await worker.start(); // Should not throw an error
-      
+
       const stats = await worker.getWorkerStats();
       expect(stats.isRunning).toBe(true);
     });
@@ -152,7 +181,7 @@ describe('PdfConversionWorker', () => {
       await worker.start();
       await worker.stop();
       await worker.stop(); // Should not throw an error
-      
+
       const stats = await worker.getWorkerStats();
       expect(stats.isRunning).toBe(false);
     });
@@ -193,7 +222,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test.pdf',
+      );
     }, 10000);
 
     it('should handle PDF conversion failure and retry', async () => {
@@ -228,7 +259,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test.pdf',
+      );
     }, 10000);
 
     it('should handle different PDF conversion result formats', async () => {
@@ -249,7 +282,9 @@ describe('PdfConversionWorker', () => {
       };
 
       // Test with string result
-      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockResolvedValueOnce({
+      (
+        mockPdfConvertor.convertPdfToMarkdownFromS3 as any
+      ).mockResolvedValueOnce({
         success: true,
         data: '# Test PDF Content\n\nThis is a test PDF content.',
       });
@@ -258,8 +293,12 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3, 1);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledTimes(1);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test.pdf',
+      );
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledTimes(
+        1,
+      );
     }, 15000);
   });
 
@@ -285,7 +324,8 @@ describe('PdfConversionWorker', () => {
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockResolvedValue({
         success: true,
         data: {
-          markdown: '# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.',
+          markdown:
+            '# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.',
         },
       });
 
@@ -296,7 +336,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test-part-0.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test-part-0.pdf',
+      );
     }, 10000);
 
     it('should handle PDF part conversion failure and retry', async () => {
@@ -329,7 +371,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test-part-1.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test-part-1.pdf',
+      );
     }, 10000);
   });
 
@@ -339,20 +383,24 @@ describe('PdfConversionWorker', () => {
     it('should handle missing PDF converter gracefully', async () => {
       // Test the worker's ability to handle error scenarios during message processing
       // by testing the worker without starting it (to avoid RabbitMQ channel issues)
-      
+
       const errorPdfConvertor = {
-        convertPdfToMarkdownFromS3: vi.fn().mockRejectedValue(new Error('PDF converter service unavailable')),
+        convertPdfToMarkdownFromS3: vi
+          .fn()
+          .mockRejectedValue(new Error('PDF converter service unavailable')),
       } as any;
 
-      const workerWithErrorConverter = new PdfConversionWorker(errorPdfConvertor);
-      
+      const workerWithErrorConverter = new PdfConversionWorker(
+        errorPdfConvertor,
+      );
+
       // Verify the worker can be created and has the expected properties
       const stats = await workerWithErrorConverter.getWorkerStats();
       expect(stats.isRunning).toBe(false);
       expect(stats.pdfConvertorAvailable).toBe(true);
       expect(stats.consumerTag).toBeNull();
       expect(stats.partConsumerTag).toBeNull();
-      
+
       // Verify the error converter mock is properly set
       expect(errorPdfConvertor.convertPdfToMarkdownFromS3).toBeDefined();
     });
@@ -376,7 +424,7 @@ describe('PdfConversionWorker', () => {
 
       // Mock network error
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockRejectedValue(
-        new Error('Network error')
+        new Error('Network error'),
       );
 
       // Send the message to the queue
@@ -386,7 +434,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test.pdf',
+      );
     }, 10000);
   });
 
@@ -394,15 +444,15 @@ describe('PdfConversionWorker', () => {
     it('should return correct worker statistics', async () => {
       await worker.start();
       const stats = await worker.getWorkerStats();
-      
+
       expect(stats).toHaveProperty('isRunning', true);
       expect(stats).toHaveProperty('consumerTag');
       expect(stats).toHaveProperty('partConsumerTag');
       expect(stats).toHaveProperty('pdfConvertorAvailable');
-      
+
       await worker.stop();
       const stoppedStats = await worker.getWorkerStats();
-      
+
       expect(stoppedStats).toHaveProperty('isRunning', false);
       expect(stoppedStats).toHaveProperty('consumerTag', null);
       expect(stoppedStats).toHaveProperty('partConsumerTag', null);
@@ -416,7 +466,7 @@ describe('PdfConversionWorker', () => {
       // This test would require manually sending a malformed message
       // to the queue to test the worker's error handling
       // For now, we'll just verify the worker can handle normal messages
-      
+
       const itemId = uuidv4();
       const testMessage: PdfConversionRequestMessage = {
         messageId: uuidv4(),
@@ -487,7 +537,9 @@ describe('PdfConversionWorker', () => {
       await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called with the expected test URL
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        'https://test-bucket.s3.amazonaws.com/test.pdf',
+      );
     }, 10000);
   });
 });

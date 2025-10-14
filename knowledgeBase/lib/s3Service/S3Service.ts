@@ -237,13 +237,12 @@ export async function getSignedUrlForDownload(
   return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
-
 export async function getPdfDownloadUrl(s3Key: string): Promise<string> {
-    const url = await getSignedUrlForDownload(
-      process.env.PDF_OSS_BUCKET_NAME as string,
-      s3Key,
-    );
-    return url;
+  const url = await getSignedUrlForDownload(
+    process.env.PDF_OSS_BUCKET_NAME as string,
+    s3Key,
+  );
+  return url;
 }
 
 /**
@@ -261,7 +260,9 @@ export async function getPdfDownloadUrl(s3Key: string): Promise<string> {
  */
 export async function deleteFromS3(s3Key: string): Promise<boolean> {
   try {
-    console.log(`[S3Service] Deleting from S3: bucket=${BUCKET_NAME}, key=${s3Key}`);
+    console.log(
+      `[S3Service] Deleting from S3: bucket=${BUCKET_NAME}, key=${s3Key}`,
+    );
 
     const command = new DeleteObjectCommand({
       Bucket: BUCKET_NAME,

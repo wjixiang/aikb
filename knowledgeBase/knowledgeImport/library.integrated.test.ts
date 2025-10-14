@@ -13,9 +13,10 @@ import { createPdfConversionWorker } from 'knowledgeBase/lib/rabbitmq/pdf-conver
 import { createPdfAnalysisWorker } from 'knowledgeBase/lib/rabbitmq/pdf-analysis.worker';
 import { createPdfProcessingCoordinatorWorker } from 'knowledgeBase/lib/rabbitmq/pdf-processing-coordinator.worker';
 import { startMarkdownStorageWorker } from 'knowledgeBase/lib/rabbitmq/markdown-storage.worker';
-import { getRabbitMQService, initializeRabbitMQService } from 'knowledgeBase/lib/rabbitmq/rabbitmq.service';
-
-
+import {
+  getRabbitMQService,
+  initializeRabbitMQService,
+} from 'knowledgeBase/lib/rabbitmq/rabbitmq.service';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
@@ -38,9 +39,12 @@ export async function UploadTestPdf() {
     maxRetries: 3,
     retryDelay: 5000,
   });
-  const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+  const storage = new S3ElasticSearchLibraryStorage(
+    'http://elasticsearch:9200',
+    1024,
+  );
   const library = new Library(storage, testMinerUPdfConvertor);
-  library
+  library;
   // Read the test PDF file
   const pdfPath = 'test/viral_pneumonia.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
@@ -57,36 +61,36 @@ export async function UploadTestPdf() {
 
   // Store the PDF from buffer
   const book = await library.storePdf(pdfBuffer, 'viral_pneumonia', metadata);
-  return {book, library};
+  return { book, library };
 }
 
 describe.skip(Library, async () => {
   let book;
-  
+
   // Option 1: With default PDF converter
-  beforeAll(async()=>{
+  beforeAll(async () => {
     try {
       // Initialize the singleton RabbitMQ service that Library will use
       // const rabbitMQService = getRabbitMQService();
       // await rabbitMQService.initialize();
       console.log('✅ RabbitMQ service initialized successfully');
-      
+
       // Create storage instance for workers
       // const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
-      
+
       // // Start workers
       // await createPdfAnalysisWorker(storage);
       // console.log('✅ PDF analysis worker started');
-      
+
       // await createPdfProcessingCoordinatorWorker(storage);
       // console.log('✅ PDF processing coordinator worker started');
-      
+
       // await createPdfConversionWorker();
       // console.log('✅ PDF conversion worker started');
-      
+
       // await startMarkdownStorageWorker(storage);
       // console.log('✅ Markdown storage worker started');
-      
+
       // // Upload test PDF after workers are ready
       book = await UploadTestPdf();
       console.log('✅ Test PDF uploaded');
@@ -94,7 +98,7 @@ describe.skip(Library, async () => {
       console.error('❌ Failed to initialize test environment:', error);
       throw error;
     }
-  }, 60000) // Increase timeout for setup
+  }, 60000); // Increase timeout for setup
 
   // afterAll(async()=>{
   //   try {
@@ -107,10 +111,10 @@ describe.skip(Library, async () => {
   //   }
   // })
   // Store the PDF from buffer
-  it.skip("self delete", async()=>{
-    const res = await book.selfDelete()
-    expect(res).toBe(true)
-  })
+  it.skip('self delete', async () => {
+    const res = await book.selfDelete();
+    expect(res).toBe(true);
+  });
 
   it('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
@@ -151,29 +155,32 @@ describe.skip(Library, async () => {
     console.log(
       `re-extracted md content (100 str): ${JSON.stringify(mdContent2.substring(0, 100))}`,
     );
-  },99999);
+  }, 99999);
 
+  it.skip('justify existance of embedding', async () => {
+    const ceRes = await book.chunkEmbed();
+    const exist = await book.hasCompletedChunkEmbed();
+    console.log(exist);
+    expect(exist).toBe(true);
+  });
 
-  it.skip("justify existance of embedding", async()=>{
-    const ceRes = await book.chunkEmbed()
-    const exist = await book.hasCompletedChunkEmbed()
-    console.log(exist)
-    expect(exist).toBe(true)
-  })
-
-  it.skip('semantic search', async()=>{
-    const searchRes = await book.searchInChunks("ACEI",2)
-    console.log(searchRes)
-  })
+  it.skip('semantic search', async () => {
+    const searchRes = await book.searchInChunks('ACEI', 2);
+    console.log(searchRes);
+  });
 });
 
-describe("pdf process workflow", async()=>{
+describe('pdf process workflow', async () => {
+  let { book, library } = await UploadTestPdf();
 
-  let {book, library} = await UploadTestPdf();
-
-  it("start pdf async process", async()=>{
-    const s3Link = await book.getPdfDownloadUrl()
-    console.log(`s3Link: ${s3Link}`)
-    await library.sendPdfAnalysisRequest(book.getItemId(),s3Link, book.metadata.s3Key as string, book.metadata.title)
-  })  
-})
+  it('start pdf async process', async () => {
+    const s3Link = await book.getPdfDownloadUrl();
+    console.log(`s3Link: ${s3Link}`);
+    await library.sendPdfAnalysisRequest(
+      book.getItemId(),
+      s3Link,
+      book.metadata.s3Key as string,
+      book.metadata.title,
+    );
+  });
+});

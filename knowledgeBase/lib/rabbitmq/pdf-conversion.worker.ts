@@ -8,6 +8,7 @@ import {
   PdfPartConversionFailedMessage,
   PdfMergingRequestMessage,
   MarkdownStorageRequestMessage,
+  MarkdownPartStorageRequestMessage,
   PdfProcessingStatus,
   PdfPartStatus,
   RABBITMQ_QUEUES,
@@ -16,6 +17,7 @@ import {
 import { getRabbitMQService } from './rabbitmq.service';
 import { getPdfDownloadUrl } from '../s3Service/S3Service';
 import {
+  ConversionResult,
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
 } from '../../knowledgeImport/PdfConvertor';
@@ -24,6 +26,8 @@ import createLoggerWithPrefix from '../../lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { IPdfPartTracker } from './pdf-part-tracker';
 import { getPdfPartTracker } from './pdf-part-tracker-factory';
+import { MarkdownPartCache } from './markdown-part-cache';
+import { getMarkdownPartCache } from './markdown-part-cache-factory';
 
 const logger = createLoggerWithPrefix('PdfConversionWorker');
 
@@ -38,10 +42,16 @@ export class PdfConversionWorker {
   private partConsumerTag: string | null = null;
   private isRunning = false;
   private partTracker: IPdfPartTracker;
+  private markdownPartCache: MarkdownPartCache;
 
-  constructor(pdfConvertor?: MinerUPdfConvertor, partTracker?: IPdfPartTracker) {
+  constructor(
+    pdfConvertor?: MinerUPdfConvertor,
+    partTracker?: IPdfPartTracker,
+    markdownPartCache?: MarkdownPartCache,
+  ) {
     this.pdfConvertor = pdfConvertor || createMinerUConvertorFromEnv();
     this.partTracker = partTracker || getPdfPartTracker();
+    this.markdownPartCache = markdownPartCache || getMarkdownPartCache();
   }
 
   /**
@@ -59,6 +69,11 @@ export class PdfConversionWorker {
         await this.rabbitMQService.initialize();
       }
 
+      // Initialize Markdown Part Cache
+      logger.info('Initializing Markdown Part Cache...');
+      await this.markdownPartCache.initialize();
+      logger.info('Markdown Part Cache initialized successfully');
+
       logger.info('Starting PDF conversion worker...');
 
       // Start consuming messages from the request queue
@@ -68,7 +83,7 @@ export class PdfConversionWorker {
         {
           consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER,
           noAck: false, // Manual acknowledgment
-        }
+        },
       );
 
       // Start consuming messages from the part conversion request queue
@@ -78,7 +93,7 @@ export class PdfConversionWorker {
         {
           consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_PART_CONVERSION_WORKER,
           noAck: false, // Manual acknowledgment
-        }
+        },
       );
 
       this.isRunning = true;
@@ -124,35 +139,51 @@ export class PdfConversionWorker {
    */
   private async handlePdfConversionRequest(
     message: PdfConversionRequestMessage,
-    originalMessage: any
+    originalMessage: any,
   ): Promise<void> {
     const startTime = Date.now();
-    logger.info(`Processing PDF conversion request for item: ${message.itemId}`);
+    logger.info(
+      `Processing PDF conversion request for item: ${message.itemId}`,
+    );
 
     // Check retry status before processing
     const retryCount = message.retryCount || 0;
     const maxRetries = message.maxRetries || 3;
     const isFinalAttempt = retryCount >= maxRetries;
-    
+
     if (isFinalAttempt) {
-      logger.info(`Processing final attempt for item ${message.itemId} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`);
+      logger.info(
+        `Processing final attempt for item ${message.itemId} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`,
+      );
     }
 
     try {
       // Update status to processing
-      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 0, 'Starting PDF conversion');
+      await this.publishProgressMessage(
+        message.itemId,
+        PdfProcessingStatus.PROCESSING,
+        0,
+        'Starting PDF conversion',
+      );
 
       // Log PDF metadata if available (optimization: no need to re-analyze)
       if (message.pdfMetadata) {
-        logger.info(`Using PDF metadata from analysis phase for item ${message.itemId}:`, {
-          pageCount: message.pdfMetadata.pageCount,
-          fileSize: message.pdfMetadata.fileSize,
-          title: message.pdfMetadata.title,
-          author: message.pdfMetadata.author,
-        });
-        logger.info(`OPTIMIZATION: Skipping PDF analysis for item ${message.itemId} - using metadata from previous analysis`);
+        logger.info(
+          `Using PDF metadata from analysis phase for item ${message.itemId}:`,
+          {
+            pageCount: message.pdfMetadata.pageCount,
+            fileSize: message.pdfMetadata.fileSize,
+            title: message.pdfMetadata.title,
+            author: message.pdfMetadata.author,
+          },
+        );
+        logger.info(
+          `OPTIMIZATION: Skipping PDF analysis for item ${message.itemId} - using metadata from previous analysis`,
+        );
       } else {
-        logger.info(`No PDF metadata available for item ${message.itemId} - will analyze during conversion`);
+        logger.info(
+          `No PDF metadata available for item ${message.itemId} - will analyze during conversion`,
+        );
       }
 
       if (!this.pdfConvertor) {
@@ -160,51 +191,97 @@ export class PdfConversionWorker {
       }
 
       // Publish progress
-      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 10, 'Preparing PDF conversion');
+      await this.publishProgressMessage(
+        message.itemId,
+        PdfProcessingStatus.PROCESSING,
+        10,
+        'Preparing PDF conversion',
+      );
 
       // Convert PDF to Markdown
-      logger.info(`Converting PDF to Markdown for item: ${message.itemId}, S3 Key: ${message.s3Key}`);
-      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 30, 'Converting PDF to Markdown');
+      logger.info(
+        `Converting PDF to Markdown for item: ${message.itemId}, S3 Key: ${message.s3Key}`,
+      );
+      await this.publishProgressMessage(
+        message.itemId,
+        PdfProcessingStatus.PROCESSING,
+        30,
+        'Converting PDF to Markdown',
+      );
 
       // Generate presigned URL from s3Key
       const s3Url = await getPdfDownloadUrl(message.s3Key);
-      logger.info(`Starting PDF conversion with generated S3 URL for item ${message.itemId}`);
-      
+      logger.info(
+        `Starting PDF conversion with generated S3 URL for item ${message.itemId}`,
+      );
+
       let conversionResult;
       try {
-        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
-        
+        conversionResult =
+          await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
+
         // Enhanced diagnostic logging for conversion result
-        logger.info(`PDF conversion completed for item ${message.itemId}. Enhanced result diagnostics: ${JSON.stringify({
-          success: conversionResult.success,
-          hasData: !!conversionResult.data,
-          hasError: !!conversionResult.error,
-          error: conversionResult.error,
-          taskId: conversionResult.taskId,
-          taskIdType: typeof conversionResult.taskId,
-          downloadedFilesCount: conversionResult.downloadedFiles?.length || 0,
-          fullConversionResult: JSON.stringify(conversionResult, null, 2)
-        }, null , 2)}`);
-        
+        logger.info(
+          `PDF conversion completed for item ${message.itemId}. Enhanced result diagnostics: ${JSON.stringify(
+            {
+              success: conversionResult.success,
+              hasData: !!conversionResult.data,
+              hasError: !!conversionResult.error,
+              error: conversionResult.error,
+              taskId: conversionResult.taskId,
+              taskIdType: typeof conversionResult.taskId,
+              downloadedFilesCount:
+                conversionResult.downloadedFiles?.length || 0,
+              fullConversionResult: JSON.stringify(conversionResult, null, 2),
+            },
+            null,
+            2,
+          )}`,
+        );
+
         if (!conversionResult.taskId || conversionResult.taskId === 'unknown') {
-          logger.error(`CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}`);
-          logger.error(`Full conversion result:`, JSON.stringify(conversionResult, null, 2));
+          logger.error(
+            `CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}`,
+          );
+          logger.error(
+            `Full conversion result:`,
+            JSON.stringify(conversionResult, null, 2),
+          );
         }
       } catch (conversionError) {
-        logger.error(`PDF conversion failed with error for item ${message.itemId}:`, conversionError);
+        logger.error(
+          `PDF conversion failed with error for item ${message.itemId}:`,
+          conversionError,
+        );
         logger.error(`Error type:`, typeof conversionError);
-        logger.error(`Error message:`, conversionError instanceof Error ? conversionError.message : String(conversionError));
-        logger.error(`Error stack:`, conversionError instanceof Error ? conversionError.stack : 'No stack trace');
+        logger.error(
+          `Error message:`,
+          conversionError instanceof Error
+            ? conversionError.message
+            : String(conversionError),
+        );
+        logger.error(
+          `Error stack:`,
+          conversionError instanceof Error
+            ? conversionError.stack
+            : 'No stack trace',
+        );
         throw conversionError;
       }
 
       if (!conversionResult.success || !conversionResult.data) {
-        logger.error(`PDF conversion failed for item ${message.itemId}:`, {
-          success: conversionResult.success,
-          hasData: !!conversionResult.data,
-          error: conversionResult.error,
-          taskId: conversionResult.taskId
-        });
+        logger.error(
+          `PDF conversion failed for item ${message.itemId}: ${JSON.stringify(
+            {
+              success: conversionResult.success,
+              hasData: !!conversionResult.data,
+              error: conversionResult.error,
+              taskId: conversionResult.taskId,
+            },
+            null,
+            2,
+          )}`,
+        );
         throw new Error(conversionResult.error || 'PDF conversion failed');
       }
 
@@ -221,44 +298,63 @@ export class PdfConversionWorker {
       }
 
       // Send markdown storage request instead of saving directly
-      await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 60, 'Sending markdown storage request');
-      
+      await this.publishProgressMessage(
+        message.itemId,
+        PdfProcessingStatus.PROCESSING,
+        60,
+        'Sending markdown storage request',
+      );
+
       const conversionTime = Date.now() - startTime;
-      await this.sendMarkdownStorageRequest(message.itemId, markdownContent, conversionTime);
+      await this.sendMarkdownStorageRequest(
+        message.itemId,
+        markdownContent,
+        conversionTime,
+      );
 
       // Update progress via message instead of updating storage directly
       await this.publishProgressMessage(
         message.itemId,
         PdfProcessingStatus.PROCESSING,
         80,
-        'PDF conversion completed, waiting for markdown storage'
+        'PDF conversion completed, waiting for markdown storage',
       );
 
       // Publish conversion completion message (not final completion)
-      await this.publishConversionCompletionMessage(message.itemId, markdownContent, conversionTime);
+      await this.publishConversionCompletionMessage(
+        message.itemId,
+        markdownContent,
+        conversionTime,
+      );
 
-      logger.info(`PDF conversion completed successfully for item: ${message.itemId}, markdown storage request sent`);
-
+      logger.info(
+        `PDF conversion completed successfully for item: ${message.itemId}, markdown storage request sent`,
+      );
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      logger.error(`PDF conversion failed for item ${message.itemId}: ${JSON.stringify(error)}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error(
+        `PDF conversion failed for item ${message.itemId}: ${JSON.stringify(error)}`,
+      );
 
       // Update status via message instead of updating storage directly
       await this.publishProgressMessage(
         message.itemId,
         PdfProcessingStatus.FAILED,
         0,
-        `PDF conversion failed: ${errorMessage}`
+        `PDF conversion failed: ${errorMessage}`,
       );
 
       // Check if should retry
       const shouldRetry = retryCount < maxRetries;
-      
+
       if (shouldRetry) {
-        logger.info(`Retrying PDF conversion for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`);
-        
+        logger.info(
+          `Retrying PDF conversion for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+
         // Republish the request with incremented retry count
         const retryRequest = {
           ...message,
@@ -270,7 +366,13 @@ export class PdfConversionWorker {
         await this.rabbitMQService.publishPdfConversionRequest(retryRequest);
       } else {
         // Publish failure message
-        await this.publishFailureMessage(message.itemId, errorMessage, retryCount, maxRetries, processingTime);
+        await this.publishFailureMessage(
+          message.itemId,
+          errorMessage,
+          retryCount,
+          maxRetries,
+          processingTime,
+        );
       }
     }
   }
@@ -280,32 +382,53 @@ export class PdfConversionWorker {
    */
   private async handlePdfPartConversionRequest(
     message: PdfPartConversionRequestMessage,
-    originalMessage: any
+    originalMessage: any,
   ): Promise<void> {
     const startTime = Date.now();
-    logger.info(`Processing PDF part conversion request for item: ${message.itemId}, part: ${message.partIndex + 1}/${message.totalParts}`);
+    logger.info(
+      `Processing PDF part conversion request for item: ${message.itemId}, part: ${message.partIndex + 1}/${message.totalParts}`,
+    );
 
     try {
       // Initialize PDF processing if not already done
-      const processingStatus = await this.partTracker.getPdfProcessingStatus(message.itemId);
+      const processingStatus = await this.partTracker.getPdfProcessingStatus(
+        message.itemId,
+      );
       if (!processingStatus) {
         logger.info(`Initializing PDF processing for item ${message.itemId}`);
-        await this.partTracker.initializePdfProcessing(message.itemId, message.totalParts);
+        await this.partTracker.initializePdfProcessing(
+          message.itemId,
+          message.totalParts,
+        );
       }
 
       // Update part status to processing
-      await this.updatePartStatus(message.itemId, message.partIndex, 'processing', 'Converting PDF part to Markdown');
-      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.PROCESSING);
+      await this.updatePartStatus(
+        message.itemId,
+        message.partIndex,
+        'processing',
+        'Converting PDF part to Markdown',
+      );
+      await this.partTracker.updatePartStatus(
+        message.itemId,
+        message.partIndex,
+        PdfPartStatus.PROCESSING,
+      );
 
       // Log PDF metadata if available (optimization: no need to re-analyze)
       if (message.pdfMetadata) {
-        logger.info(`Using PDF metadata from analysis phase for item ${message.itemId}, part ${message.partIndex + 1}:`, {
-          pageCount: message.pdfMetadata.pageCount,
-          fileSize: message.pdfMetadata.fileSize,
-          title: message.pdfMetadata.title,
-          author: message.pdfMetadata.author,
-        });
-        logger.info(`OPTIMIZATION: Skipping PDF analysis for item ${message.itemId}, part ${message.partIndex + 1} - using metadata from previous analysis`);
+        logger.info(
+          `Using PDF metadata from analysis phase for item ${message.itemId}, part ${message.partIndex + 1}:`,
+          {
+            pageCount: message.pdfMetadata.pageCount,
+            fileSize: message.pdfMetadata.fileSize,
+            title: message.pdfMetadata.title,
+            author: message.pdfMetadata.author,
+          },
+        );
+        logger.info(
+          `OPTIMIZATION: Skipping PDF analysis for item ${message.itemId}, part ${message.partIndex + 1} - using metadata from previous analysis`,
+        );
       }
 
       if (!this.pdfConvertor) {
@@ -313,37 +436,63 @@ export class PdfConversionWorker {
       }
 
       // Convert PDF part to Markdown
-      logger.info(`Converting PDF part ${message.partIndex + 1} to Markdown for item: ${message.itemId}`);
-      logger.info(`OPTIMIZATION: Generating presigned URL from s3Key for item ${message.itemId}, part ${message.partIndex + 1}`);
-      
+      logger.info(
+        `Converting PDF part ${message.partIndex + 1} to Markdown for item: ${message.itemId}`,
+      );
+      logger.info(
+        `OPTIMIZATION: Generating presigned URL from s3Key for item ${message.itemId}, part ${message.partIndex + 1}`,
+      );
+
       // Generate presigned URL from s3Key
       const s3Url = await getPdfDownloadUrl(message.s3Key);
-      
-      let conversionResult;
+
+      let conversionResult: ConversionResult;
       try {
-        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
-        
+        conversionResult =
+          await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
+
         // Enhanced diagnostic logging for part conversion result
-        logger.info(`PDF part conversion completed for item ${message.itemId}, part ${message.partIndex + 1}. Enhanced diagnostics:`, {
-          success: conversionResult.success,
-          hasData: !!conversionResult.data,
-          hasError: !!conversionResult.error,
-          error: conversionResult.error,
-          taskId: conversionResult.taskId,
-          taskIdType: typeof conversionResult.taskId,
-          downloadedFilesCount: conversionResult.downloadedFiles?.length || 0,
-          fullConversionResult: JSON.stringify(conversionResult, null, 2)
-        });
-        
+        logger.info(
+          `PDF part conversion completed for item ${message.itemId}, part ${message.partIndex + 1}. Enhanced diagnostics:`,
+          {
+            success: conversionResult.success,
+            hasData: !!conversionResult.data,
+            hasError: !!conversionResult.error,
+            error: conversionResult.error,
+            taskId: conversionResult.taskId,
+            taskIdType: typeof conversionResult.taskId,
+            downloadedFilesCount: conversionResult.downloadedFiles?.length || 0,
+            fullConversionResult: JSON.stringify(conversionResult, null, 2),
+          },
+        );
+
         if (!conversionResult.taskId || conversionResult.taskId === 'unknown') {
-          logger.error(`CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}, part ${message.partIndex + 1}`);
-          logger.error(`Full conversion result:`, JSON.stringify(conversionResult, null, 2));
+          logger.error(
+            `CRITICAL: conversionResult.taskId is missing or invalid for item ${message.itemId}, part ${message.partIndex + 1}`,
+          );
+          logger.error(
+            `Full conversion result:`,
+            JSON.stringify(conversionResult, null, 2),
+          );
         }
       } catch (conversionError) {
-        logger.error(`PDF part conversion failed with error for item ${message.itemId}, part ${message.partIndex + 1}:`, conversionError);
+        logger.error(
+          `PDF part conversion failed with error for item ${message.itemId}, part ${message.partIndex + 1}:`,
+          conversionError,
+        );
         logger.error(`Error type:`, typeof conversionError);
-        logger.error(`Error message:`, conversionError instanceof Error ? conversionError.message : String(conversionError));
-        logger.error(`Error stack:`, conversionError instanceof Error ? conversionError.stack : 'No stack trace');
+        logger.error(
+          `Error message:`,
+          conversionError instanceof Error
+            ? conversionError.message
+            : String(conversionError),
+        );
+        logger.error(
+          `Error stack:`,
+          conversionError instanceof Error
+            ? conversionError.stack
+            : 'No stack trace',
+        );
         throw conversionError;
       }
 
@@ -363,40 +512,67 @@ export class PdfConversionWorker {
         markdownContent = JSON.stringify(conversionResult.data, null, 2);
       }
 
-      // Save part markdown content (parts still need to be saved for merging)
-      await this.savePartMarkdown(message.itemId, message.partIndex, markdownContent);
+      // Send markdown part storage request to the storage worker
+      await this.sendMarkdownPartStorageRequest(
+        message.itemId,
+        message.partIndex,
+        message.totalParts,
+        markdownContent,
+        message.startPage,
+        message.endPage,
+      );
 
-      // Update part status to completed
-      await this.updatePartStatus(message.itemId, message.partIndex, 'completed', 'PDF part conversion completed');
-      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.COMPLETED);
+      // Update part status to completed in tracker (storage worker will handle cache updates)
+      await this.partTracker.updatePartStatus(
+        message.itemId,
+        message.partIndex,
+        PdfPartStatus.COMPLETED,
+      );
 
       // Publish part completion message
       const processingTime = Date.now() - startTime;
-      await this.publishPartCompletionMessage(message.itemId, message.partIndex, message.totalParts, markdownContent, processingTime);
+      await this.publishPartCompletionMessage(
+        message.itemId,
+        message.partIndex,
+        message.totalParts,
+        markdownContent,
+        processingTime,
+      );
 
-      logger.info(`PDF part conversion completed for item: ${message.itemId}, part: ${message.partIndex + 1}`);
+      logger.info(
+        `PDF part conversion completed for item: ${message.itemId}, part: ${message.partIndex + 1}`,
+      );
 
       // Check if all parts are completed and trigger merging if needed
       await this.checkAndTriggerMerging(message.itemId, message.totalParts);
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      logger.error(`PDF part conversion failed for item ${message.itemId}, part ${message.partIndex + 1}:`, error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
-      // Update part status with error
-      await this.updatePartStatus(message.itemId, message.partIndex, 'failed', `PDF part conversion failed: ${errorMessage}`, errorMessage);
-      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.FAILED, errorMessage);
+      logger.error(
+        `PDF part conversion failed for item ${message.itemId}, part ${message.partIndex + 1}:`,
+        error,
+      );
+
+      // Update part status with error (storage worker will handle cache updates)
+      await this.partTracker.updatePartStatus(
+        message.itemId,
+        message.partIndex,
+        PdfPartStatus.FAILED,
+        errorMessage,
+      );
 
       // Check if should retry
       const retryCount = message.retryCount || 0;
       const maxRetries = message.maxRetries || 3;
       const shouldRetry = retryCount < maxRetries;
-      
+
       if (shouldRetry) {
-        logger.info(`Retrying PDF part conversion for item ${message.itemId}, part ${message.partIndex + 1} (attempt ${retryCount + 1}/${maxRetries})`);
-        
+        logger.info(
+          `Retrying PDF part conversion for item ${message.itemId}, part ${message.partIndex + 1} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+
         // Republish the request with incremented retry count
         const retryRequest = {
           ...message,
@@ -405,10 +581,20 @@ export class PdfConversionWorker {
           retryCount: retryCount + 1,
         };
 
-        await this.rabbitMQService.publishPdfPartConversionRequest(retryRequest);
+        await this.rabbitMQService.publishPdfPartConversionRequest(
+          retryRequest,
+        );
       } else {
         // Publish part failure message
-        await this.publishPartFailureMessage(message.itemId, message.partIndex, message.totalParts, errorMessage, retryCount, maxRetries, processingTime);
+        await this.publishPartFailureMessage(
+          message.itemId,
+          message.partIndex,
+          message.totalParts,
+          errorMessage,
+          retryCount,
+          maxRetries,
+          processingTime,
+        );
       }
     }
   }
@@ -416,16 +602,27 @@ export class PdfConversionWorker {
   /**
    * Save part markdown content
    */
-  private async savePartMarkdown(itemId: string, partIndex: number, markdownContent: string): Promise<void> {
+  private async savePartMarkdown(
+    itemId: string,
+    partIndex: number,
+    markdownContent: string,
+  ): Promise<void> {
     try {
       // Instead of saving directly to storage, send a markdown storage request
       // The markdown storage worker will handle the actual storage
       const partSeparator = `\n\n--- PART ${partIndex + 1} ---\n\n`;
       const updatedMarkdown = partSeparator + markdownContent;
-      
-      await this.sendPartMarkdownStorageRequest(itemId, partIndex, updatedMarkdown);
+
+      await this.sendPartMarkdownStorageRequest(
+        itemId,
+        partIndex,
+        updatedMarkdown,
+      );
     } catch (error) {
-      logger.error(`Failed to send part markdown storage request for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to send part markdown storage request for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -438,83 +635,78 @@ export class PdfConversionWorker {
     partIndex: number,
     status: string,
     message: string,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       // Instead of updating storage directly, publish a part status update message
       // This allows other services to handle the status update
-      await this.publishPartStatusUpdateMessage(itemId, partIndex, status, message, error);
+      await this.publishPartStatusUpdateMessage(
+        itemId,
+        partIndex,
+        status,
+        message,
+        error,
+      );
     } catch (updateError) {
-      logger.error(`Failed to publish part status update for item ${itemId}, part ${partIndex}:`, updateError);
+      logger.error(
+        `Failed to publish part status update for item ${itemId}, part ${partIndex}:`,
+        updateError,
+      );
     }
   }
 
   /**
    * Check if all parts are completed and trigger merging if needed
+   * Note: This method is now simplified since the storage worker handles merging logic
    */
-  private async checkAndTriggerMerging(itemId: string, totalParts: number): Promise<void> {
+  private async checkAndTriggerMerging(
+    itemId: string,
+    totalParts: number,
+  ): Promise<void> {
     try {
       logger.info(`Checking if all parts are completed for item ${itemId}`);
       
-      // Check if all parts are completed
-      const allCompleted = await this.partTracker.areAllPartsCompleted(itemId);
-      
-      if (allCompleted) {
-        logger.info(`All parts completed for item ${itemId}, triggering merging`);
+      // The storage worker will handle the actual merging logic
+      // We just need to check if all parts are converted and let the storage worker handle the rest
+      const processingStatus = await this.partTracker.getPdfProcessingStatus(itemId);
+      if (!processingStatus) {
+        logger.warn(`No processing status found for item ${itemId}`);
+        return;
+      }
+
+      // Check if all parts are converted by getting all parts from the part tracker
+      // Since we don't have direct access to parts array, we'll check using the cache
+      try {
+        const allParts = await this.markdownPartCache.getAllParts(itemId);
+        const completedParts = allParts.filter(part => {
+          // We can't directly check status here, so we'll assume all parts in cache are being processed
+          // The storage worker will handle the actual status checking
+          return true;
+        });
         
-        // Get completed parts
-        const completedParts = await this.partTracker.getCompletedParts(itemId);
-        
-        // Create and publish merging request
-        const mergingRequest: PdfMergingRequestMessage = {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'PDF_MERGING_REQUEST',
-          itemId,
-          totalParts,
-          completedParts,
-          priority: 'normal',
-        };
-        
-        await this.rabbitMQService.publishPdfMergingRequest(mergingRequest);
-        logger.info(`Published merging request for item ${itemId} with ${completedParts.length} parts`);
-      } else {
-        // Check if any parts failed
-        const hasFailedParts = await this.partTracker.hasAnyPartFailed(itemId);
-        
-        if (hasFailedParts) {
-          logger.warn(`Some parts failed for item ${itemId}, checking retry options`);
-          
-          const failedParts = await this.partTracker.getFailedParts(itemId);
-          const failedPartsDetails = await this.partTracker.getFailedPartsDetails(itemId);
-          
-          // Check if any failed parts can be retried
-          const retryableParts = failedPartsDetails.filter(part => {
-            const retryCount = part.retryCount || 0;
-            const maxRetries = part.maxRetries || 3;
-            return retryCount < maxRetries;
-          });
-          
-          if (retryableParts.length > 0) {
-            logger.info(`Retrying ${retryableParts.length} failed parts for item ${itemId}`);
-            const retriedParts = await this.partTracker.retryFailedParts(itemId);
-            
-            // Republish retry requests for retried parts
-            for (const partIndex of retriedParts) {
-              // This would require the original part conversion request details
-              // For now, we'll log that retry would happen here
-              logger.info(`Would retry part ${partIndex} for item ${itemId}`);
-            }
-          } else {
-            logger.error(`All failed parts for item ${itemId} have exceeded max retries`);
-            // Here you could publish a failure message or trigger a different workflow
-          }
-        } else {
-          logger.info(`Not all parts are completed yet for item ${itemId}. Continuing to wait...`);
+        logger.info(
+          `Part status summary for item ${itemId}: ${allParts.length} parts found in cache`,
+        );
+
+        // If we have all parts in cache, the storage worker will handle the merging
+        // We don't need to trigger merging here anymore
+        if (allParts.length === totalParts) {
+          logger.info(
+            `All parts found in cache for item ${itemId}. Storage worker will handle merging.`,
+          );
         }
+      } catch (cacheError) {
+        logger.warn(
+          `Failed to check parts in cache for item ${itemId}:`,
+          cacheError,
+        );
+        // Continue anyway, the storage worker will handle the merging logic
       }
     } catch (error) {
-      logger.error(`Failed to check and trigger merging for item ${itemId}:`, error);
+      logger.error(
+        `Failed to check and trigger merging for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -526,7 +718,7 @@ export class PdfConversionWorker {
     partIndex: number,
     totalParts: number,
     markdownContent: string,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const completionMessage: PdfPartConversionCompletedMessage = {
@@ -541,9 +733,14 @@ export class PdfConversionWorker {
         processingTime,
       };
 
-      await this.rabbitMQService.publishPdfPartConversionCompleted(completionMessage);
+      await this.rabbitMQService.publishPdfPartConversionCompleted(
+        completionMessage,
+      );
     } catch (error) {
-      logger.error(`Failed to publish part completion message for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to publish part completion message for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
     }
   }
 
@@ -557,7 +754,7 @@ export class PdfConversionWorker {
     error: string,
     retryCount: number,
     maxRetries: number,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const failureMessage: PdfPartConversionFailedMessage = {
@@ -576,38 +773,57 @@ export class PdfConversionWorker {
 
       await this.rabbitMQService.publishPdfPartConversionFailed(failureMessage);
     } catch (publishError) {
-      logger.error(`Failed to publish part failure message for item ${itemId}, part ${partIndex}:`, publishError);
+      logger.error(
+        `Failed to publish part failure message for item ${itemId}, part ${partIndex}:`,
+        publishError,
+      );
     }
   }
 
   /**
    * Process chunks and embeddings for the converted markdown
    */
-  private async processChunksAndEmbeddings(itemId: string, markdownContent: string): Promise<void> {
+  private async processChunksAndEmbeddings(
+    itemId: string,
+    markdownContent: string,
+  ): Promise<void> {
     try {
       // This is a simplified version - in a real implementation, you would
       // use the proper chunking and embedding services
-      
+
       // For now, we'll just log that chunks are being processed
       // The actual chunking logic would be similar to what's in the Library class
       logger.info(`Processing chunks for item: ${itemId}`);
-      
+
       // Update progress
-      await this.publishProgressMessage(itemId, PdfProcessingStatus.PROCESSING, 80, 'Generating text chunks');
-      
+      await this.publishProgressMessage(
+        itemId,
+        PdfProcessingStatus.PROCESSING,
+        80,
+        'Generating text chunks',
+      );
+
       // Here you would implement the actual chunking logic
       // For now, we'll simulate it with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      await this.publishProgressMessage(itemId, PdfProcessingStatus.PROCESSING, 90, 'Generating embeddings');
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      await this.publishProgressMessage(
+        itemId,
+        PdfProcessingStatus.PROCESSING,
+        90,
+        'Generating embeddings',
+      );
+
       // Here you would implement the actual embedding generation
       // For now, we'll simulate it with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       logger.info(`Chunks and embeddings processed for item: ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to process chunks and embeddings for item ${itemId}:`, error);
+      logger.error(
+        `Failed to process chunks and embeddings for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -621,7 +837,7 @@ export class PdfConversionWorker {
     message: string,
     progress?: number,
     error?: string,
-    processingTime?: number
+    processingTime?: number,
   ): Promise<void> {
     try {
       // Instead of updating storage directly, publish a status update message
@@ -638,7 +854,7 @@ export class PdfConversionWorker {
     itemId: string,
     status: PdfProcessingStatus,
     progress: number,
-    message: string
+    message: string,
   ): Promise<void> {
     try {
       const progressMessage: PdfConversionProgressMessage = {
@@ -654,7 +870,10 @@ export class PdfConversionWorker {
 
       await this.rabbitMQService.publishPdfConversionProgress(progressMessage);
     } catch (error) {
-      logger.error(`Failed to publish progress message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish progress message for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -664,7 +883,7 @@ export class PdfConversionWorker {
   private async publishCompletionMessage(
     itemId: string,
     markdownContent: string,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const completionMessage: PdfConversionCompletedMessage = {
@@ -677,9 +896,14 @@ export class PdfConversionWorker {
         processingTime,
       };
 
-      await this.rabbitMQService.publishPdfConversionCompleted(completionMessage);
+      await this.rabbitMQService.publishPdfConversionCompleted(
+        completionMessage,
+      );
     } catch (error) {
-      logger.error(`Failed to publish completion message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish completion message for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -689,7 +913,7 @@ export class PdfConversionWorker {
   private async publishConversionCompletionMessage(
     itemId: string,
     markdownContent: string,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const completionMessage: PdfConversionCompletedMessage = {
@@ -702,9 +926,14 @@ export class PdfConversionWorker {
         processingTime,
       };
 
-      await this.rabbitMQService.publishPdfConversionCompleted(completionMessage);
+      await this.rabbitMQService.publishPdfConversionCompleted(
+        completionMessage,
+      );
     } catch (error) {
-      logger.error(`Failed to publish conversion completion message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish conversion completion message for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -714,7 +943,7 @@ export class PdfConversionWorker {
   private async sendMarkdownStorageRequest(
     itemId: string,
     markdownContent: string,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const storageRequest: MarkdownStorageRequestMessage = {
@@ -734,7 +963,10 @@ export class PdfConversionWorker {
       await this.rabbitMQService.publishMarkdownStorageRequest(storageRequest);
       logger.info(`Markdown storage request sent for item: ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to send markdown storage request for item ${itemId}:`, error);
+      logger.error(
+        `Failed to send markdown storage request for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -747,7 +979,7 @@ export class PdfConversionWorker {
     error: string,
     retryCount: number,
     maxRetries: number,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const failureMessage: PdfConversionFailedMessage = {
@@ -765,7 +997,10 @@ export class PdfConversionWorker {
 
       await this.rabbitMQService.publishPdfConversionFailed(failureMessage);
     } catch (error) {
-      logger.error(`Failed to publish failure message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish failure message for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -775,7 +1010,7 @@ export class PdfConversionWorker {
   private async sendPartMarkdownStorageRequest(
     itemId: string,
     partIndex: number,
-    markdownContent: string
+    markdownContent: string,
   ): Promise<void> {
     try {
       const storageRequest: MarkdownStorageRequestMessage = {
@@ -794,9 +1029,14 @@ export class PdfConversionWorker {
       };
 
       await this.rabbitMQService.publishMarkdownStorageRequest(storageRequest);
-      logger.info(`Part markdown storage request sent for item: ${itemId}, part: ${partIndex}`);
+      logger.info(
+        `Part markdown storage request sent for item: ${itemId}, part: ${partIndex}`,
+      );
     } catch (error) {
-      logger.error(`Failed to send part markdown storage request for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to send part markdown storage request for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -809,7 +1049,7 @@ export class PdfConversionWorker {
     partIndex: number,
     status: string,
     message: string,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       // Since we don't have a specific message type for part status updates,
@@ -828,9 +1068,54 @@ export class PdfConversionWorker {
 
       await this.rabbitMQService.publishPdfConversionProgress(progressMessage);
     } catch (error) {
-      logger.error(`Failed to publish part status update for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to publish part status update for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
     }
   }
+  /**
+   * Send markdown part storage request
+   */
+  private async sendMarkdownPartStorageRequest(
+    itemId: string,
+    partIndex: number,
+    totalParts: number,
+    markdownContent: string,
+    startPage?: number,
+    endPage?: number,
+  ): Promise<void> {
+    try {
+      const storageRequest: MarkdownPartStorageRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'MARKDOWN_PART_STORAGE_REQUEST',
+        itemId,
+        partIndex,
+        totalParts,
+        markdownContent,
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+        metadata: {
+          startPage,
+          endPage,
+        },
+      };
+
+      await this.rabbitMQService.publishMarkdownPartStorageRequest(storageRequest);
+      logger.info(
+        `Markdown part storage request sent for item: ${itemId}, part: ${partIndex + 1}/${totalParts}`,
+      );
+    } catch (error) {
+      logger.error(
+        `Failed to send markdown part storage request for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
 
   /**
    * Check if worker is running
@@ -863,9 +1148,11 @@ export class PdfConversionWorker {
  * Create and start a PDF conversion worker
  */
 export async function createPdfConversionWorker(
-  pdfConvertor?: MinerUPdfConvertor
+  pdfConvertor?: MinerUPdfConvertor,
+  partTracker?: IPdfPartTracker,
+  markdownPartCache?: MarkdownPartCache,
 ): Promise<PdfConversionWorker> {
-  const worker = new PdfConversionWorker(pdfConvertor);
+  const worker = new PdfConversionWorker(pdfConvertor, partTracker, markdownPartCache);
   await worker.start();
   return worker;
 }
@@ -873,7 +1160,9 @@ export async function createPdfConversionWorker(
 /**
  * Stop a PDF conversion worker
  */
-export async function stopPdfConversionWorker(worker: PdfConversionWorker): Promise<void> {
+export async function stopPdfConversionWorker(
+  worker: PdfConversionWorker,
+): Promise<void> {
   await worker.stop();
 }
 
@@ -884,29 +1173,28 @@ if (require.main === module) {
       // Create and start worker
       const worker = await createPdfConversionWorker();
       logger.info('PDF Conversion Worker started successfully');
-      
+
       // Handle graceful shutdown
       process.on('SIGINT', async () => {
         logger.info('Received SIGINT, shutting down gracefully...');
         await worker.stop();
         process.exit(0);
       });
-      
+
       process.on('SIGTERM', async () => {
         logger.info('Received SIGTERM, shutting down gracefully...');
         await worker.stop();
         process.exit(0);
       });
-      
+
       // Keep the process running
       logger.info('PDF Conversion Worker is running. Press Ctrl+C to stop.');
-      
     } catch (error) {
       logger.error('Failed to start PDF Conversion Worker:', error);
       process.exit(1);
     }
   }
-  
+
   main().catch((error) => {
     logger.error('Unhandled error:', error);
     process.exit(1);

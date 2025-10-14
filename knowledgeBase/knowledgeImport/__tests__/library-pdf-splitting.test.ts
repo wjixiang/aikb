@@ -1,7 +1,4 @@
-import Library, {
-  S3MongoLibraryStorage,
-  BookMetadata,
-} from '../library';
+import Library, { S3MongoLibraryStorage, BookMetadata } from '../library';
 import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
 import {
   PdfAnalyzerService,
@@ -74,19 +71,17 @@ describe('PDF Splitting and Merging Integration Tests', () => {
   describe('PDF Analysis', () => {
     test('should analyze small PDF and determine no splitting needed', async () => {
       // Create a small PDF buffer (simulated)
-      const smallPdfBuffer = Buffer.from('%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000079 00000 n\n0000000173 00000 n\ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n292\n%%EOF');
+      const smallPdfBuffer = Buffer.from(
+        '%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000079 00000 n\n0000000173 00000 n\ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n292\n%%EOF',
+      );
 
       // Store the PDF
-      const item = await library.storePdf(
-        smallPdfBuffer,
-        'small-test.pdf',
-        {
-          title: 'Small Test PDF',
-          authors: [{ firstName: 'Test', lastName: 'Author' }],
-          tags: ['test'],
-          collections: [],
-        }
-      );
+      const item = await library.storePdf(smallPdfBuffer, 'small-test.pdf', {
+        title: 'Small Test PDF',
+        authors: [{ firstName: 'Test', lastName: 'Author' }],
+        tags: ['test'],
+        collections: [],
+      });
 
       // Send analysis request
       const analysisRequest: PdfAnalysisRequestMessage = {
@@ -95,7 +90,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
         s3Key: item.metadata.s3Key!,
-        
+
         fileName: 'small-test.pdf',
         priority: 'normal',
         retryCount: 0,
@@ -105,11 +100,14 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       await rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
 
       // Wait for analysis to complete
-      const result = await library.waitForProcessingCompletion(item.metadata.id!, 30000);
-      
+      const result = await library.waitForProcessingCompletion(
+        item.metadata.id!,
+        30000,
+      );
+
       expect(result.success).toBe(true);
       expect(result.status).toBe(PdfProcessingStatus.COMPLETED);
-      
+
       const status = await library.getProcessingStatus(item.metadata.id!);
       if (status) {
         expect((status as any).splittingInfo).toBeUndefined(); // No splitting for small PDF
@@ -127,20 +125,16 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         largePdfContent += `0000000000 00000 n\n`;
       }
       largePdfContent += 'trailer\n<<\n/Size 101\n>>\nstartxref\n0\n%%EOF';
-      
+
       const largePdfBuffer = Buffer.from(largePdfContent);
 
       // Store the PDF
-      const item = await library.storePdf(
-        largePdfBuffer,
-        'large-test.pdf',
-        {
-          title: 'Large Test PDF',
-          authors: [{ firstName: 'Test', lastName: 'Author' }],
-          tags: ['test', 'large'],
-          collections: [],
-        }
-      );
+      const item = await library.storePdf(largePdfBuffer, 'large-test.pdf', {
+        title: 'Large Test PDF',
+        authors: [{ firstName: 'Test', lastName: 'Author' }],
+        tags: ['test', 'large'],
+        collections: [],
+      });
 
       // Send analysis request
       const analysisRequest: PdfAnalysisRequestMessage = {
@@ -148,7 +142,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        
+
         s3Key: item.metadata.s3Key!,
         fileName: 'large-test.pdf',
         priority: 'normal',
@@ -159,11 +153,14 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       await rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
 
       // Wait for analysis to complete
-      const result = await library.waitForProcessingCompletion(item.metadata.id!, 60000);
-      
+      const result = await library.waitForProcessingCompletion(
+        item.metadata.id!,
+        60000,
+      );
+
       expect(result.success).toBe(true);
       expect(result.status).toBe(PdfProcessingStatus.COMPLETED);
-      
+
       const status = await library.getProcessingStatus(item.metadata.id!);
       // Note: In a real implementation, this would have splitting info
       // For this test, we're just verifying the analysis process works
@@ -183,53 +180,56 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         largePdfContent += `0000000000 00000 n\n`;
       }
       largePdfContent += 'trailer\n<<\n/Size 401\n>>\nstartxref\n0\n%%EOF';
-      
+
       const largePdfBuffer = Buffer.from(largePdfContent);
 
       // Store the PDF
-      const item = await library.storePdf(
-        largePdfBuffer,
-        'workflow-test.pdf',
-        {
-          title: 'Workflow Test PDF',
-          authors: [{ firstName: 'Test', lastName: 'Author' }],
-          tags: ['test', 'workflow', 'large'],
-          collections: [],
-        }
-      );
+      const item = await library.storePdf(largePdfBuffer, 'workflow-test.pdf', {
+        title: 'Workflow Test PDF',
+        authors: [{ firstName: 'Test', lastName: 'Author' }],
+        tags: ['test', 'workflow', 'large'],
+        collections: [],
+      });
 
       // Monitor the processing status
       const itemId = item.metadata.id!;
       let lastProgress = 0;
-      
+
       const statusMonitor = setInterval(async () => {
         const status = await library.getProcessingStatus(itemId);
-        
-        if (status && status.progress !== undefined && status.progress !== lastProgress) {
+
+        if (
+          status &&
+          status.progress !== undefined &&
+          status.progress !== lastProgress
+        ) {
           console.log(`Progress: ${status.progress}% - ${status.message}`);
           lastProgress = status.progress;
         }
-        
-        if (status && (status.status === PdfProcessingStatus.COMPLETED ||
-            status.status === PdfProcessingStatus.FAILED)) {
+
+        if (
+          status &&
+          (status.status === PdfProcessingStatus.COMPLETED ||
+            status.status === PdfProcessingStatus.FAILED)
+        ) {
           clearInterval(statusMonitor);
         }
       }, 2000);
 
       // Wait for complete processing
       const result = await library.waitForProcessingCompletion(itemId, 180000); // 3 minutes
-      
+
       clearInterval(statusMonitor);
-      
+
       expect(result.success).toBe(true);
       expect(result.status).toBe(PdfProcessingStatus.COMPLETED);
       expect((result as any).markdownContent).toBeDefined();
       expect((result as any).markdownContent!.length).toBeGreaterThan(0);
-      
+
       // Verify the merged content structure
       expect((result as any).markdownContent).toContain('Merged PDF Document');
       expect((result as any).markdownContent).toContain('PART');
-      
+
       const finalStatus = await library.getProcessingStatus(itemId);
       if (finalStatus) {
         expect(finalStatus.status).toBe(PdfProcessingStatus.COMPLETED);
@@ -252,7 +252,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
           authors: [{ firstName: 'Test', lastName: 'Author' }],
           tags: ['test', 'invalid'],
           collections: [],
-        }
+        },
       );
 
       // Send analysis request
@@ -261,7 +261,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        
+
         s3Key: item.metadata.s3Key!,
         fileName: 'invalid-test.pdf',
         priority: 'normal',
@@ -272,8 +272,11 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       await rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
 
       // Wait for processing to complete (should fail)
-      const result = await library.waitForProcessingCompletion(item.metadata.id!, 30000);
-      
+      const result = await library.waitForProcessingCompletion(
+        item.metadata.id!,
+        30000,
+      );
+
       expect(result.success).toBe(false);
       expect(result.status).toBe(PdfProcessingStatus.FAILED);
       expect(result.error).toBeDefined();
@@ -296,7 +299,8 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       // Create multiple PDFs
       for (let i = 0; i < 3; i++) {
         let pdfContent = '%PDF-1.4\n';
-        for (let j = 0; j < 60; j++) { // Each PDF has 60 pages
+        for (let j = 0; j < 60; j++) {
+          // Each PDF has 60 pages
           pdfContent += `${j} 0 obj\n<<\n/Type /Page\n>>\nendobj\n`;
         }
         pdfContent += 'xref\n0 61\n0000000000 65535 f\n';
@@ -304,9 +308,9 @@ describe('PDF Splitting and Merging Integration Tests', () => {
           pdfContent += `0000000000 00000 n\n`;
         }
         pdfContent += 'trailer\n<<\n/Size 61\n>>\nstartxref\n0\n%%EOF';
-        
+
         const pdfBuffer = Buffer.from(pdfContent);
-        
+
         const item = await library.storePdf(
           pdfBuffer,
           `concurrent-test-${i}.pdf`,
@@ -315,18 +319,18 @@ describe('PDF Splitting and Merging Integration Tests', () => {
             authors: [{ firstName: 'Test', lastName: 'Author' }],
             tags: ['test', 'concurrent'],
             collections: [],
-          }
+          },
         );
-        
+
         items.push(item);
-        
+
         // Send analysis request
         const analysisRequest: PdfAnalysisRequestMessage = {
           messageId: uuidv4(),
           timestamp: Date.now(),
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: item.metadata.id!,
-          
+
           s3Key: item.metadata.s3Key!,
           fileName: `concurrent-test-${i}.pdf`,
           priority: 'normal',
@@ -334,7 +338,9 @@ describe('PDF Splitting and Merging Integration Tests', () => {
           maxRetries: 2,
         };
 
-        promises.push(rabbitMQService.publishPdfAnalysisRequest(analysisRequest));
+        promises.push(
+          rabbitMQService.publishPdfAnalysisRequest(analysisRequest),
+        );
       }
 
       // Send all requests concurrently
@@ -343,8 +349,8 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       // Wait for all to complete
       const results = await Promise.all(
         items.map((item: any) =>
-          library.waitForProcessingCompletion(item.metadata.id!, 120000)
-        )
+          library.waitForProcessingCompletion(item.metadata.id!, 120000),
+        ),
       );
 
       // Verify all completed successfully

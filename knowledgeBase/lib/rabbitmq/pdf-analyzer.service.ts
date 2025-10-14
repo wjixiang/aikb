@@ -43,23 +43,33 @@ export class PdfAnalyzerService {
       }
 
       // Update item status to analyzing
-      await this.updateItemStatus(request.itemId, PdfProcessingStatus.ANALYZING, 'Analyzing PDF structure');
+      await this.updateItemStatus(
+        request.itemId,
+        PdfProcessingStatus.ANALYZING,
+        'Analyzing PDF structure',
+      );
 
       // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
       const pdfBuffer = await this.downloadPdfFromS3(request.s3Key);
 
       // Analyze PDF to get page count and metadata
-      logger.info(`Analyzing PDF page count and metadata for item: ${request.itemId}`);
+      logger.info(
+        `Analyzing PDF page count and metadata for item: ${request.itemId}`,
+      );
       const pageCount = await this.getPageCount(pdfBuffer);
-      const pdfMetadata = await this.extractPdfMetadata(pdfBuffer, request.s3Key);
+      const pdfMetadata = await this.extractPdfMetadata(
+        pdfBuffer,
+        request.s3Key,
+      );
 
       if (pageCount <= 0) {
         throw new Error(`Invalid page count detected: ${pageCount}`);
       }
 
       // Determine if splitting is required
-      const requiresSplitting = pageCount > PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
+      const requiresSplitting =
+        pageCount > PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
       let suggestedSplitSize: number = PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
       let splitParts: PdfPartInfo[] = [];
 
@@ -68,15 +78,21 @@ export class PdfAnalyzerService {
         suggestedSplitSize = Math.min(
           Math.max(
             Math.ceil(pageCount / 10), // Aim for around 10 parts max
-            PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE
+            PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
           ),
-          PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE
+          PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
         );
-        
-        logger.info(`PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`);
+
+        logger.info(
+          `PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`,
+        );
 
         // Update status to splitting
-        await this.updateItemStatus(request.itemId, PdfProcessingStatus.SPLITTING, 'Splitting PDF into parts');
+        await this.updateItemStatus(
+          request.itemId,
+          PdfProcessingStatus.SPLITTING,
+          'Splitting PDF into parts',
+        );
 
         // Split the PDF directly
         splitParts = await this.splitPdfAndUploadParts(
@@ -84,12 +100,16 @@ export class PdfAnalyzerService {
           request.fileName,
           pdfBuffer,
           pageCount,
-          suggestedSplitSize
+          suggestedSplitSize,
         );
 
-        logger.info(`PDF splitting completed for item ${request.itemId}: created ${splitParts.length} parts`);
+        logger.info(
+          `PDF splitting completed for item ${request.itemId}: created ${splitParts.length} parts`,
+        );
       } else {
-        logger.info(`PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`);
+        logger.info(
+          `PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`,
+        );
       }
 
       // Update item metadata with analysis results
@@ -97,7 +117,9 @@ export class PdfAnalyzerService {
         ...itemMetadata,
         pageCount,
         pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
-        pdfProcessingMessage: requiresSplitting ? 'PDF split into parts' : 'PDF ready for conversion',
+        pdfProcessingMessage: requiresSplitting
+          ? 'PDF split into parts'
+          : 'PDF ready for conversion',
         dateModified: new Date(),
       };
 
@@ -107,7 +129,7 @@ export class PdfAnalyzerService {
           itemId: request.itemId,
           originalFileName: request.fileName,
           totalParts: splitParts.length,
-          parts: splitParts.map(part => ({
+          parts: splitParts.map((part) => ({
             partIndex: part.partIndex,
             startPage: part.startPage,
             endPage: part.endPage,
@@ -125,19 +147,36 @@ export class PdfAnalyzerService {
 
       // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
-      await this.publishAnalysisCompleted(request.itemId, pageCount, requiresSplitting, suggestedSplitSize, processingTime, pdfMetadata, undefined, request.s3Key);
+      await this.publishAnalysisCompleted(
+        request.itemId,
+        pageCount,
+        requiresSplitting,
+        suggestedSplitSize,
+        processingTime,
+        pdfMetadata,
+        undefined,
+        request.s3Key,
+      );
 
       // If splitting was done, publish individual part conversion requests
       if (requiresSplitting && splitParts.length > 0) {
-        await this.publishPartConversionRequests(request.itemId, request.fileName, splitParts, request.priority, pdfMetadata);
+        await this.publishPartConversionRequests(
+          request.itemId,
+          request.fileName,
+          splitParts,
+          request.priority,
+          pdfMetadata,
+        );
       }
 
-      logger.info(`PDF analysis completed for item: ${request.itemId}, pages: ${pageCount}, requires splitting: ${requiresSplitting}`);
-
+      logger.info(
+        `PDF analysis completed for item: ${request.itemId}, pages: ${pageCount}, requires splitting: ${requiresSplitting}`,
+      );
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
       logger.error(`PDF analysis failed for item ${request.itemId}:`, error);
 
       // Update item status with error
@@ -146,17 +185,19 @@ export class PdfAnalyzerService {
         PdfProcessingStatus.FAILED,
         `PDF analysis failed: ${errorMessage}`,
         undefined,
-        errorMessage
+        errorMessage,
       );
 
       // Check if should retry
       const retryCount = request.retryCount || 0;
       const maxRetries = request.maxRetries || 3;
       const shouldRetry = retryCount < maxRetries;
-      
+
       if (shouldRetry) {
-        logger.info(`Retrying PDF analysis for item ${request.itemId} (attempt ${retryCount + 1}/${maxRetries})`);
-        
+        logger.info(
+          `Retrying PDF analysis for item ${request.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+
         // Republish the request with incremented retry count
         const retryRequest = {
           ...request,
@@ -168,7 +209,13 @@ export class PdfAnalyzerService {
         await this.rabbitMQService.publishPdfAnalysisRequest(retryRequest);
       } else {
         // Publish failure message
-        await this.publishAnalysisFailed(request.itemId, errorMessage, retryCount, maxRetries, processingTime);
+        await this.publishAnalysisFailed(
+          request.itemId,
+          errorMessage,
+          retryCount,
+          maxRetries,
+          processingTime,
+        );
       }
     }
   }
@@ -179,17 +226,19 @@ export class PdfAnalyzerService {
   private async downloadPdfFromS3(s3Key: string): Promise<Buffer> {
     try {
       logger.info(`Attempting to download PDF from S3 using s3Key: ${s3Key}`);
-      
+
       // Generate a presigned URL for downloading
       const presignedUrl = await getPdfDownloadUrl(s3Key);
-      
+
       // Use axios to download the PDF using the presigned URL
       const response = await axios.default.get(presignedUrl, {
         responseType: 'arraybuffer',
         timeout: 30000, // 30 seconds timeout
       });
 
-      logger.info(`Successfully downloaded PDF from S3, size: ${response.data.byteLength} bytes`);
+      logger.info(
+        `Successfully downloaded PDF from S3, size: ${response.data.byteLength} bytes`,
+      );
       return Buffer.from(response.data);
     } catch (error) {
       logger.error('Failed to download PDF from S3:', {
@@ -197,9 +246,11 @@ export class PdfAnalyzerService {
         error: error instanceof Error ? error.message : 'Unknown error',
         status: (error as any)?.response?.status,
         statusText: (error as any)?.response?.statusText,
-        headers: (error as any)?.response?.headers
+        headers: (error as any)?.response?.headers,
       });
-      throw new Error(`Failed to download PDF from S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to download PDF from S3: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -211,11 +262,11 @@ export class PdfAnalyzerService {
     try {
       // For now, we'll use a simple heuristic to estimate page count
       // In a real implementation, you would use a PDF parsing library like pdf-parse or pdf2pic
-      
+
       // Simple heuristic: look for page object patterns in the PDF
       const pdfString = pdfBuffer.toString('latin1');
       const pageMatches = pdfString.match(/\/Type\s*\/Page[^s]/g);
-      
+
       if (pageMatches && pageMatches.length > 0) {
         return pageMatches.length;
       }
@@ -233,7 +284,9 @@ export class PdfAnalyzerService {
       return Math.max(1, Math.min(estimatedPages, 1000)); // Cap at 1000 pages
     } catch (error) {
       logger.error('Failed to get page count:', error);
-      throw new Error(`Failed to determine page count: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to determine page count: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -241,41 +294,44 @@ export class PdfAnalyzerService {
    * Extract PDF metadata from buffer
    * This is a simplified implementation - in production, you would use a proper PDF library
    */
-  private async extractPdfMetadata(pdfBuffer: Buffer, s3Key: string): Promise<PdfMetadata> {
+  private async extractPdfMetadata(
+    pdfBuffer: Buffer,
+    s3Key: string,
+  ): Promise<PdfMetadata> {
     try {
       // For now, we'll use a simple heuristic to extract basic metadata
       // In a real implementation, you would use a PDF parsing library like pdf-parse or pdf2pic
-      
+
       const pdfString = pdfBuffer.toString('latin1');
-      
+
       // Extract page count (reuse existing logic)
       const pageCount = await this.getPageCount(pdfBuffer);
-      
+
       // Extract title if available
       let title = '';
       const titleMatch = pdfString.match(/\/Title\s*\(([^)]+)\)/);
       if (titleMatch && titleMatch[1]) {
-        title = titleMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) => 
-          String.fromCharCode(parseInt(hex, 16))
+        title = titleMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) =>
+          String.fromCharCode(parseInt(hex, 16)),
         );
       }
-      
+
       // Extract author if available
       let author = '';
       const authorMatch = pdfString.match(/\/Author\s*\(([^)]+)\)/);
       if (authorMatch && authorMatch[1]) {
-        author = authorMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) => 
-          String.fromCharCode(parseInt(hex, 16))
+        author = authorMatch[1].replace(/\\([0-9A-Fa-f]{2})/g, (match, hex) =>
+          String.fromCharCode(parseInt(hex, 16)),
         );
       }
-      
+
       // Extract creation date if available
       let creationDate = '';
       const creationDateMatch = pdfString.match(/\/CreationDate\s*\(([^)]+)\)/);
       if (creationDateMatch && creationDateMatch[1]) {
         creationDate = creationDateMatch[1];
       }
-      
+
       return {
         pageCount,
         fileSize: pdfBuffer.length,
@@ -301,7 +357,7 @@ export class PdfAnalyzerService {
     status: PdfProcessingStatus,
     message: string,
     progress?: number,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       const metadata = await this.storage.getMetadata(itemId);
@@ -318,10 +374,14 @@ export class PdfAnalyzerService {
         dateModified: new Date(),
       };
 
-      if (status === PdfProcessingStatus.ANALYZING && !metadata.pdfProcessingStartedAt) {
+      if (
+        status === PdfProcessingStatus.ANALYZING &&
+        !metadata.pdfProcessingStartedAt
+      ) {
         updates.pdfProcessingStartedAt = new Date();
       } else if (status === PdfProcessingStatus.FAILED) {
-        updates.pdfProcessingRetryCount = (metadata.pdfProcessingRetryCount || 0) + 1;
+        updates.pdfProcessingRetryCount =
+          (metadata.pdfProcessingRetryCount || 0) + 1;
       }
 
       await this.storage.updateMetadata({ ...metadata, ...updates });
@@ -341,7 +401,7 @@ export class PdfAnalyzerService {
     processingTime: number,
     pdfMetadata?: PdfMetadata,
     s3Url?: string,
-    s3Key?: string
+    s3Key?: string,
   ): Promise<void> {
     try {
       const completedMessage: PdfAnalysisCompletedMessage = {
@@ -359,7 +419,10 @@ export class PdfAnalyzerService {
 
       await this.rabbitMQService.publishPdfAnalysisCompleted(completedMessage);
     } catch (error) {
-      logger.error(`Failed to publish analysis completed message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish analysis completed message for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -371,7 +434,7 @@ export class PdfAnalyzerService {
     error: string,
     retryCount: number,
     maxRetries: number,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const failedMessage: PdfAnalysisFailedMessage = {
@@ -388,7 +451,10 @@ export class PdfAnalyzerService {
 
       await this.rabbitMQService.publishPdfAnalysisFailed(failedMessage);
     } catch (publishError) {
-      logger.error(`Failed to publish analysis failed message for item ${itemId}:`, publishError);
+      logger.error(
+        `Failed to publish analysis failed message for item ${itemId}:`,
+        publishError,
+      );
     }
   }
 
@@ -400,19 +466,90 @@ export class PdfAnalyzerService {
     fileName: string,
     pdfBuffer: Buffer,
     pageCount: number,
-    splitSize: number
+    splitSize: number,
   ): Promise<PdfPartInfo[]> {
     const splitParts: PdfPartInfo[] = [];
     const totalParts = Math.ceil(pageCount / splitSize);
-    
-    logger.info(`Splitting PDF for item ${itemId}: ${pageCount} pages into ${totalParts} parts of max ${splitSize} pages each`);
+
+    // 输出PDF相关参数和大小信息
+    const fileSizeInMB = (pdfBuffer.length / (1024 * 1024)).toFixed(2);
+    const avgPageSizeKB = Math.round(pdfBuffer.length / pageCount / 1024);
+
+    logger.info(`[DEBUG] splitPdfAndUploadParts called for item ${itemId}`, {
+      itemId,
+      fileName,
+      pdfBufferSize: pdfBuffer.length,
+      pdfFileSizeMB: parseFloat(fileSizeInMB),
+      pageCount,
+      splitSize,
+      totalParts,
+      avgPageSizeKB,
+      estimatedPartsSize:
+        totalParts > 0 ? Math.round(pdfBuffer.length / totalParts / 1024) : 0, // KB
+    });
 
     try {
+      logger.info(`[DEBUG] Starting PDF splitting for item ${itemId}`, {
+        itemId,
+        pageCount,
+        splitSize,
+        expectedParts: totalParts,
+        originalPdfSizeMB: parseFloat(fileSizeInMB),
+        avgPageSizeKB,
+      });
+
       // Split the PDF into chunks
-      const pdfChunks = await this.pdfSpliter.splitPdfIntoChunks(pdfBuffer, splitSize);
-      
+      const pdfChunks = await this.pdfSpliter.splitPdfIntoChunks(
+        pdfBuffer,
+        splitSize,
+      );
+
+      // 计算分割后的统计信息
+      const chunkStats = pdfChunks.map((chunk, index) => {
+        const chunkSizeMB = (chunk.length / (1024 * 1024)).toFixed(2);
+        const startPage = index * splitSize;
+        const endPage = Math.min(startPage + splitSize - 1, pageCount - 1);
+        const actualPageCount = endPage - startPage + 1;
+
+        return {
+          partIndex: index,
+          size: chunk.length,
+          sizeMB: parseFloat(chunkSizeMB),
+          startPage,
+          endPage,
+          pageCount: actualPageCount,
+          avgPageSizeInChunkKB: Math.round(
+            chunk.length / actualPageCount / 1024,
+          ),
+        };
+      });
+
+      const totalChunkSize = pdfChunks.reduce(
+        (sum, chunk) => sum + chunk.length,
+        0,
+      );
+      const totalChunkSizeMB = (totalChunkSize / (1024 * 1024)).toFixed(2);
+      const compressionRatio = (
+        (totalChunkSize / pdfBuffer.length) *
+        100
+      ).toFixed(2);
+
+      logger.info(`[DEBUG] PDF splitting completed for item ${itemId}`, {
+        itemId,
+        expectedParts: totalParts,
+        actualChunks: pdfChunks.length,
+        originalPdfSizeMB: parseFloat(fileSizeInMB),
+        totalChunkSizeMB: parseFloat(totalChunkSizeMB),
+        compressionRatio: parseFloat(compressionRatio),
+        chunkStats,
+      });
+
       if (pdfChunks.length !== totalParts) {
-        logger.warn(`Expected ${totalParts} parts but got ${pdfChunks.length} chunks for item ${itemId}`);
+        logger.warn(`[DEBUG] Chunk count mismatch for item ${itemId}`, {
+          itemId,
+          expectedParts: totalParts,
+          actualChunks: pdfChunks.length,
+        });
       }
 
       // Upload each part to S3
@@ -421,25 +558,56 @@ export class PdfAnalyzerService {
         const startPage = i * splitSize;
         const endPage = Math.min(startPage + splitSize - 1, pageCount - 1);
         const partPageCount = endPage - startPage + 1;
-        
+
         // Generate S3 key for this part
         const fileExtension = fileName.split('.').pop() || 'pdf';
         const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
         const partS3Key = `${baseFileName}_part_${i + 1}_${startPage + 1}-${endPage + 1}.${fileExtension}`;
-        
-        logger.info(`Uploading part ${i + 1}/${pdfChunks.length} for item ${itemId}: pages ${startPage + 1}-${endPage + 1}, key: ${partS3Key}`);
-        
+
+        logger.info(
+          `[DEBUG] Processing part ${i + 1}/${pdfChunks.length} for item ${itemId}`,
+          {
+            itemId,
+            partIndex: i,
+            startPage,
+            endPage,
+            partPageCount,
+            chunkSize: chunk.length,
+            partS3Key,
+          },
+        );
+
         // Convert Uint8Array to Buffer for upload
         const chunkBuffer = Buffer.from(chunk);
-        
+
+        logger.info(
+          `[DEBUG] Starting S3 upload for part ${i + 1} of item ${itemId}`,
+          {
+            itemId,
+            partIndex: i,
+            bufferSize: chunkBuffer.length,
+            s3Key: partS3Key,
+          },
+        );
+
         // Upload to S3
         const partS3Url = await uploadToS3(
           chunkBuffer,
           partS3Key,
           'application/pdf',
-          'private'
+          'private',
         );
-        
+
+        logger.info(
+          `[DEBUG] S3 upload completed for part ${i + 1} of item ${itemId}`,
+          {
+            itemId,
+            partIndex: i,
+            s3Url: partS3Url,
+            s3Key: partS3Key,
+          },
+        );
+
         // Create part info
         const partInfo: PdfPartInfo = {
           partIndex: i,
@@ -449,16 +617,61 @@ export class PdfAnalyzerService {
           s3Key: partS3Key,
           status: PdfPartStatus.PENDING,
         };
-        
+
         splitParts.push(partInfo);
-        logger.info(`Successfully uploaded part ${i + 1} for item ${itemId} to S3: ${partS3Url}`);
+        logger.info(
+          `[DEBUG] Part ${i + 1} processing completed for item ${itemId}`,
+          {
+            itemId,
+            partIndex: i,
+            partInfo: {
+              partIndex: partInfo.partIndex,
+              startPage: partInfo.startPage,
+              endPage: partInfo.endPage,
+              pageCount: partInfo.pageCount,
+              s3Key: partInfo.s3Key,
+              status: partInfo.status,
+            },
+          },
+        );
       }
-      
-      logger.info(`Successfully split and uploaded all ${splitParts.length} parts for item ${itemId}`);
+
+      logger.info(`[DEBUG] All parts processing completed for item ${itemId}`, {
+        itemId,
+        totalProcessedParts: splitParts.length,
+        partsInfo: splitParts.map((part) => ({
+          partIndex: part.partIndex,
+          startPage: part.startPage,
+          endPage: part.endPage,
+          pageCount: part.pageCount,
+          s3Key: part.s3Key,
+          status: part.status,
+        })),
+      });
+
       return splitParts;
     } catch (error) {
-      logger.error(`Failed to split and upload PDF parts for item ${itemId}:`, error);
-      throw new Error(`Failed to split PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error(
+        `[DEBUG] Error in splitPdfAndUploadParts for item ${itemId}`,
+        {
+          itemId,
+          fileName,
+          pageCount,
+          splitSize,
+          error:
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  stack: error.stack,
+                  name: error.name,
+                }
+              : error,
+          processedPartsCount: splitParts.length,
+        },
+      );
+      throw new Error(
+        `Failed to split PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -470,13 +683,15 @@ export class PdfAnalyzerService {
     fileName: string,
     splitParts: PdfPartInfo[],
     priority?: 'low' | 'normal' | 'high',
-    pdfMetadata?: PdfMetadata
+    pdfMetadata?: PdfMetadata,
   ): Promise<void> {
-    logger.info(`Publishing conversion requests for ${splitParts.length} parts of item ${itemId}`);
-    
+    logger.info(
+      `Publishing conversion requests for ${splitParts.length} parts of item ${itemId}`,
+    );
+
     try {
       const totalParts = splitParts.length;
-      
+
       for (const part of splitParts) {
         const partConversionRequest = {
           messageId: uuidv4(),
@@ -495,15 +710,26 @@ export class PdfAnalyzerService {
           maxRetries: 3,
           pdfMetadata,
         };
-        
-        await this.rabbitMQService.publishPdfPartConversionRequest(partConversionRequest);
-        logger.info(`Published conversion request for part ${part.partIndex + 1}/${totalParts} of item ${itemId}`);
+
+        await this.rabbitMQService.publishPdfPartConversionRequest(
+          partConversionRequest,
+        );
+        logger.info(
+          `Published conversion request for part ${part.partIndex + 1}/${totalParts} of item ${itemId}`,
+        );
       }
-      
-      logger.info(`Successfully published all conversion requests for item ${itemId}`);
+
+      logger.info(
+        `Successfully published all conversion requests for item ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to publish part conversion requests for item ${itemId}:`, error);
-      throw new Error(`Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error(
+        `Failed to publish part conversion requests for item ${itemId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 }
@@ -511,6 +737,8 @@ export class PdfAnalyzerService {
 /**
  * Create PDF analyzer service
  */
-export function createPdfAnalyzerService(storage: AbstractLibraryStorage): PdfAnalyzerService {
+export function createPdfAnalyzerService(
+  storage: AbstractLibraryStorage,
+): PdfAnalyzerService {
   return new PdfAnalyzerService(storage);
 }

@@ -18,12 +18,14 @@ export class MinerUOutliner {
       {
         ...markdownChunks[0],
         level: 1,
-        title: markdownChunks[0].title || `Section ${markdownChunks[0].index + 1}`
+        title:
+          markdownChunks[0].title || `Section ${markdownChunks[0].index + 1}`,
       },
     ];
     for (let index = 1; index < markdownChunks.length; index++) {
       const currentChunk = markdownChunks[index];
-      const chunkTitle = currentChunk.title || `Section ${currentChunk.index + 1}`;
+      const chunkTitle =
+        currentChunk.title || `Section ${currentChunk.index + 1}`;
 
       // const context = markdownChunks.slice(index,index + this.config.chunkWindow).map(e=>`# ${e.title}\n\n${e.content}`).join('\n')
 
@@ -36,7 +38,7 @@ export class MinerUOutliner {
       OutlineResult.push({
         ...currentChunk,
         level: level,
-        title: chunkTitle
+        title: chunkTitle,
       });
     }
 

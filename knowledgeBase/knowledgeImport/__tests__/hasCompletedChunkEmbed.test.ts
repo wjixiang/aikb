@@ -25,7 +25,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
   it('should return false when no chunks exist', async () => {
     // Mock empty chunks array
     vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue([]);
-    
+
     const result = await libraryItem.hasCompletedChunkEmbed();
     expect(result).toBe(false);
   });
@@ -52,9 +52,11 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         updatedAt: new Date(),
       },
     ];
-    
-    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(chunksWithoutEmbeddings);
-    
+
+    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(
+      chunksWithoutEmbeddings,
+    );
+
     const result = await libraryItem.hasCompletedChunkEmbed();
     expect(result).toBe(false);
   });
@@ -83,9 +85,11 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         // No embedding
       },
     ];
-    
-    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(chunksWithMixedEmbeddings);
-    
+
+    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(
+      chunksWithMixedEmbeddings,
+    );
+
     const result = await libraryItem.hasCompletedChunkEmbed();
     expect(result).toBe(false);
   });
@@ -114,17 +118,21 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         updatedAt: new Date(),
       },
     ];
-    
-    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(chunksWithEmbeddings);
-    
+
+    vi.spyOn(mockStorage, 'getChunksByItemId').mockResolvedValue(
+      chunksWithEmbeddings,
+    );
+
     const result = await libraryItem.hasCompletedChunkEmbed();
     expect(result).toBe(true);
   });
 
   it('should return false when an error occurs', async () => {
     // Mock an error
-    vi.spyOn(mockStorage, 'getChunksByItemId').mockRejectedValue(new Error('Storage error'));
-    
+    vi.spyOn(mockStorage, 'getChunksByItemId').mockRejectedValue(
+      new Error('Storage error'),
+    );
+
     const result = await libraryItem.hasCompletedChunkEmbed();
     expect(result).toBe(false);
   });

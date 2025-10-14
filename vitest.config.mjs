@@ -12,7 +12,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/.venv/**',
       '**/dist/**',
-      '**/*.integration.test.ts',
+      // '**/*.integration.test.ts',
     ],
     watch: false,
     watchExclude: [

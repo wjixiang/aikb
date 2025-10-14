@@ -7,7 +7,10 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage, BookMetadata } from '../../knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  BookMetadata,
+} from '../../knowledgeImport/library';
 import Library from '../../knowledgeImport/library';
 import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../../lib/logger';
@@ -53,7 +56,7 @@ export class MarkdownStorageWorker {
         {
           consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER,
           noAck: false, // Manual acknowledgment
-        }
+        },
       );
 
       this.isRunning = true;
@@ -94,10 +97,12 @@ export class MarkdownStorageWorker {
    */
   private async handleMarkdownStorageRequest(
     message: MarkdownStorageRequestMessage,
-    originalMessage: any
+    originalMessage: any,
   ): Promise<void> {
     const startTime = Date.now();
-    logger.info(`Processing markdown storage request for item: ${message.itemId}`);
+    logger.info(
+      `Processing markdown storage request for item: ${message.itemId}`,
+    );
 
     try {
       // Get the item metadata
@@ -107,7 +112,11 @@ export class MarkdownStorageWorker {
       }
 
       // Update item status to processing
-      await this.updateItemStatus(message.itemId, PdfProcessingStatus.PROCESSING, 'Storing markdown content');
+      await this.updateItemStatus(
+        message.itemId,
+        PdfProcessingStatus.PROCESSING,
+        'Storing markdown content',
+      );
 
       // Save markdown content
       logger.info(`Saving markdown content for item: ${message.itemId}`);
@@ -121,23 +130,33 @@ export class MarkdownStorageWorker {
         'Markdown storage completed successfully',
         100,
         undefined,
-        processingTime
+        processingTime,
       );
 
       // Process chunks and embeddings
-      logger.info(`Processing chunks and embeddings for item: ${message.itemId}`);
-      await this.processChunksAndEmbeddings(message.itemId, message.markdownContent);
+      logger.info(
+        `Processing chunks and embeddings for item: ${message.itemId}`,
+      );
+      await this.processChunksAndEmbeddings(
+        message.itemId,
+        message.markdownContent,
+      );
 
       // Publish completion message
       await this.publishCompletionMessage(message.itemId, processingTime);
 
-      logger.info(`Markdown storage completed successfully for item: ${message.itemId}`);
-
+      logger.info(
+        `Markdown storage completed successfully for item: ${message.itemId}`,
+      );
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      logger.error(`Markdown storage failed for item ${message.itemId}:`, error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error(
+        `Markdown storage failed for item ${message.itemId}:`,
+        error,
+      );
 
       // Update item status with error
       await this.updateItemStatus(
@@ -145,17 +164,19 @@ export class MarkdownStorageWorker {
         PdfProcessingStatus.FAILED,
         `Markdown storage failed: ${errorMessage}`,
         undefined,
-        errorMessage
+        errorMessage,
       );
 
       // Check if should retry
       const retryCount = message.retryCount || 0;
       const maxRetries = message.maxRetries || 3;
       const shouldRetry = retryCount < maxRetries;
-      
+
       if (shouldRetry) {
-        logger.info(`Retrying markdown storage for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`);
-        
+        logger.info(
+          `Retrying markdown storage for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+
         // Republish the request with incremented retry count
         const retryRequest = {
           ...message,
@@ -167,7 +188,13 @@ export class MarkdownStorageWorker {
         await this.rabbitMQService.publishMarkdownStorageRequest(retryRequest);
       } else {
         // Publish failure message
-        await this.publishFailureMessage(message.itemId, errorMessage, retryCount, maxRetries, processingTime);
+        await this.publishFailureMessage(
+          message.itemId,
+          errorMessage,
+          retryCount,
+          maxRetries,
+          processingTime,
+        );
       }
     }
   }
@@ -181,7 +208,7 @@ export class MarkdownStorageWorker {
     message?: string,
     progress?: number,
     error?: string,
-    processingTime?: number
+    processingTime?: number,
   ): Promise<void> {
     try {
       // Get current metadata
@@ -198,7 +225,8 @@ export class MarkdownStorageWorker {
         pdfProcessingMessage: message,
         pdfProcessingProgress: progress,
         pdfProcessingError: error,
-        pdfProcessingCompletedAt: status === PdfProcessingStatus.COMPLETED ? new Date() : undefined,
+        pdfProcessingCompletedAt:
+          status === PdfProcessingStatus.COMPLETED ? new Date() : undefined,
         dateModified: new Date(),
       };
 
@@ -212,19 +240,28 @@ export class MarkdownStorageWorker {
   /**
    * Process chunks and embeddings for the markdown content
    */
-  private async processChunksAndEmbeddings(itemId: string, markdownContent: string): Promise<void> {
+  private async processChunksAndEmbeddings(
+    itemId: string,
+    markdownContent: string,
+  ): Promise<void> {
     try {
       // Use default chunking strategy
-      const chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.PARAGRAPH;
-      
+      const chunkingStrategy: ChunkingStrategyType =
+        ChunkingStrategyType.PARAGRAPH;
+
       // Get the library instance to process chunks
       const library = new Library(this.storage);
-      
+
       await library.processItemChunks(itemId, chunkingStrategy);
-      
-      logger.info(`Chunks and embeddings processed successfully for item: ${itemId}`);
+
+      logger.info(
+        `Chunks and embeddings processed successfully for item: ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to process chunks and embeddings for item ${itemId}:`, error);
+      logger.error(
+        `Failed to process chunks and embeddings for item ${itemId}:`,
+        error,
+      );
       // Don't throw here, as this is a secondary operation
     }
   }
@@ -232,7 +269,10 @@ export class MarkdownStorageWorker {
   /**
    * Publish completion message
    */
-  private async publishCompletionMessage(itemId: string, processingTime: number): Promise<void> {
+  private async publishCompletionMessage(
+    itemId: string,
+    processingTime: number,
+  ): Promise<void> {
     try {
       const completionMessage: MarkdownStorageCompletedMessage = {
         messageId: uuidv4(),
@@ -243,9 +283,14 @@ export class MarkdownStorageWorker {
         processingTime,
       };
 
-      await this.rabbitMQService.publishMarkdownStorageCompleted(completionMessage);
+      await this.rabbitMQService.publishMarkdownStorageCompleted(
+        completionMessage,
+      );
     } catch (error) {
-      logger.error(`Failed to publish completion message for item ${itemId}:`, error);
+      logger.error(
+        `Failed to publish completion message for item ${itemId}:`,
+        error,
+      );
       // Don't throw here, as this is a secondary operation
     }
   }
@@ -258,7 +303,7 @@ export class MarkdownStorageWorker {
     error: string,
     retryCount: number,
     maxRetries: number,
-    processingTime: number
+    processingTime: number,
   ): Promise<void> {
     try {
       const failureMessage: MarkdownStorageFailedMessage = {
@@ -276,7 +321,10 @@ export class MarkdownStorageWorker {
 
       await this.rabbitMQService.publishMarkdownStorageFailed(failureMessage);
     } catch (publishError) {
-      logger.error(`Failed to publish failure message for item ${itemId}:`, publishError);
+      logger.error(
+        `Failed to publish failure message for item ${itemId}:`,
+        publishError,
+      );
       // Don't throw here, as this is a secondary operation
     }
   }
@@ -292,7 +340,9 @@ export class MarkdownStorageWorker {
 /**
  * Create and start a markdown storage worker
  */
-export async function startMarkdownStorageWorker(storage: AbstractLibraryStorage): Promise<MarkdownStorageWorker> {
+export async function startMarkdownStorageWorker(
+  storage: AbstractLibraryStorage,
+): Promise<MarkdownStorageWorker> {
   const worker = new MarkdownStorageWorker(storage);
   await worker.start();
   return worker;
@@ -301,30 +351,34 @@ export async function startMarkdownStorageWorker(storage: AbstractLibraryStorage
 /**
  * Stop a markdown storage worker
  */
-export async function stopMarkdownStorageWorker(worker: MarkdownStorageWorker): Promise<void> {
+export async function stopMarkdownStorageWorker(
+  worker: MarkdownStorageWorker,
+): Promise<void> {
   await worker.stop();
 }
 
 // Direct execution support
 if (require.main === module) {
-  const { S3ElasticSearchLibraryStorage } = require('../../knowledgeImport/library');
-  
+  const {
+    S3ElasticSearchLibraryStorage,
+  } = require('../../knowledgeImport/library');
+
   async function main() {
     try {
       // Create storage instance
-      const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+      const elasticsearchUrl =
+        process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
       const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl, 1024);
-      
+
       // Create and start worker
       const worker = await startMarkdownStorageWorker(storage);
       logger.info('Markdown Storage Worker started successfully');
-      
     } catch (error) {
       logger.error('Failed to start Markdown Storage Worker:', error);
       process.exit(1);
     }
   }
-  
+
   main().catch((error) => {
     logger.error('Unhandled error:', error);
     process.exit(1);

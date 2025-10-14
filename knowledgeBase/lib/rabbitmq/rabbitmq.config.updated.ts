@@ -1,4 +1,8 @@
-import { RabbitMQConfig, RabbitMQQueueConfig, RabbitMQExchangeConfig } from './message.types';
+import {
+  RabbitMQConfig,
+  RabbitMQQueueConfig,
+  RabbitMQExchangeConfig,
+} from './message.types';
 
 /**
  * Updated RabbitMQ configuration to match docker-compose.yml

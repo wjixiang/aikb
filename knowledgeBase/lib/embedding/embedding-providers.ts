@@ -173,7 +173,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
     while (retries < this.maxRetries) {
       try {
-        logger.debug(`Making API call (attempt ${retries + 1}) for ${inputType} input`);
+        logger.debug(
+          `Making API call (attempt ${retries + 1}) for ${inputType} input`,
+        );
         const response = await axios.post(
           'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
           {
@@ -194,21 +196,27 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         logger.debug(`API response structure for ${inputType} input:`, {
           hasOutput: !!response.data.output,
           hasData: !!response.data.data,
-          outputKeys: response.data.output ? Object.keys(response.data.output) : [],
+          outputKeys: response.data.output
+            ? Object.keys(response.data.output)
+            : [],
           dataKeys: response.data.data ? Object.keys(response.data.data) : [],
         });
 
         // Handle both response structures consistently
         let embedding: number[] | null = null;
-        
+
         if (response.data.output && response.data.output.embeddings) {
           // Batch-style response structure
           if (Array.isArray(text)) {
             // For array input, return first embedding only to maintain consistent return type
-            embedding = (response.data.output.embeddings[0]?.embedding as number[]) || null;
+            embedding =
+              (response.data.output.embeddings[0]?.embedding as number[]) ||
+              null;
           } else {
             // For single text input, get the first embedding
-            embedding = (response.data.output.embeddings[0]?.embedding as number[]) || null;
+            embedding =
+              (response.data.output.embeddings[0]?.embedding as number[]) ||
+              null;
           }
         } else if (response.data.data && response.data.data.length > 0) {
           // Single-style response structure
@@ -220,7 +228,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
           return null;
         }
 
-        logger.debug(`Returning embedding for ${inputType} input: ${embedding.length} dimensions`);
+        logger.debug(
+          `Returning embedding for ${inputType} input: ${embedding.length} dimensions`,
+        );
         return embedding;
       } catch (error) {
         retries++;
@@ -240,7 +250,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
               inputInfo = 'Unknown input type';
             }
 
-            logger.error(`Bad request (400) - check input parameters for ${inputInfo}`);
+            logger.error(
+              `Bad request (400) - check input parameters for ${inputInfo}`,
+            );
             // Don't retry on 400 errors
             return null;
           } else {
@@ -253,7 +265,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         }
 
         if (retries >= this.maxRetries) {
-          logger.error(`Max retries (${this.maxRetries}) exceeded for ${inputType} input`);
+          logger.error(
+            `Max retries (${this.maxRetries}) exceeded for ${inputType} input`,
+          );
           return null;
         }
 
@@ -261,7 +275,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
       }
     }
 
-    logger.error(`Max retries (${this.maxRetries}) exceeded for ${inputType} input`);
+    logger.error(
+      `Max retries (${this.maxRetries}) exceeded for ${inputType} input`,
+    );
     return null;
   }
 
@@ -269,7 +285,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
     texts: string[],
     concurrencyLimit: number = CONCURRENCY_LIMIT,
   ): Promise<(number[] | null)[]> {
-    logger.info(`Starting embedBatch with ${texts.length} texts, concurrency limit: ${concurrencyLimit}`);
+    logger.info(
+      `Starting embedBatch with ${texts.length} texts, concurrency limit: ${concurrencyLimit}`,
+    );
     const results: (number[] | null)[] = new Array(texts.length).fill(null);
     const MAX_BATCH_SIZE = 10; // Alibaba API limit
 
@@ -277,36 +295,56 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
     for (let i = 0; i < texts.length; i += MAX_BATCH_SIZE) {
       const batch = texts.slice(i, i + MAX_BATCH_SIZE);
       const batchStartIndex = i;
-      
-      logger.info(`Processing batch ${Math.floor(i / MAX_BATCH_SIZE) + 1}: ${batch.length} texts, starting at index ${batchStartIndex}`);
+
+      logger.info(
+        `Processing batch ${Math.floor(i / MAX_BATCH_SIZE) + 1}: ${batch.length} texts, starting at index ${batchStartIndex}`,
+      );
 
       try {
         const batchResults = await this.processBatchWithRetry(batch);
-        logger.info(`Successfully processed batch with ${batchResults.length} embeddings`);
+        logger.info(
+          `Successfully processed batch with ${batchResults.length} embeddings`,
+        );
 
         // Copy batch results to the main results array
         for (let j = 0; j < batchResults.length; j++) {
           results[batchStartIndex + j] = batchResults[j];
         }
       } catch (error) {
-        logger.error(`Error in batch embedding for batch starting at index ${batchStartIndex}:`, error);
-        logger.info(`Falling back to individual processing for batch of ${batch.length} texts`);
+        logger.error(
+          `Error in batch embedding for batch starting at index ${batchStartIndex}:`,
+          error,
+        );
+        logger.info(
+          `Falling back to individual processing for batch of ${batch.length} texts`,
+        );
 
         // Fallback to individual processing for this batch
-        await this.processBatchIndividually(batch, batchStartIndex, results, concurrencyLimit);
+        await this.processBatchIndividually(
+          batch,
+          batchStartIndex,
+          results,
+          concurrencyLimit,
+        );
       }
     }
 
-    logger.info(`embedBatch completed. Results: ${results.filter(r => r !== null).length} successful, ${results.filter(r => r === null).length} failed`);
+    logger.info(
+      `embedBatch completed. Results: ${results.filter((r) => r !== null).length} successful, ${results.filter((r) => r === null).length} failed`,
+    );
     return results;
   }
 
-  private async processBatchWithRetry(batch: string[]): Promise<(number[] | null)[]> {
+  private async processBatchWithRetry(
+    batch: string[],
+  ): Promise<(number[] | null)[]> {
     let retries = 0;
-    
+
     while (retries < this.maxRetries) {
       try {
-        logger.debug(`Making batch API call (attempt ${retries + 1}) for ${batch.length} texts`);
+        logger.debug(
+          `Making batch API call (attempt ${retries + 1}) for ${batch.length} texts`,
+        );
         const response = await axios.post(
           'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
           {
@@ -327,13 +365,15 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         logger.debug(`Batch API response structure:`, {
           hasOutput: !!response.data.output,
           hasData: !!response.data.data,
-          outputKeys: response.data.output ? Object.keys(response.data.output) : [],
+          outputKeys: response.data.output
+            ? Object.keys(response.data.output)
+            : [],
           dataKeys: response.data.data ? Object.keys(response.data.data) : [],
         });
 
         // Handle both response structures consistently
         let batchResults: (number[] | null)[] = [];
-        
+
         if (response.data.output && response.data.output.embeddings) {
           // Batch-style response structure
           batchResults = response.data.output.embeddings.map(
@@ -371,7 +411,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         }
 
         if (retries >= this.maxRetries) {
-          logger.error(`Max retries (${this.maxRetries}) exceeded for batch request`);
+          logger.error(
+            `Max retries (${this.maxRetries}) exceeded for batch request`,
+          );
           throw error;
         }
 
@@ -379,14 +421,16 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
       }
     }
 
-    throw new Error(`Max retries (${this.maxRetries}) exceeded for batch request`);
+    throw new Error(
+      `Max retries (${this.maxRetries}) exceeded for batch request`,
+    );
   }
 
   private async processBatchIndividually(
     batch: string[],
     batchStartIndex: number,
     results: (number[] | null)[],
-    concurrencyLimit: number
+    concurrencyLimit: number,
   ): Promise<void> {
     const processingQueue: Promise<void>[] = [];
     const completedPromises = new Set<Promise<void>>();
@@ -395,7 +439,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
       const processItem = async (batchIndex: number, globalIndex: number) => {
         try {
           results[globalIndex] = await this.embed(batch[batchIndex]);
-          logger.debug(`Successfully processed individual text at index ${globalIndex}`);
+          logger.debug(
+            `Successfully processed individual text at index ${globalIndex}`,
+          );
         } catch (error) {
           logger.error(`Error embedding text at index ${globalIndex}:`, error);
           results[globalIndex] = null;
@@ -408,19 +454,25 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
       // If we've reached the concurrency limit, wait for some to complete
       if (processingQueue.length >= concurrencyLimit) {
         await Promise.race(processingQueue);
-        
+
         // Remove completed promises from the queue
         await Promise.allSettled(processingQueue);
-        const stillPending = processingQueue.filter(p => !completedPromises.has(p));
+        const stillPending = processingQueue.filter(
+          (p) => !completedPromises.has(p),
+        );
         processingQueue.length = 0;
         processingQueue.push(...stillPending);
-        
-        logger.debug(`Removed completed promises, queue size: ${processingQueue.length}`);
+
+        logger.debug(
+          `Removed completed promises, queue size: ${processingQueue.length}`,
+        );
       }
     }
 
     // Wait for all remaining promises to complete
-    logger.debug(`Waiting for ${processingQueue.length} remaining promises to complete`);
+    logger.debug(
+      `Waiting for ${processingQueue.length} remaining promises to complete`,
+    );
     await Promise.all(processingQueue);
   }
 }

@@ -160,7 +160,6 @@ export interface PdfAnalysisFailedMessage extends BaseRabbitMQMessage {
   processingTime: number;
 }
 
-
 /**
  * PDF part conversion request message
  */
@@ -288,6 +287,75 @@ export interface MarkdownStorageFailedMessage extends BaseRabbitMQMessage {
 }
 
 /**
+ * Markdown part storage request message
+ */
+export interface MarkdownPartStorageRequestMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_PART_STORAGE_REQUEST';
+  itemId: string;
+  partIndex: number;
+  totalParts: number;
+  markdownContent: string;
+  priority?: 'low' | 'normal' | 'high';
+  retryCount?: number;
+  maxRetries?: number;
+  metadata?: {
+    pageCount?: number;
+    processingTime?: number;
+    startPage?: number;
+    endPage?: number;
+  };
+}
+
+/**
+ * Markdown part storage progress message
+ */
+export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_PART_STORAGE_PROGRESS';
+  itemId: string;
+  partIndex: number;
+  totalParts: number;
+  status: PdfProcessingStatus;
+  progress: number; // 0-100
+  message?: string;
+  error?: string;
+  startedAt?: number;
+  estimatedCompletion?: number;
+}
+
+/**
+ * Markdown part storage completed message
+ */
+export interface MarkdownPartStorageCompletedMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_PART_STORAGE_COMPLETED';
+  itemId: string;
+  partIndex: number;
+  totalParts: number;
+  status: PdfProcessingStatus.COMPLETED;
+  processingTime: number;
+  metadata?: {
+    contentSize?: number;
+    cachedAt?: number;
+  };
+}
+
+/**
+ * Markdown part storage failed message
+ */
+export interface MarkdownPartStorageFailedMessage extends BaseRabbitMQMessage {
+  eventType: 'MARKDOWN_PART_STORAGE_FAILED';
+  itemId: string;
+  partIndex: number;
+  totalParts: number;
+  status: PdfProcessingStatus.FAILED;
+  error: string;
+  errorCode?: string;
+  retryCount: number;
+  maxRetries: number;
+  canRetry: boolean;
+  processingTime: number;
+}
+
+/**
  * Union type for all PDF conversion messages
  */
 export type PdfConversionMessage =
@@ -401,6 +469,10 @@ export const RABBITMQ_QUEUES = {
   MARKDOWN_STORAGE_REQUEST: 'markdown-storage-request',
   MARKDOWN_STORAGE_COMPLETED: 'markdown-storage-completed',
   MARKDOWN_STORAGE_FAILED: 'markdown-storage-failed',
+  MARKDOWN_PART_STORAGE_REQUEST: 'markdown-part-storage-request',
+  MARKDOWN_PART_STORAGE_PROGRESS: 'markdown-part-storage-progress',
+  MARKDOWN_PART_STORAGE_COMPLETED: 'markdown-part-storage-completed',
+  MARKDOWN_PART_STORAGE_FAILED: 'markdown-part-storage-failed',
   DEAD_LETTER_QUEUE: 'pdf-conversion-dlq',
 } as const;
 
@@ -431,6 +503,10 @@ export const RABBITMQ_ROUTING_KEYS = {
   MARKDOWN_STORAGE_REQUEST: 'markdown.storage.request',
   MARKDOWN_STORAGE_COMPLETED: 'markdown.storage.completed',
   MARKDOWN_STORAGE_FAILED: 'markdown.storage.failed',
+  MARKDOWN_PART_STORAGE_REQUEST: 'markdown.part.storage.request',
+  MARKDOWN_PART_STORAGE_PROGRESS: 'markdown.part.storage.progress',
+  MARKDOWN_PART_STORAGE_COMPLETED: 'markdown.part.storage.completed',
+  MARKDOWN_PART_STORAGE_FAILED: 'markdown.part.storage.failed',
   DEAD_LETTER: 'pdf.conversion.dlq',
 } as const;
 
@@ -444,8 +520,8 @@ export const RABBITMQ_CONSUMER_TAGS = {
   PDF_PART_CONVERSION_WORKER: 'pdf-part-conversion-worker',
   PDF_MERGING_WORKER: 'pdf-merger-worker',
   MARKDOWN_STORAGE_WORKER: 'markdown-storage-worker',
+  MARKDOWN_PART_STORAGE_WORKER: 'markdown-part-storage-worker',
 } as const;
-
 
 /**
  * PDF processing configuration

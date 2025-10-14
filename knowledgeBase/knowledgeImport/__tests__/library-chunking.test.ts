@@ -61,7 +61,10 @@ This is the second chapter content.`,
       );
 
       // Process chunks
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
 
       // Verify chunks were created
       const chunks = await library.getItemChunks(item.metadata.id!);
@@ -145,7 +148,10 @@ This is the second chapter content.`,
       const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
       // Try to process chunks without markdown content
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
 
       // Should not create any chunks
       const chunks = await library.getItemChunks(item.metadata.id!);
@@ -169,7 +175,10 @@ This is the second chapter content.`,
       );
 
       // Process initial chunks
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
       expect(chunks[0].title).toBe('Chapter 1');
@@ -181,7 +190,10 @@ This is the second chapter content.`,
       );
 
       // Re-process chunks
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
 
       // Verify chunks were replaced
       chunks = await library.getItemChunks(item.metadata.id!);
@@ -210,7 +222,10 @@ This is the second chapter content.`,
         `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
       );
 
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
     });
 
     it('should search chunks by query', async () => {
@@ -273,7 +288,10 @@ This is the second chapter content.`,
         `# Introduction\nThis is about machine learning.\n\n# Methods\nWe use neural networks.`,
       );
 
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
     });
 
     it('should find similar chunks based on query vector', async () => {
@@ -340,7 +358,10 @@ This is the second chapter content.`,
       );
 
       // Process initial chunks
-      await library.processItemChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.processItemChunks(
+        item.metadata.id!,
+        ChunkingStrategyType.H1,
+      );
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
       expect(chunks[0].content).toContain('Original content');

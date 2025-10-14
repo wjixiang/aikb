@@ -48,9 +48,10 @@ export class PdfProcessingCoordinatorWorker {
         RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED,
         this.handleAnalysisCompleted.bind(this),
         {
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator',
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator',
           noAck: false, // Manual acknowledgment
-        }
+        },
       );
 
       this.isRunning = true;
@@ -91,17 +92,22 @@ export class PdfProcessingCoordinatorWorker {
    */
   private async handleAnalysisCompleted(
     message: PdfAnalysisCompletedMessage,
-    originalMessage: any
+    originalMessage: any,
   ): Promise<void> {
-    logger.info(`Processing analysis completed for item: ${message.itemId}, requires splitting: ${message.requiresSplitting}`);
+    logger.info(
+      `Processing analysis completed for item: ${message.itemId}, requires splitting: ${message.requiresSplitting}`,
+    );
 
     try {
       // Get the item metadata
       const itemMetadata = await this.storage.getMetadata(message.itemId);
 
       // Get Item directly
-      if(!itemMetadata?.s3Key) throw new Error(`s3 key not found for library item: ${itemMetadata?.id}`)
-      
+      if (!itemMetadata?.s3Key)
+        throw new Error(
+          `s3 key not found for library item: ${itemMetadata?.id}`,
+        );
+
       // We no longer pass s3Url, consumers will generate it from s3Key
 
       if (!itemMetadata) {
@@ -109,41 +115,69 @@ export class PdfProcessingCoordinatorWorker {
         return;
       }
 
-      // Send PDF conversion request directly (splitting is now handled in the analyzer)
-      logger.info(`Sending PDF conversion request for item: ${message.itemId}`);
-      
-      const conversionRequest: PdfConversionRequestMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'PDF_CONVERSION_REQUEST',
-        itemId: message.itemId,
-        s3Key: itemMetadata.s3Key!,
-        fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
-        metadata: {
-          title: itemMetadata.title,
-          authors: itemMetadata.authors,
-          tags: itemMetadata.tags,
-          collections: itemMetadata.collections,
-        },
-        priority: 'normal',
-        retryCount: 0,
-        maxRetries: 3,
-        pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
-      };
+      // Check if the PDF was split and use the split parts for conversion
+      if (message.requiresSplitting && itemMetadata.pdfSplittingInfo) {
+        logger.info(
+          `PDF was split for item ${message.itemId}, using split parts for conversion`,
+        );
 
-      await this.rabbitMQService.publishPdfConversionRequest(conversionRequest);
-      logger.info(`PDF conversion request sent for item: ${message.itemId} with s3Key: ${itemMetadata.s3Key}`);
+        // The split parts conversion requests are already published by the analyzer service
+        // We just need to update the status to indicate the parts are being processed
+        await this.storage.updateMetadata({
+          ...itemMetadata,
+          pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
+          pdfProcessingMessage: 'PDF split parts conversion in progress',
+          dateModified: new Date(),
+        });
 
-      // Update item status
-      await this.storage.updateMetadata({
-        ...itemMetadata,
-        pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
-        pdfProcessingMessage: 'PDF conversion in progress',
-        dateModified: new Date(),
-      });
+        logger.info(
+          `Split parts conversion initiated for item: ${message.itemId}`,
+        );
+      } else {
+        // Send PDF conversion request for the whole PDF (no splitting needed)
+        logger.info(
+          `Sending PDF conversion request for non-split item: ${message.itemId}`,
+        );
 
+        const conversionRequest: PdfConversionRequestMessage = {
+          messageId: uuidv4(),
+          timestamp: Date.now(),
+          eventType: 'PDF_CONVERSION_REQUEST',
+          itemId: message.itemId,
+          s3Key: itemMetadata.s3Key!,
+          fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
+          metadata: {
+            title: itemMetadata.title,
+            authors: itemMetadata.authors,
+            tags: itemMetadata.tags,
+            collections: itemMetadata.collections,
+          },
+          priority: 'normal',
+          retryCount: 0,
+          maxRetries: 3,
+          pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
+        };
+
+        await this.rabbitMQService.publishPdfConversionRequest(
+          conversionRequest,
+        );
+        logger.info(
+          `PDF conversion request sent for item: ${message.itemId} with s3Key: ${itemMetadata.s3Key}`,
+        );
+
+        // Update item status
+        await this.storage.updateMetadata({
+          ...itemMetadata,
+          pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
+          pdfProcessingMessage: 'PDF conversion in progress',
+          dateModified: new Date(),
+        });
+      }
     } catch (error) {
-      logger.error(`Failed to handle analysis completed for item ${message.itemId}:`, error);
+      logger.error(
+        `Failed to handle analysis completed for item ${message.itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -175,7 +209,7 @@ export class PdfProcessingCoordinatorWorker {
  * Create and start a PDF processing coordinator worker
  */
 export async function createPdfProcessingCoordinatorWorker(
-  storage: AbstractLibraryStorage
+  storage: AbstractLibraryStorage,
 ): Promise<PdfProcessingCoordinatorWorker> {
   const worker = new PdfProcessingCoordinatorWorker(storage);
   await worker.start();
@@ -185,46 +219,52 @@ export async function createPdfProcessingCoordinatorWorker(
 /**
  * Stop a PDF processing coordinator worker
  */
-export async function stopPdfProcessingCoordinatorWorker(worker: PdfProcessingCoordinatorWorker): Promise<void> {
+export async function stopPdfProcessingCoordinatorWorker(
+  worker: PdfProcessingCoordinatorWorker,
+): Promise<void> {
   await worker.stop();
 }
 
 // Direct execution support
 if (require.main === module) {
-  const { S3ElasticSearchLibraryStorage } = require('../../knowledgeImport/library');
-  
+  const {
+    S3ElasticSearchLibraryStorage,
+  } = require('../../knowledgeImport/library');
+
   async function main() {
     try {
       // Create storage instance
-      const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+      const elasticsearchUrl =
+        process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
       const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl, 1024);
-      
+
       // Create and start worker
       const worker = await createPdfProcessingCoordinatorWorker(storage);
       logger.info('PDF Processing Coordinator Worker started successfully');
-      
+
       // Handle graceful shutdown
       process.on('SIGINT', async () => {
         logger.info('Received SIGINT, shutting down gracefully...');
         await worker.stop();
         process.exit(0);
       });
-      
+
       process.on('SIGTERM', async () => {
         logger.info('Received SIGTERM, shutting down gracefully...');
         await worker.stop();
         process.exit(0);
       });
-      
+
       // Keep the process running
-      logger.info('PDF Processing Coordinator Worker is running. Press Ctrl+C to stop.');
-      
+      logger.info(
+        'PDF Processing Coordinator Worker is running. Press Ctrl+C to stop.',
+      );
     } catch (error) {
       logger.error('Failed to start PDF Processing Coordinator Worker:', error);
       process.exit(1);
     }
   }
-  
+
   main().catch((error) => {
     logger.error('Unhandled error:', error);
     process.exit(1);

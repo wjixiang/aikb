@@ -70,7 +70,7 @@ export interface BookMetadata {
   contentHash?: string; // Hash of the content for deduplication
   markdownContent?: string; // Converted markdown content from PDF
   markdownUpdatedDate?: Date; // When the markdown was last updated
-  
+
   // PDF processing status fields
   pdfProcessingStatus?: PdfProcessingStatus; // Current processing status
   pdfProcessingStartedAt?: Date; // When processing started
@@ -80,7 +80,7 @@ export interface BookMetadata {
   pdfProcessingProgress?: number; // Processing progress (0-100)
   pdfProcessingMessage?: string; // Current processing message
   pdfProcessingMergingStartedAt?: Date; // When merging started
-  
+
   // PDF splitting fields (for large files)
   pdfSplittingInfo?: {
     itemId: string;
@@ -98,14 +98,17 @@ export interface BookMetadata {
     }>;
     processingTime: number;
   };
-  
+
   // PDF part processing status
-  pdfPartStatuses?: Record<number, {
-    status: string;
-    message: string;
-    error?: string;
-    updatedAt: Date;
-  }>;
+  pdfPartStatuses?: Record<
+    number,
+    {
+      status: string;
+      message: string;
+      error?: string;
+      updatedAt: Date;
+    }
+  >;
 }
 
 export interface Collection {
@@ -404,7 +407,7 @@ export default class Library extends AbstractLibrary {
     super(storage, pdfConvertor);
     logger.debug('Library constructor - RabbitMQ service instance', {
       serviceId: this.rabbitMQService.constructor.name,
-      isConnected: this.rabbitMQService.isConnected()
+      isConnected: this.rabbitMQService.isConnected(),
     });
   }
 
@@ -466,7 +469,12 @@ export default class Library extends AbstractLibrary {
     // Send PDF analysis request to RabbitMQ for async processing
     // Generate a presigned URL for the PDF analysis worker
     const presignedUrl = await this.storage.getPdfDownloadUrl(pdfInfo.s3Key);
-    await this.sendPdfAnalysisRequest(savedMetadata.id!, presignedUrl, pdfInfo.s3Key, fileName);
+    await this.sendPdfAnalysisRequest(
+      savedMetadata.id!,
+      presignedUrl,
+      pdfInfo.s3Key,
+      fileName,
+    );
 
     return libraryItem;
   }
@@ -479,7 +487,7 @@ export default class Library extends AbstractLibrary {
     status: PdfProcessingStatus,
     message?: string,
     progress?: number,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       const item = await this.getItem(itemId);
@@ -497,19 +505,28 @@ export default class Library extends AbstractLibrary {
       };
 
       // Update timestamps based on status
-      if (status === PdfProcessingStatus.PROCESSING && !item.metadata.pdfProcessingStartedAt) {
+      if (
+        status === PdfProcessingStatus.PROCESSING &&
+        !item.metadata.pdfProcessingStartedAt
+      ) {
         updates.pdfProcessingStartedAt = new Date();
       } else if (status === PdfProcessingStatus.COMPLETED) {
         updates.pdfProcessingCompletedAt = new Date();
         updates.pdfProcessingProgress = 100;
       } else if (status === PdfProcessingStatus.FAILED) {
-        updates.pdfProcessingRetryCount = (item.metadata.pdfProcessingRetryCount || 0) + 1;
+        updates.pdfProcessingRetryCount =
+          (item.metadata.pdfProcessingRetryCount || 0) + 1;
       }
 
       await item.updateMetadata(updates);
-      logger.info(`Updated processing status for item ${itemId}: ${status}${message ? ` - ${message}` : ''}`);
+      logger.info(
+        `Updated processing status for item ${itemId}: ${status}${message ? ` - ${message}` : ''}`,
+      );
     } catch (error) {
-      logger.error(`Failed to update processing status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to update processing status for item ${itemId}:`,
+        error,
+      );
     }
   }
 
@@ -520,24 +537,26 @@ export default class Library extends AbstractLibrary {
     itemId: string,
     s3Url: string,
     s3Key: string,
-    fileName: string
+    fileName: string,
   ): Promise<void> {
     try {
-      logger.info(`Sending PDF analysis request to RabbitMQ for item: ${itemId}`);
-      
+      logger.info(
+        `Sending PDF analysis request to RabbitMQ for item: ${itemId}`,
+      );
+
       // Ensure RabbitMQ service is initialized before publishing
       if (!this.rabbitMQService.isConnected()) {
         logger.info('RabbitMQ service not connected, initializing...');
         await this.rabbitMQService.initialize();
         logger.info('RabbitMQ service initialized successfully');
       }
-      
+
       const analysisRequest: PdfAnalysisRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId,
-        
+
         s3Key,
         fileName,
         priority: 'normal',
@@ -547,27 +566,30 @@ export default class Library extends AbstractLibrary {
 
       logger.debug('About to publish PDF analysis request', {
         itemId,
-        serviceConnected: this.rabbitMQService.isConnected()
+        serviceConnected: this.rabbitMQService.isConnected(),
       });
-      
+
       await this.rabbitMQService.publishPdfAnalysisRequest(analysisRequest);
-      
+
       // Don't update status to processing here - keep it as pending until the worker starts processing
       // The status will be updated to 'processing' by the worker when it starts processing
-      
+
       logger.info(`PDF analysis request sent successfully for item: ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to send PDF analysis request for item ${itemId}:`, error);
-      
+      logger.error(
+        `Failed to send PDF analysis request for item ${itemId}:`,
+        error,
+      );
+
       // Update status to failed
       await this.updateProcessingStatus(
         itemId,
         PdfProcessingStatus.FAILED,
         `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
         0,
-        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to queue for processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-      
+
       // Don't fail the entire operation, but log the error
     }
   }
@@ -591,7 +613,8 @@ export default class Library extends AbstractLibrary {
       }
 
       return {
-        status: item.metadata.pdfProcessingStatus || PdfProcessingStatus.PENDING,
+        status:
+          item.metadata.pdfProcessingStatus || PdfProcessingStatus.PENDING,
         progress: item.metadata.pdfProcessingProgress,
         message: item.metadata.pdfProcessingMessage,
         error: item.metadata.pdfProcessingError,
@@ -600,7 +623,10 @@ export default class Library extends AbstractLibrary {
         retryCount: item.metadata.pdfProcessingRetryCount,
       };
     } catch (error) {
-      logger.error(`Failed to get processing status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get processing status for item ${itemId}:`,
+        error,
+      );
       return null;
     }
   }
@@ -627,40 +653,40 @@ export default class Library extends AbstractLibrary {
   async waitForProcessingCompletion(
     itemId: string,
     timeoutMs: number = 300000, // 5 minutes default
-    intervalMs: number = 2000 // 2 seconds default
+    intervalMs: number = 2000, // 2 seconds default
   ): Promise<{
     success: boolean;
     status?: PdfProcessingStatus;
     error?: string;
   }> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeoutMs) {
       const status = await this.getProcessingStatus(itemId);
-      
+
       if (!status) {
         return { success: false, error: 'Item not found' };
       }
-      
+
       if (status.status === PdfProcessingStatus.COMPLETED) {
         return { success: true, status: status.status };
       }
-      
+
       if (status.status === PdfProcessingStatus.FAILED) {
         return {
           success: false,
           status: status.status,
-          error: status.error || 'Processing failed'
+          error: status.error || 'Processing failed',
         };
       }
-      
+
       // Wait before checking again
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
-    
+
     return {
       success: false,
-      error: `Processing timeout after ${timeoutMs}ms`
+      error: `Processing timeout after ${timeoutMs}ms`,
     };
   }
 
@@ -860,7 +886,9 @@ export default class Library extends AbstractLibrary {
       // Check if the markdown content is just a placeholder (no actual markdown was stored)
       const storedMarkdown = await this.storage.getMarkdown(itemId);
       if (!storedMarkdown) {
-        logger.warn(`No actual markdown content stored for item: ${itemId}, skipping chunking`);
+        logger.warn(
+          `No actual markdown content stored for item: ${itemId}, skipping chunking`,
+        );
         return;
       }
 
@@ -1148,8 +1176,10 @@ export class LibraryItem {
   }
 
   async extractMarkdown(): Promise<void> {
-    logger.info(`[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`);
-    
+    logger.info(
+      `[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`,
+    );
+
     // Check if this item has an associated PDF file
     if (!this.hasPdf()) {
       throw new Error('No PDF file associated with this item');
@@ -1161,14 +1191,20 @@ export class LibraryItem {
       const pdfUrl = await this.getPdfDownloadUrl();
       logger.info(`[LibraryItem.extractMarkdown] PDF URL obtained: ${pdfUrl}`);
 
-      logger.info(`[LibraryItem.extractMarkdown] Creating MinerUPdfConvertor instance...`);
+      logger.info(
+        `[LibraryItem.extractMarkdown] Creating MinerUPdfConvertor instance...`,
+      );
       // Create a new MinerUPdfConvertor instance
       const pdfConvertor = createMinerUConvertorFromEnv();
 
-      logger.info(`[LibraryItem.extractMarkdown] Converting PDF to markdown...`);
+      logger.info(
+        `[LibraryItem.extractMarkdown] Converting PDF to markdown...`,
+      );
       // Convert the PDF to markdown using the MinerUPdfConvertor
       const conversionResult = await pdfConvertor.convertPdfToMarkdown(pdfUrl);
-      logger.info(`[LibraryItem.extractMarkdown] Conversion completed. Success: ${conversionResult.success}`);
+      logger.info(
+        `[LibraryItem.extractMarkdown] Conversion completed. Success: ${conversionResult.success}`,
+      );
 
       if (!conversionResult.success) {
         throw new Error(
@@ -1176,25 +1212,38 @@ export class LibraryItem {
         );
       }
 
-      logger.info(`[LibraryItem.extractMarkdown] Extracting markdown content from result...`);
+      logger.info(
+        `[LibraryItem.extractMarkdown] Extracting markdown content from result...`,
+      );
       // Extract markdown content from the conversion result
       let markdownContent = '';
 
       if (typeof conversionResult.data === 'string') {
         markdownContent = conversionResult.data;
-        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted as string (${markdownContent.length} chars)`);
+        logger.info(
+          `[LibraryItem.extractMarkdown] Markdown extracted as string (${markdownContent.length} chars)`,
+        );
       } else if (conversionResult.data && conversionResult.data.markdown) {
         markdownContent = conversionResult.data.markdown;
-        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted from data.markdown (${markdownContent.length} chars)`);
+        logger.info(
+          `[LibraryItem.extractMarkdown] Markdown extracted from data.markdown (${markdownContent.length} chars)`,
+        );
       } else if (conversionResult.data && conversionResult.data.content) {
         markdownContent = conversionResult.data.content;
-        logger.info(`[LibraryItem.extractMarkdown] Markdown extracted from data.content (${markdownContent.length} chars)`);
+        logger.info(
+          `[LibraryItem.extractMarkdown] Markdown extracted from data.content (${markdownContent.length} chars)`,
+        );
       } else {
-        logger.error(`[LibraryItem.extractMarkdown] No markdown content found in conversion result:`, conversionResult.data);
+        logger.error(
+          `[LibraryItem.extractMarkdown] No markdown content found in conversion result:`,
+          conversionResult.data,
+        );
         throw new Error('No markdown content found in conversion result');
       }
 
-      logger.info(`[LibraryItem.extractMarkdown] Saving markdown content to storage...`);
+      logger.info(
+        `[LibraryItem.extractMarkdown] Saving markdown content to storage...`,
+      );
       // Save the markdown content to storage
       await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
 
@@ -1224,7 +1273,9 @@ export class LibraryItem {
     const logger = createLoggerWithPrefix('LibraryItem.getChunks');
     logger.info(`Retrieving chunks for item: ${this.metadata.id}`);
     const chunks = await this.storage.getChunksByItemId(this.metadata.id!);
-    logger.info(`Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`);
+    logger.info(
+      `Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`,
+    );
     return chunks;
   }
 
@@ -1325,8 +1376,10 @@ export class LibraryItem {
   ): Promise<BookChunk[]> {
     const logger = createLoggerWithPrefix('LibraryItem.chunkEmbed');
     try {
-      logger.info(`Starting chunkEmbed for item: ${this.metadata.id}, strategy: ${chunkingStrategy}, forceReprocess: ${forceReprocess}`);
-      
+      logger.info(
+        `Starting chunkEmbed for item: ${this.metadata.id}, strategy: ${chunkingStrategy}, forceReprocess: ${forceReprocess}`,
+      );
+
       // Check if markdown content exists
       if (!this.metadata.markdownContent) {
         throw new Error(
@@ -1334,12 +1387,16 @@ export class LibraryItem {
         );
       }
 
-      logger.info(`Markdown content length: ${this.metadata.markdownContent.length} characters`);
+      logger.info(
+        `Markdown content length: ${this.metadata.markdownContent.length} characters`,
+      );
 
       // Check if chunks already exist
       const existingChunks = await this.getChunks();
-      logger.info(`Found ${existingChunks.length} existing chunks for item: ${this.metadata.id}`);
-      
+      logger.info(
+        `Found ${existingChunks.length} existing chunks for item: ${this.metadata.id}`,
+      );
+
       if (existingChunks.length > 0) {
         if (!forceReprocess) {
           logger.info(
@@ -1409,16 +1466,22 @@ export class LibraryItem {
       // Generate embeddings for all chunks
       logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
       const embeddings = await embeddingService.embedBatch(chunkTexts);
-      
+
       logger.info(`Generated ${embeddings.length} embeddings`);
-      const validEmbeddings = embeddings.filter(e => e !== null && e.length > 0);
-      logger.info(`Valid embeddings: ${validEmbeddings.length}/${embeddings.length}`);
+      const validEmbeddings = embeddings.filter(
+        (e) => e !== null && e.length > 0,
+      );
+      logger.info(
+        `Valid embeddings: ${validEmbeddings.length}/${embeddings.length}`,
+      );
 
       // Assign embeddings to chunks
       for (let i = 0; i < chunks.length; i++) {
         if (embeddings[i]) {
           chunks[i].embedding = embeddings[i] || undefined;
-          logger.debug(`Chunk ${i} embedding assigned, dimensions: ${embeddings[i]!.length}`);
+          logger.debug(
+            `Chunk ${i} embedding assigned, dimensions: ${embeddings[i]!.length}`,
+          );
         } else {
           logger.warn(`Failed to generate embedding for chunk ${i}`);
         }
@@ -1473,36 +1536,49 @@ export class LibraryItem {
   async hasCompletedChunkEmbed(): Promise<boolean> {
     const logger = createLoggerWithPrefix('LibraryItem.hasCompletedChunkEmbed');
     try {
-      logger.info(`Checking chunkEmbed completion for item: ${this.metadata.id}`);
-      
+      logger.info(
+        `Checking chunkEmbed completion for item: ${this.metadata.id}`,
+      );
+
       // Get all chunks for this item
       const chunks = await this.getChunks();
-      logger.info(`Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`);
-      
+      logger.info(
+        `Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`,
+      );
+
       // If no chunks exist, chunkEmbed has not been completed
       if (chunks.length === 0) {
         logger.warn(`No chunks found for item: ${this.metadata.id}`);
         return false;
       }
-      
+
       // Log chunk details
       chunks.forEach((chunk, index) => {
-        logger.debug(`Chunk ${index}: id=${chunk.id}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`);
+        logger.debug(
+          `Chunk ${index}: id=${chunk.id}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`,
+        );
       });
-      
+
       // Check if all chunks have embeddings
-      const chunksWithEmbeddings = chunks.filter(chunk =>
-        chunk.embedding && chunk.embedding.length > 0
+      const chunksWithEmbeddings = chunks.filter(
+        (chunk) => chunk.embedding && chunk.embedding.length > 0,
       );
-      
-      logger.info(`Chunks with embeddings: ${chunksWithEmbeddings.length}/${chunks.length}`);
-      
+
+      logger.info(
+        `Chunks with embeddings: ${chunksWithEmbeddings.length}/${chunks.length}`,
+      );
+
       // Return true only if all chunks have embeddings
       const result = chunksWithEmbeddings.length === chunks.length;
-      logger.info(`ChunkEmbed completion status for item ${this.metadata.id}: ${result}`);
+      logger.info(
+        `ChunkEmbed completion status for item ${this.metadata.id}: ${result}`,
+      );
       return result;
     } catch (error) {
-      logger.error(`Error checking chunkEmbed completion for item ${this.metadata.id}:`, error);
+      logger.error(
+        `Error checking chunkEmbed completion for item ${this.metadata.id}:`,
+        error,
+      );
       return false;
     }
   }
@@ -1520,7 +1596,7 @@ export class LibraryItem {
     const logger = createLoggerWithPrefix('LibraryItem.selfDelete');
     try {
       logger.info(`Starting self-delete for item: ${this.metadata.id}`);
-      
+
       if (!this.metadata.id) {
         throw new Error('Cannot delete item without ID');
       }
@@ -1528,7 +1604,9 @@ export class LibraryItem {
       // Step 1: Delete all chunks and embeddings
       logger.info(`Deleting chunks for item: ${this.metadata.id}`);
       const deletedChunksCount = await this.deleteChunks();
-      logger.info(`Deleted ${deletedChunksCount} chunks for item: ${this.metadata.id}`);
+      logger.info(
+        `Deleted ${deletedChunksCount} chunks for item: ${this.metadata.id}`,
+      );
 
       // Step 2: Delete citations
       logger.info(`Deleting citations for item: ${this.metadata.id}`);
@@ -1547,7 +1625,10 @@ export class LibraryItem {
           await deleteFromS3(this.metadata.s3Key);
           logger.info(`Deleted PDF file from S3: ${this.metadata.s3Key}`);
         } catch (error) {
-          logger.error(`Failed to delete PDF file from S3: ${this.metadata.s3Key}`, error);
+          logger.error(
+            `Failed to delete PDF file from S3: ${this.metadata.s3Key}`,
+            error,
+          );
           // Continue with other deletions even if S3 deletion fails
         }
       }
@@ -1560,7 +1641,10 @@ export class LibraryItem {
             await deleteFromS3(part.s3Key);
             logger.info(`Deleted PDF part from S3: ${part.s3Key}`);
           } catch (error) {
-            logger.error(`Failed to delete PDF part from S3: ${part.s3Key}`, error);
+            logger.error(
+              `Failed to delete PDF part from S3: ${part.s3Key}`,
+              error,
+            );
             // Continue with other deletions even if S3 deletion fails
           }
         }
@@ -1568,17 +1652,24 @@ export class LibraryItem {
 
       // Step 6: Delete metadata (this should be the last step)
       logger.info(`Deleting metadata for item: ${this.metadata.id}`);
-      const metadataDeleted = await this.storage.deleteMetadata(this.metadata.id);
-      
+      const metadataDeleted = await this.storage.deleteMetadata(
+        this.metadata.id,
+      );
+
       if (metadataDeleted) {
-        logger.info(`Successfully deleted all data for item: ${this.metadata.id}`);
+        logger.info(
+          `Successfully deleted all data for item: ${this.metadata.id}`,
+        );
         return true;
       } else {
         logger.warn(`Failed to delete metadata for item: ${this.metadata.id}`);
         return false;
       }
     } catch (error) {
-      logger.error(`Error during self-delete for item ${this.metadata.id}:`, error);
+      logger.error(
+        `Error during self-delete for item ${this.metadata.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1909,15 +2000,13 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
 
   async deleteMarkdown(itemId: string): Promise<boolean> {
     const { db } = await connectToDatabase();
-    const result = await db
-      .collection(this.metadataCollection)
-      .updateOne(
-        { id: itemId },
-        {
-          $unset: { markdownContent: 1, markdownUpdatedDate: 1 },
-          $set: { dateModified: new Date() }
-        }
-      );
+    const result = await db.collection(this.metadataCollection).updateOne(
+      { id: itemId },
+      {
+        $unset: { markdownContent: 1, markdownUpdatedDate: 1 },
+        $set: { dateModified: new Date() },
+      },
+    );
 
     return result.modifiedCount > 0;
   }
@@ -2277,26 +2366,29 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       });
 
       let needsToCreateChunksIndex = !chunksExists;
-      
+
       // If index exists, check if vector dimensions match
       if (chunksExists) {
         try {
           const indexMapping = await this.client.indices.getMapping({
             index: this.chunksIndexName,
           });
-          
-          const currentDims = (indexMapping[this.chunksIndexName]?.mappings?.properties?.embedding as any)?.dims;
-          
+
+          const currentDims = (
+            indexMapping[this.chunksIndexName]?.mappings?.properties
+              ?.embedding as any
+          )?.dims;
+
           if (currentDims && currentDims !== this.vectorDimensions) {
             this.logger.warn(
-              `Existing chunks index has ${currentDims} dimensions, but ${this.vectorDimensions} are required. Recreating index...`
+              `Existing chunks index has ${currentDims} dimensions, but ${this.vectorDimensions} are required. Recreating index...`,
             );
-            
+
             // Delete the existing index
             await this.client.indices.delete({
               index: this.chunksIndexName,
             });
-            
+
             needsToCreateChunksIndex = true;
           }
         } catch (error) {
@@ -2768,11 +2860,11 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               ctx._source.dateModified = params.dateModified;
             `,
             params: {
-              dateModified: new Date().toISOString()
-            }
-          }
+              dateModified: new Date().toISOString(),
+            },
+          },
         },
-        refresh: true
+        refresh: true,
       } as any);
 
       return result.result === 'updated';
@@ -3146,11 +3238,13 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
-    const logger = createLoggerWithPrefix('S3ElasticSearchLibraryStorage.batchSaveChunks');
+    const logger = createLoggerWithPrefix(
+      'S3ElasticSearchLibraryStorage.batchSaveChunks',
+    );
     await this.checkInitialized();
 
     logger.info(`Starting batch save for ${chunks.length} chunks`);
-    
+
     // Ensure all chunks have IDs
     for (const chunk of chunks) {
       if (!chunk.id) {
@@ -3162,18 +3256,24 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     let embeddingsValid = true;
     for (const chunk of chunks) {
       if (chunk.embedding && chunk.embedding.length !== this.vectorDimensions) {
-        logger.error(`Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`);
+        logger.error(
+          `Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`,
+        );
         embeddingsValid = false;
       }
     }
-    
+
     if (!embeddingsValid) {
-      throw new Error(`Vector dimensions mismatch detected. Expected: ${this.vectorDimensions}`);
+      throw new Error(
+        `Vector dimensions mismatch detected. Expected: ${this.vectorDimensions}`,
+      );
     }
 
     // Log chunk details before saving
     chunks.forEach((chunk, index) => {
-      logger.debug(`Chunk ${index}: id=${chunk.id}, itemId=${chunk.itemId}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`);
+      logger.debug(
+        `Chunk ${index}: id=${chunk.id}, itemId=${chunk.itemId}, hasEmbedding=${!!chunk.embedding}, embeddingLength=${chunk.embedding?.length || 0}`,
+      );
     });
 
     const body = chunks.flatMap((chunk) => [
@@ -3189,12 +3289,17 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
     // Check for errors in bulk response
     if ((bulkResponse as any).errors) {
-      logger.error('Bulk operation had errors:', (bulkResponse as any).items?.filter((item: any) => item.index?.error));
+      logger.error(
+        'Bulk operation had errors:',
+        (bulkResponse as any).items?.filter((item: any) => item.index?.error),
+      );
     } else {
       logger.info(`Bulk operation completed successfully`);
     }
 
-    logger.info(`Batch saved ${chunks.length} chunks to index: ${this.chunksIndexName}`);
+    logger.info(
+      `Batch saved ${chunks.length} chunks to index: ${this.chunksIndexName}`,
+    );
   }
 }
 

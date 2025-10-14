@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import { PdfPartTrackerElasticsearchImpl } from '../pdf-part-tracker-impl-elasticsearch';
 import { IPdfPartTracker } from '../pdf-part-tracker';
 import { PdfPartStatus } from '../message.types';
@@ -9,7 +17,8 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
   let client: Client;
   const testItemId = 'test-pdf-123';
   const testTotalParts = 5;
-  const elasticsearchUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+  const elasticsearchUrl =
+    process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
   let elasticsearchAvailable = false;
 
   // Helper function to check if ElasticSearch is available
@@ -32,7 +41,9 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
     // Check if ElasticSearch is available
     elasticsearchAvailable = await isElasticSearchAvailable(elasticsearchUrl);
     if (!elasticsearchAvailable) {
-      console.log('ElasticSearch is not available, skipping ElasticSearch implementation tests');
+      console.log(
+        'ElasticSearch is not available, skipping ElasticSearch implementation tests',
+      );
       return;
     }
 
@@ -84,32 +95,38 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
   const testOrSkip = elasticsearchAvailable ? it : it.skip;
 
   describe('initializePdfProcessing', () => {
-    testOrSkip('should initialize PDF processing with correct number of parts', async () => {
-      await tracker.initializePdfProcessing(testItemId, testTotalParts);
-      
-      const status = await tracker.getPdfProcessingStatus(testItemId);
-      expect(status).toBeDefined();
-      expect(status!.itemId).toBe(testItemId);
-      expect(status!.totalParts).toBe(testTotalParts);
-      expect(status!.status).toBe('pending');
-      expect(status!.completedParts).toHaveLength(0);
-      expect(status!.failedParts).toHaveLength(0);
-      expect(status!.processingParts).toHaveLength(0);
-      expect(status!.pendingParts).toHaveLength(testTotalParts);
-    });
+    testOrSkip(
+      'should initialize PDF processing with correct number of parts',
+      async () => {
+        await tracker.initializePdfProcessing(testItemId, testTotalParts);
 
-    testOrSkip('should reset existing processing status if already initialized', async () => {
-      // Initialize once
-      await tracker.initializePdfProcessing(testItemId, testTotalParts);
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
-      // Initialize again
-      await tracker.initializePdfProcessing(testItemId, testTotalParts);
-      
-      const status = await tracker.getPdfProcessingStatus(testItemId);
-      expect(status!.completedParts).toHaveLength(0);
-      expect(status!.status).toBe('pending');
-    });
+        const status = await tracker.getPdfProcessingStatus(testItemId);
+        expect(status).toBeDefined();
+        expect(status!.itemId).toBe(testItemId);
+        expect(status!.totalParts).toBe(testTotalParts);
+        expect(status!.status).toBe('pending');
+        expect(status!.completedParts).toHaveLength(0);
+        expect(status!.failedParts).toHaveLength(0);
+        expect(status!.processingParts).toHaveLength(0);
+        expect(status!.pendingParts).toHaveLength(testTotalParts);
+      },
+    );
+
+    testOrSkip(
+      'should reset existing processing status if already initialized',
+      async () => {
+        // Initialize once
+        await tracker.initializePdfProcessing(testItemId, testTotalParts);
+        await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
+
+        // Initialize again
+        await tracker.initializePdfProcessing(testItemId, testTotalParts);
+
+        const status = await tracker.getPdfProcessingStatus(testItemId);
+        expect(status!.completedParts).toHaveLength(0);
+        expect(status!.status).toBe('pending');
+      },
+    );
   });
 
   describe('updatePartStatus', () => {
@@ -120,7 +137,7 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
 
     testOrSkip('should update part status to processing', async () => {
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.PROCESSING);
       expect(allParts[0].startTime).toBeDefined();
@@ -129,50 +146,62 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
     testOrSkip('should update part status to completed', async () => {
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.COMPLETED);
       expect(allParts[0].endTime).toBeDefined();
-      
+
       const completedParts = await tracker.getCompletedParts(testItemId);
       expect(completedParts).toContain(0);
     });
 
     testOrSkip('should update part status to failed', async () => {
       const errorMessage = 'Test error';
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED, errorMessage);
-      
+      await tracker.updatePartStatus(
+        testItemId,
+        0,
+        PdfPartStatus.FAILED,
+        errorMessage,
+      );
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.FAILED);
       expect(allParts[0].error).toBe(errorMessage);
       expect(allParts[0].endTime).toBeDefined();
-      
+
       const failedParts = await tracker.getFailedParts(testItemId);
       expect(failedParts).toContain(0);
     });
 
-    testOrSkip('should update overall status when parts are processed', async () => {
-      // Start processing
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
-      let status = await tracker.getPdfProcessingStatus(testItemId);
-      expect(status!.status).toBe('processing');
-      
-      // Complete a part
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      status = await tracker.getPdfProcessingStatus(testItemId);
-      expect(status!.status).toBe('processing');
-      expect(status!.completedParts).toContain(0);
-      
-      // Complete all parts
-      for (let i = 1; i < testTotalParts; i++) {
-        await tracker.updatePartStatus(testItemId, i, PdfPartStatus.COMPLETED);
-      }
-      
-      status = await tracker.getPdfProcessingStatus(testItemId);
-      expect(status!.status).toBe('completed');
-      expect(status!.completedParts).toHaveLength(testTotalParts);
-      expect(status!.endTime).toBeDefined();
-    });
+    testOrSkip(
+      'should update overall status when parts are processed',
+      async () => {
+        // Start processing
+        await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.PROCESSING);
+        let status = await tracker.getPdfProcessingStatus(testItemId);
+        expect(status!.status).toBe('processing');
+
+        // Complete a part
+        await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
+        status = await tracker.getPdfProcessingStatus(testItemId);
+        expect(status!.status).toBe('processing');
+        expect(status!.completedParts).toContain(0);
+
+        // Complete all parts
+        for (let i = 1; i < testTotalParts; i++) {
+          await tracker.updatePartStatus(
+            testItemId,
+            i,
+            PdfPartStatus.COMPLETED,
+          );
+        }
+
+        status = await tracker.getPdfProcessingStatus(testItemId);
+        expect(status!.status).toBe('completed');
+        expect(status!.completedParts).toHaveLength(testTotalParts);
+        expect(status!.endTime).toBeDefined();
+      },
+    );
   });
 
   describe('areAllPartsCompleted', () => {
@@ -186,11 +215,14 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
       expect(result).toBe(false);
     });
 
-    testOrSkip('should return false when some parts are completed', async () => {
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      const result = await tracker.areAllPartsCompleted(testItemId);
-      expect(result).toBe(false);
-    });
+    testOrSkip(
+      'should return false when some parts are completed',
+      async () => {
+        await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
+        const result = await tracker.areAllPartsCompleted(testItemId);
+        expect(result).toBe(false);
+      },
+    );
 
     testOrSkip('should return true when all parts are completed', async () => {
       for (let i = 0; i < testTotalParts; i++) {
@@ -229,11 +261,11 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
       // Fail some parts
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED);
       await tracker.updatePartStatus(testItemId, 1, PdfPartStatus.FAILED);
-      
+
       const retriedParts = await tracker.retryFailedParts(testItemId);
       expect(retriedParts).toContain(0);
       expect(retriedParts).toContain(1);
-      
+
       // Check that parts are now pending
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts[0].status).toBe(PdfPartStatus.PENDING);
@@ -251,8 +283,13 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
 
     testOrSkip('should return details of failed parts', async () => {
       const errorMessage = 'Test error';
-      await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.FAILED, errorMessage);
-      
+      await tracker.updatePartStatus(
+        testItemId,
+        0,
+        PdfPartStatus.FAILED,
+        errorMessage,
+      );
+
       const failedParts = await tracker.getFailedPartsDetails(testItemId);
       expect(failedParts).toHaveLength(1);
       expect(failedParts[0].partIndex).toBe(0);
@@ -264,12 +301,12 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
     testOrSkip('should clean up PDF processing status', async () => {
       await tracker.initializePdfProcessing(testItemId, testTotalParts);
       await tracker.updatePartStatus(testItemId, 0, PdfPartStatus.COMPLETED);
-      
+
       await tracker.cleanupPdfProcessing(testItemId);
-      
+
       const status = await tracker.getPdfProcessingStatus(testItemId);
       expect(status).toBeNull();
-      
+
       const allParts = await tracker.getAllPartStatuses(testItemId);
       expect(allParts).toHaveLength(0);
     });
@@ -278,16 +315,24 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
   describe('getAllProcessingPdfs', () => {
     testOrSkip('should return all processing PDFs', async () => {
       const testItemIds = ['test-pdf-1', 'test-pdf-2', 'test-pdf-3'];
-      
+
       // Initialize multiple PDFs
       for (const itemId of testItemIds) {
         await tracker.initializePdfProcessing(itemId, 3);
       }
-      
+
       // Start processing one and complete another
-      await tracker.updatePartStatus(testItemIds[0], 0, PdfPartStatus.PROCESSING);
-      await tracker.updatePartStatus(testItemIds[1], 0, PdfPartStatus.COMPLETED);
-      
+      await tracker.updatePartStatus(
+        testItemIds[0],
+        0,
+        PdfPartStatus.PROCESSING,
+      );
+      await tracker.updatePartStatus(
+        testItemIds[1],
+        0,
+        PdfPartStatus.COMPLETED,
+      );
+
       const processingPdfs = await tracker.getAllProcessingPdfs();
       expect(processingPdfs).toContain(testItemIds[0]);
       expect(processingPdfs).toContain(testItemIds[1]);

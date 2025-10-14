@@ -35,12 +35,12 @@ describe('Elasticsearch Logger', () => {
   it('should create logger without Elasticsearch transport when disabled', () => {
     // Set up environment variables
     process.env.ELASTICSEARCH_LOGGING_ENABLED = 'false';
-    
+
     const logger = createLoggerWithPrefix('TestLogger');
-    
+
     // Check that the logger was created
     expect(logger).toBeDefined();
-    
+
     // Check that it has the expected transports (console and file)
     expect(logger.transports).toHaveLength(2);
   });
@@ -52,15 +52,15 @@ describe('Elasticsearch Logger', () => {
     process.env.ELASTICSEARCH_URL = 'http://test-elasticsearch:9200';
     process.env.ELASTICSEARCH_LOG_INDEX = 'test-logs';
     process.env.ELASTICSEARCH_LOG_INDEX_PATTERN = 'test-logs-YYYY.MM.DD';
-    
+
     const logger = createLoggerWithPrefix('TestLogger');
-    
+
     // Check that the logger was created
     expect(logger).toBeDefined();
-    
+
     // Check that it has the expected transports (console, file, and elasticsearch)
     expect(logger.transports).toHaveLength(3);
-    
+
     // Check that the Elasticsearch transport was created with the correct options
     expect(Client).toHaveBeenCalledWith({
       node: 'http://test-elasticsearch:9200',
@@ -78,15 +78,15 @@ describe('Elasticsearch Logger', () => {
   it('should use default values when environment variables are not set', () => {
     // Set up environment variables
     process.env.ELASTICSEARCH_LOGGING_ENABLED = 'true';
-    
+
     const logger = createLoggerWithPrefix('TestLogger');
-    
+
     // Check that the logger was created
     expect(logger).toBeDefined();
-    
+
     // Check that it has the expected transports
     expect(logger.transports).toHaveLength(3);
-    
+
     // Check that the Elasticsearch transport was created with default values
     expect(Client).toHaveBeenCalledWith({
       node: 'http://localhost:9200',
@@ -104,18 +104,19 @@ describe('Elasticsearch Logger', () => {
   it('should log messages to Elasticsearch when enabled', () => {
     // Set up environment variables
     process.env.ELASTICSEARCH_LOGGING_ENABLED = 'true';
-    
+
     const logger = createLoggerWithPrefix('TestLogger');
-    
+
     // Check that the logger was created with Elasticsearch transport
     expect(logger).toBeDefined();
     expect(logger.transports).toHaveLength(3);
-    
+
     // Find the Elasticsearch transport
     const elasticsearchTransport = logger.transports.find(
-      (transport: any) => transport.constructor.name === 'ElasticsearchTransport'
+      (transport: any) =>
+        transport.constructor.name === 'ElasticsearchTransport',
     );
-    
+
     expect(elasticsearchTransport).toBeDefined();
   });
 });

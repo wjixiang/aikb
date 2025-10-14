@@ -1,12 +1,18 @@
-import { RabbitMQConfig, RabbitMQQueueConfig, RabbitMQExchangeConfig } from './message.types';
+import {
+  RabbitMQConfig,
+  RabbitMQQueueConfig,
+  RabbitMQExchangeConfig,
+} from './message.types';
 
 /**
  * Default RabbitMQ configuration
  */
 export const defaultRabbitMQConfig: RabbitMQConfig = {
-  url: process.env.RABBITMQ_URL && process.env.RABBITMQ_URL !== 'amqp://rabbitmq:5672'
-    ? process.env.RABBITMQ_URL
-    : `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
+  url:
+    process.env.RABBITMQ_URL &&
+    process.env.RABBITMQ_URL !== 'amqp://rabbitmq:5672'
+      ? process.env.RABBITMQ_URL
+      : `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
   hostname: process.env.RABBITMQ_HOSTNAME || 'rabbitmq',
   port: parseInt(process.env.RABBITMQ_PORT || '5672'),
   username: process.env.RABBITMQ_USERNAME || 'admin',
@@ -32,7 +38,9 @@ export const rabbitMQConfigs = {
   },
   test: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_TEST || `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
+    url:
+      process.env.RABBITMQ_URL_TEST ||
+      `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
     heartbeat: 30,
   },
 };
@@ -44,7 +52,8 @@ export function getRabbitMQConfig(
   env: string = process.env.NODE_ENV || 'development',
 ): RabbitMQConfig {
   return (
-    rabbitMQConfigs[env as keyof typeof rabbitMQConfigs] || rabbitMQConfigs.development
+    rabbitMQConfigs[env as keyof typeof rabbitMQConfigs] ||
+    rabbitMQConfigs.development
   );
 }
 
@@ -73,7 +82,9 @@ export function validateRabbitMQConfig(config: RabbitMQConfig): boolean {
 /**
  * Get validated RabbitMQ configuration
  */
-export function getValidatedRabbitMQConfig(env?: string): RabbitMQConfig | null {
+export function getValidatedRabbitMQConfig(
+  env?: string,
+): RabbitMQConfig | null {
   const config = getRabbitMQConfig(env);
 
   if (!validateRabbitMQConfig(config)) {
@@ -294,7 +305,9 @@ export const rabbitMQExchangeConfigs: Record<string, RabbitMQExchangeConfig> = {
  */
 export const rabbitMQConnectionOptions = {
   retry: {
-    initialRetryTime: parseInt(process.env.RABBITMQ_RETRY_INITIAL_TIME || '1000'),
+    initialRetryTime: parseInt(
+      process.env.RABBITMQ_RETRY_INITIAL_TIME || '1000',
+    ),
     retries: parseInt(process.env.RABBITMQ_RETRY_COUNT || '5'),
     factor: 2,
     maxRetryTime: parseInt(process.env.RABBITMQ_RETRY_MAX_TIME || '60000'),
@@ -333,7 +346,9 @@ export function getQueueConfig(queueName: string): RabbitMQQueueConfig | null {
 /**
  * Get exchange configuration by name
  */
-export function getExchangeConfig(exchangeName: string): RabbitMQExchangeConfig | null {
+export function getExchangeConfig(
+  exchangeName: string,
+): RabbitMQExchangeConfig | null {
   return rabbitMQExchangeConfigs[exchangeName] || null;
 }
 

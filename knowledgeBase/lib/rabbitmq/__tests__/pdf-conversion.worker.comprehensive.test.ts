@@ -1,5 +1,15 @@
 import { config } from 'dotenv';
-import { describe, beforeAll, afterAll, beforeEach, afterEach, it, expect, vi, Mock } from 'vitest';
+import {
+  describe,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  it,
+  expect,
+  vi,
+  Mock,
+} from 'vitest';
 import { PdfConversionWorker } from '../pdf-conversion.worker';
 import {
   PdfConversionRequestMessage,
@@ -39,7 +49,7 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
   beforeEach(() => {
     // Create a new worker with mocked dependencies
     worker = new PdfConversionWorker(mockPdfConvertor);
-    
+
     // Mock the RabbitMQ service
     mockRabbitMQService = {
       isConnected: vi.fn().mockReturnValue(true),
@@ -59,7 +69,7 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
 
     // Replace the worker's RabbitMQ service with our mock
     (worker as any).rabbitMQService = mockRabbitMQService;
-    
+
     vi.clearAllMocks();
   });
 
@@ -105,53 +115,79 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify progress messages were published
-      expect(mockRabbitMQService.publishPdfConversionProgress).toHaveBeenCalledTimes(5);
-      
+      expect(
+        mockRabbitMQService.publishPdfConversionProgress,
+      ).toHaveBeenCalledTimes(5);
+
       // Check initial progress message
-      const initialProgressCall = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls[0][0];
+      const initialProgressCall = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls[0][0];
       expect(initialProgressCall.itemId).toBe(itemId);
       expect(initialProgressCall.status).toBe(PdfProcessingStatus.PROCESSING);
       expect(initialProgressCall.progress).toBe(0);
       expect(initialProgressCall.message).toBe('Starting PDF conversion');
 
       // Check download progress message
-      const downloadProgressCall = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls[1][0];
+      const downloadProgressCall = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls[1][0];
       expect(downloadProgressCall.itemId).toBe(itemId);
       expect(downloadProgressCall.status).toBe(PdfProcessingStatus.PROCESSING);
       expect(downloadProgressCall.progress).toBe(10);
       expect(downloadProgressCall.message).toBe('Downloading PDF from S3');
 
       // Check conversion progress message
-      const conversionProgressCall = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls[2][0];
+      const conversionProgressCall = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls[2][0];
       expect(conversionProgressCall.itemId).toBe(itemId);
-      expect(conversionProgressCall.status).toBe(PdfProcessingStatus.PROCESSING);
+      expect(conversionProgressCall.status).toBe(
+        PdfProcessingStatus.PROCESSING,
+      );
       expect(conversionProgressCall.progress).toBe(30);
       expect(conversionProgressCall.message).toBe('Converting PDF to Markdown');
 
       // Verify markdown storage request was sent
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
       expect(storageRequest.metadata?.processingTime).toBeGreaterThan(0);
 
       // Verify conversion completion message was published
-      expect(mockRabbitMQService.publishPdfConversionCompleted).toHaveBeenCalledTimes(1);
-      const completionMessage = (mockRabbitMQService.publishPdfConversionCompleted as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+      const completionMessage = (
+        mockRabbitMQService.publishPdfConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.itemId).toBe(itemId);
-      expect(completionMessage.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(completionMessage.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
       expect(completionMessage.processingTime).toBeGreaterThan(0);
     });
   });
@@ -177,7 +213,8 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as Mock).mockResolvedValue({
         success: true,
         data: {
-          markdown: '# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.',
+          markdown:
+            '# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.',
         },
         taskId: 'valid-task-id-456',
         downloadedFiles: ['test-part-1.pdf'],
@@ -189,45 +226,71 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify progress messages were published
-      expect(mockRabbitMQService.publishPdfConversionProgress).toHaveBeenCalledTimes(2);
-      
+      expect(
+        mockRabbitMQService.publishPdfConversionProgress,
+      ).toHaveBeenCalledTimes(2);
+
       // Check part status update - processing
-      const processingProgressCall = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls[0][0];
+      const processingProgressCall = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls[0][0];
       expect(processingProgressCall.itemId).toBe(itemId);
-      expect(processingProgressCall.message).toBe('Part 2: Converting PDF part to Markdown');
+      expect(processingProgressCall.message).toBe(
+        'Part 2: Converting PDF part to Markdown',
+      );
 
       // Check part status update - completed
-      const completedProgressCall = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls[1][0];
+      const completedProgressCall = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls[1][0];
       expect(completedProgressCall.itemId).toBe(itemId);
-      expect(completedProgressCall.message).toBe('Part 2: PDF part conversion completed');
+      expect(completedProgressCall.message).toBe(
+        'Part 2: PDF part conversion completed',
+      );
 
       // Verify part markdown storage request was sent
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toContain('# Test PDF Part 2 Content');
+      expect(storageRequest.markdownContent).toContain(
+        '# Test PDF Part 2 Content',
+      );
       expect(storageRequest.metadata?.partIndex).toBe(1);
       expect(storageRequest.metadata?.isPart).toBe(true);
 
       // Verify part completion message was published
-      expect(mockRabbitMQService.publishPdfPartConversionCompleted).toHaveBeenCalledTimes(1);
-      const completionMessage = (mockRabbitMQService.publishPdfPartConversionCompleted as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfPartConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+      const completionMessage = (
+        mockRabbitMQService.publishPdfPartConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.itemId).toBe(itemId);
       expect(completionMessage.partIndex).toBe(1);
       expect(completionMessage.totalParts).toBe(3);
-      expect(completionMessage.markdownContent).toBe('# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.');
+      expect(completionMessage.markdownContent).toBe(
+        '# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.',
+      );
       expect(completionMessage.processingTime).toBeGreaterThanOrEqual(0);
     });
   });
@@ -253,7 +316,7 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
 
       // Mock S3 download failure
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as Mock).mockRejectedValue(
-        new Error('S3 download failed: Access Denied')
+        new Error('S3 download failed: Access Denied'),
       );
 
       // Start the worker
@@ -262,24 +325,30 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify failure message was published
       // Note: When an exception is thrown, the worker might not reach the failure message publishing
       // So we'll check if the PDF converter was called and that's sufficient for this test
       expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalled();
-      
+
       // Check if any failure messages were published (optional in error scenarios)
-      const failureCalls = (mockRabbitMQService.publishPdfConversionFailed as Mock).mock.calls;
+      const failureCalls = (
+        mockRabbitMQService.publishPdfConversionFailed as Mock
+      ).mock.calls;
       if (failureCalls.length > 0) {
         const failureMessage = failureCalls[0][0];
         expect(failureMessage.itemId).toBe(itemId);
@@ -291,14 +360,20 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       }
 
       // Verify failure progress message was published if available
-      const progressCalls = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls;
+      const progressCalls = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls;
       if (progressCalls.length >= 4) {
         const failedProgressCall = progressCalls[3][0];
         expect(failedProgressCall.itemId).toBe(itemId);
         expect(failedProgressCall.status).toBe(PdfProcessingStatus.FAILED);
-        expect(failedProgressCall.message).toContain('PDF conversion failed: S3 download failed: Access Denied');
+        expect(failedProgressCall.message).toContain(
+          'PDF conversion failed: S3 download failed: Access Denied',
+        );
       }
-      const retryRequest = (mockRabbitMQService.publishPdfConversionRequest as Mock).mock.calls[0][0];
+      const retryRequest = (
+        mockRabbitMQService.publishPdfConversionRequest as Mock
+      ).mock.calls[0][0];
       expect(retryRequest.itemId).toBe(itemId);
       expect(retryRequest.retryCount).toBe(1);
     });
@@ -336,23 +411,31 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify failure message was published
-      const failureCalls = (mockRabbitMQService.publishPdfConversionFailed as Mock).mock.calls;
+      const failureCalls = (
+        mockRabbitMQService.publishPdfConversionFailed as Mock
+      ).mock.calls;
       if (failureCalls.length > 0) {
         const failureMessage = failureCalls[0][0];
         expect(failureMessage.itemId).toBe(itemId);
-        expect(failureMessage.error).toBe('PDF conversion failed: Invalid PDF format');
+        expect(failureMessage.error).toBe(
+          'PDF conversion failed: Invalid PDF format',
+        );
         expect(failureMessage.retryCount).toBe(0);
         expect(failureMessage.maxRetries).toBe(3);
         expect(failureMessage.canRetry).toBe(true);
@@ -360,7 +443,9 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       }
 
       // Verify retry request was published if available
-      const retryCalls = (mockRabbitMQService.publishPdfConversionRequest as Mock).mock.calls;
+      const retryCalls = (
+        mockRabbitMQService.publishPdfConversionRequest as Mock
+      ).mock.calls;
       if (retryCalls.length > 0) {
         const retryRequest = retryCalls[0][0];
         expect(retryRequest.itemId).toBe(itemId);
@@ -399,25 +484,33 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify part failure message was published if available
-      const failureCalls = (mockRabbitMQService.publishPdfPartConversionFailed as Mock).mock.calls;
+      const failureCalls = (
+        mockRabbitMQService.publishPdfPartConversionFailed as Mock
+      ).mock.calls;
       if (failureCalls.length > 0) {
         const failureMessage = failureCalls[0][0];
         expect(failureMessage.itemId).toBe(itemId);
         expect(failureMessage.partIndex).toBe(1);
         expect(failureMessage.totalParts).toBe(3);
-        expect(failureMessage.error).toBe('PDF part conversion failed: Corrupted PDF part');
+        expect(failureMessage.error).toBe(
+          'PDF part conversion failed: Corrupted PDF part',
+        );
         expect(failureMessage.retryCount).toBe(0);
         expect(failureMessage.maxRetries).toBe(3);
         expect(failureMessage.canRetry).toBe(true);
@@ -425,15 +518,21 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       }
 
       // Verify part status update was published if available
-      const progressCalls = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls;
+      const progressCalls = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls;
       if (progressCalls.length >= 2) {
         const failedProgressCall = progressCalls[1][0];
         expect(failedProgressCall.itemId).toBe(itemId);
-        expect(failedProgressCall.message).toBe('Part 2: PDF part conversion failed: PDF part conversion failed: Corrupted PDF part');
+        expect(failedProgressCall.message).toBe(
+          'Part 2: PDF part conversion failed: PDF part conversion failed: Corrupted PDF part',
+        );
       }
 
       // Verify retry request was published if available
-      const retryCalls = (mockRabbitMQService.publishPdfPartConversionRequest as Mock).mock.calls;
+      const retryCalls = (
+        mockRabbitMQService.publishPdfPartConversionRequest as Mock
+      ).mock.calls;
       if (retryCalls.length > 0) {
         const retryRequest = retryCalls[0][0];
         expect(retryRequest.itemId).toBe(itemId);
@@ -477,29 +576,41 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify failure message was published with canRetry = false
-      expect(mockRabbitMQService.publishPdfConversionFailed).toHaveBeenCalledTimes(1);
-      const failureMessage = (mockRabbitMQService.publishPdfConversionFailed as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfConversionFailed,
+      ).toHaveBeenCalledTimes(1);
+      const failureMessage = (
+        mockRabbitMQService.publishPdfConversionFailed as Mock
+      ).mock.calls[0][0];
       expect(failureMessage.itemId).toBe(itemId);
-      expect(failureMessage.error).toBe('PDF conversion failed: Persistent error');
+      expect(failureMessage.error).toBe(
+        'PDF conversion failed: Persistent error',
+      );
       expect(failureMessage.retryCount).toBe(3);
       expect(failureMessage.maxRetries).toBe(3);
       expect(failureMessage.canRetry).toBe(false);
       expect(failureMessage.processingTime).toBeGreaterThanOrEqual(0);
 
       // Verify no retry request was published (max retries reached)
-      expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledTimes(0);
+      expect(
+        mockRabbitMQService.publishPdfConversionRequest,
+      ).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -535,31 +646,43 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Verify part failure message was published with canRetry = false
-      expect(mockRabbitMQService.publishPdfPartConversionFailed).toHaveBeenCalledTimes(1);
-      const failureMessage = (mockRabbitMQService.publishPdfPartConversionFailed as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfPartConversionFailed,
+      ).toHaveBeenCalledTimes(1);
+      const failureMessage = (
+        mockRabbitMQService.publishPdfPartConversionFailed as Mock
+      ).mock.calls[0][0];
       expect(failureMessage.itemId).toBe(itemId);
       expect(failureMessage.partIndex).toBe(1);
       expect(failureMessage.totalParts).toBe(3);
-      expect(failureMessage.error).toBe('PDF part conversion failed: Persistent error');
+      expect(failureMessage.error).toBe(
+        'PDF part conversion failed: Persistent error',
+      );
       expect(failureMessage.retryCount).toBe(3);
       expect(failureMessage.maxRetries).toBe(3);
       expect(failureMessage.canRetry).toBe(false);
       expect(failureMessage.processingTime).toBeGreaterThanOrEqual(0);
 
       // Verify no retry request was published (max retries reached)
-      expect(mockRabbitMQService.publishPdfPartConversionRequest).toHaveBeenCalledTimes(0);
+      expect(
+        mockRabbitMQService.publishPdfPartConversionRequest,
+      ).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -597,20 +720,28 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify markdown storage request was sent with correct metadata
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.eventType).toBe('MARKDOWN_STORAGE_REQUEST');
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
       expect(storageRequest.metadata?.processingTime).toBeGreaterThanOrEqual(0);
       expect(storageRequest.priority).toBe('normal');
       expect(storageRequest.retryCount).toBe(0);
@@ -639,7 +770,8 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as Mock).mockResolvedValue({
         success: true,
         data: {
-          markdown: '# Test PDF Part 3 Content\n\nThis is the third part of the test PDF.',
+          markdown:
+            '# Test PDF Part 3 Content\n\nThis is the third part of the test PDF.',
         },
         taskId: 'valid-task-id-part-storage',
       });
@@ -650,21 +782,31 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify part markdown storage request was sent with correct metadata
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.eventType).toBe('MARKDOWN_STORAGE_REQUEST');
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toContain('\n\n--- PART 3 ---\n\n');
-      expect(storageRequest.markdownContent).toContain('# Test PDF Part 3 Content');
+      expect(storageRequest.markdownContent).toContain(
+        '\n\n--- PART 3 ---\n\n',
+      );
+      expect(storageRequest.markdownContent).toContain(
+        '# Test PDF Part 3 Content',
+      );
       expect(storageRequest.metadata?.partIndex).toBe(2);
       expect(storageRequest.metadata?.isPart).toBe(true);
       expect(storageRequest.priority).toBe('normal');
@@ -707,20 +849,26 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify all progress messages were published
-      expect(mockRabbitMQService.publishPdfConversionProgress).toHaveBeenCalledTimes(5); // Initial + Download + Conversion + Storage + Waiting
+      expect(
+        mockRabbitMQService.publishPdfConversionProgress,
+      ).toHaveBeenCalledTimes(5); // Initial + Download + Conversion + Storage + Waiting
 
       // Check each progress message
-      const progressCalls = (mockRabbitMQService.publishPdfConversionProgress as Mock).mock.calls;
-      
+      const progressCalls = (
+        mockRabbitMQService.publishPdfConversionProgress as Mock
+      ).mock.calls;
+
       // Initial progress
       expect(progressCalls[0][0]).toMatchObject({
         itemId,
@@ -784,7 +932,8 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as Mock).mockResolvedValue({
         success: true,
         data: {
-          markdown: '# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.',
+          markdown:
+            '# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.',
         },
         taskId: 'valid-task-id-part-completion',
       });
@@ -795,22 +944,30 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify part completion message was published
-      expect(mockRabbitMQService.publishPdfPartConversionCompleted).toHaveBeenCalledTimes(1);
-      const completionMessage = (mockRabbitMQService.publishPdfPartConversionCompleted as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfPartConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+      const completionMessage = (
+        mockRabbitMQService.publishPdfPartConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.eventType).toBe('PDF_PART_CONVERSION_COMPLETED');
       expect(completionMessage.itemId).toBe(itemId);
       expect(completionMessage.partIndex).toBe(0);
       expect(completionMessage.totalParts).toBe(5);
-      expect(completionMessage.markdownContent).toBe('# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.');
+      expect(completionMessage.markdownContent).toBe(
+        '# Test PDF Part 1 Content\n\nThis is the first part of the test PDF.',
+      );
       expect(completionMessage.pageCount).toBe(0); // Default value
       expect(completionMessage.processingTime).toBeGreaterThanOrEqual(0);
     });
@@ -848,23 +1005,29 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify part failure message was published if available
-      const failureCalls = (mockRabbitMQService.publishPdfPartConversionFailed as Mock).mock.calls;
+      const failureCalls = (
+        mockRabbitMQService.publishPdfPartConversionFailed as Mock
+      ).mock.calls;
       if (failureCalls.length > 0) {
         const failureMessage = failureCalls[0][0];
         expect(failureMessage.eventType).toBe('PDF_PART_CONVERSION_FAILED');
         expect(failureMessage.itemId).toBe(itemId);
         expect(failureMessage.partIndex).toBe(2);
         expect(failureMessage.totalParts).toBe(5);
-        expect(failureMessage.error).toBe('PDF part conversion failed: Network timeout');
+        expect(failureMessage.error).toBe(
+          'PDF part conversion failed: Network timeout',
+        );
         expect(failureMessage.retryCount).toBe(1);
         expect(failureMessage.maxRetries).toBe(3);
         expect(failureMessage.canRetry).toBe(true);
@@ -872,7 +1035,9 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       }
 
       // Verify retry request was published if available
-      const retryCalls = (mockRabbitMQService.publishPdfPartConversionRequest as Mock).mock.calls;
+      const retryCalls = (
+        mockRabbitMQService.publishPdfPartConversionRequest as Mock
+      ).mock.calls;
       if (retryCalls.length > 0) {
         const retryRequest = retryCalls[0][0];
         expect(retryRequest.itemId).toBe(itemId);
@@ -903,7 +1068,8 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       (mockPdfConvertor.convertPdfToMarkdownFromS3 as Mock).mockResolvedValue({
         success: true,
         data: {
-          markdown: '# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.',
+          markdown:
+            '# Test PDF Part 2 Content\n\nThis is the second part of the test PDF.',
         },
         taskId: 'valid-task-id-merge',
       });
@@ -914,22 +1080,28 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfPartConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-part-conversion-request'
+        (call) => call[0] === 'pdf-part-conversion-request',
       )?.[1];
 
       expect(pdfPartConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfPartConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfPartConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify the merge trigger check was performed
       // The worker should log that it would trigger merging if all parts were completed
       // This is tested by checking that the part completion message was published
-      expect(mockRabbitMQService.publishPdfPartConversionCompleted).toHaveBeenCalledTimes(1);
-      
+      expect(
+        mockRabbitMQService.publishPdfPartConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+
       // The checkAndTriggerMerging function is called after part completion
       // We can't directly test it, but we can verify the flow reaches that point
-      const completionMessage = (mockRabbitMQService.publishPdfPartConversionCompleted as Mock).mock.calls[0][0];
+      const completionMessage = (
+        mockRabbitMQService.publishPdfPartConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.itemId).toBe(itemId);
       expect(completionMessage.partIndex).toBe(1);
       expect(completionMessage.totalParts).toBe(3);
@@ -970,30 +1142,46 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Even with missing/invalid taskId, the conversion should still complete
       // Verify completion message was published
-      expect(mockRabbitMQService.publishPdfConversionCompleted).toHaveBeenCalledTimes(1);
-      const completionMessage = (mockRabbitMQService.publishPdfConversionCompleted as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+      const completionMessage = (
+        mockRabbitMQService.publishPdfConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.itemId).toBe(itemId);
-      expect(completionMessage.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(completionMessage.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
       expect(completionMessage.processingTime).toBeGreaterThanOrEqual(0);
 
       // Verify markdown storage request was sent
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
     });
 
     it('should handle completely missing task ID', async () => {
@@ -1029,30 +1217,46 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
 
       // Even with missing taskId, the conversion should still complete
       // Verify completion message was published
-      expect(mockRabbitMQService.publishPdfConversionCompleted).toHaveBeenCalledTimes(1);
-      const completionMessage = (mockRabbitMQService.publishPdfConversionCompleted as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishPdfConversionCompleted,
+      ).toHaveBeenCalledTimes(1);
+      const completionMessage = (
+        mockRabbitMQService.publishPdfConversionCompleted as Mock
+      ).mock.calls[0][0];
       expect(completionMessage.itemId).toBe(itemId);
-      expect(completionMessage.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(completionMessage.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
       expect(completionMessage.processingTime).toBeGreaterThanOrEqual(0);
 
       // Verify markdown storage request was sent
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.itemId).toBe(itemId);
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
     });
   });
 
@@ -1088,18 +1292,26 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify markdown content was extracted correctly
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
     });
 
     it('should extract markdown content from object with markdown field', async () => {
@@ -1127,8 +1339,8 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
           markdown: '# Test PDF Content\n\nThis is a test PDF content.',
           metadata: {
             title: 'Extracted Title',
-            authors: ['John Doe']
-          }
+            authors: ['John Doe'],
+          },
         },
         taskId: 'valid-task-id-object-markdown',
       });
@@ -1139,18 +1351,26 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify markdown content was extracted correctly
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
     });
 
     it('should extract markdown content from object with content field', async () => {
@@ -1176,7 +1396,7 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
         success: true,
         data: {
           content: '# Test PDF Content\n\nThis is a test PDF content.',
-          otherData: 'some other data'
+          otherData: 'some other data',
         },
         taskId: 'valid-task-id-object-content',
       });
@@ -1187,18 +1407,26 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify markdown content was extracted correctly
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
-      expect(storageRequest.markdownContent).toBe('# Test PDF Content\n\nThis is a test PDF content.');
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
+      expect(storageRequest.markdownContent).toBe(
+        '# Test PDF Content\n\nThis is a test PDF content.',
+      );
     });
 
     it('should handle complex object data by stringifying', async () => {
@@ -1226,17 +1454,17 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
           sections: [
             {
               title: 'Section 1',
-              content: 'Content for section 1'
+              content: 'Content for section 1',
             },
             {
               title: 'Section 2',
-              content: 'Content for section 2'
-            }
+              content: 'Content for section 2',
+            },
           ],
           metadata: {
             pageCount: 10,
-            title: 'Test Document'
-          }
+            title: 'Test Document',
+          },
         },
         taskId: 'valid-task-id-complex-object',
       });
@@ -1247,17 +1475,23 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify complex object was stringified
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(1);
-      const storageRequest = (mockRabbitMQService.publishMarkdownStorageRequest as Mock).mock.calls[0][0];
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(1);
+      const storageRequest = (
+        mockRabbitMQService.publishMarkdownStorageRequest as Mock
+      ).mock.calls[0][0];
       expect(storageRequest.markdownContent).toContain('sections');
       expect(storageRequest.markdownContent).toContain('Section 1');
       expect(storageRequest.markdownContent).toContain('Content for section 1');
@@ -1268,13 +1502,13 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
     it('should handle missing PDF converter', async () => {
       // Create worker with undefined PDF converter
       const workerWithNullConverter = new PdfConversionWorker(undefined);
-      
+
       // Mock RabbitMQ service to be disconnected
       mockRabbitMQService.isConnected.mockReturnValue(false);
-      
+
       // Replace the worker's RabbitMQ service with our mock
       (workerWithNullConverter as any).rabbitMQService = mockRabbitMQService;
-      
+
       // Verify worker can be created
       const stats = await workerWithNullConverter.getWorkerStats();
       expect(stats.pdfConvertorAvailable).toBe(true); // Default behavior - it creates a converter if none provided
@@ -1283,7 +1517,7 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
     it('should handle RabbitMQ service errors gracefully', async () => {
       // Mock RabbitMQ service to throw errors
       mockRabbitMQService.publishPdfConversionProgress.mockRejectedValue(
-        new Error('RabbitMQ connection error')
+        new Error('RabbitMQ connection error'),
       );
 
       const itemId = uuidv4();
@@ -1318,16 +1552,20 @@ describe('PdfConversionWorker - Comprehensive Tests', () => {
       // Get the handler function from the mock
       const consumeCalls = mockRabbitMQService.consumeMessages.mock.calls;
       const pdfConversionHandler = consumeCalls.find(
-        call => call[0] === 'pdf-conversion-request'
+        (call) => call[0] === 'pdf-conversion-request',
       )?.[1];
 
       expect(pdfConversionHandler).toBeDefined();
 
       // Simulate message processing - should not throw even if RabbitMQ fails
-      await pdfConversionHandler(testMessage, { content: Buffer.from(JSON.stringify(testMessage)) });
+      await pdfConversionHandler(testMessage, {
+        content: Buffer.from(JSON.stringify(testMessage)),
+      });
 
       // Verify PDF converter was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(
+        testMessage.s3Url,
+      );
     });
   });
 });

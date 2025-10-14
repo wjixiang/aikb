@@ -70,7 +70,10 @@ This is the updated chapter 1 content.`;
     expect(initialChunks.length).toBe(3);
 
     // Try to re-process with forceReprocess=false (default)
-    const returnedChunks = await testItem.chunkEmbed(ChunkingStrategyType.H1, false);
+    const returnedChunks = await testItem.chunkEmbed(
+      ChunkingStrategyType.H1,
+      false,
+    );
 
     // Should return the same chunks without creating new ones
     expect(returnedChunks.length).toBe(3);

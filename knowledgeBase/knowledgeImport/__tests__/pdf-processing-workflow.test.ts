@@ -24,7 +24,10 @@ describe('PDF Processing Workflow', () => {
     console.log('✅ RabbitMQ service initialized');
 
     // Create storage instance
-    storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+    storage = new S3ElasticSearchLibraryStorage(
+      'http://elasticsearch:9200',
+      1024,
+    );
     library = new Library(storage);
 
     // Start all workers
@@ -58,59 +61,71 @@ describe('PDF Processing Workflow', () => {
     };
 
     // Store PDF (should start with pending status)
-    const book = await library.storePdf(pdfBuffer, `test-${uniqueId}.pdf`, metadata);
+    const book = await library.storePdf(
+      pdfBuffer,
+      `test-${uniqueId}.pdf`,
+      metadata,
+    );
     testItemId = book.metadata.id!;
-    
+
     console.log(`📄 PDF stored with ID: ${testItemId}`);
-    
+
     // Verify initial status
     expect(book.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.PENDING);
     expect(book.metadata.pdfProcessingMessage).toBe('Queued for processing');
-    
+
     // Wait for processing to start
     console.log('⏳ Waiting for PDF analysis to start...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     // Check status after analysis should have started
     let status = await library.getProcessingStatus(testItemId);
-    console.log(`📊 Status after 3 seconds: ${status?.status} - ${status?.message}`);
-    
+    console.log(
+      `📊 Status after 3 seconds: ${status?.status} - ${status?.message}`,
+    );
+
     // Wait for processing to complete
     console.log('⏳ Waiting for PDF processing to complete...');
     let attempts = 0;
     const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max
-    
+
     while (attempts < maxAttempts) {
       status = await library.getProcessingStatus(testItemId);
-      console.log(`📊 Status check ${attempts + 1}: ${status?.status} (${status?.progress}%) - ${status?.message}`);
-      
+      console.log(
+        `📊 Status check ${attempts + 1}: ${status?.status} (${status?.progress}%) - ${status?.message}`,
+      );
+
       if (status?.status === PdfProcessingStatus.COMPLETED) {
         console.log('✅ PDF processing completed successfully!');
         break;
       }
-      
+
       if (status?.status === PdfProcessingStatus.FAILED) {
         console.error(`❌ PDF processing failed: ${status.error}`);
         break;
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       attempts++;
     }
-    
+
     // Final status verification
     const finalStatus = await library.getProcessingStatus(testItemId);
-    console.log(`🏁 Final status: ${finalStatus?.status} - ${finalStatus?.message}`);
-    
+    console.log(
+      `🏁 Final status: ${finalStatus?.status} - ${finalStatus?.message}`,
+    );
+
     // Verify we have markdown content
     const markdownContent = await book.getMarkdown();
-    console.log(`📝 Markdown content length: ${markdownContent.length} characters`);
+    console.log(
+      `📝 Markdown content length: ${markdownContent.length} characters`,
+    );
     console.log(`📝 First 200 chars: ${markdownContent.substring(0, 200)}...`);
-    
+
     // Verify the content is meaningful (not just placeholder)
     expect(markdownContent.length).toBeGreaterThan(100);
     expect(markdownContent).toContain('viral_pneumonia');
-    
+
     // If processing completed, status should be completed
     if (finalStatus?.status === PdfProcessingStatus.COMPLETED) {
       expect(finalStatus.progress).toBe(100);
@@ -123,10 +138,10 @@ describe('PDF Processing Workflow', () => {
       console.log('⚠️ Skipping progress test - no test item available');
       return;
     }
-    
+
     // Get detailed processing status
     const status = await library.getProcessingStatus(testItemId);
-    
+
     console.log('📊 Processing Status Details:');
     console.log(`  Status: ${status?.status}`);
     console.log(`  Progress: ${status?.progress}%`);
@@ -135,7 +150,7 @@ describe('PDF Processing Workflow', () => {
     console.log(`  Completed At: ${status?.completedAt}`);
     console.log(`  Error: ${status?.error}`);
     console.log(`  Retry Count: ${status?.retryCount}`);
-    
+
     // Verify status structure
     expect(status).toBeDefined();
     expect(status?.status).toBeDefined();

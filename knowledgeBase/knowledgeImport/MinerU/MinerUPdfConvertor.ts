@@ -91,7 +91,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     if (result?.task_id) {
       return result.task_id;
     }
-    
+
     // Try alternative field names
     if (result && typeof result === 'object') {
       const taskIdCandidates = ['taskId', 'task_id', 'id', 'taskid'];
@@ -100,7 +100,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           return result[candidate];
         }
       }
-      
+
       // Use other identifiers as fallbacks
       if (result.data_id) {
         return `data-${result.data_id}`;
@@ -109,7 +109,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         return `file-${result.file_name}`;
       }
     }
-    
+
     // Generate a unique fallback identifier
     return `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -126,7 +126,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   ): Promise<ConversionResult> {
     try {
       this.logger.info(`convertPdfToMarkdownFromS3: s3Url=${s3Url}`);
-      
+
       // Use the S3 URL directly
       const request: SingleFileRequest = {
         url: s3Url,
@@ -134,15 +134,17 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         ...options,
       };
 
-      this.logger.info(`Processing file with MinerU... Request: ${JSON.stringify(request)}`);
+      this.logger.info(
+        `Processing file with MinerU... Request: ${JSON.stringify(request)}`,
+      );
       // Process the file
       const result = await this.client.processSingleFile(request, {
         downloadDir: this.config.downloadDir,
       });
-      
+
       this.logger.info(`MinerU processing completed`);
       this.logger.info(`Extracting markdown from downloaded files...`);
-      
+
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
@@ -151,7 +153,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       // Extract task ID using the helper method
       const taskId = this.extractTaskId(result.result);
-      
+
       return {
         success: true,
         data: markdownData,
@@ -208,9 +210,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         // Validate file format
         if (!MinerUClient.isValidFileFormat(pdfPath)) {
-          this.logger.error(
-            `Unsupported file format: ${pdfPath}`,
-          );
+          this.logger.error(`Unsupported file format: ${pdfPath}`);
           return {
             success: false,
             error: `Unsupported file format: ${pdfPath}`,
@@ -237,10 +237,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       const result = await this.client.processSingleFile(request, {
         downloadDir: this.config.downloadDir,
       });
-      
+
       this.logger.info(`MinerU processing completed`);
       this.logger.info(`Extracting markdown from downloaded files...`);
-      
+
       // Extract and parse the markdown content
       const markdownData = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
@@ -249,7 +249,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       // Extract task ID using the helper method
       const taskId = this.extractTaskId(result.result);
-      
+
       return {
         success: true,
         data: markdownData,
@@ -276,9 +276,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     options: Partial<SingleFileRequest> = {},
   ): Promise<ConversionResult> {
     try {
-      this.logger.info(
-        `processLocalFile: filePath=${filePath}`,
-      );
+      this.logger.info(`processLocalFile: filePath=${filePath}`);
 
       if (!fs.existsSync(filePath)) {
         this.logger.error(`File not found: ${filePath}`);
@@ -289,9 +287,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       }
 
       if (!MinerUClient.isValidFileFormat(filePath)) {
-        this.logger.error(
-          `Unsupported file format: ${filePath}`,
-        );
+        this.logger.error(`Unsupported file format: ${filePath}`);
         return {
           success: false,
           error: `Unsupported file format: ${filePath}`,
@@ -342,7 +338,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       if (result.state === 'failed') {
         this.logger.error(`Task failed: ${result.err_msg}`);
-        
+
         return {
           success: false,
           error: result.err_msg || 'Processing failed',
@@ -358,7 +354,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       // Extract task ID using the helper method
       const taskId = this.extractTaskId(result);
-      
+
       return {
         success: true,
         data: markdownData,
@@ -593,7 +589,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       // Find the ZIP file in the downloaded files
       const zipFile = downloadedFiles.find((file) => file.endsWith('.zip'));
       if (!zipFile) {
-        this.logger.error(`No ZIP file found in downloaded files. Available files: ${downloadedFiles.join(', ')}`);
+        this.logger.error(
+          `No ZIP file found in downloaded files. Available files: ${downloadedFiles.join(', ')}`,
+        );
         return null;
       }
 
@@ -627,7 +625,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   private async extractFullMdFromZip(zipPath: string): Promise<string | null> {
     return new Promise((resolve, reject) => {
       this.logger.info(`Opening ZIP file: ${zipPath}`);
-      
+
       yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
         if (err) {
           this.logger.error(`Error opening ZIP file:`, err);
@@ -640,9 +638,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
         zipfile.on('entry', (entry) => {
           this.logger.info(`Processing entry: ${entry.fileName}`);
-          
+
           // Check if this is the markdown file we're looking for
-          if (entry.fileName.endsWith('.md') || entry.fileName.endsWith('.markdown')) {
+          if (
+            entry.fileName.endsWith('.md') ||
+            entry.fileName.endsWith('.markdown')
+          ) {
             this.logger.info(`Found markdown file: ${entry.fileName}`);
             foundMarkdown = true;
 
@@ -654,7 +655,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
               this.logger.info(`Reading markdown content...`);
               const chunks: Buffer[] = [];
-              
+
               readStream.on('data', (chunk) => {
                 chunks.push(chunk);
               });
@@ -662,7 +663,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               readStream.on('end', () => {
                 markdownContent = Buffer.concat(chunks).toString('utf8');
                 this.logger.info(`Markdown content read successfully`);
-                this.logger.info(`Content length: ${markdownContent.length} characters`);
+                this.logger.info(
+                  `Content length: ${markdownContent.length} characters`,
+                );
                 // Continue reading next entries
                 zipfile.readEntry();
               });
@@ -682,7 +685,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
           this.logger.info(`ZIP file processing completed`);
           this.logger.info(`Found markdown: ${foundMarkdown}`);
           if (foundMarkdown) {
-            this.logger.info(`Resolving with markdown content (${markdownContent.length} chars)`);
+            this.logger.info(
+              `Resolving with markdown content (${markdownContent.length} chars)`,
+            );
             resolve(markdownContent);
           } else {
             this.logger.error(`No markdown file found in ZIP`);
@@ -741,11 +746,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async cleanupDownloadedFiles(olderThanHours: number = 24): Promise<void> {
     try {
-      this.logger.info(
-        `Cleaning up files older than ${olderThanHours} hours`,
-      );
+      this.logger.info(`Cleaning up files older than ${olderThanHours} hours`);
       const downloadDir = this.config.downloadDir;
-      
+
       if (!fs.existsSync(downloadDir)) {
         this.logger.info(`Download directory does not exist: ${downloadDir}`);
         return;
@@ -758,7 +761,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       for (const file of files) {
         const filePath = path.join(downloadDir, file);
         const stats = fs.statSync(filePath);
-        
+
         if (stats.mtime.getTime() < cutoffTime) {
           try {
             if (stats.isDirectory()) {
@@ -797,12 +800,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   setDownloadDirectory(directory: string): void {
     this.logger.info(`Setting download directory to: ${directory}`);
-    
+
     // Create directory if it doesn't exist
     if (!fs.existsSync(directory)) {
       fs.mkdirSync(directory, { recursive: true });
     }
-    
+
     this.config.downloadDir = directory;
   }
 }

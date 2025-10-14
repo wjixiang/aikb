@@ -26,16 +26,20 @@ vi.mock('../../lib/rabbitmq/rabbitmq.service', () => ({
 // Mock PDF converter
 vi.mock('../PdfConvertor', () => ({
   MinerUPdfConvertor: vi.fn().mockImplementation(() => ({
-    convertPdfToMarkdownFromS3: vi.fn(() => Promise.resolve({
-      success: true,
-      data: '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
-    })),
+    convertPdfToMarkdownFromS3: vi.fn(() =>
+      Promise.resolve({
+        success: true,
+        data: '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
+      }),
+    ),
   })),
   createMinerUConvertorFromEnv: vi.fn(() => ({
-    convertPdfToMarkdownFromS3: vi.fn(() => Promise.resolve({
-      success: true,
-      data: '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
-    })),
+    convertPdfToMarkdownFromS3: vi.fn(() =>
+      Promise.resolve({
+        success: true,
+        data: '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
+      }),
+    ),
   })),
 }));
 
@@ -47,17 +51,19 @@ describe('Library Async PDF Conversion', () => {
 
   beforeEach(async () => {
     // Create test PDF buffer with unique content for each test run
-    testPdfBuffer = Buffer.from(`test pdf content ${Date.now()} ${Math.random()}`);
+    testPdfBuffer = Buffer.from(
+      `test pdf content ${Date.now()} ${Math.random()}`,
+    );
 
     // Initialize storage
     storage = new S3MongoLibraryStorage();
-    
+
     // Create mock PDF converter
     mockPdfConvertor = new MinerUPdfConvertor({
       baseUrl: 'http://localhost:8000',
       token: 'test-token',
     });
-    
+
     // Initialize library
     library = new Library(storage, mockPdfConvertor);
 
@@ -90,10 +96,14 @@ describe('Library Async PDF Conversion', () => {
 
       expect(result).toBeDefined();
       expect(result.metadata.title).toBe('Test Document');
-      expect(result.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.PENDING);
+      expect(result.metadata.pdfProcessingStatus).toBe(
+        PdfProcessingStatus.PENDING,
+      );
       expect(result.metadata.pdfProcessingStartedAt).toBeDefined();
       expect(result.metadata.pdfProcessingProgress).toBe(0);
-      expect(result.metadata.pdfProcessingMessage).toBe('Queued for processing');
+      expect(result.metadata.pdfProcessingMessage).toBe(
+        'Queued for processing',
+      );
 
       // Verify RabbitMQ service was called
       const rabbitMQService = getRabbitMQService();
@@ -102,9 +112,9 @@ describe('Library Async PDF Conversion', () => {
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: result.metadata.id,
           fileName,
-  
+
           s3Key: result.metadata.s3Key,
-        })
+        }),
       );
     });
 
@@ -117,7 +127,11 @@ describe('Library Async PDF Conversion', () => {
 
       // Store the same PDF twice
       const result1 = await library.storePdf(testPdfBuffer, fileName, metadata);
-      const result2 = await library.storePdf(testPdfBuffer, fileName + '-2', metadata);
+      const result2 = await library.storePdf(
+        testPdfBuffer,
+        fileName + '-2',
+        metadata,
+      );
 
       // Should return the same item for duplicate content
       expect(result1.metadata.id).toBe(result2.metadata.id);
@@ -126,7 +140,9 @@ describe('Library Async PDF Conversion', () => {
 
     it('should handle RabbitMQ service failure gracefully', async () => {
       // Reset the mock to return rejection for this test
-      mockRabbitMQService.publishPdfAnalysisRequest.mockRejectedValueOnce(new Error('RabbitMQ unavailable'));
+      mockRabbitMQService.publishPdfAnalysisRequest.mockRejectedValueOnce(
+        new Error('RabbitMQ unavailable'),
+      );
 
       const fileName = 'error-test.pdf';
       const metadata = {
@@ -138,14 +154,18 @@ describe('Library Async PDF Conversion', () => {
 
       // Should still create the item but mark as failed
       expect(result).toBeDefined();
-      
+
       // Wait a bit for the async status update to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Refresh the item to get the updated status
       const updatedItem = await library.getItem(result.metadata.id!);
-      expect(updatedItem?.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.FAILED);
-      expect(updatedItem?.metadata.pdfProcessingError).toContain('Failed to queue for processing');
+      expect(updatedItem?.metadata.pdfProcessingStatus).toBe(
+        PdfProcessingStatus.FAILED,
+      );
+      expect(updatedItem?.metadata.pdfProcessingError).toContain(
+        'Failed to queue for processing',
+      );
     });
   });
 
@@ -180,7 +200,7 @@ describe('Library Async PDF Conversion', () => {
       };
 
       const item = await library.storePdf(testPdfBuffer, fileName, metadata);
-      
+
       // Manually update status to completed
       await item.updateMetadata({
         pdfProcessingStatus: PdfProcessingStatus.COMPLETED,
@@ -188,7 +208,9 @@ describe('Library Async PDF Conversion', () => {
         pdfProcessingProgress: 100,
       });
 
-      const isCompleted = await library.isProcessingCompleted(item.metadata.id!);
+      const isCompleted = await library.isProcessingCompleted(
+        item.metadata.id!,
+      );
       expect(isCompleted).toBe(true);
 
       const isFailed = await library.isProcessingFailed(item.metadata.id!);
@@ -203,14 +225,16 @@ describe('Library Async PDF Conversion', () => {
       };
 
       const item = await library.storePdf(testPdfBuffer, fileName, metadata);
-      
+
       // Manually update status to failed
       await item.updateMetadata({
         pdfProcessingStatus: PdfProcessingStatus.FAILED,
         pdfProcessingError: 'Test error',
       });
 
-      const isCompleted = await library.isProcessingCompleted(item.metadata.id!);
+      const isCompleted = await library.isProcessingCompleted(
+        item.metadata.id!,
+      );
       expect(isCompleted).toBe(false);
 
       const isFailed = await library.isProcessingFailed(item.metadata.id!);
@@ -225,12 +249,12 @@ describe('Library Async PDF Conversion', () => {
       };
 
       const item = await library.storePdf(testPdfBuffer, fileName, metadata);
-      
+
       // Test timeout scenario
       const result = await library.waitForProcessingCompletion(
         item.metadata.id!,
         1000, // 1 second timeout
-        100   // 100ms interval
+        100, // 100ms interval
       );
 
       expect(result.success).toBe(false);
@@ -241,7 +265,7 @@ describe('Library Async PDF Conversion', () => {
   describe('PDF conversion worker', () => {
     it('should create and start worker successfully', async () => {
       const worker = await createPdfConversionWorker(mockPdfConvertor);
-      
+
       expect(worker).toBeDefined();
       expect(worker.isWorkerRunning()).toBe(true);
 
@@ -273,10 +297,14 @@ describe('Library Async PDF Conversion', () => {
 
       // Step 1: Store PDF (should queue for processing)
       const item = await library.storePdf(testPdfBuffer, fileName, metadata);
-      expect(item.metadata.pdfProcessingStatus).toBe(PdfProcessingStatus.PENDING);
+      expect(item.metadata.pdfProcessingStatus).toBe(
+        PdfProcessingStatus.PENDING,
+      );
 
       // Step 2: Check initial status
-      const initialStatus = await library.getProcessingStatus(item.metadata.id!);
+      const initialStatus = await library.getProcessingStatus(
+        item.metadata.id!,
+      );
       expect(initialStatus?.status).toBe(PdfProcessingStatus.PENDING);
 
       // Step 3: Simulate worker processing (in real scenario, worker would process this)
@@ -286,7 +314,8 @@ describe('Library Async PDF Conversion', () => {
         pdfProcessingCompletedAt: new Date(),
         pdfProcessingProgress: 100,
         pdfProcessingMessage: 'Processing completed successfully',
-        markdownContent: '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
+        markdownContent:
+          '# Test PDF Content\n\nThis is a test PDF converted to markdown.',
         markdownUpdatedDate: new Date(),
       });
 
@@ -297,7 +326,9 @@ describe('Library Async PDF Conversion', () => {
       expect(finalStatus?.completedAt).toBeDefined();
 
       // Step 5: Check if processing is completed
-      const isCompleted = await library.isProcessingCompleted(item.metadata.id!);
+      const isCompleted = await library.isProcessingCompleted(
+        item.metadata.id!,
+      );
       expect(isCompleted).toBe(true);
     });
 
@@ -337,7 +368,9 @@ describe('Library Async PDF Conversion', () => {
         authors: [{ firstName: 'Invalid', lastName: 'File' }],
       };
 
-      await expect(library.storePdf(testPdfBuffer, '', metadata)).rejects.toThrow('File name is required');
+      await expect(
+        library.storePdf(testPdfBuffer, '', metadata),
+      ).rejects.toThrow('File name is required');
     });
 
     it('should handle storage errors gracefully', async () => {
@@ -371,7 +404,9 @@ describe('Library Async PDF Conversion', () => {
         authors: [{ firstName: 'Storage', lastName: 'Error' }],
       };
 
-      await expect(errorLibrary.storePdf(testPdfBuffer, 'error-test.pdf', metadata)).rejects.toThrow('Storage error');
+      await expect(
+        errorLibrary.storePdf(testPdfBuffer, 'error-test.pdf', metadata),
+      ).rejects.toThrow('Storage error');
     });
   });
 });

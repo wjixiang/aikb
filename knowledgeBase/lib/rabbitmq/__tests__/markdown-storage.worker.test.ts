@@ -8,7 +8,10 @@ import {
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
 } from '../message.types';
-import { AbstractLibraryStorage, BookMetadata } from '../../../knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  BookMetadata,
+} from '../../../knowledgeImport/library';
 import Library from '../../../knowledgeImport/library';
 import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
 import { getRabbitMQService } from '../rabbitmq.service';
@@ -124,7 +127,7 @@ describe('MarkdownStorageWorker', () => {
         {
           consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER,
           noAck: false,
-        }
+        },
       );
     });
 
@@ -138,7 +141,9 @@ describe('MarkdownStorageWorker', () => {
       await worker.start();
       await worker.stop();
       expect(worker.isWorkerRunning()).toBe(false);
-      expect(mockRabbitMQService.stopConsuming).toHaveBeenCalledWith('test-consumer-tag');
+      expect(mockRabbitMQService.stopConsuming).toHaveBeenCalledWith(
+        'test-consumer-tag',
+      );
     });
 
     it('should not stop if not running', async () => {
@@ -190,20 +195,28 @@ describe('MarkdownStorageWorker', () => {
 
       // Verify storage operations
       expect(mockStorage.getMetadata).toHaveBeenCalledWith(itemId);
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(itemId, markdownContent);
-      
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        itemId,
+        markdownContent,
+      );
+
       // Verify status updates (called twice: processing and completed)
       expect(mockStorage.updateMetadata).toHaveBeenCalledTimes(2);
-      
+
       // Verify chunks processing
-      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(itemId, ChunkingStrategyType.PARAGRAPH);
-      
+      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(
+        itemId,
+        ChunkingStrategyType.PARAGRAPH,
+      );
+
       // Verify completion message
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           status: PdfProcessingStatus.COMPLETED,
-        })
+        }),
       );
 
       // Note: The RabbitMQ service handles acknowledgment automatically
@@ -215,7 +228,8 @@ describe('MarkdownStorageWorker', () => {
     it('should handle large markdown content successfully', async () => {
       const itemId = 'test-item-id';
       // Create a large markdown content (100KB)
-      const largeContent = '# Large Document\n\n' + 'This is a large paragraph. '.repeat(2000);
+      const largeContent =
+        '# Large Document\n\n' + 'This is a large paragraph. '.repeat(2000);
       const mockMetadata: BookMetadata = {
         id: itemId,
         title: 'Large Document',
@@ -254,8 +268,13 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify storage operations
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(itemId, largeContent);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        itemId,
+        largeContent,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -301,8 +320,13 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify storage operations
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(itemId, smallContent);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        itemId,
+        smallContent,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -323,13 +347,16 @@ describe('MarkdownStorageWorker', () => {
 
       // Mock storage methods
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
-      (mockStorage.saveMarkdown as any).mockRejectedValue(new Error('Storage failure'));
+      (mockStorage.saveMarkdown as any).mockRejectedValue(
+        new Error('Storage failure'),
+      );
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
 
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -353,15 +380,17 @@ describe('MarkdownStorageWorker', () => {
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
           pdfProcessingError: 'Storage failure',
           pdfProcessingMessage: 'Markdown storage failed: Storage failure',
-        })
+        }),
       );
 
       // Verify retry mechanism
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           retryCount: 1,
-        })
+        }),
       );
 
       // Note: The RabbitMQ service handles acknowledgment automatically
@@ -386,7 +415,9 @@ describe('MarkdownStorageWorker', () => {
       // Mock storage methods
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
       (mockStorage.saveMarkdown as any).mockResolvedValue(undefined);
-      (mockStorage.updateMetadata as any).mockRejectedValue(new Error('Metadata update failed'));
+      (mockStorage.updateMetadata as any).mockRejectedValue(
+        new Error('Metadata update failed'),
+      );
 
       // Mock Library
       const LibraryMock = Library as any;
@@ -413,7 +444,9 @@ describe('MarkdownStorageWorker', () => {
 
       // Verify that metadata update failure doesn't prevent message completion
       expect(mockStorage.saveMarkdown).toHaveBeenCalled();
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
       // Note: The RabbitMQ service handles acknowledgment automatically
     });
   });
@@ -445,7 +478,8 @@ describe('MarkdownStorageWorker', () => {
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -461,8 +495,13 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify chunks processing
-      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(itemId, ChunkingStrategyType.PARAGRAPH);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(
+        itemId,
+        ChunkingStrategyType.PARAGRAPH,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -489,7 +528,9 @@ describe('MarkdownStorageWorker', () => {
       // Mock Library with failure
       const LibraryMock = Library as any;
       LibraryMock.mockImplementation(() => ({
-        processItemChunks: vi.fn().mockRejectedValue(new Error('Chunks processing failed')),
+        processItemChunks: vi
+          .fn()
+          .mockRejectedValue(new Error('Chunks processing failed')),
       }));
 
       await worker.start();
@@ -511,7 +552,9 @@ describe('MarkdownStorageWorker', () => {
 
       // Verify that chunks processing failure doesn't prevent message completion
       expect(mockStorage.saveMarkdown).toHaveBeenCalled();
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
       // Note: The RabbitMQ service handles acknowledgment automatically
     });
   });
@@ -558,13 +601,15 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify completion message
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           messageId: 'test-message-id',
           itemId,
           status: PdfProcessingStatus.COMPLETED,
           processingTime: expect.any(Number),
-        })
+        }),
       );
     });
   });
@@ -586,13 +631,16 @@ describe('MarkdownStorageWorker', () => {
 
       // Mock storage methods
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
-      (mockStorage.saveMarkdown as any).mockRejectedValue(new Error('Storage failure'));
+      (mockStorage.saveMarkdown as any).mockRejectedValue(
+        new Error('Storage failure'),
+      );
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
 
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -610,7 +658,9 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify failure message
-      expect(mockRabbitMQService.publishMarkdownStorageFailed).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageFailed,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           status: PdfProcessingStatus.FAILED,
@@ -619,7 +669,7 @@ describe('MarkdownStorageWorker', () => {
           maxRetries: 3,
           canRetry: false,
           processingTime: expect.any(Number),
-        })
+        }),
       );
     });
   });
@@ -641,13 +691,16 @@ describe('MarkdownStorageWorker', () => {
 
       // Mock storage methods
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
-      (mockStorage.saveMarkdown as any).mockRejectedValue(new Error('Storage failure'));
+      (mockStorage.saveMarkdown as any).mockRejectedValue(
+        new Error('Storage failure'),
+      );
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
 
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -665,12 +718,14 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify retry request
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           retryCount: 2, // Incremented
           messageId: 'test-message-id', // New message ID
-        })
+        }),
       );
     });
   });
@@ -702,7 +757,8 @@ describe('MarkdownStorageWorker', () => {
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -723,7 +779,7 @@ describe('MarkdownStorageWorker', () => {
           id: itemId,
           pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
           pdfProcessingMessage: 'Storing markdown content',
-        })
+        }),
       );
     });
 
@@ -775,7 +831,7 @@ describe('MarkdownStorageWorker', () => {
           pdfProcessingMessage: 'Markdown storage completed successfully',
           pdfProcessingProgress: 100,
           pdfProcessingCompletedAt: expect.any(Date),
-        })
+        }),
       );
     });
 
@@ -795,13 +851,16 @@ describe('MarkdownStorageWorker', () => {
 
       // Mock storage methods
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
-      (mockStorage.saveMarkdown as any).mockRejectedValue(new Error('Storage failure'));
+      (mockStorage.saveMarkdown as any).mockRejectedValue(
+        new Error('Storage failure'),
+      );
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
 
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -825,7 +884,7 @@ describe('MarkdownStorageWorker', () => {
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
           pdfProcessingMessage: 'Markdown storage failed: Storage failure',
           pdfProcessingError: 'Storage failure',
-        })
+        }),
       );
     });
   });
@@ -859,12 +918,14 @@ describe('MarkdownStorageWorker', () => {
 
       // Verify error handling
       expect(mockStorage.getMetadata).toHaveBeenCalledWith(itemId);
-      expect(mockRabbitMQService.publishMarkdownStorageFailed).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageFailed,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           status: PdfProcessingStatus.FAILED,
           error: 'Item non-existent-item not found',
-        })
+        }),
       );
     });
   });
@@ -896,7 +957,8 @@ describe('MarkdownStorageWorker', () => {
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -921,8 +983,13 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify processing with metadata
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(itemId, markdownContent);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        itemId,
+        markdownContent,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
     });
 
     it('should handle message without metadata', async () => {
@@ -951,7 +1018,8 @@ describe('MarkdownStorageWorker', () => {
       await worker.start();
 
       // Get the message handler and simulate a message
-      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock.calls[0];
+      const consumeCall = (mockRabbitMQService.consumeMessages as any).mock
+        .calls[0];
       const messageHandler = consumeCall[1];
 
       const message: MarkdownStorageRequestMessage = {
@@ -968,8 +1036,13 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify processing without metadata
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(itemId, markdownContent);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        itemId,
+        markdownContent,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
     });
   });
 });

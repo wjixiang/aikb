@@ -25,7 +25,10 @@ import { PdfConversionWorker } from '../pdf-conversion.worker';
 import { PdfProcessingCoordinatorWorker } from '../pdf-processing-coordinator.worker';
 import { MarkdownStorageWorker } from '../markdown-storage.worker';
 import { PdfMergerService } from '../pdf-merger.service';
-import { AbstractLibraryStorage, BookMetadata } from '../../../knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  BookMetadata,
+} from '../../../knowledgeImport/library';
 import { MinerUPdfConvertor } from '../../../knowledgeImport/PdfConvertor';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -48,16 +51,26 @@ const mockRabbitMQService = {
   publishPdfAnalysisRequest: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfAnalysisCompleted: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfAnalysisFailed: vi.fn((message: any) => Promise.resolve(true)),
-  publishPdfPartConversionRequest: vi.fn((message: any) => Promise.resolve(true)),
-  publishPdfPartConversionCompleted: vi.fn((message: any) => Promise.resolve(true)),
-  publishPdfPartConversionFailed: vi.fn((message: any) => Promise.resolve(true)),
+  publishPdfPartConversionRequest: vi.fn((message: any) =>
+    Promise.resolve(true),
+  ),
+  publishPdfPartConversionCompleted: vi.fn((message: any) =>
+    Promise.resolve(true),
+  ),
+  publishPdfPartConversionFailed: vi.fn((message: any) =>
+    Promise.resolve(true),
+  ),
   publishPdfMergingRequest: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfMergingProgress: vi.fn((message: any) => Promise.resolve(true)),
   publishMarkdownStorageRequest: vi.fn((message: any) => Promise.resolve(true)),
-  publishMarkdownStorageCompleted: vi.fn((message: any) => Promise.resolve(true)),
+  publishMarkdownStorageCompleted: vi.fn((message: any) =>
+    Promise.resolve(true),
+  ),
   publishMarkdownStorageFailed: vi.fn((message: any) => Promise.resolve(true)),
   purgeQueue: vi.fn(() => Promise.resolve()),
-  getQueueInfo: vi.fn(() => Promise.resolve({ messageCount: 0, consumerCount: 0 })),
+  getQueueInfo: vi.fn(() =>
+    Promise.resolve({ messageCount: 0, consumerCount: 0 }),
+  ),
 };
 
 vi.mock('../rabbitmq.service', () => ({
@@ -120,10 +133,16 @@ describe('PDF Processing End-to-End Integration Tests', () => {
     };
 
     // Create workers
-    analysisWorker = new PdfAnalysisWorker(mockStorage as AbstractLibraryStorage);
+    analysisWorker = new PdfAnalysisWorker(
+      mockStorage as AbstractLibraryStorage,
+    );
     conversionWorker = new PdfConversionWorker(mockPdfConvertor);
-    coordinatorWorker = new PdfProcessingCoordinatorWorker(mockStorage as AbstractLibraryStorage);
-    storageWorker = new MarkdownStorageWorker(mockStorage as AbstractLibraryStorage);
+    coordinatorWorker = new PdfProcessingCoordinatorWorker(
+      mockStorage as AbstractLibraryStorage,
+    );
+    storageWorker = new MarkdownStorageWorker(
+      mockStorage as AbstractLibraryStorage,
+    );
     mergerService = new PdfMergerService(mockStorage as AbstractLibraryStorage);
   });
 
@@ -185,13 +204,14 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
 
       // Get the analysis handler and simulate processing
-      const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+      const analysisHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
       if (analysisHandler) {
         await analysisHandler(analysisRequest, { ack: vi.fn(), nack: vi.fn() });
       }
@@ -208,16 +228,21 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       });
 
       // Verify analysis completed message was published
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: expect.any(Number),
           requiresSplitting: false,
-        })
+        }),
       );
 
       // Get the coordinator handler and simulate processing analysis completed
-      const coordinatorHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`];
+      const coordinatorHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`
+        ];
       const analysisCompletedMessage: PdfAnalysisCompletedMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -230,7 +255,10 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       };
 
       if (coordinatorHandler) {
-        await coordinatorHandler(analysisCompletedMessage, { ack: vi.fn(), nack: vi.fn() });
+        await coordinatorHandler(analysisCompletedMessage, {
+          ack: vi.fn(),
+          nack: vi.fn(),
+        });
       }
 
       // Manually trigger the conversion request since the service is mocked
@@ -239,7 +267,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -251,22 +279,27 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       });
 
       // Verify conversion request was published
-      expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfConversionRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
-          
+
           s3Key: testS3Key,
-        })
+        }),
       );
 
       // Get the conversion handler and simulate processing
-      const conversionHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`];
+      const conversionHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`
+        ];
       const conversionRequest: PdfConversionRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -278,7 +311,10 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       };
 
       if (conversionHandler) {
-        await conversionHandler(conversionRequest, { ack: vi.fn(), nack: vi.fn() });
+        await conversionHandler(conversionRequest, {
+          ack: vi.fn(),
+          nack: vi.fn(),
+        });
       }
 
       // Manually trigger the markdown storage request since the service is mocked
@@ -291,15 +327,20 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       });
 
       // Verify markdown storage request was published
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           markdownContent: testMarkdown,
-        })
+        }),
       );
 
       // Get the storage handler and simulate processing
-      const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
+      const storageHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+        ];
       const storageRequest: MarkdownStorageRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -324,15 +365,20 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Verify storage operations
       expect(mockStorage.getMetadata).toHaveBeenCalledWith(testItemId);
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(testItemId, testMarkdown);
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        testItemId,
+        testMarkdown,
+      );
       expect(mockStorage.updateMetadata).toHaveBeenCalledTimes(2); // Processing and completed
 
       // Verify completion message was published
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           status: PdfProcessingStatus.COMPLETED,
-        })
+        }),
       );
 
       // Verify final status
@@ -341,7 +387,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.COMPLETED,
           pdfProcessingMessage: 'Markdown storage completed successfully',
-        })
+        }),
       );
     });
   });
@@ -376,18 +422,24 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
       (mockStorage.getPdfDownloadUrl as any).mockResolvedValue(testS3Url);
       (mockStorage.getMarkdown as any).mockResolvedValue(
-        testPartMarkdown.map((content, index) => `\n\n--- PART ${index + 1} ---\n\n${content}`).join('')
+        testPartMarkdown
+          .map(
+            (content, index) => `\n\n--- PART ${index + 1} ---\n\n${content}`,
+          )
+          .join(''),
       );
 
       // Mock PDF converter responses for each part
-      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockImplementation((s3Url: string) => {
-        return Promise.resolve({
-          success: true,
-          data: testPartMarkdown[Math.floor(Math.random() * testTotalParts)],
-          taskId: `test-task-id-${uuidv4()}`,
-          downloadedFiles: [],
-        });
-      });
+      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockImplementation(
+        (s3Url: string) => {
+          return Promise.resolve({
+            success: true,
+            data: testPartMarkdown[Math.floor(Math.random() * testTotalParts)],
+            taskId: `test-task-id-${uuidv4()}`,
+            downloadedFiles: [],
+          });
+        },
+      );
 
       // Start all workers including merger
       await Promise.all([
@@ -404,26 +456,32 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'large-test-document.pdf',
       };
 
-      const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+      const analysisHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
       await analysisHandler(analysisRequest, { ack: vi.fn(), nack: vi.fn() });
 
       // Verify analysis completed with splitting requirement
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: testPageCount,
           requiresSplitting: true,
           suggestedSplitSize: testSplitSize,
-        })
+        }),
       );
 
       // Step 2: Coordinator processes analysis completed and sends splitting request
-      const coordinatorHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`];
+      const coordinatorHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`
+        ];
       const analysisCompletedMessage: PdfAnalysisCompletedMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -435,19 +493,27 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         processingTime: 1500,
       };
 
-      await coordinatorHandler(analysisCompletedMessage, { ack: vi.fn(), nack: vi.fn() });
+      await coordinatorHandler(analysisCompletedMessage, {
+        ack: vi.fn(),
+        nack: vi.fn(),
+      });
 
       // Verify conversion request was published
-      expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfConversionRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: testPageCount,
           splitSize: testSplitSize,
-        })
+        }),
       );
 
       // Step 3: Simulate PDF part conversion requests for all parts
-      const conversionHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST}`];
+      const conversionHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST}`
+        ];
       const partConversionPromises: Promise<void>[] = [];
 
       for (let partIndex = 0; partIndex < testTotalParts; partIndex++) {
@@ -458,7 +524,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           itemId: testItemId,
           partIndex,
           totalParts: testTotalParts,
-          
+
           s3Key: `${testS3Key}-part-${partIndex + 1}`,
           fileName: `large-test-document-part-${partIndex + 1}.pdf`,
           startPage: partIndex * testSplitSize + 1,
@@ -466,18 +532,28 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         };
 
         partConversionPromises.push(
-          conversionHandler(partConversionRequest, { ack: vi.fn(), nack: vi.fn() })
+          conversionHandler(partConversionRequest, {
+            ack: vi.fn(),
+            nack: vi.fn(),
+          }),
         );
       }
 
       await Promise.all(partConversionPromises);
 
       // Verify all parts were processed and markdown storage requests sent
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledTimes(testTotalParts);
-      expect(mockRabbitMQService.publishPdfPartConversionCompleted).toHaveBeenCalledTimes(testTotalParts);
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledTimes(testTotalParts);
+      expect(
+        mockRabbitMQService.publishPdfPartConversionCompleted,
+      ).toHaveBeenCalledTimes(testTotalParts);
 
       // Step 4: Process all markdown storage requests
-      const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
+      const storageHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+        ];
       const storagePromises: Promise<void>[] = [];
 
       for (let partIndex = 0; partIndex < testTotalParts; partIndex++) {
@@ -494,7 +570,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         };
 
         storagePromises.push(
-          storageHandler(storageRequest, { ack: vi.fn(), nack: vi.fn() })
+          storageHandler(storageRequest, { ack: vi.fn(), nack: vi.fn() }),
         );
       }
 
@@ -504,7 +580,8 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       expect(mockStorage.saveMarkdown).toHaveBeenCalledTimes(testTotalParts);
 
       // Step 5: Trigger merging request
-      const mergingHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_MERGING_REQUEST}`];
+      const mergingHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_MERGING_REQUEST}`];
       const mergingRequest: PdfMergingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -518,18 +595,20 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Verify merging progress and completion
       expect(mockRabbitMQService.publishPdfMergingProgress).toHaveBeenCalled();
-      expect(mockRabbitMQService.publishPdfConversionCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfConversionCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           status: PdfProcessingStatus.COMPLETED,
           markdownContent: expect.stringContaining('Merged PDF Document'),
-        })
+        }),
       );
 
       // Verify final merged content was saved
       expect(mockStorage.saveMarkdown).toHaveBeenLastCalledWith(
         testItemId,
-        expect.stringContaining('# Merged PDF Document')
+        expect.stringContaining('# Merged PDF Document'),
       );
 
       // Verify final status
@@ -538,7 +617,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.COMPLETED,
           pdfProcessingMessage: 'PDF processing completed successfully',
-        })
+        }),
       );
     });
   });
@@ -570,7 +649,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         retryCount: 0,
@@ -578,7 +657,8 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       };
 
       // Get the analysis handler
-      const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+      const analysisHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
 
       // Mock the download to fail
       const originalConsoleError = console.error;
@@ -593,16 +673,20 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
-          pdfProcessingError: expect.stringContaining('Failed to download PDF from S3'),
-        })
+          pdfProcessingError: expect.stringContaining(
+            'Failed to download PDF from S3',
+          ),
+        }),
       );
 
       // Verify retry request was published
-      expect(mockRabbitMQService.publishPdfAnalysisRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           retryCount: 1,
-        })
+        }),
       );
 
       // Verify failure message when max retries reached
@@ -619,7 +703,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           retryCount: 3,
           maxRetries: 3,
           canRetry: false,
-        })
+        }),
       );
     });
 
@@ -658,7 +742,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -671,15 +755,23 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         maxRetries: 2,
       };
 
-      const conversionHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`];
-      await conversionHandler(conversionRequest, { ack: vi.fn(), nack: vi.fn() });
+      const conversionHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`
+        ];
+      await conversionHandler(conversionRequest, {
+        ack: vi.fn(),
+        nack: vi.fn(),
+      });
 
       // Verify retry mechanism
-      expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfConversionRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           retryCount: 1,
-        })
+        }),
       );
 
       // Verify failure message when max retries reached
@@ -690,14 +782,16 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       await conversionHandler(maxRetryRequest, { ack: vi.fn(), nack: vi.fn() });
 
-      expect(mockRabbitMQService.publishPdfConversionFailed).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfConversionFailed,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           error: 'PDF conversion failed: Invalid PDF format',
           retryCount: 2,
           maxRetries: 2,
           canRetry: false,
-        })
+        }),
       );
     });
 
@@ -716,7 +810,9 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Mock storage to return metadata but fail save
       (mockStorage.getMetadata as any).mockResolvedValue(mockMetadata);
-      (mockStorage.saveMarkdown as any).mockRejectedValue(new Error('Storage connection failed'));
+      (mockStorage.saveMarkdown as any).mockRejectedValue(
+        new Error('Storage connection failed'),
+      );
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
 
       // Start storage worker
@@ -733,7 +829,10 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         maxRetries: 2,
       };
 
-      const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
+      const storageHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+        ];
       await storageHandler(storageRequest, { ack: vi.fn(), nack: vi.fn() });
 
       // Verify error handling and retry
@@ -742,14 +841,16 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
           pdfProcessingError: 'Storage connection failed',
-        })
+        }),
       );
 
-      expect(mockRabbitMQService.publishMarkdownStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           retryCount: 1,
-        })
+        }),
       );
     });
   });
@@ -769,7 +870,9 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       const mockMetadataList = testItems.map((item, index) => ({
         id: item.itemId,
         title: `Test Document ${index + 1}`,
-        authors: [{ firstName: `Author${index + 1}`, lastName: `Test${index + 1}` }],
+        authors: [
+          { firstName: `Author${index + 1}`, lastName: `Test${index + 1}` },
+        ],
         dateAdded: new Date(),
         dateModified: new Date(),
         tags: [],
@@ -780,26 +883,30 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Mock storage responses
       (mockStorage.getMetadata as any).mockImplementation((itemId: string) => {
-        const index = testItems.findIndex(item => item.itemId === itemId);
+        const index = testItems.findIndex((item) => item.itemId === itemId);
         return Promise.resolve(mockMetadataList[index]);
       });
       (mockStorage.saveMarkdown as any).mockResolvedValue(undefined);
       (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
-      (mockStorage.getPdfDownloadUrl as any).mockImplementation((s3Key: string) => {
-        const item = testItems.find(item => item.s3Key === s3Key);
-        return Promise.resolve(item?.s3Url || '');
-      });
+      (mockStorage.getPdfDownloadUrl as any).mockImplementation(
+        (s3Key: string) => {
+          const item = testItems.find((item) => item.s3Key === s3Key);
+          return Promise.resolve(item?.s3Url || '');
+        },
+      );
 
       // Mock PDF converter responses
-      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockImplementation((s3Url: string) => {
-        const item = testItems.find(item => item.s3Url === s3Url);
-        return Promise.resolve({
-          success: true,
-          data: item?.markdown || '',
-          taskId: `task-${uuidv4()}`,
-          downloadedFiles: [],
-        });
-      });
+      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockImplementation(
+        (s3Url: string) => {
+          const item = testItems.find((item) => item.s3Url === s3Url);
+          return Promise.resolve({
+            success: true,
+            data: item?.markdown || '',
+            taskId: `task-${uuidv4()}`,
+            downloadedFiles: [],
+          });
+        },
+      );
 
       // Start all workers
       await Promise.all([
@@ -817,16 +924,22 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           timestamp: Date.now(),
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: item.itemId,
-          
+
           s3Key: item.s3Key,
           fileName: `test-document-${index + 1}.pdf`,
         };
 
-        const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+        const analysisHandler =
+          mockRabbitMQService[
+            `handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`
+          ];
         await analysisHandler(analysisRequest, { ack: vi.fn(), nack: vi.fn() });
 
         // Step 2: Coordinator processing
-        const coordinatorHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`];
+        const coordinatorHandler =
+          mockRabbitMQService[
+            `handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`
+          ];
         const analysisCompletedMessage: PdfAnalysisCompletedMessage = {
           messageId: uuidv4(),
           timestamp: Date.now(),
@@ -837,30 +950,44 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           processingTime: 1000,
         };
 
-        await coordinatorHandler(analysisCompletedMessage, { ack: vi.fn(), nack: vi.fn() });
+        await coordinatorHandler(analysisCompletedMessage, {
+          ack: vi.fn(),
+          nack: vi.fn(),
+        });
 
         // Step 3: Conversion
-        const conversionHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`];
+        const conversionHandler =
+          mockRabbitMQService[
+            `handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`
+          ];
         const conversionRequest: PdfConversionRequestMessage = {
           messageId: uuidv4(),
           timestamp: Date.now(),
           eventType: 'PDF_CONVERSION_REQUEST',
           itemId: item.itemId,
-          
+
           s3Key: item.s3Key,
           fileName: `test-document-${index + 1}.pdf`,
           metadata: {
             title: `Test Document ${index + 1}`,
-            authors: [{ firstName: `Author${index + 1}`, lastName: `Test${index + 1}` }],
+            authors: [
+              { firstName: `Author${index + 1}`, lastName: `Test${index + 1}` },
+            ],
             tags: [],
             collections: [],
           },
         };
 
-        await conversionHandler(conversionRequest, { ack: vi.fn(), nack: vi.fn() });
+        await conversionHandler(conversionRequest, {
+          ack: vi.fn(),
+          nack: vi.fn(),
+        });
 
         // Step 4: Storage
-        const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
+        const storageHandler =
+          mockRabbitMQService[
+            `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+          ];
         const storageRequest: MarkdownStorageRequestMessage = {
           messageId: uuidv4(),
           timestamp: Date.now(),
@@ -879,19 +1006,28 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Verify all items were processed
       expect(completedItems).toHaveLength(concurrentPdfCount);
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledTimes(concurrentPdfCount);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalledTimes(concurrentPdfCount);
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledTimes(
+        concurrentPdfCount,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalledTimes(concurrentPdfCount);
 
       // Verify resource isolation - each item should be processed independently
       testItems.forEach((item, index) => {
         expect(mockStorage.getMetadata).toHaveBeenCalledWith(item.itemId);
-        expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(item.itemId, item.markdown);
+        expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+          item.itemId,
+          item.markdown,
+        );
       });
 
       // Verify no cross-contamination between items
       const saveCalls = (mockStorage.saveMarkdown as any).mock.calls;
-      testItems.forEach(item => {
-        const itemCalls = saveCalls.filter(([itemId]) => itemId === item.itemId);
+      testItems.forEach((item) => {
+        const itemCalls = saveCalls.filter(
+          ([itemId]) => itemId === item.itemId,
+        );
         expect(itemCalls).toHaveLength(1);
         expect(itemCalls[0][1]).toBe(item.markdown);
       });
@@ -948,15 +1084,19 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
 
-      const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+      const analysisHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
       await analysisHandler(analysisRequest, { ack: vi.fn(), nack: vi.fn() });
 
-      const coordinatorHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`];
+      const coordinatorHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED}`
+        ];
       const analysisCompletedMessage: PdfAnalysisCompletedMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -967,15 +1107,21 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         processingTime: 1000,
       };
 
-      await coordinatorHandler(analysisCompletedMessage, { ack: vi.fn(), nack: vi.fn() });
+      await coordinatorHandler(analysisCompletedMessage, {
+        ack: vi.fn(),
+        nack: vi.fn(),
+      });
 
-      const conversionHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`];
+      const conversionHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST}`
+        ];
       const conversionRequest: PdfConversionRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -986,9 +1132,15 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         },
       };
 
-      await conversionHandler(conversionRequest, { ack: vi.fn(), nack: vi.fn() });
+      await conversionHandler(conversionRequest, {
+        ack: vi.fn(),
+        nack: vi.fn(),
+      });
 
-      const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
+      const storageHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+        ];
       const storageRequest: MarkdownStorageRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -1008,21 +1160,25 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         expect(message).toHaveProperty('messageId');
         expect(message).toHaveProperty('timestamp');
         expect(message).toHaveProperty('eventType');
-        
+
         // MessageId should be a valid UUID
-        expect(message.messageId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-        
+        expect(message.messageId).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        );
+
         // Timestamp should be a valid timestamp
         expect(typeof message.timestamp).toBe('number');
         expect(message.timestamp).toBeGreaterThan(0);
-        
+
         // EventType should be valid
         expect(typeof message.eventType).toBe('string');
         expect(message.eventType.length).toBeGreaterThan(0);
       });
 
       // Verify specific message types in the flow
-      const messageTypes = publishedMessages.map(msg => msg.message.eventType);
+      const messageTypes = publishedMessages.map(
+        (msg) => msg.message.eventType,
+      );
       expect(messageTypes).toContain('PDF_ANALYSIS_COMPLETED');
       expect(messageTypes).toContain('PDF_CONVERSION_REQUEST');
       expect(messageTypes).toContain('MARKDOWN_STORAGE_REQUEST');
@@ -1030,8 +1186,13 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Verify routing keys match event types
       publishedMessages.forEach(({ routingKey, message }) => {
-        const expectedRoutingKey = routingKey.replace('pdf.', '').replace('.', '_').toUpperCase();
-        const actualEventType = message.eventType.toLowerCase().replace('_', '.');
+        const expectedRoutingKey = routingKey
+          .replace('pdf.', '')
+          .replace('.', '_')
+          .toUpperCase();
+        const actualEventType = message.eventType
+          .toLowerCase()
+          .replace('_', '.');
         expect(routingKey).toContain('pdf.');
       });
     });
@@ -1074,15 +1235,17 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       // Track message correlations
       const messageCorrelations: Map<string, string[]> = new Map();
-      
-      mockRabbitMQService.publishMessage = vi.fn((routingKey, message, options) => {
-        const correlationId = options?.correlationId || message.messageId;
-        if (!messageCorrelations.has(correlationId)) {
-          messageCorrelations.set(correlationId, []);
-        }
-        messageCorrelations.get(correlationId)!.push(message.eventType);
-        return Promise.resolve(true);
-      });
+
+      mockRabbitMQService.publishMessage = vi.fn(
+        (routingKey, message, options) => {
+          const correlationId = options?.correlationId || message.messageId;
+          if (!messageCorrelations.has(correlationId)) {
+            messageCorrelations.set(correlationId, []);
+          }
+          messageCorrelations.get(correlationId)!.push(message.eventType);
+          return Promise.resolve(true);
+        },
+      );
 
       // Process workflow with correlation ID
       const correlationId = uuidv4();
@@ -1093,25 +1256,26 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        
+
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
 
-      const analysisHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
+      const analysisHandler =
+        mockRabbitMQService[`handler_${RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST}`];
       await analysisHandler(analysisRequest, { ack: vi.fn(), nack: vi.fn() });
 
       // Verify correlation tracking
       expect(messageCorrelations.size).toBeGreaterThan(0);
-      
+
       // Check that related messages are properly correlated
       const correlations = Array.from(messageCorrelations.entries());
       expect(correlations.length).toBeGreaterThan(0);
-      
+
       // Each correlation should contain related message types
       correlations.forEach(([correlationId, eventTypes]) => {
         expect(eventTypes.length).toBeGreaterThan(0);
-        expect(eventTypes.every(type => typeof type === 'string')).toBe(true);
+        expect(eventTypes.every((type) => typeof type === 'string')).toBe(true);
       });
     });
   });
@@ -1160,7 +1324,8 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
     it('should handle memory and resource limits during processing', async () => {
       // Test with large content to verify memory handling
-      const largeMarkdown = '# Large Document\n\n' + 'This is a large paragraph. '.repeat(10000);
+      const largeMarkdown =
+        '# Large Document\n\n' + 'This is a large paragraph. '.repeat(10000);
       const mockMetadata: BookMetadata = {
         id: testItemId,
         title: 'Large Test Document',
@@ -1197,19 +1362,27 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         markdownContent: largeMarkdown,
       };
 
-      const storageHandler = mockRabbitMQService[`handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`];
-      
+      const storageHandler =
+        mockRabbitMQService[
+          `handler_${RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST}`
+        ];
+
       // Measure memory before and after
       const initialMemory = process.memoryUsage();
-      
+
       await storageHandler(storageRequest, { ack: vi.fn(), nack: vi.fn() });
-      
+
       const finalMemory = process.memoryUsage();
-      
+
       // Verify processing completed successfully
-      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(testItemId, largeMarkdown);
-      expect(mockRabbitMQService.publishMarkdownStorageCompleted).toHaveBeenCalled();
-      
+      expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
+        testItemId,
+        largeMarkdown,
+      );
+      expect(
+        mockRabbitMQService.publishMarkdownStorageCompleted,
+      ).toHaveBeenCalled();
+
       // Verify memory usage is reasonable (shouldn't grow excessively)
       const memoryGrowth = finalMemory.heapUsed - initialMemory.heapUsed;
       expect(memoryGrowth).toBeLessThan(largeMarkdown.length * 2); // Allow some overhead but not excessive
@@ -1219,7 +1392,10 @@ describe('PDF Processing End-to-End Integration Tests', () => {
   describe('Integration Test Utilities', () => {
     it('should provide helper utilities for test setup and teardown', async () => {
       // Test utility functions for creating test data
-      const createTestMetadata = (itemId: string, overrides: Partial<BookMetadata> = {}): BookMetadata => ({
+      const createTestMetadata = (
+        itemId: string,
+        overrides: Partial<BookMetadata> = {},
+      ): BookMetadata => ({
         id: itemId,
         title: 'Test Document',
         authors: [{ firstName: 'Test', lastName: 'Author' }],
@@ -1231,42 +1407,57 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         ...overrides,
       });
 
-      const createTestMessage = <T extends Record<string, any>>(eventType: string, itemId: string, overrides: Partial<T> = {}): T => {
+      const createTestMessage = <T extends Record<string, any>>(
+        eventType: string,
+        itemId: string,
+        overrides: Partial<T> = {},
+      ): T => {
         const baseMessage = {
           messageId: uuidv4(),
           timestamp: Date.now(),
           eventType,
           itemId,
         } as unknown as T;
-        
+
         return { ...baseMessage, ...overrides } as T;
       };
 
       // Test utility functions
       const testItemId = 'utility-test-item';
-      const testMetadata = createTestMetadata(testItemId, { title: 'Utility Test Document' });
+      const testMetadata = createTestMetadata(testItemId, {
+        title: 'Utility Test Document',
+      });
       const testAnalysisMessage = createTestMessage<PdfAnalysisRequestMessage>(
         'PDF_ANALYSIS_REQUEST',
         testItemId,
-        { s3Key: 'test.pdf', fileName: 'test.pdf' }
+        { s3Key: 'test.pdf', fileName: 'test.pdf' },
       );
 
       expect(testMetadata.title).toBe('Utility Test Document');
       expect(testAnalysisMessage.eventType).toBe('PDF_ANALYSIS_REQUEST');
       expect(testAnalysisMessage.itemId).toBe(testItemId);
-      
     });
 
     it('should provide workflow verification utilities', async () => {
       // Utility to verify message flow sequence
-      const verifyMessageSequence = (messages: any[], expectedSequence: string[]): boolean => {
-        const actualSequence = messages.map(msg => msg.eventType);
-        return expectedSequence.every((expected, index) => actualSequence[index] === expected);
+      const verifyMessageSequence = (
+        messages: any[],
+        expectedSequence: string[],
+      ): boolean => {
+        const actualSequence = messages.map((msg) => msg.eventType);
+        return expectedSequence.every(
+          (expected, index) => actualSequence[index] === expected,
+        );
       };
 
       // Utility to verify status transitions
-      const verifyStatusTransitions = (statuses: PdfProcessingStatus[], expectedTransitions: PdfProcessingStatus[]): boolean => {
-        return expectedTransitions.every((expected, index) => statuses[index] === expected);
+      const verifyStatusTransitions = (
+        statuses: PdfProcessingStatus[],
+        expectedTransitions: PdfProcessingStatus[],
+      ): boolean => {
+        return expectedTransitions.every(
+          (expected, index) => statuses[index] === expected,
+        );
       };
 
       // Test utilities
@@ -1303,7 +1494,9 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       ];
 
       expect(verifyMessageSequence(testMessages, expectedSequence)).toBe(true);
-      expect(verifyStatusTransitions(testStatuses, expectedTransitions)).toBe(true);
+      expect(verifyStatusTransitions(testStatuses, expectedTransitions)).toBe(
+        true,
+      );
     });
   });
 });

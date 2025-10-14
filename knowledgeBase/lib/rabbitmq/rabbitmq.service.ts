@@ -17,6 +17,10 @@ import {
   MarkdownStorageRequestMessage,
   MarkdownStorageCompletedMessage,
   MarkdownStorageFailedMessage,
+  MarkdownPartStorageRequestMessage,
+  MarkdownPartStorageProgressMessage,
+  MarkdownPartStorageCompletedMessage,
+  MarkdownPartStorageFailedMessage,
   RabbitMQMessageOptions,
   RABBITMQ_QUEUES,
   RABBITMQ_EXCHANGES,
@@ -61,7 +65,7 @@ export class RabbitMQService {
     }
 
     this.isConnecting = true;
-    
+
     try {
       const config = getValidatedRabbitMQConfig();
       if (!config) {
@@ -70,7 +74,7 @@ export class RabbitMQService {
 
       logger.info('Connecting to RabbitMQ...');
       this.connection = await amqp.connect(config);
-      
+
       logger.info('Creating RabbitMQ channel...');
       if (this.connection) {
         this.channel = await this.connection.createChannel();
@@ -117,7 +121,7 @@ export class RabbitMQService {
             autoDelete: exchangeConfig.autoDelete,
             internal: exchangeConfig.internal,
             arguments: exchangeConfig.arguments,
-          }
+          },
         );
         logger.info(`Exchange ${exchangeConfig.name} created/verified`);
       }
@@ -132,20 +136,20 @@ export class RabbitMQService {
             autoDelete: queueConfig.autoDelete,
             arguments: queueConfig.arguments,
           });
-          
-          const queueResult = await this.channel.assertQueue(
-            queueConfig.name,
-            {
-              durable: queueConfig.durable,
-              exclusive: queueConfig.exclusive,
-              autoDelete: queueConfig.autoDelete,
-              arguments: queueConfig.arguments,
-            }
-          );
-          logger.info(`Queue ${queueConfig.name} created/verified successfully`, {
-            messageCount: queueResult.messageCount,
-            consumerCount: queueResult.consumerCount,
+
+          const queueResult = await this.channel.assertQueue(queueConfig.name, {
+            durable: queueConfig.durable,
+            exclusive: queueConfig.exclusive,
+            autoDelete: queueConfig.autoDelete,
+            arguments: queueConfig.arguments,
           });
+          logger.info(
+            `Queue ${queueConfig.name} created/verified successfully`,
+            {
+              messageCount: queueResult.messageCount,
+              consumerCount: queueResult.consumerCount,
+            },
+          );
         } catch (queueError: any) {
           logger.error(`Failed to declare queue ${queueConfig.name}:`, {
             error: queueError.message,
@@ -155,31 +159,39 @@ export class RabbitMQService {
               arguments: queueConfig.arguments,
             },
           });
-          
+
           // If it's a PRECONDITION-FAILED error, try to check existing queue configuration
           if (queueError.code === 406) {
-            logger.warn(`Attempting to check existing queue configuration for ${queueConfig.name}...`);
+            logger.warn(
+              `Attempting to check existing queue configuration for ${queueConfig.name}...`,
+            );
             try {
-              const existingQueue = await this.channel.checkQueue(queueConfig.name);
+              const existingQueue = await this.channel.checkQueue(
+                queueConfig.name,
+              );
               logger.info(`Existing queue ${queueConfig.name} found:`, {
                 messageCount: existingQueue.messageCount,
                 consumerCount: existingQueue.consumerCount,
               });
-              
+
               // Try passive declaration to see current configuration
-              logger.warn(`Queue ${queueConfig.name} already exists with different configuration. Consider deleting the queue manually or updating the configuration to match.`);
+              logger.warn(
+                `Queue ${queueConfig.name} already exists with different configuration. Consider deleting the queue manually or updating the configuration to match.`,
+              );
             } catch (checkError: any) {
-              logger.error(`Failed to check existing queue ${queueConfig.name}:`, checkError.message);
+              logger.error(
+                `Failed to check existing queue ${queueConfig.name}:`,
+                checkError.message,
+              );
             }
           }
-          
+
           throw queueError;
         }
       }
 
       // Setup queue bindings
       await this.setupQueueBindings();
-
     } catch (error) {
       logger.error('Failed to setup queues and exchanges:', error);
       throw error;
@@ -196,107 +208,134 @@ export class RabbitMQService {
 
     try {
       // Bind PDF conversion queues
-      logger.info(`DEBUG: Binding queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} to exchange ${RABBITMQ_EXCHANGES.PDF_CONVERSION} with routing key ${RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST}`);
+      logger.info(
+        `DEBUG: Binding queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} to exchange ${RABBITMQ_EXCHANGES.PDF_CONVERSION} with routing key ${RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST}`,
+      );
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST
+        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST,
       );
       logger.info(`DEBUG: Queue binding completed`);
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_PROGRESS
+        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_PROGRESS,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_COMPLETED
+        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_COMPLETED,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_FAILED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_FAILED
+        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_FAILED,
       );
 
       // Bind PDF analysis queues
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_REQUEST
+        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_REQUEST,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_COMPLETED
+        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_COMPLETED,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_ANALYSIS_FAILED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED
+        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED,
       );
 
       // Bind PDF part conversion queues
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_REQUEST
+        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_REQUEST,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_COMPLETED
+        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_COMPLETED,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_FAILED
+        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_FAILED,
       );
 
       // Bind PDF merging queues
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_MERGING_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_MERGING_REQUEST
+        RABBITMQ_ROUTING_KEYS.PDF_MERGING_REQUEST,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_MERGING_PROGRESS,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_MERGING_PROGRESS
+        RABBITMQ_ROUTING_KEYS.PDF_MERGING_PROGRESS,
       );
 
       // Bind markdown storage queues
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.MARKDOWN_STORAGE_COMPLETED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED,
       );
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.MARKDOWN_STORAGE_FAILED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED,
+      );
+
+      // Bind markdown part storage queues
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_REQUEST,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_REQUEST,
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_PROGRESS,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_PROGRESS,
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_COMPLETED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_COMPLETED,
+      );
+
+      await this.channel.bindQueue(
+        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_FAILED,
+        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_FAILED,
       );
 
       // Bind DLQ to DLX
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.DEAD_LETTER_QUEUE,
         RABBITMQ_EXCHANGES.DEAD_LETTER,
-        RABBITMQ_ROUTING_KEYS.DEAD_LETTER
+        RABBITMQ_ROUTING_KEYS.DEAD_LETTER,
       );
 
       logger.info('Queue bindings setup completed');
@@ -340,18 +379,26 @@ export class RabbitMQService {
    * Handle reconnection logic
    */
   private async handleReconnection(): Promise<void> {
-    if (this.isConnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
+    if (
+      this.isConnecting ||
+      this.reconnectAttempts >= this.maxReconnectAttempts
+    ) {
       return;
     }
 
     this.reconnectAttempts++;
-    logger.info(`Attempting to reconnect to RabbitMQ (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    logger.info(
+      `Attempting to reconnect to RabbitMQ (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+    );
 
     setTimeout(async () => {
       try {
         await this.initialize();
       } catch (error) {
-        logger.error(`Reconnection attempt ${this.reconnectAttempts} failed:`, error);
+        logger.error(
+          `Reconnection attempt ${this.reconnectAttempts} failed:`,
+          error,
+        );
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.handleReconnection();
         } else {
@@ -398,34 +445,41 @@ export class RabbitMQService {
   async publishMessage(
     routingKey: string,
     message: BaseRabbitMQMessage,
-    options: RabbitMQMessageOptions = {}
+    options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
     logger.debug('publishMessage called', {
       routingKey,
       isInitialized: this.isInitialized,
       hasChannel: !!this.channel,
-      hasConnection: !!this.connection
+      hasConnection: !!this.connection,
     });
-    
+
     if (!this.isInitialized || !this.channel) {
-      logger.error('RabbitMQ service not initialized when attempting to publish', {
-        isInitialized: this.isInitialized,
-        hasChannel: !!this.channel,
-        hasConnection: !!this.connection,
-        routingKey
-      });
+      logger.error(
+        'RabbitMQ service not initialized when attempting to publish',
+        {
+          isInitialized: this.isInitialized,
+          hasChannel: !!this.channel,
+          hasConnection: !!this.connection,
+          routingKey,
+        },
+      );
       throw new Error('RabbitMQ service not initialized');
     }
 
     try {
       // Check queue message count before publishing
       if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
-        const queueInfo = await this.channel.checkQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
-        logger.info(`DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count before publishing: ${queueInfo.messageCount}`);
+        const queueInfo = await this.channel.checkQueue(
+          RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
+        );
+        logger.info(
+          `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count before publishing: ${queueInfo.messageCount}`,
+        );
       }
 
       const messageBuffer = Buffer.from(JSON.stringify(message));
-      
+
       const publishOptions: amqp.Options.Publish = {
         persistent: options.persistent !== false,
         expiration: options.expiration,
@@ -445,7 +499,7 @@ export class RabbitMQService {
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
         routingKey,
         messageBuffer,
-        publishOptions
+        publishOptions,
       );
 
       if (published) {
@@ -457,8 +511,12 @@ export class RabbitMQService {
         // Check queue message count after publishing
         if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
           setTimeout(async () => {
-            const queueInfo = await this.channel!.checkQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
-            logger.info(`DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count after publishing: ${queueInfo.messageCount}`);
+            const queueInfo = await this.channel!.checkQueue(
+              RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
+            );
+            logger.info(
+              `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count after publishing: ${queueInfo.messageCount}`,
+            );
           }, 100);
         }
       } else {
@@ -478,202 +536,300 @@ export class RabbitMQService {
   /**
    * Publish PDF conversion request
    */
-  async publishPdfConversionRequest(request: PdfConversionRequestMessage): Promise<boolean> {
+  async publishPdfConversionRequest(
+    request: PdfConversionRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST,
       request,
       {
         persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
-      }
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
     );
   }
 
   /**
    * Publish PDF conversion progress
    */
-  async publishPdfConversionProgress(progress: PdfConversionProgressMessage): Promise<boolean> {
+  async publishPdfConversionProgress(
+    progress: PdfConversionProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_PROGRESS,
       progress,
       {
         persistent: false, // Progress messages are transient
         expiration: '300000', // 5 minutes
-      }
+      },
     );
   }
 
   /**
    * Publish PDF conversion completed
    */
-  async publishPdfConversionCompleted(completed: PdfConversionCompletedMessage): Promise<boolean> {
+  async publishPdfConversionCompleted(
+    completed: PdfConversionCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_COMPLETED,
       completed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF conversion failed
    */
-  async publishPdfConversionFailed(failed: PdfConversionFailedMessage): Promise<boolean> {
+  async publishPdfConversionFailed(
+    failed: PdfConversionFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_FAILED,
       failed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF analysis request
    */
-  async publishPdfAnalysisRequest(request: PdfAnalysisRequestMessage): Promise<boolean> {
+  async publishPdfAnalysisRequest(
+    request: PdfAnalysisRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_REQUEST,
       request,
       {
         persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
-      }
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
     );
   }
 
   /**
    * Publish PDF analysis completed
    */
-  async publishPdfAnalysisCompleted(completed: PdfAnalysisCompletedMessage): Promise<boolean> {
+  async publishPdfAnalysisCompleted(
+    completed: PdfAnalysisCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_COMPLETED,
       completed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF analysis failed
    */
-  async publishPdfAnalysisFailed(failed: PdfAnalysisFailedMessage): Promise<boolean> {
+  async publishPdfAnalysisFailed(
+    failed: PdfAnalysisFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED,
       failed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF part conversion request
    */
-  async publishPdfPartConversionRequest(request: PdfPartConversionRequestMessage): Promise<boolean> {
+  async publishPdfPartConversionRequest(
+    request: PdfPartConversionRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_REQUEST,
       request,
       {
         persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
-      }
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
     );
   }
 
   /**
    * Publish PDF part conversion completed
    */
-  async publishPdfPartConversionCompleted(completed: PdfPartConversionCompletedMessage): Promise<boolean> {
+  async publishPdfPartConversionCompleted(
+    completed: PdfPartConversionCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_COMPLETED,
       completed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF part conversion failed
    */
-  async publishPdfPartConversionFailed(failed: PdfPartConversionFailedMessage): Promise<boolean> {
+  async publishPdfPartConversionFailed(
+    failed: PdfPartConversionFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_FAILED,
       failed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish PDF merging request
    */
-  async publishPdfMergingRequest(request: PdfMergingRequestMessage): Promise<boolean> {
+  async publishPdfMergingRequest(
+    request: PdfMergingRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_MERGING_REQUEST,
       request,
       {
         persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
-      }
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
     );
   }
 
   /**
    * Publish PDF merging progress
    */
-  async publishPdfMergingProgress(progress: PdfMergingProgressMessage): Promise<boolean> {
+  async publishPdfMergingProgress(
+    progress: PdfMergingProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.PDF_MERGING_PROGRESS,
       progress,
       {
         persistent: false, // Progress messages are transient
         expiration: '300000', // 5 minutes
-      }
+      },
     );
   }
 
   /**
    * Publish markdown storage request
    */
-  async publishMarkdownStorageRequest(request: MarkdownStorageRequestMessage): Promise<boolean> {
+  async publishMarkdownStorageRequest(
+    request: MarkdownStorageRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST,
       request,
       {
         persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
-      }
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
     );
   }
 
   /**
    * Publish markdown storage completed
    */
-  async publishMarkdownStorageCompleted(completed: MarkdownStorageCompletedMessage): Promise<boolean> {
+  async publishMarkdownStorageCompleted(
+    completed: MarkdownStorageCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED,
       completed,
       {
         persistent: true,
-      }
+      },
     );
   }
 
   /**
    * Publish markdown storage failed
    */
-  async publishMarkdownStorageFailed(failed: MarkdownStorageFailedMessage): Promise<boolean> {
+  async publishMarkdownStorageFailed(
+    failed: MarkdownStorageFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED,
       failed,
       {
         persistent: true,
-      }
+      },
+    );
+  }
+
+  /**
+   * Publish markdown part storage request
+   */
+  async publishMarkdownPartStorageRequest(
+    request: MarkdownPartStorageRequestMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_REQUEST,
+      request,
+      {
+        persistent: true,
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
+    );
+  }
+
+  /**
+   * Publish markdown part storage progress
+   */
+  async publishMarkdownPartStorageProgress(
+    progress: MarkdownPartStorageProgressMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_PROGRESS,
+      progress,
+      {
+        persistent: false, // Progress messages are transient
+        expiration: '300000', // 5 minutes
+      },
+    );
+  }
+
+  /**
+   * Publish markdown part storage completed
+   */
+  async publishMarkdownPartStorageCompleted(
+    completed: MarkdownPartStorageCompletedMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_COMPLETED,
+      completed,
+      {
+        persistent: true,
+      },
+    );
+  }
+
+  /**
+   * Publish markdown part storage failed
+   */
+  async publishMarkdownPartStorageFailed(
+    failed: MarkdownPartStorageFailedMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_FAILED,
+      failed,
+      {
+        persistent: true,
+      },
     );
   }
 
@@ -682,13 +838,16 @@ export class RabbitMQService {
    */
   async consumeMessages(
     queueName: string,
-    onMessage: (message: PdfConversionMessage, originalMessage: amqp.ConsumeMessage) => void,
+    onMessage: (
+      message: PdfConversionMessage,
+      originalMessage: amqp.ConsumeMessage,
+    ) => void,
     options: {
       consumerTag?: string;
       noAck?: boolean;
       exclusive?: boolean;
       priority?: number;
-    } = {}
+    } = {},
   ): Promise<string> {
     if (!this.isInitialized || !this.channel) {
       throw new Error('RabbitMQ service not initialized');
@@ -702,36 +861,50 @@ export class RabbitMQService {
         priority: options.priority,
       };
 
-      const consumerTag = await this.channel.consume(queueName, async (message) => {
-        logger.info(`DEBUG: Consumer callback triggered for queue: ${queueName}`);
-        if (!message) {
-          logger.warn(`Received null message from queue: ${queueName}`);
-          return;
-        }
-
-        try {
-          const messageContent = JSON.parse(message.content.toString()) as PdfConversionMessage;
-          logger.info(`DEBUG: Received message from queue ${queueName}:`, {
-            eventType: messageContent.eventType,
-            itemId: messageContent.itemId,
-            retryCount: (messageContent as any).retryCount,
-            maxRetries: (messageContent as any).maxRetries,
-          });
-          await onMessage(messageContent, message);
-
-          if (!consumeOptions.noAck) {
-            this.channel!.ack(message);
+      const consumerTag = await this.channel.consume(
+        queueName,
+        async (message) => {
+          logger.info(
+            `DEBUG: Consumer callback triggered for queue: ${queueName}`,
+          );
+          if (!message) {
+            logger.warn(`Received null message from queue: ${queueName}`);
+            return;
           }
-        } catch (error) {
-          logger.error(`Error processing message from queue ${queueName}:`, error);
-          logger.error(`DEBUG: Message content was:`, message.content.toString());
-          
-          if (!consumeOptions.noAck) {
-            // Negative acknowledgment and requeue
-            this.channel!.nack(message, false, true);
+
+          try {
+            const messageContent = JSON.parse(
+              message.content.toString(),
+            ) as PdfConversionMessage;
+            logger.info(`DEBUG: Received message from queue ${queueName}:`, {
+              eventType: messageContent.eventType,
+              itemId: messageContent.itemId,
+              retryCount: (messageContent as any).retryCount,
+              maxRetries: (messageContent as any).maxRetries,
+            });
+            await onMessage(messageContent, message);
+
+            if (!consumeOptions.noAck) {
+              this.channel!.ack(message);
+            }
+          } catch (error) {
+            logger.error(
+              `Error processing message from queue ${queueName}:`,
+              error,
+            );
+            logger.error(
+              `DEBUG: Message content was:`,
+              message.content.toString(),
+            );
+
+            if (!consumeOptions.noAck) {
+              // Negative acknowledgment and requeue
+              this.channel!.nack(message, false, true);
+            }
           }
-        }
-      }, consumeOptions);
+        },
+        consumeOptions,
+      );
 
       logger.info(`Started consuming messages from queue: ${queueName}`, {
         consumerTag: consumerTag.consumerTag,
@@ -754,9 +927,14 @@ export class RabbitMQService {
 
     try {
       await this.channel.cancel(consumerTag);
-      logger.info(`Stopped consuming messages for consumer tag: ${consumerTag}`);
+      logger.info(
+        `Stopped consuming messages for consumer tag: ${consumerTag}`,
+      );
     } catch (error) {
-      logger.error(`Failed to stop consuming for consumer tag ${consumerTag}:`, error);
+      logger.error(
+        `Failed to stop consuming for consumer tag ${consumerTag}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -764,7 +942,9 @@ export class RabbitMQService {
   /**
    * Get queue information
    */
-  async getQueueInfo(queueName: string): Promise<amqp.Replies.AssertQueue | null> {
+  async getQueueInfo(
+    queueName: string,
+  ): Promise<amqp.Replies.AssertQueue | null> {
     if (!this.isInitialized || !this.channel) {
       throw new Error('RabbitMQ service not initialized');
     }
@@ -811,7 +991,8 @@ export class RabbitMQService {
       reconnectAttempts: this.reconnectAttempts,
     };
 
-    const status = details.connected && details.channelOpen ? 'healthy' : 'unhealthy';
+    const status =
+      details.connected && details.channelOpen ? 'healthy' : 'unhealthy';
 
     return { status, details };
   }
@@ -845,7 +1026,9 @@ export class RabbitMQService {
    * Check if service is initialized
    */
   isConnected(): boolean {
-    return this.isInitialized && this.connection !== null && this.channel !== null;
+    return (
+      this.isInitialized && this.connection !== null && this.channel !== null
+    );
   }
 }
 
@@ -863,7 +1046,7 @@ export function getRabbitMQService(configPath?: string): RabbitMQService {
     rabbitMQServiceInstance = new RabbitMQService(configPath);
   } else {
     logger.debug('Returning existing RabbitMQ service instance', {
-      isConnected: rabbitMQServiceInstance.isConnected()
+      isConnected: rabbitMQServiceInstance.isConnected(),
     });
   }
   return rabbitMQServiceInstance;
@@ -872,7 +1055,9 @@ export function getRabbitMQService(configPath?: string): RabbitMQService {
 /**
  * Initialize the RabbitMQ service
  */
-export async function initializeRabbitMQService(configPath?: string): Promise<RabbitMQService> {
+export async function initializeRabbitMQService(
+  configPath?: string,
+): Promise<RabbitMQService> {
   const service = getRabbitMQService(configPath);
   await service.initialize();
   return service;

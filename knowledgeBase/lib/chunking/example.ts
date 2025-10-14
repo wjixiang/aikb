@@ -47,7 +47,10 @@ const defaultChunks = chunkText(sampleMarkdown) as any[];
 console.log(`默认策略 (h1) 找到 ${defaultChunks.length} 个块\n`);
 
 // 使用paragraph策略
-const paragraphChunks = chunkText(sampleMarkdown, ChunkingStrategyType.PARAGRAPH) as string[];
+const paragraphChunks = chunkText(
+  sampleMarkdown,
+  ChunkingStrategyType.PARAGRAPH,
+) as string[];
 console.log(`段落策略找到 ${paragraphChunks.length} 个段落:`);
 paragraphChunks.forEach((paragraph, index) => {
   console.log(`段落 ${index + 1}: ${paragraph.substring(0, 50)}...`);

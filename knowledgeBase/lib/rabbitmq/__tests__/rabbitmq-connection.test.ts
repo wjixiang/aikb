@@ -1,6 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from 'vitest';
 import { RabbitMQService } from '../rabbitmq.service';
-import { getValidatedRabbitMQConfig, rabbitMQConfigs } from '../rabbitmq.config';
+import {
+  getValidatedRabbitMQConfig,
+  rabbitMQConfigs,
+} from '../rabbitmq.config';
 import { PdfProcessingStatus } from '../message.types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,24 +24,25 @@ describe('RabbitMQ Connection Tests', () => {
   beforeAll(async () => {
     // Set test environment
     process.env.NODE_ENV = 'test';
-    
+
     // Override test configuration to match Python service configuration
-    process.env.RABBITMQ_URL_TEST = 'amqp://admin:admin123@rabbitmq:5672/my_vhost';
-    
+    process.env.RABBITMQ_URL_TEST =
+      'amqp://admin:admin123@rabbitmq:5672/my_vhost';
+
     // Get test configuration
     const config = getValidatedRabbitMQConfig('test');
     if (!config) {
       throw new Error('Failed to get valid RabbitMQ configuration for testing');
     }
-    
+
     console.log('Using RabbitMQ config:', {
       url: config.url,
       hostname: config.hostname,
       port: config.port,
       username: config.username,
-      vhost: config.vhost
+      vhost: config.vhost,
     });
-    
+
     rabbitMQService = new RabbitMQService();
   });
 
@@ -39,7 +51,6 @@ describe('RabbitMQ Connection Tests', () => {
       await rabbitMQService.close();
     }
   });
-
 
   describe('Connection Initialization', () => {
     it('should initialize RabbitMQ connection successfully', async () => {
@@ -63,7 +74,7 @@ describe('RabbitMQ Connection Tests', () => {
   //   it('should perform health check successfully', async () => {
   //     await rabbitMQService.initialize();
   //     const healthStatus = await rabbitMQService.healthCheck();
-      
+
   //     expect(healthStatus).toHaveProperty('status');
   //     expect(healthStatus).toHaveProperty('timestamp');
   //     expect(healthStatus).toHaveProperty('uptime');
@@ -99,10 +110,10 @@ describe('RabbitMQ Connection Tests', () => {
   //     if (!channel) {
   //       throw new Error('Channel not available');
   //     }
-      
+
   //     // Create test queue
   //     await channel.assertQueue(testQueueName, { durable: false });
-      
+
   //     const queueInfo = await rabbitMQService.getQueueInfo(testQueueName);
   //     expect(queueInfo).toBeDefined();
   //     expect(queueInfo!.queue).toBe(testQueueName);
@@ -113,14 +124,14 @@ describe('RabbitMQ Connection Tests', () => {
   //     if (!channel) {
   //       throw new Error('Channel not available');
   //     }
-      
+
   //     // Create test queue and add a message
   //     await channel.assertQueue(testQueueName, { durable: false });
   //     await channel.sendToQueue(testQueueName, Buffer.from('test message'));
-      
+
   //     // Purge queue
   //     await expect(rabbitMQService.purgeQueue(testQueueName)).resolves.not.toThrow();
-      
+
   //     // Verify queue is empty
   //     const queueInfo = await rabbitMQService.getQueueInfo(testQueueName);
   //     expect(queueInfo!.messageCount).toBe(0);
@@ -156,10 +167,10 @@ describe('RabbitMQ Connection Tests', () => {
   //     if (!channel) {
   //       throw new Error('Channel not available');
   //     }
-      
+
   //     // Create test queue
   //     await channel.assertQueue(testQueueName, { durable: false });
-      
+
   //     // Publish message
   //     const published = rabbitMQService.publishMessage(
   //       testRoutingKey,
@@ -167,7 +178,7 @@ describe('RabbitMQ Connection Tests', () => {
   //       { persistent: false }
   //     );
   //     await expect(published).resolves.toBe(true);
-      
+
   //     // Consume message
   //     let receivedMessage: any = null;
   //     const consumerTag = await rabbitMQService.consumeMessages(
@@ -176,13 +187,13 @@ describe('RabbitMQ Connection Tests', () => {
   //         receivedMessage = message;
   //       }
   //     );
-      
+
   //     // Wait for message to be processed
   //     await new Promise(resolve => setTimeout(resolve, 100));
-      
+
   //     // Stop consuming
   //     await rabbitMQService.stopConsuming(consumerTag);
-      
+
   //     // Verify message
   //     expect(receivedMessage).toBeDefined();
   //     expect(receivedMessage.messageId).toBe(testMessage.messageId);
@@ -194,12 +205,12 @@ describe('RabbitMQ Connection Tests', () => {
   //     if (!channel) {
   //       throw new Error('Channel not available');
   //     }
-      
+
   //     // Create test exchange and queue
   //     await channel.assertExchange(testExchangeName, 'topic', { durable: false });
   //     await channel.assertQueue(testQueueName, { durable: false });
   //     await channel.bindQueue(testQueueName, testExchangeName, testRoutingKey);
-      
+
   //     // Publish message to exchange
   //     const published = await new Promise<boolean>((resolve) => {
   //       const result = rabbitMQService.publishMessage(
@@ -209,9 +220,9 @@ describe('RabbitMQ Connection Tests', () => {
   //       );
   //       resolve(result);
   //     });
-      
+
   //     expect(published).toBe(true);
-      
+
   //     // Consume message
   //     let receivedMessage: any = null;
   //     const consumerTag = await rabbitMQService.consumeMessages(
@@ -220,17 +231,17 @@ describe('RabbitMQ Connection Tests', () => {
   //         receivedMessage = message;
   //       }
   //     );
-      
+
   //     // Wait for message to be processed
   //     await new Promise(resolve => setTimeout(resolve, 100));
-      
+
   //     // Stop consuming
   //     await rabbitMQService.stopConsuming(consumerTag);
-      
+
   //     // Verify message
   //     expect(receivedMessage).toBeDefined();
   //     expect(receivedMessage.messageId).toBe(testMessage.messageId);
-      
+
   //     // Cleanup
   //     await channel.deleteExchange(testExchangeName);
   //   });
@@ -239,20 +250,20 @@ describe('RabbitMQ Connection Tests', () => {
   // describe('Connection Resilience', () => {
   //   it('should handle connection gracefully', async () => {
   //     await rabbitMQService.initialize();
-      
+
   //     // Check if service is healthy
   //     const healthStatus = await rabbitMQService.healthCheck();
   //     expect(healthStatus.status).toBe('connected');
-      
+
   //     // Close connection
   //     await rabbitMQService.close();
-      
+
   //     // Try health check - should fail
   //     await expect(rabbitMQService.healthCheck()).rejects.toThrow();
-      
+
   //     // Reinitialize
   //     await rabbitMQService.initialize();
-      
+
   //     // Should be healthy again
   //     const newHealthStatus = await rabbitMQService.healthCheck();
   //     expect(newHealthStatus.status).toBe('connected');
@@ -267,7 +278,7 @@ describe('RabbitMQ Connection Tests', () => {
   //       timestamp: Date.now(),
   //       eventType: 'TEST_MESSAGE'
   //     };
-      
+
   //     await expect(
   //       newService.publishMessage('test.key', testMessage)
   //     ).rejects.toThrow('RabbitMQ service not initialized');
@@ -275,7 +286,7 @@ describe('RabbitMQ Connection Tests', () => {
 
   //   it('should handle consuming from non-existent queue', async () => {
   //     await rabbitMQService.initialize();
-      
+
   //     await expect(
   //       rabbitMQService.consumeMessages('non-existent-queue', async () => {})
   //     ).rejects.toThrow();
@@ -304,7 +315,7 @@ describe('RabbitMQ Connection Tests', () => {
   //       },
   //       priority: 'normal' as const
   //     };
-      
+
   //     const published = await rabbitMQService.publishPdfConversionRequest(pdfMessage);
   //     expect(published).toBe(true);
   //   });
@@ -319,7 +330,7 @@ describe('RabbitMQ Connection Tests', () => {
   //       progress: 50,
   //       message: 'Processing page 5 of 10'
   //     };
-      
+
   //     const published = await rabbitMQService.publishPdfConversionProgress(progressMessage);
   //     expect(published).toBe(true);
   //   });

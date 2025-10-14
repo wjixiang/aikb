@@ -29,19 +29,19 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
     it('should handle single text embedding correctly', async () => {
       // Mock successful single text response
       const mockEmbedding = Array(1024).fill(0.1);
-      
+
       (mockedAxios.post as any).mockResolvedValue({
         data: {
           data: [
             {
-              embedding: mockEmbedding
-            }
-          ]
-        }
+              embedding: mockEmbedding,
+            },
+          ],
+        },
       });
 
       const result = await provider.embed('test text');
-      
+
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
         {
@@ -50,52 +50,54 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
           dimension: '1024',
           encoding_format: 'float',
         },
-        expect.any(Object)
+        expect.any(Object),
       );
-      
+
       expect(result).toEqual(mockEmbedding);
     });
 
     it('should handle array input in embed method', async () => {
       // Mock successful array response
       const mockEmbedding = Array(1024).fill(0.2);
-      
+
       (mockedAxios.post as any).mockResolvedValue({
         data: {
           output: {
             embeddings: [
               {
-                embedding: mockEmbedding
-              }
-            ]
-          }
-        }
+                embedding: mockEmbedding,
+              },
+            ],
+          },
+        },
       });
 
       const result = await provider.embed(['test text 1', 'test text 2']);
-      
+
       expect(result).toEqual(mockEmbedding);
     });
 
     it('should test potential infinite loop scenario', async () => {
       // Mock consistent failures to test retry behavior
       (mockedAxios.post as any).mockRejectedValue({
-        response: { status: 500 }
+        response: { status: 500 },
       });
 
       // Set a timeout to prevent actual infinite loop
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Test timeout - possible infinite loop')), 5000)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Test timeout - possible infinite loop')),
+          5000,
+        ),
       );
 
       try {
-        await Promise.race([
-          provider.embed('test text'),
-          timeoutPromise
-        ]);
+        await Promise.race([provider.embed('test text'), timeoutPromise]);
         expect.fail('Should have timed out or failed');
       } catch (error) {
-        expect((error as Error).message).toBe('Test timeout - possible infinite loop');
+        expect((error as Error).message).toBe(
+          'Test timeout - possible infinite loop',
+        );
       }
     });
   });
@@ -103,11 +105,11 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
   describe('embedBatch method', () => {
     it('should handle batch processing correctly', async () => {
       // Create mock embeddings for 15 texts (more than MAX_BATCH_SIZE of 10)
-      const mockBatchEmbeddings = Array.from({ length: 10 }, (_, i) => 
-        Array(1024).fill(i * 0.1)
+      const mockBatchEmbeddings = Array.from({ length: 10 }, (_, i) =>
+        Array(1024).fill(i * 0.1),
       );
-      const mockSecondBatchEmbeddings = Array.from({ length: 5 }, (_, i) => 
-        Array(1024).fill((i + 10) * 0.1)
+      const mockSecondBatchEmbeddings = Array.from({ length: 5 }, (_, i) =>
+        Array(1024).fill((i + 10) * 0.1),
       );
 
       // Mock first batch response
@@ -115,10 +117,10 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
         data: {
           output: {
             embeddings: mockBatchEmbeddings.map((embedding, index) => ({
-              embedding
-            }))
-          }
-        }
+              embedding,
+            })),
+          },
+        },
       });
 
       // Mock second batch response
@@ -126,10 +128,10 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
         data: {
           output: {
             embeddings: mockSecondBatchEmbeddings.map((embedding, index) => ({
-              embedding
-            }))
-          }
-        }
+              embedding,
+            })),
+          },
+        },
       });
 
       const texts = Array.from({ length: 15 }, (_, i) => `test text ${i}`);
@@ -137,12 +139,12 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(2);
       expect(results).toHaveLength(15);
-      
+
       // Verify first batch results
       for (let i = 0; i < 10; i++) {
         expect(results[i]).toEqual(mockBatchEmbeddings[i]);
       }
-      
+
       // Verify second batch results
       for (let i = 0; i < 5; i++) {
         expect(results[i + 10]).toEqual(mockSecondBatchEmbeddings[i]);
@@ -152,12 +154,12 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
     it('should fallback to individual processing when batch fails', async () => {
       // Mock batch request to fail with 400 (no retry)
       (mockedAxios.post as any).mockRejectedValueOnce({
-        response: { status: 400 }
+        response: { status: 400 },
       });
 
       // Mock individual requests to succeed
       const mockEmbeddings = Array.from({ length: 3 }, (_, i) =>
-        Array(1024).fill(i * 0.1)
+        Array(1024).fill(i * 0.1),
       );
 
       // Set up individual calls after batch fails
@@ -166,28 +168,28 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
           data: {
             data: [
               {
-                embedding: mockEmbeddings[0]
-              }
-            ]
-          }
+                embedding: mockEmbeddings[0],
+              },
+            ],
+          },
         })
         .mockResolvedValueOnce({
           data: {
             data: [
               {
-                embedding: mockEmbeddings[1]
-              }
-            ]
-          }
+                embedding: mockEmbeddings[1],
+              },
+            ],
+          },
         })
         .mockResolvedValueOnce({
           data: {
             data: [
               {
-                embedding: mockEmbeddings[2]
-              }
-            ]
-          }
+                embedding: mockEmbeddings[2],
+              },
+            ],
+          },
         });
 
       const texts = ['text1', 'text2', 'text3'];
@@ -211,22 +213,19 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
       // This test specifically checks the inconsistency we identified
       // embed() uses response.data.data[0].embedding
       // embedBatch() uses response.data.output.embeddings
-      
+
       const singleTextEmbedding = Array(1024).fill(0.1);
-      const batchEmbeddings = [
-        Array(1024).fill(0.2),
-        Array(1024).fill(0.3)
-      ];
+      const batchEmbeddings = [Array(1024).fill(0.2), Array(1024).fill(0.3)];
 
       // Mock single text response with data structure
       (mockedAxios.post as any).mockResolvedValueOnce({
         data: {
           data: [
             {
-              embedding: Array(1024).fill(0.2) // Use the expected value directly
-            }
-          ]
-        }
+              embedding: Array(1024).fill(0.2), // Use the expected value directly
+            },
+          ],
+        },
       });
 
       const singleResult = await provider.embed('single text');
@@ -236,9 +235,9 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
       (mockedAxios.post as any).mockResolvedValueOnce({
         data: {
           output: {
-            embeddings: batchEmbeddings.map((embedding) => ({ embedding }))
-          }
-        }
+            embeddings: batchEmbeddings.map((embedding) => ({ embedding })),
+          },
+        },
       });
 
       const batchResults = await provider.embedBatch(['text1', 'text2']);
@@ -250,26 +249,31 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
       (mockedAxios.post as any).mockResolvedValueOnce({
         data: {
           output: {
-            embeddings: [{ embedding: Array(1024).fill(0.4) }]
-          }
-        }
+            embeddings: [{ embedding: Array(1024).fill(0.4) }],
+          },
+        },
       });
 
-      const singleResultWithBatchStructure = await provider.embed('single text 2');
+      const singleResultWithBatchStructure =
+        await provider.embed('single text 2');
       expect(singleResultWithBatchStructure).toEqual(Array(1024).fill(0.2)); // The actual result is 0.2, not 0.4
 
       // Mock batch response with single-style structure
       (mockedAxios.post as any).mockResolvedValueOnce({
         data: {
-          data: batchEmbeddings.map((embedding) => ({ embedding }))
-        }
+          data: batchEmbeddings.map((embedding) => ({ embedding })),
+        },
       });
 
-      const batchResultsWithSingleStructure = await provider.embedBatch(['text3', 'text4']);
+      const batchResultsWithSingleStructure = await provider.embedBatch([
+        'text3',
+        'text4',
+      ]);
       // The batch processing seems to only return the first embedding
-      expect(batchResultsWithSingleStructure).toEqual([Array(1024).fill(0.4), null]);
+      expect(batchResultsWithSingleStructure).toEqual([
+        Array(1024).fill(0.4),
+        null,
+      ]);
     });
   });
-
-  
 });

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Mocked } from 'vitest';
 import { PdfAnalyzerService } from '../pdf-analyzer.service';
-import { AbstractLibraryStorage, BookMetadata } from '../../../knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  BookMetadata,
+} from '../../../knowledgeImport/library';
 import {
   PdfAnalysisRequestMessage,
   PdfAnalysisCompletedMessage,
@@ -88,7 +91,9 @@ describe('PdfAnalyzerService', () => {
   };
 
   // Default analysis request
-  const createAnalysisRequest = (overrides = {}): PdfAnalysisRequestMessage => ({
+  const createAnalysisRequest = (
+    overrides = {},
+  ): PdfAnalysisRequestMessage => ({
     messageId: 'test-message-id',
     timestamp: Date.now(),
     eventType: 'PDF_ANALYSIS_REQUEST',
@@ -201,14 +206,16 @@ describe('PdfAnalyzerService', () => {
           pageCount,
           pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
           pdfProcessingMessage: 'PDF ready for conversion',
-        })
+        }),
       );
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: false,
-        })
+        }),
       );
     });
 
@@ -232,15 +239,17 @@ describe('PdfAnalyzerService', () => {
           pageCount,
           pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
           pdfProcessingMessage: 'PDF requires splitting',
-        })
+        }),
       );
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: true,
           suggestedSplitSize: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -264,14 +273,16 @@ describe('PdfAnalyzerService', () => {
           pageCount,
           pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
           pdfProcessingMessage: 'PDF ready for conversion', // Should not require splitting
-        })
+        }),
       );
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: false, // Exactly at threshold should not require splitting
-        })
+        }),
       );
     });
   });
@@ -293,13 +304,15 @@ describe('PdfAnalyzerService', () => {
       // Assert
       // For 100 pages, optimal split size should be ceil(100/10) = 10, but at least MIN_SPLIT_SIZE (10)
       // So expected split size should be 10
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: true,
           suggestedSplitSize: 10, // MIN_SPLIT_SIZE
-        })
+        }),
       );
     });
 
@@ -318,13 +331,15 @@ describe('PdfAnalyzerService', () => {
 
       // Assert
       // For 500 pages, optimal split size should be ceil(500/10) = 50
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: true,
           suggestedSplitSize: 50, // Within MIN and MAX split size range
-        })
+        }),
       );
     });
 
@@ -344,13 +359,15 @@ describe('PdfAnalyzerService', () => {
       // Assert
       // For 2000 pages, optimal split size would be ceil(2000/10) = 200
       // But this should be capped at MAX_SPLIT_SIZE (100)
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
           requiresSplitting: true,
           suggestedSplitSize: PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE, // Capped at maximum
-        })
+        }),
       );
     });
   });
@@ -372,16 +389,17 @@ describe('PdfAnalyzerService', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
-          pdfProcessingMessage: 'PDF analysis failed: Failed to download PDF from S3: Network error',
+          pdfProcessingMessage:
+            'PDF analysis failed: Failed to download PDF from S3: Network error',
           pdfProcessingError: 'Failed to download PDF from S3: Network error',
-        })
+        }),
       );
       expect(mockRabbitMQService.publishPdfAnalysisFailed).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           error: 'Failed to download PDF from S3: Network error',
           canRetry: false, // No more retries
-        })
+        }),
       );
     });
 
@@ -402,7 +420,7 @@ describe('PdfAnalyzerService', () => {
           itemId: testItemId,
           error: 'Failed to download PDF from S3: Request timeout',
           canRetry: false, // No more retries
-        })
+        }),
       );
     });
   });
@@ -417,7 +435,7 @@ describe('PdfAnalyzerService', () => {
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
-      
+
       // Mock getPageCount to return 0
       vi.spyOn(pdfAnalyzerService as any, 'getPageCount').mockResolvedValue(0);
 
@@ -429,16 +447,17 @@ describe('PdfAnalyzerService', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
-          pdfProcessingMessage: 'PDF analysis failed: Invalid page count detected: 0',
+          pdfProcessingMessage:
+            'PDF analysis failed: Invalid page count detected: 0',
           pdfProcessingError: 'Invalid page count detected: 0',
-        })
+        }),
       );
       expect(mockRabbitMQService.publishPdfAnalysisFailed).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           error: 'Invalid page count detected: 0',
           canRetry: false, // No more retries
-        })
+        }),
       );
     });
 
@@ -446,11 +465,11 @@ describe('PdfAnalyzerService', () => {
       // Arrange
       const request = createAnalysisRequest();
       const pdfBuffer = createMockPdfBuffer(10);
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
-      
+
       // Mock getPageCount to return negative value
       vi.spyOn(pdfAnalyzerService as any, 'getPageCount').mockResolvedValue(-5);
 
@@ -462,9 +481,10 @@ describe('PdfAnalyzerService', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
-          pdfProcessingMessage: 'PDF analysis failed: Invalid page count detected: -5',
+          pdfProcessingMessage:
+            'PDF analysis failed: Invalid page count detected: -5',
           pdfProcessingError: 'Invalid page count detected: -5',
-        })
+        }),
       );
     });
   });
@@ -474,14 +494,14 @@ describe('PdfAnalyzerService', () => {
       // Arrange
       const request = createAnalysisRequest({ retryCount: 3, maxRetries: 3 }); // No more retries
       const pdfBuffer = createMockPdfBuffer(10);
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
-      
+
       // Mock getPageCount to throw an error
       vi.spyOn(pdfAnalyzerService as any, 'getPageCount').mockRejectedValue(
-        new Error('PDF parsing failed')
+        new Error('PDF parsing failed'),
       );
 
       // Act
@@ -494,14 +514,14 @@ describe('PdfAnalyzerService', () => {
           pdfProcessingStatus: PdfProcessingStatus.FAILED,
           pdfProcessingMessage: 'PDF analysis failed: PDF parsing failed',
           pdfProcessingError: 'PDF parsing failed',
-        })
+        }),
       );
       expect(mockRabbitMQService.publishPdfAnalysisFailed).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           error: 'PDF parsing failed',
           canRetry: false, // No more retries
-        })
+        }),
       );
     });
   });
@@ -512,22 +532,26 @@ describe('PdfAnalyzerService', () => {
       const retryCount = 1;
       const maxRetries = 3;
       const request = createAnalysisRequest({ retryCount, maxRetries });
-      
+
       mockAxios.get.mockRejectedValue(new Error('Temporary failure'));
 
       // Act
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           retryCount: retryCount + 1, // Should be incremented
           messageId: 'test-uuid-12345', // New message ID
-        })
+        }),
       );
       // Should not publish failure message yet
-      expect(mockRabbitMQService.publishPdfAnalysisFailed).not.toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishPdfAnalysisFailed,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not retry when maximum retries reached', async () => {
@@ -535,14 +559,16 @@ describe('PdfAnalyzerService', () => {
       const retryCount = 3;
       const maxRetries = 3;
       const request = createAnalysisRequest({ retryCount, maxRetries });
-      
+
       mockAxios.get.mockRejectedValue(new Error('Persistent failure'));
 
       // Act
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisRequest).not.toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishPdfAnalysisRequest,
+      ).not.toHaveBeenCalled();
       expect(mockRabbitMQService.publishPdfAnalysisFailed).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
@@ -550,7 +576,7 @@ describe('PdfAnalyzerService', () => {
           retryCount,
           maxRetries,
           canRetry: false, // Should not be able to retry
-        })
+        }),
       );
     });
 
@@ -559,9 +585,9 @@ describe('PdfAnalyzerService', () => {
       const retryCount = 1;
       const maxRetries = 3;
       const request = createAnalysisRequest({ retryCount, maxRetries });
-      
+
       mockAxios.get.mockRejectedValue(new Error('Temporary failure'));
-      
+
       // Mock metadata with existing retry count
       const metadataWithRetry = {
         ...defaultMetadata,
@@ -577,7 +603,7 @@ describe('PdfAnalyzerService', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingRetryCount: retryCount + 1, // Should be incremented
-        })
+        }),
       );
     });
   });
@@ -588,7 +614,7 @@ describe('PdfAnalyzerService', () => {
       const pageCount = 75;
       const pdfBuffer = createMockPdfBuffer(pageCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -597,7 +623,9 @@ describe('PdfAnalyzerService', () => {
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           messageId: 'test-uuid-12345',
           eventType: 'PDF_ANALYSIS_COMPLETED',
@@ -606,7 +634,7 @@ describe('PdfAnalyzerService', () => {
           requiresSplitting: true,
           suggestedSplitSize: expect.any(Number),
           processingTime: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -615,14 +643,14 @@ describe('PdfAnalyzerService', () => {
       const request = createAnalysisRequest({ retryCount: 3, maxRetries: 3 }); // No more retries
       const errorMessage = 'Test error';
       const pdfBuffer = createMockPdfBuffer(10);
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
-      
+
       // Mock getPageCount to throw an error
       vi.spyOn(pdfAnalyzerService as any, 'getPageCount').mockRejectedValue(
-        new Error(errorMessage)
+        new Error(errorMessage),
       );
 
       // Act
@@ -639,7 +667,7 @@ describe('PdfAnalyzerService', () => {
           maxRetries: 3,
           canRetry: false, // No more retries
           processingTime: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -648,18 +676,20 @@ describe('PdfAnalyzerService', () => {
       const pageCount = 25;
       const pdfBuffer = createMockPdfBuffer(pageCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
-      
+
       mockRabbitMQService.publishPdfAnalysisCompleted.mockRejectedValue(
-        new Error('RabbitMQ connection failed')
+        new Error('RabbitMQ connection failed'),
       );
 
       // Act & Assert - Should not throw error
-      await expect(pdfAnalyzerService.analyzePdf(request)).resolves.not.toThrow();
-      
+      await expect(
+        pdfAnalyzerService.analyzePdf(request),
+      ).resolves.not.toThrow();
+
       // Metadata should still be updated
       expect(mockStorage.updateMetadata).toHaveBeenCalled();
     });
@@ -671,7 +701,7 @@ describe('PdfAnalyzerService', () => {
       const pageCount = 60;
       const pdfBuffer = createMockPdfBuffer(pageCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -687,7 +717,7 @@ describe('PdfAnalyzerService', () => {
           pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
           pdfProcessingMessage: 'PDF requires splitting',
           dateModified: expect.any(Date),
-        })
+        }),
       );
     });
 
@@ -696,7 +726,7 @@ describe('PdfAnalyzerService', () => {
       const pageCount = 30;
       const pdfBuffer = createMockPdfBuffer(pageCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -709,7 +739,7 @@ describe('PdfAnalyzerService', () => {
         expect.objectContaining({
           id: testItemId,
           pdfProcessingStartedAt: expect.any(Date),
-        })
+        }),
       );
     });
 
@@ -721,7 +751,9 @@ describe('PdfAnalyzerService', () => {
       // Act & Assert
       // Note: This test verifies that the service handles missing items gracefully
       // The actual error handling is tested through the error handling flow
-      await expect(pdfAnalyzerService.analyzePdf(request)).resolves.toBeUndefined();
+      await expect(
+        pdfAnalyzerService.analyzePdf(request),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -731,7 +763,7 @@ describe('PdfAnalyzerService', () => {
       const pageCount = 15;
       const pdfBuffer = createMockPdfBuffer(pageCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -740,11 +772,13 @@ describe('PdfAnalyzerService', () => {
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount,
-        })
+        }),
       );
     });
 
@@ -753,7 +787,7 @@ describe('PdfAnalyzerService', () => {
       const endObjCount = 50; // Should result in 5 pages (50/10)
       const pdfBuffer = createMockPdfBufferWithEndObj(endObjCount);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -762,11 +796,13 @@ describe('PdfAnalyzerService', () => {
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: 5, // Math.ceil(50/10)
-        })
+        }),
       );
     });
 
@@ -775,7 +811,7 @@ describe('PdfAnalyzerService', () => {
       const sizeInKB = 500; // Should result in 10 pages (500KB/50KB)
       const pdfBuffer = createLargePdfBuffer(sizeInKB);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -784,11 +820,13 @@ describe('PdfAnalyzerService', () => {
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: 10, // Math.ceil(500/50)
-        })
+        }),
       );
     });
 
@@ -797,7 +835,7 @@ describe('PdfAnalyzerService', () => {
       const sizeInKB = 100000; // Very large file that would exceed 1000 pages
       const pdfBuffer = createLargePdfBuffer(sizeInKB);
       const request = createAnalysisRequest();
-      
+
       mockAxios.get.mockResolvedValue({
         data: pdfBuffer,
       });
@@ -806,11 +844,13 @@ describe('PdfAnalyzerService', () => {
       await pdfAnalyzerService.analyzePdf(request);
 
       // Assert
-      expect(mockRabbitMQService.publishPdfAnalysisCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishPdfAnalysisCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: 1000, // Capped at maximum
-        })
+        }),
       );
     });
   });

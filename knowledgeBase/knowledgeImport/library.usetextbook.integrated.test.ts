@@ -5,7 +5,6 @@ import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 
-
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
 //   console.log('Using MongoDB storage for integration tests');
@@ -13,7 +12,7 @@ import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
 // });
 
 export async function UploadTestPdf() {
-const testMinerUPdfConvertor = new MinerUPdfConvertor({
+  const testMinerUPdfConvertor = new MinerUPdfConvertor({
     token: process.env.MINERU_TOKEN as string,
     downloadDir: 'test/download',
     defaultOptions: {
@@ -27,7 +26,10 @@ const testMinerUPdfConvertor = new MinerUPdfConvertor({
     maxRetries: 3,
     retryDelay: 5000,
   });
-  const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+  const storage = new S3ElasticSearchLibraryStorage(
+    'http://elasticsearch:9200',
+    1024,
+  );
   const library = new Library(storage, testMinerUPdfConvertor);
 
   // Read the test PDF file
@@ -58,7 +60,6 @@ describe(Library, async () => {
     expect(book).toBeDefined();
     expect(book.metadata.title).toBe('外科学_人卫10版');
     expect(book.metadata.s3Key).toBeDefined();
-
 
     // Retrieve the S3 download URL
     const downloadUrl = await book.getPdfDownloadUrl();
@@ -92,40 +93,47 @@ describe(Library, async () => {
     console.log(
       `re-extracted md content (100 str): ${JSON.stringify(mdContent2.substring(0, 100))}`,
     );
-  },99999);
+  }, 99999);
 
-
-  it.skip("justify existance of embedding", async()=>{
-    const ceRes = await book.chunkEmbed()
-    const exist = await book.hasCompletedChunkEmbed()
-    console.log(exist)
-    expect(exist).toBe(true)
-  })
-
-  it.skip('semantic search', async()=>{
-    const searchRes = await book.searchInChunks("ACEI",2)
-    console.log(searchRes)
-  })
-
-  it.only('re-process', async()=>{
-    const testMinerUPdfConvertor = new MinerUPdfConvertor({
-    token: process.env.MINERU_TOKEN as string,
-    downloadDir: 'test/download',
-    defaultOptions: {
-      is_ocr: true,
-      enable_formula: true,
-      enable_table: true,
-      language: 'en',
-      extra_formats: ['docx', 'html'],
-    },
-    timeout: 120000, // 2 minutes timeout
-    maxRetries: 3,
-    retryDelay: 5000,
+  it.skip('justify existance of embedding', async () => {
+    const ceRes = await book.chunkEmbed();
+    const exist = await book.hasCompletedChunkEmbed();
+    console.log(exist);
+    expect(exist).toBe(true);
   });
-  const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
-  const library = new Library(storage, testMinerUPdfConvertor);                                               
-    const s3Link = await book.getPdfDownloadUrl()
-    console.log(`s3Link: ${s3Link}`)
-    await library.sendPdfAnalysisRequest(book.getItemId(),s3Link, book.metadata.s3Key as string, book.metadata.title)
-  })
+
+  it.skip('semantic search', async () => {
+    const searchRes = await book.searchInChunks('ACEI', 2);
+    console.log(searchRes);
+  });
+
+  it.only('re-process', async () => {
+    const testMinerUPdfConvertor = new MinerUPdfConvertor({
+      token: process.env.MINERU_TOKEN as string,
+      downloadDir: 'test/download',
+      defaultOptions: {
+        is_ocr: true,
+        enable_formula: true,
+        enable_table: true,
+        language: 'en',
+        extra_formats: ['docx', 'html'],
+      },
+      timeout: 120000, // 2 minutes timeout
+      maxRetries: 3,
+      retryDelay: 5000,
+    });
+    const storage = new S3ElasticSearchLibraryStorage(
+      'http://elasticsearch:9200',
+      1024,
+    );
+    const library = new Library(storage, testMinerUPdfConvertor);
+    const s3Link = await book.getPdfDownloadUrl();
+    console.log(`s3Link: ${s3Link}`);
+    await library.sendPdfAnalysisRequest(
+      book.getItemId(),
+      s3Link,
+      book.metadata.s3Key as string,
+      book.metadata.title,
+    );
+  });
 });
