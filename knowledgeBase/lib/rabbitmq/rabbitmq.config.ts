@@ -161,28 +161,6 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
       'x-max-length': 5000, // Maximum 5,000 messages
     },
   },
-  'pdf-splitting-request': {
-    name: 'pdf-splitting-request',
-    durable: true,
-    exclusive: false,
-    autoDelete: false,
-    arguments: {
-      'x-dead-letter-exchange': 'pdf-conversion-dlx',
-      'x-dead-letter-routing-key': 'pdf.conversion.dlq',
-      'x-message-ttl': 3600000, // 1 hour in milliseconds
-      'x-max-length': 1000, // Maximum 1,000 messages
-    },
-  },
-  'pdf-splitting-completed': {
-    name: 'pdf-splitting-completed',
-    durable: true,
-    exclusive: false,
-    autoDelete: false,
-    arguments: {
-      'x-message-ttl': 3600000, // 1 hour in milliseconds
-      'x-max-length': 1000, // Maximum 1,000 messages
-    },
-  },
   'pdf-part-conversion-request': {
     name: 'pdf-part-conversion-request',
     durable: true,

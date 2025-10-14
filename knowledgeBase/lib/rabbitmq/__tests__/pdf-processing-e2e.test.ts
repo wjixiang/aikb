@@ -6,7 +6,6 @@ import {
   PdfAnalysisRequestMessage,
   PdfAnalysisCompletedMessage,
   PdfAnalysisFailedMessage,
-  PdfSplittingRequestMessage,
   PdfPartConversionRequestMessage,
   PdfPartConversionCompletedMessage,
   PdfPartConversionFailedMessage,
@@ -49,7 +48,6 @@ const mockRabbitMQService = {
   publishPdfAnalysisRequest: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfAnalysisCompleted: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfAnalysisFailed: vi.fn((message: any) => Promise.resolve(true)),
-  publishPdfSplittingRequest: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfPartConversionRequest: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfPartConversionCompleted: vi.fn((message: any) => Promise.resolve(true)),
   publishPdfPartConversionFailed: vi.fn((message: any) => Promise.resolve(true)),
@@ -187,7 +185,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
@@ -241,7 +239,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -256,7 +254,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
-          s3Url: testS3Url,
+          
           s3Key: testS3Key,
         })
       );
@@ -268,7 +266,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -406,7 +404,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'large-test-document.pdf',
       };
@@ -439,8 +437,8 @@ describe('PDF Processing End-to-End Integration Tests', () => {
 
       await coordinatorHandler(analysisCompletedMessage, { ack: vi.fn(), nack: vi.fn() });
 
-      // Verify splitting request was published
-      expect(mockRabbitMQService.publishPdfSplittingRequest).toHaveBeenCalledWith(
+      // Verify conversion request was published
+      expect(mockRabbitMQService.publishPdfConversionRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           pageCount: testPageCount,
@@ -460,7 +458,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           itemId: testItemId,
           partIndex,
           totalParts: testTotalParts,
-          s3Url: `${testS3Url}?part=${partIndex + 1}`,
+          
           s3Key: `${testS3Key}-part-${partIndex + 1}`,
           fileName: `large-test-document-part-${partIndex + 1}.pdf`,
           startPage: partIndex * testSplitSize + 1,
@@ -572,7 +570,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        s3Url: 'invalid-url',
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         retryCount: 0,
@@ -660,7 +658,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -819,7 +817,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           timestamp: Date.now(),
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: item.itemId,
-          s3Url: item.s3Url,
+          
           s3Key: item.s3Key,
           fileName: `test-document-${index + 1}.pdf`,
         };
@@ -848,7 +846,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
           timestamp: Date.now(),
           eventType: 'PDF_CONVERSION_REQUEST',
           itemId: item.itemId,
-          s3Url: item.s3Url,
+          
           s3Key: item.s3Key,
           fileName: `test-document-${index + 1}.pdf`,
           metadata: {
@@ -950,7 +948,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
@@ -977,7 +975,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
         metadata: {
@@ -1095,7 +1093,7 @@ describe('PDF Processing End-to-End Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: testItemId,
-        s3Url: testS3Url,
+        
         s3Key: testS3Key,
         fileName: 'test-document.pdf',
       };
@@ -1250,13 +1248,13 @@ describe('PDF Processing End-to-End Integration Tests', () => {
       const testAnalysisMessage = createTestMessage<PdfAnalysisRequestMessage>(
         'PDF_ANALYSIS_REQUEST',
         testItemId,
-        { s3Url: 'https://test-url.com/test.pdf', s3Key: 'test.pdf', fileName: 'test.pdf' }
+        { s3Key: 'test.pdf', fileName: 'test.pdf' }
       );
 
       expect(testMetadata.title).toBe('Utility Test Document');
       expect(testAnalysisMessage.eventType).toBe('PDF_ANALYSIS_REQUEST');
       expect(testAnalysisMessage.itemId).toBe(testItemId);
-      expect(testAnalysisMessage.s3Url).toBe('https://test-url.com/test.pdf');
+      
     });
 
     it('should provide workflow verification utilities', async () => {

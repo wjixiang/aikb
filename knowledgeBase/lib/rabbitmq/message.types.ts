@@ -36,7 +36,6 @@ export enum PdfPartStatus {
 export interface PdfConversionRequestMessage extends BaseRabbitMQMessage {
   eventType: 'PDF_CONVERSION_REQUEST';
   itemId: string;
-  s3Url: string;
   s3Key: string;
   fileName: string;
   metadata: {
@@ -111,7 +110,6 @@ export interface PdfConversionFailedMessage extends BaseRabbitMQMessage {
 export interface PdfAnalysisRequestMessage extends BaseRabbitMQMessage {
   eventType: 'PDF_ANALYSIS_REQUEST';
   itemId: string;
-  s3Url: string;
   s3Key: string;
   fileName: string;
   priority?: 'low' | 'normal' | 'high';
@@ -145,7 +143,6 @@ export interface PdfAnalysisCompletedMessage extends BaseRabbitMQMessage {
   suggestedSplitSize?: number;
   processingTime: number;
   pdfMetadata?: PdfMetadata;
-  s3Url?: string; // Pass along the S3 URL for reuse
   s3Key?: string; // Pass along the S3 key for reuse
 }
 
@@ -163,22 +160,6 @@ export interface PdfAnalysisFailedMessage extends BaseRabbitMQMessage {
   processingTime: number;
 }
 
-/**
- * PDF splitting request message
- */
-export interface PdfSplittingRequestMessage extends BaseRabbitMQMessage {
-  eventType: 'PDF_SPLITTING_REQUEST';
-  itemId: string;
-  s3Url: string;
-  s3Key: string;
-  fileName: string;
-  pageCount: number;
-  splitSize: number;
-  priority?: 'low' | 'normal' | 'high';
-  retryCount?: number;
-  maxRetries?: number;
-  pdfMetadata?: PdfMetadata; // PDF metadata from analysis phase
-}
 
 /**
  * PDF part conversion request message
@@ -188,7 +169,6 @@ export interface PdfPartConversionRequestMessage extends BaseRabbitMQMessage {
   itemId: string;
   partIndex: number;
   totalParts: number;
-  s3Url: string;
   s3Key: string;
   fileName: string;
   startPage: number;
@@ -318,7 +298,6 @@ export type PdfConversionMessage =
   | PdfAnalysisRequestMessage
   | PdfAnalysisCompletedMessage
   | PdfAnalysisFailedMessage
-  | PdfSplittingRequestMessage
   | PdfPartConversionRequestMessage
   | PdfPartConversionCompletedMessage
   | PdfPartConversionFailedMessage
@@ -337,7 +316,6 @@ export interface PdfPartInfo {
   endPage: number;
   pageCount: number;
   s3Key: string;
-  s3Url: string;
   status: PdfPartStatus;
   processingTime?: number;
   error?: string;
@@ -415,8 +393,6 @@ export const RABBITMQ_QUEUES = {
   PDF_ANALYSIS_REQUEST: 'pdf-analysis-request',
   PDF_ANALYSIS_COMPLETED: 'pdf-analysis-completed',
   PDF_ANALYSIS_FAILED: 'pdf-analysis-failed',
-  PDF_SPLITTING_REQUEST: 'pdf-splitting-request',
-  PDF_SPLITTING_COMPLETED: 'pdf-splitting-completed',
   PDF_PART_CONVERSION_REQUEST: 'pdf-part-conversion-request',
   PDF_PART_CONVERSION_COMPLETED: 'pdf-part-conversion-completed',
   PDF_PART_CONVERSION_FAILED: 'pdf-part-conversion-failed',
@@ -447,8 +423,6 @@ export const RABBITMQ_ROUTING_KEYS = {
   PDF_ANALYSIS_REQUEST: 'pdf.analysis.request',
   PDF_ANALYSIS_COMPLETED: 'pdf.analysis.completed',
   PDF_ANALYSIS_FAILED: 'pdf.analysis.failed',
-  PDF_SPLITTING_REQUEST: 'pdf.splitting.request',
-  PDF_SPLITTING_COMPLETED: 'pdf.splitting.completed',
   PDF_PART_CONVERSION_REQUEST: 'pdf.part.conversion.request',
   PDF_PART_CONVERSION_COMPLETED: 'pdf.part.conversion.completed',
   PDF_PART_CONVERSION_FAILED: 'pdf.part.conversion.failed',
@@ -467,7 +441,6 @@ export const RABBITMQ_CONSUMER_TAGS = {
   PDF_CONVERSION_WORKER: 'pdf-conversion-worker',
   PDF_CONVERSION_MONITOR: 'pdf-conversion-monitor',
   PDF_ANALYSIS_WORKER: 'pdf-analysis-worker',
-  PDF_SPLITTING_WORKER: 'pdf-splitting-worker',
   PDF_PART_CONVERSION_WORKER: 'pdf-part-conversion-worker',
   PDF_MERGING_WORKER: 'pdf-merger-worker',
   MARKDOWN_STORAGE_WORKER: 'markdown-storage-worker',

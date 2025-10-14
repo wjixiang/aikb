@@ -9,10 +9,12 @@ import {
   PdfMergingRequestMessage,
   MarkdownStorageRequestMessage,
   PdfProcessingStatus,
+  PdfPartStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
+import { getPdfDownloadUrl } from '../s3Service/S3Service';
 import {
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
@@ -20,6 +22,8 @@ import {
 import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../../lib/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { IPdfPartTracker } from './pdf-part-tracker';
+import { getPdfPartTracker } from './pdf-part-tracker-factory';
 
 const logger = createLoggerWithPrefix('PdfConversionWorker');
 
@@ -33,9 +37,11 @@ export class PdfConversionWorker {
   private consumerTag: string | null = null;
   private partConsumerTag: string | null = null;
   private isRunning = false;
+  private partTracker: IPdfPartTracker;
 
-  constructor(pdfConvertor?: MinerUPdfConvertor) {
+  constructor(pdfConvertor?: MinerUPdfConvertor, partTracker?: IPdfPartTracker) {
     this.pdfConvertor = pdfConvertor || createMinerUConvertorFromEnv();
+    this.partTracker = partTracker || getPdfPartTracker();
   }
 
   /**
@@ -123,6 +129,15 @@ export class PdfConversionWorker {
     const startTime = Date.now();
     logger.info(`Processing PDF conversion request for item: ${message.itemId}`);
 
+    // Check retry status before processing
+    const retryCount = message.retryCount || 0;
+    const maxRetries = message.maxRetries || 3;
+    const isFinalAttempt = retryCount >= maxRetries;
+    
+    if (isFinalAttempt) {
+      logger.info(`Processing final attempt for item ${message.itemId} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`);
+    }
+
     try {
       // Update status to processing
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 0, 'Starting PDF conversion');
@@ -148,15 +163,16 @@ export class PdfConversionWorker {
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 10, 'Preparing PDF conversion');
 
       // Convert PDF to Markdown
-      logger.info(`Converting PDF to Markdown for item: ${message.itemId}, S3 URL: ${message.s3Url}`);
+      logger.info(`Converting PDF to Markdown for item: ${message.itemId}, S3 Key: ${message.s3Key}`);
       await this.publishProgressMessage(message.itemId, PdfProcessingStatus.PROCESSING, 30, 'Converting PDF to Markdown');
 
-      logger.info(`Starting PDF conversion with S3 URL: ${message.s3Url}`);
-      logger.info(`OPTIMIZATION: Using S3 URL from analysis phase to avoid re-generation for item ${message.itemId}`);
+      // Generate presigned URL from s3Key
+      const s3Url = await getPdfDownloadUrl(message.s3Key);
+      logger.info(`Starting PDF conversion with generated S3 URL for item ${message.itemId}`);
       
       let conversionResult;
       try {
-        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
         
         // Enhanced diagnostic logging for conversion result
         logger.info(`PDF conversion completed for item ${message.itemId}. Enhanced result diagnostics: ${JSON.stringify({
@@ -238,8 +254,6 @@ export class PdfConversionWorker {
       );
 
       // Check if should retry
-      const retryCount = message.retryCount || 0;
-      const maxRetries = message.maxRetries || 3;
       const shouldRetry = retryCount < maxRetries;
       
       if (shouldRetry) {
@@ -272,8 +286,16 @@ export class PdfConversionWorker {
     logger.info(`Processing PDF part conversion request for item: ${message.itemId}, part: ${message.partIndex + 1}/${message.totalParts}`);
 
     try {
+      // Initialize PDF processing if not already done
+      const processingStatus = await this.partTracker.getPdfProcessingStatus(message.itemId);
+      if (!processingStatus) {
+        logger.info(`Initializing PDF processing for item ${message.itemId}`);
+        await this.partTracker.initializePdfProcessing(message.itemId, message.totalParts);
+      }
+
       // Update part status to processing
       await this.updatePartStatus(message.itemId, message.partIndex, 'processing', 'Converting PDF part to Markdown');
+      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.PROCESSING);
 
       // Log PDF metadata if available (optimization: no need to re-analyze)
       if (message.pdfMetadata) {
@@ -292,11 +314,14 @@ export class PdfConversionWorker {
 
       // Convert PDF part to Markdown
       logger.info(`Converting PDF part ${message.partIndex + 1} to Markdown for item: ${message.itemId}`);
-      logger.info(`OPTIMIZATION: Using S3 URL from analysis phase to avoid re-generation for item ${message.itemId}, part ${message.partIndex + 1}`);
+      logger.info(`OPTIMIZATION: Generating presigned URL from s3Key for item ${message.itemId}, part ${message.partIndex + 1}`);
+      
+      // Generate presigned URL from s3Key
+      const s3Url = await getPdfDownloadUrl(message.s3Key);
       
       let conversionResult;
       try {
-        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(message.s3Url);
+        conversionResult = await this.pdfConvertor.convertPdfToMarkdownFromS3(s3Url);
         
         // Enhanced diagnostic logging for part conversion result
         logger.info(`PDF part conversion completed for item ${message.itemId}, part ${message.partIndex + 1}. Enhanced diagnostics:`, {
@@ -343,6 +368,7 @@ export class PdfConversionWorker {
 
       // Update part status to completed
       await this.updatePartStatus(message.itemId, message.partIndex, 'completed', 'PDF part conversion completed');
+      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.COMPLETED);
 
       // Publish part completion message
       const processingTime = Date.now() - startTime;
@@ -361,6 +387,7 @@ export class PdfConversionWorker {
 
       // Update part status with error
       await this.updatePartStatus(message.itemId, message.partIndex, 'failed', `PDF part conversion failed: ${errorMessage}`, errorMessage);
+      await this.partTracker.updatePartStatus(message.itemId, message.partIndex, PdfPartStatus.FAILED, errorMessage);
 
       // Check if should retry
       const retryCount = message.retryCount || 0;
@@ -427,17 +454,65 @@ export class PdfConversionWorker {
    */
   private async checkAndTriggerMerging(itemId: string, totalParts: number): Promise<void> {
     try {
-      // Since we no longer track part status in storage, we need to handle this differently
-      // For now, we'll assume that when a part is completed, it will trigger a check
-      // The merging logic will need to be handled by a separate service that tracks part completion
-      logger.info(`Part completed for item ${itemId}, part merging check would be triggered here`);
+      logger.info(`Checking if all parts are completed for item ${itemId}`);
       
-      // In a real implementation, you would:
-      // 1. Query a separate tracking service for part completion status
-      // 2. If all parts are completed, send a merging request
+      // Check if all parts are completed
+      const allCompleted = await this.partTracker.areAllPartsCompleted(itemId);
       
-      // For now, we'll just log that this would happen
-      logger.info(`Would trigger merging for item ${itemId} if all ${totalParts} parts were completed`);
+      if (allCompleted) {
+        logger.info(`All parts completed for item ${itemId}, triggering merging`);
+        
+        // Get completed parts
+        const completedParts = await this.partTracker.getCompletedParts(itemId);
+        
+        // Create and publish merging request
+        const mergingRequest: PdfMergingRequestMessage = {
+          messageId: uuidv4(),
+          timestamp: Date.now(),
+          eventType: 'PDF_MERGING_REQUEST',
+          itemId,
+          totalParts,
+          completedParts,
+          priority: 'normal',
+        };
+        
+        await this.rabbitMQService.publishPdfMergingRequest(mergingRequest);
+        logger.info(`Published merging request for item ${itemId} with ${completedParts.length} parts`);
+      } else {
+        // Check if any parts failed
+        const hasFailedParts = await this.partTracker.hasAnyPartFailed(itemId);
+        
+        if (hasFailedParts) {
+          logger.warn(`Some parts failed for item ${itemId}, checking retry options`);
+          
+          const failedParts = await this.partTracker.getFailedParts(itemId);
+          const failedPartsDetails = await this.partTracker.getFailedPartsDetails(itemId);
+          
+          // Check if any failed parts can be retried
+          const retryableParts = failedPartsDetails.filter(part => {
+            const retryCount = part.retryCount || 0;
+            const maxRetries = part.maxRetries || 3;
+            return retryCount < maxRetries;
+          });
+          
+          if (retryableParts.length > 0) {
+            logger.info(`Retrying ${retryableParts.length} failed parts for item ${itemId}`);
+            const retriedParts = await this.partTracker.retryFailedParts(itemId);
+            
+            // Republish retry requests for retried parts
+            for (const partIndex of retriedParts) {
+              // This would require the original part conversion request details
+              // For now, we'll log that retry would happen here
+              logger.info(`Would retry part ${partIndex} for item ${itemId}`);
+            }
+          } else {
+            logger.error(`All failed parts for item ${itemId} have exceeded max retries`);
+            // Here you could publish a failure message or trigger a different workflow
+          }
+        } else {
+          logger.info(`Not all parts are completed yet for item ${itemId}. Continuing to wait...`);
+        }
+      }
     } catch (error) {
       logger.error(`Failed to check and trigger merging for item ${itemId}:`, error);
     }

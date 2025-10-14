@@ -92,7 +92,6 @@ export interface BookMetadata {
       endPage: number;
       pageCount: number;
       s3Key: string;
-      s3Url: string;
       status: string;
       processingTime?: number;
       error?: string;
@@ -538,7 +537,7 @@ export default class Library extends AbstractLibrary {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId,
-        s3Url,
+        
         s3Key,
         fileName,
         priority: 'normal',

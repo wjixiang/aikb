@@ -2,7 +2,6 @@ import {
   PdfAnalysisCompletedMessage,
   PdfAnalysisFailedMessage,
   PdfConversionRequestMessage,
-  PdfSplittingRequestMessage,
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
@@ -17,13 +16,12 @@ const logger = createLoggerWithPrefix('PdfProcessingCoordinator');
 
 /**
  * PDF Processing Coordinator Worker
- * Coordinates the PDF processing workflow by listening to analysis and splitting completion events
+ * Coordinates the PDF processing workflow by listening to analysis completion events
  * and triggering the next steps in the processing pipeline
  */
 export class PdfProcessingCoordinatorWorker {
   private rabbitMQService = getRabbitMQService();
   private analysisConsumerTag: string | null = null;
-  private splittingConsumerTag: string | null = null;
   private isRunning = false;
 
   constructor(private storage: AbstractLibraryStorage) {}
@@ -55,17 +53,6 @@ export class PdfProcessingCoordinatorWorker {
         }
       );
 
-      // Note: Splitting completion handling is disabled for now
-      // The splitting worker will handle sending part conversion requests directly
-      // this.splittingConsumerTag = await this.rabbitMQService.consumeMessages(
-      //   RABBITMQ_QUEUES.PDF_SPLITTING_COMPLETED,
-      //   this.handleSplittingCompleted.bind(this),
-      //   {
-      //     consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_SPLITTING_WORKER + '-coordinator',
-      //     noAck: false, // Manual acknowledgment
-      //   }
-      // );
-
       this.isRunning = true;
       logger.info('PDF processing coordinator worker started successfully');
     } catch (error) {
@@ -89,11 +76,6 @@ export class PdfProcessingCoordinatorWorker {
       if (this.analysisConsumerTag) {
         await this.rabbitMQService.stopConsuming(this.analysisConsumerTag);
         this.analysisConsumerTag = null;
-      }
-
-      if (this.splittingConsumerTag) {
-        await this.rabbitMQService.stopConsuming(this.splittingConsumerTag);
-        this.splittingConsumerTag = null;
       }
 
       this.isRunning = false;
@@ -120,69 +102,43 @@ export class PdfProcessingCoordinatorWorker {
       // Get Item directly
       if(!itemMetadata?.s3Key) throw new Error(`s3 key not found for library item: ${itemMetadata?.id}`)
       
-      // Use the S3 URL from the analysis message if available, otherwise get a new one
-      const s3Url = message.s3Url || await this.storage.getPdfDownloadUrl(itemMetadata?.s3Key)
+      // We no longer pass s3Url, consumers will generate it from s3Key
 
       if (!itemMetadata) {
         logger.error(`Item ${message.itemId} not found`);
         return;
       }
 
-      if (message.requiresSplitting) {
-        // Send PDF splitting request
-        logger.info(`Sending PDF splitting request for item: ${message.itemId}`);
-        
-        const splittingRequest: PdfSplittingRequestMessage = {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'PDF_SPLITTING_REQUEST',
-          itemId: message.itemId,
-          s3Url: s3Url,
-          s3Key: itemMetadata.s3Key!,
-          fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
-          pageCount: message.pageCount,
-          splitSize: message.suggestedSplitSize || 25,
-          priority: 'normal',
-          retryCount: 0,
-          maxRetries: 3,
-          pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
-        };
+      // Send PDF conversion request directly (splitting is now handled in the analyzer)
+      logger.info(`Sending PDF conversion request for item: ${message.itemId}`);
+      
+      const conversionRequest: PdfConversionRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'PDF_CONVERSION_REQUEST',
+        itemId: message.itemId,
+        s3Key: itemMetadata.s3Key!,
+        fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
+        metadata: {
+          title: itemMetadata.title,
+          authors: itemMetadata.authors,
+          tags: itemMetadata.tags,
+          collections: itemMetadata.collections,
+        },
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+        pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
+      };
 
-        await this.rabbitMQService.publishPdfSplittingRequest(splittingRequest);
-        logger.info(`PDF splitting request sent for item: ${message.itemId}`);
-      } else {
-        // Send PDF conversion request directly
-        logger.info(`Sending PDF conversion request for item: ${message.itemId}`);
-        
-        const conversionRequest: PdfConversionRequestMessage = {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'PDF_CONVERSION_REQUEST',
-          itemId: message.itemId,
-          s3Url: s3Url,
-          s3Key: itemMetadata.s3Key!,
-          fileName: itemMetadata.s3Key!.split('/').pop() || 'document.pdf',
-          metadata: {
-            title: itemMetadata.title,
-            authors: itemMetadata.authors,
-            tags: itemMetadata.tags,
-            collections: itemMetadata.collections,
-          },
-          priority: 'normal',
-          retryCount: 0,
-          maxRetries: 3,
-          pdfMetadata: message.pdfMetadata, // Pass along PDF metadata from analysis
-        };
-
-        await this.rabbitMQService.publishPdfConversionRequest(conversionRequest);
-        logger.info(`PDF conversion request sent for item: ${message.itemId} \n s3Url: ${s3Url}`);
-      }
+      await this.rabbitMQService.publishPdfConversionRequest(conversionRequest);
+      logger.info(`PDF conversion request sent for item: ${message.itemId} with s3Key: ${itemMetadata.s3Key}`);
 
       // Update item status
       await this.storage.updateMetadata({
         ...itemMetadata,
         pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
-        pdfProcessingMessage: message.requiresSplitting ? 'PDF splitting in progress' : 'PDF conversion in progress',
+        pdfProcessingMessage: 'PDF conversion in progress',
         dateModified: new Date(),
       });
 
@@ -191,41 +147,6 @@ export class PdfProcessingCoordinatorWorker {
       throw error;
     }
   }
-
-  // Note: Splitting completion handling is disabled for now
-  // /**
-  //  * Handle PDF splitting completed message
-  //  */
-  // private async handleSplittingCompleted(
-  //   message: PdfSplittingCompletedMessage,
-  //   originalMessage: any
-  // ): Promise<void> {
-  //   logger.info(`Processing splitting completed for item: ${message.itemId}, total parts: ${message.totalParts}`);
-
-  //   try {
-  //     // Get the item metadata
-  //     const itemMetadata = await this.storage.getMetadata(message.itemId);
-  //     if (!itemMetadata) {
-  //       logger.error(`Item ${message.itemId} not found`);
-  //       return;
-  //     }
-
-  //     // Update item status to indicate merging will start
-  //     await this.storage.updateMetadata({
-  //       ...itemMetadata,
-  //       pdfProcessingStatus: PdfProcessingStatus.MERGING,
-  //       pdfProcessingMessage: 'PDF parts conversion completed, starting merging process',
-  //       pdfProcessingMergingStartedAt: new Date(),
-  //       dateModified: new Date(),
-  //     });
-
-  //     logger.info(`Splitting completed processed for item: ${message.itemId}, merging process initiated`);
-
-  //   } catch (error) {
-  //     logger.error(`Failed to handle splitting completed for item ${message.itemId}:`, error);
-  //     throw error;
-  //   }
-  // }
 
   /**
    * Check if the worker is running

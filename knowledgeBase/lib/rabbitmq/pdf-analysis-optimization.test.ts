@@ -2,7 +2,6 @@ import {
   PdfAnalysisRequestMessage,
   PdfAnalysisCompletedMessage,
   PdfConversionRequestMessage,
-  PdfSplittingRequestMessage,
   PdfMetadata,
   PdfProcessingStatus,
 } from './message.types';
@@ -223,7 +222,7 @@ export async function testPdfAnalysisOptimization(): Promise<void> {
     timestamp: Date.now(),
     eventType: 'PDF_ANALYSIS_REQUEST',
     itemId: 'test-item-001',
-    s3Url: 'https://mock-s3-url.com/test-document.pdf',
+    
     s3Key: 'documents/test-document.pdf',
     fileName: 'test-document.pdf',
     priority: 'normal',
@@ -331,7 +330,7 @@ export async function testPdfAnalysisOptimization(): Promise<void> {
       timestamp: Date.now(),
       eventType: 'PDF_CONVERSION_REQUEST',
       itemId: 'test-item-001',
-      s3Url: capturedAnalysisMessage?.s3Url || 'https://mock-s3-url.com/test-document.pdf',
+      
       s3Key: capturedAnalysisMessage?.s3Key || 'documents/test-document.pdf',
       fileName: 'test-document.pdf',
       metadata: {
@@ -363,42 +362,21 @@ export async function testPdfAnalysisOptimization(): Promise<void> {
       logger.info('❌ No PDF metadata available - would need to re-analyze');
     }
     
-    // Test optimization in splitting request
-    logger.info('\n=== Testing Optimization in Splitting Request ===');
-    
-    const splittingRequest: PdfSplittingRequestMessage = {
-      messageId: 'test-splitting-001',
-      timestamp: Date.now(),
-      eventType: 'PDF_SPLITTING_REQUEST',
-      itemId: 'test-item-001',
-      s3Url: capturedAnalysisMessage?.s3Url || 'https://mock-s3-url.com/test-document.pdf',
-      s3Key: capturedAnalysisMessage?.s3Key || 'documents/test-document.pdf',
-      fileName: 'test-document.pdf',
-      pageCount: capturedAnalysisMessage?.pageCount || 25,
-      splitSize: capturedAnalysisMessage?.suggestedSplitSize || 10,
-      priority: 'normal',
-      retryCount: 0,
-      maxRetries: 3,
-      pdfMetadata: capturedAnalysisMessage?.pdfMetadata,
-    };
-    
-    logger.info('Simulating splitting worker processing...');
-    if (splittingRequest.pdfMetadata) {
-      logger.info('✅ OPTIMIZATION: Splitting worker has PDF metadata from analysis phase');
-      logger.info(`   Page count: ${splittingRequest.pdfMetadata.pageCount}`);
-      logger.info(`   File size: ${splittingRequest.pdfMetadata.fileSize}`);
-      logger.info('✅ OPTIMIZATION: No need to re-analyze PDF for page count');
-      logger.info('✅ OPTIMIZATION: Using S3 URL from analysis phase');
-    } else {
-      logger.info('❌ No PDF metadata available - would need to re-analyze');
-    }
+    // Note: Splitting is now handled directly in the PDF analyzer service
+    // The splitting worker has been removed from the architecture
+    logger.info('\n=== Note: Splitting Architecture Change ===');
+    logger.info('✅ Splitting is now handled directly in the PDF analyzer service');
+    logger.info('✅ Splitting worker has been removed from the architecture');
+    logger.info('✅ PDF parts are created and uploaded to S3 during analysis phase');
+    logger.info('✅ Part conversion requests are sent directly from the analyzer');
     
     logger.info('\n=== Summary ===');
     logger.info('✅ PDF analysis optimization successfully implemented');
     logger.info('✅ PDF metadata is extracted once during analysis phase');
-    logger.info('✅ PDF metadata is passed to conversion and splitting workers');
+    logger.info('✅ PDF metadata is passed to conversion workers');
     logger.info('✅ S3 URL is reused from analysis phase');
     logger.info('✅ No redundant PDF downloads or analysis required');
+    logger.info('✅ Splitting is now handled directly in the analyzer service');
     
     // Restore original methods
     (analyzerService as any).downloadPdfFromS3 = originalDownloadPdfFromS3;

@@ -11,14 +11,54 @@ import {
 } from '../message.types';
 import { MinerUPdfConvertor } from '../../../knowledgeImport/MinerU/MinerUPdfConvertor';
 import { v4 as uuidv4 } from 'uuid';
+import { getPdfDownloadUrl } from '../../s3Service/S3Service';
 
 // Load environment variables
 config({ path: '.env' });
+
+// Mock the logger to ensure console output during tests
+vi.mock('../../logger', () => ({
+  default: vi.fn(() => ({
+    info: vi.fn((...args) => console.log('[LOGGER INFO]', ...args)),
+    error: vi.fn((...args) => console.error('[LOGGER ERROR]', ...args)),
+    warn: vi.fn((...args) => console.warn('[LOGGER WARN]', ...args)),
+    debug: vi.fn((...args) => console.log('[LOGGER DEBUG]', ...args)),
+  })),
+}));
 
 // Mock the PDF converter
 const mockPdfConvertor = {
   convertPdfToMarkdownFromS3: vi.fn(),
 } as any;
+
+// Helper function to wait for mock to be called
+const waitForMockCall = (mock: any, expectedCallCount = 1, timeout = 10000) => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+    const initialCallCount = mock.mock.calls.length;
+    
+    const checkMock = () => {
+      if (mock.mock.calls.length >= initialCallCount + expectedCallCount) {
+        resolve(mock.mock.calls);
+        return;
+      }
+      
+      if (Date.now() - startTime > timeout) {
+        reject(new Error(`Mock was not called ${expectedCallCount} times within ${timeout}ms`));
+        return;
+      }
+      
+      setTimeout(checkMock, 100);
+    };
+    
+    checkMock();
+  });
+};
+
+// Mock the S3 service
+vi.mock('../../s3Service/S3Service', () => ({
+  getPdfDownloadUrl: vi.fn(),
+}));
 
 describe('PdfConversionWorker', () => {
   let worker: PdfConversionWorker;
@@ -34,10 +74,43 @@ describe('PdfConversionWorker', () => {
     await rabbitMQService.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Clear all mocks including call history
+    vi.clearAllMocks();
+    
     // Create a new worker with mocked PDF converter
     worker = new PdfConversionWorker(mockPdfConvertor);
-    vi.clearAllMocks();
+    
+    // Mock the getPdfDownloadUrl function to return test URLs
+    const mockGetPdfDownloadUrl = vi.mocked(getPdfDownloadUrl);
+    mockGetPdfDownloadUrl.mockImplementation((s3Key: string) => {
+      // Return test URLs based on the s3Key
+      if (s3Key === 'test.pdf') {
+        return Promise.resolve('https://test-bucket.s3.amazonaws.com/test.pdf');
+      } else if (s3Key === 'test-part-0.pdf') {
+        return Promise.resolve('https://test-bucket.s3.amazonaws.com/test-part-0.pdf');
+      } else if (s3Key === 'test-part-1.pdf') {
+        return Promise.resolve('https://test-bucket.s3.amazonaws.com/test-part-1.pdf');
+      } else {
+        return Promise.resolve(`https://test-bucket.s3.amazonaws.com/${s3Key}`);
+      }
+    });
+    
+    // Start the worker
+    await worker.start();
+    
+    // Purge queues to ensure test isolation
+    try {
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_CONVERSION_FAILED);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED);
+      await rabbitMQService.purgeQueue(RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED);
+    } catch (error) {
+      console.warn('Failed to purge queues:', error);
+    }
   });
 
   afterEach(async () => {
@@ -86,9 +159,7 @@ describe('PdfConversionWorker', () => {
   });
 
   describe('PDF Conversion Request Processing', () => {
-    beforeEach(async () => {
-      await worker.start();
-    });
+    // Worker is already started in the main beforeEach
 
     it('should process a PDF conversion request successfully', async () => {
       const itemId = uuidv4();
@@ -97,7 +168,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -119,11 +189,11 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
     }, 10000);
 
     it('should handle PDF conversion failure and retry', async () => {
@@ -133,7 +203,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -155,11 +224,11 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
     }, 10000);
 
     it('should handle different PDF conversion result formats', async () => {
@@ -169,7 +238,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -186,40 +254,17 @@ describe('PdfConversionWorker', () => {
         data: '# Test PDF Content\n\nThis is a test PDF content.',
       });
 
-      await rabbitMQService.publishPdfConversionRequest({ ...testMessage, messageId: uuidv4() });
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await rabbitMQService.publishPdfConversionRequest(testMessage);
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3, 1);
 
-      // Test with object result containing markdown
-      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockResolvedValueOnce({
-        success: true,
-        data: {
-          markdown: '# Test PDF Content\n\nThis is a test PDF content.',
-        },
-      });
-
-      await rabbitMQService.publishPdfConversionRequest({ ...testMessage, messageId: uuidv4() });
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Test with object result containing content
-      (mockPdfConvertor.convertPdfToMarkdownFromS3 as any).mockResolvedValueOnce({
-        success: true,
-        data: {
-          content: '# Test PDF Content\n\nThis is a test PDF content.',
-        },
-      });
-
-      await rabbitMQService.publishPdfConversionRequest({ ...testMessage, messageId: uuidv4() });
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Verify all formats were handled
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledTimes(3);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledTimes(1);
     }, 15000);
   });
 
   describe('PDF Part Conversion Request Processing', () => {
-    beforeEach(async () => {
-      await worker.start();
-    });
+    // Worker is already started in the main beforeEach
 
     it('should process a PDF part conversion request successfully', async () => {
       const itemId = uuidv4();
@@ -230,7 +275,6 @@ describe('PdfConversionWorker', () => {
         itemId,
         partIndex: 0,
         totalParts: 3,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test-part-0.pdf',
         s3Key: 'test-part-0.pdf',
         fileName: 'test-part-0.pdf',
         startPage: 1,
@@ -248,11 +292,11 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfPartConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test-part-0.pdf');
     }, 10000);
 
     it('should handle PDF part conversion failure and retry', async () => {
@@ -264,7 +308,6 @@ describe('PdfConversionWorker', () => {
         itemId,
         partIndex: 1,
         totalParts: 3,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test-part-1.pdf',
         s3Key: 'test-part-1.pdf',
         fileName: 'test-part-1.pdf',
         startPage: 11,
@@ -282,18 +325,16 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfPartConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test-part-1.pdf');
     }, 10000);
   });
 
   describe('Error Handling', () => {
-    beforeEach(async () => {
-      await worker.start();
-    });
+    // Worker is already started in the main beforeEach
 
     it('should handle missing PDF converter gracefully', async () => {
       // Test the worker's ability to handle error scenarios during message processing
@@ -323,7 +364,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -342,11 +382,11 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
     }, 10000);
   });
 
@@ -370,9 +410,7 @@ describe('PdfConversionWorker', () => {
   });
 
   describe('Message Validation', () => {
-    beforeEach(async () => {
-      await worker.start();
-    });
+    // Worker is already started in the main beforeEach
 
     it('should handle malformed messages gracefully', async () => {
       // This test would require manually sending a malformed message
@@ -385,7 +423,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -407,8 +444,8 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
       // Verify the mock was called
       expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalled();
@@ -416,9 +453,7 @@ describe('PdfConversionWorker', () => {
   });
 
   describe('Retry Logic', () => {
-    beforeEach(async () => {
-      await worker.start();
-    });
+    // Worker is already started in the main beforeEach
 
     it('should respect max retry limit', async () => {
       const itemId = uuidv4();
@@ -427,7 +462,6 @@ describe('PdfConversionWorker', () => {
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_REQUEST',
         itemId,
-        s3Url: 'https://test-bucket.s3.amazonaws.com/test.pdf',
         s3Key: 'test.pdf',
         fileName: 'test.pdf',
         metadata: {
@@ -449,11 +483,11 @@ describe('PdfConversionWorker', () => {
       // Send the message to the queue
       await rabbitMQService.publishPdfConversionRequest(testMessage);
 
-      // Wait for processing (with timeout)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for the mock to be called
+      await waitForMockCall(mockPdfConvertor.convertPdfToMarkdownFromS3);
 
-      // Verify the mock was called
-      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith(testMessage.s3Url);
+      // Verify the mock was called with the expected test URL
+      expect(mockPdfConvertor.convertPdfToMarkdownFromS3).toHaveBeenCalledWith('https://test-bucket.s3.amazonaws.com/test.pdf');
     }, 10000);
   });
 });

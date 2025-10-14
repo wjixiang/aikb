@@ -237,6 +237,15 @@ export async function getSignedUrlForDownload(
   return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
+
+export async function getPdfDownloadUrl(s3Key: string): Promise<string> {
+    const url = await getSignedUrlForDownload(
+      process.env.PDF_OSS_BUCKET_NAME as string,
+      s3Key,
+    );
+    return url;
+}
+
 /**
  * Deletes a file from S3
  *

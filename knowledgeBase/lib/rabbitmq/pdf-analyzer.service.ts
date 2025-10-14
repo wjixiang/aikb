@@ -5,12 +5,16 @@ import {
   PdfProcessingStatus,
   PDF_PROCESSING_CONFIG,
   PdfMetadata,
+  PdfPartInfo,
+  PdfPartStatus,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import * as axios from 'axios';
+import { PdfSpliterWorker } from '../../../pdfProcess-ts/pdfSpliter';
+import { uploadToS3, getPdfDownloadUrl } from '../s3Service/S3Service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 
@@ -20,6 +24,7 @@ const logger = createLoggerWithPrefix('PdfAnalyzerService');
  */
 export class PdfAnalyzerService {
   private rabbitMQService = getRabbitMQService();
+  private pdfSpliter = new PdfSpliterWorker();
 
   constructor(private storage: AbstractLibraryStorage) {}
 
@@ -42,12 +47,12 @@ export class PdfAnalyzerService {
 
       // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
-      const pdfBuffer = await this.downloadPdfFromS3(request.s3Url);
+      const pdfBuffer = await this.downloadPdfFromS3(request.s3Key);
 
       // Analyze PDF to get page count and metadata
       logger.info(`Analyzing PDF page count and metadata for item: ${request.itemId}`);
       const pageCount = await this.getPageCount(pdfBuffer);
-      const pdfMetadata = await this.extractPdfMetadata(pdfBuffer, request.s3Url);
+      const pdfMetadata = await this.extractPdfMetadata(pdfBuffer, request.s3Key);
 
       if (pageCount <= 0) {
         throw new Error(`Invalid page count detected: ${pageCount}`);
@@ -56,6 +61,7 @@ export class PdfAnalyzerService {
       // Determine if splitting is required
       const requiresSplitting = pageCount > PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
       let suggestedSplitSize: number = PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+      let splitParts: PdfPartInfo[] = [];
 
       if (requiresSplitting) {
         // Calculate optimal split size based on page count
@@ -68,24 +74,63 @@ export class PdfAnalyzerService {
         );
         
         logger.info(`PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`);
+
+        // Update status to splitting
+        await this.updateItemStatus(request.itemId, PdfProcessingStatus.SPLITTING, 'Splitting PDF into parts');
+
+        // Split the PDF directly
+        splitParts = await this.splitPdfAndUploadParts(
+          request.itemId,
+          request.fileName,
+          pdfBuffer,
+          pageCount,
+          suggestedSplitSize
+        );
+
+        logger.info(`PDF splitting completed for item ${request.itemId}: created ${splitParts.length} parts`);
       } else {
         logger.info(`PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`);
-
-        
       }
 
       // Update item metadata with analysis results
-      await this.storage.updateMetadata({
+      const updatedMetadata = {
         ...itemMetadata,
         pageCount,
         pdfProcessingStatus: PdfProcessingStatus.PROCESSING,
-        pdfProcessingMessage: requiresSplitting ? 'PDF requires splitting' : 'PDF ready for conversion',
+        pdfProcessingMessage: requiresSplitting ? 'PDF split into parts' : 'PDF ready for conversion',
         dateModified: new Date(),
-      });
+      };
+
+      // Add split parts information if available
+      if (requiresSplitting && splitParts.length > 0) {
+        updatedMetadata.pdfSplittingInfo = {
+          itemId: request.itemId,
+          originalFileName: request.fileName,
+          totalParts: splitParts.length,
+          parts: splitParts.map(part => ({
+            partIndex: part.partIndex,
+            startPage: part.startPage,
+            endPage: part.endPage,
+            pageCount: part.pageCount,
+            s3Key: part.s3Key,
+            status: part.status,
+            processingTime: part.processingTime,
+            error: part.error,
+          })),
+          processingTime: Date.now() - startTime,
+        };
+      }
+
+      await this.storage.updateMetadata(updatedMetadata);
 
       // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
-      await this.publishAnalysisCompleted(request.itemId, pageCount, requiresSplitting, suggestedSplitSize, processingTime, pdfMetadata, request.s3Url, request.s3Key);
+      await this.publishAnalysisCompleted(request.itemId, pageCount, requiresSplitting, suggestedSplitSize, processingTime, pdfMetadata, undefined, request.s3Key);
+
+      // If splitting was done, publish individual part conversion requests
+      if (requiresSplitting && splitParts.length > 0) {
+        await this.publishPartConversionRequests(request.itemId, request.fileName, splitParts, request.priority, pdfMetadata);
+      }
 
       logger.info(`PDF analysis completed for item: ${request.itemId}, pages: ${pageCount}, requires splitting: ${requiresSplitting}`);
 
@@ -129,24 +174,26 @@ export class PdfAnalyzerService {
   }
 
   /**
-   * Download PDF from S3 URL
+   * Download PDF from S3 using s3Key
    */
-  private async downloadPdfFromS3(s3Url: string): Promise<Buffer> {
+  private async downloadPdfFromS3(s3Key: string): Promise<Buffer> {
     try {
-      logger.info(`Attempting to download PDF from presigned S3 URL: ${s3Url}`);
+      logger.info(`Attempting to download PDF from S3 using s3Key: ${s3Key}`);
       
-      // The s3Url should now be a presigned URL that includes authentication
-      // No need for AWS SDK credentials, just use axios to download
-      const response = await axios.default.get(s3Url, {
+      // Generate a presigned URL for downloading
+      const presignedUrl = await getPdfDownloadUrl(s3Key);
+      
+      // Use axios to download the PDF using the presigned URL
+      const response = await axios.default.get(presignedUrl, {
         responseType: 'arraybuffer',
         timeout: 30000, // 30 seconds timeout
       });
 
-      logger.info(`Successfully downloaded PDF from presigned S3 URL, size: ${response.data.byteLength} bytes`);
+      logger.info(`Successfully downloaded PDF from S3, size: ${response.data.byteLength} bytes`);
       return Buffer.from(response.data);
     } catch (error) {
-      logger.error('Failed to download PDF from presigned S3 URL:', {
-        url: s3Url,
+      logger.error('Failed to download PDF from S3:', {
+        s3Key,
         error: error instanceof Error ? error.message : 'Unknown error',
         status: (error as any)?.response?.status,
         statusText: (error as any)?.response?.statusText,
@@ -194,7 +241,7 @@ export class PdfAnalyzerService {
    * Extract PDF metadata from buffer
    * This is a simplified implementation - in production, you would use a proper PDF library
    */
-  private async extractPdfMetadata(pdfBuffer: Buffer, s3Url: string): Promise<PdfMetadata> {
+  private async extractPdfMetadata(pdfBuffer: Buffer, s3Key: string): Promise<PdfMetadata> {
     try {
       // For now, we'll use a simple heuristic to extract basic metadata
       // In a real implementation, you would use a PDF parsing library like pdf-parse or pdf2pic
@@ -307,7 +354,6 @@ export class PdfAnalyzerService {
         suggestedSplitSize,
         processingTime,
         pdfMetadata,
-        s3Url,
         s3Key,
       };
 
@@ -343,6 +389,121 @@ export class PdfAnalyzerService {
       await this.rabbitMQService.publishPdfAnalysisFailed(failedMessage);
     } catch (publishError) {
       logger.error(`Failed to publish analysis failed message for item ${itemId}:`, publishError);
+    }
+  }
+
+  /**
+   * Split PDF and upload parts to S3
+   */
+  private async splitPdfAndUploadParts(
+    itemId: string,
+    fileName: string,
+    pdfBuffer: Buffer,
+    pageCount: number,
+    splitSize: number
+  ): Promise<PdfPartInfo[]> {
+    const splitParts: PdfPartInfo[] = [];
+    const totalParts = Math.ceil(pageCount / splitSize);
+    
+    logger.info(`Splitting PDF for item ${itemId}: ${pageCount} pages into ${totalParts} parts of max ${splitSize} pages each`);
+
+    try {
+      // Split the PDF into chunks
+      const pdfChunks = await this.pdfSpliter.splitPdfIntoChunks(pdfBuffer, splitSize);
+      
+      if (pdfChunks.length !== totalParts) {
+        logger.warn(`Expected ${totalParts} parts but got ${pdfChunks.length} chunks for item ${itemId}`);
+      }
+
+      // Upload each part to S3
+      for (let i = 0; i < pdfChunks.length; i++) {
+        const chunk = pdfChunks[i];
+        const startPage = i * splitSize;
+        const endPage = Math.min(startPage + splitSize - 1, pageCount - 1);
+        const partPageCount = endPage - startPage + 1;
+        
+        // Generate S3 key for this part
+        const fileExtension = fileName.split('.').pop() || 'pdf';
+        const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
+        const partS3Key = `${baseFileName}_part_${i + 1}_${startPage + 1}-${endPage + 1}.${fileExtension}`;
+        
+        logger.info(`Uploading part ${i + 1}/${pdfChunks.length} for item ${itemId}: pages ${startPage + 1}-${endPage + 1}, key: ${partS3Key}`);
+        
+        // Convert Uint8Array to Buffer for upload
+        const chunkBuffer = Buffer.from(chunk);
+        
+        // Upload to S3
+        const partS3Url = await uploadToS3(
+          chunkBuffer,
+          partS3Key,
+          'application/pdf',
+          'private'
+        );
+        
+        // Create part info
+        const partInfo: PdfPartInfo = {
+          partIndex: i,
+          startPage,
+          endPage,
+          pageCount: partPageCount,
+          s3Key: partS3Key,
+          status: PdfPartStatus.PENDING,
+        };
+        
+        splitParts.push(partInfo);
+        logger.info(`Successfully uploaded part ${i + 1} for item ${itemId} to S3: ${partS3Url}`);
+      }
+      
+      logger.info(`Successfully split and uploaded all ${splitParts.length} parts for item ${itemId}`);
+      return splitParts;
+    } catch (error) {
+      logger.error(`Failed to split and upload PDF parts for item ${itemId}:`, error);
+      throw new Error(`Failed to split PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Publish part conversion requests for each split part
+   */
+  private async publishPartConversionRequests(
+    itemId: string,
+    fileName: string,
+    splitParts: PdfPartInfo[],
+    priority?: 'low' | 'normal' | 'high',
+    pdfMetadata?: PdfMetadata
+  ): Promise<void> {
+    logger.info(`Publishing conversion requests for ${splitParts.length} parts of item ${itemId}`);
+    
+    try {
+      const totalParts = splitParts.length;
+      
+      for (const part of splitParts) {
+        const partConversionRequest = {
+          messageId: uuidv4(),
+          timestamp: Date.now(),
+          eventType: 'PDF_PART_CONVERSION_REQUEST' as const,
+          itemId,
+          partIndex: part.partIndex,
+          totalParts,
+          s3Url: undefined,
+          s3Key: part.s3Key,
+          fileName: `${fileName}_part_${part.partIndex + 1}_pages_${part.startPage + 1}-${part.endPage + 1}.pdf`,
+          startPage: part.startPage,
+          endPage: part.endPage,
+          priority,
+          retryCount: 0,
+          maxRetries: 3,
+          pdfMetadata,
+        };
+        
+        await this.rabbitMQService.publishPdfPartConversionRequest(partConversionRequest);
+        logger.info(`Published conversion request for part ${part.partIndex + 1}/${totalParts} of item ${itemId}`);
+      }
+      
+      logger.info(`Successfully published all conversion requests for item ${itemId}`);
+    } catch (error) {
+      logger.error(`Failed to publish part conversion requests for item ${itemId}:`, error);
+      throw new Error(`Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

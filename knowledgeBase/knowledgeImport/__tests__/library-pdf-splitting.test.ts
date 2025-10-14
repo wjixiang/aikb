@@ -24,7 +24,6 @@ import {
 } from '../../lib/rabbitmq/rabbitmq.service';
 import {
   PdfAnalysisRequestMessage,
-  PdfSplittingRequestMessage,
   PdfMergingRequestMessage,
   PDF_PROCESSING_CONFIG,
 } from '../../lib/rabbitmq/message.types';
@@ -96,7 +95,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
         s3Key: item.metadata.s3Key!,
-        s3Url:await item.getPdfDownloadUrl(),
+        
         fileName: 'small-test.pdf',
         priority: 'normal',
         retryCount: 0,
@@ -149,7 +148,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        s3Url: await item.getPdfDownloadUrl(),
+        
         s3Key: item.metadata.s3Key!,
         fileName: 'large-test.pdf',
         priority: 'normal',
@@ -262,7 +261,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
         timestamp: Date.now(),
         eventType: 'PDF_ANALYSIS_REQUEST',
         itemId: item.metadata.id!,
-        s3Url: await item.getPdfDownloadUrl(),
+        
         s3Key: item.metadata.s3Key!,
         fileName: 'invalid-test.pdf',
         priority: 'normal',
@@ -327,7 +326,7 @@ describe('PDF Splitting and Merging Integration Tests', () => {
           timestamp: Date.now(),
           eventType: 'PDF_ANALYSIS_REQUEST',
           itemId: item.metadata.id!,
-          s3Url: await item.getPdfDownloadUrl(),
+          
           s3Key: item.metadata.s3Key!,
           fileName: `concurrent-test-${i}.pdf`,
           priority: 'normal',

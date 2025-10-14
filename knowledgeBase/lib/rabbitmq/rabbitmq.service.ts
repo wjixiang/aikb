@@ -9,7 +9,6 @@ import {
   PdfAnalysisRequestMessage,
   PdfAnalysisCompletedMessage,
   PdfAnalysisFailedMessage,
-  PdfSplittingRequestMessage,
   PdfPartConversionRequestMessage,
   PdfPartConversionCompletedMessage,
   PdfPartConversionFailedMessage,
@@ -197,11 +196,13 @@ export class RabbitMQService {
 
     try {
       // Bind PDF conversion queues
+      logger.info(`DEBUG: Binding queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} to exchange ${RABBITMQ_EXCHANGES.PDF_CONVERSION} with routing key ${RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST}`);
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
         RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST
       );
+      logger.info(`DEBUG: Queue binding completed`);
 
       await this.channel.bindQueue(
         RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS,
@@ -238,19 +239,6 @@ export class RabbitMQService {
         RABBITMQ_QUEUES.PDF_ANALYSIS_FAILED,
         RABBITMQ_EXCHANGES.PDF_CONVERSION,
         RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED
-      );
-
-      // Bind PDF splitting queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_SPLITTING_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_SPLITTING_REQUEST
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_SPLITTING_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_SPLITTING_COMPLETED
       );
 
       // Bind PDF part conversion queues
@@ -430,6 +418,12 @@ export class RabbitMQService {
     }
 
     try {
+      // Check queue message count before publishing
+      if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
+        const queueInfo = await this.channel.checkQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
+        logger.info(`DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count before publishing: ${queueInfo.messageCount}`);
+      }
+
       const messageBuffer = Buffer.from(JSON.stringify(message));
       
       const publishOptions: amqp.Options.Publish = {
@@ -459,6 +453,14 @@ export class RabbitMQService {
           messageId: message.messageId,
           eventType: message.eventType,
         });
+
+        // Check queue message count after publishing
+        if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
+          setTimeout(async () => {
+            const queueInfo = await this.channel!.checkQueue(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST);
+            logger.info(`DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count after publishing: ${queueInfo.messageCount}`);
+          }, 100);
+        }
       } else {
         logger.warn(`Failed to publish message to routing key: ${routingKey}`, {
           messageId: message.messageId,
@@ -563,20 +565,6 @@ export class RabbitMQService {
       failed,
       {
         persistent: true,
-      }
-    );
-  }
-
-  /**
-   * Publish PDF splitting request
-   */
-  async publishPdfSplittingRequest(request: PdfSplittingRequestMessage): Promise<boolean> {
-    return this.publishMessage(
-      RABBITMQ_ROUTING_KEYS.PDF_SPLITTING_REQUEST,
-      request,
-      {
-        persistent: true,
-        priority: request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
       }
     );
   }
@@ -715,6 +703,7 @@ export class RabbitMQService {
       };
 
       const consumerTag = await this.channel.consume(queueName, async (message) => {
+        logger.info(`DEBUG: Consumer callback triggered for queue: ${queueName}`);
         if (!message) {
           logger.warn(`Received null message from queue: ${queueName}`);
           return;
@@ -722,6 +711,12 @@ export class RabbitMQService {
 
         try {
           const messageContent = JSON.parse(message.content.toString()) as PdfConversionMessage;
+          logger.info(`DEBUG: Received message from queue ${queueName}:`, {
+            eventType: messageContent.eventType,
+            itemId: messageContent.itemId,
+            retryCount: (messageContent as any).retryCount,
+            maxRetries: (messageContent as any).maxRetries,
+          });
           await onMessage(messageContent, message);
 
           if (!consumeOptions.noAck) {
@@ -729,6 +724,7 @@ export class RabbitMQService {
           }
         } catch (error) {
           logger.error(`Error processing message from queue ${queueName}:`, error);
+          logger.error(`DEBUG: Message content was:`, message.content.toString());
           
           if (!consumeOptions.noAck) {
             // Negative acknowledgment and requeue
