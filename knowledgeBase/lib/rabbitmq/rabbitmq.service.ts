@@ -21,6 +21,10 @@ import {
   MarkdownPartStorageProgressMessage,
   MarkdownPartStorageCompletedMessage,
   MarkdownPartStorageFailedMessage,
+  ChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingProgressMessage,
+  ChunkingEmbeddingCompletedMessage,
+  ChunkingEmbeddingFailedMessage,
   RabbitMQMessageOptions,
   RABBITMQ_QUEUES,
   RABBITMQ_EXCHANGES,
@@ -826,6 +830,69 @@ export class RabbitMQService {
   ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_FAILED,
+      failed,
+      {
+        persistent: true,
+      },
+    );
+  }
+
+  /**
+   * Publish chunking and embedding request
+   */
+  async publishChunkingEmbeddingRequest(
+    request: ChunkingEmbeddingRequestMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_REQUEST,
+      request,
+      {
+        persistent: true,
+        priority:
+          request.priority === 'high' ? 10 : request.priority === 'low' ? 1 : 5,
+      },
+    );
+  }
+
+  /**
+   * Publish chunking and embedding progress
+   */
+  async publishChunkingEmbeddingProgress(
+    progress: ChunkingEmbeddingProgressMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_PROGRESS,
+      progress,
+      {
+        persistent: false, // Progress messages are transient
+        expiration: '300000', // 5 minutes
+      },
+    );
+  }
+
+  /**
+   * Publish chunking and embedding completed
+   */
+  async publishChunkingEmbeddingCompleted(
+    completed: ChunkingEmbeddingCompletedMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_COMPLETED,
+      completed,
+      {
+        persistent: true,
+      },
+    );
+  }
+
+  /**
+   * Publish chunking and embedding failed
+   */
+  async publishChunkingEmbeddingFailed(
+    failed: ChunkingEmbeddingFailedMessage,
+  ): Promise<boolean> {
+    return this.publishMessage(
+      RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_FAILED,
       failed,
       {
         persistent: true,

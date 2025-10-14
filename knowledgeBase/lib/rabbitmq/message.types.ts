@@ -115,6 +115,8 @@ export interface PdfAnalysisRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
+  splitThreshold?: number; // Number of pages above which PDF should be split
+  splitSize?: number; // Number of pages per split part
 }
 
 /**
@@ -356,6 +358,62 @@ export interface MarkdownPartStorageFailedMessage extends BaseRabbitMQMessage {
 }
 
 /**
+ * Chunking and embedding request message
+ */
+export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
+  eventType: 'CHUNKING_EMBEDDING_REQUEST';
+  itemId: string;
+  markdownContent?: string; // Optional if markdown is already stored
+  chunkingStrategy: 'h1' | 'paragraph';
+  priority?: 'low' | 'normal' | 'high';
+  retryCount?: number;
+  maxRetries?: number;
+}
+
+/**
+ * Chunking and embedding progress message
+ */
+export interface ChunkingEmbeddingProgressMessage extends BaseRabbitMQMessage {
+  eventType: 'CHUNKING_EMBEDDING_PROGRESS';
+  itemId: string;
+  status: PdfProcessingStatus;
+  progress: number; // 0-100
+  message?: string;
+  error?: string;
+  startedAt?: number;
+  estimatedCompletion?: number;
+  chunksProcessed?: number;
+  totalChunks?: number;
+}
+
+/**
+ * Chunking and embedding completed message
+ */
+export interface ChunkingEmbeddingCompletedMessage extends BaseRabbitMQMessage {
+  eventType: 'CHUNKING_EMBEDDING_COMPLETED';
+  itemId: string;
+  status: PdfProcessingStatus.COMPLETED;
+  chunksCount: number;
+  processingTime: number; // in milliseconds
+  chunkingStrategy: 'h1' | 'paragraph';
+}
+
+/**
+ * Chunking and embedding failed message
+ */
+export interface ChunkingEmbeddingFailedMessage extends BaseRabbitMQMessage {
+  eventType: 'CHUNKING_EMBEDDING_FAILED';
+  itemId: string;
+  status: PdfProcessingStatus.FAILED;
+  error: string;
+  errorCode?: string;
+  retryCount: number;
+  maxRetries: number;
+  canRetry: boolean;
+  processingTime: number; // in milliseconds
+}
+
+/**
  * Union type for all PDF conversion messages
  */
 export type PdfConversionMessage =
@@ -373,7 +431,11 @@ export type PdfConversionMessage =
   | PdfMergingProgressMessage
   | MarkdownStorageRequestMessage
   | MarkdownStorageCompletedMessage
-  | MarkdownStorageFailedMessage;
+  | MarkdownStorageFailedMessage
+  | ChunkingEmbeddingRequestMessage
+  | ChunkingEmbeddingProgressMessage
+  | ChunkingEmbeddingCompletedMessage
+  | ChunkingEmbeddingFailedMessage;
 
 /**
  * PDF part information
@@ -473,6 +535,10 @@ export const RABBITMQ_QUEUES = {
   MARKDOWN_PART_STORAGE_PROGRESS: 'markdown-part-storage-progress',
   MARKDOWN_PART_STORAGE_COMPLETED: 'markdown-part-storage-completed',
   MARKDOWN_PART_STORAGE_FAILED: 'markdown-part-storage-failed',
+  CHUNKING_EMBEDDING_REQUEST: 'chunking-embedding-request',
+  CHUNKING_EMBEDDING_PROGRESS: 'chunking-embedding-progress',
+  CHUNKING_EMBEDDING_COMPLETED: 'chunking-embedding-completed',
+  CHUNKING_EMBEDDING_FAILED: 'chunking-embedding-failed',
   DEAD_LETTER_QUEUE: 'pdf-conversion-dlq',
 } as const;
 
@@ -507,6 +573,10 @@ export const RABBITMQ_ROUTING_KEYS = {
   MARKDOWN_PART_STORAGE_PROGRESS: 'markdown.part.storage.progress',
   MARKDOWN_PART_STORAGE_COMPLETED: 'markdown.part.storage.completed',
   MARKDOWN_PART_STORAGE_FAILED: 'markdown.part.storage.failed',
+  CHUNKING_EMBEDDING_REQUEST: 'chunking.embedding.request',
+  CHUNKING_EMBEDDING_PROGRESS: 'chunking.embedding.progress',
+  CHUNKING_EMBEDDING_COMPLETED: 'chunking.embedding.completed',
+  CHUNKING_EMBEDDING_FAILED: 'chunking.embedding.failed',
   DEAD_LETTER: 'pdf.conversion.dlq',
 } as const;
 
@@ -521,6 +591,7 @@ export const RABBITMQ_CONSUMER_TAGS = {
   PDF_MERGING_WORKER: 'pdf-merger-worker',
   MARKDOWN_STORAGE_WORKER: 'markdown-storage-worker',
   MARKDOWN_PART_STORAGE_WORKER: 'markdown-part-storage-worker',
+  CHUNKING_EMBEDDING_WORKER: 'chunking-embedding-worker',
 } as const;
 
 /**

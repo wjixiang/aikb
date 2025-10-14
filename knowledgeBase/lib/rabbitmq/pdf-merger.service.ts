@@ -157,13 +157,22 @@ export class PdfMergerService {
       await this.publishMergingProgress(
         message.itemId,
         80,
-        'Processing chunks and embeddings',
+        'Preparing for chunking and embedding',
         message.completedParts.length,
         message.totalParts,
       );
 
-      // Process chunks and embeddings for the merged content
-      await this.processChunksAndEmbeddings(message.itemId, mergedMarkdown);
+      // Update progress
+      await this.publishMergingProgress(
+        message.itemId,
+        85,
+        'Sending chunking and embedding request',
+        message.completedParts.length,
+        message.totalParts,
+      );
+
+      // Send chunking and embedding request
+      await this.sendChunkingEmbeddingRequest(message.itemId, mergedMarkdown);
 
       // Update progress
       await this.publishMergingProgress(
@@ -340,29 +349,37 @@ export class PdfMergerService {
   }
 
   /**
-   * Process chunks and embeddings for the merged markdown
+   * Send chunking and embedding request
    */
-  private async processChunksAndEmbeddings(
+  private async sendChunkingEmbeddingRequest(
     itemId: string,
     markdownContent: string,
   ): Promise<void> {
     try {
-      // This is a simplified version - in a real implementation, you would
-      // use the proper chunking and embedding services from the Library class
+      const chunkingEmbeddingRequest = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
+        itemId,
+        markdownContent,
+        chunkingStrategy: 'paragraph' as const, // Default strategy
+        priority: 'normal' as const,
+        retryCount: 0,
+        maxRetries: 3,
+      };
 
-      logger.info(`Processing chunks for merged item: ${itemId}`);
-
-      // Here you would implement the actual chunking logic
-      // For now, we'll simulate it with a delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      logger.info(`Chunks and embeddings processed for merged item: ${itemId}`);
+      await this.rabbitMQService.publishChunkingEmbeddingRequest(
+        chunkingEmbeddingRequest,
+      );
+      logger.info(
+        `Chunking and embedding request sent for merged item: ${itemId}`,
+      );
     } catch (error) {
       logger.error(
-        `Failed to process chunks and embeddings for merged item ${itemId}:`,
+        `Failed to send chunking and embedding request for merged item ${itemId}:`,
         error,
       );
-      throw error;
+      // Don't throw here, as this is a secondary operation
     }
   }
 

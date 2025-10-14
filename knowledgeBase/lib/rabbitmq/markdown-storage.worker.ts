@@ -133,17 +133,14 @@ export class MarkdownStorageWorker {
         processingTime,
       );
 
-      // Process chunks and embeddings
-      logger.info(
-        `Processing chunks and embeddings for item: ${message.itemId}`,
-      );
-      await this.processChunksAndEmbeddings(
-        message.itemId,
-        message.markdownContent,
-      );
-
       // Publish completion message
       await this.publishCompletionMessage(message.itemId, processingTime);
+
+      // Send chunking and embedding request
+      logger.info(
+        `Sending chunking and embedding request for item: ${message.itemId}`,
+      );
+      await this.sendChunkingEmbeddingRequest(message.itemId, message.markdownContent);
 
       logger.info(
         `Markdown storage completed successfully for item: ${message.itemId}`,
@@ -238,28 +235,34 @@ export class MarkdownStorageWorker {
   }
 
   /**
-   * Process chunks and embeddings for the markdown content
+   * Send chunking and embedding request
    */
-  private async processChunksAndEmbeddings(
+  private async sendChunkingEmbeddingRequest(
     itemId: string,
     markdownContent: string,
   ): Promise<void> {
     try {
-      // Use default chunking strategy
-      const chunkingStrategy: ChunkingStrategyType =
-        ChunkingStrategyType.PARAGRAPH;
+      const chunkingEmbeddingRequest = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
+        itemId,
+        markdownContent,
+        chunkingStrategy: 'paragraph' as const, // Default strategy
+        priority: 'normal' as const,
+        retryCount: 0,
+        maxRetries: 3,
+      };
 
-      // Get the library instance to process chunks
-      const library = new Library(this.storage);
-
-      await library.processItemChunks(itemId, chunkingStrategy);
-
+      await this.rabbitMQService.publishChunkingEmbeddingRequest(
+        chunkingEmbeddingRequest,
+      );
       logger.info(
-        `Chunks and embeddings processed successfully for item: ${itemId}`,
+        `Chunking and embedding request sent for item: ${itemId}`,
       );
     } catch (error) {
       logger.error(
-        `Failed to process chunks and embeddings for item ${itemId}:`,
+        `Failed to send chunking and embedding request for item ${itemId}:`,
         error,
       );
       // Don't throw here, as this is a secondary operation

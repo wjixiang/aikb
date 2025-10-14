@@ -67,21 +67,33 @@ export class PdfAnalyzerService {
         throw new Error(`Invalid page count detected: ${pageCount}`);
       }
 
+      // Get split threshold from message or environment variable
+      const splitThreshold = request.splitThreshold ||
+        parseInt(process.env.PDF_SPLIT_THRESHOLD || '') ||
+        PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
+      
       // Determine if splitting is required
-      const requiresSplitting =
-        pageCount > PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
-      let suggestedSplitSize: number = PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+      const requiresSplitting = pageCount > splitThreshold;
+      let suggestedSplitSize: number;
       let splitParts: PdfPartInfo[] = [];
 
       if (requiresSplitting) {
-        // Calculate optimal split size based on page count
-        suggestedSplitSize = Math.min(
-          Math.max(
-            Math.ceil(pageCount / 10), // Aim for around 10 parts max
-            PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
-          ),
-          PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
-        );
+        // If a specific split size was provided in the request, use it
+        if (request.splitSize) {
+          suggestedSplitSize = request.splitSize;
+        } else {
+          // Use environment variable or default split size
+          suggestedSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+          
+          // Ensure split size is within min/max bounds
+          suggestedSplitSize = Math.min(
+            Math.max(
+              suggestedSplitSize,
+              parseInt(process.env.PDF_MIN_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
+            ),
+            parseInt(process.env.PDF_MAX_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
+          );
+        }
 
         logger.info(
           `PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`,
@@ -107,6 +119,9 @@ export class PdfAnalyzerService {
           `PDF splitting completed for item ${request.itemId}: created ${splitParts.length} parts`,
         );
       } else {
+        // Set suggestedSplitSize even when not splitting
+        suggestedSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+        
         logger.info(
           `PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`,
         );

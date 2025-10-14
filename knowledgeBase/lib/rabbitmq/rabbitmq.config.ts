@@ -276,6 +276,48 @@ export const rabbitMQQueueConfigs: Record<string, RabbitMQQueueConfig> = {
       'x-max-length': 10, // Keep only a few health check messages
     },
   },
+  'chunking-embedding-request': {
+    name: 'chunking-embedding-request',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-dead-letter-exchange': 'pdf-conversion-dlx',
+      'x-dead-letter-routing-key': 'pdf.conversion.dlq',
+      'x-message-ttl': 7200000, // 2 hours in milliseconds
+      'x-max-length': 20000, // Maximum 20,000 messages
+    },
+  },
+  'chunking-embedding-progress': {
+    name: 'chunking-embedding-progress',
+    durable: false, // Progress messages are transient
+    exclusive: false,
+    autoDelete: true, // Auto-delete when no consumers
+    arguments: {
+      'x-message-ttl': 300000, // 5 minutes in milliseconds
+      'x-max-length': 1000, // Keep only recent progress messages
+    },
+  },
+  'chunking-embedding-completed': {
+    name: 'chunking-embedding-completed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 3600000, // 1 hour in milliseconds
+      'x-max-length': 10000, // Maximum 10,000 messages
+    },
+  },
+  'chunking-embedding-failed': {
+    name: 'chunking-embedding-failed',
+    durable: true,
+    exclusive: false,
+    autoDelete: false,
+    arguments: {
+      'x-message-ttl': 604800000, // 7 days in milliseconds
+      'x-max-length': 5000, // Maximum 5,000 messages
+    },
+  },
 };
 
 /**
