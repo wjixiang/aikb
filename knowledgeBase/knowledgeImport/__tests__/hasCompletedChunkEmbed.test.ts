@@ -41,6 +41,17 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {},
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
       },
       {
         id: 'chunk-2',
@@ -50,6 +61,17 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {},
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
       },
     ];
 
@@ -73,6 +95,19 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.1, 0.2, 0.3], // Has embedding
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {
+          'test-provider': [0.1, 0.2, 0.3]
+        },
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
       },
       {
         id: 'chunk-2',
@@ -82,6 +117,17 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {},
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
         // No embedding
       },
     ];
@@ -106,6 +152,19 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.1, 0.2, 0.3],
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {
+          'test-provider': [0.1, 0.2, 0.3]
+        },
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
       },
       {
         id: 'chunk-2',
@@ -116,6 +175,19 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.4, 0.5, 0.6],
         createdAt: new Date(),
         updatedAt: new Date(),
+        denseVectorIndexGroup: 'test-group',
+        version: '1.0.0',
+        embeddings: {
+          'test-provider': [0.4, 0.5, 0.6]
+        },
+        strategyMetadata: {
+          chunkingStrategy: 'test-strategy',
+          chunkingConfig: {},
+          embeddingProvider: 'test-provider',
+          embeddingConfig: {},
+          processingTimestamp: new Date(),
+          processingDuration: 1000
+        }
       },
     ];
 

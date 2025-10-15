@@ -7,6 +7,10 @@ export interface BaseRabbitMQMessage {
   eventType: string;
 }
 
+// Import required types for multi-version support
+import { EmbeddingConfig, ChunkingEmbeddingGroup } from '../../knowledgeImport/library';
+import { ChunkingConfig } from '../chunking/chunkingStrategy';
+
 /**
  * PDF processing status enum
  */
@@ -368,6 +372,71 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
+  
+  // Multi-version support
+  denseVectorIndexGroup?: string; // Optional group ID for this chunking/embedding combination
+  embeddingProvider?: string; // Optional embedding provider override
+  embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
+  chunkingConfig?: ChunkingConfig; // Optional chunking configuration override
+  
+  // Version control
+  forceReprocess?: boolean; // Force reprocessing even if chunks exist
+  preserveExisting?: boolean; // Keep existing chunks from other groups
+}
+
+/**
+ * Multi-version chunking and embedding request message
+ */
+export interface MultiVersionChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
+  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST';
+  itemId: string;
+  markdownContent?: string;
+  
+  // Multi-version support
+  groupId?: string; // Use existing group
+  groupConfig?: ChunkingEmbeddingGroup; // Create new group with this config
+  
+  // Processing options
+  priority?: 'low' | 'normal' | 'high';
+  retryCount?: number;
+  maxRetries?: number;
+  
+  // Version control
+  forceReprocess?: boolean; // Force reprocessing even if chunks exist
+  preserveExisting?: boolean; // Keep existing chunks from other groups
+}
+
+/**
+ * Multi-version chunking and embedding progress message
+ */
+export interface MultiVersionChunkingEmbeddingProgressMessage extends BaseRabbitMQMessage {
+  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_PROGRESS';
+  itemId: string;
+  groupId?: string;
+  status: PdfProcessingStatus;
+  progress: number;
+  message?: string;
+  chunksProcessed?: number;
+  totalChunks?: number;
+  currentGroup?: string;
+  totalGroups?: number;
+  startedAt?: number;
+  estimatedCompletion?: number;
+}
+
+/**
+ * Multi-version chunking and embedding completed message
+ */
+export interface MultiVersionChunkingEmbeddingCompletedMessage extends BaseRabbitMQMessage {
+  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_COMPLETED';
+  itemId: string;
+  groupId: string;
+  status: PdfProcessingStatus.COMPLETED;
+  chunksCount: number;
+  processingTime: number;
+  strategy: string;
+  provider: string;
+  version: string;
 }
 
 /**
@@ -435,7 +504,10 @@ export type PdfConversionMessage =
   | ChunkingEmbeddingRequestMessage
   | ChunkingEmbeddingProgressMessage
   | ChunkingEmbeddingCompletedMessage
-  | ChunkingEmbeddingFailedMessage;
+  | ChunkingEmbeddingFailedMessage
+  | MultiVersionChunkingEmbeddingRequestMessage
+  | MultiVersionChunkingEmbeddingProgressMessage
+  | MultiVersionChunkingEmbeddingCompletedMessage;
 
 /**
  * PDF part information

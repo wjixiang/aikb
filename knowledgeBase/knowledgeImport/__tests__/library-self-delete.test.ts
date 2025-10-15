@@ -95,6 +95,19 @@ describe('LibraryItem.selfDelete', () => {
       embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
       createdAt: new Date(),
       updatedAt: new Date(),
+      denseVectorIndexGroup: 'test-group',
+      version: '1.0.0',
+      embeddings: {
+        'test-provider': [0.1, 0.2, 0.3, 0.4, 0.5]
+      },
+      strategyMetadata: {
+        chunkingStrategy: 'test-strategy',
+        chunkingConfig: {},
+        embeddingProvider: 'test-provider',
+        embeddingConfig: {},
+        processingTimestamp: new Date(),
+        processingDuration: 1000
+      }
     });
   });
 
@@ -200,7 +213,6 @@ describe('LibraryItem.selfDelete', () => {
             endPage: 5,
             pageCount: 5,
             s3Key: 'test-split-part-1.pdf',
-            s3Url: 'https://test-bucket.s3.amazonaws.com/test-split-part-1.pdf',
             status: 'completed',
           },
           {
@@ -209,7 +221,6 @@ describe('LibraryItem.selfDelete', () => {
             endPage: 10,
             pageCount: 5,
             s3Key: 'test-split-part-2.pdf',
-            s3Url: 'https://test-bucket.s3.amazonaws.com/test-split-part-2.pdf',
             status: 'completed',
           },
         ],

@@ -5,10 +5,14 @@ import { BookMetadata, BookChunk, ChunkSearchFilter } from '../library';
 import { embeddingService } from '../../lib/embedding/embedding';
 import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
 
+// Set NODE_ENV to test for proper test environment detection
+process.env.NODE_ENV = 'test';
+
 // Mock the embedding service
 vi.mock('../../lib/embedding/embedding', () => ({
   embeddingService: {
     embedBatch: vi.fn(),
+    getProvider: vi.fn().mockReturnValue('alibaba'),
   },
 }));
 
@@ -126,14 +130,14 @@ This is the second chapter content.`,
       expect(chunks).toHaveLength(3);
 
       // Verify chunk content
-      expect(chunks[0].title).toBe('Chunk 1');
+      expect(chunks[0].title).toBe('Paragraph 1');
       expect(chunks[0].content).toBe('This is paragraph one.');
       expect(chunks[0].metadata?.chunkType).toBe('paragraph');
 
-      expect(chunks[1].title).toBe('Chunk 2');
+      expect(chunks[1].title).toBe('Paragraph 2');
       expect(chunks[1].content).toBe('This is paragraph two.');
 
-      expect(chunks[2].title).toBe('Chunk 3');
+      expect(chunks[2].title).toBe('Paragraph 3');
       expect(chunks[2].content).toBe('This is paragraph three.');
     });
 
@@ -189,10 +193,11 @@ This is the second chapter content.`,
         `# Chapter 1\nUpdated content 1\n\n# Chapter 2\nNew content 2`,
       );
 
-      // Re-process chunks
+      // Re-process chunks with forceReprocess
       await library.processItemChunks(
         item.metadata.id!,
         ChunkingStrategyType.H1,
+        { forceReprocess: true },
       );
 
       // Verify chunks were replaced

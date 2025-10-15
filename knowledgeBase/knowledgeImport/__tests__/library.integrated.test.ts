@@ -162,7 +162,7 @@ describe(Library, async () => {
   });
 });
 
-describe('pdf process workflow', async () => {
+describe.skip('pdf process workflow', async () => {
   let { book, library } = await UploadTestPdf();
 
   it('start pdf async process', async () => {

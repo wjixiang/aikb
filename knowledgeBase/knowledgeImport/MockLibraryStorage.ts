@@ -359,6 +359,25 @@ export class MockLibraryStorage extends AbstractLibraryStorage {
     }
   }
 
+  // Multi-version support methods
+  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]> {
+    const chunks = Array.from(this.chunkStore.values());
+    return chunks
+      .filter((chunk) => chunk.itemId === itemId && chunk.denseVectorIndexGroup === groupId)
+      .sort((a, b) => a.index - b.index);
+  }
+
+  async deleteChunksByGroup(groupId: string): Promise<number> {
+    const chunks = Array.from(this.chunkStore.values());
+    const chunksToDelete = chunks.filter((chunk) => chunk.denseVectorIndexGroup === groupId);
+
+    for (const chunk of chunksToDelete) {
+      this.chunkStore.delete(chunk.id);
+    }
+
+    return chunksToDelete.length;
+  }
+
   // Helper methods for testing
   clearAll(): void {
     this.metadataStore.clear();
