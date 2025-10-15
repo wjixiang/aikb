@@ -15,7 +15,7 @@ describe('MongoDBMarkdownPartCache', () => {
     await cache.cleanup(testItemId);
     await cache.close();
   });
-
+  
   describe('storePartMarkdown', () => {
     it('should store markdown part successfully', async () => {
       const partIndex = 0;

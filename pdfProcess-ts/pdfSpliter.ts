@@ -56,7 +56,7 @@ export class PdfSpliterWorker {
             // Add the copied pages to the new document
             copiedPages.forEach((page, index) => {
                 newPdfDoc.addPage(page)
-                logger.info(`Added page ${startPage + index} to new PDF`)
+                // logger.info(`Added page ${startPage + index} to new PDF`)
             })
             
             // Save the new PDF document as bytes

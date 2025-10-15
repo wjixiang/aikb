@@ -29,10 +29,23 @@ module.exports = {
     error_file: '/workspace/logs/markdown-storage.worker.error.log'
   },
   {
-    name: 'PDF spliting worker',
-    script: 'uv run ./pdfProcess/pdf_splitting_worker.py',
-    out_file: '/workspace/logs/pdf_splitting_worker.out.log',
-    error_file: '/workspace/logs/pdf_splitting_worker.error.log',
-    log_file: '/workspace/logs/pdf_splitting_worker.log'
-  }]
+    name: 'chunking & embedding worker',
+    script: "tsx knowledgeBase/lib/rabbitmq/chunking-embedding.worker",
+    out_file: '/workspace/logs/chunking-embedding.worker.out.log',
+    error_file: '/workspace/logs/chunking-embedding.worker.error.log'
+  },
+  {
+    name: 'markdown-part-storage.worker',
+    script: "tsx knowledgeBase/lib/rabbitmq/markdown-part-storage.worker",
+    out_file: '/workspace/logs/markdown-part-storage.worker.out.log',
+    error_file: '/workspace/logs/markdown-part-storage.worker.error.log'
+  },
+  {
+    name: 'PDF Merger Worker',
+    script: 'tsx ./knowledgeBase/lib/rabbitmq/pdf-merger.worker.ts',
+    description: 'Merges PDF parts into complete markdown documents',
+    out_file: '/workspace/logs/pdf-merger.worker.out.log',
+    error_file: '/workspace/logs/pdf-merger.worker.error.log'
+  }
+]
 }

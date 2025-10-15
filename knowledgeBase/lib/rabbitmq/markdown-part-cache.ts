@@ -64,11 +64,15 @@ export abstract class MarkdownPartCache {
    */
   async mergeAllParts(itemId: string): Promise<string> {
     try {
+      logger.debug(`[DEBUG] mergeAllParts called for itemId=${itemId}`);
       logger.info(`开始合并项目 ${itemId} 的所有markdown部分`, { itemId });
       
+      logger.debug(`[DEBUG] About to call getAllParts in mergeAllParts for itemId=${itemId}`);
       const parts = await this.getAllParts(itemId);
+      logger.debug(`[DEBUG] getAllParts in mergeAllParts returned ${parts.length} parts for itemId=${itemId}`);
       
       if (parts.length === 0) {
+        logger.debug(`[DEBUG] No parts available for merging for itemId=${itemId}`);
         throw new MarkdownPartCacheError(
           `项目 ${itemId} 没有可用的markdown部分`,
           'NO_PARTS_AVAILABLE',
@@ -78,26 +82,30 @@ export abstract class MarkdownPartCache {
 
       // 按部分索引排序
       parts.sort((a, b) => a.partIndex - b.partIndex);
+      logger.debug(`[DEBUG] Parts sorted for itemId=${itemId}`);
       
       // 合并所有部分
+      logger.debug(`[DEBUG] About to merge content for ${parts.length} parts of itemId=${itemId}`);
       const mergedContent = parts.map(part => part.content).join('\n\n');
+      logger.debug(`[DEBUG] Content merged for itemId=${itemId}, length: ${mergedContent.length}`);
       
-      logger.info(`成功合并项目 ${itemId} 的 ${parts.length} 个markdown部分`, { 
-        itemId, 
+      logger.info(`成功合并项目 ${itemId} 的 ${parts.length} 个markdown部分`, {
+        itemId,
         partsCount: parts.length,
-        contentLength: mergedContent.length 
+        contentLength: mergedContent.length
       });
       
       return mergedContent;
     } catch (error) {
+      logger.debug(`[DEBUG] mergeAllParts failed for itemId=${itemId}:`, error);
       if (error instanceof MarkdownPartCacheError) {
         throw error;
       }
       
-      logger.error(`合并项目 ${itemId} 的markdown部分时发生错误`, { 
-        itemId, 
+      logger.error(`合并项目 ${itemId} 的markdown部分时发生错误`, {
+        itemId,
         error: error.message,
-        stack: error.stack 
+        stack: error.stack
       });
       
       throw new MarkdownPartCacheError(

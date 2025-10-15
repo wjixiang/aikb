@@ -1,9 +1,13 @@
-import Library, { S3ElasticSearchLibraryStorage } from './library';
-import { S3MongoLibraryStorage } from './library';
+import { config } from 'dotenv';
+// Load environment variables from .env file
+config({ path: '.env' });
+
+import Library, { LibraryItem, S3ElasticSearchLibraryStorage } from '../library';
+import { S3MongoLibraryStorage } from '../library';
 import * as fs from 'fs';
 import * as path from 'path';
-import { describe, it, expect, beforeAll } from 'vitest';
-import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
@@ -31,35 +35,85 @@ export async function UploadTestPdf() {
     1024,
   );
   const library = new Library(storage, testMinerUPdfConvertor);
-
+  library;
   // Read the test PDF file
-  const pdfPath = 'test/外科学_第十版.pdf';
+  const pdfPath = 'test/ards.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
 
   // Prepare metadata for the PDF
   const metadata = {
-    title: '外科学_人卫10版',
+    title: 'ards',
     authors: [{ firstName: 'Test', lastName: 'Author' }],
-    abstract: '外科学课本',
-    publicationYear: 2025,
-    tags: ['test', 'textbook'],
-    language: 'zh',
+    abstract: 'This is a test document about ARDS',
+    publicationYear: 2023,
+    tags: ['test', 'research'],
+    language: 'English',
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(pdfBuffer, metadata.title, metadata);
-  return book;
+  const book = await library.storePdf(pdfBuffer, 'ards', metadata);
+  return { book, library };
 }
 
 describe(Library, async () => {
-  // Store the PDF from buffer
-  const book = await UploadTestPdf();
+  let book;
 
-  it('upload pdf buffer and retrieve s3 download url', async () => {
+  // Option 1: With default PDF converter
+  beforeAll(async () => {
+    try {
+      // Initialize the singleton RabbitMQ service that Library will use
+      // const rabbitMQService = getRabbitMQService();
+      // await rabbitMQService.initialize();
+      console.log('✅ RabbitMQ service initialized successfully');
+
+      // Create storage instance for workers
+      // const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
+
+      // // Start workers
+      // await createPdfAnalysisWorker(storage);
+      // console.log('✅ PDF analysis worker started');
+
+      // await createPdfProcessingCoordinatorWorker(storage);
+      // console.log('✅ PDF processing coordinator worker started');
+
+      // await createPdfConversionWorker();
+      // console.log('✅ PDF conversion worker started');
+
+      // await startMarkdownStorageWorker(storage);
+      // console.log('✅ Markdown storage worker started');
+
+      // // Upload test PDF after workers are ready
+      const testb = await UploadTestPdf();
+      book = testb.book
+      console.log('✅ Test PDF uploaded');
+    } catch (error) {
+      console.error('❌ Failed to initialize test environment:', error);
+      throw error;
+    }
+  }, 60000); // Increase timeout for setup
+
+  // afterAll(async()=>{
+  //   try {
+  //     if (book) {
+  //       await book.selfDelete();
+  //       console.log('✅ Test cleanup completed');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Cleanup failed:', error);
+  //   }
+  // })
+  // Store the PDF from buffer
+  it.skip('self delete', async () => {
+    const res = await book.selfDelete();
+    expect(res).toBe(true);
+  });
+
+  it.skip('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
-    expect(book.metadata.title).toBe('外科学_人卫10版');
+    expect(book.metadata.title).toBe('viral_pneumonia');
     expect(book.metadata.s3Key).toBeDefined();
+    expect(book.metadata.s3Url).toBeDefined();
 
     // Retrieve the S3 download URL
     const downloadUrl = await book.getPdfDownloadUrl();
@@ -67,7 +121,7 @@ describe(Library, async () => {
     // Verify the download URL is valid
     expect(downloadUrl).toBeDefined();
     expect(typeof downloadUrl).toBe('string');
-    // expect(downloadUrl).toContain(book.metadata.s3Key!);
+    expect(downloadUrl).toContain(book.metadata.s3Key!);
 
     // Verify the URL matches the stored URL
     // expect(downloadUrl).toBe(book.metadata.s3Url);
@@ -103,30 +157,15 @@ describe(Library, async () => {
   });
 
   it.skip('semantic search', async () => {
-    const searchRes = await book.searchInChunks('ACEI', 2);
+    const searchRes = await book.semanticSearchWithDenseVector('ACEI', 2);
     console.log(searchRes);
   });
+});
 
-  it.only('re-process', async () => {
-    const testMinerUPdfConvertor = new MinerUPdfConvertor({
-      token: process.env.MINERU_TOKEN as string,
-      downloadDir: 'test/download',
-      defaultOptions: {
-        is_ocr: true,
-        enable_formula: true,
-        enable_table: true,
-        language: 'en',
-        extra_formats: ['docx', 'html'],
-      },
-      timeout: 120000, // 2 minutes timeout
-      maxRetries: 3,
-      retryDelay: 5000,
-    });
-    const storage = new S3ElasticSearchLibraryStorage(
-      'http://elasticsearch:9200',
-      1024,
-    );
-    const library = new Library(storage, testMinerUPdfConvertor);
+describe('pdf process workflow', async () => {
+  let { book, library } = await UploadTestPdf();
+
+  it('start pdf async process', async () => {
     const s3Link = await book.getPdfDownloadUrl();
     console.log(`s3Link: ${s3Link}`);
     await library.sendPdfAnalysisRequest(

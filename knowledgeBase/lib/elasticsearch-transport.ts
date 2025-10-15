@@ -173,8 +173,20 @@ export class ElasticsearchTransport extends Transport {
    * Flatten nested objects for Elasticsearch indexing
    */
   private flattenObject(obj: any, result: any = '', prefix: string = ''): void {
+    // Handle null/undefined objects
+    if (obj === null || obj === undefined) {
+      return;
+    }
+    
+    // Handle non-object types
+    if (typeof obj !== 'object') {
+      return;
+    }
+    
+    // Use Object.prototype.hasOwnProperty.call for safety
+    // This works even if obj was created with Object.create(null)
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
         
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {

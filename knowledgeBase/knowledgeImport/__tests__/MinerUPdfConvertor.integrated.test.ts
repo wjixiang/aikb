@@ -2,7 +2,7 @@ import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';
-import { UploadTestPdf } from '../library.integrated.test';
+import { UploadTestPdf } from './library.integrated.test';
 config();
 
 describe(MinerUPdfConvertor, () => {
@@ -72,7 +72,7 @@ describe(MinerUPdfConvertor, () => {
     console.log('File size:', fs.statSync(testPdfPath).size, 'bytes');
 
     const startTime = Date.now();
-    const book = await UploadTestPdf();
+    const {book} = await UploadTestPdf();
     const url = await book.getPdfDownloadUrl();
     try {
       // Convert PDF using MinerU

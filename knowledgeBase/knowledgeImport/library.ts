@@ -36,6 +36,7 @@ import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,
   PDF_PROCESSING_CONFIG,
+  ChunkingEmbeddingRequestMessage,
 } from '../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../lib/rabbitmq/rabbitmq.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -440,6 +441,7 @@ export default class Library extends AbstractLibrary {
     }
 
     // Upload to S3
+    logger.info(`Pdf not exist, uploading to s3...`)
     const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
 
     const fullMetadata: BookMetadata = {
@@ -1069,6 +1071,8 @@ export default class Library extends AbstractLibrary {
 }
 
 export class LibraryItem {
+  private rabbitMQService = getRabbitMQService();
+
   constructor(
     public metadata: BookMetadata,
     private storage: AbstractLibraryStorage,
@@ -1284,7 +1288,7 @@ export class LibraryItem {
    * @param query The search query
    * @param limit Maximum number of results
    */
-  async searchInChunks(
+  async semanticSearchWithDenseVector(
     query: string,
     limit: number = 10,
   ): Promise<BookChunk[]> {
@@ -1410,94 +1414,41 @@ export class LibraryItem {
         await this.deleteChunks();
       }
 
+      // Send chunking and embedding request to the microservice
       logger.info(
-        `Processing chunks for item: ${this.metadata.id} using strategy: ${chunkingStrategy}`,
+        `Sending chunking and embedding request for item: ${this.metadata.id}`,
       );
 
-      // Use the new unified chunking interface
-      const chunkResults = chunkTextAdvanced(
-        this.metadata.markdownContent,
-        chunkingStrategy,
-        chunkingConfig,
-      );
+      // Convert chunking strategy to string format
+      const strategyString = chunkingStrategy === ChunkingStrategyType.H1 ? 'h1' : 'paragraph';
 
-      if (!chunkResults || chunkResults.length === 0) {
-        logger.warn(`No chunks generated for item: ${this.metadata.id}`);
-        return [];
-      }
+      const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'CHUNKING_EMBEDDING_REQUEST',
+        itemId: this.metadata.id!,
+        markdownContent: this.metadata.markdownContent,
+        chunkingStrategy: strategyString,
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+      };
+
+      // Publish the request to RabbitMQ
+      await this.rabbitMQService.publishChunkingEmbeddingRequest(
+        chunkingEmbeddingRequest,
+      );
 
       logger.info(
-        `Generated ${chunkResults.length} chunks for item: ${this.metadata.id}`,
+        `Chunking and embedding request sent for item: ${this.metadata.id}`,
       );
 
-      // Prepare chunks for storage
-      const chunks: BookChunk[] = [];
-      const chunkTexts: string[] = [];
-
-      for (let i = 0; i < chunkResults.length; i++) {
-        const chunkResult = chunkResults[i];
-
-        const title = chunkResult.title || `Chunk ${i + 1}`;
-        const content = chunkResult.content;
-
-        const chunk: BookChunk = {
-          id: IdUtils.generateId(),
-          itemId: this.metadata.id!,
-          title,
-          content,
-          index: i,
-          metadata: {
-            chunkType: chunkingStrategy,
-            wordCount: content.split(/\s+/).length,
-            chunkingConfig: chunkingConfig
-              ? JSON.stringify(chunkingConfig)
-              : undefined,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        chunks.push(chunk);
-        chunkTexts.push(content);
-      }
-
-      logger.info(`Prepared ${chunks.length} chunks for embedding generation`);
-
-      // Generate embeddings for all chunks
-      logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
-      const embeddings = await embeddingService.embedBatch(chunkTexts);
-
-      logger.info(`Generated ${embeddings.length} embeddings`);
-      const validEmbeddings = embeddings.filter(
-        (e) => e !== null && e.length > 0,
-      );
-      logger.info(
-        `Valid embeddings: ${validEmbeddings.length}/${embeddings.length}`,
-      );
-
-      // Assign embeddings to chunks
-      for (let i = 0; i < chunks.length; i++) {
-        if (embeddings[i]) {
-          chunks[i].embedding = embeddings[i] || undefined;
-          logger.debug(
-            `Chunk ${i} embedding assigned, dimensions: ${embeddings[i]!.length}`,
-          );
-        } else {
-          logger.warn(`Failed to generate embedding for chunk ${i}`);
-        }
-      }
-
-      // Save chunks to storage
-      logger.info(`Saving ${chunks.length} chunks to storage`);
-      await this.storage.batchSaveChunks(chunks);
-      logger.info(
-        `Successfully saved ${chunks.length} chunks to storage for item: ${this.metadata.id}`,
-      );
-
-      return chunks;
+      // Return empty array since processing is now asynchronous
+      // The chunks will be processed by the chunking embedding worker
+      return [];
     } catch (error) {
       logger.error(
-        `Error processing chunks for item ${this.metadata.id}:`,
+        `Error sending chunking and embedding request for item ${this.metadata.id}:`,
         error,
       );
       throw error;
@@ -1514,6 +1465,68 @@ export class LibraryItem {
     version: string;
   }> {
     return getAvailableStrategies();
+  }
+
+  /**
+   * Check if chunking and embedding is in progress for this item
+   * @returns Promise<boolean> - true if chunking and embedding is in progress
+   */
+  async isChunkEmbedInProgress(): Promise<boolean> {
+    const status = this.metadata.pdfProcessingStatus;
+    return status === PdfProcessingStatus.PROCESSING &&
+           this.metadata.pdfProcessingMessage?.includes('chunking') === true;
+  }
+
+  /**
+   * Wait for chunking and embedding to complete
+   * @param timeoutMs Timeout in milliseconds (default: 5 minutes)
+   * @param intervalMs Check interval in milliseconds (default: 2 seconds)
+   * @returns Promise<{success: boolean, chunks?: BookChunk[], error?: string}>
+   */
+  async waitForChunkEmbedCompletion(
+    timeoutMs: number = 300000, // 5 minutes default
+    intervalMs: number = 2000, // 2 seconds default
+  ): Promise<{success: boolean, chunks?: BookChunk[], error?: string}> {
+    const logger = createLoggerWithPrefix('LibraryItem.waitForChunkEmbedCompletion');
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+      // Refresh metadata to get latest status
+      const updatedItem = await this.storage.getMetadata(this.metadata.id!);
+      if (updatedItem) {
+        this.metadata = updatedItem;
+      }
+
+      const status = this.metadata.pdfProcessingStatus;
+      
+      if (status === PdfProcessingStatus.COMPLETED) {
+        // Check if chunks are available
+        const chunks = await this.getChunks();
+        if (chunks.length > 0) {
+          logger.info(`Chunking and embedding completed for item: ${this.metadata.id}`);
+          return { success: true, chunks };
+        }
+      }
+
+      if (status === PdfProcessingStatus.FAILED) {
+        logger.error(
+          `Chunking and embedding failed for item: ${this.metadata.id}`,
+          this.metadata.pdfProcessingError,
+        );
+        return {
+          success: false,
+          error: this.metadata.pdfProcessingError || 'Unknown error',
+        };
+      }
+
+      // Wait before checking again
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    return {
+      success: false,
+      error: `Chunking and embedding timeout after ${timeoutMs}ms`,
+    };
   }
 
   /**
@@ -2256,7 +2269,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     try {
       // Check if Elasticsearch is available
       await this.client.ping();
-      this.logger.info('Connected to Elasticsearch');
+      // this.logger.info('Connected to Elasticsearch');
 
       // Initialize metadata index
       const metadataExists = await this.client.indices.exists({

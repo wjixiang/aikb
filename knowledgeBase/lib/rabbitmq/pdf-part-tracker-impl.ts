@@ -76,18 +76,9 @@ export class PdfPartTrackerImpl implements IPdfPartTracker {
     try {
       const now = Date.now();
 
-      // 检查是否已存在
-      const existingStatus = await this.pdfProcessingCollection!.findOne({
-        itemId,
-      });
-      if (existingStatus) {
-        logger.warn(
-          `PDF processing status already exists for item ${itemId}, resetting...`,
-        );
-        await this.cleanupPdfProcessing(itemId);
-      }
+      logger.info(`[DEBUG] initializePdfProcessing called for itemId=${itemId}, totalParts=${totalParts}`);
 
-      // 创建PDF处理状态记录
+      // 创建PDF处理状态记录 - 使用原子操作避免竞态条件
       const processingStatus: Omit<
         PdfProcessingStatusInfo,
         'completedParts' | 'failedParts' | 'processingParts' | 'pendingParts'
@@ -98,15 +89,42 @@ export class PdfPartTrackerImpl implements IPdfPartTracker {
         status: 'pending',
       };
 
-      await this.pdfProcessingCollection!.insertOne({
+      const fullProcessingStatus = {
         ...processingStatus,
         completedParts: [],
         failedParts: [],
         processingParts: [],
         pendingParts: Array.from({ length: totalParts }, (_, i) => i),
-      });
+      };
 
-      // 创建所有部分的状态记录
+      logger.info(`[DEBUG] Attempting atomic upsert for itemId=${itemId}`);
+      
+      // 使用 findOneAndUpdate 进行原子操作，避免竞态条件
+      const result = await this.pdfProcessingCollection!.findOneAndUpdate(
+        { itemId },
+        { $setOnInsert: fullProcessingStatus },
+        {
+          upsert: true,
+          returnDocument: 'after'
+        }
+      );
+
+      logger.info(`[DEBUG] Atomic operation result for itemId=${itemId}:`, result ? 'success' : 'failed');
+      
+      // 检查是否是现有记录，如果是且状态不正确，则重置
+      if (result && result.status !== 'pending') {
+        logger.warn(
+          `PDF processing status exists but is not pending for item ${itemId} (status: ${result.status}), resetting...`,
+        );
+        await this.cleanupPdfProcessing(itemId);
+        logger.info(`[DEBUG] Cleanup completed for itemId=${itemId}`);
+        
+        // 重新创建状态
+        await this.pdfProcessingCollection!.insertOne(fullProcessingStatus);
+        logger.info(`[DEBUG] Re-inserted processing status for itemId=${itemId}`);
+      }
+
+      // 创建所有部分的状态记录 - 使用批量操作避免竞态条件
       const partStatuses: Omit<
         PdfPartStatusInfo,
         'startTime' | 'endTime' | 'error' | 'retryCount' | 'maxRetries'
@@ -121,7 +139,41 @@ export class PdfPartTrackerImpl implements IPdfPartTracker {
       }
 
       if (partStatuses.length > 0) {
-        await this.pdfPartCollection!.insertMany(partStatuses);
+        logger.debug(`[DEBUG] Attempting to insert ${partStatuses.length} part statuses for itemId=${itemId}`);
+        
+        try {
+          // 使用 ordered: false 来允许部分成功，并使用 bulkWrite 进行更细粒度控制
+          const bulkOps = partStatuses.map(part => ({
+            updateOne: {
+              filter: { itemId: part.itemId, partIndex: part.partIndex },
+              update: { $setOnInsert: part },
+              upsert: true
+            }
+          }));
+
+          const bulkResult = await this.pdfPartCollection!.bulkWrite(bulkOps, { ordered: false });
+          logger.debug(`[DEBUG] Bulk insert result for itemId=${itemId}:`, {
+            insertedCount: bulkResult.insertedCount,
+            upsertedCount: bulkResult.upsertedCount,
+            modifiedCount: bulkResult.modifiedCount
+          });
+        } catch (bulkError) {
+          logger.error(`[DEBUG] Bulk operation failed for itemId=${itemId}:`, bulkError);
+          // 如果批量操作失败，尝试逐个插入
+          logger.debug(`[DEBUG] Falling back to individual inserts for itemId=${itemId}`);
+          for (const part of partStatuses) {
+            try {
+              await this.pdfPartCollection!.updateOne(
+                { itemId: part.itemId, partIndex: part.partIndex },
+                { $setOnInsert: part },
+                { upsert: true }
+              );
+            } catch (individualError) {
+              logger.error(`[DEBUG] Failed to insert part ${part.partIndex} for itemId=${itemId}:`, individualError);
+              // 继续处理其他部分，不因单个失败而停止
+            }
+          }
+        }
       }
 
       logger.info(

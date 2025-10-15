@@ -106,12 +106,12 @@ export class MarkdownPartStorageWorker {
   /**
    * Handle markdown part storage request
    */
-  private async handleMarkdownPartStorageRequest(
+  async handleMarkdownPartStorageRequest(
     message: MarkdownPartStorageRequestMessage,
     originalMessage: any,
   ): Promise<void> {
     const startTime = Date.now();
-    console.log(`[DEBUG] handleMarkdownPartStorageRequest called: itemId=${message.itemId}, partIndex=${message.partIndex}, content="${message.markdownContent}", maxRetries=${message.maxRetries}`);
+    logger.debug(`[DEBUG] handleMarkdownPartStorageRequest START: itemId=${message.itemId}, partIndex=${message.partIndex}`);
     logger.info(
       `Processing markdown part storage request for item: ${message.itemId}, part: ${message.partIndex + 1}/${message.totalParts}`,
     );
@@ -126,21 +126,28 @@ export class MarkdownPartStorageWorker {
         `Processing final attempt for item ${message.itemId}, part ${message.partIndex + 1} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`,
       );
     }
-
     try {
       // Initialize PDF processing if not already done
+      logger.debug(`[DEBUG] About to call getPdfProcessingStatus for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+      logger.debug(`Initialize PDF processing if not already done`);
       const processingStatus = await this.partTracker.getPdfProcessingStatus(
         message.itemId,
       );
+      logger.debug(`[DEBUG] getPdfProcessingStatus returned for itemId=${message.itemId}, partIndex=${message.partIndex}, result:`, processingStatus);
       if (!processingStatus) {
-        logger.info(`Initializing PDF processing for item ${message.itemId}`);
+        logger.info(`[WORKER-${message.partIndex}] Initializing PDF processing for item ${message.itemId}`);
+        logger.debug(`[DEBUG] [WORKER-${message.partIndex}] About to call initializePdfProcessing for itemId=${message.itemId}`);
         await this.partTracker.initializePdfProcessing(
           message.itemId,
           message.totalParts,
         );
+        logger.debug(`[DEBUG] [WORKER-${message.partIndex}] initializePdfProcessing completed for itemId=${message.itemId}`);
+      } else {
+        logger.info(`[WORKER-${message.partIndex}] PDF processing already exists for item ${message.itemId}`);
       }
 
       // Update part status to processing
+      logger.debug(`Update part status to processing`)
       await this.updatePartStatus(
         message.itemId,
         message.partIndex,
@@ -199,7 +206,6 @@ export class MarkdownPartStorageWorker {
           PdfPartStatus.COMPLETED,
         );
       } catch (trackerError) {
-        console.log(`[DEBUG] Tracker error during completion:`, trackerError);
         logger.warn(
           `Failed to update part status in tracker for item ${message.itemId}, part ${message.partIndex}:`,
           trackerError,
@@ -225,6 +231,7 @@ export class MarkdownPartStorageWorker {
       );
 
       // Check if all parts are completed and trigger merging if needed
+      logger.debug(`Check if all parts are completed and trigger merging if needed`)
       await this.checkAndTriggerMerging(message.itemId, message.totalParts);
 
       // Publish progress
@@ -239,7 +246,7 @@ export class MarkdownPartStorageWorker {
 
       // Publish completion message
       const processingTime = Date.now() - startTime;
-      console.log(`[DEBUG] About to publish completion message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+      logger.debug(`[DEBUG] About to publish completion message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
       await this.publishCompletionMessage(
         message.itemId,
         message.partIndex,
@@ -247,7 +254,7 @@ export class MarkdownPartStorageWorker {
         processingTime,
         message.markdownContent.length,
       );
-      console.log(`[DEBUG] Completion message published successfully`);
+      logger.debug(`[DEBUG] Completion message published successfully`);
 
       // Update part status to completed
       await this.updatePartStatus(
@@ -323,7 +330,7 @@ export class MarkdownPartStorageWorker {
         );
 
         // Publish failure message for this attempt before retrying
-        console.log(`[DEBUG] About to publish failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        logger.debug(`[DEBUG] About to publish failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
         await this.publishFailureMessage(
           message.itemId,
           message.partIndex,
@@ -333,7 +340,7 @@ export class MarkdownPartStorageWorker {
           maxRetries,
           processingTime,
         );
-        console.log(`[DEBUG] Failure message published successfully`);
+        logger.debug(`[DEBUG] Failure message published successfully`);
 
         // Republish the request with incremented retry count
         const retryRequest = {
@@ -343,12 +350,12 @@ export class MarkdownPartStorageWorker {
           retryCount: retryCount + 1,
         };
 
-        console.log(`[DEBUG] About to publish retry request for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        logger.debug(`[DEBUG] About to publish retry request for itemId=${message.itemId}, partIndex=${message.partIndex}`);
         await this.rabbitMQService.publishMarkdownPartStorageRequest(retryRequest);
-        console.log(`[DEBUG] Retry request published successfully`);
+        logger.debug(`[DEBUG] Retry request published successfully`);
       } else {
         // Final failure - publish failure message
-        console.log(`[DEBUG] About to publish final failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        logger.debug(`[DEBUG] About to publish final failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
         await this.publishFailureMessage(
           message.itemId,
           message.partIndex,
@@ -358,7 +365,7 @@ export class MarkdownPartStorageWorker {
           maxRetries,
           processingTime,
         );
-        console.log(`[DEBUG] Final failure message published successfully`);
+        logger.debug(`[DEBUG] Final failure message published successfully`);
       }
     }
   }
@@ -369,9 +376,12 @@ export class MarkdownPartStorageWorker {
   private async checkAndTriggerMerging(
     itemId: string,
     totalParts: number,
+    retryCount: number = 0,
   ): Promise<void> {
+    const maxRetries = 5;
+    const baseDelayMs = 1000; // 1 second base delay
     try {
-      logger.info(`Checking if all parts are completed for item ${itemId}`);
+      logger.info(`Checking if all parts are completed for item ${itemId} (attempt ${retryCount + 1}/${maxRetries})`);
 
       // Get all parts from MarkdownPartCache to check their status
       const allParts = await this.markdownPartCache.getAllParts(itemId);
@@ -384,6 +394,16 @@ export class MarkdownPartStorageWorker {
         logger.info(
           `Not all parts are available yet for item ${itemId}. Have ${allParts.length}/${totalParts} parts. Continuing to wait...`,
         );
+        
+        // Retry if we haven't reached max retries
+        if (retryCount < maxRetries) {
+          const delayMs = baseDelayMs * Math.pow(2, retryCount);
+          setTimeout(() => {
+            this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
+          }, delayMs);
+        } else {
+          logger.error(`Max retries reached for item ${itemId}. Still missing ${totalParts - allParts.length} parts.`);
+        }
         return;
       }
 
@@ -435,9 +455,7 @@ export class MarkdownPartStorageWorker {
             priority: 'normal',
           };
 
-          console.log(`[DEBUG] About to publish merging request for itemId=${itemId}`);
           await this.rabbitMQService.publishPdfMergingRequest(mergingRequest);
-          console.log(`[DEBUG] Merging request published successfully`);
           logger.info(
             `Published merging request for item ${itemId} with ${allParts.length} parts`,
           );
@@ -466,12 +484,35 @@ export class MarkdownPartStorageWorker {
         logger.info(
           `Not all parts are completed yet for item ${itemId}. ${completedCount}/${totalParts} completed. Continuing to wait...`,
         );
+        
+        // Retry if we haven't reached max retries
+        if (retryCount < maxRetries) {
+          const delayMs = baseDelayMs * Math.pow(2, retryCount);
+          logger.debug(`[DEBUG] Retrying checkAndTriggerMerging in ${delayMs}ms for itemId=${itemId}`);
+          setTimeout(() => {
+            this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
+          }, delayMs);
+        } else {
+          logger.error(`Max retries reached for item ${itemId}. Only ${completedCount}/${totalParts} parts completed.`);
+        }
       }
     } catch (error) {
+      logger.debug(`[DEBUG] Exception in checkAndTriggerMerging for itemId=${itemId}:`, error);
       logger.error(
         `Failed to check and trigger merging for item ${itemId}:`,
         error,
       );
+      
+      // Retry on error if we haven't reached max retries
+      if (retryCount < maxRetries) {
+        const delayMs = baseDelayMs * Math.pow(2, retryCount);
+        console.log(`[DEBUG] Retrying checkAndTriggerMerging after error in ${delayMs}ms for itemId=${itemId}`);
+        setTimeout(() => {
+          this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
+        }, delayMs);
+      } else {
+        logger.error(`Max retries reached for item ${itemId} after error.`);
+      }
     }
   }
 

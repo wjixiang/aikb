@@ -111,6 +111,7 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
    */
   async storePartMarkdown(itemId: string, partIndex: number, markdownContent: string): Promise<void> {
     try {
+      logger.debug(`[DEBUG] storePartMarkdown called: itemId=${itemId}, partIndex=${partIndex}, contentLength=${markdownContent.length}`);
       this.logOperationStart('storePartMarkdown', itemId, partIndex);
       
       // 验证输入
@@ -121,8 +122,9 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
       
       const now = new Date();
       
+      logger.debug(`[DEBUG] About to upsert part for itemId=${itemId}, partIndex=${partIndex}`);
       // 使用upsert操作存储或更新部分内容
-      await this.partsCollection!.updateOne(
+      const result = await this.partsCollection!.updateOne(
         { itemId, partIndex },
         {
           $set: {
@@ -138,14 +140,30 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
         },
         { upsert: true }
       );
+      logger.debug(`[DEBUG] Upsert result for itemId=${itemId}, partIndex=${partIndex}:`, {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        upsertedCount: result.upsertedCount
+      });
+      
+      // 验证存储是否成功
+      logger.debug(`[DEBUG] Verifying stored part for itemId=${itemId}, partIndex=${partIndex}`);
+      const storedPart = await this.partsCollection!.findOne(
+        { itemId, partIndex },
+        { projection: { content: 1, status: 1 } }
+      );
+      logger.debug(`[DEBUG] Stored part verification:`, storedPart ? 'found' : 'not found');
       
       // 更新元数据
+      logger.debug(`[DEBUG] About to update metadata for itemId=${itemId}, partIndex=${partIndex}`);
       await this.updateMetadata(itemId, partIndex, 'completed');
+      logger.debug(`[DEBUG] Metadata updated for itemId=${itemId}, partIndex=${partIndex}`);
       
       this.logOperationSuccess('storePartMarkdown', itemId, partIndex, {
         contentLength: markdownContent.length
       });
     } catch (error) {
+      logger.debug(`[DEBUG] storePartMarkdown failed for itemId=${itemId}, partIndex=${partIndex}:`, error);
       this.logOperationError('storePartMarkdown', error as Error, itemId, partIndex);
       
       if (error instanceof MarkdownPartCacheError) {
@@ -210,17 +228,20 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
    */
   async getAllParts(itemId: string): Promise<Array<{partIndex: number, content: string, status?: string}>> {
     try {
+      logger.debug(`[DEBUG] getAllParts called for itemId=${itemId}`);
       this.logOperationStart('getAllParts', itemId);
       
       // 验证输入
       this.validateItemId(itemId);
       this.ensureInitialized();
       
+      logger.debug(`[DEBUG] About to query database for parts of itemId=${itemId}`);
       const parts = await this.partsCollection!
         .find({ itemId })
         .project({ partIndex: 1, content: 1, status: 1 })
         .sort({ partIndex: 1 })
         .toArray();
+      logger.debug(`[DEBUG] Database query returned ${parts.length} parts for itemId=${itemId}`);
       
       const result = parts.map(part => ({
         partIndex: part.partIndex,
@@ -228,12 +249,25 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
         status: part.status
       }));
       
+      logger.debug(`[DEBUG] getAllParts returning result with ${result.length} parts for itemId=${itemId}`);
+      
+      // 如果没有找到部分，运行诊断以帮助调试
+      if (result.length === 0) {
+        logger.debug(`[DEBUG] No parts found, running diagnosis for itemId=${itemId}`);
+        try {
+          await this.diagnoseItem(itemId);
+        } catch (diagError) {
+          logger.debug(`[DEBUG] Diagnosis failed for itemId=${itemId}:`, diagError);
+        }
+      }
+      
       this.logOperationSuccess('getAllParts', itemId, undefined, {
         partsCount: result.length
       });
       
       return result;
     } catch (error) {
+      logger.debug(`[DEBUG] getAllParts failed for itemId=${itemId}:`, error);
       this.logOperationError('getAllParts', error as Error, itemId);
       
       if (error instanceof MarkdownPartCacheError) {
@@ -256,7 +290,7 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
    */
   async updatePartStatus(itemId: string, partIndex: number, status: string): Promise<void> {
     try {
-      console.log(`[DEBUG] updatePartStatus called: itemId=${itemId}, partIndex=${partIndex}, status=${status}`);
+      logger.debug(`[DEBUG] updatePartStatus called: itemId=${itemId}, partIndex=${partIndex}, status=${status}`);
       this.logOperationStart('updatePartStatus', itemId, partIndex);
       
       // 验证输入
@@ -281,11 +315,11 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
       if (result.matchedCount === 0) {
         // If part doesn't exist and status is 'failed', create a placeholder part for tracking
         if (status === 'failed') {
-          console.log(`[DEBUG] Part not found, creating placeholder for failed part: itemId=${itemId}, partIndex=${partIndex}`);
+          logger.debug(`[DEBUG] Part not found, creating placeholder for failed part: itemId=${itemId}, partIndex=${partIndex}`);
           await this.partsCollection!.insertOne({
             itemId,
             partIndex,
-            markdownContent: '', // Empty content for failed parts
+            content: '', // Empty content for failed parts - fixed field name
             status: 'failed',
             createdAt: now,
             updatedAt: now
@@ -332,6 +366,7 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
    */
   async getPartStatus(itemId: string, partIndex: number): Promise<string | null> {
     try {
+      logger.debug(`[DEBUG] getPartStatus called: itemId=${itemId}, partIndex=${partIndex}`);
       this.logOperationStart('getPartStatus', itemId, partIndex);
       
       // 验证输入
@@ -339,12 +374,14 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
       this.validatePartIndex(partIndex);
       this.ensureInitialized();
       
+      logger.debug(`[DEBUG] About to query database for status of itemId=${itemId}, partIndex=${partIndex}`);
       const result = await this.partsCollection!.findOne(
         { itemId, partIndex },
         { projection: { status: 1 } }
       );
       
       const status = result ? result.status : null;
+      logger.debug(`[DEBUG] getPartStatus result: ${status} for itemId=${itemId}, partIndex=${partIndex}`);
       
       this.logOperationSuccess('getPartStatus', itemId, partIndex, {
         found: !!status,
@@ -353,6 +390,7 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
       
       return status;
     } catch (error) {
+      logger.debug(`[DEBUG] getPartStatus failed for itemId=${itemId}, partIndex=${partIndex}:`, error);
       this.logOperationError('getPartStatus', error as Error, itemId, partIndex);
       
       if (error instanceof MarkdownPartCacheError) {
@@ -418,12 +456,12 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
    */
   private async updateMetadata(itemId: string, partIndex: number, status: string): Promise<void> {
     try {
-      console.log(`[DEBUG] updateMetadata called: itemId=${itemId}, partIndex=${partIndex}, status=${status}`);
+      logger.debug(`[DEBUG] updateMetadata called: itemId=${itemId}, partIndex=${partIndex}, status=${status}`);
       const now = new Date();
       
       // 获取当前元数据
       const existingMetadata = await this.metadataCollection!.findOne({ itemId });
-      console.log(`[DEBUG] Existing metadata:`, existingMetadata);
+      logger.debug(`[DEBUG] Existing metadata:`, existingMetadata);
       
       if (existingMetadata) {
         // 更新现有元数据
@@ -439,12 +477,12 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
           updateData.$pull = { completedParts: partIndex };
         }
         
-        console.log(`[DEBUG] Update data:`, updateData);
+        logger.debug(`[DEBUG] Update data:`, updateData);
         await this.metadataCollection!.updateOne(
           { itemId },
           updateData
         );
-        console.log(`[DEBUG] Metadata updated successfully`);
+        logger.debug(`[DEBUG] Metadata updated successfully`);
         
         // 检查是否所有部分都已完成
         await this.checkAndUpdateOverallStatus(itemId);
@@ -566,6 +604,54 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
         'GET_METADATA_FAILED',
         { itemId, originalError: error }
       );
+    }
+  }
+
+  /**
+   * 诊断方法：检查项目的所有数据状态
+   * @param itemId 项目ID
+   * @returns 诊断信息
+   */
+  async diagnoseItem(itemId: string): Promise<any> {
+    try {
+      logger.debug(`[DEBUG] diagnoseItem called for itemId=${itemId}`);
+      this.validateItemId(itemId);
+      this.ensureInitialized();
+      
+      // 获取所有部分
+      const allParts = await this.partsCollection!.find({ itemId }).toArray();
+      logger.debug(`[DEBUG] Found ${allParts.length} parts in database for itemId=${itemId}`);
+      
+      // 获取元数据
+      const metadata = await this.metadataCollection!.findOne({ itemId });
+      logger.debug(`[DEBUG] Metadata for itemId=${itemId}:`, metadata);
+      
+      // 按状态分组统计
+      const statusStats = allParts.reduce((acc, part) => {
+        acc[part.status] = (acc[part.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const diagnosis = {
+        itemId,
+        totalParts: allParts.length,
+        statusStats,
+        parts: allParts.map(part => ({
+          partIndex: part.partIndex,
+          status: part.status,
+          hasContent: !!part.content,
+          contentLength: part.content ? part.content.length : 0,
+          createdAt: part.createdAt,
+          updatedAt: part.updatedAt
+        })),
+        metadata
+      };
+      
+      logger.debug(`[DEBUG] Diagnosis for itemId=${itemId}:`, JSON.stringify(diagnosis, null, 2));
+      return diagnosis;
+    } catch (error) {
+      logger.debug(`[DEBUG] diagnoseItem failed for itemId=${itemId}:`, error);
+      throw error;
     }
   }
 

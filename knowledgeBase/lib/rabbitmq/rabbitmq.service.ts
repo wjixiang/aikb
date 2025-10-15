@@ -358,7 +358,7 @@ export class RabbitMQService {
     }
 
     this.connection.on('error', (error) => {
-      logger.error('RabbitMQ connection error:', error);
+      logger.error(`RabbitMQ connection error: ${JSON.stringify(error, null, 2)}` );
       if (error.message !== 'Connection closing') {
         this.handleReconnection();
       }

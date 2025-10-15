@@ -103,7 +103,7 @@ const stats = await item.getChunkStats();
 console.log(`Total chunks: ${stats.totalChunks}, Average words: ${stats.averageWordsPerChunk}`);
 
 // Search within the item
-const searchResults = await item.searchInChunks('machine learning', 10);
+const searchResults = await item.semanticSearchWithDenseVector('machine learning', 10);
 
 // Find similar chunks within the item
 const queryVector = await embeddingService.embed('neural networks');
@@ -216,7 +216,7 @@ The system supports different embedding dimensions:
 
 - `chunkEmbed(chunkingStrategy?, forceReprocess?)`: Process chunks for this item
 - `getChunks()`: Get all chunks for this item
-- `searchInChunks(query, limit?)`: Search within this item's chunks
+- `semanticSearchWithDenseVector(query, limit?)`: Search within this item's chunks
 - `findSimilarInChunks(queryVector, limit?, threshold?)`: Find similar chunks within this item
 - `deleteChunks()`: Delete all chunks for this item
 - `getChunkStats()`: Get chunk statistics for this item
