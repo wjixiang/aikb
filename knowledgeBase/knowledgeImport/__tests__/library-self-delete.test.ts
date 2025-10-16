@@ -95,11 +95,7 @@ describe('LibraryItem.selfDelete', () => {
       embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
       createdAt: new Date(),
       updatedAt: new Date(),
-      denseVectorIndexGroup: 'test-group',
-      version: '1.0.0',
-      embeddings: {
-        'test-provider': [0.1, 0.2, 0.3, 0.4, 0.5]
-      },
+      denseVectorIndexGroupId: 'test-group',
       strategyMetadata: {
         chunkingStrategy: 'test-strategy',
         chunkingConfig: {},

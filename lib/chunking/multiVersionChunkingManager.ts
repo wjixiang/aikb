@@ -364,9 +364,7 @@ export class MultiVersionChunkingManager implements IMultiVersionChunkingManager
       errors.push('Embedding provider is required');
     }
 
-    if (!group.version || group.version.trim() === '') {
-      errors.push('Version is required');
-    }
+
 
     if (group.chunkingConfig) {
       if (typeof group.chunkingConfig.maxChunkSize === 'number' && group.chunkingConfig.maxChunkSize <= 0) {

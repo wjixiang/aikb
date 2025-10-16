@@ -1,6 +1,6 @@
 import * as amqp from 'amqplib';
-import { getValidatedRabbitMQConfig } from './knowledgeBase/lib/rabbitmq/rabbitmq.config';
-import createLoggerWithPrefix from './knowledgeBase/lib/logger';
+import { getValidatedRabbitMQConfig } from 'lib/rabbitmq/rabbitmq.config';
+import createLoggerWithPrefix from 'lib/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQConnectionVerify');
 

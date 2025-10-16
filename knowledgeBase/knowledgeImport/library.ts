@@ -323,7 +323,7 @@ export abstract class AbstractLibrary {
     itemId: string,
     chunkingStrategy?: ChunkingStrategyType,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
       embeddingConfig?: EmbeddingConfig;
       chunkingConfig?: ChunkingConfig;
@@ -335,15 +335,13 @@ export abstract class AbstractLibrary {
   /**
    * Get chunks for a specific item
    * @param itemId The ID of the item
-   * @param options Optional multi-version filtering options
+   * @param options Optional filtering options
    */
   abstract getItemChunks(
     itemId: string,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
@@ -361,7 +359,7 @@ export abstract class AbstractLibrary {
    * @param limit Maximum number of results
    * @param threshold Similarity threshold
    * @param itemIds Optional list of item IDs to search within
-   * @param options Optional multi-version search options
+   * @param options Optional search options
    */
   abstract findSimilarChunks(
     queryVector: number[],
@@ -369,10 +367,8 @@ export abstract class AbstractLibrary {
     threshold?: number,
     itemIds?: string[],
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
       provider?: string;
@@ -385,7 +381,7 @@ export abstract class AbstractLibrary {
    * @param queryVector The query vector
    * @param limit Maximum number of results
    * @param threshold Similarity threshold
-   * @param options Optional multi-version search options
+   * @param options Optional search options
    */
   abstract findSimilarChunksInItem(
     itemId: string,
@@ -393,10 +389,8 @@ export abstract class AbstractLibrary {
     limit?: number,
     threshold?: number,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
       provider?: string;
@@ -408,17 +402,15 @@ export abstract class AbstractLibrary {
    * @param itemId The LibraryItem ID to search within
    * @param query The search query
    * @param limit Maximum number of results
-   * @param options Optional multi-version search options
+   * @param options Optional search options
    */
   abstract searchChunksInItem(
     itemId: string,
     query: string,
     limit?: number,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
@@ -434,7 +426,7 @@ export abstract class AbstractLibrary {
     itemId?: string,
     chunkingStrategy?: ChunkingStrategyType,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
       embeddingConfig?: EmbeddingConfig;
       chunkingConfig?: ChunkingConfig;
@@ -943,7 +935,7 @@ export default class Library extends AbstractLibrary {
     itemId: string,
     chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
       embeddingConfig?: EmbeddingConfig;
       chunkingConfig?: ChunkingConfig;
@@ -978,11 +970,11 @@ export default class Library extends AbstractLibrary {
         `Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`,
       );
 
-      // Handle multi-version chunking with default group manager
+      // Handle chunking with default group manager
       const defaultGroupManager = DefaultGroupManager.getInstance();
       const defaultGroup = defaultGroupManager.getDefaultGroup(chunkingStrategy);
       
-      const denseVectorIndexGroup = options?.denseVectorIndexGroup ||
+      const denseVectorIndexGroupId = options?.denseVectorIndexGroupId ||
                                   defaultGroup?.id ||
                                   `default-${chunkingStrategy}`;
       
@@ -1002,15 +994,15 @@ export default class Library extends AbstractLibrary {
       const preserveExisting = options?.preserveExisting || false;
       
       logger.info(
-        `Processing chunks for item ${itemId} with group: ${denseVectorIndexGroup}, strategy: ${chunkingStrategy}, provider: ${embeddingProvider}`,
+        `Processing chunks for item ${itemId} with group: ${denseVectorIndexGroupId}, strategy: ${chunkingStrategy}, provider: ${embeddingProvider}`,
       );
 
       // Check if we need to delete existing chunks
       if (forceReprocess) {
-        if (preserveExisting && denseVectorIndexGroup && typeof (this.storage as any).deleteChunksByGroup === 'function') {
+        if (preserveExisting && denseVectorIndexGroupId && typeof (this.storage as any).deleteChunksByGroup === 'function') {
           // Only delete chunks for this specific group
-          logger.info(`Deleting existing chunks for group: ${denseVectorIndexGroup}`);
-          await (this.storage as any).deleteChunksByGroup(denseVectorIndexGroup);
+          logger.info(`Deleting existing chunks for group: ${denseVectorIndexGroupId}`);
+          await (this.storage as any).deleteChunksByGroup(denseVectorIndexGroupId);
         } else {
           // Delete all chunks for this item
           logger.info(`Deleting all existing chunks for item: ${itemId}`);
@@ -1018,10 +1010,10 @@ export default class Library extends AbstractLibrary {
         }
       } else {
         // Check if chunks already exist for this group
-        if (denseVectorIndexGroup && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-          const existingChunks = await (this.storage as any).getChunksByItemAndGroup(itemId, denseVectorIndexGroup);
+        if (denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
+          const existingChunks = await (this.storage as any).getChunksByItemAndGroup(itemId, denseVectorIndexGroupId);
           if (existingChunks.length > 0) {
-            logger.info(`Chunks already exist for item ${itemId} in group ${denseVectorIndexGroup}, skipping processing`);
+            logger.info(`Chunks already exist for item ${itemId} in group ${denseVectorIndexGroupId}, skipping processing`);
             return;
           }
         }
@@ -1048,8 +1040,6 @@ export default class Library extends AbstractLibrary {
       const chunks: BookChunk[] = [];
       const chunkTexts: string[] = [];
       
-      // Generate a default version for backward compatibility
-      const defaultVersion = defaultGroup?.version || '1.0.0';
       const processingStartTime = new Date();
       
       // The effective configurations are already set above
@@ -1079,12 +1069,11 @@ export default class Library extends AbstractLibrary {
           content,
           index: i,
           
-          // Multi-version support
-          denseVectorIndexGroup: denseVectorIndexGroup,
-          version: defaultVersion,
+          // Dense vector index group for organization
+          denseVectorIndexGroupId: denseVectorIndexGroupId,
           
-          // Multi-embedding support (empty for now, will be populated after embedding generation)
-          embeddings: {},
+          // Simplified single embedding field (will be populated after embedding generation)
+          embedding: [], // Will be populated with a single vector array
           
           // Strategy and configuration metadata
           strategyMetadata: {
@@ -1117,17 +1106,16 @@ export default class Library extends AbstractLibrary {
       const processingEndTime = new Date();
       const processingDuration = processingEndTime.getTime() - processingStartTime.getTime();
 
-      // Assign embeddings to chunks
+      // Assign embeddings to chunks using simplified structure
       for (let i = 0; i < chunks.length; i++) {
-        if (embeddings[i]) {
-          // Update the new embeddings structure
-          chunks[i].embeddings[embeddingProvider] = embeddings[i]!;
-          
-          // Keep the legacy embedding field for backward compatibility
+        if (embeddings[i] && Array.isArray(embeddings[i])) {
+          // Update the embedding with simplified structure (single vector array)
           chunks[i].embedding = embeddings[i]!;
           
           // Update processing duration
           chunks[i].strategyMetadata.processingDuration = processingDuration;
+        } else {
+          logger.warn(`Invalid embedding for chunk ${i}, skipping`);
         }
       }
 
@@ -1145,7 +1133,7 @@ export default class Library extends AbstractLibrary {
         stack: errorStack,
         itemId,
         chunkingStrategy,
-        denseVectorIndexGroup: options?.denseVectorIndexGroup,
+        denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
         embeddingProvider: options?.embeddingProvider,
       });
       
@@ -1169,10 +1157,8 @@ export default class Library extends AbstractLibrary {
   async getItemChunks(
     itemId: string,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
@@ -1182,17 +1168,13 @@ export default class Library extends AbstractLibrary {
       return await this.storage.getChunksByItemId(itemId);
     }
     
-    // Use multi-version storage if available
-    if (options.denseVectorIndexGroup && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-      return await (this.storage as any).getChunksByItemAndGroup(itemId, options.denseVectorIndexGroup);
+    // Use storage if available
+    if (options.denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
+      return await (this.storage as any).getChunksByItemAndGroup(itemId, options.denseVectorIndexGroupId);
     }
     
     if (options.groups && typeof (this.storage as any).getChunksByGroups === 'function') {
       return await (this.storage as any).getChunksByGroups(options.groups);
-    }
-    
-    if (options.version && typeof (this.storage as any).getChunksByVersion === 'function') {
-      return await (this.storage as any).getChunksByVersion(options.version);
     }
     
     if (options.chunkingStrategies && typeof (this.storage as any).getChunksByStrategy === 'function') {
@@ -1229,38 +1211,34 @@ export default class Library extends AbstractLibrary {
     threshold: number = 0.7,
     itemIds?: string[],
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
       provider?: string;
     },
   ): Promise<Array<BookChunk & { similarity: number }>> {
     // Handle fallback logic for strategy groups
-    let denseVectorIndexGroup = options?.denseVectorIndexGroup;
+    let denseVectorIndexGroupId = options?.denseVectorIndexGroupId;
     let groups = options?.groups;
-    
-    if (!denseVectorIndexGroup && !groups && options?.chunkingStrategies && options.chunkingStrategies.length > 0) {
+
+    if (!denseVectorIndexGroupId && !groups && options?.chunkingStrategies && options.chunkingStrategies.length > 0) {
       // If no group specified but strategies are, try to get group from strategy
       const defaultGroupManager = DefaultGroupManager.getInstance();
       const strategy = options.chunkingStrategies[0]; // Use first strategy
       const group = defaultGroupManager.getDefaultGroup(strategy);
       if (group) {
-        denseVectorIndexGroup = group.id;
+        denseVectorIndexGroupId = group.id;
       }
     }
 
-    // Create filter with multi-version support
+    // Create filter
     const filter: ChunkSearchFilter = {
       limit,
       similarityThreshold: threshold,
       itemIds: itemIds ? (Array.isArray(itemIds) ? itemIds : [itemIds]) : undefined,
-      denseVectorIndexGroup,
+      denseVectorIndexGroupId,
       groups,
-      version: options?.version,
-      versions: options?.versions,
       chunkingStrategies: options?.chunkingStrategies,
       embeddingProviders: options?.embeddingProviders,
     };
@@ -1289,10 +1267,8 @@ export default class Library extends AbstractLibrary {
     limit: number = 10,
     threshold: number = 0.7,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
       provider?: string;
@@ -1306,10 +1282,8 @@ export default class Library extends AbstractLibrary {
     query: string,
     limit: number = 10,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
@@ -1318,10 +1292,8 @@ export default class Library extends AbstractLibrary {
       query,
       itemId,
       limit,
-      denseVectorIndexGroup: options?.denseVectorIndexGroup,
+      denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
       groups: options?.groups,
-      version: options?.version,
-      versions: options?.versions,
       chunkingStrategies: options?.chunkingStrategies,
       embeddingProviders: options?.embeddingProviders,
     });
@@ -1454,10 +1426,8 @@ export default class Library extends AbstractLibrary {
           filter.similarityThreshold,
           filter.itemIds,
           {
-            denseVectorIndexGroup: filter.denseVectorIndexGroup,
+            denseVectorIndexGroupId: filter.denseVectorIndexGroupId,
             groups: filter.groups,
-            version: filter.version,
-            versions: filter.versions,
             chunkingStrategies: filter.chunkingStrategies,
             embeddingProviders: filter.embeddingProviders,
             provider: options?.provider,
@@ -1491,7 +1461,7 @@ export default class Library extends AbstractLibrary {
     itemId?: string,
     chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
       embeddingConfig?: EmbeddingConfig;
       chunkingConfig?: ChunkingConfig;
@@ -1751,13 +1721,11 @@ export class LibraryItem {
 
   /**
    * Get all chunks for this item
-   * @param options Optional multi-version filtering options
+   * @param options Optional filtering options
    */
   async getChunks(options?: {
-    denseVectorIndexGroup?: string;
+    denseVectorIndexGroupId?: string;
     groups?: string[];
-    version?: string;
-    versions?: string[];
     chunkingStrategies?: string[];
     embeddingProviders?: string[];
   }): Promise<BookChunk[]> {
@@ -1773,16 +1741,13 @@ export class LibraryItem {
       return chunks;
     }
     
-    // Use multi-version storage if available
+    // Use storage if available
     let chunks: BookChunk[] = [];
     
-    if (options.denseVectorIndexGroup && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-      chunks = await (this.storage as any).getChunksByItemAndGroup(this.metadata.id!, options.denseVectorIndexGroup);
+    if (options.denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
+      chunks = await (this.storage as any).getChunksByItemAndGroup(this.metadata.id!, options.denseVectorIndexGroupId);
     } else if (options.groups && typeof (this.storage as any).getChunksByGroups === 'function') {
       const allChunks = await (this.storage as any).getChunksByGroups(options.groups);
-      chunks = allChunks.filter(chunk => chunk.itemId === this.metadata.id!);
-    } else if (options.version && typeof (this.storage as any).getChunksByVersion === 'function') {
-      const allChunks = await (this.storage as any).getChunksByVersion(options.version);
       chunks = allChunks.filter(chunk => chunk.itemId === this.metadata.id!);
     } else if (options.chunkingStrategies && typeof (this.storage as any).getChunksByStrategy === 'function') {
       // For multiple strategies, we need to combine results
@@ -1828,17 +1793,15 @@ export class LibraryItem {
    * @param queryVector The query vector
    * @param limit Maximum number of results
    * @param threshold Similarity threshold
-   * @param options Optional multi-version search options
+   * @param options Optional search options
    */
   async findSimilarInChunks(
     queryVector: number[],
     limit: number = 10,
     threshold: number = 0.7,
     options?: {
-      denseVectorIndexGroup?: string;
+      denseVectorIndexGroupId?: string;
       groups?: string[];
-      version?: string;
-      versions?: string[];
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
       provider?: string;
@@ -1850,10 +1813,8 @@ export class LibraryItem {
         limit,
         similarityThreshold: threshold,
         itemId: this.metadata.id!,
-        denseVectorIndexGroup: options?.denseVectorIndexGroup,
+        denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
         groups: options?.groups,
-        version: options?.version,
-        versions: options?.versions,
         chunkingStrategies: options?.chunkingStrategies,
         embeddingProviders: options?.embeddingProviders,
       };
@@ -2160,9 +2121,9 @@ export class LibraryItem {
         );
       });
 
-      // Check if all chunks have embeddings
+      // Check if all chunks have simplified embedding structure
       const chunksWithEmbeddings = chunks.filter(
-        (chunk) => chunk.embedding && chunk.embedding.length > 0,
+        (chunk) => chunk.embedding && Array.isArray(chunk.embedding) && chunk.embedding.length > 0,
       );
 
       logger.info(
@@ -2181,6 +2142,49 @@ export class LibraryItem {
         error,
       );
       return false;
+    }
+  }
+
+  /**
+   * Get all available dense vector index groups for this item
+   * @returns Promise<string[]> - Array of unique denseVectorIndexGroupId values for this item
+   * @document documents/README-getDenseVectorIndexGroup.md
+   */
+  async getDenseVectorIndexGroupId(): Promise<string[]> {
+    const logger = createLoggerWithPrefix('LibraryItem.getDenseVectorIndexGroupId');
+    try {
+      logger.info(
+        `Getting dense vector index groups for item: ${this.metadata.id}`,
+      );
+
+      // Get all chunks for this item
+      const chunks = await this.getChunks();
+      logger.info(
+        `Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`,
+      );
+
+      // If no chunks exist, return empty array
+      if (chunks.length === 0) {
+        logger.warn(`No chunks found for item: ${this.metadata.id}`);
+        return [];
+      }
+
+      // Extract all unique denseVectorIndexGroupId values
+      const denseVectorIndexGroupIds = [...new Set(
+        chunks.map(chunk => chunk.denseVectorIndexGroupId).filter(Boolean)
+      )];
+
+      logger.info(
+        `Found ${denseVectorIndexGroupIds.length} unique dense vector index groups for item: ${this.metadata.id}: ${JSON.stringify(denseVectorIndexGroupIds)}`,
+      );
+
+      return denseVectorIndexGroupIds;
+    } catch (error) {
+      logger.error(
+        `Error getting dense vector index groups for item ${this.metadata.id}:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -2769,7 +2773,10 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
     const similarChunks: Array<BookChunk & { similarity: number }> = [];
 
     for (const chunk of chunks) {
-      if (!chunk.embedding) continue;
+      // Check for simplified embedding structure
+      if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
+        continue;
+      }
 
       // Simple cosine similarity calculation
       let dotProduct = 0;
@@ -2914,19 +2921,19 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   /**
-   * Generate cache key for search requests
+   * Generate cache key for search requests - updated for simplified embedding structure
    */
   private generateSearchCacheKey(filter: ChunkSearchFilter, queryVector?: number[]): string {
     const keyParts = [
       filter.query || '',
       filter.itemId || '',
-      filter.denseVectorIndexGroup || '',
-      filter.version || '',
+      filter.denseVectorIndexGroupId || '',
       filter.limit?.toString() || '10',
       filter.similarityThreshold?.toString() || '0.7',
       (filter.groups || []).join(','),
       (filter.chunkingStrategies || []).join(','),
       (filter.embeddingProviders || []).join(','),
+      'simplified-embed-v1', // Version identifier for simplified embedding structure
     ];
     
     if (queryVector) {
@@ -2938,13 +2945,27 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   /**
-   * Get cached search results
+   * Get cached search results - updated for simplified embedding structure
    */
   private getCachedSearchResults(cacheKey: string): any | null {
     const entry = this.searchCache.get(cacheKey);
     if (entry && !this.isCacheExpired(entry.timestamp)) {
-      this.logger.debug(`Cache hit for search key: ${cacheKey}`);
-      return entry.results;
+      // Validate that cached results have simplified embedding structure
+      if (Array.isArray(entry.results)) {
+        const hasValidStructure = entry.results.every((result: any) =>
+          result &&
+          (!result.embedding || Array.isArray(result.embedding))
+        );
+        
+        if (hasValidStructure) {
+          this.logger.debug(`Cache hit for search key: ${cacheKey}`);
+          return entry.results;
+        } else {
+          // Invalid structure in cache, delete and return null
+          this.logger.debug(`Cache hit but invalid structure for key: ${cacheKey}, invalidating`);
+          this.searchCache.delete(cacheKey);
+        }
+      }
     }
     
     if (entry) {
@@ -2955,9 +2976,22 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   /**
-   * Cache search results
+   * Cache search results - updated for simplified embedding structure
    */
   private cacheSearchResults(cacheKey: string, results: any): void {
+    // Validate results have simplified embedding structure before caching
+    if (Array.isArray(results)) {
+      const hasValidStructure = results.every((result: any) =>
+        result &&
+        (!result.embedding || Array.isArray(result.embedding))
+      );
+      
+      if (!hasValidStructure) {
+        this.logger.debug(`Not caching results with invalid embedding structure for key: ${cacheKey}`);
+        return;
+      }
+    }
+    
     // Clean cache if it's getting too large
     if (this.searchCache.size >= this.maxCacheSize) {
       this.cleanExpiredCache();
@@ -3199,9 +3233,8 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               id: { type: 'keyword' },
               itemId: { type: 'keyword' },
               
-              // Multi-version support
-              denseVectorIndexGroup: { type: 'keyword' },
-              version: { type: 'keyword' },
+              // Dense vector index group for organization
+              denseVectorIndexGroupId: { type: 'keyword' },
               
               title: {
                 type: 'text',
@@ -3217,20 +3250,12 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
               },
               index: { type: 'integer' },
               
-              // Multi-embedding support
-              embeddings: {
-                type: 'object',
-                dynamic: true,
-                properties: {
-                  // Dynamic properties for different providers
-                  // Each provider will have its own dense_vector field
-                },
-              },
-              
-              // Legacy embedding field for backward compatibility
+              // Single embedding field - simplified structure
               embedding: {
                 type: 'dense_vector',
                 dims: this.vectorDimensions,
+                index: true,
+                similarity: 'cosine',
               },
               
               // Strategy and configuration metadata
@@ -3937,7 +3962,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     return this.findSimilarChunksWithFilter(queryVector, filter);
   }
 
-  // IMultiVersionVectorStorage implementation
+  // Enhanced findSimilarChunks implementation
   async findSimilarChunksWithFilter(
     queryVector: number[],
     filter: ChunkSearchFilter,
@@ -3979,8 +4004,8 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       }));
     }
 
-    // Determine which embedding field to use
-    const embeddingField = provider ? `embeddings.${provider}` : 'embedding';
+    // Use the simplified embedding field
+    const embeddingField = 'embedding';
 
     const must: any[] = [];
     const should: any[] = [];
@@ -3994,20 +4019,12 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       must.push({ terms: { itemId: filter.itemIds } });
     }
 
-    if (filter.denseVectorIndexGroup) {
-      must.push({ term: { denseVectorIndexGroup: filter.denseVectorIndexGroup } });
+    if (filter.denseVectorIndexGroupId) {
+      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
     }
 
     if (filter.groups && filter.groups.length > 0) {
-      must.push({ terms: { denseVectorIndexGroup: filter.groups } });
-    }
-
-    if (filter.version) {
-      must.push({ term: { version: filter.version } });
-    }
-
-    if (filter.versions && filter.versions.length > 0) {
-      must.push({ terms: { version: filter.versions } });
+      must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
@@ -4034,7 +4051,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       });
     }
 
-    // Build similarity search query
+    // Build similarity search query using simplified embedding structure
     const similarityQuery = {
       script_score: {
         query: { match_all: {} },
@@ -4055,7 +4072,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         const groupWeight = weights[group] || 1.0;
         should.push({
           script_score: {
-            query: { term: { denseVectorIndexGroup: group } },
+            query: { term: { denseVectorIndexGroupId: group } },
             script: {
               source: `(${groupWeight} * (cosineSimilarity(params.query_vector, doc['${embeddingField}']) + 1.0))`,
               params: {
@@ -4086,7 +4103,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         size: filter.limit || 10,
         sort: [
           { _score: { order: 'desc' } },
-          { denseVectorIndexGroup: { order: 'asc' } },
+          { denseVectorIndexGroupId: { order: 'asc' } },
           { index: { order: 'asc' } },
         ],
       });
@@ -4096,6 +4113,13 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         .map((hit) => {
           const { _source, _score } = hit;
           const chunk = _source as BookChunk;
+          
+          // Ensure the chunk has the simplified embedding structure
+          if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
+            this.logger.warn(`Chunk ${chunk.id} has invalid embedding structure`);
+            return null;
+          }
+          
           const similarity = (_score || 0) - 1; // Convert back from cosine similarity + 1
 
           return {
@@ -4103,7 +4127,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
             similarity,
           };
         })
-        .filter((chunk) => chunk.similarity >= (filter.similarityThreshold || 0));
+        .filter((chunk) => chunk !== null && chunk.similarity >= (filter.similarityThreshold || 0)) as Array<BookChunk & { similarity: number }>;
       
       // Cache the results
       this.cacheSearchResults(cacheKey, results);
@@ -4228,10 +4252,22 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       }
     }
 
-    // Validate all embeddings have correct dimensions
+    // Validate all embeddings have correct dimensions and simplified structure
     let embeddingsValid = true;
     for (const chunk of chunks) {
-      if (chunk.embedding && chunk.embedding.length !== this.vectorDimensions) {
+      if (!chunk.embedding) {
+        logger.error(`Chunk ID ${chunk.id} has no embedding`);
+        embeddingsValid = false;
+        continue;
+      }
+      
+      if (!Array.isArray(chunk.embedding)) {
+        logger.error(`Chunk ID ${chunk.id} has invalid embedding structure (not an array)`);
+        embeddingsValid = false;
+        continue;
+      }
+      
+      if (chunk.embedding.length !== this.vectorDimensions) {
         logger.error(
           `Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`,
         );
@@ -4241,7 +4277,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
 
     if (!embeddingsValid) {
       throw new Error(
-        `Vector dimensions mismatch detected. Expected: ${this.vectorDimensions}`,
+        `Vector validation failed. Expected: ${this.vectorDimensions} dimensions, simplified array structure`,
       );
     }
 
@@ -4278,10 +4314,10 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     );
   }
 
-  // IMultiVersionVectorStorage implementation methods
+  // Enhanced storage implementation methods
   
   /**
-   * Store chunks with versioning information
+   * Store chunks
    */
   async storeChunks(chunks: BookChunk[]): Promise<void> {
     return this.batchSaveChunks(chunks);
@@ -4299,7 +4335,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
         bool: {
           must: [
             { term: { itemId } },
-            { term: { denseVectorIndexGroup: groupId } },
+            { term: { denseVectorIndexGroupId: groupId } },
           ],
         },
       },
@@ -4317,7 +4353,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   /**
-   * Search chunks with multi-version support
+   * Search chunks with filtering support
    */
   async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
     await this.checkInitialized();
@@ -4353,21 +4389,12 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     }
 
     // Group filtering
-    if (filter.denseVectorIndexGroup) {
-      must.push({ term: { denseVectorIndexGroup: filter.denseVectorIndexGroup } });
+    if (filter.denseVectorIndexGroupId) {
+      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
     }
 
     if (filter.groups && filter.groups.length > 0) {
-      must.push({ terms: { denseVectorIndexGroup: filter.groups } });
-    }
-
-    // Version filtering
-    if (filter.version) {
-      must.push({ term: { version: filter.version } });
-    }
-
-    if (filter.versions && filter.versions.length > 0) {
-      must.push({ terms: { version: filter.versions } });
+      must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
     // Strategy filtering
@@ -4447,7 +4474,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
       aggs: {
         groups: {
           terms: {
-            field: 'denseVectorIndexGroup',
+            field: 'denseVectorIndexGroupId',
           },
         },
       },
@@ -4472,7 +4499,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       aggs: {
         chunkCount: {
@@ -4525,7 +4552,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     const response = await this.client.deleteByQuery({
       index: this.chunksIndexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       refresh: true,
     });
@@ -4542,10 +4569,10 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
-        terms: { denseVectorIndexGroup: groupIds },
+        terms: { denseVectorIndexGroupId: groupIds },
       },
       sort: [
-        { denseVectorIndexGroup: { order: 'asc' } },
+        { denseVectorIndexGroupId: { order: 'asc' } },
         { index: { order: 'asc' } },
       ],
     });
@@ -4553,25 +4580,6 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     return response.hits.hits.map((hit: any) => hit._source);
   }
 
-  /**
-   * Get chunks by version
-   */
-  async getChunksByVersion(version: string): Promise<BookChunk[]> {
-    await this.checkInitialized();
-    
-    const response = await this.client.search({
-      index: this.chunksIndexName,
-      query: {
-        term: { version },
-      },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
-    });
-
-    return response.hits.hits.map((hit: any) => hit._source);
-  }
 
   /**
    * Get chunks by chunking strategy
@@ -4622,7 +4630,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     const response = await this.client.updateByQuery({
       index: this.chunksIndexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       script: {
         source: Object.entries(updates)
@@ -4642,7 +4650,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
   }
 
   /**
-   * Migrate legacy chunks to the new multi-version format
+   * Migrate legacy chunks to the new format
    */
   async migrateLegacyChunks(itemId?: string): Promise<number> {
     // Implementation would depend on specific migration requirements
@@ -4663,7 +4671,7 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     await this.checkInitialized();
     
     const query = groupId
-      ? { term: { denseVectorIndexGroup: groupId } }
+      ? { term: { denseVectorIndexGroupId: groupId } }
       : { match_all: {} };
 
     const response = await this.client.search({
@@ -4677,20 +4685,25 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     let validChunks = 0;
 
     for (const chunk of chunks) {
-      // Check if chunk has embeddings
-      if (!chunk.embeddings || Object.keys(chunk.embeddings).length === 0) {
-        if (!chunk.embedding) {
-          errors.push(`Chunk ${chunk.id} has no embeddings`);
-          continue;
-        }
+      // Check if chunk has simplified embedding structure
+      if (!chunk.embedding) {
+        errors.push(`Chunk ${chunk.id} has no embedding`);
+        continue;
       }
-
-      // Validate embedding dimensions
-      for (const [provider, embedding] of Object.entries(chunk.embeddings)) {
-        if (!Array.isArray(embedding) || embedding.length === 0) {
-          errors.push(`Chunk ${chunk.id} has invalid embedding for provider ${provider}`);
-          continue;
-        }
+      
+      if (!Array.isArray(chunk.embedding)) {
+        errors.push(`Chunk ${chunk.id} has invalid embedding structure (expected array)`);
+        continue;
+      }
+      
+      if (chunk.embedding.length === 0) {
+        errors.push(`Chunk ${chunk.id} has empty embedding`);
+        continue;
+      }
+      
+      if (chunk.embedding.length !== this.vectorDimensions) {
+        errors.push(`Chunk ${chunk.id} has incorrect embedding dimensions: ${chunk.embedding.length}, expected: ${this.vectorDimensions}`);
+        continue;
       }
 
       validChunks++;
@@ -4709,22 +4722,16 @@ export interface BookChunk {
   id: string;
   itemId: string; // Reference to the parent book item
   
-  // Multi-version support
-  denseVectorIndexGroup: string; // Group identifier for this chunking/embedding combination
-  version: string; // Version identifier for this specific combination
+  // Dense vector index group for organization
+  denseVectorIndexGroupId: string; // Group identifier for this chunking/embedding combination
   
   // Content and metadata
   title: string;
   content: string;
   index: number; // Position in the document
   
-  // Multi-embedding support
-  embeddings: {
-    [provider: string]: number[]; // Provider name -> embedding vector
-  };
-  
-  // Legacy embedding field for backward compatibility
-  embedding?: number[]; // Vector embedding of the content (deprecated, use embeddings instead)
+  // Simplified embedding field - single dense vector
+  embedding: number[]; // Vector embedding of the content (single vector, not versioned)
   
   // Strategy and configuration metadata
   strategyMetadata: {
@@ -4754,11 +4761,9 @@ export interface ChunkSearchFilter {
   itemId?: string;
   itemIds?: string[];
   
-  // Multi-version filtering
-  denseVectorIndexGroup?: string; // Specific group to search in
+  // Group filtering
+  denseVectorIndexGroupId?: string; // Specific group to search in
   groups?: string[]; // Multiple groups to search across
-  version?: string; // Specific version to search
-  versions?: string[]; // Multiple versions to search across
   
   // Strategy filtering
   chunkingStrategies?: string[]; // Filter by chunking strategies
@@ -4787,8 +4792,7 @@ export interface ChunkingEmbeddingGroup {
   embeddingProvider: string;
   embeddingConfig: EmbeddingConfig;
   
-  // Versioning
-  version: string;
+  // Group settings
   isDefault: boolean; // Whether this is the default group for new items
   isActive: boolean; // Whether this group is currently active
   

@@ -52,7 +52,6 @@ export class DefaultGroupManager {
         maxRetries: 3,
         timeout: 30000,
       },
-      version: '1.0.0',
       isDefault: true,
       isActive: true,
       createdAt: new Date(),
@@ -78,7 +77,6 @@ export class DefaultGroupManager {
         maxRetries: 3,
         timeout: 30000,
       },
-      version: '1.0.0',
       isDefault: false,
       isActive: true,
       createdAt: new Date(),
@@ -225,7 +223,6 @@ export class DefaultGroupManager {
         ...baseGroup.embeddingConfig,
         ...customConfig.embeddingConfig,
       },
-      version: customConfig.version || '1.0.0',
       isDefault: false,
       isActive: true,
       createdAt: new Date(),
@@ -254,10 +251,6 @@ export class DefaultGroupManager {
     
     if (!group.embeddingProvider || group.embeddingProvider.trim() === '') {
       errors.push('Embedding provider is required');
-    }
-    
-    if (!group.version || group.version.trim() === '') {
-      errors.push('Version is required');
     }
     
     if (group.chunkingConfig) {
@@ -346,7 +339,7 @@ export class DefaultGroupManager {
    * @returns Resolved group configuration
    */
   getGroupConfigForSearch(searchOptions: {
-    denseVectorIndexGroup?: string;
+    denseVectorIndexGroupId?: string;
     chunkingStrategy?: string;
     embeddingProvider?: string;
     fallbackToDefault?: boolean;
@@ -355,16 +348,16 @@ export class DefaultGroupManager {
     group: ChunkingEmbeddingGroup;
     usedFallback: boolean;
   } | null {
-    const { denseVectorIndexGroup, chunkingStrategy, embeddingProvider, fallbackToDefault = true } = searchOptions;
+    const { denseVectorIndexGroupId, chunkingStrategy, embeddingProvider, fallbackToDefault = true } = searchOptions;
 
     let group: ChunkingEmbeddingGroup | null = null;
     let usedFallback = false;
 
     // Try to get group by ID first
-    if (denseVectorIndexGroup) {
-      group = this.defaultGroups.get(denseVectorIndexGroup) || null;
+    if (denseVectorIndexGroupId) {
+      group = this.defaultGroups.get(denseVectorIndexGroupId) || null;
       if (!group && fallbackToDefault) {
-        const fallbackGroupId = this.getFallbackGroupId(denseVectorIndexGroup);
+        const fallbackGroupId = this.getFallbackGroupId(denseVectorIndexGroupId);
         if (fallbackGroupId) {
           group = this.defaultGroups.get(fallbackGroupId) || null;
           usedFallback = true;
@@ -376,7 +369,7 @@ export class DefaultGroupManager {
     if (!group && chunkingStrategy) {
       group = this.getDefaultGroup(chunkingStrategy);
       if (group) {
-        usedFallback = !denseVectorIndexGroup;
+        usedFallback = !denseVectorIndexGroupId;
       }
     }
 

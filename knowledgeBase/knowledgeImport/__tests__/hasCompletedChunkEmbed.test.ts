@@ -41,9 +41,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {},
+        denseVectorIndexGroupId: 'test-group',
+        embedding: [],
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
@@ -61,9 +60,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {},
+        denseVectorIndexGroupId: 'test-group',
+        embedding: [],
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
@@ -95,11 +93,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.1, 0.2, 0.3], // Has embedding
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {
-          'test-provider': [0.1, 0.2, 0.3]
-        },
+        denseVectorIndexGroupId: 'test-group',
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
@@ -117,9 +111,9 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         index: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {},
+        denseVectorIndexGroupId: 'test-group',
+        
+        embedding: [],
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
@@ -152,11 +146,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.1, 0.2, 0.3],
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {
-          'test-provider': [0.1, 0.2, 0.3]
-        },
+        denseVectorIndexGroupId: 'test-group',
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
@@ -175,11 +165,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         embedding: [0.4, 0.5, 0.6],
         createdAt: new Date(),
         updatedAt: new Date(),
-        denseVectorIndexGroup: 'test-group',
-        version: '1.0.0',
-        embeddings: {
-          'test-provider': [0.4, 0.5, 0.6]
-        },
+        denseVectorIndexGroupId: 'test-group',
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},

@@ -374,7 +374,7 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   maxRetries?: number;
   
   // Multi-version support
-  denseVectorIndexGroup?: string; // Optional group ID for this chunking/embedding combination
+  denseVectorIndexGroupId?: string; // Optional group ID for this chunking/embedding combination
   embeddingProvider?: string; // Optional embedding provider override
   embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
   chunkingConfig?: ChunkingConfig; // Optional chunking configuration override

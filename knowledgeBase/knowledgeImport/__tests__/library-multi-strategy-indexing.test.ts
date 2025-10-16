@@ -116,9 +116,8 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 1',
           content: 'This is test content 1',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -136,9 +135,8 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 2',
           content: 'This is test content 2',
           index: 1,
-          denseVectorIndexGroup: 'custom-paragraph',
-          version: '1.0.0',
-          embeddings: { openai: [0.2, 0.3, 0.4, 0.5, 0.6] },
+          denseVectorIndexGroupId: 'custom-paragraph',
+          embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -198,9 +196,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 1',
           content: 'This is test content that should be similar to another chunk',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -218,9 +216,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 2',
           content: 'This is test content that should be similar to another chunk',
           index: 1,
-          denseVectorIndexGroup: 'custom-paragraph',
-          version: '1.0.0',
-          embeddings: { openai: [0.2, 0.3, 0.4, 0.5, 0.6] },
+          denseVectorIndexGroupId: 'custom-paragraph',
+          
+          embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -259,9 +257,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 1',
           content: 'This is test content 1',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -279,9 +277,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 2',
           content: 'This is test content 2',
           index: 0,
-          denseVectorIndexGroup: 'custom-paragraph',
-          version: '2.0.0',
-          embeddings: { openai: [0.2, 0.3, 0.4, 0.5, 0.6] },
+          denseVectorIndexGroupId: 'custom-paragraph',
+          
+          embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -315,9 +313,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'A Chunk',
           content: 'Content 1',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -335,9 +333,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Z Chunk',
           content: 'Content 2',
           index: 1,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.2, 0.3, 0.4, 0.5, 0.6] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -412,9 +410,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 1',
           content: 'This is test content 1',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -448,9 +446,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 1',
           content: 'This is test content 1',
           index: 0,
-          denseVectorIndexGroup: 'default-h1',
-          version: '1.0.0',
-          embeddings: { openai: [0.1, 0.2, 0.3, 0.4, 0.5] },
+          denseVectorIndexGroupId: 'default-h1',
+          
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
@@ -468,9 +466,9 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           title: 'Test Chunk 2',
           content: 'This is test content 2',
           index: 1,
-          denseVectorIndexGroup: 'custom-paragraph',
-          version: '1.0.0',
-          embeddings: { openai: [0.2, 0.3, 0.4, 0.5, 0.6] },
+          denseVectorIndexGroupId: 'custom-paragraph',
+          
+          embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },

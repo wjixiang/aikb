@@ -47,7 +47,7 @@ export interface BookChunk {
   itemId: string; // Reference to the parent book item
   
   // Multi-version support
-  denseVectorIndexGroup: string; // Group identifier for this chunking/embedding combination
+  denseVectorIndexGroupId: string; // Group identifier for this chunking/embedding combination
   version: string; // Version identifier for this specific combination
   
   // Content and metadata
@@ -120,7 +120,7 @@ export interface ChunkSearchFilter {
   itemIds?: string[];
   
   // Multi-version filtering
-  denseVectorIndexGroup?: string; // Specific group to search in
+  denseVectorIndexGroupId?: string; // Specific group to search in
   groups?: string[]; // Multiple groups to search across
   version?: string; // Specific version to search
   versions?: string[]; // Multiple versions to search across

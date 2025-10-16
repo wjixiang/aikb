@@ -25,7 +25,7 @@
     "demo:markdown-part-storage": "npx tsx knowledgeBase/lib/rabbitmq/demo-markdown-part-storage.ts",
     "coverage": "vitest run --coverage",
     "baml:generate": "pnpm exec baml-cli generate",
-    "doc": "npx typedoc --entryPointStrategy Expand ./knowledgeBase",
+    "doc": "npx typedoc --entryPointStrategy Expand ./*",
     "cli": "node knowledgeBase/cli/simple-cli.js",
     "clear:library:indices": "knowledgeBase/scripts/clear-library-indices.sh"
   },

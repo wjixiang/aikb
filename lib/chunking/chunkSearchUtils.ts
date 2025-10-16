@@ -33,23 +33,13 @@ export class ChunkSearchUtils {
     }
 
     // Apply group filter
-    if (filter.denseVectorIndexGroup) {
-      filteredChunks = filteredChunks.filter(chunk => chunk.denseVectorIndexGroup === filter.denseVectorIndexGroup);
+    if (filter.denseVectorIndexGroupId) {
+      filteredChunks = filteredChunks.filter(chunk => chunk.denseVectorIndexGroupId === filter.denseVectorIndexGroupId);
     }
 
     // Apply groups filter
     if (filter.groups && filter.groups.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => filter.groups!.includes(chunk.denseVectorIndexGroup));
-    }
-
-    // Apply version filter
-    if (filter.version) {
-      filteredChunks = filteredChunks.filter(chunk => chunk.version === filter.version);
-    }
-
-    // Apply versions filter
-    if (filter.versions && filter.versions.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => filter.versions!.includes(chunk.version));
+      filteredChunks = filteredChunks.filter(chunk => filter.groups!.includes(chunk.denseVectorIndexGroupId));
     }
 
     // Apply chunking strategies filter
@@ -115,7 +105,7 @@ export class ChunkSearchUtils {
 
       case 'group':
         sortedChunks.sort((a, b) => {
-          const comparison = a.denseVectorIndexGroup.localeCompare(b.denseVectorIndexGroup);
+          const comparison = a.denseVectorIndexGroupId.localeCompare(b.denseVectorIndexGroupId);
           return order === 'desc' ? -comparison : comparison;
         });
         break;
@@ -147,19 +137,19 @@ export class ChunkSearchUtils {
     }
 
     // Filter chunks by groups and sort by priority
-    const filteredChunks = chunks.filter(chunk => groupPriorityMap.has(chunk.denseVectorIndexGroup));
+    const filteredChunks = chunks.filter(chunk => groupPriorityMap.has(chunk.denseVectorIndexGroupId));
     
     // Sort by priority (descending), then by group name, then by index
     filteredChunks.sort((a, b) => {
-      const aPriority = groupPriorityMap.get(a.denseVectorIndexGroup) || 0;
-      const bPriority = groupPriorityMap.get(b.denseVectorIndexGroup) || 0;
+      const aPriority = groupPriorityMap.get(a.denseVectorIndexGroupId) || 0;
+      const bPriority = groupPriorityMap.get(b.denseVectorIndexGroupId) || 0;
       
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first
       }
       
       // If same priority, sort by group name
-      const groupComparison = a.denseVectorIndexGroup.localeCompare(b.denseVectorIndexGroup);
+      const groupComparison = a.denseVectorIndexGroupId.localeCompare(b.denseVectorIndexGroupId);
       if (groupComparison !== 0) {
         return groupComparison;
       }

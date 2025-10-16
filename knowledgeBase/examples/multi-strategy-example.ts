@@ -185,14 +185,12 @@ async function demonstrateAdvancedSearch() {
     {
       id: 'chunk-1',
       itemId: 'item-1',
-      denseVectorIndexGroup: 'default-h1',
-      version: '1.0.0',
+      denseVectorIndexGroupId: 'default-h1',
+      
       index: 0,
       title: 'Introduction to Machine Learning',
       content: 'Machine learning is a subset of artificial intelligence...',
-      embeddings: {
-        'openai': Array(1536).fill(0).map(() => Math.random()), // Mock vector
-      },
+      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'h1',
         chunkingConfig: {
@@ -218,14 +216,12 @@ async function demonstrateAdvancedSearch() {
     {
       id: 'chunk-2',
       itemId: 'item-1',
-      denseVectorIndexGroup: 'default-paragraph',
-      version: '1.0.0',
+      denseVectorIndexGroupId: 'default-paragraph',
+      
       index: 1,
       title: 'Machine Learning Definition',
       content: 'Machine learning algorithms build a mathematical model...',
-      embeddings: {
-        'openai': Array(1536).fill(0).map(() => Math.random()), // Mock vector
-      },
+      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'paragraph',
         chunkingConfig: {
@@ -251,14 +247,12 @@ async function demonstrateAdvancedSearch() {
     {
       id: 'chunk-3',
       itemId: 'item-2',
-      denseVectorIndexGroup: 'default-h1',
-      version: '2.0.0',
+      denseVectorIndexGroupId: 'default-h1',
+      
       index: 0,
       title: 'Types of Machine Learning',
       content: 'There are three main types of machine learning...',
-      embeddings: {
-        'openai': Array(1536).fill(0).map(() => Math.random()), // Mock vector
-      },
+      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'h1',
         chunkingConfig: {
@@ -298,7 +292,7 @@ async function demonstrateAdvancedSearch() {
   const sortedChunks = ChunkSearchUtils.sortChunks(filteredChunks, 'relevance');
   console.log('\nSorted results by relevance:');
   sortedChunks.forEach((chunk, index) => {
-    console.log(`${index + 1}. ${chunk.title} (${chunk.denseVectorIndexGroup})`);
+    console.log(`${index + 1}. ${chunk.title} (${chunk.denseVectorIndexGroupId})`);
     console.log(`   ${chunk.content.substring(0, 80)}...`);
   });
   

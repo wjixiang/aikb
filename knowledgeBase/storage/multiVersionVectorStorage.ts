@@ -85,12 +85,6 @@ export interface IMultiVersionVectorStorage {
    */
   getChunksByGroups(groupIds: string[]): Promise<BookChunk[]>;
 
-  /**
-   * Get chunks by version
-   * @param version The version identifier
-   * @returns Array of chunks
-   */
-  getChunksByVersion(version: string): Promise<BookChunk[]>;
 
   /**
    * Get chunks by chunking strategy
@@ -218,7 +212,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
 
     // Invalidate cache for affected items and groups
     const affectedItems = new Set(chunks.map(chunk => chunk.itemId));
-    const affectedGroups = new Set(chunks.map(chunk => chunk.denseVectorIndexGroup));
+    const affectedGroups = new Set(chunks.map(chunk => chunk.denseVectorIndexGroupId));
     
     for (const itemId of affectedItems) {
       this.groupCache.delete(`groups:${itemId}`);
@@ -241,7 +235,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
         bool: {
           must: [
             { term: { itemId } },
-            { term: { denseVectorIndexGroup: groupId } },
+            { term: { denseVectorIndexGroupId: groupId } },
           ],
         },
       },
@@ -261,7 +255,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
         term: { itemId },
       },
       sort: [
-        { denseVectorIndexGroup: { order: 'asc' } },
+        { denseVectorIndexGroupId: { order: 'asc' } },
         { index: { order: 'asc' } },
       ],
     });
@@ -297,22 +291,14 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     }
 
     // Group filtering
-    if (filter.denseVectorIndexGroup) {
-      must.push({ term: { denseVectorIndexGroup: filter.denseVectorIndexGroup } });
+    if (filter.denseVectorIndexGroupId) {
+      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
     }
 
     if (filter.groups && filter.groups.length > 0) {
-      must.push({ terms: { denseVectorIndexGroup: filter.groups } });
+      must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
-    // Version filtering
-    if (filter.version) {
-      must.push({ term: { version: filter.version } });
-    }
-
-    if (filter.versions && filter.versions.length > 0) {
-      must.push({ terms: { version: filter.versions } });
-    }
 
     // Strategy filtering
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
@@ -380,8 +366,8 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     filter: ChunkSearchFilter,
     provider?: string
   ): Promise<Array<BookChunk & { similarity: number }>> {
-    // Determine which embedding field to use
-    const embeddingField = provider ? `embeddings.${provider}` : 'embedding';
+    // Use the single embedding field
+    const embeddingField = 'embedding';
 
     // Build query
     const must: any[] = [];
@@ -396,22 +382,14 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       must.push({ terms: { itemId: filter.itemIds } });
     }
 
-    if (filter.denseVectorIndexGroup) {
-      must.push({ term: { denseVectorIndexGroup: filter.denseVectorIndexGroup } });
+    if (filter.denseVectorIndexGroupId) {
+      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
     }
 
     if (filter.groups && filter.groups.length > 0) {
-      must.push({ terms: { denseVectorIndexGroup: filter.groups } });
+      must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
-    // Version filtering
-    if (filter.version) {
-      must.push({ term: { version: filter.version } });
-    }
-
-    if (filter.versions && filter.versions.length > 0) {
-      must.push({ terms: { version: filter.versions } });
-    }
 
     // Strategy filtering
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
@@ -459,7 +437,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       for (const group of filter.groups) {
         should.push({
           script_score: {
-            query: { term: { denseVectorIndexGroup: group } },
+            query: { term: { denseVectorIndexGroupId: group } },
             script: {
               source: 'cosineSimilarity(params.query_vector, doc[params.embedding_field]) + 1.0',
               params: {
@@ -488,7 +466,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       size: filter.limit || 10,
       sort: [
         { _score: { order: 'desc' } },
-        { denseVectorIndexGroup: { order: 'asc' } },
+        { denseVectorIndexGroupId: { order: 'asc' } },
         { index: { order: 'asc' } },
       ],
     });
@@ -518,7 +496,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       return results.map((chunk, index) => ({
         ...chunk,
         rank: index + 1,
-        group: chunk.denseVectorIndexGroup,
+        group: chunk.denseVectorIndexGroupId,
       }));
     }
 
@@ -625,7 +603,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       aggs: {
         groups: {
           terms: {
-            field: 'denseVectorIndexGroup',
+            field: 'denseVectorIndexGroupId',
           },
         },
       },
@@ -661,7 +639,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     const response = await this.client.search({
       index: this.indexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       aggs: {
         chunkCount: {
@@ -717,7 +695,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     const response = await this.client.deleteByQuery({
       index: this.indexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       refresh: true,
     });
@@ -752,10 +730,10 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     const response = await this.client.search({
       index: this.indexName,
       query: {
-        terms: { denseVectorIndexGroup: groupIds },
+        terms: { denseVectorIndexGroupId: groupIds },
       },
       sort: [
-        { denseVectorIndexGroup: { order: 'asc' } },
+        { denseVectorIndexGroupId: { order: 'asc' } },
         { index: { order: 'asc' } },
       ],
     });
@@ -763,23 +741,6 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     return response.hits.hits.map((hit: any) => hit._source);
   }
 
-  /**
-   * Get chunks by version
-   */
-  async getChunksByVersion(version: string): Promise<BookChunk[]> {
-    const response = await this.client.search({
-      index: this.indexName,
-      query: {
-        term: { version },
-      },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
-    });
-
-    return response.hits.hits.map((hit: any) => hit._source);
-  }
 
   /**
    * Get chunks by chunking strategy
@@ -824,7 +785,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     const response = await this.client.updateByQuery({
       index: this.indexName,
       query: {
-        term: { denseVectorIndexGroup: groupId },
+        term: { denseVectorIndexGroupId: groupId },
       },
       script: {
         source: Object.entries(updates)
@@ -862,7 +823,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     errors: string[];
   }> {
     const query = groupId
-      ? { term: { denseVectorIndexGroup: groupId } }
+      ? { term: { denseVectorIndexGroupId: groupId } }
       : { match_all: {} };
 
     const response = await this.client.search({
@@ -918,8 +879,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
           properties: {
             id: { type: 'keyword' },
             itemId: { type: 'keyword' },
-            denseVectorIndexGroup: { type: 'keyword' },
-            version: { type: 'keyword' },
+            denseVectorIndexGroupId: { type: 'keyword' },
             title: {
               type: 'text',
               fields: {
@@ -928,15 +888,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
             },
             content: { type: 'text' },
             index: { type: 'integer' },
-            embeddings: {
-              type: 'object',
-              dynamic: true,
-              properties: {
-                // Dynamic properties for different providers
-                // Each provider will have its own dense_vector field
-              },
-            },
-            embedding: { type: 'dense_vector', dims: 1024 }, // Legacy field
+            embedding: { type: 'dense_vector', dims: 1024 },
             strategyMetadata: {
               type: 'object',
               properties: {

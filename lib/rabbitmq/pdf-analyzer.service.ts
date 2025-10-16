@@ -13,7 +13,7 @@ import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/libr
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { PdfSpliterWorker } from '../../pdfProcess-ts/pdfSpliter';
+import { PdfSpliterWorker } from '../pdfProcess-ts/pdfSpliter';
 import { uploadToS3, getPdfDownloadUrl } from '../s3Service/S3Service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');

@@ -193,7 +193,7 @@ export class ChunkingEmbeddingWorker {
         {
           itemId: message.itemId,
           chunkingStrategy: message.chunkingStrategy,
-          denseVectorIndexGroup: message.denseVectorIndexGroup,
+          denseVectorIndexGroupId: message.denseVectorIndexGroupId,
           embeddingProvider: message.embeddingProvider,
           retryCount,
           maxRetries,
@@ -210,7 +210,7 @@ export class ChunkingEmbeddingWorker {
 
       // Prepare options for multi-version support
       const options = {
-        denseVectorIndexGroup: message.denseVectorIndexGroup,
+        denseVectorIndexGroupId: message.denseVectorIndexGroupId,
         embeddingProvider: message.embeddingProvider,
         embeddingConfig: message.embeddingConfig,
         chunkingConfig: message.chunkingConfig,
@@ -268,7 +268,7 @@ export class ChunkingEmbeddingWorker {
           stack: errorStack,
           itemId: message.itemId,
           chunkingStrategy: message.chunkingStrategy,
-          denseVectorIndexGroup: message.denseVectorIndexGroup,
+          denseVectorIndexGroupId: message.denseVectorIndexGroupId,
           embeddingProvider: message.embeddingProvider,
           retryCount,
           maxRetries,
@@ -383,7 +383,7 @@ export class ChunkingEmbeddingWorker {
         }
 
         options = {
-          denseVectorIndexGroup: groupId,
+          denseVectorIndexGroupId: groupId,
           embeddingProvider: groupConfig.embeddingProvider,
           embeddingConfig: groupConfig.embeddingConfig,
           chunkingConfig: groupConfig.chunkingConfig,
@@ -400,7 +400,7 @@ export class ChunkingEmbeddingWorker {
         // For now, use default strategy
         chunkingStrategy = ChunkingStrategyType.H1;
         options = {
-          denseVectorIndexGroup: groupId,
+          denseVectorIndexGroupId: groupId,
           forceReprocess: message.forceReprocess,
           preserveExisting: message.preserveExisting,
         };
@@ -506,7 +506,7 @@ export class ChunkingEmbeddingWorker {
           priority: message.priority,
           retryCount: retryCount + 1,
           maxRetries: message.maxRetries,
-          denseVectorIndexGroup: message.groupId,
+          denseVectorIndexGroupId: message.groupId,
           embeddingProvider: message.groupConfig?.embeddingProvider,
           embeddingConfig: message.groupConfig?.embeddingConfig,
           chunkingConfig: message.groupConfig?.chunkingConfig,
