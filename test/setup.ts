@@ -1,4 +1,6 @@
 import { config } from 'dotenv';
+
+
 config(); // Inject  env variables
 
 console.log(new Date())
@@ -62,3 +64,22 @@ global.FormData = class FormData {
 
 // Mock fetch if needed
 global.fetch = vi.fn();
+
+// Mock logger
+// const { mockLogger } = vi.hoisted(() => {
+//   const mockLogger = {
+//     error: vi.fn(console.log),
+//     warn: vi.fn(console.log),
+//     info: vi.fn(console.log),
+//     debug: vi.fn(console.log),
+//     verbose: vi.fn(console.log),
+//     http: vi.fn(console.log),
+//     silly: vi.fn(console.log),
+//     log: vi.fn(console.log),
+//   };
+//   return { mockLogger };
+// });
+
+// vi.mock('../../logger', () => ({
+//   default: vi.fn(() => mockLogger)
+// }));

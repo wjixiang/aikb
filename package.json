@@ -16,7 +16,7 @@
     "check:workers": "node knowledgeBase/lib/rabbitmq/simple-check-workers.js",
     "check:workers:full": "node knowledgeBase/lib/rabbitmq/check-workers-status.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test:unit": "export SYSTEM_LOG_LEVEL=0 && vitest --exclude **/*.integration.test.ts --exclude **/*.integrated.test.ts --exclude **/*.interogated.test.ts ",
+    "test:unit": "export SYSTEM_LOG_LEVEL=3 && vitest --silent --exclude **/*.integration.test.ts --exclude **/*.integrated.test.ts --exclude **/*.interogated.test.ts ",
     "test:integrated": "vitest run knowledgeBase/**/*.integrated.test.ts",
     "test": "vitest run",
     "test:markdown-part-storage": "vitest run knowledgeBase/lib/rabbitmq/__tests__/markdown-part-storage.integration.test.ts",

@@ -491,9 +491,12 @@ export class MongoDBMarkdownPartCache extends MarkdownPartCache {
         const completedParts = status === 'completed' ? [partIndex] : [];
         const failedParts = status === 'failed' ? [partIndex] : [];
         
+        // For new metadata, we need to count the actual parts
+        const allParts = await this.partsCollection!.find({ itemId }).toArray();
+        
         await this.metadataCollection!.insertOne({
           itemId,
-          totalParts: 0, // 将在后续更新
+          totalParts: allParts.length, // Set to actual count of parts
           completedParts,
           failedParts,
           status: status === 'completed' ? 'completed' : 'processing',

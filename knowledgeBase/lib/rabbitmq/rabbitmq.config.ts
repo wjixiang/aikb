@@ -407,3 +407,27 @@ export function getAllQueueConfigs(): Array<RabbitMQQueueConfig> {
 export function getAllExchangeConfigs(): Array<RabbitMQExchangeConfig> {
   return Object.values(rabbitMQExchangeConfigs);
 }
+
+/**
+ * Get updated RabbitMQ configuration (alias for getValidatedRabbitMQConfig)
+ * This function provides compatibility with the previous rabbitmq.config.updated.ts
+ */
+export function getValidatedUpdatedRabbitMQConfig(): RabbitMQConfig | null {
+  return getValidatedRabbitMQConfig();
+}
+
+/**
+ * Get updated RabbitMQ configuration (alias for defaultRabbitMQConfig)
+ * This function provides compatibility with the previous rabbitmq.config.updated.ts
+ */
+export function getUpdatedRabbitMQConfig(): RabbitMQConfig {
+  return defaultRabbitMQConfig;
+}
+
+/**
+ * Validate updated RabbitMQ configuration (alias for validateRabbitMQConfig)
+ * This function provides compatibility with the previous rabbitmq.config.updated.ts
+ */
+export function validateUpdatedRabbitMQConfig(config: RabbitMQConfig): boolean {
+  return validateRabbitMQConfig(config);
+}

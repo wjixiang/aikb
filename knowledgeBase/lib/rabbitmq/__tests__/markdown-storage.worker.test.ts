@@ -26,6 +26,7 @@ vi.mock('../rabbitmq.service', () => ({
     publishMarkdownStorageRequest: vi.fn(() => Promise.resolve(true)),
     publishMarkdownStorageCompleted: vi.fn(() => Promise.resolve(true)),
     publishMarkdownStorageFailed: vi.fn(() => Promise.resolve(true)),
+    publishChunkingEmbeddingRequest: vi.fn(() => Promise.resolve(true)),
   })),
 }));
 
@@ -56,10 +57,10 @@ vi.mock('../../../knowledgeImport/library', () => ({
 // Mock the logger
 vi.mock('../../../lib/logger', () => ({
   default: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
+    debug: vi.fn(console.log),
+    info: vi.fn(console.log),
+    warn: vi.fn(console.log),
+    error: vi.fn(console.log),
   })),
 }));
 
@@ -98,6 +99,7 @@ describe('MarkdownStorageWorker', () => {
       publishMarkdownStorageRequest: vi.fn(() => Promise.resolve(true)),
       publishMarkdownStorageCompleted: vi.fn(() => Promise.resolve(true)),
       publishMarkdownStorageFailed: vi.fn(() => Promise.resolve(true)),
+      publishChunkingEmbeddingRequest: vi.fn(() => Promise.resolve(true)),
     };
 
     // Create mock Library
@@ -203,10 +205,12 @@ describe('MarkdownStorageWorker', () => {
       // Verify status updates (called twice: processing and completed)
       expect(mockStorage.updateMetadata).toHaveBeenCalledTimes(2);
 
-      // Verify chunks processing
-      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(
-        itemId,
-        ChunkingStrategyType.PARAGRAPH,
+      // Verify chunks processing request was sent
+      expect(mockRabbitMQService.publishChunkingEmbeddingRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          itemId,
+          chunkingStrategy: 'paragraph',
+        }),
       );
 
       // Verify completion message
@@ -494,10 +498,12 @@ describe('MarkdownStorageWorker', () => {
 
       await messageHandler(message, originalMessage);
 
-      // Verify chunks processing
-      expect(mockLibrary.processItemChunks).toHaveBeenCalledWith(
-        itemId,
-        ChunkingStrategyType.PARAGRAPH,
+      // Verify chunks processing request was sent
+      expect(mockRabbitMQService.publishChunkingEmbeddingRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          itemId,
+          chunkingStrategy: 'paragraph',
+        }),
       );
       expect(
         mockRabbitMQService.publishMarkdownStorageCompleted,

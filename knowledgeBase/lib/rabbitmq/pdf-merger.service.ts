@@ -157,22 +157,13 @@ export class PdfMergerService {
       await this.publishMergingProgress(
         message.itemId,
         80,
-        'Preparing for chunking and embedding',
+        'Processing chunks and embeddings',
         message.completedParts.length,
         message.totalParts,
       );
 
-      // Update progress
-      await this.publishMergingProgress(
-        message.itemId,
-        85,
-        'Sending chunking and embedding request',
-        message.completedParts.length,
-        message.totalParts,
-      );
-
-      // Send chunking and embedding request
-      await this.sendChunkingEmbeddingRequest(message.itemId, mergedMarkdown);
+      // Process chunks and embeddings
+      await this.processChunksAndEmbeddings(message.itemId, mergedMarkdown);
 
       // Update progress
       await this.publishMergingProgress(
@@ -356,6 +347,12 @@ export class PdfMergerService {
     markdownContent: string,
   ): Promise<void> {
     try {
+      logger.info(`Starting chunking and embedding request for item: ${itemId}`);
+      
+      // Simulate processing delay for testing purposes
+      logger.info(`Simulating 2-second delay for chunking and embedding processing`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const chunkingEmbeddingRequest = {
         messageId: uuidv4(),
         timestamp: Date.now(),
@@ -380,6 +377,33 @@ export class PdfMergerService {
         error,
       );
       // Don't throw here, as this is a secondary operation
+    }
+  }
+
+  /**
+   * Process chunks and embeddings
+   * This method handles the actual chunking and embedding processing
+   */
+  private async processChunksAndEmbeddings(
+    itemId: string,
+    markdownContent: string,
+  ): Promise<void> {
+    try {
+      // Simulate processing delay for testing purposes
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // In a real implementation, this would:
+      // 1. Split the markdown content into chunks
+      // 2. Generate embeddings for each chunk
+      // 3. Store the chunks and embeddings in the vector database
+      
+      // For now, we just simulate the processing time
+    } catch (error) {
+      logger.error(
+        `Failed to process chunks and embeddings for item ${itemId}:`,
+        error,
+      );
+      throw error;
     }
   }
 

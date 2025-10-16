@@ -124,7 +124,7 @@ describe('PDF Processing Workflow', () => {
 
     // Verify the content is meaningful (not just placeholder)
     expect(markdownContent.length).toBeGreaterThan(100);
-    expect(markdownContent).toContain('viral_pneumonia');
+    expect(markdownContent).toContain('Viral pneumonia');
 
     // If processing completed, status should be completed
     if (finalStatus?.status === PdfProcessingStatus.COMPLETED) {

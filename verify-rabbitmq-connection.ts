@@ -1,5 +1,5 @@
 import * as amqp from 'amqplib';
-import { getValidatedUpdatedRabbitMQConfig } from './knowledgeBase/lib/rabbitmq/rabbitmq.config.updated';
+import { getValidatedRabbitMQConfig } from './knowledgeBase/lib/rabbitmq/rabbitmq.config';
 import createLoggerWithPrefix from './knowledgeBase/lib/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQConnectionVerify');
@@ -7,7 +7,7 @@ const logger = createLoggerWithPrefix('RabbitMQConnectionVerify');
 async function verifyConnection(): Promise<boolean> {
   logger.info('🔍 验证 RabbitMQ 连接...');
   
-  const config = getValidatedUpdatedRabbitMQConfig();
+  const config = getValidatedRabbitMQConfig();
   if (!config) {
     logger.error('❌ 无效的 RabbitMQ 配置');
     return false;

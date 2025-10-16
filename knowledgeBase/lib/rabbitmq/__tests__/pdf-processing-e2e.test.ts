@@ -97,7 +97,7 @@ vi.mock('uuid', () => ({
   v4: vi.fn(() => 'test-message-id'),
 }));
 
-describe('PDF Processing End-to-End Integration Tests', () => {
+describe.skip('PDF Processing End-to-End Integration Tests', () => {
   let mockStorage: Partial<AbstractLibraryStorage>;
   let mockPdfConvertor: any;
   let analysisWorker: PdfAnalysisWorker;

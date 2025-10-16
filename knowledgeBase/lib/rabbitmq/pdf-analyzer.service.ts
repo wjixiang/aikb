@@ -12,7 +12,7 @@ import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
-import * as axios from 'axios';
+import axios from 'axios';
 import { PdfSpliterWorker } from '../../../pdfProcess-ts/pdfSpliter';
 import { uploadToS3, getPdfDownloadUrl } from '../s3Service/S3Service';
 
@@ -72,7 +72,7 @@ export class PdfAnalyzerService {
         parseInt(process.env.PDF_SPLIT_THRESHOLD || '') ||
         PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
       
-      // Determine if splitting is required
+      // Determine if splitting is required (strictly greater than threshold)
       const requiresSplitting = pageCount > splitThreshold;
       let suggestedSplitSize: number;
       let splitParts: PdfPartInfo[] = [];
@@ -81,18 +81,29 @@ export class PdfAnalyzerService {
         // If a specific split size was provided in the request, use it
         if (request.splitSize) {
           suggestedSplitSize = request.splitSize;
+          logger.info(`Using splitSize from request: ${suggestedSplitSize}`);
         } else {
-          // Use environment variable or default split size
-          suggestedSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+          // Check if we should use environment variable or default
+          const envSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '');
           
-          // Ensure split size is within min/max bounds
-          suggestedSplitSize = Math.min(
-            Math.max(
-              suggestedSplitSize,
-              parseInt(process.env.PDF_MIN_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
-            ),
-            parseInt(process.env.PDF_MAX_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
-          );
+          if (envSplitSize) {
+            suggestedSplitSize = envSplitSize;
+            logger.info(`Using splitSize from environment: ${suggestedSplitSize}`);
+          } else {
+            // Calculate optimal split size based on page count
+            // Target around 10 parts total to optimize processing
+            const calculatedSplitSize = Math.ceil(pageCount / 10);
+            
+            // Use the calculated size but ensure it's within min/max bounds
+            suggestedSplitSize = Math.min(
+              Math.max(
+                calculatedSplitSize,
+                parseInt(process.env.PDF_MIN_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
+              ),
+              parseInt(process.env.PDF_MAX_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
+            );
+            logger.info(`Using calculated splitSize: ${suggestedSplitSize} (pageCount=${pageCount}, calculated=${calculatedSplitSize}, min=${PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE}, max=${PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE})`);
+          }
         }
 
         logger.info(
@@ -246,7 +257,7 @@ export class PdfAnalyzerService {
       const presignedUrl = await getPdfDownloadUrl(s3Key);
 
       // Use axios to download the PDF using the presigned URL
-      const response = await axios.default.get(presignedUrl, {
+      const response = await axios.get(presignedUrl, {
         responseType: 'arraybuffer',
         timeout: 30000, // 30 seconds timeout
       });
@@ -514,10 +525,22 @@ export class PdfAnalyzerService {
       });
 
       // Split the PDF into chunks
+      logger.info(`[DEBUG] Attempting to split PDF`, {
+        itemId,
+        pdfBufferSize: pdfBuffer.length,
+        splitSize,
+        pdfBufferStart: pdfBuffer.slice(0, 100).toString('latin1'),
+      });
+      
       const pdfChunks = await this.pdfSpliter.splitPdfIntoChunks(
         pdfBuffer,
         splitSize,
       );
+      
+      logger.info(`[DEBUG] PDF splitting completed successfully`, {
+        itemId,
+        chunksCount: pdfChunks.length,
+      });
 
       // 计算分割后的统计信息
       const chunkStats = pdfChunks.map((chunk, index) => {

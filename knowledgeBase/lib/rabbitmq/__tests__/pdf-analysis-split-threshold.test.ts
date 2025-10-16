@@ -7,6 +7,13 @@ import { PdfAnalysisRequestMessage } from '../message.types';
 vi.mock('../rabbitmq.service');
 vi.mock('../s3Service/S3Service');
 vi.mock('../../../pdfProcess-ts/pdfSpliter');
+vi.mock('../logger', () => ({
+  default: {
+    info: vi.fn(console.log),
+    error: vi.fn(console.log),
+    warn: vi.fn(console.log),
+  },
+}));
 
 describe('PDF Analysis Split Threshold', () => {
   let analyzerService: PdfAnalyzerService;
@@ -151,7 +158,7 @@ describe('PDF Analysis Split Threshold', () => {
     delete process.env.PDF_SPLIT_SIZE;
   });
 
-  it('should use default values when neither message nor environment variables are provided', async () => {
+  it('should use calculated split size when neither message nor environment variables are provided', async () => {
     // Ensure environment variables are not set
     delete process.env.PDF_SPLIT_THRESHOLD;
     delete process.env.PDF_SPLIT_SIZE;
@@ -196,13 +203,14 @@ describe('PDF Analysis Split Threshold', () => {
       // Expected to fail due to mocking, but we can check the parameters used
     }
 
-    // Verify that the default values were used
+    // Verify that the calculated split size was used
+    // For 60 pages: calculated = ceil(60/10) = 6, min = 10, so final = 10
     expect(mockSplitPdfAndUploadParts).toHaveBeenCalledWith(
       'test-item-id',
       'test-file.pdf',
       expect.any(Buffer),
       60,
-      25 // Should use the default split size
+      10 // Should use the calculated split size (min bound applied)
     );
   });
 

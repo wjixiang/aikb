@@ -85,6 +85,9 @@ describe('MongoDBMarkdownPartCache', () => {
 
   describe('mergeAllParts', () => {
     it('should merge all parts into complete markdown', async () => {
+      // Clean up any existing data first
+      await cache.cleanup(testItemId);
+      
       // Store multiple parts
       await cache.storePartMarkdown(testItemId, 0, '# Part 0\n\nContent 0');
       await cache.storePartMarkdown(testItemId, 1, '# Part 1\n\nContent 1');
@@ -170,6 +173,9 @@ describe('MongoDBMarkdownPartCache', () => {
 
   describe('getMetadata', () => {
     it('should retrieve metadata for an item', async () => {
+      // Clean up any existing data first
+      await cache.cleanup(testItemId);
+      
       // Store a part first
       await cache.storePartMarkdown(testItemId, 0, '# Test Content');
       
