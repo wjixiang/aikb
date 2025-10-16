@@ -3,12 +3,12 @@ config({ path: '.env' });
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
-import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
-import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
-import { createPdfAnalysisWorker } from '../../lib/rabbitmq/pdf-analysis.worker';
-import { createPdfProcessingCoordinatorWorker } from '../../lib/rabbitmq/pdf-processing-coordinator.worker';
-import { createPdfConversionWorker } from '../../lib/rabbitmq/pdf-conversion.worker';
-import { startMarkdownStorageWorker } from '../../lib/rabbitmq/markdown-storage.worker';
+import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
+import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';
+import { createPdfAnalysisWorker } from '../../../lib/rabbitmq/pdf-analysis.worker';
+import { createPdfProcessingCoordinatorWorker } from '../../../lib/rabbitmq/pdf-processing-coordinator.worker';
+import { createPdfConversionWorker } from '../../../lib/rabbitmq/pdf-conversion.worker';
+import { startMarkdownStorageWorker } from '../../../lib/rabbitmq/markdown-storage.worker';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 

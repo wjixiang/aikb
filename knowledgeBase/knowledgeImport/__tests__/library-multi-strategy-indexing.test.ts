@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vites
 import Library from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { MultiVersionVectorStorage } from '../../storage/multiVersionVectorStorage';
-import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
-import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
-import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
+import { DefaultGroupManager } from '../../../lib/chunking/defaultGroupManager';
+import { ChunkSearchUtils } from '../../../lib/chunking/chunkSearchUtils';
+import { ChunkingErrorHandler } from '../../../lib/error/errorHandler';
 import { Client } from '@elastic/elasticsearch';
 import { BookChunk, ChunkSearchFilter, EmbeddingConfig } from '../library';
-import { ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
-import { embeddingService } from '../../lib/embedding/embedding';
-import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
+import { ChunkingConfig } from '../../../lib/chunking/chunkingStrategy';
+import { embeddingService } from '../../../lib/embedding/embedding';
+import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
 
 // Mock embedding service
 vi.mock('../../lib/embedding/embedding', () => ({

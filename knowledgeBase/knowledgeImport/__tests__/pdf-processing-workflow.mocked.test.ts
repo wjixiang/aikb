@@ -3,15 +3,15 @@ config({ path: '.env' });
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
-import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
-import { getMockRabbitMQService, resetMockRabbitMQService } from '../../lib/rabbitmq/__tests__/MockRabbitMQService';
+import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
+import { getMockRabbitMQService, resetMockRabbitMQService } from '../../../lib/rabbitmq/__tests__/MockRabbitMQService';
 import { 
   createPdfAnalysisWorker,
   createPdfProcessingCoordinatorWorker,
   createPdfConversionWorker,
   startMarkdownStorageWorker,
   simulateCompletePdfProcessingWorkflow
-} from '../../lib/rabbitmq/__tests__/MockWorkers';
+} from '../../../lib/rabbitmq/__tests__/MockWorkers';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';

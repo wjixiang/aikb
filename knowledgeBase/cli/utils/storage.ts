@@ -1,4 +1,4 @@
-import { connectToDatabase } from '../../lib/mongodb';
+import { connectToDatabase } from '../../../lib/mongodb';
 import { MongodbEntityContentStorage } from '../../storage/mongodb-entity-content-storage';
 import { MongodbKnowledgeContentStorage } from '../../storage/mongodb-knowledge-content-storage';
 import { MongodbKnowledgeVectorStorage } from '../../storage/mongodb-knowledge-vector-storage';
@@ -8,7 +8,7 @@ import { ElasticsearchVectorStorage } from '../../storage/elasticsearch-entity-v
 import EntityStorage from '../../storage/entityStorage';
 import KnowledgeStorage from '../../storage/knowledgeStorage';
 import { KBStorage } from '../../storage/storage';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from '../../../lib/logger';
 
 const logger = createLoggerWithPrefix('CLI-Storage');
 

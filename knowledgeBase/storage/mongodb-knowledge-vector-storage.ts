@@ -1,5 +1,5 @@
-import createLoggerWithPrefix from '../lib/logger';
-import { connectToDatabase } from '../lib/mongodb';
+import createLoggerWithPrefix from '../../lib/logger';
+import { connectToDatabase } from '../../lib/mongodb';
 import { AbstractKnowledgeVectorStorage } from './abstract-storage';
 
 /**

@@ -1,7 +1,7 @@
 import Library, { LibraryItem, S3MongoLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
-import { deleteFromS3 } from '../../lib/s3Service/S3Service';
+import { deleteFromS3 } from '../../../lib/s3Service/S3Service';
 import {
   vi,
   describe,
@@ -14,12 +14,12 @@ import {
 } from 'vitest';
 
 // Mock the S3Service to avoid real S3 operations
-vi.mock('../../lib/s3Service/S3Service', () => ({
+vi.mock('/lib/s3Service/S3Service', () => ({
   deleteFromS3: vi.fn().mockResolvedValue(true),
 }));
 
 // Mock the MinerU PDF converter to avoid real PDF conversion
-vi.mock('../../lib/chunking/chunkingTool', () => ({
+vi.mock('/lib/chunking/chunkingTool', () => ({
   chunkTextAdvanced: vi.fn().mockResolvedValue([
     {
       index: 0,
@@ -32,7 +32,7 @@ vi.mock('../../lib/chunking/chunkingTool', () => ({
 }));
 
 // Mock the embedding service
-vi.mock('../../lib/embedding/embedding', () => ({
+vi.mock('/lib/embedding/embedding', () => ({
   embeddingService: {
     generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3, 0.4, 0.5]),
   },

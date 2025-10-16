@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
+import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock RabbitMQ Service

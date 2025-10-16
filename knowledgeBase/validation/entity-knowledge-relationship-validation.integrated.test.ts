@@ -9,7 +9,7 @@ import EntityStorage from '../storage/entityStorage';
 import Entity from '../Entity';
 import { KnowledgeCreationWorkflow } from '../knowledgeCreation/KnowledgeCreationWorkflow';
 import { KnowledgeData, EntityData } from '../knowledge.type';
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from '../../lib/logger';
 
 /**
  * 验证实体-知识关系的正确性

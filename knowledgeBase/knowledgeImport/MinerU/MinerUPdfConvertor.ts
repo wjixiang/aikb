@@ -6,8 +6,8 @@ import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 import * as yauzl from 'yauzl';
-import { uploadPdfFromPath } from '../../lib/s3Service/S3Service';
-import createLoggerWithPrefix from '../../lib/logger';
+import { uploadPdfFromPath } from '../../../lib/s3Service/S3Service';
+import createLoggerWithPrefix from '../../../lib/logger';
 import { app_config } from 'knowledgeBase/config';
 
 /**

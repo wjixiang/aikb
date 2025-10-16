@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library from '../library';
 import { S3MongoLibraryStorage } from '../library';
-import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
-import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
-import { createPdfConversionWorker } from '../../lib/rabbitmq/pdf-conversion.worker';
+import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
+import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';
+import { createPdfConversionWorker } from '../../../lib/rabbitmq/pdf-conversion.worker';
 import { MinerUPdfConvertor } from '../PdfConvertor';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,7 +19,7 @@ const mockRabbitMQService = {
   close: vi.fn(() => Promise.resolve()),
 };
 
-vi.mock('../../lib/rabbitmq/rabbitmq.service', () => ({
+vi.mock('../../../lib/rabbitmq/rabbitmq.service', () => ({
   getRabbitMQService: vi.fn(() => mockRabbitMQService),
 }));
 

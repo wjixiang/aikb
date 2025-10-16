@@ -19,12 +19,12 @@ import {
   canStrategyHandle,
   getStrategyDefaultConfig,
   validateStrategyConfig
-} from '../lib/chunking/chunkingTool';
-import { DefaultGroupManager } from '../lib/chunking/defaultGroupManager';
-import { ChunkSearchUtils } from '../lib/chunking/chunkSearchUtils';
-import { ChunkingErrorHandler } from '../lib/error/errorHandler';
+} from '../../lib/chunking/chunkingTool';
+import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
+import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
+import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import { BookChunk, ChunkSearchFilter, ChunkingEmbeddingGroup } from '../knowledgeImport/library';
-import { MultiVersionChunkingManager } from '../lib/chunking/multiVersionChunkingManager';
+import { MultiVersionChunkingManager } from '../../lib/chunking/multiVersionChunkingManager';
 
 // Sample text for demonstration
 const sampleText = `

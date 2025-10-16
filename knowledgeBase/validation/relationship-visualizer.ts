@@ -2,7 +2,7 @@ import Entity from '../Entity';
 import Knowledge from '../Knowledge';
 import { AbstractKnowledgeStorage } from '../storage/abstract-storage';
 import { AbstractEntityStorage } from '../storage/abstract-storage';
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from '../../lib/logger';
 
 /**
  * 实体-知识关系可视化工具

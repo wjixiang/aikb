@@ -6,7 +6,7 @@ import {
   uploadToS3,
   uploadPdfFromPath,
   getSignedUploadUrl,
-} from '../../lib/s3Service/S3Service';
+} from '../../../lib/s3Service/S3Service';
 
 /**
  * MinerU API Client for document parsing and conversion

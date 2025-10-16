@@ -1,5 +1,5 @@
 import { b } from 'baml_client';
-import { ChunkResult } from 'knowledgeBase/lib/chunking/chunkingTool';
+import { ChunkResult } from 'lib/chunking/chunkingTool';
 
 interface HierarchicalChunkResult extends ChunkResult {
   level: number;

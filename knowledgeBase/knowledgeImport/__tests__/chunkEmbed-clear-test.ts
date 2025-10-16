@@ -1,7 +1,7 @@
 import Library, { LibraryItem } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata } from '../library';
-import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
+import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
 
 describe('chunkEmbed clear existing chunks test', () => {
   let library: Library;

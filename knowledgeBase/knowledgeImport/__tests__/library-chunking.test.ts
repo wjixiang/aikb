@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata, BookChunk, ChunkSearchFilter } from '../library';
-import { embeddingService } from '../../lib/embedding/embedding';
-import { ChunkingStrategyType } from '../../lib/chunking/chunkingStrategy';
+import { embeddingService } from '../../../lib/embedding/embedding';
+import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
 
 // Set NODE_ENV to test for proper test environment detection
 process.env.NODE_ENV = 'test';
 
 // Mock the embedding service
-vi.mock('../../lib/embedding/embedding', () => ({
+vi.mock('../../../lib/embedding/embedding', () => ({
   embeddingService: {
     embedBatch: vi.fn(),
     getProvider: vi.fn().mockReturnValue('alibaba'),

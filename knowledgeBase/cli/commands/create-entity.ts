@@ -7,7 +7,7 @@ import {
   displayError,
   displayInfo,
 } from '../utils/prompts';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from '../../../lib/logger';
 
 const logger = createLoggerWithPrefix('CLI-CreateEntity');
 

@@ -4,14 +4,14 @@ import {
   getSignedUploadUrl,
   getSignedUrlForDownload,
   deleteFromS3,
-} from '../lib/s3Service/S3Service';
-import { connectToDatabase } from '../lib/mongodb';
+} from '../../lib/s3Service/S3Service';
+import { connectToDatabase } from '../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from '../../lib/logger';
 import { IMultiVersionVectorStorage } from '../storage/multiVersionVectorStorage';
 
 // Create a global logger for the Library module
@@ -24,18 +24,18 @@ import {
 import {
   chunkTextAdvanced,
   getAvailableStrategies,
-} from '../lib/chunking/chunkingTool';
-import { ChunkSearchUtils } from '../lib/chunking/chunkSearchUtils';
-import { ChunkingErrorHandler } from '../lib/error/errorHandler';
+} from '../../lib/chunking/chunkingTool';
+import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
+import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import {
   h1Chunking,
   paragraphChunking,
   chunkText,
   ChunkResult,
-} from '../lib/chunking/chunkingTool';
-import { ChunkingStrategyType, ChunkingConfig } from '../lib/chunking/chunkingStrategy';
-import { embeddingService } from '../lib/embedding/embedding';
-import { DefaultGroupManager } from '../lib/chunking/defaultGroupManager';
+} from '../../lib/chunking/chunkingTool';
+import { ChunkingStrategyType, ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
+import { embeddingService } from '../../lib/embedding/embedding';
+import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
 
 // Embedding configuration interface
 export interface EmbeddingConfig {
@@ -51,8 +51,8 @@ import {
   PdfAnalysisRequestMessage,
   PDF_PROCESSING_CONFIG,
   ChunkingEmbeddingRequestMessage,
-} from '../lib/rabbitmq/message.types';
-import { getRabbitMQService } from '../lib/rabbitmq/rabbitmq.service';
+} from '../../lib/rabbitmq/message.types';
+import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // Enhanced metadata interfaces for Zotero-like functionality

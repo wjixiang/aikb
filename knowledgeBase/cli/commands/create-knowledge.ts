@@ -10,7 +10,7 @@ import {
   displayInfo,
   selectFromOptions,
 } from '../utils/prompts';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from '../../../lib/logger';
 
 const logger = createLoggerWithPrefix('CLI-CreateKnowledge');
 

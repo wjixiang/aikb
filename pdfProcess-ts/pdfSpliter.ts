@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import createLoggerWithPrefix from '../knowledgeBase/lib/logger'
+import createLoggerWithPrefix from '../lib/logger'
 
 const logger = createLoggerWithPrefix('PdfSpliterWorker')
 

@@ -1,29 +1,29 @@
 import Library, { S3MongoLibraryStorage, BookMetadata } from '../library';
-import { PdfProcessingStatus } from '../../lib/rabbitmq/message.types';
+import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
 import {
   PdfAnalyzerService,
   createPdfAnalyzerService,
-} from '../../lib/rabbitmq/pdf-analyzer.service';
+} from '../../../lib/rabbitmq/pdf-analyzer.service';
 // TypeScript PDF splitter has been replaced with Python implementation
 // No longer need to import PdfSplittingWorker
 import {
   PdfMergerService,
   createPdfMergerService,
-} from '../../lib/rabbitmq/pdf-merger.service';
+} from '../../../lib/rabbitmq/pdf-merger.service';
 import {
   PdfConversionWorker,
   createPdfConversionWorker,
-} from '../../lib/rabbitmq/pdf-conversion.worker';
+} from '../../../lib/rabbitmq/pdf-conversion.worker';
 import {
   getRabbitMQService,
   initializeRabbitMQService,
   closeRabbitMQService,
-} from '../../lib/rabbitmq/rabbitmq.service';
+} from '../../../lib/rabbitmq/rabbitmq.service';
 import {
   PdfAnalysisRequestMessage,
   PdfMergingRequestMessage,
   PDF_PROCESSING_CONFIG,
-} from '../../lib/rabbitmq/message.types';
+} from '../../../lib/rabbitmq/message.types';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';

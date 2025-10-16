@@ -1,4 +1,4 @@
-import { h1Chunking } from 'knowledgeBase/lib/chunking/chunkingTool';
+import { h1Chunking } from 'lib/chunking/chunkingTool';
 import { MinerUOutliner } from './MinerUOutliner';
 
 const testMd = `

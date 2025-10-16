@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from '../../lib/logger';
 import { Client } from '@elastic/elasticsearch';
 import { AbstractEntityVectorStorage } from './abstract-storage';
 

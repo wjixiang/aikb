@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MongodbEntityContentStorage } from '../mongodb-entity-content-storage';
-import { connectToDatabase } from '../../lib/mongodb';
+import { connectToDatabase } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { EntityData } from '../../knowledge.type';
 import Entity from 'knowledgeBase/Entity';
 import { AbstractEntityStorage } from '../storage';
 
 // Mock the database connection
-vi.mock('../../lib/mongodb');
+vi.mock('../../../lib/mongodb');
 const mockConnectToDatabase = vi.mocked(connectToDatabase);
 
 // Mock the logger
-vi.mock('../../lib/logger', () => ({
+vi.mock('../../../lib/logger', () => ({
   default: vi.fn(() => ({
     info: vi.fn(),
     error: vi.fn(),
