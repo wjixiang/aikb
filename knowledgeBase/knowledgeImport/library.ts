@@ -222,25 +222,14 @@ export class IdUtils {
 /**
  * Manage overall storage & retrieve of books/literatures/articles
  */
-export abstract class AbstractLibrary {
-  protected storage: AbstractLibraryStorage;
-  protected pdfConvertor?: MinerUPdfConvertor;
-
-  constructor(
-    storage: AbstractLibraryStorage,
-    pdfConvertor?: MinerUPdfConvertor,
-  ) {
-    this.storage = storage;
-    this.pdfConvertor = pdfConvertor;
-  }
-
+export interface AbstractLibrary {
   /**
    * Store a PDF file from a buffer
    * @param pdfBuffer The PDF file buffer
    * @param fileName The file name
    * @param metadata PDF metadata
    */
-  abstract storePdf(
+  storePdf(
     pdfBuffer: Buffer,
     fileName: string,
     metadata: Partial<BookMetadata>,
@@ -250,22 +239,22 @@ export abstract class AbstractLibrary {
    * Re-extract markdown for a specific item or all items
    * @param itemId Optional ID of the item to re-extract markdown for
    */
-  abstract reExtractMarkdown(itemId?: string): Promise<void>;
+  reExtractMarkdown(itemId?: string): Promise<void>;
 
   /**
    * Get a item by ID
    */
-  abstract getItem(id: string): Promise<LibraryItem | null>;
+  getItem(id: string): Promise<LibraryItem | null>;
 
   /**
    * Search for items with filters
    */
-  abstract searchItems(filter: SearchFilter): Promise<LibraryItem[]>;
+  searchItems(filter: SearchFilter): Promise<LibraryItem[]>;
 
   /**
    * Create a new collection
    */
-  abstract createCollection(
+  createCollection(
     name: string,
     description?: string,
     parentCollectionId?: string,
@@ -274,12 +263,12 @@ export abstract class AbstractLibrary {
   /**
    * Get all collections
    */
-  abstract getCollections(): Promise<Collection[]>;
+  getCollections(): Promise<Collection[]>;
 
   /**
    * Add item to collection
    */
-  abstract addItemToCollection(
+  addItemToCollection(
     itemId: string,
     collectionId: string,
   ): Promise<void>;
@@ -287,7 +276,7 @@ export abstract class AbstractLibrary {
   /**
    * Remove item from collection
    */
-  abstract removeItemFromCollection(
+  removeItemFromCollection(
     itemId: string,
     collectionId: string,
   ): Promise<void>;
@@ -295,31 +284,31 @@ export abstract class AbstractLibrary {
   /**
    * Generate citation for an item
    */
-  abstract generateCitation(itemId: string, style: string): Promise<Citation>;
+  generateCitation(itemId: string, style: string): Promise<Citation>;
 
   /**
    * Delete a book by ID
    */
-  abstract deleteBook(id: string): Promise<boolean>;
+  deleteBook(id: string): Promise<boolean>;
 
   /**
    * Delete a collection by ID
    */
-  abstract deleteCollection(id: string): Promise<boolean>;
+  deleteCollection(id: string): Promise<boolean>;
 
   /**
    * Delete all items in a collection
    */
-  abstract deleteItemsInCollection(collectionId: string): Promise<number>;
+  deleteItemsInCollection(collectionId: string): Promise<number>;
 
-  // Chunk-related abstract methods
+  // Chunk-related methods
   /**
    * Process markdown content into chunks and generate embeddings
    * @param itemId The ID of the item to process
    * @param chunkingStrategy The chunking strategy to use
    * @param options Optional configuration for chunking and embedding
    */
-  abstract processItemChunks(
+  processItemChunks(
     itemId: string,
     chunkingStrategy?: ChunkingStrategyType,
     options?: {
@@ -337,7 +326,7 @@ export abstract class AbstractLibrary {
    * @param itemId The ID of the item
    * @param options Optional filtering options
    */
-  abstract getItemChunks(
+  getItemChunks(
     itemId: string,
     options?: {
       denseVectorIndexGroupId?: string;
@@ -351,7 +340,7 @@ export abstract class AbstractLibrary {
    * Search chunks with filters
    * @param filter Search filters
    */
-  abstract searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
 
   /**
    * Find similar chunks based on a query vector
@@ -361,7 +350,7 @@ export abstract class AbstractLibrary {
    * @param itemIds Optional list of item IDs to search within
    * @param options Optional search options
    */
-  abstract findSimilarChunks(
+  findSimilarChunks(
     queryVector: number[],
     limit?: number,
     threshold?: number,
@@ -383,7 +372,7 @@ export abstract class AbstractLibrary {
    * @param threshold Similarity threshold
    * @param options Optional search options
    */
-  abstract findSimilarChunksInItem(
+  findSimilarChunksInItem(
     itemId: string,
     queryVector: number[],
     limit?: number,
@@ -404,7 +393,7 @@ export abstract class AbstractLibrary {
    * @param limit Maximum number of results
    * @param options Optional search options
    */
-  abstract searchChunksInItem(
+  searchChunksInItem(
     itemId: string,
     query: string,
     limit?: number,
@@ -422,7 +411,7 @@ export abstract class AbstractLibrary {
    * @param chunkingStrategy The chunking strategy to use
    * @param options Optional configuration for chunking and embedding
    */
-  abstract reProcessChunks(
+  reProcessChunks(
     itemId?: string,
     chunkingStrategy?: ChunkingStrategyType,
     options?: {
@@ -434,11 +423,16 @@ export abstract class AbstractLibrary {
       preserveExisting?: boolean;
     },
   ): Promise<void>;
+}
 
+/**
+ * Utility functions for formatting citations
+ */
+export class CitationFormatter {
   /**
    * Helper method to format citation
    */
-  protected formatCitation(metadata: BookMetadata, style: string): string {
+  static formatCitation(metadata: BookMetadata, style: string): string {
     const authors = metadata.authors
       .map(
         (author) =>
@@ -462,14 +456,17 @@ export abstract class AbstractLibrary {
 /**
  * Default implementation of Library
  */
-export default class Library extends AbstractLibrary {
+export default class Library implements AbstractLibrary {
   private rabbitMQService = getRabbitMQService();
+  protected storage: AbstractLibraryStorage;
+  protected pdfConvertor?: MinerUPdfConvertor;
 
   constructor(
     storage: AbstractLibraryStorage,
     pdfConvertor?: MinerUPdfConvertor,
   ) {
-    super(storage, pdfConvertor);
+    this.storage = storage;
+    this.pdfConvertor = pdfConvertor;
     logger.debug('Library constructor - RabbitMQ service instance', {
       serviceId: this.rabbitMQService.constructor.name,
       isConnected: this.rabbitMQService.isConnected(),
@@ -879,7 +876,7 @@ export default class Library extends AbstractLibrary {
 
     // This is a simplified citation generator
     // In a real implementation, you would use a proper citation library
-    const citationText = this.formatCitation(metadata, style);
+    const citationText = CitationFormatter.formatCitation(metadata, style);
 
     const citation: Citation = {
       id: IdUtils.generateId(),
@@ -2289,55 +2286,55 @@ interface AbstractPdf {
   createDate: Date;
 }
 
-export abstract class AbstractLibraryStorage {
-  abstract uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
-  abstract uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
-  abstract getPdfDownloadUrl(s3Key: string): Promise<string>;
-  abstract getPdf(s3Key: string): Promise<Buffer>;
-  abstract saveMetadata(
+export interface AbstractLibraryStorage {
+  uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
+  uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
+  getPdfDownloadUrl(s3Key: string): Promise<string>;
+  getPdf(s3Key: string): Promise<Buffer>;
+  saveMetadata(
     metadata: BookMetadata,
   ): Promise<BookMetadata & { id: string }>;
-  abstract getMetadata(id: string): Promise<BookMetadata | null>;
-  abstract getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
-  abstract updateMetadata(metadata: BookMetadata): Promise<void>;
-  abstract searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>;
-  abstract saveCollection(collection: Collection): Promise<Collection>;
-  abstract getCollections(): Promise<Collection[]>;
-  abstract addItemToCollection(
+  getMetadata(id: string): Promise<BookMetadata | null>;
+  getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
+  updateMetadata(metadata: BookMetadata): Promise<void>;
+  searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>;
+  saveCollection(collection: Collection): Promise<Collection>;
+  getCollections(): Promise<Collection[]>;
+  addItemToCollection(
     itemId: string,
     collectionId: string,
   ): Promise<void>;
-  abstract removeItemFromCollection(
+  removeItemFromCollection(
     itemId: string,
     collectionId: string,
   ): Promise<void>;
-  abstract saveCitation(citation: Citation): Promise<Citation>;
-  abstract getCitations(itemId: string): Promise<Citation[]>;
-  abstract saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
-  abstract getMarkdown(itemId: string): Promise<string | null>;
-  abstract deleteMarkdown(itemId: string): Promise<boolean>;
-  abstract deleteMetadata(id: string): Promise<boolean>;
-  abstract deleteCollection(id: string): Promise<boolean>;
-  abstract deleteCitations(itemId: string): Promise<boolean>;
+  saveCitation(citation: Citation): Promise<Citation>;
+  getCitations(itemId: string): Promise<Citation[]>;
+  saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
+  getMarkdown(itemId: string): Promise<string | null>;
+  deleteMarkdown(itemId: string): Promise<boolean>;
+  deleteMetadata(id: string): Promise<boolean>;
+  deleteCollection(id: string): Promise<boolean>;
+  deleteCitations(itemId: string): Promise<boolean>;
 
   // Chunk-related methods
-  abstract saveChunk(chunk: BookChunk): Promise<BookChunk>;
-  abstract getChunk(chunkId: string): Promise<BookChunk | null>;
-  abstract getChunksByItemId(itemId: string): Promise<BookChunk[]>;
-  abstract updateChunk(chunk: BookChunk): Promise<void>;
-  abstract deleteChunk(chunkId: string): Promise<boolean>;
-  abstract deleteChunksByItemId(itemId: string): Promise<number>;
-  abstract searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
-  abstract findSimilarChunks(
+  saveChunk(chunk: BookChunk): Promise<BookChunk>;
+  getChunk(chunkId: string): Promise<BookChunk | null>;
+  getChunksByItemId(itemId: string): Promise<BookChunk[]>;
+  updateChunk(chunk: BookChunk): Promise<void>;
+  deleteChunk(chunkId: string): Promise<boolean>;
+  deleteChunksByItemId(itemId: string): Promise<number>;
+  searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  findSimilarChunks(
     queryVector: number[],
     limit?: number,
     threshold?: number,
     itemIds?: string[],
   ): Promise<Array<BookChunk & { similarity: number }>>;
-  abstract batchSaveChunks(chunks: BookChunk[]): Promise<void>;
+  batchSaveChunks(chunks: BookChunk[]): Promise<void>;
 }
 
-export class S3MongoLibraryStorage extends AbstractLibraryStorage {
+export class S3MongoLibraryStorage implements AbstractLibraryStorage {
   private pdfCollection = 'library_pdfs';
   private metadataCollection = 'library_metadata';
   private collectionsCollection = 'library_collections';
@@ -2345,7 +2342,6 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
   private chunksCollection = 'library_chunks';
 
   constructor() {
-    super();
     this.ensureIndexes();
   }
 
@@ -2826,7 +2822,7 @@ export class S3MongoLibraryStorage extends AbstractLibraryStorage {
   }
 }
 
-export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
+export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   private readonly metadataIndexName = 'library_metadata';
   private readonly collectionsIndexName = 'library_collections';
   private readonly citationsIndexName = 'library_citations';
@@ -2849,7 +2845,6 @@ export class S3ElasticSearchLibraryStorage extends AbstractLibraryStorage {
     elasticsearchUrl: string = 'http://elasticsearch:9200',
     vectorDimensions: number = 1536,
   ) {
-    super();
     this.vectorDimensions = vectorDimensions;
     this.client = new Client({
       node: elasticsearchUrl,

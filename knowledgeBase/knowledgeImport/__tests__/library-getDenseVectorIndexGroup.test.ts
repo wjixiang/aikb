@@ -4,12 +4,11 @@ import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
 
 // Mock storage implementation for testing
-class MockStorage extends AbstractLibraryStorage {
+class MockStorage implements AbstractLibraryStorage {
   private chunks: BookChunk[] = [];
   private metadata: Record<string, BookMetadata> = {};
 
   constructor() {
-    super();
   }
 
   // Mock implementation for required abstract methods

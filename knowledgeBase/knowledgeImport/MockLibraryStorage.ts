@@ -20,7 +20,7 @@ interface AbstractPdf {
 /**
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
-export class MockLibraryStorage extends AbstractLibraryStorage {
+export class MockLibraryStorage implements AbstractLibraryStorage {
   async deleteMetadata(id: string): Promise<boolean> {
     return this.metadataStore.delete(id);
   }
