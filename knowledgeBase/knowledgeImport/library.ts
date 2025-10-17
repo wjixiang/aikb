@@ -1509,7 +1509,7 @@ export class LibraryItem {
   constructor(
     public metadata: BookMetadata,
     private storage: AbstractLibraryStorage,
-    private library?: Library,
+    public library?: Library,
   ) {}
 
   /**
@@ -1897,38 +1897,16 @@ export class LibraryItem {
         `Markdown content length: ${this.metadata.markdownContent.length} characters`,
       );
 
+      // DEBUG: Log RabbitMQ service status
+      logger.info(`DEBUG: RabbitMQ service status:`, {
+        isConnected: this.rabbitMQService.isConnected(),
+        serviceExists: !!this.rabbitMQService,
+        nodeIdEnv: process.env.NODE_ENV,
+        isVitest: typeof globalThis !== 'undefined' && (globalThis as any).__vitest__ !== undefined,
+      });
       
       // For testing or when RabbitMQ is not available, use the library's processItemChunks method directly
       // Check if we're in a test environment (vitest sets process.env.NODE_ENV to 'test' but sometimes it doesn't work)
-      // const isTestEnv = process.env.NODE_ENV === 'test' ||
-      //                  typeof globalThis !== 'undefined' &&
-      //                  (globalThis as any).__vitest__ !== undefined ||
-      //                  typeof window !== 'undefined' &&
-      //                  (window as any).__vitest__ !== undefined;
-      
-      // if (isTestEnv || !this.rabbitMQService.isConnected()) {
-      //   logger.info(
-      //     `Processing chunks directly for item: ${this.metadata.id} (test mode or RabbitMQ not connected)`,
-      //   );
-        
-      //   // Use the library's processItemChunks method with the provided configuration
-      //   if (this.library) {
-      //     await this.library.processItemChunks(this.metadata.id!, chunkingStrategy, {
-      //       forceReprocess,
-      //       chunkingConfig,
-      //     });
-      //   } else {
-      //     // Create a temporary library instance if not available
-      //     const tempLibrary = new Library(this.storage);
-      //     await tempLibrary.processItemChunks(this.metadata.id!, chunkingStrategy, {
-      //       forceReprocess,
-      //       chunkingConfig,
-      //     });
-      //   }
-        
-      //   // Return the processed chunks
-      //   return await this.getChunks();
-      // }
 
       // Send chunking and embedding request to the microservice
       logger.info(

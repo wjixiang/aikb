@@ -4,6 +4,9 @@ import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
 import { ChunkingStrategyType } from 'lib/chunking/chunkingStrategy';
+import { time } from 'console';
+import { delay } from 'rxjs';
+import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
@@ -167,11 +170,12 @@ describe(Library, async () => {
     );
   });
 
-  it('re-embed', async()=>{
-    book.chunkEmbed(ChunkingStrategyType.H1)
-  })
+  it.skip('re-embed', async()=>{
+    delay(1000)
+    await book.chunkEmbed(ChunkingStrategyType.H1)
+  }, 30000) // Increase timeout to 30 seconds
 
-  it.skip('semantic search', async()=>{
+  it('semantic search', async()=>{
     const semanticSearchResult = await book.semanticSearchWithDenseVector("期蛋白依赖性激酶抑制因子表达不足和突变：多种肿瘤细胞或组织 CKI 表达不足或突变")
     console.log(semanticSearchResult)
   })

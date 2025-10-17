@@ -1,9 +1,18 @@
 import { config } from 'dotenv';
-
+import { getRabbitMQService } from '../lib/rabbitmq/rabbitmq.service';
 
 config(); // Inject  env variables
 
 console.log(new Date())
+
+// Initialize RabbitMQ service for tests
+const rabbitMQService = getRabbitMQService();
+rabbitMQService.initialize().catch(() => {
+  // If RabbitMQ is not available, mock the service for testing
+  (rabbitMQService as any).isInitialized = true;
+  (rabbitMQService as any).publishChunkingEmbeddingRequest = async () => true;
+  (rabbitMQService as any).publishMessage = async () => true;
+});
 
 // Mock browser globals that @elastic/elasticsearch expects
 global.File = class File {
