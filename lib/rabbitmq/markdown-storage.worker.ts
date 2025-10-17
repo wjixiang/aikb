@@ -364,7 +364,7 @@ export async function stopMarkdownStorageWorker(
 if (require.main === module) {
   const {
     S3ElasticSearchLibraryStorage,
-  } = require('../../knowledgeImport/library');
+  } = require('../../knowledgeBase/knowledgeImport/library');
 
   async function main() {
     try {

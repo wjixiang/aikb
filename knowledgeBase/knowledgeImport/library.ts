@@ -1,18 +1,15 @@
 import {
   uploadToS3,
   uploadPdfFromPath,
-  getSignedUploadUrl,
   getSignedUrlForDownload,
   deleteFromS3,
 } from '../../lib/s3Service/S3Service';
 import { connectToDatabase } from '../../lib/mongodb';
-import { ObjectId } from 'mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '../../lib/logger';
-import { IMultiVersionVectorStorage } from '../storage/multiVersionVectorStorage';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
@@ -22,7 +19,6 @@ import {
 } from './PdfConvertor';
 // 导入新的统一chunking接口
 import {
-  chunkTextAdvanced,
   getAvailableStrategies,
 } from '../../lib/chunking/chunkingTool';
 import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
@@ -30,26 +26,14 @@ import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import {
   h1Chunking,
   paragraphChunking,
-  chunkText,
   ChunkResult,
 } from '../../lib/chunking/chunkingTool';
 import { ChunkingStrategyType, ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
-import { embeddingService } from '../../lib/embedding/embedding';
+import { embeddingService, EmbeddingConfig, EmbeddingProvider, OpenAIModel, AlibabaModel } from '../../lib/embedding/embedding';
 import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
-
-// Embedding configuration interface
-export interface EmbeddingConfig {
-  model?: string; // Model name for the embedding provider
-  dimension?: number; // Embedding dimension
-  batchSize?: number; // Batch size for processing
-  maxRetries?: number; // Maximum retry attempts
-  timeout?: number; // Request timeout in milliseconds
-  provider?: string; // Provider-specific configuration
-}
 import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,
-  PDF_PROCESSING_CONFIG,
   ChunkingEmbeddingRequestMessage,
 } from '../../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
@@ -463,10 +447,8 @@ export default class Library implements AbstractLibrary {
 
   constructor(
     storage: AbstractLibraryStorage,
-    pdfConvertor?: MinerUPdfConvertor,
   ) {
     this.storage = storage;
-    this.pdfConvertor = pdfConvertor;
     logger.debug('Library constructor - RabbitMQ service instance', {
       serviceId: this.rabbitMQService.constructor.name,
       isConnected: this.rabbitMQService.isConnected(),
@@ -979,9 +961,16 @@ export default class Library implements AbstractLibrary {
                               defaultGroup?.embeddingProvider ||
                               embeddingService.getProvider();
       
-      const embeddingConfig = options?.embeddingConfig ||
+      const embeddingConfig: EmbeddingConfig = options?.embeddingConfig ||
                             defaultGroup?.embeddingConfig ||
-                            { model: 'default' };
+                            {
+                              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+                              dimension: 1536,
+                              batchSize: 32,
+                              maxRetries: 3,
+                              timeout: 30000,
+                              provider: EmbeddingProvider.OPENAI,
+                            };
       
       const chunkingConfig = options?.chunkingConfig ||
                            defaultGroup?.chunkingConfig ||
@@ -1076,7 +1065,6 @@ export default class Library implements AbstractLibrary {
           strategyMetadata: {
             chunkingStrategy,
             chunkingConfig: effectiveChunkingConfig,
-            embeddingProvider: embeddingProvider,
             embeddingConfig: effectiveEmbeddingConfig,
             processingTimestamp: processingStartTime,
             processingDuration: 0, // Will be updated after processing
@@ -1909,64 +1897,43 @@ export class LibraryItem {
         `Markdown content length: ${this.metadata.markdownContent.length} characters`,
       );
 
-      // Check if chunks already exist
-      const existingChunks = await this.getChunks();
-      logger.info(
-        `Found ${existingChunks.length} existing chunks for item: ${this.metadata.id}`,
-      );
-
-      if (existingChunks.length > 0) {
-        if (!forceReprocess) {
-          logger.info(
-            `Chunks already exist for item: ${this.metadata.id}, returning existing chunks`,
-          );
-          return existingChunks;
-        }
-
-        // Always clear existing chunks before processing new ones
-        logger.info(`Clearing existing chunks for item: ${this.metadata.id}`);
-        await this.deleteChunks();
-      }
-
+      
       // For testing or when RabbitMQ is not available, use the library's processItemChunks method directly
       // Check if we're in a test environment (vitest sets process.env.NODE_ENV to 'test' but sometimes it doesn't work)
-      const isTestEnv = process.env.NODE_ENV === 'test' ||
-                       typeof globalThis !== 'undefined' &&
-                       (globalThis as any).__vitest__ !== undefined ||
-                       typeof window !== 'undefined' &&
-                       (window as any).__vitest__ !== undefined;
+      // const isTestEnv = process.env.NODE_ENV === 'test' ||
+      //                  typeof globalThis !== 'undefined' &&
+      //                  (globalThis as any).__vitest__ !== undefined ||
+      //                  typeof window !== 'undefined' &&
+      //                  (window as any).__vitest__ !== undefined;
       
-      if (isTestEnv || !this.rabbitMQService.isConnected()) {
-        logger.info(
-          `Processing chunks directly for item: ${this.metadata.id} (test mode or RabbitMQ not connected)`,
-        );
+      // if (isTestEnv || !this.rabbitMQService.isConnected()) {
+      //   logger.info(
+      //     `Processing chunks directly for item: ${this.metadata.id} (test mode or RabbitMQ not connected)`,
+      //   );
         
-        // Use the library's processItemChunks method with the provided configuration
-        if (this.library) {
-          await this.library.processItemChunks(this.metadata.id!, chunkingStrategy, {
-            forceReprocess,
-            chunkingConfig,
-          });
-        } else {
-          // Create a temporary library instance if not available
-          const tempLibrary = new Library(this.storage);
-          await tempLibrary.processItemChunks(this.metadata.id!, chunkingStrategy, {
-            forceReprocess,
-            chunkingConfig,
-          });
-        }
+      //   // Use the library's processItemChunks method with the provided configuration
+      //   if (this.library) {
+      //     await this.library.processItemChunks(this.metadata.id!, chunkingStrategy, {
+      //       forceReprocess,
+      //       chunkingConfig,
+      //     });
+      //   } else {
+      //     // Create a temporary library instance if not available
+      //     const tempLibrary = new Library(this.storage);
+      //     await tempLibrary.processItemChunks(this.metadata.id!, chunkingStrategy, {
+      //       forceReprocess,
+      //       chunkingConfig,
+      //     });
+      //   }
         
-        // Return the processed chunks
-        return await this.getChunks();
-      }
+      //   // Return the processed chunks
+      //   return await this.getChunks();
+      // }
 
       // Send chunking and embedding request to the microservice
       logger.info(
         `Sending chunking and embedding request for item: ${this.metadata.id}`,
       );
-
-      // Convert chunking strategy to string format
-      const strategyString = chunkingStrategy === ChunkingStrategyType.H1 ? 'h1' : 'paragraph';
 
       const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
@@ -1974,7 +1941,7 @@ export class LibraryItem {
         eventType: 'CHUNKING_EMBEDDING_REQUEST',
         itemId: this.metadata.id!,
         markdownContent: this.metadata.markdownContent,
-        chunkingStrategy: strategyString,
+        chunkingStrategy: chunkingStrategy,
         priority: 'normal',
         retryCount: 0,
         maxRetries: 3,
@@ -4732,7 +4699,6 @@ export interface BookChunk {
   strategyMetadata: {
     chunkingStrategy: string; // e.g., 'h1', 'paragraph', 'semantic'
     chunkingConfig: ChunkingConfig; // Original chunking configuration
-    embeddingProvider: string; // e.g., 'openai', 'alibaba', 'onnx'
     embeddingConfig: EmbeddingConfig; // Original embedding configuration
     processingTimestamp: Date;
     processingDuration: number;
@@ -4784,7 +4750,7 @@ export interface ChunkingEmbeddingGroup {
   // Strategy and model configuration
   chunkingStrategy: string;
   chunkingConfig: ChunkingConfig;
-  embeddingProvider: string;
+  embeddingProvider: EmbeddingProvider;
   embeddingConfig: EmbeddingConfig;
   
   // Group settings

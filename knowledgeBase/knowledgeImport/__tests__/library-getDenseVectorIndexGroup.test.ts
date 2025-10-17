@@ -2,6 +2,7 @@ import { LibraryItem, BookChunk } from '../library';
 import { AbstractLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
+import { EmbeddingProvider, OpenAIModel, AlibabaModel } from '../../../lib/embedding/embedding';
 
 // Mock storage implementation for testing
 class MockStorage implements AbstractLibraryStorage {
@@ -106,8 +107,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'h1',
           chunkingConfig: {},
-          embeddingProvider: 'openai',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -125,8 +132,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'h1',
           chunkingConfig: {},
-          embeddingProvider: 'openai',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -154,8 +167,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'h1',
           chunkingConfig: {},
-          embeddingProvider: 'openai',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -173,8 +192,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'paragraph',
           chunkingConfig: {},
-          embeddingProvider: 'alibaba',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.ALIBABA,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -192,8 +217,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'h1',
           chunkingConfig: {},
-          embeddingProvider: 'openai',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -221,8 +252,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'h1',
           chunkingConfig: {},
-          embeddingProvider: 'openai',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },
@@ -240,8 +277,14 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
         strategyMetadata: {
           chunkingStrategy: 'paragraph',
           chunkingConfig: {},
-          embeddingProvider: 'alibaba',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: AlibabaModel.TEXT_EMBEDDING_V3,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.ALIBABA,
+          },
           processingTimestamp: new Date(),
           processingDuration: 100,
         },

@@ -14,6 +14,7 @@ import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import { EmbeddingProvider, OpenAIModel } from '../embedding/embedding';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -801,7 +802,7 @@ export async function stopChunkingEmbeddingWorker(
 if (require.main === module) {
   const {
     S3ElasticSearchLibraryStorage,
-  } = require('../../knowledgeImport/library');
+  } = require('../../knowledgeBase/knowledgeImport/library');
 
   async function main() {
     try {

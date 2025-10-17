@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LibraryItem, BookMetadata, BookChunk } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
+import { EmbeddingProvider, OpenAIModel } from '../../../lib/embedding/embedding';
 
 describe('LibraryItem.hasCompletedChunkEmbed', () => {
   let mockStorage: MockLibraryStorage;
@@ -46,8 +47,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }
@@ -65,8 +72,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }
@@ -97,8 +110,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }
@@ -117,8 +136,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }
@@ -150,8 +175,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }
@@ -169,8 +200,14 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
           chunkingConfig: {},
-          embeddingProvider: 'test-provider',
-          embeddingConfig: {},
+          embeddingConfig: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: 1536,
+            batchSize: 100,
+            maxRetries: 3,
+            timeout: 30000,
+            provider: EmbeddingProvider.OPENAI,
+          },
           processingTimestamp: new Date(),
           processingDuration: 1000
         }

@@ -1,5 +1,6 @@
 import { BookChunk, ChunkSearchFilter, ChunkingEmbeddingGroup } from '../knowledgeImport/library';
 import { Client } from '@elastic/elasticsearch';
+import { EmbeddingProvider } from '../../lib/embedding/embedding';
 
 /**
  * Multi-Version Vector Storage Interface
@@ -48,7 +49,7 @@ export interface IMultiVersionVectorStorage {
   findSimilarChunks(
     queryVector: number[],
     filter: ChunkSearchFilter,
-    provider?: string
+    provider?: EmbeddingProvider
   ): Promise<Array<BookChunk & { similarity: number }>>;
 
   /**
@@ -98,7 +99,7 @@ export interface IMultiVersionVectorStorage {
    * @param provider The embedding provider
    * @returns Array of chunks
    */
-  getChunksByProvider(provider: string): Promise<BookChunk[]>;
+  getChunksByProvider(provider: EmbeddingProvider): Promise<BookChunk[]>;
 
   /**
    * Update chunks for a specific group
@@ -364,7 +365,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   async findSimilarChunks(
     queryVector: number[],
     filter: ChunkSearchFilter,
-    provider?: string
+    provider?: EmbeddingProvider
   ): Promise<Array<BookChunk & { similarity: number }>> {
     // Use the single embedding field
     const embeddingField = 'embedding';
@@ -484,7 +485,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     queryVector: number[],
     filter: ChunkSearchFilter,
     options?: {
-      provider?: string;
+      provider?: EmbeddingProvider;
       rankFusion?: boolean;
       weights?: Record<string, number>; // Group-specific weights
       maxResultsPerGroup?: number;
@@ -763,7 +764,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks by embedding provider
    */
-  async getChunksByProvider(provider: string): Promise<BookChunk[]> {
+  async getChunksByProvider(provider: EmbeddingProvider): Promise<BookChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {

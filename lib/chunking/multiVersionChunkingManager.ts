@@ -1,4 +1,5 @@
-import { BookChunk, ChunkingEmbeddingGroup, EmbeddingConfig } from '../../knowledgeBase/knowledgeImport/library';
+import { BookChunk, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import { EmbeddingConfig, EmbeddingProvider } from '../embedding/embedding';
 import { ChunkingConfig, ChunkingStrategyType } from './chunkingStrategy';
 
 /**
@@ -69,10 +70,10 @@ export interface IMultiVersionChunkingManager {
    * @returns Array of processed chunks
    */
   processItemWithConfig(
-    itemId: string, 
-    chunkingStrategy: string, 
+    itemId: string,
+    chunkingStrategy: string,
     chunkingConfig: ChunkingConfig,
-    embeddingProvider: string,
+    embeddingProvider: EmbeddingProvider,
     embeddingConfig: EmbeddingConfig
   ): Promise<BookChunk[]>;
 
@@ -108,7 +109,7 @@ export interface IMultiVersionChunkingManager {
    * @param provider The embedding provider to filter by
    * @returns Array of groups using the specified provider
    */
-  getGroupsByProvider(provider: string): ChunkingEmbeddingGroup[];
+  getGroupsByProvider(provider: EmbeddingProvider): ChunkingEmbeddingGroup[];
 
   /**
    * Validate group configuration
@@ -285,10 +286,10 @@ export class MultiVersionChunkingManager implements IMultiVersionChunkingManager
    * Process item chunks with custom configuration
    */
   async processItemWithConfig(
-    itemId: string, 
-    chunkingStrategy: string, 
+    itemId: string,
+    chunkingStrategy: string,
     chunkingConfig: ChunkingConfig,
-    embeddingProvider: string,
+    embeddingProvider: EmbeddingProvider,
     embeddingConfig: EmbeddingConfig
   ): Promise<BookChunk[]> {
     // This method would be implemented by the concrete class
@@ -340,8 +341,8 @@ export class MultiVersionChunkingManager implements IMultiVersionChunkingManager
   /**
    * Get groups by embedding provider
    */
-  getGroupsByProvider(provider: string): ChunkingEmbeddingGroup[] {
-    return Array.from(this.groups.values()).filter(group => 
+  getGroupsByProvider(provider: EmbeddingProvider): ChunkingEmbeddingGroup[] {
+    return Array.from(this.groups.values()).filter(group =>
       group.embeddingProvider === provider && group.isActive
     );
   }

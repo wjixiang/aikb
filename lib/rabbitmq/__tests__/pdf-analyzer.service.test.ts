@@ -16,7 +16,7 @@ import { RabbitMQService, getRabbitMQService } from '../rabbitmq.service';
 import * as axios from 'axios';
 
 // Mock dependencies
-vi.mock('../../../knowledgeImport/library');
+vi.mock('../../../knowledgeBase/knowledgeImport/library');
 vi.mock('../rabbitmq.service');
 vi.mock('../logger', () => ({
   default: vi.fn(() => ({

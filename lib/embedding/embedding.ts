@@ -9,13 +9,35 @@ const CONCURRENCY_LIMIT = parseInt(
   process.env.EMBEDDING_CONCURRENCY_LIMIT || '5',
 );
 
-// Embedding provider types
-/**
- * - 'openai'
- * - 'alibaba':
- * - 'onnx': Local embedding
- */
-export type EmbeddingProvider = 'openai' | 'alibaba' | 'onnx';
+// Embedding provider enums
+export enum EmbeddingProvider {
+  OPENAI = 'openai',
+  ALIBABA = 'alibaba',
+  ONNX = 'onnx'
+}
+
+// Model enums for each provider
+export enum OpenAIModel {
+  TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002'
+}
+
+export enum AlibabaModel {
+  TEXT_EMBEDDING_V3 = 'text-embedding-v3'
+}
+
+export enum OnnxModel {
+  // Placeholder for future ONNX models
+}
+
+// Embedding configuration interface
+export interface EmbeddingConfig {
+  model: OpenAIModel | AlibabaModel | OnnxModel; // Model name for the embedding provider
+  dimension: number; // Embedding dimension
+  batchSize: number; // Batch size for processing
+  maxRetries: number; // Maximum retry attempts
+  timeout: number; // Request timeout in milliseconds
+  provider: EmbeddingProvider; // Provider-specific configuration
+}
 
 // Re-export the provider base class and implementations for convenience
 export { EmbeddingProviderBase } from './embedding-providers';
@@ -23,7 +45,7 @@ export { EmbeddingProviderBase } from './embedding-providers';
 export { embeddingManager, EmbeddingManager } from './embedding-manager';
 
 export class Embedding {
-  private activeProvider: EmbeddingProvider = 'alibaba'; // Default to alibaba
+  private activeProvider: EmbeddingProvider = EmbeddingProvider.ALIBABA; // Default to alibaba
 
   constructor() {
     // Check if manager is initialized, if not, initialize it

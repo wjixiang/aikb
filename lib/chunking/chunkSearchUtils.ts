@@ -51,8 +51,8 @@ export class ChunkSearchUtils {
 
     // Apply embedding providers filter
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => 
-        filter.embeddingProviders!.includes(chunk.strategyMetadata.embeddingProvider)
+      filteredChunks = filteredChunks.filter(chunk =>
+        filter.embeddingProviders!.includes(chunk.strategyMetadata.embeddingConfig.provider)
       );
     }
 
@@ -209,9 +209,9 @@ export class ChunkSearchUtils {
 
     // Filter chunks by providers and calculate preference scores
     const filteredChunks = chunks
-      .filter(chunk => providerPreferenceMap.has(chunk.strategyMetadata.embeddingProvider))
+      .filter(chunk => providerPreferenceMap.has(chunk.strategyMetadata.embeddingConfig.provider))
       .map(chunk => {
-        const preference = providerPreferenceMap.get(chunk.strategyMetadata.embeddingProvider) || 1.0;
+        const preference = providerPreferenceMap.get(chunk.strategyMetadata.embeddingConfig.provider) || 1.0;
         const similarity = (chunk as any).similarity || 0;
         return {
           ...chunk,

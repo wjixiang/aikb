@@ -8,7 +8,8 @@ export interface BaseRabbitMQMessage {
 }
 
 // Import required types for multi-version support
-import { EmbeddingConfig, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import { EmbeddingConfig, EmbeddingProvider } from '../embedding/embedding';
 import { ChunkingConfig } from '../chunking/chunkingStrategy';
 
 /**
@@ -375,7 +376,7 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   
   // Multi-version support
   denseVectorIndexGroupId?: string; // Optional group ID for this chunking/embedding combination
-  embeddingProvider?: string; // Optional embedding provider override
+  embeddingProvider?: EmbeddingProvider; // Optional embedding provider override
   embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
   chunkingConfig?: ChunkingConfig; // Optional chunking configuration override
   

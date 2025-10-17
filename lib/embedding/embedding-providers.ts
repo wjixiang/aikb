@@ -1,5 +1,6 @@
 import createLoggerWithPrefix from '../logger';
 import axios, { AxiosError } from 'axios';
+import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding';
 
 const logger = createLoggerWithPrefix('EmbeddingProviders');
 
@@ -64,7 +65,7 @@ export class OpenAIEmbeddingProvider extends EmbeddingProviderBase {
         const response = await axios.post(
           `${this.apiBase}embeddings`,
           {
-            model: 'text-embedding-ada-002',
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
             input: text,
           },
           {
@@ -160,7 +161,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
   async embed(
     text: string | string[],
-    model: string = 'text-embedding-v3',
+    model: AlibabaModel = AlibabaModel.TEXT_EMBEDDING_V3,
   ): Promise<number[] | null> {
     if (!this.apiKey) {
       logger.error('Alibaba API key not configured');
@@ -348,7 +349,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         const response = await axios.post(
           'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
           {
-            model: 'text-embedding-v3',
+            model: AlibabaModel.TEXT_EMBEDDING_V3,
             input: batch,
             dimension: '1024',
             encoding_format: 'float',

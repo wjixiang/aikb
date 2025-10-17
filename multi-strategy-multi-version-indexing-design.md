@@ -64,7 +64,7 @@ export interface BookChunk {
   strategyMetadata: {
     chunkingStrategy: string; // e.g., 'h1', 'paragraph', 'semantic'
     chunkingConfig: ChunkingConfig; // Original chunking configuration
-    embeddingProvider: string; // e.g., 'openai', 'alibaba', 'onnx'
+    embeddingProvider: EmbeddingProvider; // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
     embeddingConfig: EmbeddingConfig; // Original embedding configuration
     processingTimestamp: Date;
     processingDuration: number;
@@ -95,7 +95,7 @@ export interface ChunkingEmbeddingGroup {
   // Strategy and model configuration
   chunkingStrategy: string;
   chunkingConfig: ChunkingConfig;
-  embeddingProvider: string;
+  embeddingProvider: EmbeddingProvider; // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
   embeddingConfig: EmbeddingConfig;
   
   // Versioning
@@ -191,10 +191,10 @@ export class MultiVersionChunkingManager {
    * Process item chunks with custom configuration
    */
   processItemWithConfig(
-    itemId: string, 
-    chunkingStrategy: string, 
+    itemId: string,
+    chunkingStrategy: string,
     chunkingConfig: ChunkingConfig,
-    embeddingProvider: string,
+    embeddingProvider: EmbeddingProvider, // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
     embeddingConfig: EmbeddingConfig
   ): Promise<BookChunk[]>;
   
@@ -243,7 +243,7 @@ export class MultiVersionVectorStorage {
   async findSimilarChunks(
     queryVector: number[],
     filter: ChunkSearchFilter,
-    provider?: string
+    provider?: EmbeddingProvider // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
   ): Promise<Array<BookChunk & { similarity: number }>>;
   
   /**

@@ -1,5 +1,6 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { AlibabaEmbeddingProvider } from '../embedding-providers';
+import { AlibabaModel } from '../embedding';
 import axios from 'axios';
 
 // Mock axios to control API responses
@@ -45,7 +46,7 @@ describe('AlibabaEmbeddingProvider Integration Tests', () => {
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
         {
-          model: 'text-embedding-v3',
+          model: AlibabaModel.TEXT_EMBEDDING_V3,
           input: 'test text',
           dimension: '1024',
           encoding_format: 'float',

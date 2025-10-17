@@ -102,7 +102,7 @@ describe('Library PDF Conversion Workflow', () => {
     };
 
     // Create the library instance
-    library = new Library(mockStorage, mockPdfConvertor);
+    library = new Library(mockStorage );
   });
 
   afterEach(() => {

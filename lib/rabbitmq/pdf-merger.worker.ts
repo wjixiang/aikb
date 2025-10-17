@@ -173,7 +173,7 @@ const main = async () => {
   try {
     const {
       S3ElasticSearchLibraryStorage,
-    } = require('../../knowledgeImport/library');
+    } = require('../../knowledgeBase/knowledgeImport/library');
 
     // Create storage instance
     const elasticsearchUrl =

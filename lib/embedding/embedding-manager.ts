@@ -53,7 +53,7 @@ export class EmbeddingManager {
           EMBEDDING_API_KEY,
           EMBEDDING_API_BASE,
         );
-        this.providers.set('openai', openaiProvider);
+        this.providers.set(EmbeddingProvider.OPENAI, openaiProvider);
         logger.info('OpenAI embedding provider initialized');
       } catch (error) {
         logger.error('Failed to initialize OpenAI embedding provider:', error);
@@ -68,7 +68,7 @@ export class EmbeddingManager {
     if (ALIBABA_API_KEY) {
       try {
         const alibabaProvider = new AlibabaEmbeddingProvider(ALIBABA_API_KEY);
-        this.providers.set('alibaba', alibabaProvider);
+        this.providers.set(EmbeddingProvider.ALIBABA, alibabaProvider);
         logger.info('Alibaba embedding provider initialized');
       } catch (error) {
         logger.error('Failed to initialize Alibaba embedding provider:', error);
@@ -82,7 +82,7 @@ export class EmbeddingManager {
     // Initialize ONNX provider (always available as a fallback)
     try {
       const onnxProvider = new ONNXEmbeddingProvider();
-      this.providers.set('onnx', onnxProvider);
+      this.providers.set(EmbeddingProvider.ONNX, onnxProvider);
       logger.info('ONNX embedding provider initialized');
     } catch (error) {
       logger.error('Failed to initialize ONNX embedding provider:', error);

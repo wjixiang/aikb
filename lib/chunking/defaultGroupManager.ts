@@ -1,4 +1,5 @@
-import { ChunkingEmbeddingGroup, EmbeddingConfig } from '../../knowledgeBase/knowledgeImport/library';
+import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from '../embedding/embedding';
 import { ChunkingConfig } from './chunkingStrategy';
 import { embeddingService } from '../embedding/embedding';
 
@@ -47,10 +48,12 @@ export class DefaultGroupManager {
       },
       embeddingProvider: activeProvider,
       embeddingConfig: {
-        model: 'default',
+        model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+        dimension: 1536,
         batchSize: 32,
         maxRetries: 3,
         timeout: 30000,
+        provider: EmbeddingProvider.OPENAI,
       },
       isDefault: true,
       isActive: true,
@@ -72,10 +75,12 @@ export class DefaultGroupManager {
       },
       embeddingProvider: activeProvider,
       embeddingConfig: {
-        model: 'default',
+        model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+        dimension: 1536,
         batchSize: 32,
         maxRetries: 3,
         timeout: 30000,
+        provider: EmbeddingProvider.OPENAI,
       },
       isDefault: false,
       isActive: true,
@@ -198,7 +203,7 @@ export class DefaultGroupManager {
       name?: string;
       description?: string;
       chunkingConfig?: Partial<ChunkingConfig>;
-      embeddingProvider?: string;
+      embeddingProvider?: EmbeddingProvider;
       embeddingConfig?: Partial<EmbeddingConfig>;
       version?: string;
       tags?: string[];

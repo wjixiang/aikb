@@ -34,7 +34,7 @@ export async function UploadTestPdf() {
     'http://elasticsearch:9200',
     1024,
   );
-  const library = new Library(storage, testMinerUPdfConvertor);
+  const library = new Library(storage);
   library;
   // Read the test PDF file
   const pdfPath = 'test/ards.pdf';

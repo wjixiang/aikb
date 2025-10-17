@@ -6,7 +6,8 @@ import { DefaultGroupManager } from '../../../lib/chunking/defaultGroupManager';
 import { ChunkSearchUtils } from '../../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../../lib/error/errorHandler';
 import { Client } from '@elastic/elasticsearch';
-import { BookChunk, ChunkSearchFilter, EmbeddingConfig } from '../library';
+import { BookChunk, ChunkSearchFilter } from '../library';
+import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from '../../../lib/embedding/embedding';
 import { ChunkingConfig } from '../../../lib/chunking/chunkingStrategy';
 import { embeddingService } from '../../../lib/embedding/embedding';
 import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
@@ -19,7 +20,7 @@ vi.mock('../../lib/embedding/embedding', () => ({
       [0.2, 0.3, 0.4, 0.5, 0.6],
     ]),
     embed: vi.fn().mockResolvedValue([0.1, 0.2, 0.3, 0.4, 0.5]),
-    getProvider: vi.fn().mockReturnValue('openai'),
+    getProvider: vi.fn().mockReturnValue(EmbeddingProvider.OPENAI),
   },
 }));
 
@@ -121,8 +122,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -140,8 +147,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 200,
           },
@@ -202,8 +215,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -222,8 +241,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 200,
           },
@@ -263,8 +288,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -283,8 +314,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 200,
           },
@@ -296,7 +333,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
       const filter: ChunkSearchFilter = {
         itemId: 'item1',
         chunkingStrategies: ['h1'],
-        embeddingProviders: ['openai'],
+        embeddingProviders: [EmbeddingProvider.OPENAI],
       };
 
       const filteredChunks = ChunkSearchUtils.filterChunks(chunks, filter);
@@ -319,8 +356,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -339,8 +382,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 200,
           },
@@ -416,8 +465,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -452,8 +507,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'h1',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 100,
           },
@@ -472,8 +533,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
             chunkingConfig: { maxChunkSize: 1000, minChunkSize: 100 },
-            embeddingProvider: 'openai',
-            embeddingConfig: { model: 'text-embedding-ada-002' },
+            embeddingConfig: {
+              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+              dimension: 1536,
+              batchSize: 100,
+              maxRetries: 3,
+              timeout: 30000,
+              provider: EmbeddingProvider.OPENAI,
+            },
             processingTimestamp: new Date(),
             processingDuration: 200,
           },
@@ -502,7 +569,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
         [0.1, 0.2, 0.3, 0.4, 0.5],
         filter,
         {
-          provider: 'openai',
+          provider: EmbeddingProvider.OPENAI,
           weights: { 'default-h1': 2, 'custom-paragraph': 1 }
         }
       );

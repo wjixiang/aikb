@@ -12,9 +12,9 @@
  * 4. Handle errors and fallbacks
  */
 
-import { 
-  chunkTextAdvanced, 
-  getAvailableStrategies, 
+import {
+  chunkTextAdvanced,
+  getAvailableStrategies,
   autoSelectStrategy,
   canStrategyHandle,
   getStrategyDefaultConfig,
@@ -25,6 +25,7 @@ import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import { BookChunk, ChunkSearchFilter, ChunkingEmbeddingGroup } from '../knowledgeImport/library';
 import { MultiVersionChunkingManager } from '../../lib/chunking/multiVersionChunkingManager';
+import { EmbeddingProvider, OpenAIModel } from '../../lib/embedding/embedding';
 
 // Sample text for demonstration
 const sampleText = `
@@ -198,10 +199,13 @@ async function demonstrateAdvancedSearch() {
           minChunkSize: 200,
           overlap: 100,
         },
-        embeddingProvider: 'openai',
         embeddingConfig: {
-          model: 'text-embedding-ada-002',
+          model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
           dimension: 1536,
+          batchSize: 100,
+          maxRetries: 3,
+          timeout: 30000,
+          provider: EmbeddingProvider.OPENAI,
         },
         processingTimestamp: new Date(),
         processingDuration: 1000,
@@ -229,10 +233,13 @@ async function demonstrateAdvancedSearch() {
           minChunkSize: 100,
           overlap: 50,
         },
-        embeddingProvider: 'openai',
         embeddingConfig: {
-          model: 'text-embedding-ada-002',
+          model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
           dimension: 1536,
+          batchSize: 100,
+          maxRetries: 3,
+          timeout: 30000,
+          provider: EmbeddingProvider.OPENAI,
         },
         processingTimestamp: new Date(),
         processingDuration: 1200,
@@ -260,10 +267,13 @@ async function demonstrateAdvancedSearch() {
           minChunkSize: 200,
           overlap: 100,
         },
-        embeddingProvider: 'openai',
         embeddingConfig: {
-          model: 'text-embedding-ada-002',
+          model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
           dimension: 1536,
+          batchSize: 100,
+          maxRetries: 3,
+          timeout: 30000,
+          provider: EmbeddingProvider.OPENAI,
         },
         processingTimestamp: new Date(),
         processingDuration: 900,

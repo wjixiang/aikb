@@ -65,7 +65,7 @@ describe('Library Async PDF Conversion', () => {
     });
 
     // Initialize library
-    library = new Library(storage, mockPdfConvertor);
+    library = new Library(storage );
 
     // Clear any existing test data
     await cleanupTestData();
@@ -397,7 +397,7 @@ describe('Library Async PDF Conversion', () => {
         ensureIndexes: vi.fn(),
       } as any;
 
-      const errorLibrary = new Library(mockStorage, mockPdfConvertor);
+      const errorLibrary = new Library(mockStorage );
 
       const metadata = {
         title: 'Storage Error Test',

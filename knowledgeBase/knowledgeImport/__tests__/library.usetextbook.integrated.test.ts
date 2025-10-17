@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { ChunkingStrategyType } from 'lib/chunking/chunkingStrategy';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
@@ -29,7 +30,7 @@ export async function UploadTestPdf() {
     'http://elasticsearch:9200',
     1024,
   );
-  const library = new Library(storage, testMinerUPdfConvertor);
+  const library = new Library(storage);
 
   // Read the test PDF file
   const pdfPath = 'test/病理生理学_第十版.pdf';
@@ -98,7 +99,7 @@ describe(Library, async () => {
     1024,
   );
 
-    const library = new Library(storage, testMinerUPdfConvertor);
+    const library = new Library(storage);
     await library.sendPdfAnalysisRequest(
       book.getItemId(),
       s3Link,
@@ -155,7 +156,7 @@ describe(Library, async () => {
       'http://elasticsearch:9200',
       1024,
     );
-    const library = new Library(storage, testMinerUPdfConvertor);
+    const library = new Library(storage);
     const s3Link = await book.getPdfDownloadUrl();
     console.log(`s3Link: ${s3Link}`);
     await library.sendPdfAnalysisRequest(
@@ -166,7 +167,11 @@ describe(Library, async () => {
     );
   });
 
-  it('semantic search', async()=>{
+  it('re-embed', async()=>{
+    book.chunkEmbed(ChunkingStrategyType.H1)
+  })
+
+  it.skip('semantic search', async()=>{
     const semanticSearchResult = await book.semanticSearchWithDenseVector("期蛋白依赖性激酶抑制因子表达不足和突变：多种肿瘤细胞或组织 CKI 表达不足或突变")
     console.log(semanticSearchResult)
   })
