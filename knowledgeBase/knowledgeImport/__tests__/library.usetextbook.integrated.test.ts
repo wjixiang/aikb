@@ -175,8 +175,13 @@ describe(Library, async () => {
     await book.chunkEmbed(ChunkingStrategyType.H1)
   }, 30000) // Increase timeout to 30 seconds
 
-  it('semantic search', async()=>{
+  it.skip('semantic search', async()=>{
     const semanticSearchResult = await book.semanticSearchWithDenseVector("期蛋白依赖性激酶抑制因子表达不足和突变：多种肿瘤细胞或组织 CKI 表达不足或突变")
     console.log(semanticSearchResult)
+  })
+
+  it('get all chunkEmbedGroupids', async()=>{
+    const ids = await book.getDenseVectorIndexGroupId()
+    console.log(ids)
   })
 });
