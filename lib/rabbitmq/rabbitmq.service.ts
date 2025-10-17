@@ -41,6 +41,12 @@ import {
   getAllQueueConfigs,
   getAllExchangeConfigs,
 } from './rabbitmq.config';
+import {
+  IMessageService,
+  MessageProtocol,
+  MessageServiceConfig,
+} from './message-service.interface';
+import { createMessageService } from './message-service-factory';
 import createLoggerWithPrefix from '../logger';
 
 const logger = createLoggerWithPrefix('RabbitMQService');
@@ -49,16 +55,14 @@ const logger = createLoggerWithPrefix('RabbitMQService');
  * RabbitMQ service for handling PDF conversion messages
  */
 export class RabbitMQService {
-  private connection: any | null = null;
-  private channel: any | null = null;
+  private messageService: IMessageService;
   private isInitialized = false;
   private isConnecting = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 5000; // 5 seconds
-  private heartbeatInterval: NodeJS.Timeout | null = null;
 
-  constructor(private configPath?: string) {}
+  constructor(private configPath?: string) {
+    // Create the message service instance using the factory
+    this.messageService = createMessageService(MessageProtocol.RABBITMQ);
+  }
 
   /**
    * Initialize RabbitMQ connection and setup queues/exchanges
@@ -71,31 +75,11 @@ export class RabbitMQService {
     this.isConnecting = true;
 
     try {
-      const config = getValidatedRabbitMQConfig();
-      if (!config) {
-        throw new Error('Invalid RabbitMQ configuration');
-      }
-
-      logger.info('Connecting to RabbitMQ...');
-      this.connection = await amqp.connect(config);
-
-      logger.info('Creating RabbitMQ channel...');
-      if (this.connection) {
-        this.channel = await this.connection.createChannel();
-      }
-
-      // Setup queues and exchanges
-      await this.setupQueuesAndExchanges();
-
-      // Setup connection event handlers
-      this.setupConnectionHandlers();
-
-      // Start heartbeat
-      this.startHeartbeat();
+      logger.info('Initializing RabbitMQ service using message service interface...');
+      await this.messageService.initialize();
 
       this.isInitialized = true;
       this.isConnecting = false;
-      this.reconnectAttempts = 0;
 
       logger.info('RabbitMQ service initialized successfully');
     } catch (error) {
@@ -105,343 +89,6 @@ export class RabbitMQService {
     }
   }
 
-  /**
-   * Setup queues and exchanges
-   */
-  private async setupQueuesAndExchanges(): Promise<void> {
-    if (!this.channel) {
-      throw new Error('RabbitMQ channel not available');
-    }
-
-    try {
-      // Setup exchanges
-      const exchangeConfigs = getAllExchangeConfigs();
-      for (const exchangeConfig of exchangeConfigs) {
-        await this.channel.assertExchange(
-          exchangeConfig.name,
-          exchangeConfig.type,
-          {
-            durable: exchangeConfig.durable,
-            autoDelete: exchangeConfig.autoDelete,
-            internal: exchangeConfig.internal,
-            arguments: exchangeConfig.arguments,
-          },
-        );
-        logger.info(`Exchange ${exchangeConfig.name} created/verified`);
-      }
-
-      // Setup queues
-      const queueConfigs = getAllQueueConfigs();
-      for (const queueConfig of queueConfigs) {
-        try {
-          logger.info(`Attempting to declare queue: ${queueConfig.name}`, {
-            durable: queueConfig.durable,
-            exclusive: queueConfig.exclusive,
-            autoDelete: queueConfig.autoDelete,
-            arguments: queueConfig.arguments,
-          });
-
-          const queueResult = await this.channel.assertQueue(queueConfig.name, {
-            durable: queueConfig.durable,
-            exclusive: queueConfig.exclusive,
-            autoDelete: queueConfig.autoDelete,
-            arguments: queueConfig.arguments,
-          });
-          logger.info(
-            `Queue ${queueConfig.name} created/verified successfully`,
-            {
-              messageCount: queueResult.messageCount,
-              consumerCount: queueResult.consumerCount,
-            },
-          );
-        } catch (queueError: any) {
-          logger.error(`Failed to declare queue ${queueConfig.name}:`, {
-            error: queueError.message,
-            code: queueError.code,
-            queueConfig: {
-              name: queueConfig.name,
-              arguments: queueConfig.arguments,
-            },
-          });
-
-          // If it's a PRECONDITION-FAILED error, try to check existing queue configuration
-          if (queueError.code === 406) {
-            logger.warn(
-              `Attempting to check existing queue configuration for ${queueConfig.name}...`,
-            );
-            try {
-              const existingQueue = await this.channel.checkQueue(
-                queueConfig.name,
-              );
-              logger.info(`Existing queue ${queueConfig.name} found:`, {
-                messageCount: existingQueue.messageCount,
-                consumerCount: existingQueue.consumerCount,
-              });
-
-              // Try passive declaration to see current configuration
-              logger.warn(
-                `Queue ${queueConfig.name} already exists with different configuration. Consider deleting the queue manually or updating the configuration to match.`,
-              );
-            } catch (checkError: any) {
-              logger.error(
-                `Failed to check existing queue ${queueConfig.name}:`,
-                checkError.message,
-              );
-            }
-          }
-
-          throw queueError;
-        }
-      }
-
-      // Setup queue bindings
-      await this.setupQueueBindings();
-    } catch (error) {
-      logger.error('Failed to setup queues and exchanges:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Setup queue bindings to exchanges
-   */
-  private async setupQueueBindings(): Promise<void> {
-    if (!this.channel) {
-      throw new Error('RabbitMQ channel not available');
-    }
-
-    try {
-      // Bind PDF conversion queues
-      logger.info(
-        `DEBUG: Binding queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} to exchange ${RABBITMQ_EXCHANGES.PDF_CONVERSION} with routing key ${RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST}`,
-      );
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST,
-      );
-      logger.info(`DEBUG: Queue binding completed`);
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_PROGRESS,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_COMPLETED,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_CONVERSION_FAILED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_FAILED,
-      );
-
-      // Bind PDF analysis queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_REQUEST,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_COMPLETED,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_ANALYSIS_FAILED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_ANALYSIS_FAILED,
-      );
-
-      // Bind PDF part conversion queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_PART_CONVERSION_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_REQUEST,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_COMPLETED,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_PART_CONVERSION_FAILED,
-      );
-
-      // Bind PDF merging queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_MERGING_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_MERGING_REQUEST,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.PDF_MERGING_PROGRESS,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.PDF_MERGING_PROGRESS,
-      );
-
-      // Bind markdown storage queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_STORAGE_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_REQUEST,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_STORAGE_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_COMPLETED,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_STORAGE_FAILED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_STORAGE_FAILED,
-      );
-
-      // Bind markdown part storage queues
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_REQUEST,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_REQUEST,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_PROGRESS,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_PROGRESS,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_COMPLETED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_COMPLETED,
-      );
-
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_FAILED,
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
-        RABBITMQ_ROUTING_KEYS.MARKDOWN_PART_STORAGE_FAILED,
-      );
-
-      // Bind DLQ to DLX
-      await this.channel.bindQueue(
-        RABBITMQ_QUEUES.DEAD_LETTER_QUEUE,
-        RABBITMQ_EXCHANGES.DEAD_LETTER,
-        RABBITMQ_ROUTING_KEYS.DEAD_LETTER,
-      );
-
-      logger.info('Queue bindings setup completed');
-    } catch (error) {
-      logger.error('Failed to setup queue bindings:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Setup connection event handlers
-   */
-  private setupConnectionHandlers(): void {
-    if (!this.connection) {
-      return;
-    }
-
-    this.connection.on('error', (error) => {
-      logger.error(`RabbitMQ connection error: ${JSON.stringify(error, null, 2)}` );
-      if (error.message !== 'Connection closing') {
-        this.handleReconnection();
-      }
-    });
-
-    this.connection.on('close', () => {
-      logger.warn('RabbitMQ connection closed');
-      this.isInitialized = false;
-      this.handleReconnection();
-    });
-
-    this.connection.on('blocked', (reason) => {
-      logger.warn('RabbitMQ connection blocked:', reason);
-    });
-
-    this.connection.on('unblocked', () => {
-      logger.info('RabbitMQ connection unblocked');
-    });
-  }
-
-  /**
-   * Handle reconnection logic
-   */
-  private async handleReconnection(): Promise<void> {
-    if (
-      this.isConnecting ||
-      this.reconnectAttempts >= this.maxReconnectAttempts
-    ) {
-      return;
-    }
-
-    this.reconnectAttempts++;
-    logger.info(
-      `Attempting to reconnect to RabbitMQ (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
-    );
-
-    setTimeout(async () => {
-      try {
-        await this.initialize();
-      } catch (error) {
-        logger.error(
-          `Reconnection attempt ${this.reconnectAttempts} failed:`,
-          error,
-        );
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.handleReconnection();
-        } else {
-          logger.error('Max reconnection attempts reached. Giving up.');
-        }
-      }
-    }, this.reconnectDelay);
-  }
-
-  /**
-   * Start heartbeat to monitor connection health
-   */
-  private startHeartbeat(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-    }
-
-    this.heartbeatInterval = setInterval(async () => {
-      if (this.connection && this.channel) {
-        try {
-          // Check connection health by checking server properties
-          await this.channel.checkQueue('health-check');
-        } catch (error) {
-          logger.warn('Health check failed:', error);
-          // Don't automatically reconnect here, let the connection handlers handle it
-        }
-      }
-    }, rabbitMQHealthCheckConfig.interval);
-  }
-
-  /**
-   * Stop heartbeat
-   */
-  private stopHeartbeat(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-    }
-  }
 
   /**
    * Publish a message to RabbitMQ
@@ -454,17 +101,14 @@ export class RabbitMQService {
     logger.debug('publishMessage called', {
       routingKey,
       isInitialized: this.isInitialized,
-      hasChannel: !!this.channel,
-      hasConnection: !!this.connection,
+      isConnected: this.messageService.isConnected(),
     });
 
-    if (!this.isInitialized || !this.channel) {
+    if (!this.isInitialized) {
       logger.error(
         'RabbitMQ service not initialized when attempting to publish',
         {
           isInitialized: this.isInitialized,
-          hasChannel: !!this.channel,
-          hasConnection: !!this.connection,
           routingKey,
         },
       );
@@ -474,36 +118,18 @@ export class RabbitMQService {
     try {
       // Check queue message count before publishing
       if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
-        const queueInfo = await this.channel.checkQueue(
+        const queueInfo = await this.messageService.getQueueInfo(
           RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
         );
         logger.info(
-          `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count before publishing: ${queueInfo.messageCount}`,
+          `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count before publishing: ${queueInfo?.messageCount || 0}`,
         );
       }
 
-      const messageBuffer = Buffer.from(JSON.stringify(message));
-
-      const publishOptions: amqp.Options.Publish = {
-        persistent: options.persistent !== false,
-        expiration: options.expiration,
-        priority: options.priority,
-        correlationId: options.correlationId,
-        replyTo: options.replyTo,
-        headers: {
-          ...options.headers,
-          'x-message-type': message.eventType,
-          'x-timestamp': Date.now(),
-        },
-        timestamp: Date.now(),
-        messageId: message.messageId,
-      };
-
-      const published = this.channel.publish(
-        RABBITMQ_EXCHANGES.PDF_CONVERSION,
+      const published = await this.messageService.publishMessage(
         routingKey,
-        messageBuffer,
-        publishOptions,
+        message,
+        options,
       );
 
       if (published) {
@@ -515,11 +141,11 @@ export class RabbitMQService {
         // Check queue message count after publishing
         if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
           setTimeout(async () => {
-            const queueInfo = await this.channel!.checkQueue(
+            const queueInfo = await this.messageService.getQueueInfo(
               RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
             );
             logger.info(
-              `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count after publishing: ${queueInfo.messageCount}`,
+              `DEBUG: Queue ${RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST} message count after publishing: ${queueInfo?.messageCount || 0}`,
             );
           }, 100);
         }
@@ -916,68 +542,34 @@ export class RabbitMQService {
       priority?: number;
     } = {},
   ): Promise<string> {
-    if (!this.isInitialized || !this.channel) {
+    if (!this.isInitialized) {
       throw new Error('RabbitMQ service not initialized');
     }
 
     try {
-      const consumeOptions: amqp.Options.Consume = {
-        noAck: options.noAck ?? false,
-        exclusive: options.exclusive ?? false,
-        consumerTag: options.consumerTag,
-        priority: options.priority,
-      };
-
-      const consumerTag = await this.channel.consume(
+      const consumerTag = await this.messageService.consumeMessages(
         queueName,
-        async (message) => {
+        async (message, originalMessage) => {
           logger.info(
             `DEBUG: Consumer callback triggered for queue: ${queueName}`,
           );
-          if (!message) {
-            logger.warn(`Received null message from queue: ${queueName}`);
-            return;
-          }
-
-          try {
-            const messageContent = JSON.parse(
-              message.content.toString(),
-            ) as PdfConversionMessage;
-            logger.info(`DEBUG: Received message from queue ${queueName}:`, {
-              eventType: messageContent.eventType,
-              itemId: messageContent.itemId,
-              retryCount: (messageContent as any).retryCount,
-              maxRetries: (messageContent as any).maxRetries,
-            });
-            await onMessage(messageContent, message);
-
-            if (!consumeOptions.noAck) {
-              this.channel!.ack(message);
-            }
-          } catch (error) {
-            logger.error(
-              `Error processing message from queue ${queueName}:`,
-              error,
-            );
-            logger.error(
-              `DEBUG: Message content was:`,
-              message.content.toString(),
-            );
-
-            if (!consumeOptions.noAck) {
-              // Negative acknowledgment and requeue
-              this.channel!.nack(message, false, true);
-            }
-          }
+          
+          logger.info(`DEBUG: Received message from queue ${queueName}:`, {
+            eventType: message.eventType,
+            itemId: message.itemId,
+            retryCount: (message as any).retryCount,
+            maxRetries: (message as any).maxRetries,
+          });
+          await onMessage(message, originalMessage);
         },
-        consumeOptions,
+        options,
       );
 
       logger.info(`Started consuming messages from queue: ${queueName}`, {
-        consumerTag: consumerTag.consumerTag,
+        consumerTag,
       });
 
-      return consumerTag.consumerTag;
+      return consumerTag;
     } catch (error) {
       logger.error(`Failed to start consuming from queue ${queueName}:`, error);
       throw error;
@@ -988,12 +580,12 @@ export class RabbitMQService {
    * Stop consuming messages
    */
   async stopConsuming(consumerTag: string): Promise<void> {
-    if (!this.isInitialized || !this.channel) {
+    if (!this.isInitialized) {
       return;
     }
 
     try {
-      await this.channel.cancel(consumerTag);
+      await this.messageService.stopConsuming(consumerTag);
       logger.info(
         `Stopped consuming messages for consumer tag: ${consumerTag}`,
       );
@@ -1011,13 +603,13 @@ export class RabbitMQService {
    */
   async getQueueInfo(
     queueName: string,
-  ): Promise<amqp.Replies.AssertQueue | null> {
-    if (!this.isInitialized || !this.channel) {
+  ): Promise<any> {
+    if (!this.isInitialized) {
       throw new Error('RabbitMQ service not initialized');
     }
 
     try {
-      return await this.channel.checkQueue(queueName);
+      return await this.messageService.getQueueInfo(queueName);
     } catch (error) {
       logger.error(`Failed to get queue info for ${queueName}:`, error);
       return null;
@@ -1028,12 +620,12 @@ export class RabbitMQService {
    * Purge a queue
    */
   async purgeQueue(queueName: string): Promise<void> {
-    if (!this.isInitialized || !this.channel) {
+    if (!this.isInitialized) {
       throw new Error('RabbitMQ service not initialized');
     }
 
     try {
-      await this.channel.purgeQueue(queueName);
+      await this.messageService.purgeQueue(queueName);
       logger.info(`Purged queue: ${queueName}`);
     } catch (error) {
       logger.error(`Failed to purge queue ${queueName}:`, error);
@@ -1052,16 +644,18 @@ export class RabbitMQService {
       reconnectAttempts: number;
     };
   }> {
+    const healthResult = await this.messageService.healthCheck();
+    
     const details = {
-      connected: this.connection !== null,
-      channelOpen: this.channel !== null,
-      reconnectAttempts: this.reconnectAttempts,
+      connected: healthResult.details.connected,
+      channelOpen: healthResult.details.channelOpen || healthResult.details.connected,
+      reconnectAttempts: healthResult.details.reconnectAttempts || 0,
     };
 
-    const status =
-      details.connected && details.channelOpen ? 'healthy' : 'unhealthy';
-
-    return { status, details };
+    return {
+      status: healthResult.status,
+      details,
+    };
   }
 
   /**
@@ -1069,18 +663,7 @@ export class RabbitMQService {
    */
   async close(): Promise<void> {
     try {
-      this.stopHeartbeat();
-
-      if (this.channel) {
-        await this.channel.close();
-        this.channel = null;
-      }
-
-      if (this.connection) {
-        await this.connection.close();
-        this.connection = null;
-      }
-
+      await this.messageService.close();
       this.isInitialized = false;
       logger.info('RabbitMQ service closed successfully');
     } catch (error) {
@@ -1093,9 +676,7 @@ export class RabbitMQService {
    * Check if service is initialized
    */
   isConnected(): boolean {
-    return (
-      this.isInitialized && this.connection !== null && this.channel !== null
-    );
+    return this.isInitialized && this.messageService.isConnected();
   }
 }
 
