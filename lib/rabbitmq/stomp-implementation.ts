@@ -59,9 +59,12 @@ export class StompImplementation implements IMessageService {
       logger.info('Connecting to STOMP server...', {
         brokerURL: this.config.connectionOptions.brokerURL,
         login: this.config.connectionOptions.connectHeaders.login,
+        passcode: this.config.connectionOptions.connectHeaders.passcode ? '[REDACTED]' : undefined,
         vhost: this.config.connectionOptions.connectHeaders.host,
         reconnectDelay: this.config.connectionOptions.reconnectDelay,
         maxReconnectAttempts: this.config.reconnect?.maxAttempts,
+        heartbeatIncoming: this.config.connectionOptions.heartbeatIncoming,
+        heartbeatOutgoing: this.config.connectionOptions.heartbeatOutgoing,
       });
       
       // Create STOMP client
@@ -91,6 +94,9 @@ export class StompImplementation implements IMessageService {
             connectionStatus: this.connectionStatus,
             reconnectAttempts: this.reconnectAttempts,
             maxReconnectAttempts: this.maxReconnectAttempts,
+            brokerURL: this.config.connectionOptions.brokerURL,
+            vhost: this.config.connectionOptions.connectHeaders.host,
+            login: this.config.connectionOptions.connectHeaders.login,
           });
           this.connectionStatus = 'disconnected';
           this.handleReconnection();
@@ -307,8 +313,8 @@ export class StompImplementation implements IMessageService {
             onMessage(messageContent, message);
 
             // Manually acknowledge if not auto-ack
-            if (!options.noAck && message.ackId) {
-              this.client!.ack(message.ackId);
+            if (!options.noAck && message.headers['message-id']) {
+              this.client!.ack(message.headers['message-id'], subscriptionId);
             }
           } catch (error) {
             logger.error(
@@ -321,8 +327,8 @@ export class StompImplementation implements IMessageService {
             );
 
             // Negative acknowledgment if not auto-ack
-            if (!options.noAck && message.ackId) {
-              this.client!.nack(message.ackId);
+            if (!options.noAck && message.headers['message-id']) {
+              this.client!.nack(message.headers['message-id'], subscriptionId);
             }
           }
         },

@@ -58,10 +58,12 @@ export class RabbitMQService {
   private messageService: IMessageService;
   private isInitialized = false;
   private isConnecting = false;
+  public protocol = process.env.RABBITMQ_PROTOCOL as MessageProtocol;
 
   constructor(private configPath?: string) {
     // Create the message service instance using the factory
-    this.messageService = createMessageService(MessageProtocol.RABBITMQ);
+    // console.log(process.env.RABBITMQ_PROTOCOL)
+    this.messageService = createMessageService(this.protocol);
   }
 
   /**
@@ -81,7 +83,7 @@ export class RabbitMQService {
       this.isInitialized = true;
       this.isConnecting = false;
 
-      logger.info('RabbitMQ service initialized successfully');
+      logger.info(`RabbitMQ service initialized successfully, protocol: ${this.protocol}`);
     } catch (error) {
       this.isConnecting = false;
       logger.error('Failed to initialize RabbitMQ service:', error);
@@ -697,6 +699,7 @@ export function getRabbitMQService(configPath?: string): RabbitMQService {
       isConnected: rabbitMQServiceInstance.isConnected(),
     });
   }
+  logger.info(`Current protocol: ${rabbitMQServiceInstance.protocol}`)
   return rabbitMQServiceInstance;
 }
 
