@@ -12,7 +12,7 @@ import { IPdfConversionService } from './pdf-conversion.service.interface';
 import { PdfConversionService } from './pdf-conversion.service';
 import { IPdfConversionMessageHandler } from './pdf-conversion-message-handler.interface';
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler';
-import { PdfConversionWorker } from './pdf-conversion.worker.refactored';
+import { PdfConversionWorker } from './pdf-conversion.worker';
 import createLoggerWithPrefix from '../logger';
 
 const logger = createLoggerWithPrefix('PdfConversionWorkerFactory');

@@ -2,6 +2,8 @@ import {
   BaseChunkingStrategy,
   ChunkingConfig,
   TitledChunkResult,
+  ChunkingStrategy,
+  CHUNKING_STRATEGY_REGISTRY,
 } from '../chunkingStrategy';
 
 /**
@@ -9,7 +11,7 @@ import {
  * 将markdown文本按照H1标题进行切分
  */
 export class H1ChunkingStrategy extends BaseChunkingStrategy {
-  readonly name = 'h1';
+  readonly name = ChunkingStrategy.H1;
   readonly description = '基于H1标题的markdown文本切片策略';
   readonly version = '1.0.0';
 
@@ -34,7 +36,11 @@ export class H1ChunkingStrategy extends BaseChunkingStrategy {
 
     // 使用正则表达式匹配所有的H1标题
     const h1Regex = /^# (.+)$/gm;
-    const matches = [...text.matchAll(h1Regex)];
+    const matches: RegExpExecArray[] = [];
+    let match;
+    while ((match = h1Regex.exec(text)) !== null) {
+      matches.push(match);
+    }
 
     if (matches.length === 0) {
       // 如果没有找到H1标题，返回整个文本作为一个块

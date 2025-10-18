@@ -2,6 +2,7 @@ import {
   BaseChunkingStrategy,
   ChunkingConfig,
   BaseChunkResult,
+  ChunkingStrategy,
 } from '../chunkingStrategy';
 
 /**
@@ -9,7 +10,7 @@ import {
  * 将文本按段落进行切分，支持合并短段落和分割长段落
  */
 export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
-  readonly name = 'paragraph';
+  readonly name = ChunkingStrategy.PARAGRAPH;
   readonly description = '基于段落的文本切片策略，支持合并短段落和分割长段落';
   readonly version = '1.0.0';
 

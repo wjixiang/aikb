@@ -183,7 +183,7 @@ Intro content.`;
     it('should throw error for unsupported strategy', () => {
       expect(() => {
         chunkText('Some text', 'unsupported' as any);
-      }).toThrow('Unsupported chunking strategy: unsupported');
+      }).toThrow('Unsupported chunking strategy: legacy');
     });
   });
 });
