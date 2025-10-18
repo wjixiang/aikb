@@ -646,10 +646,10 @@ export const RABBITMQ_ROUTING_KEYS = {
   MARKDOWN_PART_STORAGE_PROGRESS: 'markdown.part.storage.progress',
   MARKDOWN_PART_STORAGE_COMPLETED: 'markdown.part.storage.completed',
   MARKDOWN_PART_STORAGE_FAILED: 'markdown.part.storage.failed',
-  CHUNKING_EMBEDDING_REQUEST: 'chunking.embedding.request',
-  CHUNKING_EMBEDDING_PROGRESS: 'chunking.embedding.progress',
-  CHUNKING_EMBEDDING_COMPLETED: 'chunking.embedding.completed',
-  CHUNKING_EMBEDDING_FAILED: 'chunking.embedding.failed',
+  CHUNKING_EMBEDDING_REQUEST: 'chunking-embedding-request',
+  CHUNKING_EMBEDDING_PROGRESS: 'chunking-embedding-progress',
+  CHUNKING_EMBEDDING_COMPLETED: 'chunking-embedding-completed',
+  CHUNKING_EMBEDDING_FAILED: 'chunking-embedding-failed',
   DEAD_LETTER: 'pdf.conversion.dlq',
 } as const;
 

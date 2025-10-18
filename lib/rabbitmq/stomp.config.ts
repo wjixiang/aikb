@@ -185,8 +185,8 @@ export const STOMP_DESTINATIONS = {
   MARKDOWN_PART_STORAGE_FAILED: '/exchange/pdf-conversion-exchange/markdown.part.storage.failed',
   
   // Chunking and embedding destinations
-  CHUNKING_EMBEDDING_REQUEST: '/exchange/pdf-conversion-exchange/chunking.embedding.request',
-  CHUNKING_EMBEDDING_PROGRESS: '/exchange/pdf-conversion-exchange/chunking.embedding.progress',
+  CHUNKING_EMBEDDING_REQUEST: '/exchange/pdf-conversion-exchange/chunking-embedding-request',
+  CHUNKING_EMBEDDING_PROGRESS: '/exchange/pdf-conversion-exchange/chunking-embedding-progress',
   CHUNKING_EMBEDDING_COMPLETED: '/exchange/pdf-conversion-exchange/chunking.embedding.completed',
   CHUNKING_EMBEDDING_FAILED: '/exchange/pdf-conversion-exchange/chunking.embedding.failed',
   
@@ -219,8 +219,8 @@ export function getStompDestination(routingKey: string): string {
     'markdown.part.storage.progress': STOMP_DESTINATIONS.MARKDOWN_PART_STORAGE_PROGRESS,
     'markdown.part.storage.completed': STOMP_DESTINATIONS.MARKDOWN_PART_STORAGE_COMPLETED,
     'markdown.part.storage.failed': STOMP_DESTINATIONS.MARKDOWN_PART_STORAGE_FAILED,
-    'chunking.embedding.request': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_REQUEST,
-    'chunking.embedding.progress': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_PROGRESS,
+    'chunking-embedding-request': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_REQUEST,
+    'chunking-embedding-progress': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_PROGRESS,
     'chunking.embedding.completed': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_COMPLETED,
     'chunking.embedding.failed': STOMP_DESTINATIONS.CHUNKING_EMBEDDING_FAILED,
     'pdf.conversion.dlq': STOMP_DESTINATIONS.DEAD_LETTER,

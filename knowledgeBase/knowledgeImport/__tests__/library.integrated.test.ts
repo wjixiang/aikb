@@ -37,21 +37,21 @@ export async function UploadTestPdf() {
   const library = new Library(storage);
   library;
   // Read the test PDF file
-  const pdfPath = 'test/ards.pdf';
+  const pdfPath = 'test/Evaluating the Patient With a Pulmonary Nodule.pdf';
   const pdfBuffer = fs.readFileSync(pdfPath);
 
   // Prepare metadata for the PDF
   const metadata = {
-    title: 'ards',
+    title: 'Evaluating the Patient With a Pulmonary Nodule',
     authors: [{ firstName: 'Test', lastName: 'Author' }],
-    abstract: 'This is a test document about ARDS',
+    abstract: 'This is a test document about Evaluating the Patient With a Pulmonary Nodule',
     publicationYear: 2023,
     tags: ['test', 'research'],
     language: 'English',
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(pdfBuffer, 'ards', metadata);
+  const book = await library.storePdf(pdfBuffer, 'Evaluating the Patient With a Pulmonary Nodule', metadata);
   return { book, library };
 }
 
@@ -61,28 +61,6 @@ describe(Library, async () => {
   // Option 1: With default PDF converter
   beforeAll(async () => {
     try {
-      // Initialize the singleton RabbitMQ service that Library will use
-      // const rabbitMQService = getRabbitMQService();
-      // await rabbitMQService.initialize();
-      console.log('✅ RabbitMQ service initialized successfully');
-
-      // Create storage instance for workers
-      // const storage = new S3ElasticSearchLibraryStorage('http://elasticsearch:9200', 1024);
-
-      // // Start workers
-      // await createPdfAnalysisWorker(storage);
-      // console.log('✅ PDF analysis worker started');
-
-      // await createPdfProcessingCoordinatorWorker(storage);
-      // console.log('✅ PDF processing coordinator worker started');
-
-      // await createPdfConversionWorker();
-      // console.log('✅ PDF conversion worker started');
-
-      // await startMarkdownStorageWorker(storage);
-      // console.log('✅ Markdown storage worker started');
-
-      // // Upload test PDF after workers are ready
       const testb = await UploadTestPdf();
       book = testb.book
       console.log('✅ Test PDF uploaded');
@@ -111,7 +89,7 @@ describe(Library, async () => {
   it.skip('upload pdf buffer and retrieve s3 download url', async () => {
     // Verify the book was stored correctly
     expect(book).toBeDefined();
-    expect(book.metadata.title).toBe('viral_pneumonia');
+    // expect(book.metadata.title).toBe('viral_pneumonia');
     expect(book.metadata.s3Key).toBeDefined();
     expect(book.metadata.s3Url).toBeDefined();
 
@@ -131,6 +109,36 @@ describe(Library, async () => {
     console.log(`S3 Key: ${book.metadata.s3Key}`);
     console.log(`Download URL: ${downloadUrl}`);
   }, 30000); // Increase timeout to 30 seconds for S3 operations
+
+   it('re-process', async () => {
+    const testMinerUPdfConvertor = new MinerUPdfConvertor({
+      token: process.env.MINERU_TOKEN as string,
+      downloadDir: 'test/download',
+      defaultOptions: {
+        is_ocr: true,
+        enable_formula: true,
+        enable_table: true,
+        language: 'en',
+        extra_formats: ['docx', 'html'],
+      },
+      timeout: 120000, // 2 minutes timeout
+      maxRetries: 3,
+      retryDelay: 5000,
+    });
+    const storage = new S3ElasticSearchLibraryStorage(
+      'http://elasticsearch:9200',
+      1024,
+    );
+    const library = new Library(storage);
+    const s3Link = await book.getPdfDownloadUrl();
+    console.log(`s3Link: ${s3Link}`);
+    await library.sendPdfAnalysisRequest(
+      book.getItemId(),
+      s3Link,
+      book.metadata.s3Key as string,
+      book.metadata.title,
+    );
+  });
 
   it.skip('get current md', async () => {
     // Read markdown content from Library storage

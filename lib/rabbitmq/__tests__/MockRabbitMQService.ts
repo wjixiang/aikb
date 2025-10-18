@@ -260,7 +260,7 @@ export class MockRabbitMQService {
   }
 
   async publishChunkingEmbeddingRequest(message: ChunkingEmbeddingRequestMessage): Promise<boolean> {
-    return this.publishMessage('chunking.embedding.request', message);
+    return this.publishMessage('chunking-embedding-request', message);
   }
 
   async publishChunkingEmbeddingProgress(message: ChunkingEmbeddingProgressMessage): Promise<boolean> {
