@@ -586,6 +586,35 @@ export interface RabbitMQMessageOptions {
 }
 
 /**
+ * Dead letter queue message
+ */
+export interface DeadLetterQueueMessage extends BaseRabbitMQMessage {
+  eventType: 'DEAD_LETTER';
+  originalMessage: any; // The original message that failed
+  originalRoutingKey: string;
+  failureReason: string;
+  failureTimestamp: number;
+  retryCount: number;
+  originalQueue: string;
+  errorDetails?: {
+    stack?: string;
+    errorCode?: string;
+    errorMessage?: string;
+  };
+}
+
+/**
+ * Dead letter queue handler message types
+ */
+export interface DeadLetterProcessedMessage extends BaseRabbitMQMessage {
+  eventType: 'DEAD_LETTER_PROCESSED';
+  originalMessageId: string;
+  action: 'requeued' | 'discarded' | 'moved_to_error_storage';
+  reason: string;
+  processedAt: number;
+}
+
+/**
  * Queue and exchange names
  */
 export const RABBITMQ_QUEUES = {

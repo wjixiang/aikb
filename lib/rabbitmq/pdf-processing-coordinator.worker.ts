@@ -10,9 +10,12 @@ import {
   MarkdownPartStorageCompletedMessage,
   MarkdownPartStorageFailedMessage,
   MarkdownPartStorageProgressMessage,
+  DeadLetterQueueMessage,
+  DeadLetterProcessedMessage,
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
+  RABBITMQ_ROUTING_KEYS,
   PdfMetadata,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
@@ -102,6 +105,11 @@ export class PdfProcessingCoordinatorWorker {
           queue: RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_PROGRESS,
           handler: this.handleMarkdownPartStorageProgress.bind(this),
           consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER + '-coordinator-progress'
+        },
+        {
+          queue: RABBITMQ_QUEUES.DEAD_LETTER_QUEUE,
+          handler: this.handleDeadLetterMessage.bind(this),
+          consumerTag: 'dlq-handler-coordinator'
         }
       ];
 
@@ -536,6 +544,228 @@ export class PdfProcessingCoordinatorWorker {
         error,
       );
       // Don't throw for progress messages as they are less critical
+    }
+  }
+
+  /**
+   * Handle dead letter queue message
+   */
+  private async handleDeadLetterMessage(
+    message: DeadLetterQueueMessage,
+    originalMessage: any,
+  ): Promise<void> {
+    logger.warn(
+      `Processing dead letter message for item: ${message.originalMessage?.itemId || 'unknown'}, ` +
+      `original queue: ${message.originalQueue}, ` +
+      `failure reason: ${message.failureReason}, ` +
+      `retry count: ${message.retryCount}`
+    );
+
+    try {
+      // Analyze the failure and decide on action
+      const action = await this.analyzeDeadLetterMessage(message);
+      
+      // Log the action taken
+      logger.info(`DLQ action for message ${message.messageId}: ${action.action} - ${action.reason}`);
+
+      // Send processed message notification
+      await this.sendDeadLetterProcessedNotification(message, action);
+
+      // Update item status if we have an itemId
+      if (message.originalMessage?.itemId) {
+        await this.updateItemStatus(
+          message.originalMessage.itemId,
+          PdfProcessingStatus.FAILED,
+          `Message failed and moved to DLQ: ${message.failureReason}`,
+          undefined,
+          `${message.failureReason} (Retry count: ${message.retryCount})`
+        );
+      }
+
+    } catch (error) {
+      logger.error(
+        `Failed to handle dead letter message ${message.messageId}:`,
+        error,
+      );
+      // Don't throw DLQ processing errors to avoid message loops
+    }
+  }
+
+  /**
+   * Analyze dead letter message and determine action
+   */
+  private async analyzeDeadLetterMessage(
+    message: DeadLetterQueueMessage
+  ): Promise<{ action: 'requeued' | 'discarded' | 'moved_to_error_storage', reason: string }> {
+    const { retryCount, failureReason, originalQueue, originalMessage } = message;
+
+    // Check if it's a retryable error
+    const isRetryableError = this.isRetryableError(failureReason);
+    const maxRetries = this.getMaxRetriesForQueue(originalQueue);
+
+    // If retry count is below max and error is retryable, requeue
+    if (retryCount < maxRetries && isRetryableError) {
+      try {
+        // Requeue the original message
+        await this.requeueOriginalMessage(originalMessage, originalQueue);
+        return {
+          action: 'requeued',
+          reason: `Retryable error (${retryCount + 1}/${maxRetries})`
+        };
+      } catch (requeueError) {
+        logger.error(`Failed to requeue message ${message.messageId}:`, requeueError);
+      }
+    }
+
+    // If it's a critical error or max retries exceeded, move to error storage
+    if (!isRetryableError || retryCount >= maxRetries) {
+      try {
+        await this.moveToErrorStorage(message);
+        return {
+          action: 'moved_to_error_storage',
+          reason: !isRetryableError ? 'Non-retryable error' : `Max retries exceeded (${maxRetries})`
+        };
+      } catch (storageError) {
+        logger.error(`Failed to move message ${message.messageId} to error storage:`, storageError);
+      }
+    }
+
+    // Default action: discard
+    return {
+      action: 'discarded',
+      reason: 'Failed to requeue or move to error storage'
+    };
+  }
+
+  /**
+   * Check if an error is retryable
+   */
+  private isRetryableError(failureReason: string): boolean {
+    const retryablePatterns = [
+      /timeout/i,
+      /connection/i,
+      /network/i,
+      /temporary/i,
+      /resource.*busy/i,
+      /rate.*limit/i,
+      /service.*unavailable/i
+    ];
+
+    const nonRetryablePatterns = [
+      /authentication/i,
+      /authorization/i,
+      /invalid.*format/i,
+      /corrupted/i,
+      /not.*found/i,
+      /permission/i
+    ];
+
+    // Check for non-retryable patterns first
+    for (const pattern of nonRetryablePatterns) {
+      if (pattern.test(failureReason)) {
+        return false;
+      }
+    }
+
+    // Check for retryable patterns
+    for (const pattern of retryablePatterns) {
+      if (pattern.test(failureReason)) {
+        return true;
+      }
+    }
+
+    // Default to retryable for unknown errors
+    return true;
+  }
+
+  /**
+   * Get max retries for a specific queue
+   */
+  private getMaxRetriesForQueue(queue: string): number {
+    const retryLimits: Record<string, number> = {
+      'pdf-conversion-request': 3,
+      'pdf-analysis-request': 3,
+      'markdown-storage-request': 2,
+      'markdown-part-storage-request': 2,
+      'chunking-embedding-request': 3
+    };
+
+    return retryLimits[queue] || 3; // Default to 3 retries
+  }
+
+  /**
+   * Requeue original message
+   */
+  private async requeueOriginalMessage(originalMessage: any, originalQueue: string): Promise<void> {
+    if (!originalMessage) {
+      throw new Error('Original message is null or undefined');
+    }
+
+    // Increment retry count
+    const updatedMessage = {
+      ...originalMessage,
+      retryCount: (originalMessage.retryCount || 0) + 1,
+      timestamp: Date.now()
+    };
+
+    await this.rabbitMQService.publishMessage(originalQueue, updatedMessage);
+    logger.info(`Requeued message to ${originalQueue}, retry count: ${updatedMessage.retryCount}`);
+  }
+
+  /**
+   * Move message to error storage
+   */
+  private async moveToErrorStorage(message: DeadLetterQueueMessage): Promise<void> {
+    // Store the failed message in error storage for manual review
+    const errorRecord = {
+      id: `error-${message.messageId}`,
+      messageId: message.messageId,
+      originalMessage: message.originalMessage,
+      originalQueue: message.originalQueue,
+      originalRoutingKey: message.originalRoutingKey,
+      failureReason: message.failureReason,
+      failureTimestamp: message.failureTimestamp,
+      retryCount: message.retryCount,
+      errorDetails: message.errorDetails,
+      createdAt: new Date(),
+      status: 'pending_review'
+    };
+
+    // Store in a special error collection (implementation depends on storage backend)
+    // For now, log the error record as storage doesn't have this method
+    logger.error('Error record stored:', JSON.stringify(errorRecord, null, 2));
+    
+    // TODO: Implement proper error storage when AbstractLibraryStorage is extended
+    // if (this.storage.storeErrorRecord) {
+    //   await this.storage.storeErrorRecord(errorRecord);
+    // }
+
+    logger.info(`Moved message ${message.messageId} to error storage`);
+  }
+
+  /**
+   * Send dead letter processed notification
+   */
+  private async sendDeadLetterProcessedNotification(
+    originalMessage: DeadLetterQueueMessage,
+    action: { action: 'requeued' | 'discarded' | 'moved_to_error_storage', reason: string }
+  ): Promise<void> {
+    const notification: DeadLetterProcessedMessage = {
+      messageId: uuidv4(),
+      timestamp: Date.now(),
+      eventType: 'DEAD_LETTER_PROCESSED',
+      originalMessageId: originalMessage.messageId,
+      action: action.action,
+      reason: action.reason,
+      processedAt: Date.now()
+    };
+
+    // Send to a monitoring/notifications queue if available
+    try {
+      await this.rabbitMQService.publishMessage('dlq-processed-notifications', notification);
+    } catch (error) {
+      // Don't fail if notification queue doesn't exist
+      logger.debug('Could not send DLQ processed notification:', error);
     }
   }
 
