@@ -1,21 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import createLoggerWithPrefix from '../logger';
-import { Client } from '@elastic/elasticsearch';
-
-// Mock the Elasticsearch client
-const mockIndex = vi.fn().mockResolvedValue({});
-const mockIndicesExists = vi.fn().mockResolvedValue(false);
-const mockIndicesCreate = vi.fn().mockResolvedValue({});
-
-vi.mock('@elastic/elasticsearch', () => ({
-  Client: vi.fn().mockImplementation(() => ({
-    indices: {
-      exists: mockIndicesExists,
-      create: mockIndicesCreate,
-    },
-    index: mockIndex,
-  })),
-}));
 
 describe('Elasticsearch Logger', () => {
   beforeEach(() => {
@@ -61,18 +45,17 @@ describe('Elasticsearch Logger', () => {
     // Check that it has the expected transports (console, file, and elasticsearch)
     expect(logger.transports).toHaveLength(3);
 
-    // Check that the Elasticsearch transport was created with the correct options
-    expect(Client).toHaveBeenCalledWith({
-      node: 'http://test-elasticsearch:9200',
-      auth: {
-        apiKey: '',
-        username: 'elastic',
-        password: 'changeme',
-      },
-      tls: {
-        rejectUnauthorized: true,
-      },
-    });
+    // Find the Elasticsearch transport
+    const elasticsearchTransport = logger.transports.find(
+      (transport: any) =>
+        transport.constructor.name === 'ElasticsearchTransport',
+    );
+
+    expect(elasticsearchTransport).toBeDefined();
+    
+    // Check that the transport has the correct configuration
+    expect((elasticsearchTransport as any).indexName).toBe('test-logs');
+    expect((elasticsearchTransport as any).indexPattern).toBe('test-logs-YYYY.MM.DD');
   });
 
   it('should use default values when environment variables are not set', () => {
@@ -87,18 +70,17 @@ describe('Elasticsearch Logger', () => {
     // Check that it has the expected transports
     expect(logger.transports).toHaveLength(3);
 
-    // Check that the Elasticsearch transport was created with default values
-    expect(Client).toHaveBeenCalledWith({
-      node: 'http://localhost:9200',
-      auth: {
-        apiKey: '',
-        username: 'elastic',
-        password: 'changeme',
-      },
-      tls: {
-        rejectUnauthorized: true,
-      },
-    });
+    // Find the Elasticsearch transport
+    const elasticsearchTransport = logger.transports.find(
+      (transport: any) =>
+        transport.constructor.name === 'ElasticsearchTransport',
+    );
+
+    expect(elasticsearchTransport).toBeDefined();
+    
+    // Check that the transport has default configuration
+    expect((elasticsearchTransport as any).indexName).toBe('logs');
+    expect((elasticsearchTransport as any).indexPattern).toBe('logs-YYYY.MM.DD');
   });
 
   it('should log messages to Elasticsearch when enabled', () => {

@@ -47,6 +47,7 @@ import {
   MessageServiceConfig,
 } from './message-service.interface';
 import { createMessageService } from './message-service-factory';
+import { getStompDestination } from './stomp.config';
 import createLoggerWithPrefix from '../logger';
 
 const logger = createLoggerWithPrefix('RabbitMQService');
@@ -118,6 +119,12 @@ export class RabbitMQService {
     }
 
     try {
+      // For STOMP protocol, we need to convert routing keys to destinations
+      let destination = routingKey;
+      if (this.protocol === 'stomp') {
+        destination = getStompDestination(routingKey);
+      }
+
       // Check queue message count before publishing
       if (routingKey === RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST) {
         const queueInfo = await this.messageService.getQueueInfo(
@@ -129,7 +136,7 @@ export class RabbitMQService {
       }
 
       const published = await this.messageService.publishMessage(
-        routingKey,
+        destination,
         message,
         options,
       );
@@ -549,8 +556,37 @@ export class RabbitMQService {
     }
 
     try {
+      // For STOMP protocol, we need to convert queue names to destinations
+      let destination = queueName;
+      if (this.protocol === 'stomp') {
+        // Map queue names to their corresponding routing keys
+        let routingKey = queueName;
+        
+        // Map queue names to their corresponding routing keys
+        switch (queueName) {
+          case 'pdf-conversion-request':
+            routingKey = 'pdf.conversion.request';
+            break;
+          case 'pdf-part-conversion-request':
+            routingKey = 'pdf.part.conversion.request';
+            break;
+          case 'pdf-conversion-progress':
+            routingKey = 'pdf.conversion.progress';
+            break;
+          case 'pdf-conversion-completed':
+            routingKey = 'pdf.conversion.completed';
+            break;
+          case 'pdf-conversion-failed':
+            routingKey = 'pdf.conversion.failed';
+            break;
+          // Add more mappings as needed
+        }
+        
+        destination = getStompDestination(routingKey);
+      }
+
       const consumerTag = await this.messageService.consumeMessages(
-        queueName,
+        destination,
         async (message, originalMessage) => {
           logger.info(
             `DEBUG: Consumer callback triggered for queue: ${queueName}`,

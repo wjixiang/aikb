@@ -274,6 +274,7 @@ export class StompImplementation implements IMessageService {
     options: ConsumerOptions = {},
   ): Promise<string> {
     if (!this.isConnected()) {
+      logger.error('STOMP implementation not connected');
       throw new Error('STOMP implementation not connected');
     }
 
@@ -314,7 +315,7 @@ export class StompImplementation implements IMessageService {
 
             // Manually acknowledge if not auto-ack
             if (!options.noAck && message.headers['message-id']) {
-              this.client!.ack(message.headers['message-id'], subscriptionId);
+              this.client!.ack(message.headers['message-id']);
             }
           } catch (error) {
             logger.error(
@@ -328,7 +329,7 @@ export class StompImplementation implements IMessageService {
 
             // Negative acknowledgment if not auto-ack
             if (!options.noAck && message.headers['message-id']) {
-              this.client!.nack(message.headers['message-id'], subscriptionId);
+              this.client!.nack(message.headers['message-id']);
             }
           }
         },

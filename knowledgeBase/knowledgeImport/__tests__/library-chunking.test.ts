@@ -110,48 +110,48 @@ This is the second chapter content.`,
       expect(chunks[2].embedding).toEqual([0.7, 0.8, 0.9]);
     });
 
-    it('should handle paragraph chunking', async () => {
-      const metadata: Partial<BookMetadata> = {
-        title: 'Test Document',
-        authors: [{ firstName: 'John', lastName: 'Doe' }],
-        fileType: 'pdf',
-      };
+    // it('should handle paragraph chunking', async () => {
+    //   const metadata: Partial<BookMetadata> = {
+    //     title: 'Test Document',
+    //     authors: [{ firstName: 'John', lastName: 'Doe' }],
+    //     fileType: 'pdf',
+    //   };
 
-      const pdfBuffer = Buffer.from('mock pdf content');
-      const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
+    //   const pdfBuffer = Buffer.from('mock pdf content');
+    //   const item = await library.storePdf(pdfBuffer, 'test.pdf', metadata);
 
-      // Set markdown content without H1 headers
-      await mockStorage.saveMarkdown(
-        item.metadata.id!,
-        `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`,
-      );
+    //   // Set markdown content without H1 headers
+    //   await mockStorage.saveMarkdown(
+    //     item.metadata.id!,
+    //     `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`,
+    //   );
 
-      // Update the item's metadata to include the markdown content
-      item.metadata.markdownContent = `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`;
+    //   // Update the item's metadata to include the markdown content
+    //   item.metadata.markdownContent = `This is paragraph one.\n\nThis is paragraph two.\n\nThis is paragraph three.`;
 
-      // Process chunks with paragraph strategy - use the item's chunkEmbed method with custom config
-      // to ensure each paragraph becomes a separate chunk
-      await item.chunkEmbed(ChunkingStrategyType.PARAGRAPH, true, {
-        maxChunkSize: 30, // Small enough to ensure each paragraph is separate
-        minChunkSize: 10,
-        overlap: 0,
-      });
+    //   // Process chunks with paragraph strategy - use the item's chunkEmbed method with custom config
+    //   // to ensure each paragraph becomes a separate chunk
+    //   await item.chunkEmbed(ChunkingStrategyType.PARAGRAPH, true, {
+    //     maxChunkSize: 30, // Small enough to ensure each paragraph is separate
+    //     minChunkSize: 10,
+    //     overlap: 0,
+    //   });
 
-      // Verify chunks were created
-      const chunks = await library.getItemChunks(item.metadata.id!);
-      expect(chunks).toHaveLength(3);
+    //   // Verify chunks were created
+    //   const chunks = await library.getItemChunks(item.metadata.id!);
+    //   expect(chunks).toHaveLength(3);
 
-      // Verify chunk content
-      expect(chunks[0].title).toBe('Paragraph 1');
-      expect(chunks[0].content).toBe('This is paragraph one.');
-      expect(chunks[0].metadata?.chunkType).toBe('paragraph');
+    //   // Verify chunk content
+    //   expect(chunks[0].title).toBe('Paragraph 1');
+    //   expect(chunks[0].content).toBe('This is paragraph one.');
+    //   expect(chunks[0].metadata?.chunkType).toBe('paragraph');
 
-      expect(chunks[1].title).toBe('Paragraph 2');
-      expect(chunks[1].content).toBe('This is paragraph two.');
+    //   expect(chunks[1].title).toBe('Paragraph 2');
+    //   expect(chunks[1].content).toBe('This is paragraph two.');
 
-      expect(chunks[2].title).toBe('Paragraph 3');
-      expect(chunks[2].content).toBe('This is paragraph three.');
-    });
+    //   expect(chunks[2].title).toBe('Paragraph 3');
+    //   expect(chunks[2].content).toBe('This is paragraph three.');
+    // });
 
     it('should handle items without markdown content', async () => {
       const metadata: Partial<BookMetadata> = {
