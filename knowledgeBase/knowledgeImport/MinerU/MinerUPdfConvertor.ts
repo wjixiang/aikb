@@ -1,4 +1,4 @@
-import { AbstractPdfConvertor } from '../AbstractPdfConvertor';
+import type { IPdfConvertor } from '../IPdfConvertor';
 import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -6,9 +6,9 @@ import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 import * as yauzl from 'yauzl';
-import { uploadPdfFromPath } from '../../../lib/s3Service/S3Service';
+import { uploadPdfFromPath, uploadToS3 } from '../../../lib/s3Service/S3Service';
 import createLoggerWithPrefix from '../../../lib/logger';
-import { app_config } from 'knowledgeBase/config';
+import { app_config } from '../../config';
 
 /**
  * MinerU-based PDF converter implementation
@@ -31,9 +31,18 @@ export interface ConversionResult {
   error?: string;
   downloadedFiles?: string[];
   taskId?: string;
+  uploadedImages?: ImageUploadResult[];
 }
 
-export class MinerUPdfConvertor extends AbstractPdfConvertor {
+export interface ImageUploadResult {
+  originalPath: string; // Original path in ZIP file
+  s3Url: string; // S3 URL after upload
+  fileName: string; // S3 key/filename
+  success?: boolean; // Whether the upload was successful
+  error?: string; // Error message if upload failed
+}
+
+export class MinerUPdfConvertor implements IPdfConvertor {
   private logger = createLoggerWithPrefix('MinerUPdfConvertor');
   private client: MinerUClient;
   private config: Omit<MinerUPdfConvertorConfig, 'defaultOptions'> & {
@@ -47,8 +56,6 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   };
 
   constructor(config: MinerUPdfConvertorConfig) {
-    super();
-
     this.config = {
       token: config.token || app_config.MinerU.token,
       baseUrl: config.baseUrl || 'https://mineru.net/api/v4',
@@ -78,6 +85,24 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     // Ensure download directory exists
     if (!fs.existsSync(this.config.downloadDir)) {
       fs.mkdirSync(this.config.downloadDir, { recursive: true });
+    }
+  }
+
+  /**
+   * Extract S3 key from URL
+   * @param url The S3 URL
+   * @returns The S3 key extracted from the URL
+   */
+  private extractS3KeyFromUrl(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      // Remove leading slash from pathname
+      return urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
+    } catch (error) {
+      this.logger.error(`Error extracting S3 key from URL: ${url}`, error);
+      // Fallback to a default key based on filename
+      const fileName = path.basename(url);
+      return `pdfs/${fileName}`;
     }
   }
 
@@ -122,10 +147,14 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async convertPdfToMarkdownFromS3(
     s3Url: string,
-    options: Partial<SingleFileRequest> = {},
+    options: any = {},
   ): Promise<ConversionResult> {
     try {
       this.logger.info(`convertPdfToMarkdownFromS3: s3Url=${s3Url}`);
+
+      // Extract S3 key from URL for image path organization
+      const s3Key = this.extractS3KeyFromUrl(s3Url);
+      this.logger.info(`Extracted S3 key: ${s3Key}`);
 
       // Use the S3 URL directly
       const request: SingleFileRequest = {
@@ -145,9 +174,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       this.logger.info(`MinerU processing completed`);
       this.logger.info(`Extracting markdown from downloaded files...`);
 
-      // Extract and parse the markdown content
-      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+      // Extract and parse the markdown content and upload images
+      const extractionResult = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
+        s3Key, // Pass S3 key for image path organization
       );
       this.logger.info(`Markdown extraction completed`);
 
@@ -156,9 +186,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       return {
         success: true,
-        data: markdownData,
+        data: extractionResult?.markdownContent,
         downloadedFiles: result.downloadedFiles,
         taskId: taskId,
+        uploadedImages: extractionResult?.uploadedImages,
       };
     } catch (error) {
       this.logger.error(`Error in convertPdfToMarkdownFromS3:`, error);
@@ -177,7 +208,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async convertPdfToMarkdown(
     pdfPath: string,
-    options: Partial<SingleFileRequest> = {},
+    options: any = {},
   ): Promise<ConversionResult> {
     try {
       this.logger.info(`convertPdfToJSON: pdfPath=${pdfPath}`);
@@ -188,10 +219,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       this.logger.info(`Is URL: ${isUrl}`);
 
       let request: SingleFileRequest;
+      let s3Key: string | undefined;
 
       if (isUrl) {
         // Use URL directly
         this.logger.info(`Using URL directly: ${pdfPath}`);
+        s3Key = this.extractS3KeyFromUrl(pdfPath);
         request = {
           url: pdfPath,
           ...this.config.defaultOptions,
@@ -220,6 +253,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         this.logger.info(`Uploading to S3...`);
         const s3Url = await uploadPdfFromPath(pdfPath);
         this.logger.info(`S3 upload successful: ${s3Url}`);
+        
+        // Extract S3 key from the uploaded URL
+        s3Key = this.extractS3KeyFromUrl(s3Url);
 
         request = {
           url: s3Url,
@@ -241,9 +277,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       this.logger.info(`MinerU processing completed`);
       this.logger.info(`Extracting markdown from downloaded files...`);
 
-      // Extract and parse the markdown content
-      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+      // Extract and parse the markdown content and upload images
+      const extractionResult = await this.extractMarkdownFromDownloadedFiles(
         result.downloadedFiles || [],
+        s3Key, // Pass S3 key for image path organization
       );
       this.logger.info(`Markdown extraction completed`);
 
@@ -252,9 +289,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       return {
         success: true,
-        data: markdownData,
+        data: extractionResult?.markdownContent,
         downloadedFiles: result.downloadedFiles,
         taskId: taskId,
+        uploadedImages: extractionResult?.uploadedImages,
       };
     } catch (error) {
       this.logger.error(`Error in convertPdfToJSON:`, error);
@@ -273,7 +311,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processLocalFile(
     filePath: string,
-    options: Partial<SingleFileRequest> = {},
+    options: any = {},
   ): Promise<ConversionResult> {
     try {
       this.logger.info(`processLocalFile: filePath=${filePath}`);
@@ -347,9 +385,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
       }
 
       this.logger.info(`Extracting markdown from downloaded files...`);
-      // Extract and parse the markdown content
-      const markdownData = await this.extractMarkdownFromDownloadedFiles(
+      // Extract and parse the markdown content and upload images
+      const extractionResult = await this.extractMarkdownFromDownloadedFiles(
         taskResult.downloadedFiles,
+        undefined, // No S3 key available for batch local files
       );
 
       // Extract task ID using the helper method
@@ -357,9 +396,10 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       return {
         success: true,
-        data: markdownData,
+        data: extractionResult?.markdownContent,
         downloadedFiles: taskResult.downloadedFiles,
         taskId: taskId,
+        uploadedImages: extractionResult?.uploadedImages,
       };
     } catch (error) {
       this.logger.error(`Error in processLocalFile:`, error);
@@ -378,7 +418,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processMultipleFiles(
     filePaths: string[],
-    options: Partial<SingleFileRequest> = {},
+    options: any = {},
   ): Promise<ConversionResult[]> {
     const results: ConversionResult[] = [];
 
@@ -460,14 +500,15 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               file.includes(taskIdentifier),
             );
 
-            const markdownData =
-              await this.extractMarkdownFromDownloadedFiles(filteredFiles);
+            const extractionResult =
+              await this.extractMarkdownFromDownloadedFiles(filteredFiles, undefined);
 
             results.push({
               success: true,
-              data: markdownData,
+              data: extractionResult?.markdownContent,
               downloadedFiles: filteredFiles,
               taskId: taskIdentifier,
+              uploadedImages: extractionResult?.uploadedImages,
             });
           }
         }
@@ -496,7 +537,7 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
    */
   async processUrls(
     urls: string[],
-    options: Partial<SingleFileRequest> = {},
+    options: any = {},
   ): Promise<ConversionResult[]> {
     try {
       // Process URLs in batches (max 200 per API limit)
@@ -551,14 +592,15 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
               file.includes(taskIdentifier),
             );
 
-            const markdownData =
-              await this.extractMarkdownFromDownloadedFiles(filteredFiles);
+            const extractionResult =
+              await this.extractMarkdownFromDownloadedFiles(filteredFiles, undefined);
 
             allResults.push({
               success: true,
-              data: markdownData,
+              data: extractionResult?.markdownContent,
               downloadedFiles: filteredFiles,
               taskId: taskIdentifier,
+              uploadedImages: extractionResult?.uploadedImages,
             });
           }
         }
@@ -576,10 +618,12 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   /**
    * Extract markdown content from downloaded ZIP files
    * @param downloadedFiles Array of downloaded file paths
+   * @param pdfS3Key Optional S3 key of the original PDF for organizing images
    * @returns Promise<any> The extracted markdown content
    */
   private async extractMarkdownFromDownloadedFiles(
     downloadedFiles: string[],
+    pdfS3Key?: string,
   ): Promise<any> {
     try {
       this.logger.info(
@@ -597,17 +641,17 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
 
       this.logger.info(`Processing ZIP file: ${zipFile}`);
 
-      // Extract markdown from the ZIP file
-      const markdownContent = await this.extractFullMdFromZip(zipFile);
-      if (!markdownContent) {
+      // Extract markdown and images from the ZIP file
+      const result = await this.extractFullMdAndImagesFromZip(zipFile, pdfS3Key);
+      if (!result) {
         this.logger.error(`Failed to extract markdown from ZIP`);
         return null;
       }
 
       this.logger.info(
-        `Successfully extracted markdown (${markdownContent.length} characters)`,
+        `Successfully extracted markdown (${result.markdownContent.length} characters) and ${result.uploadedImages.length} images`,
       );
-      return markdownContent;
+      return result;
     } catch (error) {
       this.logger.error(
         `Error extracting markdown from downloaded files:`,
@@ -618,11 +662,15 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
   }
 
   /**
-   * Extract full.md content from a ZIP file
+   * Extract full.md content and images from a ZIP file
    * @param zipPath Path to the ZIP file
-   * @returns Promise<string | null> The extracted markdown content
+   * @param pdfS3Key Optional S3 key of the original PDF for organizing images
+   * @returns Promise<{markdownContent: string, uploadedImages: ImageUploadResult[]} | null> The extracted markdown content and uploaded image information
    */
-  private async extractFullMdFromZip(zipPath: string): Promise<string | null> {
+  private async extractFullMdAndImagesFromZip(zipPath: string, pdfS3Key?: string): Promise<{
+    markdownContent: string;
+    uploadedImages: ImageUploadResult[];
+  } | null> {
     return new Promise((resolve, reject) => {
       this.logger.info(`Opening ZIP file: ${zipPath}`);
 
@@ -635,6 +683,9 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
         this.logger.info(`ZIP file opened successfully`);
         let markdownContent = '';
         let foundMarkdown = false;
+        const uploadedImages: ImageUploadResult[] = [];
+        const imageBuffers: { [key: string]: Buffer } = {};
+        let imageProcessingQueue: Promise<void>[] = [];
 
         zipfile.on('entry', (entry) => {
           this.logger.info(`Processing entry: ${entry.fileName}`);
@@ -675,20 +726,138 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
                 reject(err);
               });
             });
+          } else if (entry.fileName.startsWith('images/') || entry.fileName.startsWith('./images/')) {
+            // Process image files
+            this.logger.info(`Found image file: ${entry.fileName}`);
+            
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                this.logger.error(`Error opening image entry:`, err);
+                return reject(err);
+              }
+
+              this.logger.info(`Reading image content...`);
+              const chunks: Buffer[] = [];
+
+              readStream.on('data', (chunk) => {
+                chunks.push(chunk);
+              });
+
+              readStream.on('end', () => {
+                const imageBuffer = Buffer.concat(chunks);
+                const imageFileName = path.basename(entry.fileName);
+                imageBuffers[entry.fileName] = imageBuffer;
+                this.logger.info(`Image content read: ${imageFileName} (${imageBuffer.length} bytes)`);
+                // Continue reading next entries
+                zipfile.readEntry();
+              });
+
+              readStream.on('error', (err) => {
+                this.logger.error(`Error reading image entry:`, err);
+                reject(err);
+              });
+            });
           } else {
             // Skip other entries
             zipfile.readEntry();
           }
         });
 
-        zipfile.on('end', () => {
+        zipfile.on('end', async () => {
           this.logger.info(`ZIP file processing completed`);
           this.logger.info(`Found markdown: ${foundMarkdown}`);
+          this.logger.info(`Found images: ${Object.keys(imageBuffers).length}`);
+          
           if (foundMarkdown) {
-            this.logger.info(
-              `Resolving with markdown content (${markdownContent.length} chars)`,
-            );
-            resolve(markdownContent);
+            try {
+              // Upload all images to S3
+              this.logger.info(`Starting image upload process...`);
+              
+              for (const [imagePath, imageBuffer] of Object.entries(imageBuffers)) {
+                try {
+                  const imageFileName = path.basename(imagePath);
+                  const imageExtension = path.extname(imageFileName).toLowerCase();
+                  
+                  // Determine content type based on file extension
+                  let contentType = 'application/octet-stream';
+                  switch (imageExtension) {
+                    case '.jpg':
+                    case '.jpeg':
+                      contentType = 'image/jpeg';
+                      break;
+                    case '.png':
+                      contentType = 'image/png';
+                      break;
+                    case '.gif':
+                      contentType = 'image/gif';
+                      break;
+                    case '.svg':
+                      contentType = 'image/svg+xml';
+                      break;
+                    case '.webp':
+                      contentType = 'image/webp';
+                      break;
+                  }
+                  
+                  // Generate S3 key based on PDF S3 key and original image filename
+                  let s3Key: string;
+                  if (pdfS3Key) {
+                    // Remove file extension from PDF S3 key and use as directory
+                    const pdfKeyWithoutExt = pdfS3Key.replace(/\.[^/.]+$/, '');
+                    s3Key = `images/${pdfKeyWithoutExt}/${imageFileName}`;
+                  } else {
+                    // Fallback to images directory with filename
+                    s3Key = `images/${imageFileName}`;
+                  }
+                  
+                  // Upload to S3
+                  const s3Url = await uploadToS3(imageBuffer, s3Key, contentType);
+                  
+                  uploadedImages.push({
+                    originalPath: imagePath,
+                    s3Url: s3Url,
+                    fileName: s3Key
+                  });
+                  
+                  this.logger.info(`Successfully uploaded image: ${imageFileName} to ${s3Url}`);
+                } catch (uploadError) {
+                  this.logger.error(`Failed to upload image ${imagePath}:`, uploadError);
+                  // Continue with other images even if one fails
+                }
+              }
+              
+              // Update markdown content to use S3 URLs
+              let updatedMarkdownContent = markdownContent;
+              for (const uploadedImage of uploadedImages) {
+                // Replace relative image paths with S3 URLs
+                const relativePath = uploadedImage.originalPath;
+                const fileName = path.basename(relativePath);
+                
+                // Replace various possible image reference formats
+                updatedMarkdownContent = updatedMarkdownContent
+                  .replace(new RegExp(`\\./?images/${fileName}`, 'g'), uploadedImage.s3Url)
+                  .replace(new RegExp(`images/${fileName}`, 'g'), uploadedImage.s3Url)
+                  .replace(new RegExp(`/${relativePath}`, 'g'), uploadedImage.s3Url)
+                  .replace(new RegExp(relativePath, 'g'), uploadedImage.s3Url);
+              }
+              
+              this.logger.info(`Updated markdown content with ${uploadedImages.length} S3 image URLs`);
+              
+              this.logger.info(
+                `Resolving with markdown content (${updatedMarkdownContent.length} chars) and ${uploadedImages.length} images`,
+              );
+              resolve({
+                markdownContent: updatedMarkdownContent,
+                uploadedImages: uploadedImages
+              });
+            } catch (error) {
+              this.logger.error(`Error during image upload process:`, error);
+              // Still return the markdown content even if image upload fails
+              resolve({
+                markdownContent: markdownContent,
+                uploadedImages: uploadedImages
+              });
+            }
           } else {
             this.logger.error(`No markdown file found in ZIP`);
             resolve(null);
@@ -794,10 +963,6 @@ export class MinerUPdfConvertor extends AbstractPdfConvertor {
     return this.config.downloadDir;
   }
 
-  /**
-   * Set the download directory
-   * @param directory The new download directory
-   */
   setDownloadDirectory(directory: string): void {
     this.logger.info(`Setting download directory to: ${directory}`);
 
