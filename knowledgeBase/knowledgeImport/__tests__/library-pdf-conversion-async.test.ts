@@ -271,7 +271,7 @@ describe('Library Async PDF Conversion', () => {
 
       const stats = await worker.getWorkerStats();
       expect(stats.isRunning).toBe(true);
-      expect(stats.rabbitMQConnected).toBe(true);
+      expect(stats.messageServiceConnected).toBe(true);
 
       await worker.stop();
       expect(worker.isWorkerRunning()).toBe(false);

@@ -52,7 +52,9 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
 
     try {
       // Ensure message service is initialized
-      if (!this.messageService.isConnected()) {
+      if (typeof this.messageService.isConnected === 'function' && !this.messageService.isConnected()) {
+        await this.messageService.initialize();
+      } else if (typeof this.messageService.initialize === 'function') {
         await this.messageService.initialize();
       }
 

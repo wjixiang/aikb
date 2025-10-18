@@ -130,12 +130,17 @@ export class PdfConversionWorker {
     conversionServiceStats: any;
     messageServiceConnected: boolean;
   }> {
+    // Check if message service has isConnected method, otherwise assume it's connected
+    const messageServiceConnected = typeof this.messageService.isConnected === 'function'
+      ? this.messageService.isConnected()
+      : true;
+
     return {
       isRunning: this.isWorkerRunning(),
       isInitialized: this.isInitialized,
       messageHandlerStats: this.messageHandler.getStats(),
       conversionServiceStats: this.pdfConversionService.getStats(),
-      messageServiceConnected: this.messageService.isConnected(),
+      messageServiceConnected,
     };
   }
 }

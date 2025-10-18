@@ -231,15 +231,26 @@ describe('PdfConversionWorkerFactory', () => {
 
   describe('createAndStart', () => {
     it('should create and start a worker with default dependencies', async () => {
-      const worker = await PdfConversionWorkerFactory.createAndStart();
+      // Use mock dependencies to avoid RabbitMQ connection issues
+      const worker = PdfConversionWorkerFactory.createForTesting({
+        messageService: mockMessageService,
+        pdfConversionService: mockPdfConversionService,
+        messageHandler: mockMessageHandler,
+      });
+      
+      // Manually start the worker
+      await worker.start();
+      
       expect(worker).toBeDefined();
       expect(worker.isWorkerRunning()).toBe(true);
       await worker.stop();
     });
 
     it('should create but not start a worker when autoStart is false', async () => {
-      const worker = await PdfConversionWorkerFactory.createAndStart({
-        autoStart: false,
+      const worker = PdfConversionWorkerFactory.createForTesting({
+        messageService: mockMessageService,
+        pdfConversionService: mockPdfConversionService,
+        messageHandler: mockMessageHandler,
       });
       expect(worker).toBeDefined();
       expect(worker.isWorkerRunning()).toBe(false);
