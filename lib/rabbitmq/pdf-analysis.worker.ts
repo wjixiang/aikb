@@ -6,13 +6,14 @@ import {
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
-import { getRabbitMQService } from './rabbitmq.service';
+import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import {
   PdfAnalyzerService,
   createPdfAnalyzerService,
 } from './pdf-analyzer.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
+import { IMessageService, MessageProtocol } from './message-service.interface';
 
 const logger = createLoggerWithPrefix('PdfAnalysisWorker');
 
@@ -21,13 +22,14 @@ const logger = createLoggerWithPrefix('PdfAnalysisWorker');
  * Processes PDF analysis requests from RabbitMQ queue
  */
 export class PdfAnalysisWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService: RabbitMQService
   private analyzerService: PdfAnalyzerService;
   private consumerTag: string | null = null;
   private isRunning = false;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.analyzerService = createPdfAnalyzerService(storage);
+    this.rabbitMQService = getRabbitMQService(protocol)
   }
 
   /**
@@ -93,7 +95,7 @@ export class PdfAnalysisWorker {
   /**
    * Handle PDF analysis request
    */
-  private async handlePdfAnalysisRequest(
+  async handlePdfAnalysisRequest(
     message: PdfAnalysisRequestMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -126,11 +128,13 @@ export class PdfAnalysisWorker {
     isRunning: boolean;
     consumerTag: string | null;
     rabbitMQConnected: boolean;
+    protocol: MessageProtocol;
   }> {
     return {
       isRunning: this.isRunning,
       consumerTag: this.consumerTag,
       rabbitMQConnected: this.rabbitMQService.isConnected(),
+      protocol: this.rabbitMQService.protocol
     };
   }
 }

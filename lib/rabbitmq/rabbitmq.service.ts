@@ -59,11 +59,14 @@ export class RabbitMQService {
   private messageService: IMessageService;
   private isInitialized = false;
   private isConnecting = false;
-  public protocol = process.env.RABBITMQ_PROTOCOL as MessageProtocol;
+  private initializationPromise: Promise<void> | null = null;
+  private initializationResolver: (() => void) | null = null;
+  public protocol: MessageProtocol;
 
-  constructor(private configPath?: string) {
+  constructor(protocol?: MessageProtocol) {
     // Create the message service instance using the factory
     // console.log(process.env.RABBITMQ_PROTOCOL)
+    this.protocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp"
     this.messageService = createMessageService(this.protocol);
   }
 
@@ -71,29 +74,78 @@ export class RabbitMQService {
    * Initialize RabbitMQ connection and setup queues/exchanges
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized || this.isConnecting) {
+    // 如果已经在初始化中，等待现有的初始化完成
+    if (this.isConnecting && this.initializationPromise) {
+      return this.initializationPromise;
+    }
+    
+    if (this.isInitialized) {
       return;
     }
 
     this.isConnecting = true;
+    
+    // 创建初始化Promise
+    this.initializationPromise = new Promise((resolve) => {
+      this.initializationResolver = resolve;
+    });
 
     try {
       logger.info('Initializing RabbitMQ service using message service interface...');
       await this.messageService.initialize();
-
+      
+      // 确保底层服务真正连接成功
+      await this.waitForConnectionReady();
+      
       this.isInitialized = true;
       this.isConnecting = false;
-
+      
+      // 解析等待的Promise
+      if (this.initializationResolver) {
+        this.initializationResolver();
+        this.initializationResolver = null;
+      }
+      
       logger.info(`RabbitMQ service initialized successfully, protocol: ${this.protocol}`);
     } catch (error) {
       this.isConnecting = false;
+      this.initializationPromise = null;
+      this.initializationResolver = null;
       logger.error('Failed to initialize RabbitMQ service:', error);
       throw error;
     }
   }
 
-
   /**
+   * 等待底层连接真正就绪
+   */
+  private async waitForConnectionReady(): Promise<void> {
+    // 等待底层连接真正就绪，有超时机制
+    const maxWaitTime = 10000; // 10秒超时
+    const checkInterval = 100; // 100ms检查间隔
+    let elapsed = 0;
+    
+    logger.info('Waiting for RabbitMQ connection to be ready...');
+    
+    while (!this.messageService.isConnected() && elapsed < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      elapsed += checkInterval;
+      
+      // 每秒记录一次进度
+      if (elapsed % 1000 === 0 && elapsed > 0) {
+        logger.debug(`Still waiting for connection... (${elapsed}ms elapsed)`);
+      }
+    }
+    
+    if (!this.messageService.isConnected()) {
+      throw new Error(`RabbitMQ service initialization timeout - connection not ready after ${maxWaitTime}ms`);
+    }
+    
+    logger.info(`RabbitMQ connection is ready (took ${elapsed}ms)`);
+  }
+
+
+/**
    * Publish a message to RabbitMQ
    */
   async publishMessage(
@@ -579,6 +631,15 @@ export class RabbitMQService {
           case 'pdf-conversion-failed':
             routingKey = 'pdf.conversion.failed';
             break;
+          case 'pdf-analysis-request':
+            routingKey = 'pdf.analysis.request';
+            break;
+          case 'pdf-analysis-completed':
+            routingKey = 'pdf.analysis.completed';
+            break;
+          case 'pdf-analysis-failed':
+            routingKey = 'pdf.analysis.failed';
+            break;
           // Add more mappings as needed
         }
         
@@ -719,43 +780,66 @@ export class RabbitMQService {
 }
 
 /**
- * Singleton instance for the RabbitMQ service
+ * Singleton instances for the RabbitMQ service, keyed by protocol
  */
-let rabbitMQServiceInstance: RabbitMQService | null = null;
+const rabbitMQServiceInstances: Map<string, RabbitMQService> = new Map();
 
 /**
- * Get or create the RabbitMQ service singleton instance
+ * Get or create the RabbitMQ service singleton instance for the specified protocol
  */
-export function getRabbitMQService(configPath?: string): RabbitMQService {
-  if (!rabbitMQServiceInstance) {
-    logger.info('Creating new RabbitMQ service instance');
-    rabbitMQServiceInstance = new RabbitMQService(configPath);
+export function getRabbitMQService(protocol?: MessageProtocol): RabbitMQService {
+  const resolvedProtocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp";
+  const protocolKey = resolvedProtocol.toString();
+  
+  if (!rabbitMQServiceInstances.has(protocolKey)) {
+    logger.info(`Creating new RabbitMQ service instance for protocol: ${resolvedProtocol}`);
+    rabbitMQServiceInstances.set(protocolKey, new RabbitMQService(protocol));
   } else {
-    logger.debug('Returning existing RabbitMQ service instance', {
-      isConnected: rabbitMQServiceInstance.isConnected(),
+    logger.debug(`Returning existing RabbitMQ service instance for protocol: ${resolvedProtocol}`, {
+      isConnected: rabbitMQServiceInstances.get(protocolKey)?.isConnected(),
     });
   }
-  logger.info(`Current protocol: ${rabbitMQServiceInstance.protocol}`)
-  return rabbitMQServiceInstance;
+  
+  const service = rabbitMQServiceInstances.get(protocolKey)!;
+  logger.info(`Current protocol: ${service.protocol}`);
+  return service;
 }
 
 /**
  * Initialize the RabbitMQ service
  */
 export async function initializeRabbitMQService(
-  configPath?: string,
+  protocol?: MessageProtocol,
 ): Promise<RabbitMQService> {
-  const service = getRabbitMQService(configPath);
+  const service = getRabbitMQService(protocol);
   await service.initialize();
   return service;
 }
 
 /**
- * Close and cleanup the RabbitMQ service
+ * Close and cleanup a specific RabbitMQ service instance
  */
-export async function closeRabbitMQService(): Promise<void> {
-  if (rabbitMQServiceInstance) {
-    await rabbitMQServiceInstance.close();
-    rabbitMQServiceInstance = null;
+export async function closeRabbitMQService(protocol?: MessageProtocol): Promise<void> {
+  const resolvedProtocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp";
+  const protocolKey = resolvedProtocol.toString();
+  
+  if (rabbitMQServiceInstances.has(protocolKey)) {
+    const service = rabbitMQServiceInstances.get(protocolKey)!;
+    await service.close();
+    rabbitMQServiceInstances.delete(protocolKey);
+    logger.info(`Closed RabbitMQ service instance for protocol: ${resolvedProtocol}`);
   }
+}
+
+/**
+ * Close and cleanup all RabbitMQ service instances
+ */
+export async function closeAllRabbitMQServices(): Promise<void> {
+  const protocols = Array.from(rabbitMQServiceInstances.keys());
+  for (const protocol of protocols) {
+    const service = rabbitMQServiceInstances.get(protocol)!;
+    await service.close();
+    rabbitMQServiceInstances.delete(protocol);
+  }
+  logger.info('Closed all RabbitMQ service instances');
 }

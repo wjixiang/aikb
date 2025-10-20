@@ -66,7 +66,7 @@ const consumerTag = await rabbitMQService.consumeMessages(
 import { createMessageService, MessageProtocol } from './message-service-factory';
 
 // 创建 RabbitMQ 消息服务
-const messageService = createMessageService(MessageProtocol.RABBITMQ);
+const messageService = createMessageService(MessageProtocol.AMQP);
 
 // 初始化
 await messageService.initialize();

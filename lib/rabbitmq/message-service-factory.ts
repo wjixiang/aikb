@@ -21,7 +21,7 @@ export class MessageServiceFactory implements IMessageServiceFactory {
     }
 
     switch (config.protocol) {
-      case MessageProtocol.RABBITMQ:
+      case MessageProtocol.AMQP:
         return new RabbitMQImplementation(config);
       
       case MessageProtocol.STOMP:

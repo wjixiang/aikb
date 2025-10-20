@@ -202,7 +202,7 @@ async function testWebSocketConnection() {
 async function main() {
   try {
     console.log('='.repeat(60));
-    console.log('🐰 RABBITMQ STOMP CONNECTION TEST');
+    console.log('🐰 AMQP STOMP CONNECTION TEST');
     console.log('='.repeat(60));
     console.log('');
 

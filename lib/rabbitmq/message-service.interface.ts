@@ -132,7 +132,7 @@ export interface IMessageServiceFactory {
  * Protocol types supported by the message service
  */
 export enum MessageProtocol {
-  RABBITMQ = 'amqp',
+  AMQP = 'amqp',
   STOMP = 'stomp',
 }
 
