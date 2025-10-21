@@ -16,7 +16,7 @@ describe(MinerUClient, () => {
     // Create a unique test directory for each test
     testDownloadDir = path.join(
       __dirname,
-      'test-downloads',
+      'test/download',
       Date.now().toString(),
     );
     testTaskId = 'test-task-123';

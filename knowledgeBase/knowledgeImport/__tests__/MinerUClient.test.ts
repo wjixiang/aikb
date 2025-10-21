@@ -67,7 +67,7 @@ describe('MinerU PDF Converter', () => {
     it('should accept custom configuration', () => {
       const converter = new MinerUPdfConvertor({
         token: TEST_TOKEN,
-        downloadDir: './test-downloads',
+        downloadDir: './test/download',
         defaultOptions: {
           is_ocr: true,
           enable_formula: false,
@@ -107,7 +107,7 @@ describe('Integration tests (requires valid token)', () => {
     client = new MinerUClient(app_config.MinerU);
     converter = new MinerUPdfConvertor({
       token,
-      downloadDir: './test-downloads',
+      downloadDir: './test/download',
     });
   });
 

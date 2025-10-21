@@ -61,7 +61,7 @@ describe('MinerUPdfConvertor Image Upload', () => {
     timeout: 30000,
     maxRetries: 3,
     retryDelay: 1000,
-    downloadDir: './test-downloads',
+    downloadDir: './test/download',
   };
 
   beforeEach(() => {

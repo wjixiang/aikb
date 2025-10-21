@@ -11,7 +11,7 @@ describe('IPdfConvertor Interface', () => {
       timeout: 30000,
       maxRetries: 3,
       retryDelay: 1000,
-      downloadDir: './test-downloads',
+      downloadDir: './test/download',
     };
 
     // Create an instance of MinerUPdfConvertor
