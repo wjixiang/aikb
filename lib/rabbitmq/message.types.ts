@@ -23,6 +23,7 @@ export enum PdfProcessingStatus {
   ANALYZING = 'analyzing',
   SPLITTING = 'splitting',
   MERGING = 'merging',
+  CONVERTING = 'converting'
 }
 
 /**
@@ -80,7 +81,6 @@ export interface PdfConversionCompletedMessage extends BaseRabbitMQMessage {
   eventType: 'PDF_CONVERSION_COMPLETED';
   itemId: string;
   status: PdfProcessingStatus.COMPLETED;
-  markdownContent: string;
   pageCount?: number;
   processingTime: number; // in milliseconds
   metadata?: {

@@ -19,7 +19,7 @@ describe('IPdfConvertor Interface', () => {
 
     // Verify that the converter implements the IPdfConvertor interface
     expect(converter).toBeDefined();
-    
+
     // Check that required methods exist
     expect(typeof converter.convertPdfToMarkdown).toBe('function');
     expect(typeof converter.convertPdfToMarkdownFromS3).toBe('function');

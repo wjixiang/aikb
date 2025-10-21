@@ -27,7 +27,16 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
-import { describe, beforeAll, afterAll, beforeEach, afterEach, test, expect, vi } from 'vitest';
+import {
+  describe,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  test,
+  expect,
+  vi,
+} from 'vitest';
 
 // Import mocks
 import {
@@ -62,11 +71,15 @@ vi.mock('../../lib/rabbitmq/pdf-analyzer.service', () => ({
 }));
 
 vi.mock('../../lib/rabbitmq/pdf-conversion.worker', () => ({
-  createPdfConversionWorker: vi.fn(() => Promise.resolve(createMockPdfConversionWorker())),
+  createPdfConversionWorker: vi.fn(() =>
+    Promise.resolve(createMockPdfConversionWorker()),
+  ),
 }));
 
 vi.mock('../../lib/rabbitmq/pdf-merger.service', () => ({
-  createPdfMergerService: vi.fn(() => Promise.resolve(createMockPdfMergerService())),
+  createPdfMergerService: vi.fn(() =>
+    Promise.resolve(createMockPdfMergerService()),
+  ),
 }));
 
 vi.mock('../../lib/s3Service/S3Service', () => ({
@@ -75,7 +88,9 @@ vi.mock('../../lib/s3Service/S3Service', () => ({
   getSignedUploadUrl: vi.fn(),
   getSignedUrlForDownload: vi.fn(),
   deleteFromS3: vi.fn(),
-  getPdfDownloadUrl: vi.fn((s3Key: string) => Promise.resolve(`https://mock-bucket.s3.amazonaws.com/${s3Key}`)),
+  getPdfDownloadUrl: vi.fn((s3Key: string) =>
+    Promise.resolve(`https://mock-bucket.s3.amazonaws.com/${s3Key}`),
+  ),
 }));
 
 describe('PDF Splitting and Merging Integration Tests', () => {
@@ -105,44 +120,48 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       return mockProcessingTracker.getProcessingStatus(itemId);
     });
 
-    library.waitForProcessingCompletion = vi.fn(async (itemId: string, timeoutMs?: number) => {
-      const startTime = Date.now();
-      const timeout = timeoutMs || 30000;
-      
-      while (Date.now() - startTime < timeout) {
-        const status = mockProcessingTracker.getProcessingStatus(itemId);
-        
-        if (status.status === PdfProcessingStatus.COMPLETED) {
-          return {
-            success: true,
-            status: status.status,
-            markdownContent: status.markdownContent
-          };
+    library.waitForProcessingCompletion = vi.fn(
+      async (itemId: string, timeoutMs?: number) => {
+        const startTime = Date.now();
+        const timeout = timeoutMs || 30000;
+
+        while (Date.now() - startTime < timeout) {
+          const status = mockProcessingTracker.getProcessingStatus(itemId);
+
+          if (status.status === PdfProcessingStatus.COMPLETED) {
+            return {
+              success: true,
+              status: status.status,
+              markdownContent: status.markdownContent,
+            };
+          }
+
+          if (status.status === PdfProcessingStatus.FAILED) {
+            return {
+              success: false,
+              status: status.status,
+              error: status.error || 'Processing failed',
+            };
+          }
+
+          // Wait before checking again
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
-        
-        if (status.status === PdfProcessingStatus.FAILED) {
-          return {
-            success: false,
-            status: status.status,
-            error: status.error || 'Processing failed',
-          };
-        }
-        
-        // Wait before checking again
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      return {
-        success: false,
-        error: `Processing timeout after ${timeout}ms`,
-      };
-    });
+
+        return {
+          success: false,
+          error: `Processing timeout after ${timeout}ms`,
+        };
+      },
+    );
 
     // Set up auto-processing for published requests
-    mockRabbitMQService.publishPdfAnalysisRequest.mockImplementation(async (message: any) => {
-      // Simulate async processing
-      setTimeout(() => autoProcess(message), 100);
-    });
+    mockRabbitMQService.publishPdfAnalysisRequest.mockImplementation(
+      async (message: any) => {
+        // Simulate async processing
+        setTimeout(() => autoProcess(message), 100);
+      },
+    );
   });
 
   afterAll(async () => {
@@ -311,7 +330,6 @@ describe('PDF Splitting and Merging Integration Tests', () => {
       clearInterval(statusMonitor);
 
       // Debug logging
-      
 
       expect(result.success).toBe(true);
       expect(result.status).toBe(PdfProcessingStatus.COMPLETED);

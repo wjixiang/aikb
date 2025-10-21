@@ -275,7 +275,6 @@ export class MockPdfConversionWorker {
       eventType: 'PDF_CONVERSION_COMPLETED',
       itemId,
       status: PdfProcessingStatus.COMPLETED,
-      markdownContent: mockMarkdownContent,
       processingTime: 2000,
     });
   }

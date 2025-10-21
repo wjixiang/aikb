@@ -18,10 +18,11 @@ import {
   RABBITMQ_ROUTING_KEYS,
   PdfMetadata,
 } from './message.types';
-import { getRabbitMQService } from './rabbitmq.service';
+import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
+import { MessageProtocol } from './message-service.interface';
 
 const logger = createLoggerWithPrefix('PdfProcessingCoordinator');
 
@@ -31,11 +32,13 @@ const logger = createLoggerWithPrefix('PdfProcessingCoordinator');
  * and triggering the next steps in the processing pipeline
  */
 export class PdfProcessingCoordinatorWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService: RabbitMQService;
   private consumerTags: Map<string, string> = new Map();
   private isRunning = false;
 
-  constructor(private storage: AbstractLibraryStorage) {}
+  constructor(private storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
+    this.rabbitMQService = getRabbitMQService(protocol)
+  }
 
   /**
    * Start the PDF processing coordinator worker
@@ -175,7 +178,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle PDF analysis completed message
    */
-  private async handleAnalysisCompleted(
+  public async handleAnalysisCompleted(
     message: PdfAnalysisCompletedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -270,7 +273,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle PDF analysis failed message
    */
-  private async handleAnalysisFailed(
+  public async handleAnalysisFailed(
     message: PdfAnalysisFailedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -301,7 +304,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle PDF conversion completed message
    */
-  private async handleConversionCompleted(
+  public async handleConversionCompleted(
     message: PdfConversionCompletedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -333,7 +336,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle PDF conversion failed message
    */
-  private async handleConversionFailed(
+  public async handleConversionFailed(
     message: PdfConversionFailedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -364,7 +367,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle PDF conversion progress message
    */
-  private async handleConversionProgress(
+  public async handleConversionProgress(
     message: PdfConversionProgressMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -395,7 +398,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle markdown storage completed message
    */
-  private async handleMarkdownStorageCompleted(
+  public async handleMarkdownStorageCompleted(
     message: MarkdownStorageCompletedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -427,7 +430,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle markdown storage failed message
    */
-  private async handleMarkdownStorageFailed(
+  public async handleMarkdownStorageFailed(
     message: MarkdownStorageFailedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -458,7 +461,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle markdown part storage completed message
    */
-  private async handleMarkdownPartStorageCompleted(
+  public async handleMarkdownPartStorageCompleted(
     message: MarkdownPartStorageCompletedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -488,7 +491,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle markdown part storage failed message
    */
-  private async handleMarkdownPartStorageFailed(
+  public async handleMarkdownPartStorageFailed(
     message: MarkdownPartStorageFailedMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -519,7 +522,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle markdown part storage progress message
    */
-  private async handleMarkdownPartStorageProgress(
+  public async handleMarkdownPartStorageProgress(
     message: MarkdownPartStorageProgressMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -550,7 +553,7 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Handle dead letter queue message
    */
-  private async handleDeadLetterMessage(
+  public async handleDeadLetterMessage(
     message: DeadLetterQueueMessage,
     originalMessage: any,
   ): Promise<void> {
@@ -844,11 +847,13 @@ export class PdfProcessingCoordinatorWorker {
     isRunning: boolean;
     consumerTags: Map<string, string>;
     rabbitMQConnected: boolean;
+    protocol: MessageProtocol;
   }> {
     return {
       isRunning: this.isRunning,
       consumerTags: new Map(this.consumerTags),
       rabbitMQConnected: this.rabbitMQService.isConnected(),
+      protocol: this.rabbitMQService.protocol
     };
   }
 }

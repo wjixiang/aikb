@@ -169,12 +169,14 @@ export class RabbitMQImplementation implements IMessageService {
     options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
     if (!this.isConnected() || !this.channel) {
-      logger.error('RabbitMQ implementation not connected when attempting to publish', {
-        connectionStatus: this.connectionStatus,
-        hasChannel: !!this.channel,
-        routingKey,
-      });
-      throw new Error('RabbitMQ implementation not connected');
+      // logger.error('RabbitMQ implementation not connected when attempting to publish', {
+      //   connectionStatus: this.connectionStatus,
+      //   hasChannel: !!this.channel,
+      //   routingKey,
+      // });
+      // throw new Error('RabbitMQ implementation not connected');
+
+      await this.initialize()
     }
 
     try {

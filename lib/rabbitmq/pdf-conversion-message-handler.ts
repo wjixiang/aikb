@@ -10,6 +10,7 @@ import {
   MarkdownPartStorageRequestMessage,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
+  PdfProcessingStatus,
 } from './message.types';
 import { IMessageService } from './message-service.interface';
 import { IPdfConversionService } from './pdf-conversion.service.interface';
@@ -19,6 +20,7 @@ import {
 } from './pdf-conversion-message-handler.interface';
 import { v4 as uuidv4 } from 'uuid';
 import createLoggerWithPrefix from '../logger';
+import { RabbitMQService } from './rabbitmq.service';
 
 const logger = createLoggerWithPrefix('PdfConversionMessageHandler');
 
@@ -27,14 +29,14 @@ const logger = createLoggerWithPrefix('PdfConversionMessageHandler');
  * Handles message processing and communication for PDF conversion
  */
 export class PdfConversionMessageHandler implements IPdfConversionMessageHandler {
-  private messageService: IMessageService;
+  private messageService: RabbitMQService;
   private pdfConversionService: IPdfConversionService;
   private consumerTag: string | null = null;
   private partConsumerTag: string | null = null;
   private _isRunning = false;
 
   constructor(
-    messageService: IMessageService,
+    messageService: RabbitMQService,
     pdfConversionService: IPdfConversionService,
   ) {
     this.messageService = messageService;
@@ -161,12 +163,16 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
 
     try {
       // Update status to processing
-      await this.publishProgressMessage(
-        message.itemId,
-        'processing',
-        0,
-        'Starting PDF conversion',
-      );
+      await this.messageService.publishPdfConversionProgress(
+        {
+          eventType: 'PDF_CONVERSION_PROGRESS',
+          itemId: message.itemId,
+          status: PdfProcessingStatus.CONVERTING,
+          progress: 0,
+          messageId: uuidv4(),
+          timestamp: Date.now()
+        }
+      )
 
       // Convert PDF using the conversion service
       const conversionResult = await this.pdfConversionService.convertPdfToMarkdown(
@@ -183,35 +189,39 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
       );
 
       if (!conversionResult.success) {
+        await this.messageService.publishPdfConversionProgress(
+          {
+            eventType: 'PDF_CONVERSION_PROGRESS',
+            itemId: message.itemId,
+            status: PdfProcessingStatus.FAILED,
+            progress: 0,
+            messageId: uuidv4(),
+            timestamp: Date.now()
+          }
+        )
         throw new Error(conversionResult.error || 'PDF conversion failed');
       }
 
       // Send markdown storage request
-      await this.publishProgressMessage(
-        message.itemId,
-        'processing',
-        60,
-        'Sending markdown storage request',
-      );
 
-      await this.sendMarkdownStorageRequest(
-        message.itemId,
-        conversionResult.markdownContent,
-        conversionResult.processingTime,
-      );
-
-      // Update progress
-      await this.publishProgressMessage(
-        message.itemId,
-        'processing',
-        80,
-        'PDF conversion completed, waiting for markdown storage',
-      );
+      await this.messageService.publishMarkdownStorageRequest(
+        {
+          eventType: 'MARKDOWN_STORAGE_REQUEST',
+          itemId: message.itemId,
+          markdownContent: conversionResult.markdownContent,
+          messageId: uuidv4(),
+          timestamp: Date.now()
+        }
+      )
 
       // Publish conversion completion message
       await this.publishConversionCompletionMessage(
         message.itemId,
-        conversionResult.markdownContent,
+        conversionResult.processingTime,
+      );
+
+      await this.publishConversionCompletionMessage(
+        message.itemId,
         conversionResult.processingTime,
       );
 
@@ -256,10 +266,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
           retryCount: retryCount + 1,
         };
 
-        await this.messageService.publishMessage(
-          'pdf.conversion.request',
-          retryRequest,
-        );
+        await this.messageService.publishPdfConversionRequest(retryRequest);
 
         return {
           success: false,
@@ -374,10 +381,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
           retryCount: retryCount + 1,
         };
 
-        await this.messageService.publishMessage(
-          'pdf.part.conversion.request',
-          retryRequest,
-        );
+        await this.messageService.publishPdfPartConversionRequest(retryRequest);
 
         return {
           success: false,
@@ -425,10 +429,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         startedAt: Date.now(),
       };
 
-      await this.messageService.publishMessage(
-        'pdf.conversion.progress',
-        progressMessage,
-      );
+      await this.messageService.publishPdfConversionProgress(progressMessage);
     } catch (error) {
       logger.error(
         `Failed to publish progress message for item ${itemId}:`,
@@ -442,7 +443,6 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
    */
   async publishConversionCompletionMessage(
     itemId: string,
-    markdownContent: string,
     processingTime: number,
   ): Promise<void> {
     try {
@@ -452,14 +452,10 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         eventType: 'PDF_CONVERSION_COMPLETED',
         itemId,
         status: 'completed' as any,
-        markdownContent,
         processingTime,
       };
 
-      await this.messageService.publishMessage(
-        'pdf.conversion.completed',
-        completionMessage,
-      );
+      await this.messageService.publishPdfConversionCompleted(completionMessage);
     } catch (error) {
       logger.error(
         `Failed to publish conversion completion message for item ${itemId}:`,
@@ -484,7 +480,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         timestamp: Date.now(),
         eventType: 'PDF_CONVERSION_FAILED',
         itemId,
-        status: 'failed' as any,
+        status: PdfProcessingStatus.FAILED,
         error,
         retryCount,
         maxRetries,
@@ -492,10 +488,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         processingTime,
       };
 
-      await this.messageService.publishMessage(
-        'pdf.conversion.failed',
-        failureMessage,
-      );
+      await this.messageService.publishPdfConversionFailed(failureMessage);
     } catch (error) {
       logger.error(
         `Failed to publish failure message for item ${itemId}:`,
@@ -527,10 +520,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         processingTime,
       };
 
-      await this.messageService.publishMessage(
-        'pdf.part.conversion.completed',
-        completionMessage,
-      );
+      await this.messageService.publishPdfPartConversionCompleted(completionMessage);
     } catch (error) {
       logger.error(
         `Failed to publish part completion message for item ${itemId}, part ${partIndex}:`,
@@ -566,10 +556,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         processingTime,
       };
 
-      await this.messageService.publishMessage(
-        'pdf.part.conversion.failed',
-        failureMessage,
-      );
+      await this.messageService.publishPdfPartConversionFailed(failureMessage);
     } catch (publishError) {
       logger.error(
         `Failed to publish part failure message for item ${itemId}, part ${partIndex}:`,
@@ -601,10 +588,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         maxRetries: 3,
       };
 
-      await this.messageService.publishMessage(
-        'markdown.storage.request',
-        storageRequest,
-      );
+      await this.messageService.publishMarkdownStorageRequest(storageRequest);
       logger.info(`Markdown storage request sent for item: ${itemId}`);
     } catch (error) {
       logger.error(
@@ -644,10 +628,7 @@ export class PdfConversionMessageHandler implements IPdfConversionMessageHandler
         },
       };
 
-      await this.messageService.publishMessage(
-        'markdown.part.storage.request',
-        storageRequest,
-      );
+      await this.messageService.publishMarkdownPartStorageRequest(storageRequest);
       logger.info(
         `Markdown part storage request sent for item: ${itemId}, part: ${partIndex + 1}/${totalParts}`,
       );

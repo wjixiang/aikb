@@ -6,7 +6,8 @@ import {
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
-import { getRabbitMQService } from './rabbitmq.service';
+import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
+import { MessageProtocol } from './message-service.interface';
 import {
   AbstractLibraryStorage,
   BookMetadata,
@@ -23,13 +24,14 @@ const logger = createLoggerWithPrefix('MarkdownStorageWorker');
  * Processes markdown storage requests from RabbitMQ queue
  */
 export class MarkdownStorageWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService: RabbitMQService;
   private consumerTag: string | null = null;
   private isRunning = false;
   private storage: AbstractLibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
+    this.rabbitMQService = getRabbitMQService(protocol);
   }
 
   /**

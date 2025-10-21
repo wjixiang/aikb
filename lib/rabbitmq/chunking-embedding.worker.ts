@@ -11,6 +11,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
+import { MessageProtocol } from './message-service.interface';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingStrategyType } from '../chunking/chunkingStrategy';
@@ -25,15 +26,16 @@ const logger = createLoggerWithPrefix('ChunkingEmbeddingWorker');
  * Processes chunking and embedding requests from RabbitMQ queue
  */
 export class ChunkingEmbeddingWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService;
   private consumerTag: string | null = null;
   private isRunning = false;
   private storage: AbstractLibraryStorage;
   private library: Library;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
     this.library = new Library(storage);
+    this.rabbitMQService = getRabbitMQService(protocol);
   }
 
   /**

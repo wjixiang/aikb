@@ -640,6 +640,30 @@ export class RabbitMQService {
           case 'pdf-analysis-failed':
             routingKey = 'pdf.analysis.failed';
             break;
+          case 'markdown-storage-request':
+            routingKey = 'markdown.storage.request';
+            break;
+          case 'markdown-storage-completed':
+            routingKey = 'markdown.storage.completed';
+            break;
+          case 'markdown-storage-failed':
+            routingKey = 'markdown.storage.failed';
+            break;
+          case 'markdown-part-storage-request':
+            routingKey = 'markdown.part.storage.request';
+            break;
+          case 'markdown-part-storage-progress':
+            routingKey = 'markdown.part.storage.progress';
+            break;
+          case 'markdown-part-storage-completed':
+            routingKey = 'markdown.part.storage.completed';
+            break;
+          case 'markdown-part-storage-failed':
+            routingKey = 'markdown.part.storage.failed';
+            break;
+          case 'pdf-conversion-dlq':
+            routingKey = 'pdf.conversion.dlq';
+            break;
           // Add more mappings as needed
         }
         
@@ -793,15 +817,16 @@ export function getRabbitMQService(protocol?: MessageProtocol): RabbitMQService 
   
   if (!rabbitMQServiceInstances.has(protocolKey)) {
     logger.info(`Creating new RabbitMQ service instance for protocol: ${resolvedProtocol}`);
-    rabbitMQServiceInstances.set(protocolKey, new RabbitMQService(protocol));
+    const newInstance = new RabbitMQService(protocol);
+    rabbitMQServiceInstances.set(protocolKey, newInstance);
   } else {
+    const existingInstance = rabbitMQServiceInstances.get(protocolKey)!;
     logger.debug(`Returning existing RabbitMQ service instance for protocol: ${resolvedProtocol}`, {
-      isConnected: rabbitMQServiceInstances.get(protocolKey)?.isConnected(),
+      isConnected: existingInstance.isConnected(),
     });
   }
   
   const service = rabbitMQServiceInstances.get(protocolKey)!;
-  logger.info(`Current protocol: ${service.protocol}`);
   return service;
 }
 

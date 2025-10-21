@@ -4,13 +4,16 @@ config({ path: '.env' });
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
-import { getMockRabbitMQService, resetMockRabbitMQService } from '../../../lib/rabbitmq/__tests__/MockRabbitMQService';
-import { 
+import {
+  getMockRabbitMQService,
+  resetMockRabbitMQService,
+} from '../../../lib/rabbitmq/__tests__/MockRabbitMQService';
+import {
   createPdfAnalysisWorker,
   createPdfProcessingCoordinatorWorker,
   createPdfConversionWorker,
   startMarkdownStorageWorker,
-  simulateCompletePdfProcessingWorkflow
+  simulateCompletePdfProcessingWorkflow,
 } from '../../../lib/rabbitmq/__tests__/MockWorkers';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import * as fs from 'fs';
@@ -19,8 +22,12 @@ import { v4 as uuidv4 } from 'uuid';
 // Mock the S3 service to avoid real S3 calls
 vi.mock('../../lib/s3Service/S3Service', () => {
   return {
-    uploadToS3: vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf'),
-    getPdfDownloadUrl: vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf'),
+    uploadToS3: vi
+      .fn()
+      .mockResolvedValue('https://mock-s3-url.com/test-file.pdf'),
+    getPdfDownloadUrl: vi
+      .fn()
+      .mockResolvedValue('https://mock-s3-url.com/test-file.pdf'),
     deleteFromS3: vi.fn().mockResolvedValue(true),
   };
 });
@@ -39,7 +46,7 @@ describe('PDF Processing Workflow (Mocked)', () => {
   beforeAll(async () => {
     // Reset any existing mock service
     resetMockRabbitMQService();
-    
+
     // Get the mock RabbitMQ service
     mockRabbitMQService = getMockRabbitMQService();
     await mockRabbitMQService.initialize();
@@ -158,13 +165,13 @@ describe('PDF Processing Workflow (Mocked)', () => {
 
     // Get all published messages from the mock RabbitMQ service
     const publishedMessages = mockRabbitMQService.getPublishedMessages();
-    
+
     console.log(`📨 Total published messages: ${publishedMessages.length}`);
-    
+
     // Verify that key messages were published
-    const messageTypes = publishedMessages.map(msg => msg.message.eventType);
+    const messageTypes = publishedMessages.map((msg) => msg.message.eventType);
     console.log('📨 Message types:', messageTypes);
-    
+
     // Should have analysis, conversion, and storage messages
     expect(messageTypes).toContain('PDF_ANALYSIS_COMPLETED');
     expect(messageTypes).toContain('PDF_CONVERSION_REQUEST');

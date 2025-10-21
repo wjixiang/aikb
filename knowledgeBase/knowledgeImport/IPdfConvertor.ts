@@ -1,5 +1,8 @@
 // Import ConversionResult and ImageUploadResult types for use in the interface
-import type { ConversionResult, ImageUploadResult } from './MinerU/MinerUPdfConvertor';
+import type {
+  ConversionResult,
+  ImageUploadResult,
+} from './MinerU/MinerUPdfConvertor';
 
 /**
  * Interface for PDF converters
@@ -14,7 +17,7 @@ export interface IPdfConvertor {
    */
   convertPdfToMarkdown(
     pdfPath: string,
-    options?: any
+    options?: any,
   ): Promise<ConversionResult>;
 
   /**
@@ -25,7 +28,7 @@ export interface IPdfConvertor {
    */
   convertPdfToMarkdownFromS3(
     s3Url: string,
-    options?: any
+    options?: any,
   ): Promise<ConversionResult>;
 
   /**
@@ -34,10 +37,7 @@ export interface IPdfConvertor {
    * @param options Optional processing parameters
    * @returns Promise<ConversionResult> The conversion result
    */
-  processLocalFile?(
-    filePath: string,
-    options?: any
-  ): Promise<ConversionResult>;
+  processLocalFile?(filePath: string, options?: any): Promise<ConversionResult>;
 
   /**
    * Process multiple local files
@@ -47,7 +47,7 @@ export interface IPdfConvertor {
    */
   processMultipleFiles?(
     filePaths: string[],
-    options?: any
+    options?: any,
   ): Promise<ConversionResult[]>;
 
   /**
@@ -56,10 +56,7 @@ export interface IPdfConvertor {
    * @param options Optional processing parameters
    * @returns Promise<ConversionResult[]> Array of conversion results
    */
-  processUrls?(
-    urls: string[],
-    options?: any
-  ): Promise<ConversionResult[]>;
+  processUrls?(urls: string[], options?: any): Promise<ConversionResult[]>;
 
   /**
    * Cancel a running task

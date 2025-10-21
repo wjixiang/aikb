@@ -12,7 +12,10 @@ import {
   beforeAll,
   afterAll,
 } from 'vitest';
-import { EmbeddingProvider, OpenAIModel } from '../../../lib/embedding/embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+} from '../../../lib/embedding/embedding';
 
 // Mock the S3Service to avoid real S3 operations
 vi.mock('/lib/s3Service/S3Service', () => ({
@@ -40,15 +43,15 @@ vi.mock('/lib/embedding/embedding', () => ({
   EmbeddingProvider: {
     OPENAI: 'openai',
     ALIBABA: 'alibaba',
-    ONNX: 'onnx'
+    ONNX: 'onnx',
   },
   OpenAIModel: {
-    TEXT_EMBEDDING_ADA_002: 'text-embedding-ada-002'
+    TEXT_EMBEDDING_ADA_002: 'text-embedding-ada-002',
   },
   AlibabaModel: {
-    TEXT_EMBEDDING_V3: 'text-embedding-v3'
+    TEXT_EMBEDDING_V3: 'text-embedding-v3',
   },
-  OnnxModel: {}
+  OnnxModel: {},
 }));
 
 describe('LibraryItem.selfDelete', () => {
@@ -121,8 +124,8 @@ describe('LibraryItem.selfDelete', () => {
           provider: EmbeddingProvider.OPENAI,
         },
         processingTimestamp: new Date(),
-        processingDuration: 1000
-      }
+        processingDuration: 1000,
+      },
     });
   });
 

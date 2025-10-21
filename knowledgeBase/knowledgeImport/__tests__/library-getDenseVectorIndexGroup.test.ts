@@ -2,19 +2,22 @@ import { LibraryItem, BookChunk } from '../library';
 import { AbstractLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
-import { EmbeddingProvider, OpenAIModel, AlibabaModel } from '../../../lib/embedding/embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+  AlibabaModel,
+} from '../../../lib/embedding/embedding';
 
 // Mock storage implementation for testing
 class MockStorage implements AbstractLibraryStorage {
   private chunks: BookChunk[] = [];
   private metadata: Record<string, BookMetadata> = {};
 
-  constructor() {
-  }
+  constructor() {}
 
   // Mock implementation for required abstract methods
   async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
-    return this.chunks.filter(chunk => chunk.itemId === itemId);
+    return this.chunks.filter((chunk) => chunk.itemId === itemId);
   }
 
   async getMetadata(id: string): Promise<BookMetadata | null> {
@@ -31,37 +34,104 @@ class MockStorage implements AbstractLibraryStorage {
   }
 
   // Other required methods with basic implementations
-  async uploadPdf(pdfData: Buffer, fileName: string): Promise<any> { throw new Error('Not implemented'); }
-  async uploadPdfFromPath(pdfPath: string): Promise<any> { throw new Error('Not implemented'); }
-  async getPdfDownloadUrl(s3Key: string): Promise<string> { throw new Error('Not implemented'); }
-  async getPdf(s3Key: string): Promise<Buffer> { throw new Error('Not implemented'); }
-  async saveMetadata(metadata: BookMetadata): Promise<BookMetadata & { id: string }> {
+  async uploadPdf(pdfData: Buffer, fileName: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+  async uploadPdfFromPath(pdfPath: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+  async getPdfDownloadUrl(s3Key: string): Promise<string> {
+    throw new Error('Not implemented');
+  }
+  async getPdf(s3Key: string): Promise<Buffer> {
+    throw new Error('Not implemented');
+  }
+  async saveMetadata(
+    metadata: BookMetadata,
+  ): Promise<BookMetadata & { id: string }> {
     this.metadata[metadata.id!] = { ...metadata, id: metadata.id! };
     return { ...metadata, id: metadata.id! };
   }
-  async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> { throw new Error('Not implemented'); }
-  async updateMetadata(metadata: BookMetadata): Promise<void> { throw new Error('Not implemented'); }
-  async searchMetadata(filter: any): Promise<BookMetadata[]> { throw new Error('Not implemented'); }
-  async saveCollection(collection: any): Promise<any> { throw new Error('Not implemented'); }
-  async getCollections(): Promise<any[]> { throw new Error('Not implemented'); }
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> { throw new Error('Not implemented'); }
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> { throw new Error('Not implemented'); }
-  async saveCitation(citation: any): Promise<any> { throw new Error('Not implemented'); }
-  async getCitations(itemId: string): Promise<any[]> { throw new Error('Not implemented'); }
-  async saveMarkdown(itemId: string, markdownContent: string): Promise<void> { throw new Error('Not implemented'); }
-  async getMarkdown(itemId: string): Promise<string | null> { throw new Error('Not implemented'); }
-  async deleteMarkdown(itemId: string): Promise<boolean> { throw new Error('Not implemented'); }
-  async deleteMetadata(id: string): Promise<boolean> { throw new Error('Not implemented'); }
-  async deleteCollection(id: string): Promise<boolean> { throw new Error('Not implemented'); }
-  async deleteCitations(itemId: string): Promise<boolean> { throw new Error('Not implemented'); }
-  async saveChunk(chunk: BookChunk): Promise<BookChunk> { throw new Error('Not implemented'); }
-  async getChunk(chunkId: string): Promise<BookChunk | null> { throw new Error('Not implemented'); }
-  async updateChunk(chunk: BookChunk): Promise<void> { throw new Error('Not implemented'); }
-  async deleteChunk(chunkId: string): Promise<boolean> { throw new Error('Not implemented'); }
-  async deleteChunksByItemId(itemId: string): Promise<number> { throw new Error('Not implemented'); }
-  async searchChunks(filter: any): Promise<BookChunk[]> { throw new Error('Not implemented'); }
-  async findSimilarChunks(queryVector: number[], limit?: number, threshold?: number, itemIds?: string[]): Promise<Array<BookChunk & { similarity: number }>> { throw new Error('Not implemented'); }
-  async batchSaveChunks(chunks: BookChunk[]): Promise<void> { throw new Error('Not implemented'); }
+  async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
+    throw new Error('Not implemented');
+  }
+  async updateMetadata(metadata: BookMetadata): Promise<void> {
+    throw new Error('Not implemented');
+  }
+  async searchMetadata(filter: any): Promise<BookMetadata[]> {
+    throw new Error('Not implemented');
+  }
+  async saveCollection(collection: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+  async getCollections(): Promise<any[]> {
+    throw new Error('Not implemented');
+  }
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
+    throw new Error('Not implemented');
+  }
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
+    throw new Error('Not implemented');
+  }
+  async saveCitation(citation: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+  async getCitations(itemId: string): Promise<any[]> {
+    throw new Error('Not implemented');
+  }
+  async saveMarkdown(itemId: string, markdownContent: string): Promise<void> {
+    throw new Error('Not implemented');
+  }
+  async getMarkdown(itemId: string): Promise<string | null> {
+    throw new Error('Not implemented');
+  }
+  async deleteMarkdown(itemId: string): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
+  async deleteMetadata(id: string): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
+  async deleteCollection(id: string): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
+  async deleteCitations(itemId: string): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
+  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+    throw new Error('Not implemented');
+  }
+  async getChunk(chunkId: string): Promise<BookChunk | null> {
+    throw new Error('Not implemented');
+  }
+  async updateChunk(chunk: BookChunk): Promise<void> {
+    throw new Error('Not implemented');
+  }
+  async deleteChunk(chunkId: string): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
+  async deleteChunksByItemId(itemId: string): Promise<number> {
+    throw new Error('Not implemented');
+  }
+  async searchChunks(filter: any): Promise<BookChunk[]> {
+    throw new Error('Not implemented');
+  }
+  async findSimilarChunks(
+    queryVector: number[],
+    limit?: number,
+    threshold?: number,
+    itemIds?: string[],
+  ): Promise<Array<BookChunk & { similarity: number }>> {
+    throw new Error('Not implemented');
+  }
+  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+    throw new Error('Not implemented');
+  }
 }
 
 describe('LibraryItem.getDenseVectorIndexGroupId', () => {
@@ -72,7 +142,7 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
   beforeEach(() => {
     mockStorage = new MockStorage();
     itemId = new ObjectId().toString();
-    
+
     // Create test metadata
     const metadata: BookMetadata = {
       id: itemId,

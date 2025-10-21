@@ -14,7 +14,8 @@ import {
   PdfConversionMessage,
   RabbitMQMessageOptions,
 } from './message.types';
-import { getValidatedStompConfig } from './stomp.config';
+import { getValidatedStompConfig, getStompDestination } from './stomp.config';
+import { getRoutingKeyForQueue } from './queue-routing-mappings';
 import createLoggerWithPrefix from '../logger';
 const logger = createLoggerWithPrefix('StompImplementation');
 
@@ -143,8 +144,13 @@ export class StompImplementation implements IMessageService {
 
       // Unsubscribe from all subscriptions
       for (const [subscriptionId, subscription] of this.subscriptions) {
-        if (subscription && this.client) {
-          this.client.unsubscribe(subscription.id);
+        if (subscription && this.client && this.client.connected) {
+          try {
+            this.client.unsubscribe(subscription.id);
+          } catch (error) {
+            // Ignore unsubscribe errors if connection is already closed
+            logger.debug('Error unsubscribing:', error);
+          }
         }
       }
       this.subscriptions.clear();
@@ -213,11 +219,7 @@ export class StompImplementation implements IMessageService {
     options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
     if (!this.isConnected()) {
-      logger.error('STOMP implementation not connected when attempting to publish', {
-        connectionStatus: this.connectionStatus,
-        destination,
-      });
-      throw new Error('STOMP implementation not connected');
+      await this.initialize()
     }
 
     try {
@@ -293,19 +295,34 @@ export class StompImplementation implements IMessageService {
         headers['priority'] = options.priority.toString();
       }
 
+      // Convert queue name to STOMP destination if needed
+      let stompDestination = destination;
+      if (destination.startsWith('pdf-') || destination.startsWith('markdown-') || destination.startsWith('chunking-')) {
+        // This looks like a queue name, convert it to an exchange destination
+        try {
+          const routingKey = getRoutingKeyForQueue(destination);
+          stompDestination = getStompDestination(routingKey);
+          logger.info(`Converted queue ${destination} to STOMP destination ${stompDestination}`);
+        } catch (error) {
+          // If conversion fails, try direct queue access
+          stompDestination = `/queue/${destination}`;
+          logger.info(`Using direct queue access for ${destination}: ${stompDestination}`);
+        }
+      }
+
       const subscription = this.client!.subscribe(
-        destination,
+        stompDestination,
         (message) => {
-          logger.info(`Received message from STOMP destination: ${destination}`);
+          logger.info(`Received message from STOMP destination: ${stompDestination} (original: ${destination})`);
           
           if (!message.body) {
-            logger.warn(`Received empty message from STOMP destination: ${destination}`);
+            logger.warn(`Received empty message from STOMP destination: ${stompDestination}`);
             return;
           }
 
           try {
             const messageContent = JSON.parse(message.body) as PdfConversionMessage;
-            logger.info(`Processed STOMP message from destination ${destination}:`, {
+            logger.info(`Processed STOMP message from destination ${stompDestination}:`, {
               eventType: messageContent.eventType,
               itemId: (messageContent as any).itemId,
             });
@@ -319,7 +336,7 @@ export class StompImplementation implements IMessageService {
             }
           } catch (error) {
             logger.error(
-              `Error processing STOMP message from destination ${destination}:`,
+              `Error processing STOMP message from destination ${stompDestination}:`,
               error,
             );
             logger.error(
@@ -378,7 +395,7 @@ export class StompImplementation implements IMessageService {
    */
   async getQueueInfo(destination: string): Promise<QueueInfo | null> {
     if (!this.isConnected()) {
-      throw new Error('STOMP implementation not connected');
+      await this.initialize()
     }
 
     try {

@@ -10,6 +10,7 @@ import {
   PdfMergingRequestMessage,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
+import { MessageProtocol } from './message-service.interface';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
 import { IPdfPartTracker } from './pdf-part-tracker';
@@ -24,7 +25,7 @@ const logger = createLoggerWithPrefix('MarkdownPartStorageWorker');
  * Processes markdown part storage requests from RabbitMQ queue
  */
 export class MarkdownPartStorageWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService;
   private consumerTag: string | null = null;
   private isRunning = false;
   private markdownPartCache: MarkdownPartCache;
@@ -33,9 +34,11 @@ export class MarkdownPartStorageWorker {
   constructor(
     markdownPartCache?: MarkdownPartCache,
     partTracker?: IPdfPartTracker,
+    protocol?: MessageProtocol,
   ) {
     this.markdownPartCache = markdownPartCache || getMarkdownPartCache();
     this.partTracker = partTracker || getPdfPartTracker();
+    this.rabbitMQService = getRabbitMQService(protocol);
   }
 
   /**

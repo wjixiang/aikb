@@ -80,27 +80,27 @@ describe(Library, async () => {
     console.log(`S3 Key: ${book.metadata.s3Key}`);
     console.log(`Download URL: ${downloadUrl}`);
 
-        const s3Link = await book.getPdfDownloadUrl();
+    const s3Link = await book.getPdfDownloadUrl();
     console.log(`s3Link: ${s3Link}`);
 
     const testMinerUPdfConvertor = new MinerUPdfConvertor({
-    token: process.env.MINERU_TOKEN as string,
-    downloadDir: 'test/download',
-    defaultOptions: {
-      is_ocr: true,
-      enable_formula: true,
-      enable_table: true,
-      language: 'en',
-      extra_formats: ['docx', 'html'],
-    },
-    timeout: 120000, // 2 minutes timeout
-    maxRetries: 3,
-    retryDelay: 5000,
-  });
-  const storage = new S3ElasticSearchLibraryStorage(
-    'http://elasticsearch:9200',
-    1024,
-  );
+      token: process.env.MINERU_TOKEN as string,
+      downloadDir: 'test/download',
+      defaultOptions: {
+        is_ocr: true,
+        enable_formula: true,
+        enable_table: true,
+        language: 'en',
+        extra_formats: ['docx', 'html'],
+      },
+      timeout: 120000, // 2 minutes timeout
+      maxRetries: 3,
+      retryDelay: 5000,
+    });
+    const storage = new S3ElasticSearchLibraryStorage(
+      'http://elasticsearch:9200',
+      1024,
+    );
 
     const library = new Library(storage);
     await library.sendPdfAnalysisRequest(
@@ -170,18 +170,20 @@ describe(Library, async () => {
     );
   });
 
-  it.skip('re-embed', async()=>{
-    delay(1000)
-    await book.chunkEmbed(ChunkingStrategyType.H1)
-  }, 30000) // Increase timeout to 30 seconds
+  it.skip('re-embed', async () => {
+    delay(1000);
+    await book.chunkEmbed(ChunkingStrategyType.H1);
+  }, 30000); // Increase timeout to 30 seconds
 
-  it.skip('semantic search', async()=>{
-    const semanticSearchResult = await book.semanticSearchWithDenseVector("期蛋白依赖性激酶抑制因子表达不足和突变：多种肿瘤细胞或组织 CKI 表达不足或突变")
-    console.log(semanticSearchResult)
-  })
+  it.skip('semantic search', async () => {
+    const semanticSearchResult = await book.semanticSearchWithDenseVector(
+      '期蛋白依赖性激酶抑制因子表达不足和突变：多种肿瘤细胞或组织 CKI 表达不足或突变',
+    );
+    console.log(semanticSearchResult);
+  });
 
-  it('get all chunkEmbedGroupids', async()=>{
-    const ids = await book.getDenseVectorIndexGroupId()
-    console.log(ids)
-  })
+  it('get all chunkEmbedGroupids', async () => {
+    const ids = await book.getDenseVectorIndexGroupId();
+    console.log(ids);
+  });
 });

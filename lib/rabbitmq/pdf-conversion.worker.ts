@@ -6,8 +6,8 @@ import { IPdfPartTracker } from './pdf-part-tracker';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getPdfPartTracker } from './pdf-part-tracker-factory';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
-import { getRabbitMQService } from './rabbitmq.service';
-import { IMessageService } from './message-service.interface';
+import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
+import { MessageProtocol } from './message-service.interface';
 import {
   IPdfConversionService,
 } from './pdf-conversion.service.interface';
@@ -25,25 +25,26 @@ const logger = createLoggerWithPrefix('PdfConversionWorker');
  * Processes PDF conversion requests from RabbitMQ queue using separated service modules
  */
 export class PdfConversionWorker {
-  private messageService: IMessageService;
+  private messageService: RabbitMQService;
   private pdfConversionService: IPdfConversionService;
   private messageHandler: IPdfConversionMessageHandler;
   private isInitialized = false;
 
   constructor(
-    messageService?: IMessageService,
+    messageService?: RabbitMQService,
     pdfConversionService?: IPdfConversionService,
     messageHandler?: IPdfConversionMessageHandler,
+    protocol?: MessageProtocol,
   ) {
     // Initialize message service
     // If no message service is provided, get the RabbitMQ service and extract its internal message service
     if (messageService) {
       this.messageService = messageService;
     } else {
-      const rabbitMQService = getRabbitMQService();
+      const rabbitMQService = getRabbitMQService(protocol);
       // Access the internal message service from RabbitMQService
       // This is a workaround since RabbitMQService doesn't implement IMessageService directly
-      this.messageService = (rabbitMQService as any).messageService || rabbitMQService;
+      this.messageService = rabbitMQService
     }
 
     // Initialize PDF conversion service with dependencies

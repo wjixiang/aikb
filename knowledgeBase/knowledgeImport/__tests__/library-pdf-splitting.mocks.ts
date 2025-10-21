@@ -8,7 +8,7 @@ export const createMockRabbitMQService = () => {
   const mockInitialize = vi.fn();
   const mockClose = vi.fn();
   const mockPurgeQueue = vi.fn();
-  
+
   return {
     initialize: mockInitialize,
     close: mockClose,
@@ -79,20 +79,24 @@ export const createMockS3Service = () => {
 // Mock processing status tracker
 export const createMockProcessingTracker = () => {
   const statusMap = new Map<string, any>();
-  
+
   return {
     setProcessingStatus: (itemId: string, status: any) => {
       statusMap.set(itemId, status);
     },
     getProcessingStatus: (itemId: string) => {
-      return statusMap.get(itemId) || {
-        status: PdfProcessingStatus.PENDING,
-        progress: 0,
-        message: 'Processing started',
-      };
+      return (
+        statusMap.get(itemId) || {
+          status: PdfProcessingStatus.PENDING,
+          progress: 0,
+          message: 'Processing started',
+        }
+      );
     },
     updateProcessingStatus: (itemId: string, updates: any) => {
-      const current = statusMap.get(itemId) || { status: PdfProcessingStatus.PENDING };
+      const current = statusMap.get(itemId) || {
+        status: PdfProcessingStatus.PENDING,
+      };
       statusMap.set(itemId, { ...current, ...updates });
     },
     completeProcessing: (itemId: string, markdownContent?: string) => {
@@ -120,10 +124,14 @@ export const createMockProcessingTracker = () => {
 };
 
 // Mock PDF conversion results
-export const createMockPdfConversionResult = (success: boolean = true, markdown?: string) => {
+export const createMockPdfConversionResult = (
+  success: boolean = true,
+  markdown?: string,
+) => {
   return {
     success,
-    data: markdown || '# Mock PDF Content\n\nThis is mock PDF content for testing.',
+    data:
+      markdown || '# Mock PDF Content\n\nThis is mock PDF content for testing.',
     taskId: uuidv4(),
     downloadedFiles: [],
   };
@@ -147,7 +155,7 @@ export const simulateAsyncProcessing = async (
   itemId: string,
   delay: number = 1000,
   success: boolean = true,
-  markdown?: string
+  markdown?: string,
 ) => {
   // Set initial status
   tracker.setProcessingStatus(itemId, {
@@ -158,7 +166,7 @@ export const simulateAsyncProcessing = async (
 
   // Simulate progress updates
   for (let i = 0; i <= 100; i += 20) {
-    await new Promise(resolve => setTimeout(resolve, delay / 5));
+    await new Promise((resolve) => setTimeout(resolve, delay / 5));
     tracker.updateProcessingStatus(itemId, {
       progress: i,
       message: `Processing... ${i}%`,
@@ -177,24 +185,28 @@ export const simulateAsyncProcessing = async (
 export const setupAutoProcessing = (mockTracker: any) => {
   const processRequest = async (message: any) => {
     const { itemId, s3Key, fileName } = message;
-    
+
     // Check if this is an invalid PDF
-    const isInvalidPdf = fileName.includes('invalid') || s3Key.includes('invalid');
+    const isInvalidPdf =
+      fileName.includes('invalid') || s3Key.includes('invalid');
     if (isInvalidPdf) {
       await simulateAsyncProcessing(
         mockTracker,
         itemId,
         500,
         false, // Fail for invalid PDFs
-        undefined
+        undefined,
       );
       return;
     }
-    
+
     // Simulate different processing based on file size
-    const isLargePdf = s3Key.includes('large') || fileName.includes('large') || fileName.includes('workflow');
+    const isLargePdf =
+      s3Key.includes('large') ||
+      fileName.includes('large') ||
+      fileName.includes('workflow');
     const delay = isLargePdf ? 1500 : 800;
-    
+
     // Simulate processing
     await simulateAsyncProcessing(
       mockTracker,
@@ -203,7 +215,7 @@ export const setupAutoProcessing = (mockTracker: any) => {
       true, // Succeed for valid PDFs
       isLargePdf
         ? '# Large PDF Content\n\nThis is mock content for a large PDF file that would normally be split.'
-        : '# Small PDF Content\n\nThis is mock content for a small PDF file.'
+        : '# Small PDF Content\n\nThis is mock content for a small PDF file.',
     );
   };
 

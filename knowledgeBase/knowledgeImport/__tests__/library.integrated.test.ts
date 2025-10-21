@@ -2,7 +2,10 @@ import { config } from 'dotenv';
 // Load environment variables from .env file
 config({ path: '.env' });
 
-import Library, { LibraryItem, S3ElasticSearchLibraryStorage } from '../library';
+import Library, {
+  LibraryItem,
+  S3ElasticSearchLibraryStorage,
+} from '../library';
 import { S3MongoLibraryStorage } from '../library';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -44,14 +47,19 @@ export async function UploadTestPdf() {
   const metadata = {
     title: 'Evaluating the Patient With a Pulmonary Nodule',
     authors: [{ firstName: 'Test', lastName: 'Author' }],
-    abstract: 'This is a test document about Evaluating the Patient With a Pulmonary Nodule',
+    abstract:
+      'This is a test document about Evaluating the Patient With a Pulmonary Nodule',
     publicationYear: 2023,
     tags: ['test', 'research'],
     language: 'English',
   };
 
   // Store the PDF from buffer
-  const book = await library.storePdf(pdfBuffer, 'Evaluating the Patient With a Pulmonary Nodule', metadata);
+  const book = await library.storePdf(
+    pdfBuffer,
+    'Evaluating the Patient With a Pulmonary Nodule',
+    metadata,
+  );
   return { book, library };
 }
 
@@ -62,7 +70,7 @@ describe(Library, async () => {
   beforeAll(async () => {
     try {
       const testb = await UploadTestPdf();
-      book = testb.book
+      book = testb.book;
       console.log('✅ Test PDF uploaded');
     } catch (error) {
       console.error('❌ Failed to initialize test environment:', error);
@@ -110,7 +118,7 @@ describe(Library, async () => {
     console.log(`Download URL: ${downloadUrl}`);
   }, 30000); // Increase timeout to 30 seconds for S3 operations
 
-   it('re-process', async () => {
+  it('re-process', async () => {
     const testMinerUPdfConvertor = new MinerUPdfConvertor({
       token: process.env.MINERU_TOKEN as string,
       downloadDir: 'test/download',

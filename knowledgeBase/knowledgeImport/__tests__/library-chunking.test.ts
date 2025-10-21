@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata, BookChunk, ChunkSearchFilter } from '../library';
-import { embeddingService, EmbeddingProvider } from '../../../lib/embedding/embedding';
+import {
+  embeddingService,
+  EmbeddingProvider,
+} from '../../../lib/embedding/embedding';
 import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
 
 // Set NODE_ENV to test for proper test environment detection
@@ -17,15 +20,15 @@ vi.mock('../../../lib/embedding/embedding', () => ({
   EmbeddingProvider: {
     OPENAI: 'openai',
     ALIBABA: 'alibaba',
-    ONNX: 'onnx'
+    ONNX: 'onnx',
   },
   OpenAIModel: {
-    TEXT_EMBEDDING_ADA_002: 'text-embedding-ada-002'
+    TEXT_EMBEDDING_ADA_002: 'text-embedding-ada-002',
   },
   AlibabaModel: {
-    TEXT_EMBEDDING_V3: 'text-embedding-v3'
+    TEXT_EMBEDDING_V3: 'text-embedding-v3',
   },
-  OnnxModel: {}
+  OnnxModel: {},
 }));
 
 describe('Library Chunking and Embedding', () => {

@@ -360,16 +360,24 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
   }
 
   // Multi-version support methods
-  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]> {
+  async getChunksByItemAndGroup(
+    itemId: string,
+    groupId: string,
+  ): Promise<BookChunk[]> {
     const chunks = Array.from(this.chunkStore.values());
     return chunks
-      .filter((chunk) => chunk.itemId === itemId && chunk.denseVectorIndexGroupId === groupId)
+      .filter(
+        (chunk) =>
+          chunk.itemId === itemId && chunk.denseVectorIndexGroupId === groupId,
+      )
       .sort((a, b) => a.index - b.index);
   }
 
   async deleteChunksByGroup(groupId: string): Promise<number> {
     const chunks = Array.from(this.chunkStore.values());
-    const chunksToDelete = chunks.filter((chunk) => chunk.denseVectorIndexGroupId === groupId);
+    const chunksToDelete = chunks.filter(
+      (chunk) => chunk.denseVectorIndexGroupId === groupId,
+    );
 
     for (const chunk of chunksToDelete) {
       this.chunkStore.delete(chunk.id);

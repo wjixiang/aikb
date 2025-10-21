@@ -500,7 +500,6 @@ export class PdfMergerService {
         eventType: 'PDF_CONVERSION_COMPLETED',
         itemId,
         status: PdfProcessingStatus.COMPLETED,
-        markdownContent,
         processingTime,
       };
 

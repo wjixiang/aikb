@@ -2,10 +2,10 @@
 
 /**
  * Multi-Strategy Indexing Example
- * 
+ *
  * This example demonstrates the multi-strategy and multi-version indexing
  * functionality of the knowledge base system. It shows how to:
- * 
+ *
  * 1. Use different chunking strategies
  * 2. Create and manage embedding groups
  * 3. Perform advanced search with multiple strategies
@@ -18,12 +18,16 @@ import {
   autoSelectStrategy,
   canStrategyHandle,
   getStrategyDefaultConfig,
-  validateStrategyConfig
+  validateStrategyConfig,
 } from '../../lib/chunking/chunkingTool';
 import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
 import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
-import { BookChunk, ChunkSearchFilter, ChunkingEmbeddingGroup } from '../knowledgeImport/library';
+import {
+  BookChunk,
+  ChunkSearchFilter,
+  ChunkingEmbeddingGroup,
+} from '../knowledgeImport/library';
 import { MultiVersionChunkingManager } from '../../lib/chunking/multiVersionChunkingManager';
 import { EmbeddingProvider, OpenAIModel } from '../../lib/embedding/embedding';
 
@@ -68,24 +72,30 @@ Machine learning continues to evolve and find new applications in various fields
  */
 async function demonstrateChunkingStrategies() {
   console.log('\n=== Example 1: Available Chunking Strategies ===');
-  
+
   // Get all available strategies
   const strategies = getAvailableStrategies();
   console.log('Available chunking strategies:');
-  strategies.forEach(strategy => {
-    console.log(`- ${strategy.name} (v${strategy.version}): ${strategy.description}`);
+  strategies.forEach((strategy) => {
+    console.log(
+      `- ${strategy.name} (v${strategy.version}): ${strategy.description}`,
+    );
   });
-  
+
   // Try different strategies on sample text
   console.log('\nTrying different strategies on sample text:');
-  
+
   for (const strategy of strategies) {
     if (canStrategyHandle(strategy.name, sampleText)) {
       try {
         const chunks = chunkTextAdvanced(sampleText, strategy.name);
-        console.log(`\n${strategy.name} strategy: ${chunks.length} chunks generated`);
+        console.log(
+          `\n${strategy.name} strategy: ${chunks.length} chunks generated`,
+        );
         chunks.slice(0, 2).forEach((chunk, index) => {
-          console.log(`  Chunk ${index + 1}: ${chunk.content.substring(0, 100)}...`);
+          console.log(
+            `  Chunk ${index + 1}: ${chunk.content.substring(0, 100)}...`,
+          );
         });
       } catch (error) {
         console.log(`Error with ${strategy.name}: ${error.message}`);
@@ -101,13 +111,13 @@ async function demonstrateChunkingStrategies() {
  */
 async function demonstrateAutoStrategySelection() {
   console.log('\n=== Example 2: Automatic Strategy Selection ===');
-  
+
   const selectedStrategy = autoSelectStrategy(sampleText);
   console.log(`Auto-selected strategy: ${selectedStrategy}`);
-  
+
   const chunks = chunkTextAdvanced(sampleText, selectedStrategy);
   console.log(`Generated ${chunks.length} chunks using auto-selected strategy`);
-  
+
   chunks.forEach((chunk, index) => {
     console.log(`\nChunk ${index + 1}:`);
     console.log(`  Title: ${chunk.title || 'No title'}`);
@@ -120,24 +130,24 @@ async function demonstrateAutoStrategySelection() {
  */
 async function demonstrateStrategyConfiguration() {
   console.log('\n=== Example 3: Strategy Configuration ===');
-  
+
   const strategyName = 'h1';
-  
+
   // Get default configuration
   const defaultConfig = getStrategyDefaultConfig(strategyName);
   console.log('Default configuration for H1 strategy:', defaultConfig);
-  
+
   // Create custom configuration
   const customConfig = {
     maxChunkSize: 800,
     minChunkSize: 100,
     overlap: 50,
   };
-  
+
   // Validate configuration
   const validation = validateStrategyConfig(strategyName, customConfig);
   console.log('Configuration validation:', validation);
-  
+
   if (validation.valid) {
     const chunks = chunkTextAdvanced(sampleText, strategyName, customConfig);
     console.log(`Generated ${chunks.length} chunks with custom configuration`);
@@ -149,9 +159,9 @@ async function demonstrateStrategyConfiguration() {
  */
 async function demonstrateGroupManager() {
   console.log('\n=== Example 4: Default Group Manager ===');
-  
+
   const groupManager = DefaultGroupManager.getInstance();
-  
+
   // Get default group for H1 strategy
   const h1Group = groupManager.getDefaultGroup('h1');
   console.log('Default H1 group:');
@@ -160,7 +170,7 @@ async function demonstrateGroupManager() {
     console.log(`  Strategy: ${h1Group.chunkingStrategy}`);
     console.log(`  Provider: ${h1Group.embeddingProvider}`);
   }
-  
+
   // Get default group for paragraph strategy
   const paragraphGroup = groupManager.getDefaultGroup('paragraph');
   console.log('\nDefault paragraph group:');
@@ -169,10 +179,12 @@ async function demonstrateGroupManager() {
     console.log(`  Strategy: ${paragraphGroup.chunkingStrategy}`);
     console.log(`  Provider: ${paragraphGroup.embeddingProvider}`);
   }
-  
+
   // Note: In a real implementation, you would use the multiVersionChunkingManager
   // to create custom groups. The DefaultGroupManager only provides default groups.
-  console.log('\nNote: Custom groups would be created using MultiVersionChunkingManager');
+  console.log(
+    '\nNote: Custom groups would be created using MultiVersionChunkingManager',
+  );
 }
 
 /**
@@ -180,18 +192,20 @@ async function demonstrateGroupManager() {
  */
 async function demonstrateAdvancedSearch() {
   console.log('\n=== Example 5: Advanced Search with Multiple Strategies ===');
-  
+
   // Create sample chunks
   const chunks: BookChunk[] = [
     {
       id: 'chunk-1',
       itemId: 'item-1',
       denseVectorIndexGroupId: 'default-h1',
-      
+
       index: 0,
       title: 'Introduction to Machine Learning',
       content: 'Machine learning is a subset of artificial intelligence...',
-      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
+      embedding: Array(1536)
+        .fill(0)
+        .map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'h1',
         chunkingConfig: {
@@ -221,11 +235,13 @@ async function demonstrateAdvancedSearch() {
       id: 'chunk-2',
       itemId: 'item-1',
       denseVectorIndexGroupId: 'default-paragraph',
-      
+
       index: 1,
       title: 'Machine Learning Definition',
       content: 'Machine learning algorithms build a mathematical model...',
-      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
+      embedding: Array(1536)
+        .fill(0)
+        .map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'paragraph',
         chunkingConfig: {
@@ -255,11 +271,13 @@ async function demonstrateAdvancedSearch() {
       id: 'chunk-3',
       itemId: 'item-2',
       denseVectorIndexGroupId: 'default-h1',
-      
+
       index: 0,
       title: 'Types of Machine Learning',
       content: 'There are three main types of machine learning...',
-      embedding: Array(1536).fill(0).map(() => Math.random()), // Mock vector
+      embedding: Array(1536)
+        .fill(0)
+        .map(() => Math.random()), // Mock vector
       strategyMetadata: {
         chunkingStrategy: 'h1',
         chunkingConfig: {
@@ -286,26 +304,30 @@ async function demonstrateAdvancedSearch() {
       updatedAt: new Date(),
     },
   ];
-  
+
   // Create search filter
   const filter: ChunkSearchFilter = {
     query: 'machine learning',
     groups: ['default-h1', 'default-paragraph'],
     limit: 10,
   };
-  
+
   // Apply filters
   const filteredChunks = ChunkSearchUtils.filterChunks(chunks, filter);
-  console.log(`Filtered ${chunks.length} chunks to ${filteredChunks.length} results`);
-  
+  console.log(
+    `Filtered ${chunks.length} chunks to ${filteredChunks.length} results`,
+  );
+
   // Sort by relevance
   const sortedChunks = ChunkSearchUtils.sortChunks(filteredChunks, 'relevance');
   console.log('\nSorted results by relevance:');
   sortedChunks.forEach((chunk, index) => {
-    console.log(`${index + 1}. ${chunk.title} (${chunk.denseVectorIndexGroupId})`);
+    console.log(
+      `${index + 1}. ${chunk.title} (${chunk.denseVectorIndexGroupId})`,
+    );
     console.log(`   ${chunk.content.substring(0, 80)}...`);
   });
-  
+
   // Apply group-based filtering with priority
   const priorities = {
     'default-h1': 1,
@@ -314,9 +336,11 @@ async function demonstrateAdvancedSearch() {
   const priorityFilteredChunks = ChunkSearchUtils.filterByGroupsWithPriority(
     chunks,
     ['default-h1', 'default-paragraph'],
-    priorities
+    priorities,
   );
-  console.log(`\nAfter priority filtering: ${priorityFilteredChunks.length} chunks`);
+  console.log(
+    `\nAfter priority filtering: ${priorityFilteredChunks.length} chunks`,
+  );
 }
 
 /**
@@ -324,34 +348,38 @@ async function demonstrateAdvancedSearch() {
  */
 async function demonstrateErrorHandling() {
   console.log('\n=== Example 6: Error Handling and Fallbacks ===');
-  
+
   const errorHandler = ChunkingErrorHandler;
-  
+
   // Test invalid strategy
   try {
     chunkTextAdvanced(sampleText, 'invalid-strategy');
   } catch (error) {
-    errorHandler.handleChunkingError(error, {
-      operation: 'chunking',
-      strategy: 'invalid-strategy',
-    }, () => {
-      // Fallback function
-      console.log('Applying fallback strategy: H1');
-      return chunkTextAdvanced(sampleText, 'h1');
-    });
+    errorHandler.handleChunkingError(
+      error,
+      {
+        operation: 'chunking',
+        strategy: 'invalid-strategy',
+      },
+      () => {
+        // Fallback function
+        console.log('Applying fallback strategy: H1');
+        return chunkTextAdvanced(sampleText, 'h1');
+      },
+    );
   }
-  
+
   // Test configuration validation
   const invalidConfig = {
     maxChunkSize: -100, // Invalid negative size
     minChunkSize: 200,
     overlap: 50,
   };
-  
+
   const validation = validateStrategyConfig('h1', invalidConfig);
   if (!validation.valid) {
     console.log('\nConfiguration errors:', validation.errors);
-    
+
     // Apply automatic correction
     // Note: In a real implementation, you would have a config correction method
     const correctedConfig = {
@@ -361,12 +389,12 @@ async function demonstrateErrorHandling() {
     };
     console.log('Corrected configuration:', correctedConfig);
   }
-  
+
   // Test retry mechanism
   console.log('\nTesting retry mechanism:');
   let attempt = 0;
   const maxAttempts = 3;
-  
+
   while (attempt < maxAttempts) {
     attempt++;
     try {
@@ -374,14 +402,14 @@ async function demonstrateErrorHandling() {
       if (attempt < 3) {
         throw new Error(`Simulated failure (attempt ${attempt})`);
       }
-      
+
       console.log(`Operation succeeded on attempt ${attempt}`);
       break;
     } catch (error) {
       const shouldRetry = attempt < maxAttempts;
       console.log(`Attempt ${attempt} failed: ${error.message}`);
       console.log(`Should retry: ${shouldRetry}`);
-      
+
       if (!shouldRetry) {
         console.log('Max retries reached, giving up');
         break;
@@ -395,7 +423,7 @@ async function demonstrateErrorHandling() {
  */
 async function demonstrateMultiVersionChunking() {
   console.log('\n=== Example 7: Multi-Version Chunking Manager ===');
-  
+
   // Note: MultiVersionChunkingManager is an interface
   // In a real implementation, you would use a concrete implementation
   console.log('Multi-Version Chunking Manager would be used to:');
@@ -403,14 +431,14 @@ async function demonstrateMultiVersionChunking() {
   console.log('- Process chunks with different strategies');
   console.log('- Track session status and progress');
   console.log('- Complete sessions and store results');
-  
+
   // Simulate what would happen in a real implementation
   const sessionId = 'session-' + Date.now();
   console.log(`\nSimulated chunking session: ${sessionId}`);
-  
+
   const chunks = chunkTextAdvanced(sampleText, 'h1');
   console.log(`Would process ${chunks.length} chunks with H1 strategy`);
-  
+
   console.log('Session status would track:');
   console.log(`- Total chunks: ${chunks.length}`);
   console.log(`- Processed chunks: ${chunks.length}`);
@@ -423,7 +451,7 @@ async function demonstrateMultiVersionChunking() {
 async function main() {
   console.log('Multi-Strategy Indexing Example');
   console.log('================================');
-  
+
   try {
     await demonstrateChunkingStrategies();
     await demonstrateAutoStrategySelection();
@@ -432,7 +460,7 @@ async function main() {
     await demonstrateAdvancedSearch();
     await demonstrateErrorHandling();
     await demonstrateMultiVersionChunking();
-    
+
     console.log('\n=== All Examples Completed Successfully ===');
     console.log('\nKey Features Demonstrated:');
     console.log('✓ Multiple chunking strategies');
@@ -442,7 +470,6 @@ async function main() {
     console.log('✓ Advanced search with filtering');
     console.log('✓ Error handling and fallbacks');
     console.log('✓ Multi-version chunking support');
-    
   } catch (error) {
     console.error('Example execution failed:', error);
     process.exit(1);

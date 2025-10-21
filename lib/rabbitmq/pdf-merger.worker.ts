@@ -8,6 +8,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
+import { MessageProtocol } from './message-service.interface';
 import {
   PdfMergerService,
   createPdfMergerService,
@@ -22,16 +23,17 @@ const logger = createLoggerWithPrefix('PdfMergerWorker');
  * Processes PDF merging requests from RabbitMQ queue
  */
 export class PdfMergerWorker {
-  private rabbitMQService = getRabbitMQService();
+  private rabbitMQService;
   private mergerService: PdfMergerService;
   private consumerTag: string | null = null;
   private isRunning = false;
   private storage: AbstractLibraryStorage;
   private workerId: string;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
     this.mergerService = new PdfMergerService(storage);
+    this.rabbitMQService = getRabbitMQService(protocol);
     // Generate unique worker ID to avoid consumer tag conflicts
     this.workerId = `pdf-merger-worker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }

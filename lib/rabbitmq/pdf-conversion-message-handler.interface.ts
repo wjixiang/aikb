@@ -74,7 +74,6 @@ export interface IPdfConversionMessageHandler {
    */
   publishConversionCompletionMessage(
     itemId: string,
-    markdownContent: string,
     processingTime: number,
   ): Promise<void>;
 

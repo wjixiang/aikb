@@ -9,7 +9,7 @@ import { createMinerUConvertorFromEnv } from '../PdfConvertor';
 
 async function exampleUsingMinerUConvertor() {
   console.log('=== Example 1: Using MinerUPdfConvertor directly ===');
-  
+
   // Create a converter with explicit configuration
   const converter = new MinerUPdfConvertor({
     token: 'your-token-here',
@@ -32,7 +32,7 @@ async function exampleUsingMinerUConvertor() {
 
 async function exampleUsingEnvironmentConfig() {
   console.log('\n=== Example 2: Using environment configuration ===');
-  
+
   // Create a converter using environment variables
   // Make sure to set MINERU_TOKEN in your environment
   const converter = createMinerUConvertorFromEnv({
@@ -51,10 +51,10 @@ async function exampleUsingEnvironmentConfig() {
 
 async function exampleWithInterfaceType() {
   console.log('\n=== Example 3: Using IPdfConvertor interface type ===');
-  
+
   // Create a converter and type it as IPdfConvertor
   const converter: IPdfConvertor = createMinerUConvertorFromEnv();
-  
+
   // This demonstrates that any implementation of IPdfConvertor can be used
   // interchangeably, making the code more flexible and testable
   await demonstrateConverterUsage(converter);
@@ -66,17 +66,23 @@ async function demonstrateConverterUsage(converter: IPdfConvertor) {
     console.log('Converting local PDF file...');
     const localResult = await converter.convertPdfToMarkdown(
       '/path/to/local/file.pdf',
-      { is_ocr: true } // Optional parameters
+      { is_ocr: true }, // Optional parameters
     );
-    console.log('Local conversion result:', localResult.success ? 'Success' : 'Failed');
+    console.log(
+      'Local conversion result:',
+      localResult.success ? 'Success' : 'Failed',
+    );
 
     // Example 2: Convert a PDF from S3 URL
     console.log('Converting PDF from S3 URL...');
     const s3Result = await converter.convertPdfToMarkdownFromS3(
       'https://your-s3-bucket.s3.amazonaws.com/file.pdf',
-      { enable_formula: true } // Optional parameters
+      { enable_formula: true }, // Optional parameters
     );
-    console.log('S3 conversion result:', s3Result.success ? 'Success' : 'Failed');
+    console.log(
+      'S3 conversion result:',
+      s3Result.success ? 'Success' : 'Failed',
+    );
 
     // Example 3: Process multiple files
     console.log('Processing multiple files...');
@@ -86,8 +92,10 @@ async function demonstrateConverterUsage(converter: IPdfConvertor) {
       '/path/to/file3.pdf',
     ]);
     if (multipleResults) {
-      const successCount = multipleResults.filter(r => r.success).length;
-      console.log(`Multiple processing: ${successCount}/${multipleResults.length} files processed successfully`);
+      const successCount = multipleResults.filter((r) => r.success).length;
+      console.log(
+        `Multiple processing: ${successCount}/${multipleResults.length} files processed successfully`,
+      );
     }
 
     // Example 4: Process URLs in batch
@@ -97,13 +105,18 @@ async function demonstrateConverterUsage(converter: IPdfConvertor) {
       'https://example.com/file2.pdf',
     ]);
     if (urlResults) {
-      const successCount = urlResults.filter(r => r.success).length;
-      console.log(`URL processing: ${successCount}/${urlResults.length} URLs processed successfully`);
+      const successCount = urlResults.filter((r) => r.success).length;
+      console.log(
+        `URL processing: ${successCount}/${urlResults.length} URLs processed successfully`,
+      );
     }
 
     // Example 5: Get download directory
     if (converter.getDownloadDirectory) {
-      console.log('Current download directory:', converter.getDownloadDirectory());
+      console.log(
+        'Current download directory:',
+        converter.getDownloadDirectory(),
+      );
     }
 
     // Example 6: Set download directory
@@ -123,7 +136,6 @@ async function demonstrateConverterUsage(converter: IPdfConvertor) {
       await converter.cleanupDownloadedFiles(24); // Clean files older than 24 hours
       console.log('Download cleanup completed');
     }
-
   } catch (error) {
     console.error('Error during conversion:', error);
   }
@@ -140,7 +152,7 @@ class CustomPdfConvertor implements IPdfConvertor {
       taskId: 'custom-task-id',
     };
   }
-  
+
   async convertPdfToMarkdownFromS3(s3Url: string, options?: any): Promise<any> {
     // Custom implementation
     console.log(`Custom converter processing S3 URL: ${s3Url}`);
@@ -150,40 +162,43 @@ class CustomPdfConvertor implements IPdfConvertor {
       taskId: 'custom-s3-task-id',
     };
   }
-  
+
   // Implement other required methods as needed
   async processLocalFile(filePath: string, options?: any): Promise<any> {
     throw new Error('Not implemented');
   }
-  
-  async processMultipleFiles(filePaths: string[], options?: any): Promise<any[]> {
+
+  async processMultipleFiles(
+    filePaths: string[],
+    options?: any,
+  ): Promise<any[]> {
     throw new Error('Not implemented');
   }
-  
+
   async processUrls(urls: string[], options?: any): Promise<any[]> {
     throw new Error('Not implemented');
   }
-  
+
   async cancelTask(taskId: string): Promise<boolean> {
     throw new Error('Not implemented');
   }
-  
+
   async getTaskStatus(taskId: string): Promise<any> {
     throw new Error('Not implemented');
   }
-  
+
   async validateToken(): Promise<boolean> {
     throw new Error('Not implemented');
   }
-  
+
   async cleanupDownloadedFiles(olderThanHours?: number): Promise<void> {
     throw new Error('Not implemented');
   }
-  
+
   getDownloadDirectory(): string {
     throw new Error('Not implemented');
   }
-  
+
   setDownloadDirectory(directory: string): void {
     throw new Error('Not implemented');
   }
@@ -191,7 +206,7 @@ class CustomPdfConvertor implements IPdfConvertor {
 
 async function exampleWithCustomConverter() {
   console.log('\n=== Example 4: Using custom PDF converter implementation ===');
-  
+
   const customConverter = new CustomPdfConvertor();
   await demonstrateConverterUsage(customConverter);
 }
@@ -200,15 +215,17 @@ async function exampleWithCustomConverter() {
 export async function runAllExamples() {
   // Note: These examples are for demonstration purposes only
   // They won't actually run without proper configuration and valid files
-  
+
   console.log('IPdfConvertor Interface Examples');
   console.log('================================');
-  
+
   // Uncomment the following lines to run the examples:
   // await exampleUsingMinerUConvertor();
   // await exampleUsingEnvironmentConfig();
   // await exampleWithInterfaceType();
   // await exampleWithCustomConverter();
-  
-  console.log('\nExamples completed. Uncomment the function calls above to run them.');
+
+  console.log(
+    '\nExamples completed. Uncomment the function calls above to run them.',
+  );
 }

@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LibraryItem, BookMetadata, BookChunk } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
-import { EmbeddingProvider, OpenAIModel } from '../../../lib/embedding/embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+} from '../../../lib/embedding/embedding';
 
 describe('LibraryItem.hasCompletedChunkEmbed', () => {
   let mockStorage: MockLibraryStorage;
@@ -56,8 +59,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
       },
       {
         id: 'chunk-2',
@@ -81,8 +84,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
       },
     ];
 
@@ -119,8 +122,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
       },
       {
         id: 'chunk-2',
@@ -131,7 +134,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         denseVectorIndexGroupId: 'test-group',
-        
+
         embedding: [],
         strategyMetadata: {
           chunkingStrategy: 'test-strategy',
@@ -145,8 +148,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
         // No embedding
       },
     ];
@@ -184,8 +187,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
       },
       {
         id: 'chunk-2',
@@ -209,8 +212,8 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
             provider: EmbeddingProvider.OPENAI,
           },
           processingTimestamp: new Date(),
-          processingDuration: 1000
-        }
+          processingDuration: 1000,
+        },
       },
     ];
 

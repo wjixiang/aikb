@@ -1,10 +1,14 @@
-import { BookChunk, ChunkSearchFilter, ChunkingEmbeddingGroup } from '../knowledgeImport/library';
+import {
+  BookChunk,
+  ChunkSearchFilter,
+  ChunkingEmbeddingGroup,
+} from '../knowledgeImport/library';
 import { Client } from '@elastic/elasticsearch';
 import { EmbeddingProvider } from '../../lib/embedding/embedding';
 
 /**
  * Multi-Version Vector Storage Interface
- * 
+ *
  * This interface defines the contract for storing and retrieving vector embeddings
  * with support for multiple versions and strategies. It enables semantic search
  * across different chunking and embedding approaches while maintaining backward
@@ -23,7 +27,10 @@ export interface IMultiVersionVectorStorage {
    * @param groupId The ID of the group
    * @returns Array of chunks
    */
-  getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]>;
+  getChunksByItemAndGroup(
+    itemId: string,
+    groupId: string,
+  ): Promise<BookChunk[]>;
 
   /**
    * Get chunks for a specific item across all groups
@@ -49,7 +56,7 @@ export interface IMultiVersionVectorStorage {
   findSimilarChunks(
     queryVector: number[],
     filter: ChunkSearchFilter,
-    provider?: EmbeddingProvider
+    provider?: EmbeddingProvider,
   ): Promise<Array<BookChunk & { similarity: number }>>;
 
   /**
@@ -86,7 +93,6 @@ export interface IMultiVersionVectorStorage {
    */
   getChunksByGroups(groupIds: string[]): Promise<BookChunk[]>;
 
-
   /**
    * Get chunks by chunking strategy
    * @param strategy The chunking strategy
@@ -107,7 +113,10 @@ export interface IMultiVersionVectorStorage {
    * @param updates The updates to apply
    * @returns Number of updated chunks
    */
-  updateChunksByGroup(groupId: string, updates: Partial<BookChunk>): Promise<number>;
+  updateChunksByGroup(
+    groupId: string,
+    updates: Partial<BookChunk>,
+  ): Promise<number>;
 
   /**
    * Migrate legacy chunks to the new multi-version format
@@ -135,7 +144,7 @@ export interface IMultiVersionVectorStorage {
 export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   private client: Client;
   private readonly indexName = 'multi_version_chunks';
-  
+
   // Caching for frequently accessed data
   private groupCache: Map<string, string[]> = new Map();
   private groupStatsCache: Map<string, any> = new Map();
@@ -157,7 +166,11 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Set cache entry with expiry
    */
-  private setCacheWithExpiry<T>(cache: Map<string, T>, key: string, value: T): void {
+  private setCacheWithExpiry<T>(
+    cache: Map<string, T>,
+    key: string,
+    value: T,
+  ): void {
     cache.set(key, value);
     this.cacheExpiry.set(key, Date.now() + this.cacheTtlMs);
   }
@@ -212,14 +225,16 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     });
 
     // Invalidate cache for affected items and groups
-    const affectedItems = new Set(chunks.map(chunk => chunk.itemId));
-    const affectedGroups = new Set(chunks.map(chunk => chunk.denseVectorIndexGroupId));
-    
+    const affectedItems = new Set(chunks.map((chunk) => chunk.itemId));
+    const affectedGroups = new Set(
+      chunks.map((chunk) => chunk.denseVectorIndexGroupId),
+    );
+
     for (const itemId of affectedItems) {
       this.groupCache.delete(`groups:${itemId}`);
       this.cacheExpiry.delete(`groups:${itemId}`);
     }
-    
+
     for (const groupId of affectedGroups) {
       this.groupStatsCache.delete(`stats:${groupId}`);
       this.cacheExpiry.delete(`stats:${groupId}`);
@@ -229,7 +244,10 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks for a specific item and group
    */
-  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]> {
+  async getChunksByItemAndGroup(
+    itemId: string,
+    groupId: string,
+  ): Promise<BookChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -293,25 +311,30 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
 
     // Group filtering
     if (filter.denseVectorIndexGroupId) {
-      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
+      must.push({
+        term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId },
+      });
     }
 
     if (filter.groups && filter.groups.length > 0) {
       must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
-
     // Strategy filtering
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.chunkingStrategy': filter.chunkingStrategies },
+        terms: {
+          'strategyMetadata.chunkingStrategy': filter.chunkingStrategies,
+        },
       });
     }
 
     // Provider filtering
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.embeddingProvider': filter.embeddingProviders },
+        terms: {
+          'strategyMetadata.embeddingProvider': filter.embeddingProviders,
+        },
       });
     }
 
@@ -365,7 +388,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   async findSimilarChunks(
     queryVector: number[],
     filter: ChunkSearchFilter,
-    provider?: EmbeddingProvider
+    provider?: EmbeddingProvider,
   ): Promise<Array<BookChunk & { similarity: number }>> {
     // Use the single embedding field
     const embeddingField = 'embedding';
@@ -384,25 +407,30 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     }
 
     if (filter.denseVectorIndexGroupId) {
-      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
+      must.push({
+        term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId },
+      });
     }
 
     if (filter.groups && filter.groups.length > 0) {
       must.push({ terms: { denseVectorIndexGroupId: filter.groups } });
     }
 
-
     // Strategy filtering
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.chunkingStrategy': filter.chunkingStrategies },
+        terms: {
+          'strategyMetadata.chunkingStrategy': filter.chunkingStrategies,
+        },
       });
     }
 
     // Provider filtering
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.embeddingProvider': filter.embeddingProviders },
+        terms: {
+          'strategyMetadata.embeddingProvider': filter.embeddingProviders,
+        },
       });
     }
 
@@ -423,7 +451,8 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       script_score: {
         query: { match_all: {} },
         script: {
-          source: 'cosineSimilarity(params.query_vector, doc[params.embedding_field]) + 1.0',
+          source:
+            'cosineSimilarity(params.query_vector, doc[params.embedding_field]) + 1.0',
           params: {
             query_vector: queryVector,
             embedding_field: embeddingField,
@@ -440,7 +469,8 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
           script_score: {
             query: { term: { denseVectorIndexGroupId: group } },
             script: {
-              source: 'cosineSimilarity(params.query_vector, doc[params.embedding_field]) + 1.0',
+              source:
+                'cosineSimilarity(params.query_vector, doc[params.embedding_field]) + 1.0',
               params: {
                 query_vector: queryVector,
                 embedding_field: embeddingField,
@@ -463,7 +493,9 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
           minimum_should_match: 1,
         },
       },
-      min_score: filter.similarityThreshold ? filter.similarityThreshold + 1 : 0.5,
+      min_score: filter.similarityThreshold
+        ? filter.similarityThreshold + 1
+        : 0.5,
       size: filter.limit || 10,
       sort: [
         { _score: { order: 'desc' } },
@@ -489,11 +521,17 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       rankFusion?: boolean;
       weights?: Record<string, number>; // Group-specific weights
       maxResultsPerGroup?: number;
-    }
-  ): Promise<Array<BookChunk & { similarity: number; rank: number; group: string }>> {
+    },
+  ): Promise<
+    Array<BookChunk & { similarity: number; rank: number; group: string }>
+  > {
     if (!options?.rankFusion || !filter.groups || filter.groups.length <= 1) {
       // Use regular similarity search if rank fusion is not requested
-      const results = await this.findSimilarChunks(queryVector, filter, options?.provider);
+      const results = await this.findSimilarChunks(
+        queryVector,
+        filter,
+        options?.provider,
+      );
       return results.map((chunk, index) => ({
         ...chunk,
         rank: index + 1,
@@ -501,9 +539,11 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       }));
     }
 
-    const maxResultsPerGroup = options?.maxResultsPerGroup || Math.ceil((filter.limit || 10) / filter.groups!.length);
+    const maxResultsPerGroup =
+      options?.maxResultsPerGroup ||
+      Math.ceil((filter.limit || 10) / filter.groups!.length);
     const weights = options?.weights || {};
-    
+
     // Get results from each group
     const groupResults: Array<{
       group: string;
@@ -511,9 +551,17 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     }> = [];
 
     for (const group of filter.groups!) {
-      const groupFilter = { ...filter, groups: [group], limit: maxResultsPerGroup };
-      const chunks = await this.findSimilarChunks(queryVector, groupFilter, options?.provider);
-      
+      const groupFilter = {
+        ...filter,
+        groups: [group],
+        limit: maxResultsPerGroup,
+      };
+      const chunks = await this.findSimilarChunks(
+        queryVector,
+        groupFilter,
+        options?.provider,
+      );
+
       groupResults.push({
         group,
         chunks,
@@ -532,7 +580,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       group: string;
       chunks: Array<BookChunk & { similarity: number }>;
     }>,
-    weights: Record<string, number>
+    weights: Record<string, number>,
   ): Array<BookChunk & { similarity: number; rank: number; group: string }> {
     const allResults: Array<{
       chunk: BookChunk & { similarity: number };
@@ -544,14 +592,14 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Collect all results with their ranks and weighted scores
     for (const { group, chunks } of groupResults) {
       const groupWeight = weights[group] || 1.0;
-      
+
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const rank = i + 1;
-        
+
         // Calculate weighted score using reciprocal rank fusion
         const weightedScore = (chunk.similarity * groupWeight) / (rank + 60); // k=60 for RRF
-        
+
         allResults.push({
           chunk,
           group,
@@ -566,11 +614,13 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
 
     // Remove duplicates (keep the highest scoring version)
     const seenChunks = new Set<string>();
-    const finalResults: Array<BookChunk & { similarity: number; rank: number; group: string }> = [];
-    
+    const finalResults: Array<
+      BookChunk & { similarity: number; rank: number; group: string }
+    > = [];
+
     for (const { chunk, group, rank } of allResults) {
       const chunkKey = `${chunk.itemId}-${chunk.index}`;
-      
+
       if (!seenChunks.has(chunkKey)) {
         seenChunks.add(chunkKey);
         finalResults.push({
@@ -591,7 +641,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Check cache first
     const cacheKey = `groups:${itemId}`;
     const cachedGroups = this.getCacheEntry(this.groupCache, cacheKey);
-    
+
     if (cachedGroups) {
       return cachedGroups;
     }
@@ -611,11 +661,14 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       size: 0,
     });
 
-    const groups = (response.aggregations?.groups as any)?.buckets?.map((bucket: any) => bucket.key) || [];
-    
+    const groups =
+      (response.aggregations?.groups as any)?.buckets?.map(
+        (bucket: any) => bucket.key,
+      ) || [];
+
     // Cache the result
     this.setCacheWithExpiry(this.groupCache, cacheKey, groups);
-    
+
     return groups;
   }
 
@@ -632,7 +685,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Check cache first
     const cacheKey = `stats:${groupId}`;
     const cachedStats = this.getCacheEntry(this.groupStatsCache, cacheKey);
-    
+
     if (cachedStats) {
       return cachedStats;
     }
@@ -679,13 +732,17 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       chunkCount: aggregations?.chunkCount?.value || 0,
       averageChunkSize: aggregations?.avgChunkSize?.value || 0,
       processingTime: aggregations?.avgProcessingTime?.value || 0,
-      createdAt: new Date(aggregations?.oldestChunk?.value_as_string || Date.now()),
-      updatedAt: new Date(aggregations?.newestChunk?.value_as_string || Date.now()),
+      createdAt: new Date(
+        aggregations?.oldestChunk?.value_as_string || Date.now(),
+      ),
+      updatedAt: new Date(
+        aggregations?.newestChunk?.value_as_string || Date.now(),
+      ),
     };
-    
+
     // Cache the result
     this.setCacheWithExpiry(this.groupStatsCache, cacheKey, stats);
-    
+
     return stats;
   }
 
@@ -714,7 +771,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Remove group stats cache
     this.groupStatsCache.delete(`stats:${groupId}`);
     this.cacheExpiry.delete(`stats:${groupId}`);
-    
+
     // Remove group cache entries for all items
     for (const [key] of this.groupCache.entries()) {
       if (key.startsWith('groups:')) {
@@ -742,7 +799,6 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     return response.hits.hits.map((hit: any) => hit._source);
   }
 
-
   /**
    * Get chunks by chunking strategy
    */
@@ -752,10 +808,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       query: {
         term: { 'strategyMetadata.chunkingStrategy': strategy },
       },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
+      sort: [{ itemId: { order: 'asc' } }, { index: { order: 'asc' } }],
     });
 
     return response.hits.hits.map((hit: any) => hit._source);
@@ -770,10 +823,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       query: {
         term: { 'strategyMetadata.embeddingProvider': provider },
       },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
+      sort: [{ itemId: { order: 'asc' } }, { index: { order: 'asc' } }],
     });
 
     return response.hits.hits.map((hit: any) => hit._source);
@@ -782,7 +832,10 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Update chunks for a specific group
    */
-  async updateChunksByGroup(groupId: string, updates: Partial<BookChunk>): Promise<number> {
+  async updateChunksByGroup(
+    groupId: string,
+    updates: Partial<BookChunk>,
+  ): Promise<number> {
     const response = await this.client.updateByQuery({
       index: this.indexName,
       query: {
@@ -849,7 +902,9 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       // Validate embedding dimensions
       for (const [provider, embedding] of Object.entries(chunk.embeddings)) {
         if (!Array.isArray(embedding) || embedding.length === 0) {
-          errors.push(`Chunk ${chunk.id} has invalid embedding for provider ${provider}`);
+          errors.push(
+            `Chunk ${chunk.id} has invalid embedding for provider ${provider}`,
+          );
           continue;
         }
       }

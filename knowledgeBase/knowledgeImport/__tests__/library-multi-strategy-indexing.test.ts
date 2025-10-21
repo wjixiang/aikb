@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  vi,
+} from 'vitest';
 import Library from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { MultiVersionVectorStorage } from '../../storage/multiVersionVectorStorage';
@@ -7,7 +15,11 @@ import { ChunkSearchUtils } from '../../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../../lib/error/errorHandler';
 import { Client } from '@elastic/elasticsearch';
 import { BookChunk, ChunkSearchFilter } from '../library';
-import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from '../../../lib/embedding/embedding';
+import {
+  EmbeddingConfig,
+  EmbeddingProvider,
+  OpenAIModel,
+} from '../../../lib/embedding/embedding';
 import { ChunkingConfig } from '../../../lib/chunking/chunkingStrategy';
 import { embeddingService } from '../../../lib/embedding/embedding';
 import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
@@ -34,8 +46,8 @@ vi.mock('@elastic/elasticsearch', () => ({
     },
     search: vi.fn().mockResolvedValue({
       hits: {
-        hits: []
-      }
+        hits: [],
+      },
     }),
     bulk: vi.fn().mockResolvedValue({}),
     updateByQuery: vi.fn().mockResolvedValue({}),
@@ -59,14 +71,14 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
-    
+
     // Create mock storage
     mockStorage = new MockLibraryStorage();
     mockVectorStorage = new MultiVersionVectorStorage(mockClient);
-    
+
     // Create library instance
     library = new Library(mockStorage);
-    
+
     // Initialize the default group manager
     DefaultGroupManager.getInstance();
   });
@@ -74,12 +86,12 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
   describe('Default Group Manager', () => {
     it('should provide default groups for different strategies', () => {
       const groupManager = DefaultGroupManager.getInstance();
-      
+
       const h1Group = groupManager.getDefaultGroup('h1');
       expect(h1Group).not.toBeNull();
       expect(h1Group?.chunkingStrategy).toBe('h1');
       expect(h1Group?.id).toBe('default-h1');
-      
+
       const paragraphGroup = groupManager.getDefaultGroup('paragraph');
       expect(paragraphGroup).not.toBeNull();
       expect(paragraphGroup?.chunkingStrategy).toBe('paragraph');
@@ -88,7 +100,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
     it('should provide fallback for unknown strategies', () => {
       const groupManager = DefaultGroupManager.getInstance();
-      
+
       const unknownGroup = groupManager.getDefaultGroup('unknown');
       expect(unknownGroup).not.toBeNull();
       // Should fallback to a known strategy
@@ -96,11 +108,11 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
     it('should get group config for search with fallback', () => {
       const groupManager = DefaultGroupManager.getInstance();
-      
+
       const config = groupManager.getGroupConfigForSearch({
         chunkingStrategy: 'h1',
       });
-      
+
       expect(config).not.toBeNull();
       expect(config?.groupId).toBe('default-h1');
       expect(config?.group.chunkingStrategy).toBe('h1');
@@ -193,7 +205,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
         {
           rankFusion: true,
           weights: { 'default-h1': 2, 'custom-paragraph': 1 },
-        }
+        },
       );
 
       // The method should return an array (could be empty if no similar chunks found)
@@ -207,10 +219,11 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           id: 'chunk1',
           itemId: 'item1',
           title: 'Test Chunk 1',
-          content: 'This is test content that should be similar to another chunk',
+          content:
+            'This is test content that should be similar to another chunk',
           index: 0,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -233,10 +246,11 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           id: 'chunk2',
           itemId: 'item1',
           title: 'Test Chunk 2',
-          content: 'This is test content that should be similar to another chunk',
+          content:
+            'This is test content that should be similar to another chunk',
           index: 1,
           denseVectorIndexGroupId: 'custom-paragraph',
-          
+
           embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
@@ -283,7 +297,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'This is test content 1',
           index: 0,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -309,7 +323,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'This is test content 2',
           index: 0,
           denseVectorIndexGroupId: 'custom-paragraph',
-          
+
           embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
@@ -337,7 +351,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
       };
 
       const filteredChunks = ChunkSearchUtils.filterChunks(chunks, filter);
-      
+
       expect(filteredChunks).toHaveLength(1);
       expect(filteredChunks[0].id).toBe('chunk1');
     });
@@ -351,7 +365,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'Content 1',
           index: 0,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -377,7 +391,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'Content 2',
           index: 1,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -404,7 +418,11 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
       expect(sortedByTitle[1].title).toBe('Z Chunk');
 
       // Sort by title descending
-      const sortedByTitleDesc = ChunkSearchUtils.sortChunks(chunks, 'title', 'desc');
+      const sortedByTitleDesc = ChunkSearchUtils.sortChunks(
+        chunks,
+        'title',
+        'desc',
+      );
       expect(sortedByTitleDesc[0].title).toBe('Z Chunk');
       expect(sortedByTitleDesc[1].title).toBe('A Chunk');
 
@@ -418,14 +436,16 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
   describe('Error Handling', () => {
     it('should handle search errors with fallback', async () => {
       // Mock storage to throw an error
-      mockStorage.getChunksByItemId = vi.fn().mockRejectedValue(new Error('Storage error'));
+      mockStorage.getChunksByItemId = vi
+        .fn()
+        .mockRejectedValue(new Error('Storage error'));
 
       const filter: ChunkSearchFilter = {
         itemId: 'item1',
       };
 
       const results = await library.searchChunksAdvanced(filter);
-      
+
       expect(results).toEqual([]); // Should return empty results as fallback
     });
 
@@ -440,8 +460,10 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
     it('should validate required parameters', async () => {
       const invalidFilter = null as any;
-      
-      await expect(library.searchChunksAdvanced(invalidFilter)).rejects.toThrow();
+
+      await expect(
+        library.searchChunksAdvanced(invalidFilter),
+      ).rejects.toThrow();
     });
   });
 
@@ -460,7 +482,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'This is test content 1',
           index: 0,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -483,12 +505,12 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
       // Mock index exists check to return false
       mockClient.indices.exists = vi.fn().mockResolvedValue(false);
-      
+
       // Mock index creation to succeed
       mockClient.indices.create = vi.fn().mockResolvedValue({});
 
       await mockVectorStorage.storeChunks(chunks);
-      
+
       expect(mockClient.indices.exists).toHaveBeenCalled();
       expect(mockClient.indices.create).toHaveBeenCalled();
     });
@@ -502,7 +524,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'This is test content 1',
           index: 0,
           denseVectorIndexGroupId: 'default-h1',
-          
+
           embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
           strategyMetadata: {
             chunkingStrategy: 'h1',
@@ -528,7 +550,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
           content: 'This is test content 2',
           index: 1,
           denseVectorIndexGroupId: 'custom-paragraph',
-          
+
           embedding: [0.2, 0.3, 0.4, 0.5, 0.6],
           strategyMetadata: {
             chunkingStrategy: 'paragraph',
@@ -552,11 +574,11 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
       // Mock search response
       mockClient.search = vi.fn().mockResolvedValue({
         hits: {
-          hits: chunks.map(chunk => ({
+          hits: chunks.map((chunk) => ({
             _source: chunk,
-            _score: 1.5 // Similarity + 1
-          }))
-        }
+            _score: 1.5, // Similarity + 1
+          })),
+        },
       });
 
       const filter: ChunkSearchFilter = {
@@ -570,8 +592,8 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
         filter,
         {
           provider: EmbeddingProvider.OPENAI,
-          weights: { 'default-h1': 2, 'custom-paragraph': 1 }
-        }
+          weights: { 'default-h1': 2, 'custom-paragraph': 1 },
+        },
       );
 
       expect(results).toHaveLength(2);

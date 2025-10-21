@@ -18,9 +18,7 @@ import {
   createMinerUConvertorFromEnv,
 } from './PdfConvertor';
 // 导入新的统一chunking接口
-import {
-  getAvailableStrategies,
-} from '../../lib/chunking/chunkingTool';
+import { getAvailableStrategies } from '../../lib/chunking/chunkingTool';
 import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import {
@@ -28,8 +26,17 @@ import {
   paragraphChunking,
   ChunkResult,
 } from '../../lib/chunking/chunkingTool';
-import { ChunkingStrategyType, ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
-import { embeddingService, EmbeddingConfig, EmbeddingProvider, OpenAIModel, AlibabaModel } from '../../lib/embedding/embedding';
+import {
+  ChunkingStrategyType,
+  ChunkingConfig,
+} from '../../lib/chunking/chunkingStrategy';
+import {
+  embeddingService,
+  EmbeddingConfig,
+  EmbeddingProvider,
+  OpenAIModel,
+  AlibabaModel,
+} from '../../lib/embedding/embedding';
 import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
 import {
   PdfProcessingStatus,
@@ -252,18 +259,12 @@ export interface AbstractLibrary {
   /**
    * Add item to collection
    */
-  addItemToCollection(
-    itemId: string,
-    collectionId: string,
-  ): Promise<void>;
+  addItemToCollection(itemId: string, collectionId: string): Promise<void>;
 
   /**
    * Remove item from collection
    */
-  removeItemFromCollection(
-    itemId: string,
-    collectionId: string,
-  ): Promise<void>;
+  removeItemFromCollection(itemId: string, collectionId: string): Promise<void>;
 
   /**
    * Generate citation for an item
@@ -445,9 +446,7 @@ export default class Library implements AbstractLibrary {
   protected storage: AbstractLibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 
-  constructor(
-    storage: AbstractLibraryStorage,
-  ) {
+  constructor(storage: AbstractLibraryStorage) {
     this.storage = storage;
     logger.debug('Library constructor - RabbitMQ service instance', {
       serviceId: this.rabbitMQService.constructor.name,
@@ -484,7 +483,7 @@ export default class Library implements AbstractLibrary {
     }
 
     // Upload to S3
-    logger.info(`Pdf not exist, uploading to s3...`)
+    logger.info(`Pdf not exist, uploading to s3...`);
     const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
 
     const fullMetadata: BookMetadata = {
@@ -951,44 +950,57 @@ export default class Library implements AbstractLibrary {
 
       // Handle chunking with default group manager
       const defaultGroupManager = DefaultGroupManager.getInstance();
-      const defaultGroup = defaultGroupManager.getDefaultGroup(chunkingStrategy);
-      
-      const denseVectorIndexGroupId = options?.denseVectorIndexGroupId ||
-                                  defaultGroup?.id ||
-                                  `default-${chunkingStrategy}`;
-      
-      const embeddingProvider = options?.embeddingProvider ||
-                              defaultGroup?.embeddingProvider ||
-                              embeddingService.getProvider();
-      
+      const defaultGroup =
+        defaultGroupManager.getDefaultGroup(chunkingStrategy);
+
+      const denseVectorIndexGroupId =
+        options?.denseVectorIndexGroupId ||
+        defaultGroup?.id ||
+        `default-${chunkingStrategy}`;
+
+      const embeddingProvider =
+        options?.embeddingProvider ||
+        defaultGroup?.embeddingProvider ||
+        embeddingService.getProvider();
+
       const embeddingConfig: EmbeddingConfig = options?.embeddingConfig ||
-                            defaultGroup?.embeddingConfig ||
-                            {
-                              model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
-                              dimension: 1536,
-                              batchSize: 32,
-                              maxRetries: 3,
-                              timeout: 30000,
-                              provider: EmbeddingProvider.OPENAI,
-                            };
-      
+        defaultGroup?.embeddingConfig || {
+          model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+          dimension: 1536,
+          batchSize: 32,
+          maxRetries: 3,
+          timeout: 30000,
+          provider: EmbeddingProvider.OPENAI,
+        };
+
       const chunkingConfig = options?.chunkingConfig ||
-                           defaultGroup?.chunkingConfig ||
-                           { maxChunkSize: 1000, minChunkSize: 100, overlap: 50 };
-      
+        defaultGroup?.chunkingConfig || {
+          maxChunkSize: 1000,
+          minChunkSize: 100,
+          overlap: 50,
+        };
+
       const forceReprocess = options?.forceReprocess || false;
       const preserveExisting = options?.preserveExisting || false;
-      
+
       logger.info(
         `Processing chunks for item ${itemId} with group: ${denseVectorIndexGroupId}, strategy: ${chunkingStrategy}, provider: ${embeddingProvider}`,
       );
 
       // Check if we need to delete existing chunks
       if (forceReprocess) {
-        if (preserveExisting && denseVectorIndexGroupId && typeof (this.storage as any).deleteChunksByGroup === 'function') {
+        if (
+          preserveExisting &&
+          denseVectorIndexGroupId &&
+          typeof (this.storage as any).deleteChunksByGroup === 'function'
+        ) {
           // Only delete chunks for this specific group
-          logger.info(`Deleting existing chunks for group: ${denseVectorIndexGroupId}`);
-          await (this.storage as any).deleteChunksByGroup(denseVectorIndexGroupId);
+          logger.info(
+            `Deleting existing chunks for group: ${denseVectorIndexGroupId}`,
+          );
+          await (this.storage as any).deleteChunksByGroup(
+            denseVectorIndexGroupId,
+          );
         } else {
           // Delete all chunks for this item
           logger.info(`Deleting all existing chunks for item: ${itemId}`);
@@ -996,10 +1008,17 @@ export default class Library implements AbstractLibrary {
         }
       } else {
         // Check if chunks already exist for this group
-        if (denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-          const existingChunks = await (this.storage as any).getChunksByItemAndGroup(itemId, denseVectorIndexGroupId);
+        if (
+          denseVectorIndexGroupId &&
+          typeof (this.storage as any).getChunksByItemAndGroup === 'function'
+        ) {
+          const existingChunks = await (
+            this.storage as any
+          ).getChunksByItemAndGroup(itemId, denseVectorIndexGroupId);
           if (existingChunks.length > 0) {
-            logger.info(`Chunks already exist for item ${itemId} in group ${denseVectorIndexGroupId}, skipping processing`);
+            logger.info(
+              `Chunks already exist for item ${itemId} in group ${denseVectorIndexGroupId}, skipping processing`,
+            );
             return;
           }
         }
@@ -1025,9 +1044,9 @@ export default class Library implements AbstractLibrary {
       // Prepare chunks for storage
       const chunks: BookChunk[] = [];
       const chunkTexts: string[] = [];
-      
+
       const processingStartTime = new Date();
-      
+
       // The effective configurations are already set above
       const effectiveChunkingConfig = chunkingConfig;
       const effectiveEmbeddingConfig = embeddingConfig;
@@ -1054,13 +1073,13 @@ export default class Library implements AbstractLibrary {
           title,
           content,
           index: i,
-          
+
           // Dense vector index group for organization
           denseVectorIndexGroupId: denseVectorIndexGroupId,
-          
+
           // Simplified single embedding field (will be populated after embedding generation)
           embedding: [], // Will be populated with a single vector array
-          
+
           // Strategy and configuration metadata
           strategyMetadata: {
             chunkingStrategy,
@@ -1069,13 +1088,13 @@ export default class Library implements AbstractLibrary {
             processingTimestamp: processingStartTime,
             processingDuration: 0, // Will be updated after processing
           },
-          
+
           // Legacy metadata for backward compatibility
           metadata: {
             chunkType: chunkingStrategy,
             wordCount: content.split(/\s+/).length,
           },
-          
+
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -1087,16 +1106,17 @@ export default class Library implements AbstractLibrary {
       // Generate embeddings for all chunks
       logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
       const embeddings = await embeddingService.embedBatch(chunkTexts);
-      
+
       const processingEndTime = new Date();
-      const processingDuration = processingEndTime.getTime() - processingStartTime.getTime();
+      const processingDuration =
+        processingEndTime.getTime() - processingStartTime.getTime();
 
       // Assign embeddings to chunks using simplified structure
       for (let i = 0; i < chunks.length; i++) {
         if (embeddings[i] && Array.isArray(embeddings[i])) {
           // Update the embedding with simplified structure (single vector array)
           chunks[i].embedding = embeddings[i]!;
-          
+
           // Update processing duration
           chunks[i].strategyMetadata.processingDuration = processingDuration;
         } else {
@@ -1110,9 +1130,10 @@ export default class Library implements AbstractLibrary {
         `Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`,
       );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       logger.error(`Error processing chunks for item ${itemId}:`, {
         error: errorMessage,
         stack: errorStack,
@@ -1121,7 +1142,7 @@ export default class Library implements AbstractLibrary {
         denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
         embeddingProvider: options?.embeddingProvider,
       });
-      
+
       // Update item status with error
       try {
         await this.updateProcessingStatus(
@@ -1132,9 +1153,12 @@ export default class Library implements AbstractLibrary {
           errorMessage,
         );
       } catch (statusUpdateError) {
-        logger.error(`Failed to update processing status for item ${itemId}:`, statusUpdateError);
+        logger.error(
+          `Failed to update processing status for item ${itemId}:`,
+          statusUpdateError,
+        );
       }
-      
+
       throw error;
     }
   }
@@ -1152,36 +1176,55 @@ export default class Library implements AbstractLibrary {
     if (!options) {
       return await this.storage.getChunksByItemId(itemId);
     }
-    
+
     // Use storage if available
-    if (options.denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-      return await (this.storage as any).getChunksByItemAndGroup(itemId, options.denseVectorIndexGroupId);
+    if (
+      options.denseVectorIndexGroupId &&
+      typeof (this.storage as any).getChunksByItemAndGroup === 'function'
+    ) {
+      return await (this.storage as any).getChunksByItemAndGroup(
+        itemId,
+        options.denseVectorIndexGroupId,
+      );
     }
-    
-    if (options.groups && typeof (this.storage as any).getChunksByGroups === 'function') {
+
+    if (
+      options.groups &&
+      typeof (this.storage as any).getChunksByGroups === 'function'
+    ) {
       return await (this.storage as any).getChunksByGroups(options.groups);
     }
-    
-    if (options.chunkingStrategies && typeof (this.storage as any).getChunksByStrategy === 'function') {
+
+    if (
+      options.chunkingStrategies &&
+      typeof (this.storage as any).getChunksByStrategy === 'function'
+    ) {
       // For multiple strategies, we need to combine results
       const allChunks: BookChunk[] = [];
       for (const strategy of options.chunkingStrategies) {
-        const chunks = await (this.storage as any).getChunksByStrategy(strategy);
-        allChunks.push(...chunks.filter(chunk => chunk.itemId === itemId));
+        const chunks = await (this.storage as any).getChunksByStrategy(
+          strategy,
+        );
+        allChunks.push(...chunks.filter((chunk) => chunk.itemId === itemId));
       }
       return allChunks;
     }
-    
-    if (options.embeddingProviders && typeof (this.storage as any).getChunksByProvider === 'function') {
+
+    if (
+      options.embeddingProviders &&
+      typeof (this.storage as any).getChunksByProvider === 'function'
+    ) {
       // For multiple providers, we need to combine results
       const allChunks: BookChunk[] = [];
       for (const provider of options.embeddingProviders) {
-        const chunks = await (this.storage as any).getChunksByProvider(provider);
-        allChunks.push(...chunks.filter(chunk => chunk.itemId === itemId));
+        const chunks = await (this.storage as any).getChunksByProvider(
+          provider,
+        );
+        allChunks.push(...chunks.filter((chunk) => chunk.itemId === itemId));
       }
       return allChunks;
     }
-    
+
     // Fallback to legacy method
     return await this.storage.getChunksByItemId(itemId);
   }
@@ -1207,7 +1250,12 @@ export default class Library implements AbstractLibrary {
     let denseVectorIndexGroupId = options?.denseVectorIndexGroupId;
     let groups = options?.groups;
 
-    if (!denseVectorIndexGroupId && !groups && options?.chunkingStrategies && options.chunkingStrategies.length > 0) {
+    if (
+      !denseVectorIndexGroupId &&
+      !groups &&
+      options?.chunkingStrategies &&
+      options.chunkingStrategies.length > 0
+    ) {
       // If no group specified but strategies are, try to get group from strategy
       const defaultGroupManager = DefaultGroupManager.getInstance();
       const strategy = options.chunkingStrategies[0]; // Use first strategy
@@ -1221,22 +1269,28 @@ export default class Library implements AbstractLibrary {
     const filter: ChunkSearchFilter = {
       limit,
       similarityThreshold: threshold,
-      itemIds: itemIds ? (Array.isArray(itemIds) ? itemIds : [itemIds]) : undefined,
+      itemIds: itemIds
+        ? Array.isArray(itemIds)
+          ? itemIds
+          : [itemIds]
+        : undefined,
       denseVectorIndexGroupId,
       groups,
       chunkingStrategies: options?.chunkingStrategies,
       embeddingProviders: options?.embeddingProviders,
     };
-    
+
     // Use the enhanced findSimilarChunksWithFilter method if available
-    if (typeof (this.storage as any).findSimilarChunksWithFilter === 'function') {
+    if (
+      typeof (this.storage as any).findSimilarChunksWithFilter === 'function'
+    ) {
       return await (this.storage as any).findSimilarChunksWithFilter(
         queryVector,
         filter,
-        options?.provider
+        options?.provider,
       );
     }
-    
+
     // Fallback to legacy method
     return await this.storage.findSimilarChunks(
       queryVector,
@@ -1259,7 +1313,13 @@ export default class Library implements AbstractLibrary {
       provider?: string;
     },
   ): Promise<Array<BookChunk & { similarity: number }>> {
-    return await this.findSimilarChunks(queryVector, limit, threshold, [itemId], options);
+    return await this.findSimilarChunks(
+      queryVector,
+      limit,
+      threshold,
+      [itemId],
+      options,
+    );
   }
 
   async searchChunksInItem(
@@ -1300,22 +1360,22 @@ export default class Library implements AbstractLibrary {
       rankFusion?: boolean;
       weights?: Record<string, number>;
       maxResultsPerGroup?: number;
-    }
+    },
   ): Promise<BookChunk[]> {
     // Validate parameters
     ChunkingErrorHandler.validateParams(
       { filter, options },
       'searchChunksAdvanced',
-      ['filter']
+      ['filter'],
     );
-    
+
     const startTime = Date.now();
-    
+
     return ChunkingErrorHandler.withRetry(
       async () => {
         // Get initial results from storage
         let chunks: BookChunk[];
-        
+
         if (filter.query || Object.keys(filter).length > 1) {
           // Use storage search for complex queries
           chunks = await this.storage.searchChunks(filter);
@@ -1325,7 +1385,11 @@ export default class Library implements AbstractLibrary {
         }
 
         // Apply advanced filtering using ChunkSearchUtils
-        const filteredChunks = ChunkSearchUtils.applyAdvancedFiltering(chunks, filter, options);
+        const filteredChunks = ChunkSearchUtils.applyAdvancedFiltering(
+          chunks,
+          filter,
+          options,
+        );
 
         logger.info(`Advanced search returned ${filteredChunks.length} chunks`);
         return filteredChunks;
@@ -1333,24 +1397,26 @@ export default class Library implements AbstractLibrary {
       {
         operation: 'searchChunksAdvanced',
         maxRetries: 2,
-      }
-    ).catch(error => {
-      return ChunkingErrorHandler.handleSearchError(
-        error,
-        {
-          operation: 'searchChunksAdvanced',
-          query: filter.query,
-          filter,
-        },
-        () => [] // Return empty results as fallback
-      );
-    }).finally(() => {
-      // Log performance metrics
-      ChunkingErrorHandler.logPerformance('searchChunksAdvanced', startTime, {
-        itemId: filter.itemId,
-        chunkCount: options?.maxResultsPerGroup,
+      },
+    )
+      .catch((error) => {
+        return ChunkingErrorHandler.handleSearchError(
+          error,
+          {
+            operation: 'searchChunksAdvanced',
+            query: filter.query,
+            filter,
+          },
+          () => [], // Return empty results as fallback
+        );
+      })
+      .finally(() => {
+        // Log performance metrics
+        ChunkingErrorHandler.logPerformance('searchChunksAdvanced', startTime, {
+          itemId: filter.itemId,
+          chunkCount: options?.maxResultsPerGroup,
+        });
       });
-    });
   }
 
   /**
@@ -1371,22 +1437,27 @@ export default class Library implements AbstractLibrary {
       weights?: Record<string, number>;
       maxResultsPerGroup?: number;
       provider?: string;
-    }
+    },
   ): Promise<Array<BookChunk & { similarity: number }>> {
     // Validate parameters
     ChunkingErrorHandler.validateParams(
       { queryVector, filter, options },
       'findSimilarChunksAdvanced',
-      ['queryVector', 'filter']
+      ['queryVector', 'filter'],
     );
-    
+
     const startTime = Date.now();
-    
+
     return ChunkingErrorHandler.withRetry(
       async () => {
         // Use enhanced findSimilarChunksWithFilter method if available
-        if (typeof (this.storage as any).findSimilarChunksWithFilter === 'function') {
-          const results = await (this.storage as any).findSimilarChunksWithFilter(
+        if (
+          typeof (this.storage as any).findSimilarChunksWithFilter ===
+          'function'
+        ) {
+          const results = await (
+            this.storage as any
+          ).findSimilarChunksWithFilter(
             queryVector,
             filter,
             options?.provider,
@@ -1394,13 +1465,19 @@ export default class Library implements AbstractLibrary {
               rankFusion: options?.rankFusion,
               weights: options?.weights,
               maxResultsPerGroup: options?.maxResultsPerGroup,
-            }
+            },
           );
 
           // Apply advanced filtering using ChunkSearchUtils
-          const filteredResults = ChunkSearchUtils.applyAdvancedFiltering(results, filter, options);
+          const filteredResults = ChunkSearchUtils.applyAdvancedFiltering(
+            results,
+            filter,
+            options,
+          );
 
-          logger.info(`Advanced similarity search returned ${filteredResults.length} chunks`);
+          logger.info(
+            `Advanced similarity search returned ${filteredResults.length} chunks`,
+          );
           return filteredResults as Array<BookChunk & { similarity: number }>;
         }
 
@@ -1416,30 +1493,36 @@ export default class Library implements AbstractLibrary {
             chunkingStrategies: filter.chunkingStrategies,
             embeddingProviders: filter.embeddingProviders,
             provider: options?.provider,
-          }
+          },
         );
       },
       {
         operation: 'findSimilarChunksAdvanced',
         maxRetries: 2,
-      }
-    ).catch(error => {
-      return ChunkingErrorHandler.handleSearchError(
-        error,
-        {
-          operation: 'findSimilarChunksAdvanced',
-          filter,
-        },
-        () => [] // Return empty results as fallback
-      );
-    }).finally(() => {
-      // Log performance metrics
-      ChunkingErrorHandler.logPerformance('findSimilarChunksAdvanced', startTime, {
-        itemId: filter.itemId,
-        chunkCount: options?.maxResultsPerGroup,
-        provider: options?.provider,
+      },
+    )
+      .catch((error) => {
+        return ChunkingErrorHandler.handleSearchError(
+          error,
+          {
+            operation: 'findSimilarChunksAdvanced',
+            filter,
+          },
+          () => [], // Return empty results as fallback
+        );
+      })
+      .finally(() => {
+        // Log performance metrics
+        ChunkingErrorHandler.logPerformance(
+          'findSimilarChunksAdvanced',
+          startTime,
+          {
+            itemId: filter.itemId,
+            chunkCount: options?.maxResultsPerGroup,
+            provider: options?.provider,
+          },
+        );
       });
-    });
   }
 
   async reProcessChunks(
@@ -1464,7 +1547,11 @@ export default class Library implements AbstractLibrary {
       if (itemId) {
         // Re-process chunks for a specific item
         logger.info(`Re-processing chunks for item: ${itemId}`);
-        await this.processItemChunks(itemId, chunkingStrategy, reProcessOptions);
+        await this.processItemChunks(
+          itemId,
+          chunkingStrategy,
+          reProcessOptions,
+        );
         logger.info(`Successfully re-processed chunks for item: ${itemId}`);
       } else {
         // Re-process chunks for all items that have markdown content
@@ -1480,7 +1567,11 @@ export default class Library implements AbstractLibrary {
             const markdownContent = await item.getMarkdown();
             if (markdownContent) {
               logger.info(`Re-processing chunks for item: ${item.metadata.id}`);
-              await this.processItemChunks(item.metadata.id!, chunkingStrategy, reProcessOptions);
+              await this.processItemChunks(
+                item.metadata.id!,
+                chunkingStrategy,
+                reProcessOptions,
+              );
               logger.info(
                 `Successfully re-processed chunks for item: ${item.metadata.id}`,
               );
@@ -1716,7 +1807,7 @@ export class LibraryItem {
   }): Promise<BookChunk[]> {
     const logger = createLoggerWithPrefix('LibraryItem.getChunks');
     logger.info(`Retrieving chunks for item: ${this.metadata.id}`);
-    
+
     // If no options specified, use legacy method
     if (!options) {
       const chunks = await this.storage.getChunksByItemId(this.metadata.id!);
@@ -1725,32 +1816,61 @@ export class LibraryItem {
       );
       return chunks;
     }
-    
+
     // Use storage if available
     let chunks: BookChunk[] = [];
-    
-    if (options.denseVectorIndexGroupId && typeof (this.storage as any).getChunksByItemAndGroup === 'function') {
-      chunks = await (this.storage as any).getChunksByItemAndGroup(this.metadata.id!, options.denseVectorIndexGroupId);
-    } else if (options.groups && typeof (this.storage as any).getChunksByGroups === 'function') {
-      const allChunks = await (this.storage as any).getChunksByGroups(options.groups);
-      chunks = allChunks.filter(chunk => chunk.itemId === this.metadata.id!);
-    } else if (options.chunkingStrategies && typeof (this.storage as any).getChunksByStrategy === 'function') {
+
+    if (
+      options.denseVectorIndexGroupId &&
+      typeof (this.storage as any).getChunksByItemAndGroup === 'function'
+    ) {
+      chunks = await (this.storage as any).getChunksByItemAndGroup(
+        this.metadata.id!,
+        options.denseVectorIndexGroupId,
+      );
+    } else if (
+      options.groups &&
+      typeof (this.storage as any).getChunksByGroups === 'function'
+    ) {
+      const allChunks = await (this.storage as any).getChunksByGroups(
+        options.groups,
+      );
+      chunks = allChunks.filter((chunk) => chunk.itemId === this.metadata.id!);
+    } else if (
+      options.chunkingStrategies &&
+      typeof (this.storage as any).getChunksByStrategy === 'function'
+    ) {
       // For multiple strategies, we need to combine results
       for (const strategy of options.chunkingStrategies) {
-        const strategyChunks = await (this.storage as any).getChunksByStrategy(strategy);
-        chunks.push(...strategyChunks.filter(chunk => chunk.itemId === this.metadata.id!));
+        const strategyChunks = await (this.storage as any).getChunksByStrategy(
+          strategy,
+        );
+        chunks.push(
+          ...strategyChunks.filter(
+            (chunk) => chunk.itemId === this.metadata.id!,
+          ),
+        );
       }
-    } else if (options.embeddingProviders && typeof (this.storage as any).getChunksByProvider === 'function') {
+    } else if (
+      options.embeddingProviders &&
+      typeof (this.storage as any).getChunksByProvider === 'function'
+    ) {
       // For multiple providers, we need to combine results
       for (const provider of options.embeddingProviders) {
-        const providerChunks = await (this.storage as any).getChunksByProvider(provider);
-        chunks.push(...providerChunks.filter(chunk => chunk.itemId === this.metadata.id!));
+        const providerChunks = await (this.storage as any).getChunksByProvider(
+          provider,
+        );
+        chunks.push(
+          ...providerChunks.filter(
+            (chunk) => chunk.itemId === this.metadata.id!,
+          ),
+        );
       }
     } else {
       // Fallback to legacy method
       chunks = await this.storage.getChunksByItemId(this.metadata.id!);
     }
-    
+
     logger.info(
       `Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`,
     );
@@ -1793,7 +1913,9 @@ export class LibraryItem {
     },
   ): Promise<Array<BookChunk & { similarity: number }>> {
     // Use the enhanced findSimilarChunksWithFilter method if available
-    if (typeof (this.storage as any).findSimilarChunksWithFilter === 'function') {
+    if (
+      typeof (this.storage as any).findSimilarChunksWithFilter === 'function'
+    ) {
       const filter: ChunkSearchFilter = {
         limit,
         similarityThreshold: threshold,
@@ -1803,14 +1925,14 @@ export class LibraryItem {
         chunkingStrategies: options?.chunkingStrategies,
         embeddingProviders: options?.embeddingProviders,
       };
-      
+
       return await (this.storage as any).findSimilarChunksWithFilter(
         queryVector,
         filter,
-        options?.provider
+        options?.provider,
       );
     }
-    
+
     // Fallback to legacy method
     return await this.storage.findSimilarChunks(queryVector, limit, threshold, [
       this.metadata.id!,
@@ -1902,9 +2024,11 @@ export class LibraryItem {
         isConnected: this.rabbitMQService.isConnected(),
         serviceExists: !!this.rabbitMQService,
         nodeIdEnv: process.env.NODE_ENV,
-        isVitest: typeof globalThis !== 'undefined' && (globalThis as any).__vitest__ !== undefined,
+        isVitest:
+          typeof globalThis !== 'undefined' &&
+          (globalThis as any).__vitest__ !== undefined,
       });
-      
+
       // For testing or when RabbitMQ is not available, use the library's processItemChunks method directly
       // Check if we're in a test environment (vitest sets process.env.NODE_ENV to 'test' but sometimes it doesn't work)
 
@@ -1964,8 +2088,10 @@ export class LibraryItem {
    */
   async isChunkEmbedInProgress(): Promise<boolean> {
     const status = this.metadata.pdfProcessingStatus;
-    return status === PdfProcessingStatus.PROCESSING &&
-           this.metadata.pdfProcessingMessage?.includes('chunking') === true;
+    return (
+      status === PdfProcessingStatus.PROCESSING &&
+      this.metadata.pdfProcessingMessage?.includes('chunking') === true
+    );
   }
 
   /**
@@ -1977,8 +2103,10 @@ export class LibraryItem {
   async waitForChunkEmbedCompletion(
     timeoutMs: number = 300000, // 5 minutes default
     intervalMs: number = 2000, // 2 seconds default
-  ): Promise<{success: boolean, chunks?: BookChunk[], error?: string}> {
-    const logger = createLoggerWithPrefix('LibraryItem.waitForChunkEmbedCompletion');
+  ): Promise<{ success: boolean; chunks?: BookChunk[]; error?: string }> {
+    const logger = createLoggerWithPrefix(
+      'LibraryItem.waitForChunkEmbedCompletion',
+    );
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
@@ -1989,12 +2117,14 @@ export class LibraryItem {
       }
 
       const status = this.metadata.pdfProcessingStatus;
-      
+
       if (status === PdfProcessingStatus.COMPLETED) {
         // Check if chunks are available
         const chunks = await this.getChunks();
         if (chunks.length > 0) {
-          logger.info(`Chunking and embedding completed for item: ${this.metadata.id}`);
+          logger.info(
+            `Chunking and embedding completed for item: ${this.metadata.id}`,
+          );
           return { success: true, chunks };
         }
       }
@@ -2065,7 +2195,10 @@ export class LibraryItem {
 
       // Check if all chunks have simplified embedding structure
       const chunksWithEmbeddings = chunks.filter(
-        (chunk) => chunk.embedding && Array.isArray(chunk.embedding) && chunk.embedding.length > 0,
+        (chunk) =>
+          chunk.embedding &&
+          Array.isArray(chunk.embedding) &&
+          chunk.embedding.length > 0,
       );
 
       logger.info(
@@ -2093,7 +2226,9 @@ export class LibraryItem {
    * @document documents/README-getDenseVectorIndexGroup.md
    */
   async getDenseVectorIndexGroupId(): Promise<string[]> {
-    const logger = createLoggerWithPrefix('LibraryItem.getDenseVectorIndexGroupId');
+    const logger = createLoggerWithPrefix(
+      'LibraryItem.getDenseVectorIndexGroupId',
+    );
     try {
       logger.info(
         `Getting dense vector index groups for item: ${this.metadata.id}`,
@@ -2112,9 +2247,11 @@ export class LibraryItem {
       }
 
       // Extract all unique denseVectorIndexGroupId values
-      const denseVectorIndexGroupIds = [...new Set(
-        chunks.map(chunk => chunk.denseVectorIndexGroupId).filter(Boolean)
-      )];
+      const denseVectorIndexGroupIds = [
+        ...new Set(
+          chunks.map((chunk) => chunk.denseVectorIndexGroupId).filter(Boolean),
+        ),
+      ];
 
       logger.info(
         `Found ${denseVectorIndexGroupIds.length} unique dense vector index groups for item: ${this.metadata.id}: ${JSON.stringify(denseVectorIndexGroupIds)}`,
@@ -2236,23 +2373,15 @@ export interface AbstractLibraryStorage {
   uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
   getPdfDownloadUrl(s3Key: string): Promise<string>;
   getPdf(s3Key: string): Promise<Buffer>;
-  saveMetadata(
-    metadata: BookMetadata,
-  ): Promise<BookMetadata & { id: string }>;
+  saveMetadata(metadata: BookMetadata): Promise<BookMetadata & { id: string }>;
   getMetadata(id: string): Promise<BookMetadata | null>;
   getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
   updateMetadata(metadata: BookMetadata): Promise<void>;
   searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>;
   saveCollection(collection: Collection): Promise<Collection>;
   getCollections(): Promise<Collection[]>;
-  addItemToCollection(
-    itemId: string,
-    collectionId: string,
-  ): Promise<void>;
-  removeItemFromCollection(
-    itemId: string,
-    collectionId: string,
-  ): Promise<void>;
+  addItemToCollection(itemId: string, collectionId: string): Promise<void>;
+  removeItemFromCollection(itemId: string, collectionId: string): Promise<void>;
   saveCitation(citation: Citation): Promise<Citation>;
   getCitations(itemId: string): Promise<Citation[]>;
   saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
@@ -2779,7 +2908,8 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   logger = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
 
   // Performance optimization caches
-  private searchCache: Map<string, { results: any; timestamp: number }> = new Map();
+  private searchCache: Map<string, { results: any; timestamp: number }> =
+    new Map();
   private groupCache: Map<string, string[]> = new Map();
   private itemCache: Map<string, any> = new Map();
   private readonly cacheTtlMs = 5 * 60 * 1000; // 5 minutes
@@ -2797,10 +2927,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
       },
     });
-    
+
     // Start periodic cache cleanup
     this.startCacheCleanup();
-    
+
     // Don't initialize indexes in constructor to avoid blocking
     // Initialize lazily when first operation is called
   }
@@ -2836,14 +2966,14 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   private cleanExpiredCache(): void {
     const now = Date.now();
-    
+
     // Clean search cache
     for (const [key, entry] of this.searchCache.entries()) {
       if (this.isCacheExpired(entry.timestamp)) {
         this.searchCache.delete(key);
       }
     }
-    
+
     // Clean group cache
     for (const [key] of this.groupCache.entries()) {
       // Group cache entries don't have timestamps, use a simple size limit
@@ -2851,7 +2981,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         this.groupCache.delete(key);
       }
     }
-    
+
     // Clean item cache
     for (const [key, entry] of this.itemCache.entries()) {
       if (this.isCacheExpired(entry.timestamp)) {
@@ -2863,7 +2993,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Generate cache key for search requests - updated for simplified embedding structure
    */
-  private generateSearchCacheKey(filter: ChunkSearchFilter, queryVector?: number[]): string {
+  private generateSearchCacheKey(
+    filter: ChunkSearchFilter,
+    queryVector?: number[],
+  ): string {
     const keyParts = [
       filter.query || '',
       filter.itemId || '',
@@ -2875,12 +3008,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       (filter.embeddingProviders || []).join(','),
       'simplified-embed-v1', // Version identifier for simplified embedding structure
     ];
-    
+
     if (queryVector) {
       // Use first few dimensions of vector for cache key (for privacy and performance)
       keyParts.push(queryVector.slice(0, 5).join(','));
     }
-    
+
     return keyParts.join('|');
   }
 
@@ -2892,26 +3025,28 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     if (entry && !this.isCacheExpired(entry.timestamp)) {
       // Validate that cached results have simplified embedding structure
       if (Array.isArray(entry.results)) {
-        const hasValidStructure = entry.results.every((result: any) =>
-          result &&
-          (!result.embedding || Array.isArray(result.embedding))
+        const hasValidStructure = entry.results.every(
+          (result: any) =>
+            result && (!result.embedding || Array.isArray(result.embedding)),
         );
-        
+
         if (hasValidStructure) {
           this.logger.debug(`Cache hit for search key: ${cacheKey}`);
           return entry.results;
         } else {
           // Invalid structure in cache, delete and return null
-          this.logger.debug(`Cache hit but invalid structure for key: ${cacheKey}, invalidating`);
+          this.logger.debug(
+            `Cache hit but invalid structure for key: ${cacheKey}, invalidating`,
+          );
           this.searchCache.delete(cacheKey);
         }
       }
     }
-    
+
     if (entry) {
       this.searchCache.delete(cacheKey);
     }
-    
+
     return null;
   }
 
@@ -2921,21 +3056,23 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   private cacheSearchResults(cacheKey: string, results: any): void {
     // Validate results have simplified embedding structure before caching
     if (Array.isArray(results)) {
-      const hasValidStructure = results.every((result: any) =>
-        result &&
-        (!result.embedding || Array.isArray(result.embedding))
+      const hasValidStructure = results.every(
+        (result: any) =>
+          result && (!result.embedding || Array.isArray(result.embedding)),
       );
-      
+
       if (!hasValidStructure) {
-        this.logger.debug(`Not caching results with invalid embedding structure for key: ${cacheKey}`);
+        this.logger.debug(
+          `Not caching results with invalid embedding structure for key: ${cacheKey}`,
+        );
         return;
       }
     }
-    
+
     // Clean cache if it's getting too large
     if (this.searchCache.size >= this.maxCacheSize) {
       this.cleanExpiredCache();
-      
+
       // If still too large, remove oldest entries
       if (this.searchCache.size >= this.maxCacheSize) {
         const keysToDelete = Array.from(this.searchCache.keys()).slice(0, 100);
@@ -2944,12 +3081,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         }
       }
     }
-    
+
     this.searchCache.set(cacheKey, {
       results,
       timestamp: Date.now(),
     });
-    
+
     this.logger.debug(`Cached search results for key: ${cacheKey}`);
   }
 
@@ -2961,11 +3098,11 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     if (entry && !this.isCacheExpired(entry.timestamp)) {
       return entry.data;
     }
-    
+
     if (entry) {
       this.itemCache.delete(itemId);
     }
-    
+
     return null;
   }
 
@@ -2976,7 +3113,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     // Clean cache if it's getting too large
     if (this.itemCache.size >= this.maxCacheSize) {
       this.cleanExpiredCache();
-      
+
       // If still too large, remove oldest entries
       if (this.itemCache.size >= this.maxCacheSize) {
         const keysToDelete = Array.from(this.itemCache.keys()).slice(0, 100);
@@ -2985,7 +3122,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         }
       }
     }
-    
+
     this.itemCache.set(itemId, {
       data,
       timestamp: Date.now(),
@@ -2997,7 +3134,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   private invalidateItemCache(itemId: string): void {
     this.itemCache.delete(itemId);
-    
+
     // Also invalidate any search results that might include this item
     for (const [key, entry] of this.searchCache.entries()) {
       // Simple heuristic: if the cache key contains the item ID, invalidate it
@@ -3005,10 +3142,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         this.searchCache.delete(key);
       }
     }
-    
+
     // Invalidate group cache as it might be affected
     this.groupCache.clear();
-    
+
     this.logger.debug(`Invalidated cache for item: ${itemId}`);
   }
 
@@ -3172,10 +3309,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
             properties: {
               id: { type: 'keyword' },
               itemId: { type: 'keyword' },
-              
+
               // Dense vector index group for organization
               denseVectorIndexGroupId: { type: 'keyword' },
-              
+
               title: {
                 type: 'text',
                 fields: {
@@ -3189,7 +3326,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
                 },
               },
               index: { type: 'integer' },
-              
+
               // Single embedding field - simplified structure
               embedding: {
                 type: 'dense_vector',
@@ -3197,7 +3334,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
                 index: true,
                 similarity: 'cosine',
               },
-              
+
               // Strategy and configuration metadata
               strategyMetadata: {
                 type: 'object',
@@ -3210,7 +3347,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
                   processingDuration: { type: 'float' },
                 },
               },
-              
+
               // Legacy metadata for backward compatibility
               metadata: {
                 type: 'object',
@@ -3222,7 +3359,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
                   chunkingConfig: { type: 'text' },
                 },
               },
-              
+
               createdAt: { type: 'date' },
               updatedAt: { type: 'date' },
             },
@@ -3885,7 +4022,6 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }
   }
 
-
   // Implementation from AbstractLibraryStorage
   async findSimilarChunks(
     queryVector: number[],
@@ -3896,9 +4032,13 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     const filter: ChunkSearchFilter = {
       limit,
       similarityThreshold: threshold,
-      itemIds: itemIds ? (Array.isArray(itemIds) ? itemIds : [itemIds]) : undefined,
+      itemIds: itemIds
+        ? Array.isArray(itemIds)
+          ? itemIds
+          : [itemIds]
+        : undefined,
     };
-    
+
     return this.findSimilarChunksWithFilter(queryVector, filter);
   }
 
@@ -3911,7 +4051,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       rankFusion?: boolean;
       weights?: Record<string, number>; // Group-specific weights
       maxResultsPerGroup?: number;
-    }
+    },
   ): Promise<Array<BookChunk & { similarity: number }>> {
     await this.checkInitialized();
 
@@ -3935,10 +4075,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         queryVector,
         filter,
         provider,
-        options
+        options,
       );
-      
-      return rankFusionResults.map(result => ({
+
+      return rankFusionResults.map((result) => ({
         ...result,
         similarity: result.similarity,
       }));
@@ -3960,7 +4100,9 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }
 
     if (filter.denseVectorIndexGroupId) {
-      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
+      must.push({
+        term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId },
+      });
     }
 
     if (filter.groups && filter.groups.length > 0) {
@@ -3969,13 +4111,17 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
 
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.chunkingStrategy': filter.chunkingStrategies },
+        terms: {
+          'strategyMetadata.chunkingStrategy': filter.chunkingStrategies,
+        },
       });
     }
 
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.embeddingProvider': filter.embeddingProviders },
+        terms: {
+          'strategyMetadata.embeddingProvider': filter.embeddingProviders,
+        },
       });
     }
 
@@ -4039,7 +4185,9 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       const result = await this.client.search({
         index: this.chunksIndexName,
         query,
-        min_score: filter.similarityThreshold ? filter.similarityThreshold + 1 : 0.5,
+        min_score: filter.similarityThreshold
+          ? filter.similarityThreshold + 1
+          : 0.5,
         size: filter.limit || 10,
         sort: [
           { _score: { order: 'desc' } },
@@ -4053,13 +4201,15 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         .map((hit) => {
           const { _source, _score } = hit;
           const chunk = _source as BookChunk;
-          
+
           // Ensure the chunk has the simplified embedding structure
           if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
-            this.logger.warn(`Chunk ${chunk.id} has invalid embedding structure`);
+            this.logger.warn(
+              `Chunk ${chunk.id} has invalid embedding structure`,
+            );
             return null;
           }
-          
+
           const similarity = (_score || 0) - 1; // Convert back from cosine similarity + 1
 
           return {
@@ -4067,11 +4217,15 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
             similarity,
           };
         })
-        .filter((chunk) => chunk !== null && chunk.similarity >= (filter.similarityThreshold || 0)) as Array<BookChunk & { similarity: number }>;
-      
+        .filter(
+          (chunk) =>
+            chunk !== null &&
+            chunk.similarity >= (filter.similarityThreshold || 0),
+        ) as Array<BookChunk & { similarity: number }>;
+
       // Cache the results
       this.cacheSearchResults(cacheKey, results);
-      
+
       return results;
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
@@ -4091,11 +4245,15 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     options?: {
       weights?: Record<string, number>; // Group-specific weights
       maxResultsPerGroup?: number;
-    }
-  ): Promise<Array<BookChunk & { similarity: number; rank: number; group: string }>> {
-    const maxResultsPerGroup = options?.maxResultsPerGroup || Math.ceil((filter.limit || 10) / filter.groups!.length);
+    },
+  ): Promise<
+    Array<BookChunk & { similarity: number; rank: number; group: string }>
+  > {
+    const maxResultsPerGroup =
+      options?.maxResultsPerGroup ||
+      Math.ceil((filter.limit || 10) / filter.groups!.length);
     const weights = options?.weights || {};
-    
+
     // Get results from each group
     const groupResults: Array<{
       group: string;
@@ -4103,9 +4261,18 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }> = [];
 
     for (const group of filter.groups!) {
-      const groupFilter = { ...filter, groups: [group], limit: maxResultsPerGroup };
-      const chunks = await this.findSimilarChunksWithFilter(queryVector, groupFilter, provider, { rankFusion: false });
-      
+      const groupFilter = {
+        ...filter,
+        groups: [group],
+        limit: maxResultsPerGroup,
+      };
+      const chunks = await this.findSimilarChunksWithFilter(
+        queryVector,
+        groupFilter,
+        provider,
+        { rankFusion: false },
+      );
+
       groupResults.push({
         group,
         chunks,
@@ -4124,7 +4291,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       group: string;
       chunks: Array<BookChunk & { similarity: number }>;
     }>,
-    weights: Record<string, number>
+    weights: Record<string, number>,
   ): Array<BookChunk & { similarity: number; rank: number; group: string }> {
     const allResults: Array<{
       chunk: BookChunk & { similarity: number };
@@ -4136,14 +4303,14 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     // Collect all results with their ranks and weighted scores
     for (const { group, chunks } of groupResults) {
       const groupWeight = weights[group] || 1.0;
-      
+
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const rank = i + 1;
-        
+
         // Calculate weighted score using reciprocal rank fusion
         const weightedScore = (chunk.similarity * groupWeight) / (rank + 60); // k=60 for RRF
-        
+
         allResults.push({
           chunk,
           group,
@@ -4158,11 +4325,13 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
 
     // Remove duplicates (keep the highest scoring version)
     const seenChunks = new Set<string>();
-    const finalResults: Array<BookChunk & { similarity: number; rank: number; group: string }> = [];
-    
+    const finalResults: Array<
+      BookChunk & { similarity: number; rank: number; group: string }
+    > = [];
+
     for (const { chunk, group, rank } of allResults) {
       const chunkKey = `${chunk.itemId}-${chunk.index}`;
-      
+
       if (!seenChunks.has(chunkKey)) {
         seenChunks.add(chunkKey);
         finalResults.push({
@@ -4175,7 +4344,6 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
 
     return finalResults;
   }
-
 
   async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
     const logger = createLoggerWithPrefix(
@@ -4200,13 +4368,15 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         embeddingsValid = false;
         continue;
       }
-      
+
       if (!Array.isArray(chunk.embedding)) {
-        logger.error(`Chunk ID ${chunk.id} has invalid embedding structure (not an array)`);
+        logger.error(
+          `Chunk ID ${chunk.id} has invalid embedding structure (not an array)`,
+        );
         embeddingsValid = false;
         continue;
       }
-      
+
       if (chunk.embedding.length !== this.vectorDimensions) {
         logger.error(
           `Vector dimensions mismatch for chunk ID ${chunk.id}. Expected: ${this.vectorDimensions}, Got: ${chunk.embedding.length}`,
@@ -4255,7 +4425,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   }
 
   // Enhanced storage implementation methods
-  
+
   /**
    * Store chunks
    */
@@ -4266,9 +4436,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Get chunks for a specific item and group
    */
-  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]> {
+  async getChunksByItemAndGroup(
+    itemId: string,
+    groupId: string,
+  ): Promise<BookChunk[]> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
@@ -4330,7 +4503,9 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
 
     // Group filtering
     if (filter.denseVectorIndexGroupId) {
-      must.push({ term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId } });
+      must.push({
+        term: { denseVectorIndexGroupId: filter.denseVectorIndexGroupId },
+      });
     }
 
     if (filter.groups && filter.groups.length > 0) {
@@ -4340,14 +4515,18 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     // Strategy filtering
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.chunkingStrategy': filter.chunkingStrategies },
+        terms: {
+          'strategyMetadata.chunkingStrategy': filter.chunkingStrategies,
+        },
       });
     }
 
     // Provider filtering
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
       must.push({
-        terms: { 'strategyMetadata.embeddingProvider': filter.embeddingProviders },
+        terms: {
+          'strategyMetadata.embeddingProvider': filter.embeddingProviders,
+        },
       });
     }
 
@@ -4393,10 +4572,10 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     });
 
     const results = response.hits.hits.map((hit: any) => hit._source);
-    
+
     // Cache the results
     this.cacheSearchResults(cacheKey, results);
-    
+
     return results;
   }
 
@@ -4405,7 +4584,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   async getAvailableGroups(itemId: string): Promise<string[]> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
@@ -4421,7 +4600,11 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       size: 0,
     });
 
-    return (response.aggregations?.groups as any)?.buckets?.map((bucket: any) => bucket.key) || [];
+    return (
+      (response.aggregations?.groups as any)?.buckets?.map(
+        (bucket: any) => bucket.key,
+      ) || []
+    );
   }
 
   /**
@@ -4435,7 +4618,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     updatedAt: Date;
   }> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
@@ -4478,8 +4661,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       chunkCount: aggregations?.chunkCount?.value || 0,
       averageChunkSize: aggregations?.avgChunkSize?.value || 0,
       processingTime: aggregations?.avgProcessingTime?.value || 0,
-      createdAt: new Date(aggregations?.oldestChunk?.value_as_string || Date.now()),
-      updatedAt: new Date(aggregations?.newestChunk?.value_as_string || Date.now()),
+      createdAt: new Date(
+        aggregations?.oldestChunk?.value_as_string || Date.now(),
+      ),
+      updatedAt: new Date(
+        aggregations?.newestChunk?.value_as_string || Date.now(),
+      ),
     };
   }
 
@@ -4488,7 +4675,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   async deleteChunksByGroup(groupId: string): Promise<number> {
     await this.checkInitialized();
-    
+
     const response = await this.client.deleteByQuery({
       index: this.chunksIndexName,
       query: {
@@ -4505,7 +4692,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   async getChunksByGroups(groupIds: string[]): Promise<BookChunk[]> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
@@ -4520,22 +4707,18 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     return response.hits.hits.map((hit: any) => hit._source);
   }
 
-
   /**
    * Get chunks by chunking strategy
    */
   async getChunksByStrategy(strategy: string): Promise<BookChunk[]> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
         term: { 'strategyMetadata.chunkingStrategy': strategy },
       },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
+      sort: [{ itemId: { order: 'asc' } }, { index: { order: 'asc' } }],
     });
 
     return response.hits.hits.map((hit: any) => hit._source);
@@ -4546,16 +4729,13 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   async getChunksByProvider(provider: string): Promise<BookChunk[]> {
     await this.checkInitialized();
-    
+
     const response = await this.client.search({
       index: this.chunksIndexName,
       query: {
         term: { 'strategyMetadata.embeddingProvider': provider },
       },
-      sort: [
-        { itemId: { order: 'asc' } },
-        { index: { order: 'asc' } },
-      ],
+      sort: [{ itemId: { order: 'asc' } }, { index: { order: 'asc' } }],
     });
 
     return response.hits.hits.map((hit: any) => hit._source);
@@ -4564,9 +4744,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Update chunks for a specific group
    */
-  async updateChunksByGroup(groupId: string, updates: Partial<BookChunk>): Promise<number> {
+  async updateChunksByGroup(
+    groupId: string,
+    updates: Partial<BookChunk>,
+  ): Promise<number> {
     await this.checkInitialized();
-    
+
     const response = await this.client.updateByQuery({
       index: this.chunksIndexName,
       query: {
@@ -4609,7 +4792,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     errors: string[];
   }> {
     await this.checkInitialized();
-    
+
     const query = groupId
       ? { term: { denseVectorIndexGroupId: groupId } }
       : { match_all: {} };
@@ -4630,19 +4813,23 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
         errors.push(`Chunk ${chunk.id} has no embedding`);
         continue;
       }
-      
+
       if (!Array.isArray(chunk.embedding)) {
-        errors.push(`Chunk ${chunk.id} has invalid embedding structure (expected array)`);
+        errors.push(
+          `Chunk ${chunk.id} has invalid embedding structure (expected array)`,
+        );
         continue;
       }
-      
+
       if (chunk.embedding.length === 0) {
         errors.push(`Chunk ${chunk.id} has empty embedding`);
         continue;
       }
-      
+
       if (chunk.embedding.length !== this.vectorDimensions) {
-        errors.push(`Chunk ${chunk.id} has incorrect embedding dimensions: ${chunk.embedding.length}, expected: ${this.vectorDimensions}`);
+        errors.push(
+          `Chunk ${chunk.id} has incorrect embedding dimensions: ${chunk.embedding.length}, expected: ${this.vectorDimensions}`,
+        );
         continue;
       }
 
@@ -4661,18 +4848,18 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
 export interface BookChunk {
   id: string;
   itemId: string; // Reference to the parent book item
-  
+
   // Dense vector index group for organization
   denseVectorIndexGroupId: string; // Group identifier for this chunking/embedding combination
-  
+
   // Content and metadata
   title: string;
   content: string;
   index: number; // Position in the document
-  
+
   // Simplified embedding field - single dense vector
   embedding: number[]; // Vector embedding of the content (single vector, not versioned)
-  
+
   // Strategy and configuration metadata
   strategyMetadata: {
     chunkingStrategy: string; // e.g., 'h1', 'paragraph', 'semantic'
@@ -4681,7 +4868,7 @@ export interface BookChunk {
     processingTimestamp: Date;
     processingDuration: number;
   };
-  
+
   // Additional metadata
   metadata?: {
     chunkType?: string; // Changed to string to support any chunking strategy
@@ -4690,7 +4877,7 @@ export interface BookChunk {
     wordCount?: number;
     chunkingConfig?: string; // JSON string of chunking configuration (deprecated, use strategyMetadata instead)
   };
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -4699,19 +4886,19 @@ export interface ChunkSearchFilter {
   query?: string;
   itemId?: string;
   itemIds?: string[];
-  
+
   // Group filtering
   denseVectorIndexGroupId?: string; // Specific group to search in
   groups?: string[]; // Multiple groups to search across
-  
+
   // Strategy filtering
   chunkingStrategies?: string[]; // Filter by chunking strategies
   embeddingProviders?: string[]; // Filter by embedding providers
-  
+
   chunkType?: string; // Changed to string to support any chunking strategy
   similarityThreshold?: number;
   limit?: number;
-  
+
   // Additional filters
   metadataFilters?: Record<string, any>; // Generic metadata filtering
   dateRange?: {
@@ -4724,17 +4911,17 @@ export interface ChunkingEmbeddingGroup {
   id: string; // Unique identifier for this group
   name: string; // Human-readable name
   description?: string;
-  
+
   // Strategy and model configuration
   chunkingStrategy: string;
   chunkingConfig: ChunkingConfig;
   embeddingProvider: EmbeddingProvider;
   embeddingConfig: EmbeddingConfig;
-  
+
   // Group settings
   isDefault: boolean; // Whether this is the default group for new items
   isActive: boolean; // Whether this group is currently active
-  
+
   // Metadata
   createdAt: Date;
   updatedAt: Date;
