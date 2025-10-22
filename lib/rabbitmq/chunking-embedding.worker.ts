@@ -13,29 +13,81 @@ import {
 import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import Library from '../../knowledgeBase/knowledgeImport/library';
+import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
-import { EmbeddingProvider, OpenAIModel } from '../embedding/embedding';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('ChunkingEmbeddingWorker');
 
 /**
- * Chunking and Embedding Worker
- * Processes chunking and embedding requests from RabbitMQ queue
+ * Interface for status updates
  */
-export class ChunkingEmbeddingWorker {
+interface StatusUpdater {
+  updateItemStatus(
+    itemId: string,
+    status: PdfProcessingStatus,
+    message?: string,
+    progress?: number,
+    error?: string,
+    processingTime?: number,
+  ): Promise<void>;
+}
+
+
+/**
+ * Interface for retry handling
+ */
+interface RetryHandler {
+  shouldRetry(retryCount: number, maxRetries: number): boolean;
+  handleRetry(
+    message: ChunkingEmbeddingRequestMessage | MultiVersionChunkingEmbeddingRequestMessage,
+    retryCount: number,
+    maxRetries: number,
+  ): Promise<void>;
+  handleFailure(
+    itemId: string,
+    error: string,
+    retryCount: number,
+    maxRetries: number,
+    processingTime: number,
+  ): Promise<void>;
+}
+
+
+
+interface ProgressReporter {
+  reportProgress(
+    itemId: string,
+    status: PdfProcessingStatus,
+    progress: number,
+    message: string,
+    chunksProcessed?: number,
+    totalChunks?: number,
+    groupId?: string,
+  ): Promise<void>;
+}
+
+/**
+ * Chunking and Embedding Worker
+ * Orchestrates the processing and communication for chunking and embedding requests from RabbitMQ queue
+ */
+export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater, RetryHandler {
   private rabbitMQService;
+  private processor: ChunkingEmbeddingProcessor;
   private consumerTag: string | null = null;
   private isRunning = false;
   private storage: AbstractLibraryStorage;
-  private library: Library;
 
   constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
-    this.library = new Library(storage);
     this.rabbitMQService = getRabbitMQService(protocol);
+    this.processor = new ChunkingEmbeddingProcessor(
+      storage,
+      this, // ProgressReporter
+      this, // StatusUpdater
+      this, // RetryHandler
+    );
   }
 
   /**
@@ -109,16 +161,19 @@ export class ChunkingEmbeddingWorker {
       // Route message based on event type
       switch (message.eventType) {
         case 'CHUNKING_EMBEDDING_REQUEST':
-          await this.handleChunkingEmbeddingRequest(message, originalMessage);
+          await this.processor.processChunkingEmbeddingRequest(message as ChunkingEmbeddingRequestMessage);
           break;
         case 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST':
-          await this.handleMultiVersionChunkingEmbeddingRequest(message, originalMessage);
+          await this.processor.processMultiVersionChunkingEmbeddingRequest(message as MultiVersionChunkingEmbeddingRequestMessage);
           break;
         default:
           logger.warn(`Unknown message type: ${message.eventType}`);
           // Acknowledge the message to prevent reprocessing
           originalMessage.ack();
       }
+      
+      // Acknowledge the message after successful processing
+      originalMessage.ack();
     } catch (error) {
       logger.error(`Error handling message:`, error);
       // Negative acknowledge to requeue the message
@@ -126,415 +181,42 @@ export class ChunkingEmbeddingWorker {
     }
   }
 
-  /**
-   * Handle chunking and embedding request
-   */
-  private async handleChunkingEmbeddingRequest(
-    message: ChunkingEmbeddingRequestMessage,
-    originalMessage: any,
+  // ProgressReporter interface implementation
+  async reportProgress(
+    itemId: string,
+    status: PdfProcessingStatus,
+    progress: number,
+    message: string,
+    chunksProcessed?: number,
+    totalChunks?: number,
+    groupId?: string,
   ): Promise<void> {
-    const startTime = Date.now();
-    logger.info(
-      `Processing chunking and embedding request for item: ${message.itemId}`,
-    );
-
-    // Check retry status before processing
-    const retryCount = message.retryCount || 0;
-    const maxRetries = message.maxRetries || 3;
-    const isFinalAttempt = retryCount >= maxRetries;
-
-    if (isFinalAttempt) {
-      logger.info(
-        `Processing final attempt for item ${message.itemId} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`,
-      );
-    }
-
     try {
-      // Update status to processing
-      await this.publishProgressMessage(
-        message.itemId,
-        PdfProcessingStatus.PROCESSING,
-        0,
-        'Starting chunking and embedding',
-      );
-
-      // Get the item metadata
-      const itemMetadata = await this.storage.getMetadata(message.itemId);
-      if (!itemMetadata) {
-        throw new Error(`Item ${message.itemId} not found`);
-      }
-
-      // Get the markdown content
-      let markdownContent = message.markdownContent;
-      if (!markdownContent) {
-        logger.info(`Fetching markdown content from storage for item: ${message.itemId}`);
-        const storedMarkdown = await this.storage.getMarkdown(message.itemId);
-        if (!storedMarkdown) {
-          throw new Error(`No markdown content found for item ${message.itemId}`);
-        }
-        markdownContent = storedMarkdown;
-      }
-
-      // Update progress
-      await this.publishProgressMessage(
-        message.itemId,
-        PdfProcessingStatus.PROCESSING,
-        10,
-        'Preparing chunking process',
-      );
-
-      // Convert string strategy to enum
-      let chunkingStrategy: ChunkingStrategy;
-      if (message.chunkingStrategy === 'h1') {
-        chunkingStrategy = ChunkingStrategy.H1;
-      } else {
-        chunkingStrategy = ChunkingStrategy.PARAGRAPH;
-      }
-
-      logger.info(
-        `Starting chunking for item ${message.itemId} using strategy: ${chunkingStrategy}`,
-        {
-          itemId: message.itemId,
-          chunkingStrategy: message.chunkingStrategy,
-          denseVectorIndexGroupId: message.denseVectorIndexGroupId,
-          embeddingProvider: message.embeddingProvider,
-          retryCount,
-          maxRetries,
-        },
-      );
-
-      // Update progress
-      await this.publishProgressMessage(
-        message.itemId,
-        PdfProcessingStatus.PROCESSING,
-        20,
-        'Chunking markdown content',
-      );
-
-      // Prepare options for multi-version support
-      const options = {
-        denseVectorIndexGroupId: message.denseVectorIndexGroupId,
-        embeddingProvider: message.embeddingProvider,
-        embeddingConfig: message.embeddingConfig,
-        chunkingConfig: message.chunkingConfig,
-        forceReprocess: message.forceReprocess,
-        preserveExisting: message.preserveExisting,
+      const progressMessage: ChunkingEmbeddingProgressMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'CHUNKING_EMBEDDING_PROGRESS',
+        itemId,
+        status,
+        progress,
+        message: groupId ? `${message} (Group: ${groupId})` : message,
+        startedAt: Date.now(),
+        chunksProcessed,
+        totalChunks,
       };
 
-      // Process chunks and embeddings with options
-      await this.library.processItemChunks(message.itemId, chunkingStrategy, options);
-
-      // Update progress
-      await this.publishProgressMessage(
-        message.itemId,
-        PdfProcessingStatus.PROCESSING,
-        90,
-        'Finalizing chunking and embedding',
-      );
-
-      // Get the chunks to count them
-      const chunks = await this.library.getItemChunks(message.itemId);
-      const chunksCount = chunks.length;
-
-      // Update item status to completed
-      const processingTime = Date.now() - startTime;
-      await this.updateItemStatus(
-        message.itemId,
-        PdfProcessingStatus.COMPLETED,
-        'Chunking and embedding completed successfully',
-        100,
-        undefined,
-        processingTime,
-      );
-
-      // Publish completion message
-      await this.publishCompletionMessage(
-        message.itemId,
-        chunksCount,
-        processingTime,
-        message.chunkingStrategy,
-      );
-
-      logger.info(
-        `Chunking and embedding completed successfully for item: ${message.itemId}, chunks: ${chunksCount}`,
-      );
+      await this.rabbitMQService.publishChunkingEmbeddingProgress(progressMessage);
     } catch (error) {
-      const processingTime = Date.now() - startTime;
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-
       logger.error(
-        `Chunking and embedding failed for item ${message.itemId}:`,
-        {
-          error: errorMessage,
-          stack: errorStack,
-          itemId: message.itemId,
-          chunkingStrategy: message.chunkingStrategy,
-          denseVectorIndexGroupId: message.denseVectorIndexGroupId,
-          embeddingProvider: message.embeddingProvider,
-          retryCount,
-          maxRetries,
-          processingTime,
-        },
+        `Failed to publish progress message for item ${itemId}:`,
+        error,
       );
-
-      // Update item status with error
-      await this.updateItemStatus(
-        message.itemId,
-        PdfProcessingStatus.FAILED,
-        `Chunking and embedding failed: ${errorMessage}`,
-        undefined,
-        errorMessage,
-      );
-
-      // Check if should retry
-      const shouldRetry = retryCount < maxRetries;
-
-      if (shouldRetry) {
-        logger.info(
-          `Retrying chunking and embedding for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
-        );
-
-        // Republish the request with incremented retry count
-        const retryRequest = {
-          ...message,
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          retryCount: retryCount + 1,
-        };
-
-        await this.rabbitMQService.publishChunkingEmbeddingRequest(retryRequest);
-      } else {
-        // Publish failure message
-        await this.publishFailureMessage(
-          message.itemId,
-          errorMessage,
-          retryCount,
-          maxRetries,
-          processingTime,
-        );
-      }
+      // Don't throw here, as this is a secondary operation
     }
   }
 
-  /**
-   * Handle multi-version chunking and embedding request
-   */
-  private async handleMultiVersionChunkingEmbeddingRequest(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
-    originalMessage: any,
-  ): Promise<void> {
-    const startTime = Date.now();
-    logger.info(
-      `Processing multi-version chunking and embedding request for item: ${message.itemId}`,
-    );
-
-    // Check retry status before processing
-    const retryCount = message.retryCount || 0;
-    const maxRetries = message.maxRetries || 3;
-    const isFinalAttempt = retryCount >= maxRetries;
-
-    if (isFinalAttempt) {
-      logger.info(
-        `Processing final attempt for item ${message.itemId} (retryCount: ${retryCount}, maxRetries: ${maxRetries})`,
-      );
-    }
-
-    try {
-      // Update status to processing
-      await this.publishMultiVersionProgressMessage(
-        message.itemId,
-        message.groupId,
-        PdfProcessingStatus.PROCESSING,
-        0,
-        'Starting multi-version chunking and embedding',
-      );
-
-      // Get the item metadata
-      const itemMetadata = await this.storage.getMetadata(message.itemId);
-      if (!itemMetadata) {
-        throw new Error(`Item ${message.itemId} not found`);
-      }
-
-      // Get the markdown content
-      let markdownContent = message.markdownContent;
-      if (!markdownContent) {
-        logger.info(`Fetching markdown content from storage for item: ${message.itemId}`);
-        const storedMarkdown = await this.storage.getMarkdown(message.itemId);
-        if (!storedMarkdown) {
-          throw new Error(`No markdown content found for item ${message.itemId}`);
-        }
-        markdownContent = storedMarkdown;
-      }
-
-      // Extract group configuration
-      let groupId = message.groupId;
-      let chunkingStrategy: ChunkingStrategy;
-      let options: any = {};
-
-      if (message.groupConfig) {
-        // Use provided group configuration
-        const groupConfig = message.groupConfig;
-        groupId = groupId || groupConfig.id;
-        
-        // Convert string strategy to enum
-        if (groupConfig.chunkingStrategy === 'h1') {
-          chunkingStrategy = ChunkingStrategy.H1;
-        } else {
-          chunkingStrategy = ChunkingStrategy.PARAGRAPH;
-        }
-
-        options = {
-          denseVectorIndexGroupId: groupId,
-          embeddingProvider: groupConfig.embeddingProvider,
-          embeddingConfig: groupConfig.embeddingConfig,
-          chunkingConfig: groupConfig.chunkingConfig,
-          forceReprocess: message.forceReprocess,
-          preserveExisting: message.preserveExisting,
-        };
-
-        logger.info(
-          `Using group configuration for item ${message.itemId}: strategy=${groupConfig.chunkingStrategy}, provider=${groupConfig.embeddingProvider}`,
-        );
-      } else if (groupId) {
-        // Use existing group (would need to fetch group details from storage)
-        logger.info(`Using existing group ${groupId} for item ${message.itemId}`);
-        // For now, use default strategy
-        chunkingStrategy = ChunkingStrategy.H1;
-        options = {
-          denseVectorIndexGroupId: groupId,
-          forceReprocess: message.forceReprocess,
-          preserveExisting: message.preserveExisting,
-        };
-      } else {
-        throw new Error('Either groupId or groupConfig must be provided for multi-version processing');
-      }
-
-      // Update progress
-      await this.publishMultiVersionProgressMessage(
-        message.itemId,
-        groupId,
-        PdfProcessingStatus.PROCESSING,
-        20,
-        'Chunking markdown content with multi-version support',
-      );
-
-      // Process chunks and embeddings with multi-version options
-      await this.library.processItemChunks(message.itemId, chunkingStrategy, options);
-
-      // Update progress
-      await this.publishMultiVersionProgressMessage(
-        message.itemId,
-        groupId,
-        PdfProcessingStatus.PROCESSING,
-        90,
-        'Finalizing multi-version chunking and embedding',
-      );
-
-      // Get the chunks to count them
-      const chunks = await this.library.getItemChunks(message.itemId);
-      const chunksCount = chunks.length;
-
-      // Update item status to completed
-      const processingTime = Date.now() - startTime;
-      await this.updateItemStatus(
-        message.itemId,
-        PdfProcessingStatus.COMPLETED,
-        'Multi-version chunking and embedding completed successfully',
-        100,
-        undefined,
-        processingTime,
-      );
-
-      // Publish multi-version completion message
-      await this.publishMultiVersionCompletionMessage(
-        message.itemId,
-        groupId!,
-        chunksCount,
-        processingTime,
-        options.chunkingStrategy || chunkingStrategy,
-        options.embeddingProvider || 'default',
-        '1.0.0', // Default version
-      );
-
-      logger.info(
-        `Multi-version chunking and embedding completed successfully for item: ${message.itemId}, group: ${groupId}, chunks: ${chunksCount}`,
-      );
-    } catch (error) {
-      const processingTime = Date.now() - startTime;
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-
-      logger.error(
-        `Multi-version chunking and embedding failed for item ${message.itemId}:`,
-        {
-          error: errorMessage,
-          stack: errorStack,
-          itemId: message.itemId,
-          groupId: message.groupId,
-          groupConfig: message.groupConfig,
-          retryCount,
-          maxRetries,
-          processingTime,
-        },
-      );
-
-      // Update item status with error
-      await this.updateItemStatus(
-        message.itemId,
-        PdfProcessingStatus.FAILED,
-        `Multi-version chunking and embedding failed: ${errorMessage}`,
-        undefined,
-        errorMessage,
-      );
-
-      // Check if should retry
-      const shouldRetry = retryCount < maxRetries;
-
-      if (shouldRetry) {
-        logger.info(
-          `Retrying multi-version chunking and embedding for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
-        );
-
-        // Convert multi-version message to standard message for retry
-        const retryRequest: ChunkingEmbeddingRequestMessage = {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'CHUNKING_EMBEDDING_REQUEST',
-          itemId: message.itemId,
-          markdownContent: message.markdownContent,
-          chunkingStrategy: message.groupConfig?.chunkingStrategy as ChunkingStrategy|| 'h1',
-          priority: message.priority,
-          retryCount: retryCount + 1,
-          maxRetries: message.maxRetries,
-          denseVectorIndexGroupId: message.groupId,
-          embeddingProvider: message.groupConfig?.embeddingProvider,
-          embeddingConfig: message.groupConfig?.embeddingConfig,
-          chunkingConfig: message.groupConfig?.chunkingConfig,
-          forceReprocess: message.forceReprocess,
-          preserveExisting: message.preserveExisting,
-        };
-
-        await this.rabbitMQService.publishChunkingEmbeddingRequest(retryRequest);
-      } else {
-        // Publish failure message using the standard method
-        await this.publishFailureMessage(
-          message.itemId,
-          errorMessage,
-          retryCount,
-          maxRetries,
-          processingTime,
-        );
-      }
-    }
-  }
-
-  /**
-   * Update item status in storage
-   */
-  private async updateItemStatus(
+  // StatusUpdater interface implementation
+  async updateItemStatus(
     itemId: string,
     status: PdfProcessingStatus,
     message?: string,
@@ -569,45 +251,70 @@ export class ChunkingEmbeddingWorker {
     }
   }
 
-  /**
-   * Publish progress message
-   */
-  private async publishProgressMessage(
-    itemId: string,
-    status: PdfProcessingStatus,
-    progress: number,
-    message: string,
-    chunksProcessed?: number,
-    totalChunks?: number,
+  // RetryHandler interface implementation
+  shouldRetry(retryCount: number, maxRetries: number): boolean {
+    return retryCount < maxRetries;
+  }
+
+  async handleRetry(
+    message: ChunkingEmbeddingRequestMessage | MultiVersionChunkingEmbeddingRequestMessage,
+    retryCount: number,
+    maxRetries: number,
   ): Promise<void> {
-    try {
-      const progressMessage: ChunkingEmbeddingProgressMessage = {
+    logger.info(
+      `Retrying chunking and embedding for item ${message.itemId} (attempt ${retryCount + 1}/${maxRetries})`,
+    );
+
+    // Republish the request with incremented retry count
+    const retryRequest = {
+      ...message,
+      messageId: uuidv4(),
+      timestamp: Date.now(),
+      retryCount: retryCount + 1,
+    };
+
+    // Check if it's a multi-version message and convert to standard message for retry
+    if (message.eventType === 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST') {
+      const multiVersionMessage = message as MultiVersionChunkingEmbeddingRequestMessage;
+      const standardRetryRequest: ChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_PROGRESS',
-        itemId,
-        status,
-        progress,
-        message,
-        startedAt: Date.now(),
-        chunksProcessed,
-        totalChunks,
+        eventType: 'CHUNKING_EMBEDDING_REQUEST',
+        itemId: multiVersionMessage.itemId,
+        markdownContent: multiVersionMessage.markdownContent,
+        chunkingStrategy: multiVersionMessage.groupConfig?.chunkingStrategy as ChunkingStrategy || 'h1',
+        priority: multiVersionMessage.priority,
+        retryCount: retryCount + 1,
+        maxRetries: multiVersionMessage.maxRetries,
+        denseVectorIndexGroupId: multiVersionMessage.groupId,
+        embeddingProvider: multiVersionMessage.groupConfig?.embeddingProvider,
+        embeddingConfig: multiVersionMessage.groupConfig?.embeddingConfig,
+        chunkingConfig: multiVersionMessage.groupConfig?.chunkingConfig,
+        forceReprocess: multiVersionMessage.forceReprocess,
+        preserveExisting: multiVersionMessage.preserveExisting,
       };
 
-      await this.rabbitMQService.publishChunkingEmbeddingProgress(progressMessage);
-    } catch (error) {
-      logger.error(
-        `Failed to publish progress message for item ${itemId}:`,
-        error,
-      );
-      // Don't throw here, as this is a secondary operation
+      await this.rabbitMQService.publishChunkingEmbeddingRequest(standardRetryRequest);
+    } else {
+      await this.rabbitMQService.publishChunkingEmbeddingRequest(retryRequest as ChunkingEmbeddingRequestMessage);
     }
+  }
+
+  async handleFailure(
+    itemId: string,
+    error: string,
+    retryCount: number,
+    maxRetries: number,
+    processingTime: number,
+  ): Promise<void> {
+    // Publish failure message
+    await this.publishFailureMessage(itemId, error, retryCount, maxRetries, processingTime);
   }
 
   /**
    * Publish completion message
    */
-  private async publishCompletionMessage(
+  async publishCompletionMessage(
     itemId: string,
     chunksCount: number,
     processingTime: number,
@@ -640,7 +347,7 @@ export class ChunkingEmbeddingWorker {
   /**
    * Publish failure message
    */
-  private async publishFailureMessage(
+  async publishFailureMessage(
     itemId: string,
     error: string,
     retryCount: number,
@@ -666,92 +373,6 @@ export class ChunkingEmbeddingWorker {
       logger.error(
         `Failed to publish failure message for item ${itemId}:`,
         publishError,
-      );
-      // Don't throw here, as this is a secondary operation
-    }
-  }
-
-  /**
-   * Publish multi-version progress message
-   */
-  private async publishMultiVersionProgressMessage(
-    itemId: string,
-    groupId: string | undefined,
-    status: PdfProcessingStatus,
-    progress: number,
-    message: string,
-    chunksProcessed?: number,
-    totalChunks?: number,
-  ): Promise<void> {
-    try {
-      // For now, use the standard progress message publisher with group info in the message
-      // In a full implementation, you would add a specific method for multi-version messages
-      const progressMessage: ChunkingEmbeddingProgressMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_PROGRESS',
-        itemId,
-        status,
-        progress,
-        message: groupId ? `${message} (Group: ${groupId})` : message,
-        startedAt: Date.now(),
-        chunksProcessed,
-        totalChunks,
-      };
-
-      await this.rabbitMQService.publishChunkingEmbeddingProgress(progressMessage);
-    } catch (error) {
-      logger.error(
-        `Failed to publish multi-version progress message for item ${itemId}:`,
-        error,
-      );
-      // Don't throw here, as this is a secondary operation
-    }
-  }
-
-  /**
-   * Publish multi-version completion message
-   */
-  private async publishMultiVersionCompletionMessage(
-    itemId: string,
-    groupId: string,
-    chunksCount: number,
-    processingTime: number,
-    strategy: string,
-    provider: string,
-    version: string,
-  ): Promise<void> {
-    try {
-      const completionMessage: MultiVersionChunkingEmbeddingCompletedMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_COMPLETED',
-        itemId,
-        groupId,
-        status: PdfProcessingStatus.COMPLETED,
-        chunksCount,
-        processingTime,
-        strategy,
-        provider,
-        version,
-      };
-
-      // For now, use the standard completion message publisher
-      // In a full implementation, you would add a specific method for multi-version messages
-      await this.rabbitMQService.publishChunkingEmbeddingCompleted({
-        messageId: completionMessage.messageId,
-        timestamp: completionMessage.timestamp,
-        eventType: 'CHUNKING_EMBEDDING_COMPLETED',
-        itemId: completionMessage.itemId,
-        status: completionMessage.status,
-        chunksCount: completionMessage.chunksCount,
-        processingTime: completionMessage.processingTime,
-        chunkingStrategy: completionMessage.strategy as 'h1' | 'paragraph',
-      });
-    } catch (error) {
-      logger.error(
-        `Failed to publish multi-version completion message for item ${itemId}:`,
-        error,
       );
       // Don't throw here, as this is a secondary operation
     }
@@ -785,8 +406,9 @@ export class ChunkingEmbeddingWorker {
  */
 export async function createChunkingEmbeddingWorker(
   storage: AbstractLibraryStorage,
+  protocol?: MessageProtocol,
 ): Promise<ChunkingEmbeddingWorker> {
-  const worker = new ChunkingEmbeddingWorker(storage);
+  const worker = new ChunkingEmbeddingWorker(storage, protocol);
   await worker.start();
   return worker;
 }

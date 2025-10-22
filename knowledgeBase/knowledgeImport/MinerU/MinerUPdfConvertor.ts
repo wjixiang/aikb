@@ -632,7 +632,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
    * @param pdfS3Key Optional S3 key of the original PDF for organizing images
    * @returns Promise<any> The extracted markdown content
    */
-  private async extractMarkdownFromDownloadedFiles(
+  async extractMarkdownFromDownloadedFiles(
     downloadedFiles: string[],
     pdfS3Key?: string,
   ): Promise<any> {
