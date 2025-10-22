@@ -1,4 +1,4 @@
-import { LibraryItem, BookChunk } from '../library';
+import { LibraryItem, ItemChunk } from '../library';
 import { AbstractLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
@@ -10,13 +10,13 @@ import {
 
 // Mock storage implementation for testing
 class MockStorage implements AbstractLibraryStorage {
-  private chunks: BookChunk[] = [];
+  private chunks: ItemChunk[] = [];
   private metadata: Record<string, BookMetadata> = {};
 
   constructor() {}
 
   // Mock implementation for required abstract methods
-  async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItemId(itemId: string): Promise<ItemChunk[]> {
     return this.chunks.filter((chunk) => chunk.itemId === itemId);
   }
 
@@ -25,7 +25,7 @@ class MockStorage implements AbstractLibraryStorage {
   }
 
   // Add test data
-  addTestChunks(chunks: BookChunk[]) {
+  addTestChunks(chunks: ItemChunk[]) {
     this.chunks.push(...chunks);
   }
 
@@ -103,13 +103,13 @@ class MockStorage implements AbstractLibraryStorage {
   async deleteCitations(itemId: string): Promise<boolean> {
     throw new Error('Not implemented');
   }
-  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+  async saveChunk(chunk: ItemChunk): Promise<ItemChunk> {
     throw new Error('Not implemented');
   }
-  async getChunk(chunkId: string): Promise<BookChunk | null> {
+  async getChunk(chunkId: string): Promise<ItemChunk | null> {
     throw new Error('Not implemented');
   }
-  async updateChunk(chunk: BookChunk): Promise<void> {
+  async updateChunk(chunk: ItemChunk): Promise<void> {
     throw new Error('Not implemented');
   }
   async deleteChunk(chunkId: string): Promise<boolean> {
@@ -118,7 +118,7 @@ class MockStorage implements AbstractLibraryStorage {
   async deleteChunksByItemId(itemId: string): Promise<number> {
     throw new Error('Not implemented');
   }
-  async searchChunks(filter: any): Promise<BookChunk[]> {
+  async searchChunks(filter: any): Promise<ItemChunk[]> {
     throw new Error('Not implemented');
   }
   async findSimilarChunks(
@@ -126,10 +126,10 @@ class MockStorage implements AbstractLibraryStorage {
     limit?: number,
     threshold?: number,
     itemIds?: string[],
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     throw new Error('Not implemented');
   }
-  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+  async batchSaveChunks(chunks: ItemChunk[]): Promise<void> {
     throw new Error('Not implemented');
   }
 }
@@ -165,7 +165,7 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
   });
 
   test('should return single denseVectorIndexGroup when all chunks have the same group', async () => {
-    const chunks: BookChunk[] = [
+    const chunks: ItemChunk[] = [
       {
         id: 'chunk1',
         itemId: itemId,
@@ -225,7 +225,7 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
   });
 
   test('should return multiple denseVectorIndexGroups when chunks have different groups', async () => {
-    const chunks: BookChunk[] = [
+    const chunks: ItemChunk[] = [
       {
         id: 'chunk1',
         itemId: itemId,
@@ -310,7 +310,7 @@ describe('LibraryItem.getDenseVectorIndexGroupId', () => {
   });
 
   test('should filter out empty or null denseVectorIndexGroup values', async () => {
-    const chunks: BookChunk[] = [
+    const chunks: ItemChunk[] = [
       {
         id: 'chunk1',
         itemId: itemId,

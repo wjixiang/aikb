@@ -24,7 +24,7 @@ import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
 import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import {
-  BookChunk,
+  ItemChunk,
   ChunkSearchFilter,
   ChunkingEmbeddingGroup,
 } from '../knowledgeImport/library';
@@ -194,7 +194,7 @@ async function demonstrateAdvancedSearch() {
   console.log('\n=== Example 5: Advanced Search with Multiple Strategies ===');
 
   // Create sample chunks
-  const chunks: BookChunk[] = [
+  const chunks: ItemChunk[] = [
     {
       id: 'chunk-1',
       itemId: 'item-1',

@@ -1,4 +1,4 @@
-import { BookChunk, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import { ItemChunk, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
 import { EmbeddingConfig, EmbeddingProvider } from '../embedding/embedding';
 import { ChunkingConfig, ChunkingStrategyType } from './chunkingStrategy';
 
@@ -58,7 +58,7 @@ export interface IMultiVersionChunkingManager {
    * @param groupId The ID of the group to use for processing
    * @returns Array of processed chunks
    */
-  processItemWithGroup(itemId: string, groupId: string): Promise<BookChunk[]>;
+  processItemWithGroup(itemId: string, groupId: string): Promise<ItemChunk[]>;
 
   /**
    * Process item chunks with custom configuration
@@ -75,7 +75,7 @@ export interface IMultiVersionChunkingManager {
     chunkingConfig: ChunkingConfig,
     embeddingProvider: EmbeddingProvider,
     embeddingConfig: EmbeddingConfig
-  ): Promise<BookChunk[]>;
+  ): Promise<ItemChunk[]>;
 
   /**
    * Get available strategies for a group
@@ -267,7 +267,7 @@ export class MultiVersionChunkingManager implements IMultiVersionChunkingManager
   /**
    * Process item chunks with a specific group
    */
-  async processItemWithGroup(itemId: string, groupId: string): Promise<BookChunk[]> {
+  async processItemWithGroup(itemId: string, groupId: string): Promise<ItemChunk[]> {
     const group = this.getGroup(groupId);
     if (!group) {
       throw new Error(`Group with ID ${groupId} not found`);
@@ -291,7 +291,7 @@ export class MultiVersionChunkingManager implements IMultiVersionChunkingManager
     chunkingConfig: ChunkingConfig,
     embeddingProvider: EmbeddingProvider,
     embeddingConfig: EmbeddingConfig
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     // This method would be implemented by the concrete class
     // that has access to the actual chunking and embedding services
     throw new Error('Method not implemented - use concrete implementation');

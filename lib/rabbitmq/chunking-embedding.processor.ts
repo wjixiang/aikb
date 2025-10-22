@@ -321,14 +321,14 @@ export class ChunkingEmbeddingProcessor {
       }
 
       // Extract group configuration
-      let groupId = message.groupId;
+    
       let chunkingStrategy: ChunkingStrategy;
       let options: ProcessingOptions = {};
 
       if (message.groupConfig) {
         // Use provided group configuration
         const groupConfig = message.groupConfig;
-        groupId = groupId || groupConfig.id;
+        
         
         // Convert string strategy to enum
         if (groupConfig.chunkingStrategy === 'h1') {
@@ -338,7 +338,7 @@ export class ChunkingEmbeddingProcessor {
         }
 
         options = {
-          denseVectorIndexGroupId: groupId,
+          // denseVectorIndexGroupId: groupId,
           embeddingProvider: groupConfig.embeddingProvider,
           embeddingConfig: groupConfig.embeddingConfig,
           chunkingConfig: groupConfig.chunkingConfig,
@@ -349,16 +349,6 @@ export class ChunkingEmbeddingProcessor {
         logger.info(
           `Using group configuration for item ${message.itemId}: strategy=${groupConfig.chunkingStrategy}, provider=${groupConfig.embeddingProvider}`,
         );
-      } else if (groupId) {
-        // Use existing group (would need to fetch group details from storage)
-        logger.info(`Using existing group ${groupId} for item ${message.itemId}`);
-        // For now, use default strategy
-        chunkingStrategy = ChunkingStrategy.H1;
-        options = {
-          denseVectorIndexGroupId: groupId,
-          forceReprocess: message.forceReprocess,
-          preserveExisting: message.preserveExisting,
-        };
       } else {
         throw new Error('Either groupId or groupConfig must be provided for multi-version processing');
       }
@@ -371,7 +361,7 @@ export class ChunkingEmbeddingProcessor {
         'Chunking markdown content with multi-version support',
         undefined,
         undefined,
-        groupId,
+        // groupId,
       );
 
       // Process chunks and embeddings with multi-version options
@@ -461,3 +451,4 @@ export class ChunkingEmbeddingProcessor {
     }
   }
 }
+

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
-import { BookMetadata, BookChunk, ChunkSearchFilter } from '../library';
+import { BookMetadata, ItemChunk, ChunkSearchFilter } from '../library';
 import {
   embeddingService,
   EmbeddingProvider,

@@ -21,7 +21,7 @@ This document outlines the architecture design for supporting multiple chunking 
 3. **Storage System**
    - Elasticsearch-based vector storage for entities and knowledge
    - Separate indices: `entity_vectors`, `knowledge_vectors`
-   - Current `BookChunk` interface with single embedding field
+   - Current `ItemChunk` interface with single embedding field
 
 4. **Processing Pipeline**
    - RabbitMQ-based async processing
@@ -39,10 +39,10 @@ This document outlines the architecture design for supporting multiple chunking 
 
 ### 1. Data Structure Design
 
-#### Enhanced BookChunk Interface
+#### Enhanced ItemChunk Interface
 
 ```typescript
-export interface BookChunk {
+export interface ItemChunk {
   id: string;
   itemId: string; // Reference to the parent book item
   
@@ -185,7 +185,7 @@ export class MultiVersionChunkingManager {
   /**
    * Process item chunks with a specific group
    */
-  processItemWithGroup(itemId: string, groupId: string): Promise<BookChunk[]>;
+  processItemWithGroup(itemId: string, groupId: string): Promise<ItemChunk[]>;
   
   /**
    * Process item chunks with custom configuration
@@ -196,7 +196,7 @@ export class MultiVersionChunkingManager {
     chunkingConfig: ChunkingConfig,
     embeddingProvider: EmbeddingProvider, // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
     embeddingConfig: EmbeddingConfig
-  ): Promise<BookChunk[]>;
+  ): Promise<ItemChunk[]>;
   
   /**
    * Get available strategies for a group
@@ -220,22 +220,22 @@ export class MultiVersionVectorStorage {
   /**
    * Store chunks with versioning information
    */
-  async storeChunks(chunks: BookChunk[]): Promise<void>;
+  async storeChunks(chunks: ItemChunk[]): Promise<void>;
   
   /**
    * Get chunks for a specific item and group
    */
-  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<BookChunk[]>;
+  async getChunksByItemAndGroup(itemId: string, groupId: string): Promise<ItemChunk[]>;
   
   /**
    * Get chunks for a specific item across all groups
    */
-  async getChunksByItem(itemId: string): Promise<BookChunk[]>;
+  async getChunksByItem(itemId: string): Promise<ItemChunk[]>;
   
   /**
    * Search chunks with multi-version support
    */
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
   
   /**
    * Find similar chunks across multiple groups
@@ -244,7 +244,7 @@ export class MultiVersionVectorStorage {
     queryVector: number[],
     filter: ChunkSearchFilter,
     provider?: EmbeddingProvider // Uses EmbeddingProvider enum: OPENAI, ALIBABA, ONNX
-  ): Promise<Array<BookChunk & { similarity: number }>>;
+  ): Promise<Array<ItemChunk & { similarity: number }>>;
   
   /**
    * Get available groups for an item
@@ -322,7 +322,7 @@ export interface MultiVersionChunkingEmbeddingCompletedMessage extends BaseRabbi
 #### Phase 1: Core Infrastructure
 
 1. **Enhanced Data Models**
-   - Update `BookChunk` interface with multi-version fields
+   - Update `ItemChunk` interface with multi-version fields
    - Create `ChunkingEmbeddingGroup` interface
    - Update search filters to support multi-version queries
 
@@ -444,7 +444,7 @@ export class MultiVersionSimilaritySearch {
       weights?: Record<string, number>; // Group-specific weights
     }
   ): Promise<Array<{
-    chunk: BookChunk;
+    chunk: ItemChunk;
     similarity: number;
     group: string;
     rank: number;
@@ -455,13 +455,13 @@ export class MultiVersionSimilaritySearch {
    */
   private async rankFusion(
     results: Array<{
-      chunk: BookChunk;
+      chunk: ItemChunk;
       similarity: number;
       group: string;
     }>,
     weights?: Record<string, number>
   ): Promise<Array<{
-    chunk: BookChunk;
+    chunk: ItemChunk;
     similarity: number;
     group: string;
     rank: number;
@@ -472,12 +472,12 @@ export class MultiVersionSimilaritySearch {
    */
   private normalizeSimilarity(
     results: Array<{
-      chunk: BookChunk;
+      chunk: ItemChunk;
       similarity: number;
       group: string;
     }>
   ): Array<{
-    chunk: BookChunk;
+    chunk: ItemChunk;
     similarity: number;
     group: string;
   }>;

@@ -41,7 +41,7 @@ vi.mock('../../../knowledgeBase/knowledgeImport/library', () => ({
   Author: {},
   Collection: {},
   Citation: {},
-  BookChunk: {},
+  ItemChunk: {},
   ChunkSearchFilter: {},
   HashUtils: {
     generateHashFromBuffer: vi.fn(() => 'mock-hash'),

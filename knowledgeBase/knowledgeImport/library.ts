@@ -319,13 +319,13 @@ export interface AbstractLibrary {
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
-  ): Promise<BookChunk[]>;
+  ): Promise<ItemChunk[]>;
 
   /**
    * Search chunks with filters
    * @param filter Search filters
    */
-  searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
 
   /**
    * Find similar chunks based on a query vector
@@ -347,7 +347,7 @@ export interface AbstractLibrary {
       embeddingProviders?: string[];
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>>;
+  ): Promise<Array<ItemChunk & { similarity: number }>>;
 
   /**
    * Find similar chunks within a specific LibraryItem
@@ -369,7 +369,7 @@ export interface AbstractLibrary {
       embeddingProviders?: string[];
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>>;
+  ): Promise<Array<ItemChunk & { similarity: number }>>;
 
   /**
    * Search chunks within a specific LibraryItem
@@ -388,7 +388,7 @@ export interface AbstractLibrary {
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
-  ): Promise<BookChunk[]>;
+  ): Promise<ItemChunk[]>;
 
   /**
    * Re-process chunks for a specific item or all items
@@ -1042,7 +1042,7 @@ export default class Library implements AbstractLibrary {
       );
 
       // Prepare chunks for storage
-      const chunks: BookChunk[] = [];
+      const chunks: ItemChunk[] = [];
       const chunkTexts: string[] = [];
 
       const processingStartTime = new Date();
@@ -1067,7 +1067,7 @@ export default class Library implements AbstractLibrary {
           content = chunkResult.content;
         }
 
-        const chunk: BookChunk = {
+        const chunk: ItemChunk = {
           id: IdUtils.generateId(),
           itemId,
           title,
@@ -1171,7 +1171,7 @@ export default class Library implements AbstractLibrary {
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     // If no options specified, use legacy method
     if (!options) {
       return await this.storage.getChunksByItemId(itemId);
@@ -1200,7 +1200,7 @@ export default class Library implements AbstractLibrary {
       typeof (this.storage as any).getChunksByStrategy === 'function'
     ) {
       // For multiple strategies, we need to combine results
-      const allChunks: BookChunk[] = [];
+      const allChunks: ItemChunk[] = [];
       for (const strategy of options.chunkingStrategies) {
         const chunks = await (this.storage as any).getChunksByStrategy(
           strategy,
@@ -1215,7 +1215,7 @@ export default class Library implements AbstractLibrary {
       typeof (this.storage as any).getChunksByProvider === 'function'
     ) {
       // For multiple providers, we need to combine results
-      const allChunks: BookChunk[] = [];
+      const allChunks: ItemChunk[] = [];
       for (const provider of options.embeddingProviders) {
         const chunks = await (this.storage as any).getChunksByProvider(
           provider,
@@ -1229,7 +1229,7 @@ export default class Library implements AbstractLibrary {
     return await this.storage.getChunksByItemId(itemId);
   }
 
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
     return await this.storage.searchChunks(filter);
   }
 
@@ -1245,7 +1245,7 @@ export default class Library implements AbstractLibrary {
       embeddingProviders?: string[];
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     // Handle fallback logic for strategy groups
     let denseVectorIndexGroupId = options?.denseVectorIndexGroupId;
     let groups = options?.groups;
@@ -1312,7 +1312,7 @@ export default class Library implements AbstractLibrary {
       embeddingProviders?: string[];
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     return await this.findSimilarChunks(
       queryVector,
       limit,
@@ -1332,7 +1332,7 @@ export default class Library implements AbstractLibrary {
       chunkingStrategies?: string[];
       embeddingProviders?: string[];
     },
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     return await this.searchChunks({
       query,
       itemId,
@@ -1361,7 +1361,7 @@ export default class Library implements AbstractLibrary {
       weights?: Record<string, number>;
       maxResultsPerGroup?: number;
     },
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     // Validate parameters
     ChunkingErrorHandler.validateParams(
       { filter, options },
@@ -1374,7 +1374,7 @@ export default class Library implements AbstractLibrary {
     return ChunkingErrorHandler.withRetry(
       async () => {
         // Get initial results from storage
-        let chunks: BookChunk[];
+        let chunks: ItemChunk[];
 
         if (filter.query || Object.keys(filter).length > 1) {
           // Use storage search for complex queries
@@ -1438,7 +1438,7 @@ export default class Library implements AbstractLibrary {
       maxResultsPerGroup?: number;
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     // Validate parameters
     ChunkingErrorHandler.validateParams(
       { queryVector, filter, options },
@@ -1478,7 +1478,7 @@ export default class Library implements AbstractLibrary {
           logger.info(
             `Advanced similarity search returned ${filteredResults.length} chunks`,
           );
-          return filteredResults as Array<BookChunk & { similarity: number }>;
+          return filteredResults as Array<ItemChunk & { similarity: number }>;
         }
 
         // Fallback to legacy method
@@ -1804,7 +1804,7 @@ export class LibraryItem {
     groups?: string[];
     chunkingStrategies?: string[];
     embeddingProviders?: string[];
-  }): Promise<BookChunk[]> {
+  }): Promise<ItemChunk[]> {
     const logger = createLoggerWithPrefix('LibraryItem.getChunks');
     logger.info(`Retrieving chunks for item: ${this.metadata.id}`);
 
@@ -1818,7 +1818,7 @@ export class LibraryItem {
     }
 
     // Use storage if available
-    let chunks: BookChunk[] = [];
+    let chunks: ItemChunk[] = [];
 
     if (
       options.denseVectorIndexGroupId &&
@@ -1885,7 +1885,7 @@ export class LibraryItem {
   async semanticSearchWithDenseVector(
     query: string,
     limit: number = 10,
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     return await this.storage.searchChunks({
       query,
       itemId: this.metadata.id!,
@@ -1911,7 +1911,7 @@ export class LibraryItem {
       embeddingProviders?: string[];
       provider?: string;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     // Use the enhanced findSimilarChunksWithFilter method if available
     if (
       typeof (this.storage as any).findSimilarChunksWithFilter === 'function'
@@ -2001,7 +2001,7 @@ export class LibraryItem {
     chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
     forceReprocess: boolean = false,
     chunkingConfig?: any,
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     const logger = createLoggerWithPrefix('LibraryItem.chunkEmbed');
     try {
       logger.info(
@@ -2098,12 +2098,12 @@ export class LibraryItem {
    * Wait for chunking and embedding to complete
    * @param timeoutMs Timeout in milliseconds (default: 5 minutes)
    * @param intervalMs Check interval in milliseconds (default: 2 seconds)
-   * @returns Promise<{success: boolean, chunks?: BookChunk[], error?: string}>
+   * @returns Promise<{success: boolean, chunks?: ItemChunk[], error?: string}>
    */
   async waitForChunkEmbedCompletion(
     timeoutMs: number = 300000, // 5 minutes default
     intervalMs: number = 2000, // 2 seconds default
-  ): Promise<{ success: boolean; chunks?: BookChunk[]; error?: string }> {
+  ): Promise<{ success: boolean; chunks?: ItemChunk[]; error?: string }> {
     const logger = createLoggerWithPrefix(
       'LibraryItem.waitForChunkEmbedCompletion',
     );
@@ -2392,20 +2392,20 @@ export interface AbstractLibraryStorage {
   deleteCitations(itemId: string): Promise<boolean>;
 
   // Chunk-related methods
-  saveChunk(chunk: BookChunk): Promise<BookChunk>;
-  getChunk(chunkId: string): Promise<BookChunk | null>;
-  getChunksByItemId(itemId: string): Promise<BookChunk[]>;
-  updateChunk(chunk: BookChunk): Promise<void>;
+  saveChunk(chunk: ItemChunk): Promise<ItemChunk>;
+  getChunk(chunkId: string): Promise<ItemChunk | null>;
+  getChunksByItemId(itemId: string): Promise<ItemChunk[]>;
+  updateChunk(chunk: ItemChunk): Promise<void>;
   deleteChunk(chunkId: string): Promise<boolean>;
   deleteChunksByItemId(itemId: string): Promise<number>;
-  searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
   findSimilarChunks(
     queryVector: number[],
     limit?: number,
     threshold?: number,
     itemIds?: string[],
-  ): Promise<Array<BookChunk & { similarity: number }>>;
-  batchSaveChunks(chunks: BookChunk[]): Promise<void>;
+  ): Promise<Array<ItemChunk & { similarity: number }>>;
+  batchSaveChunks(chunks: ItemChunk[]): Promise<void>;
 }
 
 export class S3MongoLibraryStorage implements AbstractLibraryStorage {
@@ -2726,7 +2726,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
   }
 
   // Chunk-related methods implementation (MongoDB version)
-  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+  async saveChunk(chunk: ItemChunk): Promise<ItemChunk> {
     if (!chunk.id) {
       chunk.id = IdUtils.generateId();
     }
@@ -2739,25 +2739,25 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
     return chunk;
   }
 
-  async getChunk(chunkId: string): Promise<BookChunk | null> {
+  async getChunk(chunkId: string): Promise<ItemChunk | null> {
     const { db } = await connectToDatabase();
     const chunk = await db
-      .collection<BookChunk>(this.chunksCollection)
+      .collection<ItemChunk>(this.chunksCollection)
       .findOne({ id: chunkId });
     return chunk || null;
   }
 
-  async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItemId(itemId: string): Promise<ItemChunk[]> {
     const { db } = await connectToDatabase();
     const chunks = await db
-      .collection<BookChunk>(this.chunksCollection)
+      .collection<ItemChunk>(this.chunksCollection)
       .find({ itemId })
       .sort({ index: 1 })
       .toArray();
     return chunks;
   }
 
-  async updateChunk(chunk: BookChunk): Promise<void> {
+  async updateChunk(chunk: ItemChunk): Promise<void> {
     const { db } = await connectToDatabase();
     await db.collection(this.chunksCollection).updateOne(
       { id: chunk.id },
@@ -2786,7 +2786,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
     return result.deletedCount;
   }
 
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
     const { db } = await connectToDatabase();
     const query: any = {};
 
@@ -2810,7 +2810,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
     }
 
     const chunks = await db
-      .collection<BookChunk>(this.chunksCollection)
+      .collection<ItemChunk>(this.chunksCollection)
       .find(query)
       .limit(filter.limit || 100)
       .toArray();
@@ -2822,7 +2822,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
     limit: number = 10,
     threshold: number = 0.7,
     itemIds?: string[],
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     // MongoDB doesn't have native vector similarity search like Elasticsearch
     // This is a simplified implementation that would need to be enhanced
     // with a proper vector search solution (e.g., MongoDB Atlas Vector Search)
@@ -2834,13 +2834,13 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
 
     const { db } = await connectToDatabase();
     const chunks = await db
-      .collection<BookChunk>(this.chunksCollection)
+      .collection<ItemChunk>(this.chunksCollection)
       .find(query)
       .limit(limit)
       .toArray();
 
     // Calculate cosine similarity manually (this is inefficient and should be replaced with proper vector search)
-    const similarChunks: Array<BookChunk & { similarity: number }> = [];
+    const similarChunks: Array<ItemChunk & { similarity: number }> = [];
 
     for (const chunk of chunks) {
       // Check for simplified embedding structure
@@ -2874,7 +2874,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
     return similarChunks.slice(0, limit);
   }
 
-  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+  async batchSaveChunks(chunks: ItemChunk[]): Promise<void> {
     const { db } = await connectToDatabase();
 
     // Ensure all chunks have IDs
@@ -3897,7 +3897,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   }
 
   // Chunk-related methods implementation
-  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+  async saveChunk(chunk: ItemChunk): Promise<ItemChunk> {
     await this.checkInitialized();
 
     if (!chunk.id) {
@@ -3914,7 +3914,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     return chunk;
   }
 
-  async getChunk(chunkId: string): Promise<BookChunk | null> {
+  async getChunk(chunkId: string): Promise<ItemChunk | null> {
     await this.checkInitialized();
 
     try {
@@ -3924,7 +3924,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       });
 
       if (result.found) {
-        return result._source as BookChunk;
+        return result._source as ItemChunk;
       }
       return null;
     } catch (error) {
@@ -3935,7 +3935,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }
   }
 
-  async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItemId(itemId: string): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     try {
@@ -3953,7 +3953,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       } as any);
 
       const hits = result.hits.hits;
-      return hits.map((hit) => hit._source as BookChunk);
+      return hits.map((hit) => hit._source as ItemChunk);
     } catch (error) {
       if (error?.meta?.body?.error?.type === 'index_not_found_exception') {
         return [];
@@ -3962,7 +3962,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }
   }
 
-  async updateChunk(chunk: BookChunk): Promise<void> {
+  async updateChunk(chunk: ItemChunk): Promise<void> {
     await this.checkInitialized();
 
     await this.client.update({
@@ -4028,7 +4028,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     limit: number = 10,
     threshold: number = 0.7,
     itemIds?: string[],
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     const filter: ChunkSearchFilter = {
       limit,
       similarityThreshold: threshold,
@@ -4052,7 +4052,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       weights?: Record<string, number>; // Group-specific weights
       maxResultsPerGroup?: number;
     },
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     await this.checkInitialized();
 
     // Check cache first
@@ -4200,7 +4200,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       const results = hits
         .map((hit) => {
           const { _source, _score } = hit;
-          const chunk = _source as BookChunk;
+          const chunk = _source as ItemChunk;
 
           // Ensure the chunk has the simplified embedding structure
           if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
@@ -4221,7 +4221,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
           (chunk) =>
             chunk !== null &&
             chunk.similarity >= (filter.similarityThreshold || 0),
-        ) as Array<BookChunk & { similarity: number }>;
+        ) as Array<ItemChunk & { similarity: number }>;
 
       // Cache the results
       this.cacheSearchResults(cacheKey, results);
@@ -4247,7 +4247,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
       maxResultsPerGroup?: number;
     },
   ): Promise<
-    Array<BookChunk & { similarity: number; rank: number; group: string }>
+    Array<ItemChunk & { similarity: number; rank: number; group: string }>
   > {
     const maxResultsPerGroup =
       options?.maxResultsPerGroup ||
@@ -4257,7 +4257,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     // Get results from each group
     const groupResults: Array<{
       group: string;
-      chunks: Array<BookChunk & { similarity: number }>;
+      chunks: Array<ItemChunk & { similarity: number }>;
     }> = [];
 
     for (const group of filter.groups!) {
@@ -4289,12 +4289,12 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   private performRankFusion(
     groupResults: Array<{
       group: string;
-      chunks: Array<BookChunk & { similarity: number }>;
+      chunks: Array<ItemChunk & { similarity: number }>;
     }>,
     weights: Record<string, number>,
-  ): Array<BookChunk & { similarity: number; rank: number; group: string }> {
+  ): Array<ItemChunk & { similarity: number; rank: number; group: string }> {
     const allResults: Array<{
-      chunk: BookChunk & { similarity: number };
+      chunk: ItemChunk & { similarity: number };
       group: string;
       rank: number;
       weightedScore: number;
@@ -4326,7 +4326,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     // Remove duplicates (keep the highest scoring version)
     const seenChunks = new Set<string>();
     const finalResults: Array<
-      BookChunk & { similarity: number; rank: number; group: string }
+      ItemChunk & { similarity: number; rank: number; group: string }
     > = [];
 
     for (const { chunk, group, rank } of allResults) {
@@ -4345,7 +4345,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     return finalResults;
   }
 
-  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+  async batchSaveChunks(chunks: ItemChunk[]): Promise<void> {
     const logger = createLoggerWithPrefix(
       'S3ElasticSearchLibraryStorage.batchSaveChunks',
     );
@@ -4429,7 +4429,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Store chunks
    */
-  async storeChunks(chunks: BookChunk[]): Promise<void> {
+  async storeChunks(chunks: ItemChunk[]): Promise<void> {
     return this.batchSaveChunks(chunks);
   }
 
@@ -4439,7 +4439,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   async getChunksByItemAndGroup(
     itemId: string,
     groupId: string,
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     const response = await this.client.search({
@@ -4461,14 +4461,14 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Get chunks for a specific item across all groups
    */
-  async getChunksByItem(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItem(itemId: string): Promise<ItemChunk[]> {
     return this.getChunksByItemId(itemId);
   }
 
   /**
    * Search chunks with filtering support
    */
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     // Check cache first
@@ -4690,7 +4690,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Get chunks by multiple groups
    */
-  async getChunksByGroups(groupIds: string[]): Promise<BookChunk[]> {
+  async getChunksByGroups(groupIds: string[]): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     const response = await this.client.search({
@@ -4710,7 +4710,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Get chunks by chunking strategy
    */
-  async getChunksByStrategy(strategy: string): Promise<BookChunk[]> {
+  async getChunksByStrategy(strategy: string): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     const response = await this.client.search({
@@ -4727,7 +4727,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   /**
    * Get chunks by embedding provider
    */
-  async getChunksByProvider(provider: string): Promise<BookChunk[]> {
+  async getChunksByProvider(provider: string): Promise<ItemChunk[]> {
     await this.checkInitialized();
 
     const response = await this.client.search({
@@ -4746,7 +4746,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
    */
   async updateChunksByGroup(
     groupId: string,
-    updates: Partial<BookChunk>,
+    updates: Partial<ItemChunk>,
   ): Promise<number> {
     await this.checkInitialized();
 
@@ -4845,7 +4845,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
   }
 }
 
-export interface BookChunk {
+export interface ItemChunk {
   id: string;
   itemId: string; // Reference to the parent book item
 
@@ -4929,4 +4929,24 @@ export interface ChunkingEmbeddingGroup {
   tags?: string[]; // For categorization and filtering
 }
 
-export abstract class AbstractTextSplitter {}
+export interface ItemChunkSemanticSearchQuery {
+  searchText: string;
+  resultNum: number;
+  threshold: number;
+}
+
+export enum ItemVectorStorageStatus {
+  COMPLETED = "completed",
+  FAILED = "failed",
+  PROCESSING = "processing"
+}
+
+export interface IItemVectorStorage {
+  itemId: string;
+  groupInfo: ChunkingEmbeddingGroup;
+  getStatus: ()=>Promise<ItemVectorStorageStatus>;
+  semanticSearch: (query: ItemChunkSemanticSearchQuery) => Promise<Omit<ItemChunk, 'embedding'>>;
+  insertItemChunk: (ItemChunk: ItemChunk)=> Promise<boolean>;
+  batchInsertItemChunks: (ItemChunks: ItemChunk[]) => Promise<boolean>;
+}
+

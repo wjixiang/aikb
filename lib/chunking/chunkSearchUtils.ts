@@ -1,4 +1,4 @@
-import { BookChunk, ChunkSearchFilter } from '../../knowledgeBase/knowledgeImport/library';
+import { ItemChunk, ChunkSearchFilter } from '../../knowledgeBase/knowledgeImport/library';
 
 /**
  * Utility class for advanced chunk search filtering and sorting
@@ -8,9 +8,9 @@ export class ChunkSearchUtils {
    * Filter chunks by multiple criteria with priority ordering
    */
   static filterChunks(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     filter: ChunkSearchFilter
-  ): BookChunk[] {
+  ): ItemChunk[] {
     let filteredChunks = [...chunks];
 
     // Apply text search filter
@@ -72,10 +72,10 @@ export class ChunkSearchUtils {
    * Sort chunks by various criteria
    */
   static sortChunks(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     sortBy: 'relevance' | 'date' | 'title' | 'group' | 'similarity' = 'relevance',
     order: 'asc' | 'desc' = 'desc'
-  ): BookChunk[] {
+  ): ItemChunk[] {
     const sortedChunks = [...chunks];
 
     switch (sortBy) {
@@ -126,10 +126,10 @@ export class ChunkSearchUtils {
    * Apply group-based filtering with priority
    */
   static filterByGroupsWithPriority(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     groups: string[],
     priorities: Record<string, number> = {}
-  ): BookChunk[] {
+  ): ItemChunk[] {
     // Create a map of group to priority (default to 0 if not specified)
     const groupPriorityMap = new Map<string, number>();
     for (const group of groups) {
@@ -165,10 +165,10 @@ export class ChunkSearchUtils {
    * Apply strategy-based filtering with weights
    */
   static filterByStrategiesWithWeights(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     strategies: string[],
     weights: Record<string, number> = {}
-  ): BookChunk[] {
+  ): ItemChunk[] {
     // Create a map of strategy to weight (default to 1.0 if not specified)
     const strategyWeightMap = new Map<string, number>();
     for (const strategy of strategies) {
@@ -197,10 +197,10 @@ export class ChunkSearchUtils {
    * Apply provider-based filtering with preferences
    */
   static filterByProvidersWithPreferences(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     providers: string[],
     preferences: Record<string, number> = {}
-  ): BookChunk[] {
+  ): ItemChunk[] {
     // Create a map of provider to preference (default to 1.0 if not specified)
     const providerPreferenceMap = new Map<string, number>();
     for (const provider of providers) {
@@ -229,10 +229,10 @@ export class ChunkSearchUtils {
    * Deduplicate chunks by content similarity
    */
   static deduplicateChunks(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     similarityThreshold: number = 0.9
-  ): BookChunk[] {
-    const deduplicatedChunks: BookChunk[] = [];
+  ): ItemChunk[] {
+    const deduplicatedChunks: ItemChunk[] = [];
     const seenContent = new Set<string>();
 
     for (const chunk of chunks) {
@@ -337,7 +337,7 @@ export class ChunkSearchUtils {
    * Apply advanced filtering with multiple criteria
    */
   static applyAdvancedFiltering(
-    chunks: BookChunk[],
+    chunks: ItemChunk[],
     filter: ChunkSearchFilter,
     options?: {
       groupPriorities?: Record<string, number>;
@@ -348,7 +348,7 @@ export class ChunkSearchUtils {
       sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
       sortOrder?: 'asc' | 'desc';
     }
-  ): BookChunk[] {
+  ): ItemChunk[] {
     let filteredChunks = this.filterChunks(chunks, filter);
 
     // Apply group priorities

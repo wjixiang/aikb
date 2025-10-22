@@ -14,7 +14,7 @@ import { DefaultGroupManager } from '../../../lib/chunking/defaultGroupManager';
 import { ChunkSearchUtils } from '../../../lib/chunking/chunkSearchUtils';
 import { ChunkingErrorHandler } from '../../../lib/error/errorHandler';
 import { Client } from '@elastic/elasticsearch';
-import { BookChunk, ChunkSearchFilter } from '../library';
+import { ItemChunk, ChunkSearchFilter } from '../library';
 import {
   EmbeddingConfig,
   EmbeddingProvider,
@@ -122,7 +122,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
   describe('Advanced Search Functionality', () => {
     it('should search chunks with group priorities', async () => {
       // Create test chunks
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',
@@ -214,7 +214,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
     it('should apply advanced filtering with deduplication', async () => {
       // Create test chunks with similar content
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',
@@ -289,7 +289,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
 
   describe('Chunk Search Utils', () => {
     it('should filter chunks by multiple criteria', () => {
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',
@@ -357,7 +357,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
     });
 
     it('should sort chunks by different criteria', () => {
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',
@@ -474,7 +474,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
     });
 
     it('should store chunks with versioning information', async () => {
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',
@@ -516,7 +516,7 @@ describe('Library Multi-Strategy Multi-Version Indexing', () => {
     });
 
     it('should find similar chunks with rank fusion', async () => {
-      const chunks: BookChunk[] = [
+      const chunks: ItemChunk[] = [
         {
           id: 'chunk1',
           itemId: 'item1',

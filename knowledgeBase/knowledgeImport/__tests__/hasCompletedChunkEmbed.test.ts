@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LibraryItem, BookMetadata, BookChunk } from '../library';
+import { LibraryItem, BookMetadata, ItemChunk } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import {
   EmbeddingProvider,
@@ -36,7 +36,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
 
   it('should return false when chunks exist but have no embeddings', async () => {
     // Mock chunks without embeddings
-    const chunksWithoutEmbeddings: BookChunk[] = [
+    const chunksWithoutEmbeddings: ItemChunk[] = [
       {
         id: 'chunk-1',
         itemId: 'test-item-id',
@@ -99,7 +99,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
 
   it('should return false when some chunks have embeddings but not all', async () => {
     // Mock chunks with mixed embedding status
-    const chunksWithMixedEmbeddings: BookChunk[] = [
+    const chunksWithMixedEmbeddings: ItemChunk[] = [
       {
         id: 'chunk-1',
         itemId: 'test-item-id',
@@ -164,7 +164,7 @@ describe('LibraryItem.hasCompletedChunkEmbed', () => {
 
   it('should return true when all chunks have embeddings', async () => {
     // Mock chunks with all embeddings
-    const chunksWithEmbeddings: BookChunk[] = [
+    const chunksWithEmbeddings: ItemChunk[] = [
       {
         id: 'chunk-1',
         itemId: 'test-item-id',

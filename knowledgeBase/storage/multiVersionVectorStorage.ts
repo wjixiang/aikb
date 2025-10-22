@@ -1,5 +1,5 @@
 import {
-  BookChunk,
+  ItemChunk,
   ChunkSearchFilter,
   ChunkingEmbeddingGroup,
 } from '../knowledgeImport/library';
@@ -19,7 +19,7 @@ export interface IMultiVersionVectorStorage {
    * Store chunks with versioning information
    * @param chunks Array of chunks to store
    */
-  storeChunks(chunks: BookChunk[]): Promise<void>;
+  storeChunks(chunks: ItemChunk[]): Promise<void>;
 
   /**
    * Get chunks for a specific item and group
@@ -30,21 +30,21 @@ export interface IMultiVersionVectorStorage {
   getChunksByItemAndGroup(
     itemId: string,
     groupId: string,
-  ): Promise<BookChunk[]>;
+  ): Promise<ItemChunk[]>;
 
   /**
    * Get chunks for a specific item across all groups
    * @param itemId The ID of the item
    * @returns Array of chunks
    */
-  getChunksByItem(itemId: string): Promise<BookChunk[]>;
+  getChunksByItem(itemId: string): Promise<ItemChunk[]>;
 
   /**
    * Search chunks with multi-version support
    * @param filter Search filters
    * @returns Array of matching chunks
    */
-  searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]>;
+  searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
 
   /**
    * Find similar chunks across multiple groups
@@ -57,7 +57,7 @@ export interface IMultiVersionVectorStorage {
     queryVector: number[],
     filter: ChunkSearchFilter,
     provider?: EmbeddingProvider,
-  ): Promise<Array<BookChunk & { similarity: number }>>;
+  ): Promise<Array<ItemChunk & { similarity: number }>>;
 
   /**
    * Get available groups for an item
@@ -91,21 +91,21 @@ export interface IMultiVersionVectorStorage {
    * @param groupIds Array of group IDs
    * @returns Array of chunks
    */
-  getChunksByGroups(groupIds: string[]): Promise<BookChunk[]>;
+  getChunksByGroups(groupIds: string[]): Promise<ItemChunk[]>;
 
   /**
    * Get chunks by chunking strategy
    * @param strategy The chunking strategy
    * @returns Array of chunks
    */
-  getChunksByStrategy(strategy: string): Promise<BookChunk[]>;
+  getChunksByStrategy(strategy: string): Promise<ItemChunk[]>;
 
   /**
    * Get chunks by embedding provider
    * @param provider The embedding provider
    * @returns Array of chunks
    */
-  getChunksByProvider(provider: EmbeddingProvider): Promise<BookChunk[]>;
+  getChunksByProvider(provider: EmbeddingProvider): Promise<ItemChunk[]>;
 
   /**
    * Update chunks for a specific group
@@ -115,7 +115,7 @@ export interface IMultiVersionVectorStorage {
    */
   updateChunksByGroup(
     groupId: string,
-    updates: Partial<BookChunk>,
+    updates: Partial<ItemChunk>,
   ): Promise<number>;
 
   /**
@@ -204,7 +204,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Store chunks with versioning information
    */
-  async storeChunks(chunks: BookChunk[]): Promise<void> {
+  async storeChunks(chunks: ItemChunk[]): Promise<void> {
     if (chunks.length === 0) {
       return;
     }
@@ -247,7 +247,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   async getChunksByItemAndGroup(
     itemId: string,
     groupId: string,
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -267,7 +267,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks for a specific item across all groups
    */
-  async getChunksByItem(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItem(itemId: string): Promise<ItemChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -285,7 +285,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Search chunks with multi-version support
    */
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
     const must: any[] = [];
     const should: any[] = [];
 
@@ -389,7 +389,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     queryVector: number[],
     filter: ChunkSearchFilter,
     provider?: EmbeddingProvider,
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     // Use the single embedding field
     const embeddingField = 'embedding';
 
@@ -523,7 +523,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
       maxResultsPerGroup?: number;
     },
   ): Promise<
-    Array<BookChunk & { similarity: number; rank: number; group: string }>
+    Array<ItemChunk & { similarity: number; rank: number; group: string }>
   > {
     if (!options?.rankFusion || !filter.groups || filter.groups.length <= 1) {
       // Use regular similarity search if rank fusion is not requested
@@ -547,7 +547,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Get results from each group
     const groupResults: Array<{
       group: string;
-      chunks: Array<BookChunk & { similarity: number }>;
+      chunks: Array<ItemChunk & { similarity: number }>;
     }> = [];
 
     for (const group of filter.groups!) {
@@ -578,12 +578,12 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   private performRankFusion(
     groupResults: Array<{
       group: string;
-      chunks: Array<BookChunk & { similarity: number }>;
+      chunks: Array<ItemChunk & { similarity: number }>;
     }>,
     weights: Record<string, number>,
-  ): Array<BookChunk & { similarity: number; rank: number; group: string }> {
+  ): Array<ItemChunk & { similarity: number; rank: number; group: string }> {
     const allResults: Array<{
-      chunk: BookChunk & { similarity: number };
+      chunk: ItemChunk & { similarity: number };
       group: string;
       rank: number;
       weightedScore: number;
@@ -615,7 +615,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
     // Remove duplicates (keep the highest scoring version)
     const seenChunks = new Set<string>();
     const finalResults: Array<
-      BookChunk & { similarity: number; rank: number; group: string }
+      ItemChunk & { similarity: number; rank: number; group: string }
     > = [];
 
     for (const { chunk, group, rank } of allResults) {
@@ -784,7 +784,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks by multiple groups
    */
-  async getChunksByGroups(groupIds: string[]): Promise<BookChunk[]> {
+  async getChunksByGroups(groupIds: string[]): Promise<ItemChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -802,7 +802,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks by chunking strategy
    */
-  async getChunksByStrategy(strategy: string): Promise<BookChunk[]> {
+  async getChunksByStrategy(strategy: string): Promise<ItemChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -817,7 +817,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
   /**
    * Get chunks by embedding provider
    */
-  async getChunksByProvider(provider: EmbeddingProvider): Promise<BookChunk[]> {
+  async getChunksByProvider(provider: EmbeddingProvider): Promise<ItemChunk[]> {
     const response = await this.client.search({
       index: this.indexName,
       query: {
@@ -834,7 +834,7 @@ export class MultiVersionVectorStorage implements IMultiVersionVectorStorage {
    */
   async updateChunksByGroup(
     groupId: string,
-    updates: Partial<BookChunk>,
+    updates: Partial<ItemChunk>,
   ): Promise<number> {
     const response = await this.client.updateByQuery({
       index: this.indexName,

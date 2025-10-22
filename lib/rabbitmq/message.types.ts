@@ -395,7 +395,7 @@ export interface MultiVersionChunkingEmbeddingRequestMessage extends BaseRabbitM
   
   // Multi-version support
   groupId?: string; // Use existing group
-  groupConfig?: ChunkingEmbeddingGroup; // Create new group with this config
+  groupConfig?: Omit<ChunkingEmbeddingGroup, "id">; // Create new group with this config
   
   // Processing options
   priority?: 'low' | 'normal' | 'high';

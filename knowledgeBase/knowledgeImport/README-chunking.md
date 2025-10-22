@@ -15,10 +15,10 @@ The enhanced workflow processes PDF documents through the following stages:
 
 ## Key Components
 
-### BookChunk Interface
+### ItemChunk Interface
 
 ```typescript
-interface BookChunk {
+interface ItemChunk {
   id: string;
   itemId: string; // Reference to the parent book item
   title: string;

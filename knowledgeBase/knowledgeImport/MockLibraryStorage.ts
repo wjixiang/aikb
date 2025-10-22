@@ -3,7 +3,7 @@ import Library, {
   BookMetadata,
   Collection,
   Citation,
-  BookChunk,
+  ItemChunk,
   ChunkSearchFilter,
   IdUtils,
 } from './library';
@@ -35,7 +35,7 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
   private collectionStore: Map<string, Collection> = new Map();
   private citationStore: Map<string, Citation[]> = new Map();
   private markdownStore: Map<string, string> = new Map();
-  private chunkStore: Map<string, BookChunk> = new Map();
+  private chunkStore: Map<string, ItemChunk> = new Map();
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
     const id = IdUtils.generateId();
@@ -232,7 +232,7 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
   }
 
   // Chunk-related methods implementation
-  async saveChunk(chunk: BookChunk): Promise<BookChunk> {
+  async saveChunk(chunk: ItemChunk): Promise<ItemChunk> {
     if (!chunk.id) {
       chunk.id = IdUtils.generateId();
     }
@@ -241,18 +241,18 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
     return chunk;
   }
 
-  async getChunk(chunkId: string): Promise<BookChunk | null> {
+  async getChunk(chunkId: string): Promise<ItemChunk | null> {
     return this.chunkStore.get(chunkId) || null;
   }
 
-  async getChunksByItemId(itemId: string): Promise<BookChunk[]> {
+  async getChunksByItemId(itemId: string): Promise<ItemChunk[]> {
     const chunks = Array.from(this.chunkStore.values());
     return chunks
       .filter((chunk) => chunk.itemId === itemId)
       .sort((a, b) => a.index - b.index);
   }
 
-  async updateChunk(chunk: BookChunk): Promise<void> {
+  async updateChunk(chunk: ItemChunk): Promise<void> {
     if (chunk.id) {
       chunk.updatedAt = new Date();
       this.chunkStore.set(chunk.id, chunk);
@@ -274,8 +274,8 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
     return chunksToDelete.length;
   }
 
-  async searchChunks(filter: ChunkSearchFilter): Promise<BookChunk[]> {
-    const results: BookChunk[] = [];
+  async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
+    const results: ItemChunk[] = [];
     const chunkList = Array.from(this.chunkStore.values());
 
     for (const chunk of chunkList) {
@@ -316,9 +316,9 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
     limit: number = 10,
     threshold: number = 0.7,
     itemIds?: string[],
-  ): Promise<Array<BookChunk & { similarity: number }>> {
+  ): Promise<Array<ItemChunk & { similarity: number }>> {
     const chunks = Array.from(this.chunkStore.values());
-    const similarChunks: Array<BookChunk & { similarity: number }> = [];
+    const similarChunks: Array<ItemChunk & { similarity: number }> = [];
 
     for (const chunk of chunks) {
       if (itemIds && !itemIds.includes(chunk.itemId)) continue;
@@ -350,7 +350,7 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
     return similarChunks.slice(0, limit);
   }
 
-  async batchSaveChunks(chunks: BookChunk[]): Promise<void> {
+  async batchSaveChunks(chunks: ItemChunk[]): Promise<void> {
     for (const chunk of chunks) {
       if (!chunk.id) {
         chunk.id = IdUtils.generateId();
@@ -363,7 +363,7 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
   async getChunksByItemAndGroup(
     itemId: string,
     groupId: string,
-  ): Promise<BookChunk[]> {
+  ): Promise<ItemChunk[]> {
     const chunks = Array.from(this.chunkStore.values());
     return chunks
       .filter(
@@ -400,7 +400,7 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
     return Array.from(this.metadataStore.values());
   }
 
-  getAllChunks(): BookChunk[] {
+  getAllChunks(): ItemChunk[] {
     return Array.from(this.chunkStore.values());
   }
 }
