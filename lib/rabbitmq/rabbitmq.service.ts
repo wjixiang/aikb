@@ -46,6 +46,7 @@ import {
   MessageProtocol,
   MessageServiceConfig,
 } from './message-service.interface';
+import { IRabbitMQService } from './rabbitmq-service.interface';
 import { createMessageService } from './message-service-factory';
 import { getStompDestination } from './stomp.config';
 import createLoggerWithPrefix from '../logger';
@@ -55,7 +56,7 @@ const logger = createLoggerWithPrefix('RabbitMQService');
 /**
  * RabbitMQ service for handling PDF conversion messages
  */
-export class RabbitMQService {
+export class RabbitMQService implements IRabbitMQService {
   private messageService: IMessageService;
   private isInitialized = false;
   private isConnecting = false;
@@ -66,7 +67,7 @@ export class RabbitMQService {
   constructor(protocol?: MessageProtocol) {
     // Create the message service instance using the factory
     // console.log(process.env.RABBITMQ_PROTOCOL)
-    this.protocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp"
+    this.protocol = protocol ?? (process.env.RABBITMQ_PROTOCOL as MessageProtocol) ?? MessageProtocol.AMQP
     this.messageService = createMessageService(this.protocol);
   }
 

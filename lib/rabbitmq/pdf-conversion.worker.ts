@@ -17,6 +17,7 @@ import {
 } from './pdf-conversion-message-handler.interface';
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler';
 import createLoggerWithPrefix from '../logger';
+import { IRabbitMQService } from './rabbitmq-service.interface';
 
 const logger = createLoggerWithPrefix('PdfConversionWorker');
 
@@ -25,13 +26,13 @@ const logger = createLoggerWithPrefix('PdfConversionWorker');
  * Processes PDF conversion requests from RabbitMQ queue using separated service modules
  */
 export class PdfConversionWorker {
-  private messageService: RabbitMQService;
+  private messageService: IRabbitMQService;
   private pdfConversionService: IPdfConversionService;
   private messageHandler: IPdfConversionMessageHandler;
   private isInitialized = false;
 
   constructor(
-    messageService?: RabbitMQService,
+    messageService?: IRabbitMQService,
     pdfConversionService?: IPdfConversionService,
     messageHandler?: IPdfConversionMessageHandler,
     protocol?: MessageProtocol,

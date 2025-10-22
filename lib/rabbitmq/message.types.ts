@@ -10,7 +10,7 @@ export interface BaseRabbitMQMessage {
 // Import required types for multi-version support
 import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
 import { EmbeddingConfig, EmbeddingProvider } from '../embedding/embedding';
-import { ChunkingConfig } from '../chunking/chunkingStrategy';
+import { ChunkingConfig, ChunkingStrategy } from '../chunking/chunkingStrategy';
 
 /**
  * PDF processing status enum
@@ -369,7 +369,7 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   eventType: 'CHUNKING_EMBEDDING_REQUEST';
   itemId: string;
   markdownContent?: string; // Optional if markdown is already stored
-  chunkingStrategy: 'h1' | 'paragraph';
+  chunkingStrategy: ChunkingStrategy;
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
@@ -465,7 +465,7 @@ export interface ChunkingEmbeddingCompletedMessage extends BaseRabbitMQMessage {
   status: PdfProcessingStatus.COMPLETED;
   chunksCount: number;
   processingTime: number; // in milliseconds
-  chunkingStrategy: 'h1' | 'paragraph';
+  chunkingStrategy: ChunkingStrategy;
 }
 
 /**

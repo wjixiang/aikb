@@ -6,7 +6,7 @@ import { IPdfPartTracker } from './pdf-part-tracker';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getPdfPartTracker } from './pdf-part-tracker-factory';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
-import { getRabbitMQService } from './rabbitmq.service';
+import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { IMessageService } from './message-service.interface';
 import { IPdfConversionService } from './pdf-conversion.service.interface';
 import { PdfConversionService } from './pdf-conversion.service';
@@ -14,6 +14,7 @@ import { IPdfConversionMessageHandler } from './pdf-conversion-message-handler.i
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler';
 import { PdfConversionWorker } from './pdf-conversion.worker';
 import createLoggerWithPrefix from '../logger';
+import { IRabbitMQService } from './rabbitmq-service.interface';
 
 const logger = createLoggerWithPrefix('PdfConversionWorkerFactory');
 
@@ -22,7 +23,7 @@ const logger = createLoggerWithPrefix('PdfConversionWorkerFactory');
  */
 export interface PdfConversionWorkerConfig {
   // Message service configuration
-  messageService?: IMessageService;
+  messageService?: IRabbitMQService;
   
   // PDF conversion service configuration
   pdfConvertor?: MinerUPdfConvertor;
@@ -47,7 +48,7 @@ export class PdfConversionWorkerFactory {
     logger.info('Creating PDF conversion worker with default dependencies');
     
     // Create message service
-    let messageService: IMessageService;
+    let messageService: IRabbitMQService;
     if (config.messageService) {
       messageService = config.messageService;
     } else {
@@ -90,7 +91,7 @@ export class PdfConversionWorkerFactory {
     logger.info('Creating PDF conversion worker with custom dependencies');
     
     // Use provided services or create defaults
-    let messageService: IMessageService;
+    let messageService: IRabbitMQService;
     if (config.messageService) {
       messageService = config.messageService;
     } else {
@@ -151,7 +152,7 @@ export class PdfConversionWorkerFactory {
    * Create a PDF conversion worker for testing with mock dependencies
    */
   static createForTesting(config: {
-    messageService?: IMessageService;
+    messageService?: IRabbitMQService;
     pdfConversionService?: IPdfConversionService;
     messageHandler?: IPdfConversionMessageHandler;
   } = {}): PdfConversionWorker {

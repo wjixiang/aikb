@@ -21,6 +21,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import createLoggerWithPrefix from '../logger';
 import { RabbitMQService } from './rabbitmq.service';
+import { IRabbitMQService } from './rabbitmq-service.interface';
 
 const logger = createLoggerWithPrefix('PdfConversionMessageHandler');
 
@@ -29,14 +30,14 @@ const logger = createLoggerWithPrefix('PdfConversionMessageHandler');
  * Handles message processing and communication for PDF conversion
  */
 export class PdfConversionMessageHandler implements IPdfConversionMessageHandler {
-  private messageService: RabbitMQService;
+  private messageService: IRabbitMQService;
   private pdfConversionService: IPdfConversionService;
   private consumerTag: string | null = null;
   private partConsumerTag: string | null = null;
   private _isRunning = false;
 
   constructor(
-    messageService: RabbitMQService,
+    messageService: IRabbitMQService,
     pdfConversionService: IPdfConversionService,
   ) {
     this.messageService = messageService;

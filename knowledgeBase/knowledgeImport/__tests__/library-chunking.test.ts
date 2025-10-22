@@ -6,7 +6,7 @@ import {
   embeddingService,
   EmbeddingProvider,
 } from '../../../lib/embedding/embedding';
-import { ChunkingStrategyType } from '../../../lib/chunking/chunkingStrategy';
+import { ChunkingStrategy } from '../../../lib/chunking/chunkingStrategy';
 
 // Set NODE_ENV to test for proper test environment detection
 process.env.NODE_ENV = 'test';
@@ -82,7 +82,7 @@ This is the second chapter content.`,
       // Process chunks
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
 
       // Verify chunks were created
@@ -134,7 +134,7 @@ This is the second chapter content.`,
 
     //   // Process chunks with paragraph strategy - use the item's chunkEmbed method with custom config
     //   // to ensure each paragraph becomes a separate chunk
-    //   await item.chunkEmbed(ChunkingStrategyType.PARAGRAPH, true, {
+    //   await item.chunkEmbed(ChunkingStrategy.PARAGRAPH, true, {
     //     maxChunkSize: 30, // Small enough to ensure each paragraph is separate
     //     minChunkSize: 10,
     //     overlap: 0,
@@ -169,7 +169,7 @@ This is the second chapter content.`,
       // Try to process chunks without markdown content
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
 
       // Should not create any chunks
@@ -196,7 +196,7 @@ This is the second chapter content.`,
       // Process initial chunks
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
@@ -211,7 +211,7 @@ This is the second chapter content.`,
       // Re-process chunks with forceReprocess
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
         { forceReprocess: true },
       );
 
@@ -244,7 +244,7 @@ This is the second chapter content.`,
 
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
     });
 
@@ -310,7 +310,7 @@ This is the second chapter content.`,
 
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
     });
 
@@ -380,7 +380,7 @@ This is the second chapter content.`,
       // Process initial chunks
       await library.processItemChunks(
         item.metadata.id!,
-        ChunkingStrategyType.H1,
+        ChunkingStrategy.H1,
       );
       let chunks = await library.getItemChunks(item.metadata.id!);
       expect(chunks).toHaveLength(1);
@@ -393,7 +393,7 @@ This is the second chapter content.`,
       );
 
       // Re-process chunks
-      await library.reProcessChunks(item.metadata.id!, ChunkingStrategyType.H1);
+      await library.reProcessChunks(item.metadata.id!, ChunkingStrategy.H1);
 
       // Verify chunks were updated
       chunks = await library.getItemChunks(item.metadata.id!);

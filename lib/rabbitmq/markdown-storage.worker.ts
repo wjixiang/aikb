@@ -13,7 +13,7 @@ import {
   BookMetadata,
 } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import { ChunkingStrategy, ChunkingStrategyType } from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -250,7 +250,7 @@ export class MarkdownStorageWorker {
         eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
         itemId,
         markdownContent,
-        chunkingStrategy: 'paragraph' as const, // Default strategy
+        chunkingStrategy: ChunkingStrategy.PARAGRAPH, // Default strategy
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,

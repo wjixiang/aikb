@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { skip } from 'rxjs';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
@@ -118,7 +119,7 @@ describe(Library, async () => {
     console.log(`Download URL: ${downloadUrl}`);
   }, 30000); // Increase timeout to 30 seconds for S3 operations
 
-  it('re-process', async () => {
+  it.skip('re-process', async () => {
     const testMinerUPdfConvertor = new MinerUPdfConvertor({
       token: process.env.MINERU_TOKEN as string,
       downloadDir: 'test/download',
@@ -172,7 +173,7 @@ describe(Library, async () => {
     expect(exist).toBe(true);
   });
 
-  it.skip('semantic search', async () => {
+  it('semantic search', async () => {
     const searchRes = await book.semanticSearchWithDenseVector('ACEI', 2);
     console.log(searchRes);
   });

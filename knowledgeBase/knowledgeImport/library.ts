@@ -27,7 +27,7 @@ import {
   ChunkResult,
 } from '../../lib/chunking/chunkingTool';
 import {
-  ChunkingStrategyType,
+  ChunkingStrategy,
   ChunkingConfig,
 } from '../../lib/chunking/chunkingStrategy';
 import {
@@ -295,7 +295,7 @@ export interface AbstractLibrary {
    */
   processItemChunks(
     itemId: string,
-    chunkingStrategy?: ChunkingStrategyType,
+    chunkingStrategy?: ChunkingStrategy,
     options?: {
       denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
@@ -398,7 +398,7 @@ export interface AbstractLibrary {
    */
   reProcessChunks(
     itemId?: string,
-    chunkingStrategy?: ChunkingStrategyType,
+    chunkingStrategy?: ChunkingStrategy,
     options?: {
       denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
@@ -911,7 +911,7 @@ export default class Library implements AbstractLibrary {
   // Chunk-related methods implementation
   async processItemChunks(
     itemId: string,
-    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
+    chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
     options?: {
       denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
@@ -1026,7 +1026,7 @@ export default class Library implements AbstractLibrary {
 
       // Chunk the markdown content
       let chunkResults: ChunkResult[] | string[];
-      if (chunkingStrategy === ChunkingStrategyType.H1) {
+      if (chunkingStrategy === ChunkingStrategy.H1) {
         chunkResults = h1Chunking(markdownContent);
       } else {
         chunkResults = paragraphChunking(markdownContent);
@@ -1527,7 +1527,7 @@ export default class Library implements AbstractLibrary {
 
   async reProcessChunks(
     itemId?: string,
-    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
+    chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
     options?: {
       denseVectorIndexGroupId?: string;
       embeddingProvider?: string;
@@ -1998,7 +1998,7 @@ export class LibraryItem {
    * @returns Array of created chunks
    */
   async chunkEmbed(
-    chunkingStrategy: ChunkingStrategyType = ChunkingStrategyType.H1,
+    chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
     forceReprocess: boolean = false,
     chunkingConfig?: any,
   ): Promise<BookChunk[]> {
@@ -2155,7 +2155,7 @@ export class LibraryItem {
    * @param strategyName The strategy name
    * @returns Default configuration
    */
-  getChunkingStrategyDefaultConfig(strategyName: ChunkingStrategyType): any {
+  getChunkingStrategyDefaultConfig(strategyName: ChunkingStrategy): any {
     // Import dynamically to avoid circular dependencies
     const {
       getStrategyDefaultConfig,
@@ -4913,7 +4913,7 @@ export interface ChunkingEmbeddingGroup {
   description?: string;
 
   // Strategy and model configuration
-  chunkingStrategy: string;
+  chunkingStrategy: ChunkingStrategy;
   chunkingConfig: ChunkingConfig;
   embeddingProvider: EmbeddingProvider;
   embeddingConfig: EmbeddingConfig;

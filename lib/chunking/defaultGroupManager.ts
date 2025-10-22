@@ -1,6 +1,6 @@
 import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
 import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from '../embedding/embedding';
-import { ChunkingConfig } from './chunkingStrategy';
+import { ChunkingConfig, ChunkingStrategy } from './chunkingStrategy';
 import { embeddingService } from '../embedding/embedding';
 
 /**
@@ -40,7 +40,7 @@ export class DefaultGroupManager {
       id: 'default-h1',
       name: 'Default H1 Chunking',
       description: 'Default group for H1-based chunking strategy',
-      chunkingStrategy: 'h1',
+      chunkingStrategy: ChunkingStrategy.H1,
       chunkingConfig: {
         maxChunkSize: 1500,
         minChunkSize: 200,
@@ -67,7 +67,7 @@ export class DefaultGroupManager {
       id: 'default-paragraph',
       name: 'Default Paragraph Chunking',
       description: 'Default group for paragraph-based chunking strategy',
-      chunkingStrategy: 'paragraph',
+      chunkingStrategy: ChunkingStrategy.PARAGRAPH,
       chunkingConfig: {
         maxChunkSize: 1000,
         minChunkSize: 100,

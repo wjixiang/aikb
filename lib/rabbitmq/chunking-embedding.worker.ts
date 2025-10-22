@@ -14,7 +14,7 @@ import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import { ChunkingStrategy } from '../chunking/chunkingStrategy';
 import { EmbeddingProvider, OpenAIModel } from '../embedding/embedding';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -184,11 +184,11 @@ export class ChunkingEmbeddingWorker {
       );
 
       // Convert string strategy to enum
-      let chunkingStrategy: ChunkingStrategyType;
+      let chunkingStrategy: ChunkingStrategy;
       if (message.chunkingStrategy === 'h1') {
-        chunkingStrategy = ChunkingStrategyType.H1;
+        chunkingStrategy = ChunkingStrategy.H1;
       } else {
-        chunkingStrategy = ChunkingStrategyType.PARAGRAPH;
+        chunkingStrategy = ChunkingStrategy.PARAGRAPH;
       }
 
       logger.info(
@@ -370,7 +370,7 @@ export class ChunkingEmbeddingWorker {
 
       // Extract group configuration
       let groupId = message.groupId;
-      let chunkingStrategy: ChunkingStrategyType;
+      let chunkingStrategy: ChunkingStrategy;
       let options: any = {};
 
       if (message.groupConfig) {
@@ -380,9 +380,9 @@ export class ChunkingEmbeddingWorker {
         
         // Convert string strategy to enum
         if (groupConfig.chunkingStrategy === 'h1') {
-          chunkingStrategy = ChunkingStrategyType.H1;
+          chunkingStrategy = ChunkingStrategy.H1;
         } else {
-          chunkingStrategy = ChunkingStrategyType.PARAGRAPH;
+          chunkingStrategy = ChunkingStrategy.PARAGRAPH;
         }
 
         options = {
@@ -401,7 +401,7 @@ export class ChunkingEmbeddingWorker {
         // Use existing group (would need to fetch group details from storage)
         logger.info(`Using existing group ${groupId} for item ${message.itemId}`);
         // For now, use default strategy
-        chunkingStrategy = ChunkingStrategyType.H1;
+        chunkingStrategy = ChunkingStrategy.H1;
         options = {
           denseVectorIndexGroupId: groupId,
           forceReprocess: message.forceReprocess,
@@ -505,7 +505,7 @@ export class ChunkingEmbeddingWorker {
           eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: message.itemId,
           markdownContent: message.markdownContent,
-          chunkingStrategy: message.groupConfig?.chunkingStrategy as 'h1' | 'paragraph' || 'h1',
+          chunkingStrategy: message.groupConfig?.chunkingStrategy as ChunkingStrategy|| 'h1',
           priority: message.priority,
           retryCount: retryCount + 1,
           maxRetries: message.maxRetries,
@@ -611,7 +611,7 @@ export class ChunkingEmbeddingWorker {
     itemId: string,
     chunksCount: number,
     processingTime: number,
-    chunkingStrategy: 'h1' | 'paragraph',
+    chunkingStrategy: ChunkingStrategy,
   ): Promise<void> {
     try {
       const completionMessage: ChunkingEmbeddingCompletedMessage = {

@@ -15,14 +15,8 @@ import { PdfConversionService } from '../pdf-conversion.service';
 import { PdfConversionMessageHandler } from '../pdf-conversion-message-handler';
 import { IPdfConversionService } from '../pdf-conversion.service.interface';
 import { IPdfConversionMessageHandler } from '../pdf-conversion-message-handler.interface';
-import { IMessageService } from '../message-service.interface';
-import {
-  PdfConversionRequestMessage,
-  PdfPartConversionRequestMessage,
-  PdfProcessingStatus,
-} from '../message.types';
 import { MinerUPdfConvertor } from '../../../knowledgeBase/knowledgeImport/MinerU/MinerUPdfConvertor';
-import { v4 as uuidv4 } from 'uuid';
+import { mockRabbitMQService } from '../__mocks__/rabbitmq.mock';
 
 // Load environment variables
 config({ path: '.env' });
@@ -37,20 +31,7 @@ vi.mock('../../logger', () => ({
   })),
 }));
 
-// Mock dependencies
-const mockMessageService: IMessageService = {
-  initialize: vi.fn().mockResolvedValue(undefined),
-  close: vi.fn().mockResolvedValue(undefined),
-  isConnected: vi.fn().mockReturnValue(true),
-  getConnectionStatus: vi.fn().mockReturnValue('connected'),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy', details: { connected: true } }),
-  publishMessage: vi.fn().mockResolvedValue(true),
-  consumeMessages: vi.fn().mockResolvedValue('test-consumer-tag'),
-  stopConsuming: vi.fn().mockResolvedValue(undefined),
-  getQueueInfo: vi.fn().mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
-  purgeQueue: vi.fn().mockResolvedValue(undefined),
-  setupTopology: vi.fn().mockResolvedValue(undefined),
-};
+
 
 const mockPdfConvertor: MinerUPdfConvertor = {
   convertPdfToMarkdownFromS3: vi.fn(),
@@ -107,7 +88,7 @@ describe('PdfConversionWorker (Refactored)', () => {
 
     it('should create a worker with custom dependencies', () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -121,7 +102,7 @@ describe('PdfConversionWorker (Refactored)', () => {
       (mockMessageHandler.isRunning as any).mockReturnValue(true);
 
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -135,7 +116,7 @@ describe('PdfConversionWorker (Refactored)', () => {
 
     it('should stop the worker successfully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -151,7 +132,7 @@ describe('PdfConversionWorker (Refactored)', () => {
       (mockMessageHandler.initialize as any).mockRejectedValueOnce(new Error('Test error'));
 
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -172,7 +153,7 @@ describe('PdfConversionWorker (Refactored)', () => {
       });
 
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -189,7 +170,7 @@ describe('PdfConversionWorker (Refactored)', () => {
 
     it('should return correct statistics when not running', () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -212,7 +193,7 @@ describe('PdfConversionWorkerFactory', () => {
 
     it('should create a worker with custom message service', () => {
       const worker = PdfConversionWorkerFactory.createDefault({
-        messageService: mockMessageService,
+        messageService: mockRabbitMQService,
       });
       expect(worker).toBeDefined();
     });
@@ -221,7 +202,7 @@ describe('PdfConversionWorkerFactory', () => {
   describe('createWithDependencies', () => {
     it('should create a worker with all custom dependencies', () => {
       const worker = PdfConversionWorkerFactory.createWithDependencies({
-        messageService: mockMessageService,
+        messageService: mockRabbitMQService,
         pdfConvertor: mockPdfConvertor,
         messageHandler: mockMessageHandler,
       });
@@ -233,7 +214,7 @@ describe('PdfConversionWorkerFactory', () => {
     it('should create and start a worker with default dependencies', async () => {
       // Use mock dependencies to avoid RabbitMQ connection issues
       const worker = PdfConversionWorkerFactory.createForTesting({
-        messageService: mockMessageService,
+        messageService: mockRabbitMQService,
         pdfConversionService: mockPdfConversionService,
         messageHandler: mockMessageHandler,
       });
@@ -248,7 +229,7 @@ describe('PdfConversionWorkerFactory', () => {
 
     it('should create but not start a worker when autoStart is false', async () => {
       const worker = PdfConversionWorkerFactory.createForTesting({
-        messageService: mockMessageService,
+        messageService: mockRabbitMQService,
         pdfConversionService: mockPdfConversionService,
         messageHandler: mockMessageHandler,
       });
@@ -260,7 +241,7 @@ describe('PdfConversionWorkerFactory', () => {
   describe('createForTesting', () => {
     it('should create a worker for testing with mock dependencies', () => {
       const worker = PdfConversionWorkerFactory.createForTesting({
-        messageService: mockMessageService,
+        messageService: mockRabbitMQService,
         pdfConversionService: mockPdfConversionService,
         messageHandler: mockMessageHandler,
       });

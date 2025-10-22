@@ -15,6 +15,7 @@ import {
 import { MessageProtocol } from '../message-service.interface';
 import { getRabbitMQService, closeAllRabbitMQServices, RabbitMQService } from '../rabbitmq.service';
 import { EmbeddingProvider } from '../../embedding/embedding';
+import { ChunkingStrategy } from 'lib/chunking/chunkingStrategy';
 
 // Mock the Library class
 vi.mock('../../../knowledgeBase/knowledgeImport/library', async () => {
@@ -146,7 +147,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
           eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
           markdownContent: '# Test Markdown Content\n\nThis is a test markdown content for chunking and embedding.',
-          chunkingStrategy: 'paragraph',
+          chunkingStrategy: ChunkingStrategy.PARAGRAPH,
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
@@ -181,7 +182,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
           groupConfig: {
             id: 'test-group-id',
             name: 'Test Group',
-            chunkingStrategy: 'h1',
+            chunkingStrategy: ChunkingStrategy.H1,
             embeddingProvider: EmbeddingProvider.OPENAI,
             embeddingConfig: {
               model: 'text-embedding-ada-002' as any,
@@ -258,7 +259,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
           eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
           markdownContent: '# Test Markdown Content\n\nThis is a test markdown content for chunking and embedding.',
-          chunkingStrategy: 'paragraph',
+          chunkingStrategy: ChunkingStrategy.H1,
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
@@ -296,7 +297,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
           groupConfig: {
             id: 'test-group-id',
             name: 'Test Group',
-            chunkingStrategy: 'h1',
+            chunkingStrategy: ChunkingStrategy.H1,
             embeddingProvider: EmbeddingProvider.OPENAI,
             embeddingConfig: {
               model: 'text-embedding-ada-002' as any,

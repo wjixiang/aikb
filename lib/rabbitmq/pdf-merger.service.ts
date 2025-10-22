@@ -9,7 +9,7 @@ import {
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import { ChunkingStrategy, ChunkingStrategyType } from '../chunking/chunkingStrategy';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
 import createLoggerWithPrefix from '../logger';
@@ -359,7 +359,7 @@ export class PdfMergerService {
         eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
         itemId,
         markdownContent,
-        chunkingStrategy: 'paragraph' as const, // Default strategy
+        chunkingStrategy: ChunkingStrategy.PARAGRAPH, // Default strategy
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,

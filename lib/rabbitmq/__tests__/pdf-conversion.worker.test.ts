@@ -10,11 +10,7 @@ import {
   vi,
 } from 'vitest';
 import { PdfConversionWorker } from '../pdf-conversion.worker';
-import { PdfConversionWorkerFactory } from '../pdf-conversion-worker.factory';
-import { PdfConversionService } from '../pdf-conversion.service';
-import { PdfConversionMessageHandler } from '../pdf-conversion-message-handler';
-import { IPdfConversionService } from '../pdf-conversion.service.interface';
-import { IPdfConversionMessageHandler } from '../pdf-conversion-message-handler.interface';
+import { mockRabbitMQService } from '../__mocks__/rabbitmq.mock';
 import { IMessageService } from '../message-service.interface';
 import {
   PdfConversionRequestMessage,
@@ -40,20 +36,6 @@ vi.mock('../../logger', () => ({
   })),
 }));
 
-// Mock dependencies
-const mockMessageService: IMessageService = {
-  initialize: vi.fn().mockResolvedValue(undefined),
-  close: vi.fn().mockResolvedValue(undefined),
-  isConnected: vi.fn().mockReturnValue(true),
-  getConnectionStatus: vi.fn().mockReturnValue('connected'),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy', details: { connected: true } }),
-  publishMessage: vi.fn().mockResolvedValue(true),
-  consumeMessages: vi.fn().mockResolvedValue('test-consumer-tag'),
-  stopConsuming: vi.fn().mockResolvedValue(undefined),
-  getQueueInfo: vi.fn().mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
-  purgeQueue: vi.fn().mockResolvedValue(undefined),
-  setupTopology: vi.fn().mockResolvedValue(undefined),
-};
 
 const mockPdfConvertor: MinerUPdfConvertor = {
   convertPdfToMarkdownFromS3: vi.fn(),
@@ -131,7 +113,7 @@ describe('PdfConversionWorker', () => {
   describe('Worker Lifecycle', () => {
     it('should start the worker successfully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -145,7 +127,7 @@ describe('PdfConversionWorker', () => {
 
     it('should stop the worker successfully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -159,7 +141,7 @@ describe('PdfConversionWorker', () => {
 
     it('should handle multiple start calls gracefully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -174,7 +156,7 @@ describe('PdfConversionWorker', () => {
 
     it('should handle multiple stop calls gracefully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -193,7 +175,7 @@ describe('PdfConversionWorker', () => {
       (mockMessageHandler.isRunning as any).mockReturnValue(true);
 
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -238,7 +220,7 @@ describe('PdfConversionWorker', () => {
 
     it('should handle PDF conversion failure and retry', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -291,7 +273,7 @@ describe('PdfConversionWorker', () => {
 
     it('should handle different PDF conversion result formats', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -342,7 +324,7 @@ describe('PdfConversionWorker', () => {
   describe('PDF Part Conversion Request Processing', () => {
     it('should process a PDF part conversion request successfully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -385,7 +367,7 @@ describe('PdfConversionWorker', () => {
 
     it('should handle PDF part conversion failure and retry', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -438,7 +420,7 @@ describe('PdfConversionWorker', () => {
     it('should handle missing PDF converter gracefully', async () => {
       // Create a worker with a null PDF converter
       const workerWithNullConverter = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -459,10 +441,10 @@ describe('PdfConversionWorker', () => {
 
     it('should handle network errors during message publishing', async () => {
       // Mock publishMessage to throw an error
-      (mockMessageService.publishMessage as any).mockRejectedValue(new Error('Network error'));
+      (mockRabbitMQService.publishMessage as any).mockRejectedValue(new Error('Network error'));
 
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -481,7 +463,7 @@ describe('PdfConversionWorker', () => {
   describe('Worker Statistics', () => {
     it('should return correct worker statistics', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -509,7 +491,7 @@ describe('PdfConversionWorker', () => {
   describe('Message Validation', () => {
     it('should handle malformed messages gracefully', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );
@@ -545,7 +527,7 @@ describe('PdfConversionWorker', () => {
   describe('Retry Logic', () => {
     it('should respect max retry limit', async () => {
       worker = new PdfConversionWorker(
-        mockMessageService,
+        mockRabbitMQService,
         mockPdfConversionService,
         mockMessageHandler,
       );

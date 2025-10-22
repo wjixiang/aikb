@@ -2,11 +2,15 @@ import {
   PdfAnalysisRequestMessage,
   PdfAnalysisCompletedMessage,
   PdfAnalysisFailedMessage,
+  PdfPartConversionCompletedMessage,
+  PdfPartConversionFailedMessage,
   PdfProcessingStatus,
   PDF_PROCESSING_CONFIG,
   PdfMetadata,
   PdfPartInfo,
   PdfPartStatus,
+  RABBITMQ_QUEUES,
+  RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
@@ -14,7 +18,7 @@ import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliterWorker } from '../pdfProcess-ts/pdfSpliter';
-import { uploadToS3, getPdfDownloadUrl } from '../s3Service/S3Service';
+import { uploadToS3, getPdfDownloadUrl, deleteFromS3 } from '../s3Service/S3Service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 
@@ -25,6 +29,9 @@ const logger = createLoggerWithPrefix('PdfAnalyzerService');
 export class PdfAnalyzerService {
   private rabbitMQService = getRabbitMQService();
   private pdfSpliter = new PdfSpliterWorker();
+  private isRunning = false;
+  private partCompletedConsumerTag: string | null = null;
+  private partFailedConsumerTag: string | null = null;
 
   constructor(private storage: AbstractLibraryStorage) {}
 
@@ -769,6 +776,233 @@ export class PdfAnalyzerService {
         `Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  }
+
+  /**
+   * Start the PDF analyzer service with part cleanup functionality
+   */
+  async start(): Promise<void> {
+    if (this.isRunning) {
+      logger.warn('PDF analyzer service is already running');
+      return;
+    }
+
+    try {
+      // Ensure RabbitMQ service is initialized
+      if (!this.rabbitMQService.isConnected()) {
+        await this.rabbitMQService.initialize();
+      }
+
+      logger.info('Starting PDF analyzer service with part cleanup...');
+
+      // Start consuming messages from the part conversion completed queue
+      this.partCompletedConsumerTag = await this.rabbitMQService.consumeMessages(
+        RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
+        this.handlePdfPartConversionCompleted.bind(this),
+        {
+          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-completed',
+          noAck: false, // Manual acknowledgment
+        },
+      );
+
+      // Start consuming messages from the part conversion failed queue
+      this.partFailedConsumerTag = await this.rabbitMQService.consumeMessages(
+        RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED,
+        this.handlePdfPartConversionFailed.bind(this),
+        {
+          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-failed',
+          noAck: false, // Manual acknowledgment
+        },
+      );
+
+      this.isRunning = true;
+      logger.info('PDF analyzer service with part cleanup started successfully');
+    } catch (error) {
+      logger.error('Failed to start PDF analyzer service with part cleanup:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stop the PDF analyzer service
+   */
+  async stop(): Promise<void> {
+    if (!this.isRunning) {
+      logger.warn('PDF analyzer service is not running');
+      return;
+    }
+
+    try {
+      logger.info('Stopping PDF analyzer service...');
+
+      if (this.partCompletedConsumerTag) {
+        await this.rabbitMQService.stopConsuming(this.partCompletedConsumerTag);
+        this.partCompletedConsumerTag = null;
+      }
+
+      if (this.partFailedConsumerTag) {
+        await this.rabbitMQService.stopConsuming(this.partFailedConsumerTag);
+        this.partFailedConsumerTag = null;
+      }
+
+      this.isRunning = false;
+      logger.info('PDF analyzer service stopped successfully');
+    } catch (error) {
+      logger.error('Failed to stop PDF analyzer service:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle PDF part conversion completed message
+   */
+  private async handlePdfPartConversionCompleted(
+    message: PdfPartConversionCompletedMessage,
+    originalMessage: any,
+  ): Promise<void> {
+    logger.info(
+      `Processing PDF part conversion completed for item: ${message.itemId}, part: ${message.partIndex}`,
+    );
+
+    try {
+      // Get the item metadata to find the S3 key for this part
+      const itemMetadata = await this.storage.getMetadata(message.itemId);
+      if (!itemMetadata) {
+        logger.warn(`Item ${message.itemId} not found for part cleanup`);
+        return;
+      }
+
+      // Check if the item has splitting information
+      const splittingInfo = (itemMetadata as any).pdfSplittingInfo;
+      if (!splittingInfo || !splittingInfo.parts) {
+        logger.warn(`No splitting information found for item ${message.itemId}`);
+        return;
+      }
+
+      // Find the part information for this part
+      const partInfo = splittingInfo.parts.find(
+        (part: any) => part.partIndex === message.partIndex,
+      );
+      if (!partInfo || !partInfo.s3Key) {
+        logger.warn(
+          `No S3 key found for part ${message.partIndex} of item ${message.itemId}`,
+        );
+        return;
+      }
+
+      // Update the part status in metadata
+      partInfo.status = PdfPartStatus.COMPLETED;
+      partInfo.processingTime = message.processingTime;
+      await this.storage.updateMetadata(itemMetadata);
+
+      // Delete the PDF part from S3
+      await this.deletePdfPartFromS3(partInfo.s3Key, message.itemId, message.partIndex);
+
+      logger.info(
+        `Successfully processed PDF part conversion completed for item: ${message.itemId}, part: ${message.partIndex}`,
+      );
+    } catch (error) {
+      logger.error(
+        `Failed to process PDF part conversion completed for item ${message.itemId}, part ${message.partIndex}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Handle PDF part conversion failed message
+   */
+  private async handlePdfPartConversionFailed(
+    message: PdfPartConversionFailedMessage,
+    originalMessage: any,
+  ): Promise<void> {
+    logger.info(
+      `Processing PDF part conversion failed for item: ${message.itemId}, part: ${message.partIndex}`,
+    );
+
+    try {
+      // Get the item metadata to find the S3 key for this part
+      const itemMetadata = await this.storage.getMetadata(message.itemId);
+      if (!itemMetadata) {
+        logger.warn(`Item ${message.itemId} not found for part cleanup`);
+        return;
+      }
+
+      // Check if the item has splitting information
+      const splittingInfo = (itemMetadata as any).pdfSplittingInfo;
+      if (!splittingInfo || !splittingInfo.parts) {
+        logger.warn(`No splitting information found for item ${message.itemId}`);
+        return;
+      }
+
+      // Find the part information for this part
+      const partInfo = splittingInfo.parts.find(
+        (part: any) => part.partIndex === message.partIndex,
+      );
+      if (!partInfo || !partInfo.s3Key) {
+        logger.warn(
+          `No S3 key found for part ${message.partIndex} of item ${message.itemId}`,
+        );
+        return;
+      }
+
+      // Update the part status in metadata
+      partInfo.status = PdfPartStatus.FAILED;
+      partInfo.error = message.error;
+      partInfo.processingTime = message.processingTime;
+      await this.storage.updateMetadata(itemMetadata);
+
+      // Delete the PDF part from S3 even if it failed
+      await this.deletePdfPartFromS3(partInfo.s3Key, message.itemId, message.partIndex);
+
+      logger.info(
+        `Successfully processed PDF part conversion failed for item: ${message.itemId}, part: ${message.partIndex}`,
+      );
+    } catch (error) {
+      logger.error(
+        `Failed to process PDF part conversion failed for item ${message.itemId}, part ${message.partIndex}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Delete a PDF part from S3
+   */
+  private async deletePdfPartFromS3(
+    s3Key: string,
+    itemId: string,
+    partIndex: number,
+  ): Promise<void> {
+    try {
+      logger.info(
+        `Deleting PDF part from S3 for item ${itemId}, part ${partIndex}, s3Key: ${s3Key}`,
+      );
+
+      const deleted = await deleteFromS3(s3Key);
+      if (deleted) {
+        logger.info(
+          `Successfully deleted PDF part from S3 for item ${itemId}, part ${partIndex}, s3Key: ${s3Key}`,
+        );
+      } else {
+        logger.warn(
+          `Failed to delete PDF part from S3 for item ${itemId}, part ${partIndex}, s3Key: ${s3Key}`,
+        );
+      }
+    } catch (error) {
+      logger.error(
+        `Error deleting PDF part from S3 for item ${itemId}, part ${partIndex}, s3Key: ${s3Key}:`,
+        error,
+      );
+      // Don't throw here, as this is a cleanup operation
+    }
+  }
+
+  /**
+   * Check if service is running
+   */
+  isServiceRunning(): boolean {
+    return this.isRunning;
   }
 }
 
