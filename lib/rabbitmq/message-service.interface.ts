@@ -7,7 +7,11 @@ import {
 /**
  * Connection status for message service
  */
-export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'reconnecting';
+export type ConnectionStatus =
+  | 'connected'
+  | 'disconnected'
+  | 'connecting'
+  | 'reconnecting';
 
 /**
  * Health check result for message service

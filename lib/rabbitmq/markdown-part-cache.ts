@@ -18,7 +18,11 @@ export interface MarkdownPartInfo {
  * Markdown缓存错误类
  */
 export class MarkdownPartCacheError extends Error {
-  constructor(message: string, public readonly code: string, public readonly details?: any) {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: any,
+  ) {
     super(message);
     this.name = 'MarkdownPartCacheError';
   }
@@ -40,7 +44,11 @@ export abstract class MarkdownPartCache {
    * @param partIndex 部分索引
    * @param markdownContent markdown内容
    */
-  abstract storePartMarkdown(itemId: string, partIndex: number, markdownContent: string): Promise<void>;
+  abstract storePartMarkdown(
+    itemId: string,
+    partIndex: number,
+    markdownContent: string,
+  ): Promise<void>;
 
   /**
    * 获取特定部分的markdown内容
@@ -48,14 +56,19 @@ export abstract class MarkdownPartCache {
    * @param partIndex 部分索引
    * @returns markdown内容或null（如果不存在）
    */
-  abstract getPartMarkdown(itemId: string, partIndex: number): Promise<string | null>;
+  abstract getPartMarkdown(
+    itemId: string,
+    partIndex: number,
+  ): Promise<string | null>;
 
   /**
    * Get all parts of target pdf markdown cache
    * @param itemId 项目ID
    * @returns 部分信息数组
    */
-  abstract getAllParts(itemId: string): Promise<Array<{partIndex: number, content: string, status?: string}>>;
+  abstract getAllParts(
+    itemId: string,
+  ): Promise<Array<{ partIndex: number; content: string; status?: string }>>;
 
   /**
    * 合并所有部分为完整的markdown
@@ -66,52 +79,62 @@ export abstract class MarkdownPartCache {
     try {
       logger.debug(`[DEBUG] mergeAllParts called for itemId=${itemId}`);
       logger.info(`开始合并项目 ${itemId} 的所有markdown部分`, { itemId });
-      
-      logger.debug(`[DEBUG] About to call getAllParts in mergeAllParts for itemId=${itemId}`);
+
+      logger.debug(
+        `[DEBUG] About to call getAllParts in mergeAllParts for itemId=${itemId}`,
+      );
       const parts = await this.getAllParts(itemId);
-      logger.debug(`[DEBUG] getAllParts in mergeAllParts returned ${parts.length} parts for itemId=${itemId}`);
-      
+      logger.debug(
+        `[DEBUG] getAllParts in mergeAllParts returned ${parts.length} parts for itemId=${itemId}`,
+      );
+
       if (parts.length === 0) {
-        logger.debug(`[DEBUG] No parts available for merging for itemId=${itemId}`);
+        logger.debug(
+          `[DEBUG] No parts available for merging for itemId=${itemId}`,
+        );
         throw new MarkdownPartCacheError(
           `项目 ${itemId} 没有可用的markdown部分`,
           'NO_PARTS_AVAILABLE',
-          { itemId }
+          { itemId },
         );
       }
 
       // 按部分索引排序
       parts.sort((a, b) => a.partIndex - b.partIndex);
       logger.debug(`[DEBUG] Parts sorted for itemId=${itemId}`);
-      
+
       // 合并所有部分
-      logger.debug(`[DEBUG] About to merge content for ${parts.length} parts of itemId=${itemId}`);
-      const mergedContent = parts.map(part => part.content).join('\n\n');
-      logger.debug(`[DEBUG] Content merged for itemId=${itemId}, length: ${mergedContent.length}`);
-      
+      logger.debug(
+        `[DEBUG] About to merge content for ${parts.length} parts of itemId=${itemId}`,
+      );
+      const mergedContent = parts.map((part) => part.content).join('\n\n');
+      logger.debug(
+        `[DEBUG] Content merged for itemId=${itemId}, length: ${mergedContent.length}`,
+      );
+
       logger.info(`成功合并项目 ${itemId} 的 ${parts.length} 个markdown部分`, {
         itemId,
         partsCount: parts.length,
-        contentLength: mergedContent.length
+        contentLength: mergedContent.length,
       });
-      
+
       return mergedContent;
     } catch (error) {
       logger.debug(`[DEBUG] mergeAllParts failed for itemId=${itemId}:`, error);
       if (error instanceof MarkdownPartCacheError) {
         throw error;
       }
-      
+
       logger.error(`合并项目 ${itemId} 的markdown部分时发生错误`, {
         itemId,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       throw new MarkdownPartCacheError(
         `合并markdown部分失败: ${error.message}`,
         'MERGE_FAILED',
-        { itemId, originalError: error }
+        { itemId, originalError: error },
       );
     }
   }
@@ -122,7 +145,11 @@ export abstract class MarkdownPartCache {
    * @param partIndex 部分索引
    * @param status 新状态
    */
-  abstract updatePartStatus(itemId: string, partIndex: number, status: string): Promise<void>;
+  abstract updatePartStatus(
+    itemId: string,
+    partIndex: number,
+    status: string,
+  ): Promise<void>;
 
   /**
    * 获取部分状态
@@ -130,7 +157,10 @@ export abstract class MarkdownPartCache {
    * @param partIndex 部分索引
    * @returns 状态或null（如果不存在）
    */
-  abstract getPartStatus(itemId: string, partIndex: number): Promise<string | null>;
+  abstract getPartStatus(
+    itemId: string,
+    partIndex: number,
+  ): Promise<string | null>;
 
   /**
    * 清理特定项目的缓存
@@ -145,11 +175,9 @@ export abstract class MarkdownPartCache {
    */
   protected validateItemId(itemId: string): void {
     if (!itemId || typeof itemId !== 'string' || itemId.trim().length === 0) {
-      throw new MarkdownPartCacheError(
-        '项目ID不能为空',
-        'INVALID_ITEM_ID',
-        { itemId }
-      );
+      throw new MarkdownPartCacheError('项目ID不能为空', 'INVALID_ITEM_ID', {
+        itemId,
+      });
     }
   }
 
@@ -163,7 +191,7 @@ export abstract class MarkdownPartCache {
       throw new MarkdownPartCacheError(
         '部分索引必须是非负整数',
         'INVALID_PART_INDEX',
-        { partIndex }
+        { partIndex },
       );
     }
   }
@@ -178,7 +206,7 @@ export abstract class MarkdownPartCache {
       throw new MarkdownPartCacheError(
         'markdown内容必须是字符串',
         'INVALID_CONTENT_TYPE',
-        { contentType: typeof content }
+        { contentType: typeof content },
       );
     }
   }
@@ -190,11 +218,9 @@ export abstract class MarkdownPartCache {
    */
   protected validateStatus(status: string): void {
     if (!status || typeof status !== 'string' || status.trim().length === 0) {
-      throw new MarkdownPartCacheError(
-        '状态不能为空',
-        'INVALID_STATUS',
-        { status }
-      );
+      throw new MarkdownPartCacheError('状态不能为空', 'INVALID_STATUS', {
+        status,
+      });
     }
   }
 
@@ -204,7 +230,11 @@ export abstract class MarkdownPartCache {
    * @param itemId 项目ID
    * @param partIndex 部分索引（可选）
    */
-  protected logOperationStart(operation: string, itemId: string, partIndex?: number): void {
+  protected logOperationStart(
+    operation: string,
+    itemId: string,
+    partIndex?: number,
+  ): void {
     const logData: any = { itemId, operation };
     if (partIndex !== undefined) {
       logData.partIndex = partIndex;
@@ -220,10 +250,10 @@ export abstract class MarkdownPartCache {
    * @param additionalData 额外数据（可选）
    */
   protected logOperationSuccess(
-    operation: string, 
-    itemId: string, 
-    partIndex?: number, 
-    additionalData?: any
+    operation: string,
+    itemId: string,
+    partIndex?: number,
+    additionalData?: any,
   ): void {
     const logData: any = { itemId, operation };
     if (partIndex !== undefined) {
@@ -243,16 +273,16 @@ export abstract class MarkdownPartCache {
    * @param partIndex 部分索引（可选）
    */
   protected logOperationError(
-    operation: string, 
-    error: Error, 
-    itemId: string, 
-    partIndex?: number
+    operation: string,
+    error: Error,
+    itemId: string,
+    partIndex?: number,
   ): void {
-    const logData: any = { 
-      itemId, 
-      operation, 
+    const logData: any = {
+      itemId,
+      operation,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     };
     if (partIndex !== undefined) {
       logData.partIndex = partIndex;

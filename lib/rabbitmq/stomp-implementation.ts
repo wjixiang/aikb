@@ -50,7 +50,10 @@ export class StompImplementation implements IMessageService {
    * Initialize STOMP connection
    */
   async initialize(): Promise<void> {
-    if (this.connectionStatus === 'connected' || this.connectionStatus === 'connecting') {
+    if (
+      this.connectionStatus === 'connected' ||
+      this.connectionStatus === 'connecting'
+    ) {
       return;
     }
 
@@ -60,14 +63,16 @@ export class StompImplementation implements IMessageService {
       logger.info('Connecting to STOMP server...', {
         brokerURL: this.config.connectionOptions.brokerURL,
         login: this.config.connectionOptions.connectHeaders.login,
-        passcode: this.config.connectionOptions.connectHeaders.passcode ? '[REDACTED]' : undefined,
+        passcode: this.config.connectionOptions.connectHeaders.passcode
+          ? '[REDACTED]'
+          : undefined,
         vhost: this.config.connectionOptions.connectHeaders.host,
         reconnectDelay: this.config.connectionOptions.reconnectDelay,
         maxReconnectAttempts: this.config.reconnect?.maxAttempts,
         heartbeatIncoming: this.config.connectionOptions.heartbeatIncoming,
         heartbeatOutgoing: this.config.connectionOptions.heartbeatOutgoing,
       });
-      
+
       // Create STOMP client
       const clientOptions: any = {
         brokerURL: this.config.connectionOptions.brokerURL,
@@ -75,7 +80,8 @@ export class StompImplementation implements IMessageService {
         reconnectDelay: this.config.connectionOptions.reconnectDelay,
         heartbeatIncoming: this.config.connectionOptions.heartbeatIncoming,
         heartbeatOutgoing: this.config.connectionOptions.heartbeatOutgoing,
-        webSocketFactory: () => new WebSocket(this.config.connectionOptions.brokerURL),
+        webSocketFactory: () =>
+          new WebSocket(this.config.connectionOptions.brokerURL),
         onConnect: (frame) => {
           logger.info('STOMP connected successfully');
           this.connectionStatus = 'connected';
@@ -172,7 +178,11 @@ export class StompImplementation implements IMessageService {
    * Check if the service is connected
    */
   isConnected(): boolean {
-    return this.connectionStatus === 'connected' && this.client !== null && this.client.connected;
+    return (
+      this.connectionStatus === 'connected' &&
+      this.client !== null &&
+      this.client.connected
+    );
   }
 
   /**
@@ -219,7 +229,7 @@ export class StompImplementation implements IMessageService {
     options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
     if (!this.isConnected()) {
-      await this.initialize()
+      await this.initialize();
     }
 
     try {
@@ -281,8 +291,10 @@ export class StompImplementation implements IMessageService {
     }
 
     try {
-      const subscriptionId = options.consumerTag || `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+      const subscriptionId =
+        options.consumerTag ||
+        `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       const headers: any = {
         ack: options.noAck ? 'auto' : 'client',
         id: subscriptionId,
@@ -297,36 +309,53 @@ export class StompImplementation implements IMessageService {
 
       // Convert queue name to STOMP destination if needed
       let stompDestination = destination;
-      if (destination.startsWith('pdf-') || destination.startsWith('markdown-') || destination.startsWith('chunking-')) {
+      if (
+        destination.startsWith('pdf-') ||
+        destination.startsWith('markdown-') ||
+        destination.startsWith('chunking-')
+      ) {
         // This looks like a queue name, convert it to an exchange destination
         try {
           const routingKey = getRoutingKeyForQueue(destination);
           stompDestination = getStompDestination(routingKey);
-          logger.info(`Converted queue ${destination} to STOMP destination ${stompDestination}`);
+          logger.info(
+            `Converted queue ${destination} to STOMP destination ${stompDestination}`,
+          );
         } catch (error) {
           // If conversion fails, try direct queue access
           stompDestination = `/queue/${destination}`;
-          logger.info(`Using direct queue access for ${destination}: ${stompDestination}`);
+          logger.info(
+            `Using direct queue access for ${destination}: ${stompDestination}`,
+          );
         }
       }
 
       const subscription = this.client!.subscribe(
         stompDestination,
         (message) => {
-          logger.info(`Received message from STOMP destination: ${stompDestination} (original: ${destination})`);
-          
+          logger.info(
+            `Received message from STOMP destination: ${stompDestination} (original: ${destination})`,
+          );
+
           if (!message.body) {
-            logger.warn(`Received empty message from STOMP destination: ${stompDestination}`);
+            logger.warn(
+              `Received empty message from STOMP destination: ${stompDestination}`,
+            );
             return;
           }
 
           try {
-            const messageContent = JSON.parse(message.body) as PdfConversionMessage;
-            logger.info(`Processed STOMP message from destination ${stompDestination}:`, {
-              eventType: messageContent.eventType,
-              itemId: (messageContent as any).itemId,
-            });
-            
+            const messageContent = JSON.parse(
+              message.body,
+            ) as PdfConversionMessage;
+            logger.info(
+              `Processed STOMP message from destination ${stompDestination}:`,
+              {
+                eventType: messageContent.eventType,
+                itemId: (messageContent as any).itemId,
+              },
+            );
+
             // Call the message handler
             onMessage(messageContent, message);
 
@@ -339,10 +368,7 @@ export class StompImplementation implements IMessageService {
               `Error processing STOMP message from destination ${stompDestination}:`,
               error,
             );
-            logger.error(
-              `Message content was:`,
-              message.body,
-            );
+            logger.error(`Message content was:`, message.body);
 
             // Negative acknowledgment if not auto-ack
             if (!options.noAck && message.headers['message-id']) {
@@ -361,7 +387,10 @@ export class StompImplementation implements IMessageService {
 
       return subscriptionId;
     } catch (error) {
-      logger.error(`Failed to subscribe to STOMP destination ${destination}:`, error);
+      logger.error(
+        `Failed to subscribe to STOMP destination ${destination}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -395,7 +424,7 @@ export class StompImplementation implements IMessageService {
    */
   async getQueueInfo(destination: string): Promise<QueueInfo | null> {
     if (!this.isConnected()) {
-      await this.initialize()
+      await this.initialize();
     }
 
     try {
@@ -403,13 +432,16 @@ export class StompImplementation implements IMessageService {
       // We can make a temporary subscription to check if destination exists
       // but for now, return basic info
       logger.info(`Getting info for STOMP destination: ${destination}`);
-      
+
       return {
         messageCount: 0, // STOMP doesn't provide message count
         consumerCount: this.subscriptions.size,
       };
     } catch (error) {
-      logger.error(`Failed to get STOMP destination info for ${destination}:`, error);
+      logger.error(
+        `Failed to get STOMP destination info for ${destination}:`,
+        error,
+      );
       return null;
     }
   }
@@ -489,7 +521,9 @@ export class StompImplementation implements IMessageService {
       try {
         logger.debug(`Starting reconnection attempt ${this.reconnectAttempts}`);
         await this.initialize();
-        logger.info(`STOMP reconnection successful on attempt ${this.reconnectAttempts}`);
+        logger.info(
+          `STOMP reconnection successful on attempt ${this.reconnectAttempts}`,
+        );
       } catch (error) {
         logger.error(
           `STOMP reconnection attempt ${this.reconnectAttempts} failed:`,
@@ -524,7 +558,7 @@ export class StompImplementation implements IMessageService {
     }
 
     const interval = this.config.healthCheck?.interval || 30000;
-    
+
     this.heartbeatInterval = setInterval(async () => {
       if (this.isConnected()) {
         try {

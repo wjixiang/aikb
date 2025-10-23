@@ -1,5 +1,5 @@
-import { ConsumeMessage } from "amqplib";
-import { IMessageService, MessageProtocol } from "./message-service.interface";
+import { ConsumeMessage } from 'amqplib';
+import { IMessageService, MessageProtocol } from './message-service.interface';
 import {
   BaseRabbitMQMessage,
   RabbitMQMessageOptions,
@@ -22,12 +22,12 @@ import {
   MarkdownPartStorageProgressMessage,
   MarkdownPartStorageCompletedMessage,
   MarkdownPartStorageFailedMessage,
-  ChunkingEmbeddingRequestMessage,
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
   PdfConversionMessage,
-} from "./message.types";
+  MultiVersionChunkingEmbeddingRequestMessage,
+} from './message.types';
 
 /**
  * Interface for RabbitMQ service
@@ -56,32 +56,44 @@ export interface IRabbitMQService {
   /**
    * Publish PDF conversion request
    */
-  publishPdfConversionRequest(request: PdfConversionRequestMessage): Promise<boolean>;
+  publishPdfConversionRequest(
+    request: PdfConversionRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF conversion progress
    */
-  publishPdfConversionProgress(progress: PdfConversionProgressMessage): Promise<boolean>;
+  publishPdfConversionProgress(
+    progress: PdfConversionProgressMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF conversion completed
    */
-  publishPdfConversionCompleted(completed: PdfConversionCompletedMessage): Promise<boolean>;
+  publishPdfConversionCompleted(
+    completed: PdfConversionCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF conversion failed
    */
-  publishPdfConversionFailed(failed: PdfConversionFailedMessage): Promise<boolean>;
+  publishPdfConversionFailed(
+    failed: PdfConversionFailedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF analysis request
    */
-  publishPdfAnalysisRequest(request: PdfAnalysisRequestMessage): Promise<boolean>;
+  publishPdfAnalysisRequest(
+    request: PdfAnalysisRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF analysis completed
    */
-  publishPdfAnalysisCompleted(completed: PdfAnalysisCompletedMessage): Promise<boolean>;
+  publishPdfAnalysisCompleted(
+    completed: PdfAnalysisCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF analysis failed
@@ -91,17 +103,23 @@ export interface IRabbitMQService {
   /**
    * Publish PDF part conversion request
    */
-  publishPdfPartConversionRequest(request: PdfPartConversionRequestMessage): Promise<boolean>;
+  publishPdfPartConversionRequest(
+    request: PdfPartConversionRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF part conversion completed
    */
-  publishPdfPartConversionCompleted(completed: PdfPartConversionCompletedMessage): Promise<boolean>;
+  publishPdfPartConversionCompleted(
+    completed: PdfPartConversionCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF part conversion failed
    */
-  publishPdfPartConversionFailed(failed: PdfPartConversionFailedMessage): Promise<boolean>;
+  publishPdfPartConversionFailed(
+    failed: PdfPartConversionFailedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish PDF merging request
@@ -111,62 +129,86 @@ export interface IRabbitMQService {
   /**
    * Publish PDF merging progress
    */
-  publishPdfMergingProgress(progress: PdfMergingProgressMessage): Promise<boolean>;
+  publishPdfMergingProgress(
+    progress: PdfMergingProgressMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown storage request
    */
-  publishMarkdownStorageRequest(request: MarkdownStorageRequestMessage): Promise<boolean>;
+  publishMarkdownStorageRequest(
+    request: MarkdownStorageRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown storage completed
    */
-  publishMarkdownStorageCompleted(completed: MarkdownStorageCompletedMessage): Promise<boolean>;
+  publishMarkdownStorageCompleted(
+    completed: MarkdownStorageCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown storage failed
    */
-  publishMarkdownStorageFailed(failed: MarkdownStorageFailedMessage): Promise<boolean>;
+  publishMarkdownStorageFailed(
+    failed: MarkdownStorageFailedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown part storage request
    */
-  publishMarkdownPartStorageRequest(request: MarkdownPartStorageRequestMessage): Promise<boolean>;
+  publishMarkdownPartStorageRequest(
+    request: MarkdownPartStorageRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown part storage progress
    */
-  publishMarkdownPartStorageProgress(progress: MarkdownPartStorageProgressMessage): Promise<boolean>;
+  publishMarkdownPartStorageProgress(
+    progress: MarkdownPartStorageProgressMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown part storage completed
    */
-  publishMarkdownPartStorageCompleted(completed: MarkdownPartStorageCompletedMessage): Promise<boolean>;
+  publishMarkdownPartStorageCompleted(
+    completed: MarkdownPartStorageCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish markdown part storage failed
    */
-  publishMarkdownPartStorageFailed(failed: MarkdownPartStorageFailedMessage): Promise<boolean>;
+  publishMarkdownPartStorageFailed(
+    failed: MarkdownPartStorageFailedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish chunking and embedding request
    */
-  publishChunkingEmbeddingRequest(request: ChunkingEmbeddingRequestMessage): Promise<boolean>;
+  publishChunkingEmbeddingRequest(
+    request: MultiVersionChunkingEmbeddingRequestMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish chunking and embedding progress
    */
-  publishChunkingEmbeddingProgress(progress: ChunkingEmbeddingProgressMessage): Promise<boolean>;
+  publishChunkingEmbeddingProgress(
+    progress: ChunkingEmbeddingProgressMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish chunking and embedding completed
    */
-  publishChunkingEmbeddingCompleted(completed: ChunkingEmbeddingCompletedMessage): Promise<boolean>;
+  publishChunkingEmbeddingCompleted(
+    completed: ChunkingEmbeddingCompletedMessage,
+  ): Promise<boolean>;
 
   /**
    * Publish chunking and embedding failed
    */
-  publishChunkingEmbeddingFailed(failed: ChunkingEmbeddingFailedMessage): Promise<boolean>;
+  publishChunkingEmbeddingFailed(
+    failed: ChunkingEmbeddingFailedMessage,
+  ): Promise<boolean>;
 
   /**
    * Consume messages from a queue

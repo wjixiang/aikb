@@ -9,10 +9,7 @@ import {
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
-import {
-  PdfMergerService,
-  createPdfMergerService,
-} from './pdf-merger.service';
+import { PdfMergerService, createPdfMergerService } from './pdf-merger.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '../logger';
 
@@ -116,7 +113,10 @@ export class PdfMergerWorker {
     try {
       // The merger service already handles the merging logic
       // We just need to trigger it by calling the handlePdfMergingRequest method
-      await (this.mergerService as any).handlePdfMergingRequest(message, originalMessage);
+      await (this.mergerService as any).handlePdfMergingRequest(
+        message,
+        originalMessage,
+      );
 
       logger.info(
         `PDF merging completed successfully for item: ${message.itemId}`,

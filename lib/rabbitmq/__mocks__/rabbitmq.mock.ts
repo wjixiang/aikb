@@ -1,8 +1,34 @@
-import { ConsumeMessage } from "amqplib";
-import { vi } from "vitest";
-import { IMessageService, MessageProtocol } from "../message-service.interface";
-import { IRabbitMQService } from "../rabbitmq-service.interface";
-import { BaseRabbitMQMessage, RabbitMQMessageOptions, PdfConversionRequestMessage, PdfConversionProgressMessage, PdfConversionCompletedMessage, PdfConversionFailedMessage, PdfAnalysisRequestMessage, PdfAnalysisCompletedMessage, PdfAnalysisFailedMessage, PdfPartConversionRequestMessage, PdfPartConversionCompletedMessage, PdfPartConversionFailedMessage, PdfMergingRequestMessage, PdfMergingProgressMessage, MarkdownStorageRequestMessage, MarkdownStorageCompletedMessage, MarkdownStorageFailedMessage, MarkdownPartStorageRequestMessage, MarkdownPartStorageProgressMessage, MarkdownPartStorageCompletedMessage, MarkdownPartStorageFailedMessage, ChunkingEmbeddingRequestMessage, ChunkingEmbeddingProgressMessage, ChunkingEmbeddingCompletedMessage, ChunkingEmbeddingFailedMessage, PdfConversionMessage } from "../message.types";
+import { ConsumeMessage } from 'amqplib';
+import { vi } from 'vitest';
+import { IMessageService, MessageProtocol } from '../message-service.interface';
+import { IRabbitMQService } from '../rabbitmq-service.interface';
+import {
+  BaseRabbitMQMessage,
+  RabbitMQMessageOptions,
+  PdfConversionRequestMessage,
+  PdfConversionProgressMessage,
+  PdfConversionCompletedMessage,
+  PdfConversionFailedMessage,
+  PdfAnalysisRequestMessage,
+  PdfAnalysisCompletedMessage,
+  PdfAnalysisFailedMessage,
+  PdfPartConversionRequestMessage,
+  PdfPartConversionCompletedMessage,
+  PdfPartConversionFailedMessage,
+  PdfMergingRequestMessage,
+  PdfMergingProgressMessage,
+  MarkdownStorageRequestMessage,
+  MarkdownStorageCompletedMessage,
+  MarkdownStorageFailedMessage,
+  MarkdownPartStorageRequestMessage,
+  MarkdownPartStorageProgressMessage,
+  MarkdownPartStorageCompletedMessage,
+  MarkdownPartStorageFailedMessage,
+  ChunkingEmbeddingProgressMessage,
+  ChunkingEmbeddingCompletedMessage,
+  ChunkingEmbeddingFailedMessage,
+  PdfConversionMessage,
+} from '../message.types';
 
 // Mock dependencies
 export const mockMessageService: IMessageService = {
@@ -10,11 +36,15 @@ export const mockMessageService: IMessageService = {
   close: vi.fn().mockResolvedValue(undefined),
   isConnected: vi.fn().mockReturnValue(true),
   getConnectionStatus: vi.fn().mockReturnValue('connected'),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy', details: { connected: true } }),
+  healthCheck: vi
+    .fn()
+    .mockResolvedValue({ status: 'healthy', details: { connected: true } }),
   publishMessage: vi.fn().mockResolvedValue(true),
   consumeMessages: vi.fn().mockResolvedValue('test-consumer-tag'),
   stopConsuming: vi.fn().mockResolvedValue(undefined),
-  getQueueInfo: vi.fn().mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
+  getQueueInfo: vi
+    .fn()
+    .mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
   purgeQueue: vi.fn().mockResolvedValue(undefined),
   setupTopology: vi.fn().mockResolvedValue(undefined),
 };
@@ -28,7 +58,7 @@ const mockRabbitMQServiceImpl = {
   initializationPromise: null,
   initializationResolver: null,
   protocol: MessageProtocol.AMQP,
-  
+
   // Public methods
   initialize: vi.fn().mockResolvedValue(undefined),
   waitForConnectionReady: vi.fn().mockResolvedValue(undefined),
@@ -58,15 +88,20 @@ const mockRabbitMQServiceImpl = {
   publishChunkingEmbeddingFailed: vi.fn().mockResolvedValue(true),
   consumeMessages: vi.fn().mockResolvedValue('test-consumer-tag'),
   stopConsuming: vi.fn().mockResolvedValue(undefined),
-  getQueueInfo: vi.fn().mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
+  getQueueInfo: vi
+    .fn()
+    .mockResolvedValue({ messageCount: 0, consumerCount: 1 }),
   purgeQueue: vi.fn().mockResolvedValue(undefined),
-  healthCheck: vi.fn().mockResolvedValue({ status: 'healthy', details: { connected: true } }),
+  healthCheck: vi
+    .fn()
+    .mockResolvedValue({ status: 'healthy', details: { connected: true } }),
   close: vi.fn().mockResolvedValue(undefined),
   isConnected: vi.fn().mockReturnValue(true),
 };
 
 // Export with type assertion to bypass the private property issue
-export const mockRabbitMQService = mockRabbitMQServiceImpl as unknown as IRabbitMQService;
+export const mockRabbitMQService =
+  mockRabbitMQServiceImpl as unknown as IRabbitMQService;
 
 // Also export a helper to access the mock properties for testing
 export const getMockRabbitMQServiceImpl = () => mockRabbitMQServiceImpl;

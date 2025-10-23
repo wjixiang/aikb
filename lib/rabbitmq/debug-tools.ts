@@ -1,5 +1,8 @@
 import { IRabbitMQService } from './rabbitmq-service.interface';
-import { mockRabbitMQService, getMockRabbitMQServiceImpl } from './__mocks__/rabbitmq.mock';
+import {
+  mockRabbitMQService,
+  getMockRabbitMQServiceImpl,
+} from './__mocks__/rabbitmq.mock';
 
 /**
  * Debug utility for RabbitMQ service
@@ -52,10 +55,10 @@ export class RabbitMQDebugTools {
 
     for (const methodName of methodNames) {
       const originalMethod = (service as any)[methodName] as Function;
-      
+
       (debugService as any)[methodName] = async (...args: any[]) => {
         console.log(`[RabbitMQ Debug] Calling ${methodName} with args:`, args);
-        
+
         try {
           const result = await originalMethod.apply(service, args);
           console.log(`[RabbitMQ Debug] ${methodName} returned:`, result);
@@ -72,7 +75,7 @@ export class RabbitMQDebugTools {
       get: () => {
         console.log(`[RabbitMQ Debug] Getting protocol:`, service.protocol);
         return service.protocol;
-      }
+      },
     });
 
     return debugService;
@@ -116,7 +119,7 @@ export class RabbitMQDebugTools {
       },
       restore: () => {
         (service as any)[methodName] = originalMethod;
-      }
+      },
     };
   }
 }

@@ -32,9 +32,18 @@ console.log('');
 
 // 2. 测试策略类别
 console.log('2. 测试策略类别:');
-console.log('结构化策略:', getStrategiesByCategory(ChunkingStrategyCategory.STRUCTURE_BASED));
-console.log('内容化策略:', getStrategiesByCategory(ChunkingStrategyCategory.CONTENT_BASED));
-console.log('系统策略:', getStrategiesByCategory(ChunkingStrategyCategory.SYSTEM));
+console.log(
+  '结构化策略:',
+  getStrategiesByCategory(ChunkingStrategyCategory.STRUCTURE_BASED),
+);
+console.log(
+  '内容化策略:',
+  getStrategiesByCategory(ChunkingStrategyCategory.CONTENT_BASED),
+);
+console.log(
+  '系统策略:',
+  getStrategiesByCategory(ChunkingStrategyCategory.SYSTEM),
+);
 console.log('');
 
 // 3. 测试可用策略
@@ -45,9 +54,18 @@ console.log('');
 
 // 4. 测试工具函数
 console.log('4. 测试工具函数:');
-console.log('H1需要标题:', ChunkingStrategyUtils.requiresTitle(ChunkingStrategy.H1));
-console.log('PARAGRAPH需要标题:', ChunkingStrategyUtils.requiresTitle(ChunkingStrategy.PARAGRAPH));
-console.log('H1的默认配置:', ChunkingStrategyUtils.getDefaultConfig(ChunkingStrategy.H1));
+console.log(
+  'H1需要标题:',
+  ChunkingStrategyUtils.requiresTitle(ChunkingStrategy.H1),
+);
+console.log(
+  'PARAGRAPH需要标题:',
+  ChunkingStrategyUtils.requiresTitle(ChunkingStrategy.PARAGRAPH),
+);
+console.log(
+  'H1的默认配置:',
+  ChunkingStrategyUtils.getDefaultConfig(ChunkingStrategy.H1),
+);
 console.log('');
 
 // 5. 测试自动选择
@@ -58,12 +76,22 @@ console.log('');
 
 // 6. 测试兼容性转换
 console.log('6. 测试兼容性转换:');
-const legacyH1 = ChunkingStrategyCompatibility.fromLegacy(ChunkingStrategyType.H1);
-const legacyParagraph = ChunkingStrategyCompatibility.fromLegacy(ChunkingStrategyType.PARAGRAPH);
+const legacyH1 = ChunkingStrategyCompatibility.fromLegacy(
+  ChunkingStrategyType.H1,
+);
+const legacyParagraph = ChunkingStrategyCompatibility.fromLegacy(
+  ChunkingStrategyType.PARAGRAPH,
+);
 console.log('旧版H1转新版:', legacyH1);
 console.log('旧版PARAGRAPH转新版:', legacyParagraph);
-console.log('新版H1转旧版:', ChunkingStrategyCompatibility.toLegacy(ChunkingStrategy.H1));
-console.log('新版PARAGRAPH转旧版:', ChunkingStrategyCompatibility.toLegacy(ChunkingStrategy.PARAGRAPH));
+console.log(
+  '新版H1转旧版:',
+  ChunkingStrategyCompatibility.toLegacy(ChunkingStrategy.H1),
+);
+console.log(
+  '新版PARAGRAPH转旧版:',
+  ChunkingStrategyCompatibility.toLegacy(ChunkingStrategy.PARAGRAPH),
+);
 console.log('');
 
 // 7. 测试切片功能
@@ -72,21 +100,30 @@ console.log('使用H1策略切片:');
 const h1Chunks = chunkTextWithEnum(sampleMarkdown, ChunkingStrategy.H1);
 console.log(`生成了 ${h1Chunks.length} 个块`);
 h1Chunks.forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`,
+  );
 });
 
 console.log('\n使用PARAGRAPH策略切片:');
-const paragraphChunks = chunkTextWithEnum(sampleMarkdown, ChunkingStrategy.PARAGRAPH);
+const paragraphChunks = chunkTextWithEnum(
+  sampleMarkdown,
+  ChunkingStrategy.PARAGRAPH,
+);
 console.log(`生成了 ${paragraphChunks.length} 个块`);
 paragraphChunks.slice(0, 3).forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: ${chunk.content.substring(0, 50)}... (${chunk.content.length} 字符)`,
+  );
 });
 
 console.log('\n使用增强函数（自动选择）:');
 const enhancedChunks = chunkTextEnhanced(sampleMarkdown);
 console.log(`生成了 ${enhancedChunks.length} 个块`);
 enhancedChunks.slice(0, 2).forEach((chunk, index) => {
-  console.log(`块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`);
+  console.log(
+    `块 ${index + 1}: "${chunk.title}" (${chunk.content.length} 字符)`,
+  );
 });
 
 console.log('\n=== 测试完成 ===');

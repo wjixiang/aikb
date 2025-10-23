@@ -23,7 +23,7 @@ export enum PdfProcessingStatus {
   ANALYZING = 'analyzing',
   SPLITTING = 'splitting',
   MERGING = 'merging',
-  CONVERTING = 'converting'
+  CONVERTING = 'converting',
 }
 
 /**
@@ -316,7 +316,8 @@ export interface MarkdownPartStorageRequestMessage extends BaseRabbitMQMessage {
 /**
  * Markdown part storage progress message
  */
-export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageProgressMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_PROGRESS';
   itemId: string;
   partIndex: number;
@@ -332,7 +333,8 @@ export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage 
 /**
  * Markdown part storage completed message
  */
-export interface MarkdownPartStorageCompletedMessage extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageCompletedMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_COMPLETED';
   itemId: string;
   partIndex: number;
@@ -364,6 +366,7 @@ export interface MarkdownPartStorageFailedMessage extends BaseRabbitMQMessage {
 
 /**
  * Chunking and embedding request message
+ * @deprecated
  */
 export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   eventType: 'CHUNKING_EMBEDDING_REQUEST';
@@ -373,13 +376,13 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
-  
+
   // Multi-version support
   denseVectorIndexGroupId?: string; // Optional group ID for this chunking/embedding combination
   embeddingProvider?: EmbeddingProvider; // Optional embedding provider override
   embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
   chunkingConfig?: ChunkingConfig; // Optional chunking configuration override
-  
+
   // Version control
   forceReprocess?: boolean; // Force reprocessing even if chunks exist
   preserveExisting?: boolean; // Keep existing chunks from other groups
@@ -388,20 +391,22 @@ export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
 /**
  * Multi-version chunking and embedding request message
  */
-export interface MultiVersionChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
+export interface MultiVersionChunkingEmbeddingRequestMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST';
   itemId: string;
   markdownContent?: string;
-  
+
   // Multi-version support
-  groupId?: string; // Use existing group
-  groupConfig?: Omit<ChunkingEmbeddingGroup, "id">; // Create new group with this config
-  
+  groupConfig: Omit<ChunkingEmbeddingGroup, 'id'>; // Create new group with this config
+  embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
+  chunkingConfig?: ChunkingConfig; // Optional chunking configuration overrid
+
   // Processing options
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
-  
+
   // Version control
   forceReprocess?: boolean; // Force reprocessing even if chunks exist
   preserveExisting?: boolean; // Keep existing chunks from other groups
@@ -410,7 +415,8 @@ export interface MultiVersionChunkingEmbeddingRequestMessage extends BaseRabbitM
 /**
  * Multi-version chunking and embedding progress message
  */
-export interface MultiVersionChunkingEmbeddingProgressMessage extends BaseRabbitMQMessage {
+export interface MultiVersionChunkingEmbeddingProgressMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_PROGRESS';
   itemId: string;
   groupId?: string;
@@ -428,7 +434,8 @@ export interface MultiVersionChunkingEmbeddingProgressMessage extends BaseRabbit
 /**
  * Multi-version chunking and embedding completed message
  */
-export interface MultiVersionChunkingEmbeddingCompletedMessage extends BaseRabbitMQMessage {
+export interface MultiVersionChunkingEmbeddingCompletedMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_COMPLETED';
   itemId: string;
   groupId: string;

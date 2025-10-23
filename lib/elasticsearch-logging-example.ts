@@ -54,14 +54,14 @@ async function demonstrateElasticsearchLogging() {
         email: 'zhangsan@example.com',
         preferences: {
           language: 'zh-CN',
-          timezone: 'Asia/Shanghai'
-        }
-      }
+          timezone: 'Asia/Shanghai',
+        },
+      },
     },
     operation: {
       type: 'profile_update',
       duration: 1250,
-      success: true
+      success: true,
     },
     request: {
       id: 'req_abc123',
@@ -69,10 +69,10 @@ async function demonstrateElasticsearchLogging() {
       endpoint: '/api/v1/users/12345/profile',
       headers: {
         'user-agent': 'Mozilla/5.0',
-        'content-type': 'application/json'
-      }
+        'content-type': 'application/json',
+      },
     },
-    tags: ['user', 'profile', 'update', 'success']
+    tags: ['user', 'profile', 'update', 'success'],
   });
 
   // 演示数组处理
@@ -85,8 +85,8 @@ async function demonstrateElasticsearchLogging() {
       total: 7,
       successful: 5,
       failed: 2,
-      processingTime: 3500
-    }
+      processingTime: 3500,
+    },
   });
 
   // 模拟批量日志记录

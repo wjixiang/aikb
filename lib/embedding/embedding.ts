@@ -13,16 +13,17 @@ const CONCURRENCY_LIMIT = parseInt(
 export enum EmbeddingProvider {
   OPENAI = 'openai',
   ALIBABA = 'alibaba',
-  ONNX = 'onnx'
+  ONNX = 'onnx',
 }
 
 // Model enums for each provider
 export enum OpenAIModel {
-  TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002'
+  TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002',
 }
 
 export enum AlibabaModel {
-  TEXT_EMBEDDING_V3 = 'text-embedding-v3'
+  TEXT_EMBEDDING_V3 = 'text-embedding-v3',
+  TEXT_EMBEDDING_V4 = 'text-embedding-v4',
 }
 
 export enum OnnxModel {
@@ -38,6 +39,15 @@ export interface EmbeddingConfig {
   timeout: number; // Request timeout in milliseconds
   provider: EmbeddingProvider; // Provider-specific configuration
 }
+
+export const defaultEmbeddingConfig: EmbeddingConfig = {
+  model: AlibabaModel.TEXT_EMBEDDING_V4,
+  dimension: 1024,
+  batchSize: 20,
+  maxRetries: 3,
+  timeout: 20000,
+  provider: EmbeddingProvider.ALIBABA,
+};
 
 // Re-export the provider base class and implementations for convenience
 export { EmbeddingProviderBase } from './embedding-providers';

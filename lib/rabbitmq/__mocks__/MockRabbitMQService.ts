@@ -20,12 +20,12 @@ import {
   MarkdownPartStorageProgressMessage,
   MarkdownPartStorageCompletedMessage,
   MarkdownPartStorageFailedMessage,
-  ChunkingEmbeddingRequestMessage,
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
   RabbitMQMessageOptions,
   PdfProcessingStatus,
+  MultiVersionChunkingEmbeddingRequestMessage,
 } from '../message.types';
 
 /**
@@ -45,7 +45,7 @@ export class MockRabbitMQService {
   async initialize(): Promise<void> {
     console.log('[MockRabbitMQService] Initializing...');
     // Simulate initialization delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     this.isInitializedValue = true;
     this.isConnectedValue = true;
     console.log('[MockRabbitMQService] Initialized successfully');
@@ -78,14 +78,17 @@ export class MockRabbitMQService {
     message: BaseRabbitMQMessage,
     options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
-    console.log(`[MockRabbitMQService] Publishing message to ${routingKey}:`, message.eventType);
-    
+    console.log(
+      `[MockRabbitMQService] Publishing message to ${routingKey}:`,
+      message.eventType,
+    );
+
     // Store the published message for testing verification
     this.publishedMessages.push({ routingKey, message });
-    
+
     // Simulate message publishing delay
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     return true;
   }
 
@@ -97,15 +100,17 @@ export class MockRabbitMQService {
     handler: Function,
     options: any = {},
   ): Promise<string> {
-    console.log(`[MockRabbitMQService] Starting to consume messages from queue: ${queueName}`);
-    
+    console.log(
+      `[MockRabbitMQService] Starting to consume messages from queue: ${queueName}`,
+    );
+
     // Store the handler for later use in tests
     this.messageHandlers.set(queueName, handler);
-    
+
     // Generate a mock consumer tag
     const consumerTag = `mock-consumer-${queueName}-${Date.now()}`;
     this.consumerTags.set(queueName, consumerTag);
-    
+
     return consumerTag;
   }
 
@@ -114,7 +119,7 @@ export class MockRabbitMQService {
    */
   async stopConsuming(consumerTag: string): Promise<void> {
     console.log(`[MockRabbitMQService] Stopping consumer: ${consumerTag}`);
-    
+
     // Find and remove the consumer tag
     for (const [queueName, tag] of this.consumerTags.entries()) {
       if (tag === consumerTag) {
@@ -162,116 +167,167 @@ export class MockRabbitMQService {
         },
         content: Buffer.from(JSON.stringify(message)),
       };
-      
+
       // Mock the ack and nack functions
       const mockAck = vi.fn();
       const mockNack = vi.fn();
-      
+
       try {
         await handler(message, mockOriginalMessage);
         // Auto-ack the message
         mockAck();
       } catch (error) {
-        console.error(`[MockRabbitMQService] Error handling message on queue ${queueName}:`, error);
+        console.error(
+          `[MockRabbitMQService] Error handling message on queue ${queueName}:`,
+          error,
+        );
         // Auto-nack on error
         mockNack();
       }
     } else {
-      console.warn(`[MockRabbitMQService] No handler found for queue: ${queueName}`);
+      console.warn(
+        `[MockRabbitMQService] No handler found for queue: ${queueName}`,
+      );
     }
   }
 
   // Specific publish methods for different message types
 
-  async publishPdfConversionRequest(message: PdfConversionRequestMessage): Promise<boolean> {
+  async publishPdfConversionRequest(
+    message: PdfConversionRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.conversion.request', message);
   }
 
-  async publishPdfConversionProgress(message: PdfConversionProgressMessage): Promise<boolean> {
+  async publishPdfConversionProgress(
+    message: PdfConversionProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.conversion.progress', message);
   }
 
-  async publishPdfConversionCompleted(message: PdfConversionCompletedMessage): Promise<boolean> {
+  async publishPdfConversionCompleted(
+    message: PdfConversionCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.conversion.completed', message);
   }
 
-  async publishPdfConversionFailed(message: PdfConversionFailedMessage): Promise<boolean> {
+  async publishPdfConversionFailed(
+    message: PdfConversionFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.conversion.failed', message);
   }
 
-  async publishPdfAnalysisRequest(message: PdfAnalysisRequestMessage): Promise<boolean> {
+  async publishPdfAnalysisRequest(
+    message: PdfAnalysisRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.analysis.request', message);
   }
 
-  async publishPdfAnalysisCompleted(message: PdfAnalysisCompletedMessage): Promise<boolean> {
+  async publishPdfAnalysisCompleted(
+    message: PdfAnalysisCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.analysis.completed', message);
   }
 
-  async publishPdfAnalysisFailed(message: PdfAnalysisFailedMessage): Promise<boolean> {
+  async publishPdfAnalysisFailed(
+    message: PdfAnalysisFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.analysis.failed', message);
   }
 
-  async publishPdfPartConversionRequest(message: PdfPartConversionRequestMessage): Promise<boolean> {
+  async publishPdfPartConversionRequest(
+    message: PdfPartConversionRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.part.conversion.request', message);
   }
 
-  async publishPdfPartConversionCompleted(message: PdfPartConversionCompletedMessage): Promise<boolean> {
+  async publishPdfPartConversionCompleted(
+    message: PdfPartConversionCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.part.conversion.completed', message);
   }
 
-  async publishPdfPartConversionFailed(message: PdfPartConversionFailedMessage): Promise<boolean> {
+  async publishPdfPartConversionFailed(
+    message: PdfPartConversionFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.part.conversion.failed', message);
   }
 
-  async publishPdfMergingRequest(message: PdfMergingRequestMessage): Promise<boolean> {
+  async publishPdfMergingRequest(
+    message: PdfMergingRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.merging.request', message);
   }
 
-  async publishPdfMergingProgress(message: PdfMergingProgressMessage): Promise<boolean> {
+  async publishPdfMergingProgress(
+    message: PdfMergingProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.merging.progress', message);
   }
 
-  async publishMarkdownStorageRequest(message: MarkdownStorageRequestMessage): Promise<boolean> {
+  async publishMarkdownStorageRequest(
+    message: MarkdownStorageRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.storage.request', message);
   }
 
-  async publishMarkdownStorageCompleted(message: MarkdownStorageCompletedMessage): Promise<boolean> {
+  async publishMarkdownStorageCompleted(
+    message: MarkdownStorageCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.storage.completed', message);
   }
 
-  async publishMarkdownStorageFailed(message: MarkdownStorageFailedMessage): Promise<boolean> {
+  async publishMarkdownStorageFailed(
+    message: MarkdownStorageFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.storage.failed', message);
   }
 
-  async publishMarkdownPartStorageRequest(message: MarkdownPartStorageRequestMessage): Promise<boolean> {
+  async publishMarkdownPartStorageRequest(
+    message: MarkdownPartStorageRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.part.storage.request', message);
   }
 
-  async publishMarkdownPartStorageProgress(message: MarkdownPartStorageProgressMessage): Promise<boolean> {
+  async publishMarkdownPartStorageProgress(
+    message: MarkdownPartStorageProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.part.storage.progress', message);
   }
 
-  async publishMarkdownPartStorageCompleted(message: MarkdownPartStorageCompletedMessage): Promise<boolean> {
+  async publishMarkdownPartStorageCompleted(
+    message: MarkdownPartStorageCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.part.storage.completed', message);
   }
 
-  async publishMarkdownPartStorageFailed(message: MarkdownPartStorageFailedMessage): Promise<boolean> {
+  async publishMarkdownPartStorageFailed(
+    message: MarkdownPartStorageFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('markdown.part.storage.failed', message);
   }
 
-  async publishChunkingEmbeddingRequest(message: ChunkingEmbeddingRequestMessage): Promise<boolean> {
+  async publishChunkingEmbeddingRequest(
+    message: MultiVersionChunkingEmbeddingRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('chunking-embedding-request', message);
   }
 
-  async publishChunkingEmbeddingProgress(message: ChunkingEmbeddingProgressMessage): Promise<boolean> {
+  async publishChunkingEmbeddingProgress(
+    message: ChunkingEmbeddingProgressMessage,
+  ): Promise<boolean> {
     return this.publishMessage('chunking.embedding.progress', message);
   }
 
-  async publishChunkingEmbeddingCompleted(message: ChunkingEmbeddingCompletedMessage): Promise<boolean> {
+  async publishChunkingEmbeddingCompleted(
+    message: ChunkingEmbeddingCompletedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('chunking.embedding.completed', message);
   }
 
-  async publishChunkingEmbeddingFailed(message: ChunkingEmbeddingFailedMessage): Promise<boolean> {
+  async publishChunkingEmbeddingFailed(
+    message: ChunkingEmbeddingFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('chunking.embedding.failed', message);
   }
 

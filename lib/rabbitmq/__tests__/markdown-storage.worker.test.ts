@@ -206,7 +206,9 @@ describe('MarkdownStorageWorker', () => {
       expect(mockStorage.updateMetadata).toHaveBeenCalledTimes(2);
 
       // Verify chunks processing request was sent
-      expect(mockRabbitMQService.publishChunkingEmbeddingRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishChunkingEmbeddingRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           chunkingStrategy: 'paragraph',
@@ -499,7 +501,9 @@ describe('MarkdownStorageWorker', () => {
       await messageHandler(message, originalMessage);
 
       // Verify chunks processing request was sent
-      expect(mockRabbitMQService.publishChunkingEmbeddingRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishChunkingEmbeddingRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId,
           chunkingStrategy: 'paragraph',

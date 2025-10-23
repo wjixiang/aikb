@@ -3,7 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
-import { ChunkingStrategy, ChunkingStrategyType } from 'lib/chunking/chunkingStrategy';
+import {
+  ChunkingStrategy,
+  ChunkingStrategyType,
+} from 'lib/chunking/chunkingStrategy';
 import { time } from 'console';
 import { delay } from 'rxjs';
 import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';

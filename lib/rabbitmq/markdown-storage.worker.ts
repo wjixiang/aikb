@@ -5,17 +5,22 @@ import {
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
+  MultiVersionChunkingEmbeddingRequestMessage,
 } from './message.types';
 import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import {
   AbstractLibraryStorage,
   BookMetadata,
+  ChunkingEmbeddingGroup,
 } from '../../knowledgeBase/knowledgeImport/library';
-import Library from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategy, ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import {
+  defaultChunkingConfig,
+} from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
+import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
+import { defaultEmbeddingConfig } from 'lib/embedding/embedding';
 
 const logger = createLoggerWithPrefix('MarkdownStorageWorker');
 
@@ -142,7 +147,10 @@ export class MarkdownStorageWorker {
       logger.info(
         `Sending chunking and embedding request for item: ${message.itemId}`,
       );
-      await this.sendChunkingEmbeddingRequest(message.itemId, message.markdownContent);
+      await this.sendChunkingEmbeddingRequest(
+        message.itemId,
+        message.markdownContent,
+      );
 
       logger.info(
         `Markdown storage completed successfully for item: ${message.itemId}`,
@@ -244,24 +252,33 @@ export class MarkdownStorageWorker {
     markdownContent: string,
   ): Promise<void> {
     try {
-      const chunkingEmbeddingRequest = {
+      const groupinfo: Omit<ChunkingEmbeddingGroup, "id"> = {
+        name: `chunk-embed-${Date.now()}`,
+        chunkingConfig: defaultChunkingConfig,
+        embeddingConfig: defaultEmbeddingConfig,
+        isDefault: false,
+        isActive: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      
+
+      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
+        eventType: "MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST",
         itemId,
         markdownContent,
-        chunkingStrategy: ChunkingStrategy.PARAGRAPH, // Default strategy
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,
+        groupConfig: groupinfo
       };
 
       await this.rabbitMQService.publishChunkingEmbeddingRequest(
         chunkingEmbeddingRequest,
       );
-      logger.info(
-        `Chunking and embedding request sent for item: ${itemId}`,
-      );
+      logger.info(`Chunking and embedding request sent for item: ${itemId}`);
     } catch (error) {
       logger.error(
         `Failed to send chunking and embedding request for item ${itemId}:`,

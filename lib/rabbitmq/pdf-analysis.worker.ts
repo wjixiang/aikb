@@ -22,14 +22,14 @@ const logger = createLoggerWithPrefix('PdfAnalysisWorker');
  * Processes PDF analysis requests from RabbitMQ queue
  */
 export class PdfAnalysisWorker {
-  private rabbitMQService: RabbitMQService
+  private rabbitMQService: RabbitMQService;
   private analyzerService: PdfAnalyzerService;
   private consumerTag: string | null = null;
   private isRunning = false;
 
   constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
     this.analyzerService = createPdfAnalyzerService(storage);
-    this.rabbitMQService = getRabbitMQService(protocol)
+    this.rabbitMQService = getRabbitMQService(protocol);
   }
 
   /**
@@ -134,7 +134,7 @@ export class PdfAnalysisWorker {
       isRunning: this.isRunning,
       consumerTag: this.consumerTag,
       rabbitMQConnected: this.rabbitMQService.isConnected(),
-      protocol: this.rabbitMQService.protocol
+      protocol: this.rabbitMQService.protocol,
     };
   }
 }

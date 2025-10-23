@@ -24,15 +24,15 @@ const logger = createLoggerWithPrefix('PdfConversionWorkerFactory');
 export interface PdfConversionWorkerConfig {
   // Message service configuration
   messageService?: IRabbitMQService;
-  
+
   // PDF conversion service configuration
   pdfConvertor?: MinerUPdfConvertor;
   partTracker?: IPdfPartTracker;
   markdownPartCache?: MarkdownPartCache;
-  
+
   // Message handler configuration
   messageHandler?: IPdfConversionMessageHandler;
-  
+
   // Worker configuration
   autoStart?: boolean;
 }
@@ -44,9 +44,11 @@ export class PdfConversionWorkerFactory {
   /**
    * Create a PDF conversion worker with default dependencies
    */
-  static createDefault(config: Partial<PdfConversionWorkerConfig> = {}): PdfConversionWorker {
+  static createDefault(
+    config: Partial<PdfConversionWorkerConfig> = {},
+  ): PdfConversionWorker {
     logger.info('Creating PDF conversion worker with default dependencies');
-    
+
     // Create message service
     let messageService: IRabbitMQService;
     if (config.messageService) {
@@ -54,42 +56,43 @@ export class PdfConversionWorkerFactory {
     } else {
       const rabbitMQService = getRabbitMQService();
       // Access the internal message service from RabbitMQService
-      messageService = (rabbitMQService as any).messageService || rabbitMQService;
+      messageService =
+        (rabbitMQService as any).messageService || rabbitMQService;
     }
-    
+
     // Create PDF conversion service
     const pdfConvertor = config.pdfConvertor || createMinerUConvertorFromEnv();
     const partTracker = config.partTracker || getPdfPartTracker();
-    const markdownPartCache = config.markdownPartCache || getMarkdownPartCache();
-    
-    const pdfConversionService = config.messageHandler ? undefined : new PdfConversionService(
-      pdfConvertor,
-      partTracker,
-      markdownPartCache,
-    );
-    
+    const markdownPartCache =
+      config.markdownPartCache || getMarkdownPartCache();
+
+    const pdfConversionService = config.messageHandler
+      ? undefined
+      : new PdfConversionService(pdfConvertor, partTracker, markdownPartCache);
+
     // Create message handler
-    const messageHandler = config.messageHandler || new PdfConversionMessageHandler(
-      messageService,
-      pdfConversionService!,
-    );
-    
+    const messageHandler =
+      config.messageHandler ||
+      new PdfConversionMessageHandler(messageService, pdfConversionService!);
+
     // Create worker
     const worker = new PdfConversionWorker(
       messageService,
       pdfConversionService,
       messageHandler,
     );
-    
+
     return worker;
   }
 
   /**
    * Create a PDF conversion worker with custom dependencies
    */
-  static createWithDependencies(config: PdfConversionWorkerConfig): PdfConversionWorker {
+  static createWithDependencies(
+    config: PdfConversionWorkerConfig,
+  ): PdfConversionWorker {
     logger.info('Creating PDF conversion worker with custom dependencies');
-    
+
     // Use provided services or create defaults
     let messageService: IRabbitMQService;
     if (config.messageService) {
@@ -97,67 +100,80 @@ export class PdfConversionWorkerFactory {
     } else {
       const rabbitMQService = getRabbitMQService();
       // Access the internal message service from RabbitMQService
-      messageService = (rabbitMQService as any).messageService || rabbitMQService;
+      messageService =
+        (rabbitMQService as any).messageService || rabbitMQService;
     }
-    
+
     // Create PDF conversion service if not provided
-    let pdfConversionService = config.messageHandler ? undefined : config.pdfConvertor ? 
-      new PdfConversionService(
-        config.pdfConvertor,
-        config.partTracker || getPdfPartTracker(),
-        config.markdownPartCache || getMarkdownPartCache(),
-      ) : undefined;
-    
+    let pdfConversionService = config.messageHandler
+      ? undefined
+      : config.pdfConvertor
+        ? new PdfConversionService(
+            config.pdfConvertor,
+            config.partTracker || getPdfPartTracker(),
+            config.markdownPartCache || getMarkdownPartCache(),
+          )
+        : undefined;
+
     // Create message handler if not provided
-    const messageHandler = config.messageHandler || (pdfConversionService ? 
-      new PdfConversionMessageHandler(messageService, pdfConversionService) : undefined);
-    
+    const messageHandler =
+      config.messageHandler ||
+      (pdfConversionService
+        ? new PdfConversionMessageHandler(messageService, pdfConversionService)
+        : undefined);
+
     // Create worker
     const worker = new PdfConversionWorker(
       messageService,
       pdfConversionService,
       messageHandler,
     );
-    
+
     return worker;
   }
 
   /**
    * Create and start a PDF conversion worker with default dependencies
    */
-  static async createAndStart(config: Partial<PdfConversionWorkerConfig> = {}): Promise<PdfConversionWorker> {
+  static async createAndStart(
+    config: Partial<PdfConversionWorkerConfig> = {},
+  ): Promise<PdfConversionWorker> {
     const worker = this.createDefault(config);
-    
+
     if (config.autoStart !== false) {
       await worker.start();
     }
-    
+
     return worker;
   }
 
   /**
    * Create and start a PDF conversion worker with custom dependencies
    */
-  static async createAndStartWithDependencies(config: PdfConversionWorkerConfig): Promise<PdfConversionWorker> {
+  static async createAndStartWithDependencies(
+    config: PdfConversionWorkerConfig,
+  ): Promise<PdfConversionWorker> {
     const worker = this.createWithDependencies(config);
-    
+
     if (config.autoStart !== false) {
       await worker.start();
     }
-    
+
     return worker;
   }
 
   /**
    * Create a PDF conversion worker for testing with mock dependencies
    */
-  static createForTesting(config: {
-    messageService?: IRabbitMQService;
-    pdfConversionService?: IPdfConversionService;
-    messageHandler?: IPdfConversionMessageHandler;
-  } = {}): PdfConversionWorker {
+  static createForTesting(
+    config: {
+      messageService?: IRabbitMQService;
+      pdfConversionService?: IPdfConversionService;
+      messageHandler?: IPdfConversionMessageHandler;
+    } = {},
+  ): PdfConversionWorker {
     logger.info('Creating PDF conversion worker for testing');
-    
+
     return new PdfConversionWorker(
       config.messageService,
       config.pdfConversionService,

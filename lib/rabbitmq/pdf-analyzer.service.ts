@@ -18,7 +18,11 @@ import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliterWorker } from '../pdfProcess-ts/pdfSpliter';
-import { uploadToS3, getPdfDownloadUrl, deleteFromS3 } from '../s3Service/S3Service';
+import {
+  uploadToS3,
+  getPdfDownloadUrl,
+  deleteFromS3,
+} from '../s3Service/S3Service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 
@@ -75,10 +79,11 @@ export class PdfAnalyzerService {
       }
 
       // Get split threshold from message or environment variable
-      const splitThreshold = request.splitThreshold ||
+      const splitThreshold =
+        request.splitThreshold ||
         parseInt(process.env.PDF_SPLIT_THRESHOLD || '') ||
         PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_THRESHOLD;
-      
+
       // Determine if splitting is required (strictly greater than threshold)
       const requiresSplitting = pageCount > splitThreshold;
       let suggestedSplitSize: number;
@@ -92,24 +97,30 @@ export class PdfAnalyzerService {
         } else {
           // Check if we should use environment variable or default
           const envSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '');
-          
+
           if (envSplitSize) {
             suggestedSplitSize = envSplitSize;
-            logger.info(`Using splitSize from environment: ${suggestedSplitSize}`);
+            logger.info(
+              `Using splitSize from environment: ${suggestedSplitSize}`,
+            );
           } else {
             // Calculate optimal split size based on page count
             // Target around 10 parts total to optimize processing
             const calculatedSplitSize = Math.ceil(pageCount / 10);
-            
+
             // Use the calculated size but ensure it's within min/max bounds
             suggestedSplitSize = Math.min(
               Math.max(
                 calculatedSplitSize,
-                parseInt(process.env.PDF_MIN_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
+                parseInt(process.env.PDF_MIN_SPLIT_SIZE || '') ||
+                  PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE,
               ),
-              parseInt(process.env.PDF_MAX_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
+              parseInt(process.env.PDF_MAX_SPLIT_SIZE || '') ||
+                PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE,
             );
-            logger.info(`Using calculated splitSize: ${suggestedSplitSize} (pageCount=${pageCount}, calculated=${calculatedSplitSize}, min=${PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE}, max=${PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE})`);
+            logger.info(
+              `Using calculated splitSize: ${suggestedSplitSize} (pageCount=${pageCount}, calculated=${calculatedSplitSize}, min=${PDF_PROCESSING_CONFIG.MIN_SPLIT_SIZE}, max=${PDF_PROCESSING_CONFIG.MAX_SPLIT_SIZE})`,
+            );
           }
         }
 
@@ -138,8 +149,10 @@ export class PdfAnalyzerService {
         );
       } else {
         // Set suggestedSplitSize even when not splitting
-        suggestedSplitSize = parseInt(process.env.PDF_SPLIT_SIZE || '') || PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
-        
+        suggestedSplitSize =
+          parseInt(process.env.PDF_SPLIT_SIZE || '') ||
+          PDF_PROCESSING_CONFIG.DEFAULT_SPLIT_SIZE;
+
         logger.info(
           `PDF does not require splitting for item ${request.itemId}: ${pageCount} pages`,
         );
@@ -538,12 +551,12 @@ export class PdfAnalyzerService {
         splitSize,
         pdfBufferStart: pdfBuffer.slice(0, 100).toString('latin1'),
       });
-      
+
       const pdfChunks = await this.pdfSpliter.splitPdfIntoChunks(
         pdfBuffer,
         splitSize,
       );
-      
+
       logger.info(`[DEBUG] PDF splitting completed successfully`, {
         itemId,
         chunksCount: pdfChunks.length,
@@ -796,29 +809,37 @@ export class PdfAnalyzerService {
       logger.info('Starting PDF analyzer service with part cleanup...');
 
       // Start consuming messages from the part conversion completed queue
-      this.partCompletedConsumerTag = await this.rabbitMQService.consumeMessages(
-        RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
-        this.handlePdfPartConversionCompleted.bind(this),
-        {
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-completed',
-          noAck: false, // Manual acknowledgment
-        },
-      );
+      this.partCompletedConsumerTag =
+        await this.rabbitMQService.consumeMessages(
+          RABBITMQ_QUEUES.PDF_PART_CONVERSION_COMPLETED,
+          this.handlePdfPartConversionCompleted.bind(this),
+          {
+            consumerTag:
+              RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-completed',
+            noAck: false, // Manual acknowledgment
+          },
+        );
 
       // Start consuming messages from the part conversion failed queue
       this.partFailedConsumerTag = await this.rabbitMQService.consumeMessages(
         RABBITMQ_QUEUES.PDF_PART_CONVERSION_FAILED,
         this.handlePdfPartConversionFailed.bind(this),
         {
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-failed',
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-part-failed',
           noAck: false, // Manual acknowledgment
         },
       );
 
       this.isRunning = true;
-      logger.info('PDF analyzer service with part cleanup started successfully');
+      logger.info(
+        'PDF analyzer service with part cleanup started successfully',
+      );
     } catch (error) {
-      logger.error('Failed to start PDF analyzer service with part cleanup:', error);
+      logger.error(
+        'Failed to start PDF analyzer service with part cleanup:',
+        error,
+      );
       throw error;
     }
   }
@@ -875,7 +896,9 @@ export class PdfAnalyzerService {
       // Check if the item has splitting information
       const splittingInfo = (itemMetadata as any).pdfSplittingInfo;
       if (!splittingInfo || !splittingInfo.parts) {
-        logger.warn(`No splitting information found for item ${message.itemId}`);
+        logger.warn(
+          `No splitting information found for item ${message.itemId}`,
+        );
         return;
       }
 
@@ -896,7 +919,11 @@ export class PdfAnalyzerService {
       await this.storage.updateMetadata(itemMetadata);
 
       // Delete the PDF part from S3
-      await this.deletePdfPartFromS3(partInfo.s3Key, message.itemId, message.partIndex);
+      await this.deletePdfPartFromS3(
+        partInfo.s3Key,
+        message.itemId,
+        message.partIndex,
+      );
 
       logger.info(
         `Successfully processed PDF part conversion completed for item: ${message.itemId}, part: ${message.partIndex}`,
@@ -931,7 +958,9 @@ export class PdfAnalyzerService {
       // Check if the item has splitting information
       const splittingInfo = (itemMetadata as any).pdfSplittingInfo;
       if (!splittingInfo || !splittingInfo.parts) {
-        logger.warn(`No splitting information found for item ${message.itemId}`);
+        logger.warn(
+          `No splitting information found for item ${message.itemId}`,
+        );
         return;
       }
 
@@ -953,7 +982,11 @@ export class PdfAnalyzerService {
       await this.storage.updateMetadata(itemMetadata);
 
       // Delete the PDF part from S3 even if it failed
-      await this.deletePdfPartFromS3(partInfo.s3Key, message.itemId, message.partIndex);
+      await this.deletePdfPartFromS3(
+        partInfo.s3Key,
+        message.itemId,
+        message.partIndex,
+      );
 
       logger.info(
         `Successfully processed PDF part conversion failed for item: ${message.itemId}, part: ${message.partIndex}`,

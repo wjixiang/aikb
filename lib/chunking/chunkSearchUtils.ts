@@ -1,4 +1,7 @@
-import { ItemChunk, ChunkSearchFilter } from '../../knowledgeBase/knowledgeImport/library';
+import {
+  ItemChunk,
+  ChunkSearchFilter,
+} from '../../knowledgeBase/knowledgeImport/library';
 
 /**
  * Utility class for advanced chunk search filtering and sorting
@@ -9,57 +12,71 @@ export class ChunkSearchUtils {
    */
   static filterChunks(
     chunks: ItemChunk[],
-    filter: ChunkSearchFilter
+    filter: ChunkSearchFilter,
   ): ItemChunk[] {
     let filteredChunks = [...chunks];
 
     // Apply text search filter
     if (filter.query) {
       const queryLower = filter.query.toLowerCase();
-      filteredChunks = filteredChunks.filter(chunk =>
-        chunk.title.toLowerCase().includes(queryLower) ||
-        chunk.content.toLowerCase().includes(queryLower)
+      filteredChunks = filteredChunks.filter(
+        (chunk) =>
+          chunk.title.toLowerCase().includes(queryLower) ||
+          chunk.content.toLowerCase().includes(queryLower),
       );
     }
 
     // Apply item ID filter
     if (filter.itemId) {
-      filteredChunks = filteredChunks.filter(chunk => chunk.itemId === filter.itemId);
+      filteredChunks = filteredChunks.filter(
+        (chunk) => chunk.itemId === filter.itemId,
+      );
     }
 
     // Apply item IDs filter
     if (filter.itemIds && filter.itemIds.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => filter.itemIds!.includes(chunk.itemId));
+      filteredChunks = filteredChunks.filter((chunk) =>
+        filter.itemIds!.includes(chunk.itemId),
+      );
     }
 
     // Apply group filter
     if (filter.denseVectorIndexGroupId) {
-      filteredChunks = filteredChunks.filter(chunk => chunk.denseVectorIndexGroupId === filter.denseVectorIndexGroupId);
+      filteredChunks = filteredChunks.filter(
+        (chunk) =>
+          chunk.denseVectorIndexGroupId === filter.denseVectorIndexGroupId,
+      );
     }
 
     // Apply groups filter
     if (filter.groups && filter.groups.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => filter.groups!.includes(chunk.denseVectorIndexGroupId));
+      filteredChunks = filteredChunks.filter((chunk) =>
+        filter.groups!.includes(chunk.denseVectorIndexGroupId),
+      );
     }
 
     // Apply chunking strategies filter
     if (filter.chunkingStrategies && filter.chunkingStrategies.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk => 
-        filter.chunkingStrategies!.includes(chunk.strategyMetadata.chunkingStrategy)
+      filteredChunks = filteredChunks.filter((chunk) =>
+        filter.chunkingStrategies!.includes(
+          chunk.strategyMetadata.chunkingStrategy,
+        ),
       );
     }
 
     // Apply embedding providers filter
     if (filter.embeddingProviders && filter.embeddingProviders.length > 0) {
-      filteredChunks = filteredChunks.filter(chunk =>
-        filter.embeddingProviders!.includes(chunk.strategyMetadata.embeddingConfig.provider)
+      filteredChunks = filteredChunks.filter((chunk) =>
+        filter.embeddingProviders!.includes(
+          chunk.strategyMetadata.embeddingConfig.provider,
+        ),
       );
     }
 
     // Apply date range filter
     if (filter.dateRange) {
       const { start, end } = filter.dateRange;
-      filteredChunks = filteredChunks.filter(chunk => {
+      filteredChunks = filteredChunks.filter((chunk) => {
         const chunkDate = new Date(chunk.createdAt);
         return chunkDate >= start && chunkDate <= end;
       });
@@ -73,8 +90,13 @@ export class ChunkSearchUtils {
    */
   static sortChunks(
     chunks: ItemChunk[],
-    sortBy: 'relevance' | 'date' | 'title' | 'group' | 'similarity' = 'relevance',
-    order: 'asc' | 'desc' = 'desc'
+    sortBy:
+      | 'relevance'
+      | 'date'
+      | 'title'
+      | 'group'
+      | 'similarity' = 'relevance',
+    order: 'asc' | 'desc' = 'desc',
   ): ItemChunk[] {
     const sortedChunks = [...chunks];
 
@@ -105,7 +127,9 @@ export class ChunkSearchUtils {
 
       case 'group':
         sortedChunks.sort((a, b) => {
-          const comparison = a.denseVectorIndexGroupId.localeCompare(b.denseVectorIndexGroupId);
+          const comparison = a.denseVectorIndexGroupId.localeCompare(
+            b.denseVectorIndexGroupId,
+          );
           return order === 'desc' ? -comparison : comparison;
         });
         break;
@@ -128,7 +152,7 @@ export class ChunkSearchUtils {
   static filterByGroupsWithPriority(
     chunks: ItemChunk[],
     groups: string[],
-    priorities: Record<string, number> = {}
+    priorities: Record<string, number> = {},
   ): ItemChunk[] {
     // Create a map of group to priority (default to 0 if not specified)
     const groupPriorityMap = new Map<string, number>();
@@ -137,23 +161,27 @@ export class ChunkSearchUtils {
     }
 
     // Filter chunks by groups and sort by priority
-    const filteredChunks = chunks.filter(chunk => groupPriorityMap.has(chunk.denseVectorIndexGroupId));
-    
+    const filteredChunks = chunks.filter((chunk) =>
+      groupPriorityMap.has(chunk.denseVectorIndexGroupId),
+    );
+
     // Sort by priority (descending), then by group name, then by index
     filteredChunks.sort((a, b) => {
       const aPriority = groupPriorityMap.get(a.denseVectorIndexGroupId) || 0;
       const bPriority = groupPriorityMap.get(b.denseVectorIndexGroupId) || 0;
-      
+
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first
       }
-      
+
       // If same priority, sort by group name
-      const groupComparison = a.denseVectorIndexGroupId.localeCompare(b.denseVectorIndexGroupId);
+      const groupComparison = a.denseVectorIndexGroupId.localeCompare(
+        b.denseVectorIndexGroupId,
+      );
       if (groupComparison !== 0) {
         return groupComparison;
       }
-      
+
       // If same group, sort by index
       return a.index - b.index;
     });
@@ -167,7 +195,7 @@ export class ChunkSearchUtils {
   static filterByStrategiesWithWeights(
     chunks: ItemChunk[],
     strategies: string[],
-    weights: Record<string, number> = {}
+    weights: Record<string, number> = {},
   ): ItemChunk[] {
     // Create a map of strategy to weight (default to 1.0 if not specified)
     const strategyWeightMap = new Map<string, number>();
@@ -177,9 +205,12 @@ export class ChunkSearchUtils {
 
     // Filter chunks by strategies and calculate weighted scores
     const filteredChunks = chunks
-      .filter(chunk => strategyWeightMap.has(chunk.strategyMetadata.chunkingStrategy))
-      .map(chunk => {
-        const weight = strategyWeightMap.get(chunk.strategyMetadata.chunkingStrategy) || 1.0;
+      .filter((chunk) =>
+        strategyWeightMap.has(chunk.strategyMetadata.chunkingStrategy),
+      )
+      .map((chunk) => {
+        const weight =
+          strategyWeightMap.get(chunk.strategyMetadata.chunkingStrategy) || 1.0;
         const similarity = (chunk as any).similarity || 0;
         return {
           ...chunk,
@@ -199,7 +230,7 @@ export class ChunkSearchUtils {
   static filterByProvidersWithPreferences(
     chunks: ItemChunk[],
     providers: string[],
-    preferences: Record<string, number> = {}
+    preferences: Record<string, number> = {},
   ): ItemChunk[] {
     // Create a map of provider to preference (default to 1.0 if not specified)
     const providerPreferenceMap = new Map<string, number>();
@@ -209,9 +240,16 @@ export class ChunkSearchUtils {
 
     // Filter chunks by providers and calculate preference scores
     const filteredChunks = chunks
-      .filter(chunk => providerPreferenceMap.has(chunk.strategyMetadata.embeddingConfig.provider))
-      .map(chunk => {
-        const preference = providerPreferenceMap.get(chunk.strategyMetadata.embeddingConfig.provider) || 1.0;
+      .filter((chunk) =>
+        providerPreferenceMap.has(
+          chunk.strategyMetadata.embeddingConfig.provider,
+        ),
+      )
+      .map((chunk) => {
+        const preference =
+          providerPreferenceMap.get(
+            chunk.strategyMetadata.embeddingConfig.provider,
+          ) || 1.0;
         const similarity = (chunk as any).similarity || 0;
         return {
           ...chunk,
@@ -230,7 +268,7 @@ export class ChunkSearchUtils {
    */
   static deduplicateChunks(
     chunks: ItemChunk[],
-    similarityThreshold: number = 0.9
+    similarityThreshold: number = 0.9,
   ): ItemChunk[] {
     const deduplicatedChunks: ItemChunk[] = [];
     const seenContent = new Set<string>();
@@ -238,11 +276,16 @@ export class ChunkSearchUtils {
     for (const chunk of chunks) {
       // Create a content signature for comparison
       const contentSignature = this.createContentSignature(chunk.content);
-      
+
       // Check if we've seen similar content
       let isDuplicate = false;
       for (const existingSignature of seenContent) {
-        if (this.calculateContentSimilarity(contentSignature, existingSignature) >= similarityThreshold) {
+        if (
+          this.calculateContentSimilarity(
+            contentSignature,
+            existingSignature,
+          ) >= similarityThreshold
+        ) {
           isDuplicate = true;
           break;
         }
@@ -271,22 +314,26 @@ export class ChunkSearchUtils {
   /**
    * Calculate content similarity between two signatures
    */
-  private static calculateContentSimilarity(sig1: string, sig2: string): number {
+  private static calculateContentSimilarity(
+    sig1: string,
+    sig2: string,
+  ): number {
     const [first1, last1, count1] = sig1.split('|');
     const [first2, last2, count2] = sig2.split('|');
 
     // Calculate similarity based on first and last parts
     const firstSimilarity = this.calculateStringSimilarity(first1, first2);
     const lastSimilarity = this.calculateStringSimilarity(last1, last2);
-    
+
     // Calculate count similarity
     const countNum1 = parseInt(count1) || 0;
     const countNum2 = parseInt(count2) || 0;
     const maxCount = Math.max(countNum1, countNum2);
-    const countSimilarity = maxCount > 0 ? 1 - Math.abs(countNum1 - countNum2) / maxCount : 1;
+    const countSimilarity =
+      maxCount > 0 ? 1 - Math.abs(countNum1 - countNum2) / maxCount : 1;
 
     // Weighted average
-    return (firstSimilarity * 0.4 + lastSimilarity * 0.4 + countSimilarity * 0.2);
+    return firstSimilarity * 0.4 + lastSimilarity * 0.4 + countSimilarity * 0.2;
   }
 
   /**
@@ -309,7 +356,9 @@ export class ChunkSearchUtils {
    * Calculate Levenshtein distance between two strings
    */
   private static levenshteinDistance(str1: string, str2: string): number {
-    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
 
     for (let i = 0; i <= str1.length; i++) {
       matrix[0][i] = i;
@@ -325,7 +374,7 @@ export class ChunkSearchUtils {
         matrix[j][i] = Math.min(
           matrix[j][i - 1] + 1, // deletion
           matrix[j - 1][i] + 1, // insertion
-          matrix[j - 1][i - 1] + indicator // substitution
+          matrix[j - 1][i - 1] + indicator, // substitution
         );
       }
     }
@@ -347,7 +396,7 @@ export class ChunkSearchUtils {
       deduplicationThreshold?: number;
       sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
       sortOrder?: 'asc' | 'desc';
-    }
+    },
   ): ItemChunk[] {
     let filteredChunks = this.filterChunks(chunks, filter);
 
@@ -356,7 +405,7 @@ export class ChunkSearchUtils {
       filteredChunks = this.filterByGroupsWithPriority(
         filteredChunks,
         filter.groups,
-        options.groupPriorities
+        options.groupPriorities,
       );
     }
 
@@ -365,7 +414,7 @@ export class ChunkSearchUtils {
       filteredChunks = this.filterByStrategiesWithWeights(
         filteredChunks,
         filter.chunkingStrategies,
-        options.strategyWeights
+        options.strategyWeights,
       );
     }
 
@@ -374,7 +423,7 @@ export class ChunkSearchUtils {
       filteredChunks = this.filterByProvidersWithPreferences(
         filteredChunks,
         filter.embeddingProviders,
-        options.providerPreferences
+        options.providerPreferences,
       );
     }
 
@@ -382,7 +431,7 @@ export class ChunkSearchUtils {
     if (options?.deduplicate) {
       filteredChunks = this.deduplicateChunks(
         filteredChunks,
-        options.deduplicationThreshold || 0.9
+        options.deduplicationThreshold || 0.9,
       );
     }
 
@@ -391,7 +440,7 @@ export class ChunkSearchUtils {
       filteredChunks = this.sortChunks(
         filteredChunks,
         options.sortBy,
-        options.sortOrder || 'desc'
+        options.sortOrder || 'desc',
       );
     }
 

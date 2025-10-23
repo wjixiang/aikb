@@ -24,7 +24,10 @@ describe('STOMP Integration Tests', () => {
           isRabbitMQAvailable = true;
           await testService.close();
         } catch (error) {
-          console.log('RabbitMQ STOMP not available for integration tests:', error.message);
+          console.log(
+            'RabbitMQ STOMP not available for integration tests:',
+            error.message,
+          );
           isRabbitMQAvailable = false;
         }
       }
@@ -40,13 +43,13 @@ describe('STOMP Integration Tests', () => {
       const originalEnv = process.env.NODE_ENV;
       const originalMaxAttempts = process.env.STOMP_MAX_RECONNECT_ATTEMPTS;
       const originalReconnectDelay = process.env.STOMP_RECONNECT_DELAY;
-      
+
       process.env.NODE_ENV = 'test';
       process.env.STOMP_MAX_RECONNECT_ATTEMPTS = '2';
       process.env.STOMP_RECONNECT_DELAY = '1000';
-      
+
       stompService = new StompImplementation();
-      
+
       // Restore environment variables
       if (originalEnv) {
         process.env.NODE_ENV = originalEnv;
@@ -80,9 +83,9 @@ describe('STOMP Integration Tests', () => {
       }
 
       expect(stompService.getConnectionStatus()).toBe('disconnected');
-      
+
       await stompService.initialize();
-      
+
       expect(stompService.isConnected()).toBe(true);
       expect(stompService.getConnectionStatus()).toBe('connected');
     }, 10000);
@@ -121,7 +124,7 @@ describe('STOMP Integration Tests', () => {
         },
         {
           consumerTag: `test-consumer-${Date.now()}`,
-        }
+        },
       );
 
       expect(subscriptionId).toBeDefined();
@@ -129,7 +132,7 @@ describe('STOMP Integration Tests', () => {
       // Publish the message
       const published = await stompService.publishMessage(
         '/queue/test-stomp-integration',
-        testMessage
+        testMessage,
       );
 
       expect(published).toBe(true);
@@ -137,7 +140,7 @@ describe('STOMP Integration Tests', () => {
       // Wait for message to be received
       let attempts = 0;
       while (!receivedMessage && attempts < 10) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         attempts++;
       }
 
@@ -159,7 +162,7 @@ describe('STOMP Integration Tests', () => {
       expect(stompService.isConnected()).toBe(true);
 
       const health = await stompService.healthCheck();
-      
+
       expect(health.status).toBe('healthy');
       expect(health.details.connected).toBe(true);
       expect(health.details.protocol).toBe('stomp');
@@ -204,9 +207,15 @@ describe('STOMP Integration Tests', () => {
         const { getValidatedStompConfig } = await import('../stomp.config.js');
         const config = getValidatedStompConfig('test');
 
-        expect(config?.connectionOptions?.brokerURL).toBe('ws://test-host:15674/ws');
-        expect(config?.connectionOptions?.connectHeaders?.login).toBe('testuser');
-        expect(config?.connectionOptions?.connectHeaders?.passcode).toBe('testpass');
+        expect(config?.connectionOptions?.brokerURL).toBe(
+          'ws://test-host:15674/ws',
+        );
+        expect(config?.connectionOptions?.connectHeaders?.login).toBe(
+          'testuser',
+        );
+        expect(config?.connectionOptions?.connectHeaders?.passcode).toBe(
+          'testpass',
+        );
       } finally {
         // Restore original environment variables
         if (originalBrokerUrl) {
@@ -243,9 +252,9 @@ describe('STOMP Integration Tests', () => {
         // Set additional environment variables for this test
         process.env.STOMP_MAX_RECONNECT_ATTEMPTS = '0';
         process.env.STOMP_RECONNECT_DELAY = '100';
-        
+
         const invalidService = new StompImplementation();
-        
+
         // Clean up additional environment variables
         delete process.env.STOMP_MAX_RECONNECT_ATTEMPTS;
         delete process.env.STOMP_RECONNECT_DELAY;

@@ -58,7 +58,7 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the download and page count
     const mockDownloadPdfFromS3 = vi.spyOn(
       analyzerService as any,
-      'downloadPdfFromS3'
+      'downloadPdfFromS3',
     );
     mockDownloadPdfFromS3.mockResolvedValue(Buffer.from('mock-pdf-content'));
 
@@ -68,14 +68,14 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the splitting process
     const mockSplitPdfAndUploadParts = vi.spyOn(
       analyzerService as any,
-      'splitPdfAndUploadParts'
+      'splitPdfAndUploadParts',
     );
     mockSplitPdfAndUploadParts.mockResolvedValue([]);
 
     // Mock the publish methods
     const mockPublishAnalysisCompleted = vi.spyOn(
       analyzerService as any,
-      'publishAnalysisCompleted'
+      'publishAnalysisCompleted',
     );
     mockPublishAnalysisCompleted.mockResolvedValue(undefined);
 
@@ -91,7 +91,7 @@ describe('PDF Analysis Split Threshold', () => {
       'test-file.pdf',
       expect.any(Buffer),
       30,
-      15 // Should use the custom split size from message
+      15, // Should use the custom split size from message
     );
 
     // Clean up
@@ -117,7 +117,7 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the download and page count
     const mockDownloadPdfFromS3 = vi.spyOn(
       analyzerService as any,
-      'downloadPdfFromS3'
+      'downloadPdfFromS3',
     );
     mockDownloadPdfFromS3.mockResolvedValue(Buffer.from('mock-pdf-content'));
 
@@ -127,14 +127,14 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the splitting process
     const mockSplitPdfAndUploadParts = vi.spyOn(
       analyzerService as any,
-      'splitPdfAndUploadParts'
+      'splitPdfAndUploadParts',
     );
     mockSplitPdfAndUploadParts.mockResolvedValue([]);
 
     // Mock the publish methods
     const mockPublishAnalysisCompleted = vi.spyOn(
       analyzerService as any,
-      'publishAnalysisCompleted'
+      'publishAnalysisCompleted',
     );
     mockPublishAnalysisCompleted.mockResolvedValue(undefined);
 
@@ -150,7 +150,7 @@ describe('PDF Analysis Split Threshold', () => {
       'test-file.pdf',
       expect.any(Buffer),
       35,
-      20 // Should use the split size from environment variable
+      20, // Should use the split size from environment variable
     );
 
     // Clean up
@@ -176,7 +176,7 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the download and page count
     const mockDownloadPdfFromS3 = vi.spyOn(
       analyzerService as any,
-      'downloadPdfFromS3'
+      'downloadPdfFromS3',
     );
     mockDownloadPdfFromS3.mockResolvedValue(Buffer.from('mock-pdf-content'));
 
@@ -186,14 +186,14 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the splitting process
     const mockSplitPdfAndUploadParts = vi.spyOn(
       analyzerService as any,
-      'splitPdfAndUploadParts'
+      'splitPdfAndUploadParts',
     );
     mockSplitPdfAndUploadParts.mockResolvedValue([]);
 
     // Mock the publish methods
     const mockPublishAnalysisCompleted = vi.spyOn(
       analyzerService as any,
-      'publishAnalysisCompleted'
+      'publishAnalysisCompleted',
     );
     mockPublishAnalysisCompleted.mockResolvedValue(undefined);
 
@@ -210,7 +210,7 @@ describe('PDF Analysis Split Threshold', () => {
       'test-file.pdf',
       expect.any(Buffer),
       60,
-      10 // Should use the calculated split size (min bound applied)
+      10, // Should use the calculated split size (min bound applied)
     );
   });
 
@@ -230,7 +230,7 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the download and page count
     const mockDownloadPdfFromS3 = vi.spyOn(
       analyzerService as any,
-      'downloadPdfFromS3'
+      'downloadPdfFromS3',
     );
     mockDownloadPdfFromS3.mockResolvedValue(Buffer.from('mock-pdf-content'));
 
@@ -240,7 +240,7 @@ describe('PDF Analysis Split Threshold', () => {
     // Mock the publish methods
     const mockPublishAnalysisCompleted = vi.spyOn(
       analyzerService as any,
-      'publishAnalysisCompleted'
+      'publishAnalysisCompleted',
     );
     mockPublishAnalysisCompleted.mockResolvedValue(undefined);
 
@@ -259,7 +259,7 @@ describe('PDF Analysis Split Threshold', () => {
       expect.any(Number),
       expect.any(Object),
       undefined,
-      'test-s3-key'
+      'test-s3-key',
     );
 
     // Clean up

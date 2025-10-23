@@ -27,7 +27,7 @@ const { mockLogger } = vi.hoisted(() => {
 });
 
 vi.mock('../../logger', () => ({
-  default: vi.fn(() => mockLogger)
+  default: vi.fn(() => mockLogger),
 }));
 
 import { PdfMergerService } from '../pdf-merger.service';
@@ -57,7 +57,7 @@ describe('PdfMergerService - Comprehensive Tests', () => {
   beforeEach(() => {
     // Clear other mocks
     vi.clearAllMocks();
-    
+
     // Create a mock storage
     mockStorage = {
       getMetadata: vi.fn(),

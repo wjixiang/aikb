@@ -8,10 +8,14 @@ import {
   PdfConversionFailedMessage,
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
-  RABBITMQ_CONSUMER_TAGS
+  RABBITMQ_CONSUMER_TAGS,
 } from '../message.types';
 import { MessageProtocol } from '../message-service.interface';
-import { getRabbitMQService, closeAllRabbitMQServices, RabbitMQService } from '../rabbitmq.service';
+import {
+  getRabbitMQService,
+  closeAllRabbitMQServices,
+  RabbitMQService,
+} from '../rabbitmq.service';
 
 // Mock the storage implementation
 const mockStorage: Partial<AbstractLibraryStorage> = {
@@ -37,10 +41,10 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
   beforeEach(async () => {
     // Reset environment
     vi.clearAllMocks();
-    
+
     // Store original protocol
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
-    
+
     // Create a new worker instance for each test
     worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
   });
@@ -52,7 +56,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     } else {
       delete process.env.RABBITMQ_PROTOCOL;
     }
-    
+
     // Stop the worker if it's running
     if (worker && worker.isWorkerRunning()) {
       await worker.stop();
@@ -71,10 +75,12 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should detect AMQP protocol from environment', () => {
       // Set protocol to AMQP
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      
+
       // Create a new worker to pick up the environment variable
-      const amqpWorker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
-      
+      const amqpWorker = new PdfMergerWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       // The worker should be created with AMQP protocol
       expect(amqpWorker).toBeDefined();
       expect(amqpWorker.isWorkerRunning()).toBe(false);
@@ -83,10 +89,12 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should detect STOMP protocol from environment', () => {
       // Set protocol to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      
+
       // Create a new worker to pick up the environment variable
-      const stompWorker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
-      
+      const stompWorker = new PdfMergerWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       // The worker should be created with STOMP protocol
       expect(stompWorker).toBeDefined();
       expect(stompWorker.isWorkerRunning()).toBe(false);
@@ -97,13 +105,17 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should handle protocol switching between AMQP and STOMP', async () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      const amqpWorker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
+      const amqpWorker = new PdfMergerWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
       expect(amqpWorker).toBeDefined();
-      
+
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      const stompWorker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
-      
+      const stompWorker = new PdfMergerWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       expect(stompWorker).toBeDefined();
       expect(stompWorker.isWorkerRunning()).toBe(false);
     });
@@ -132,19 +144,27 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
         };
 
         // Create worker with AMQP protocol
-        const worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.AMQP);
-        
+        const worker = new PdfMergerWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.AMQP,
+        );
+
         // Spy on the private handler method
-        const handlePdfMergingRequestSpy = vi.spyOn(worker as any, 'handlePdfMergingRequest').mockImplementation(async () => {});
+        const handlePdfMergingRequestSpy = vi
+          .spyOn(worker as any, 'handlePdfMergingRequest')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
         // Publish message
         await rabbitmqService.publishPdfMergingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
+        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(
+          testMessage,
+          expect.anything(),
+        );
+
         await worker.stop();
       });
 
@@ -162,19 +182,27 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
         };
 
         // Create worker with AMQP protocol
-        const worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.AMQP);
-        
+        const worker = new PdfMergerWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.AMQP,
+        );
+
         // Spy on the private handler method
-        const handlePdfMergingRequestSpy = vi.spyOn(worker as any, 'handlePdfMergingRequest').mockImplementation(async () => {});
+        const handlePdfMergingRequestSpy = vi
+          .spyOn(worker as any, 'handlePdfMergingRequest')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
         // Publish message
         await rabbitmqService.publishPdfMergingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
+        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(
+          testMessage,
+          expect.anything(),
+        );
+
         await worker.stop();
       });
     });
@@ -199,10 +227,15 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
         };
 
         // Create worker with STOMP protocol
-        const worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.STOMP);
-        
+        const worker = new PdfMergerWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.STOMP,
+        );
+
         // Spy on the private handler method
-        const handlePdfMergingRequestSpy = vi.spyOn(worker as any, 'handlePdfMergingRequest').mockImplementation(async () => {});
+        const handlePdfMergingRequestSpy = vi
+          .spyOn(worker as any, 'handlePdfMergingRequest')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
@@ -211,7 +244,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
 
         // Publish message
         await rabbitmqService.publishPdfMergingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // If the spy wasn't called through the message queue, call the handler directly
         // This ensures the test passes even if there are connection issues
@@ -220,8 +253,11 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
           await (worker as any).handlePdfMergingRequest(testMessage, {});
         }
 
-        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
+        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(
+          testMessage,
+          expect.anything(),
+        );
+
         await worker.stop();
       });
 
@@ -239,16 +275,21 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
         };
 
         // Create worker with STOMP protocol
-        const worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.STOMP);
-        
+        const worker = new PdfMergerWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.STOMP,
+        );
+
         // Spy on the private handler method
-        const handlePdfMergingRequestSpy = vi.spyOn(worker as any, 'handlePdfMergingRequest').mockImplementation(async () => {});
+        const handlePdfMergingRequestSpy = vi
+          .spyOn(worker as any, 'handlePdfMergingRequest')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
         // Publish message
         await rabbitmqService.publishPdfMergingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // If the spy wasn't called through the message queue, call the handler directly
         // This ensures the test passes even if there are connection issues
@@ -257,8 +298,11 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
           await (worker as any).handlePdfMergingRequest(testMessage, {});
         }
 
-        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
+        expect(handlePdfMergingRequestSpy).toHaveBeenCalledWith(
+          testMessage,
+          expect.anything(),
+        );
+
         await worker.stop();
       });
     });
@@ -268,13 +312,13 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should initialize RabbitMQ service with AMQP protocol', async () => {
       // Set protocol to AMQP
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      
+
       // Get the RabbitMQ service instance
       const rabbitmqService = getRabbitMQService(MessageProtocol.AMQP);
-      
+
       // Initialize the service
       await rabbitmqService.initialize();
-      
+
       // Verify the service is connected
       expect(rabbitmqService.isConnected()).toBe(true);
     });
@@ -282,13 +326,13 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should initialize RabbitMQ service with STOMP protocol', async () => {
       // Set protocol to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      
+
       // Get the RabbitMQ service instance
       const rabbitmqService = getRabbitMQService(MessageProtocol.STOMP);
-      
+
       // Initialize the service
       await rabbitmqService.initialize();
-      
+
       // Verify the service is connected
       expect(rabbitmqService.isConnected()).toBe(true);
     });
@@ -299,9 +343,9 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
       // Create worker
       const worker = new PdfMergerWorker(
         mockStorage as AbstractLibraryStorage,
-        MessageProtocol.AMQP
+        MessageProtocol.AMQP,
       );
-      
+
       // The worker should handle the error gracefully without throwing
       // Note: We can't directly test the private handler, but we can verify the worker doesn't crash
       expect(worker).toBeDefined();

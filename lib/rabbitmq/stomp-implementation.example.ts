@@ -13,10 +13,7 @@ import {
   MessageConsumer,
   MessageServiceConfig,
 } from './message-service.interface';
-import {
-  BaseRabbitMQMessage,
-  RabbitMQMessageOptions,
-} from './message.types';
+import { BaseRabbitMQMessage, RabbitMQMessageOptions } from './message.types';
 import createLoggerWithPrefix from '../logger';
 
 const logger = createLoggerWithPrefix('StompImplementation');
@@ -56,7 +53,10 @@ export class StompImplementation implements IMessageService {
    * Initialize STOMP connection
    */
   async initialize(): Promise<void> {
-    if (this.connectionStatus === 'connected' || this.connectionStatus === 'connecting') {
+    if (
+      this.connectionStatus === 'connected' ||
+      this.connectionStatus === 'connecting'
+    ) {
       return;
     }
 
@@ -64,11 +64,14 @@ export class StompImplementation implements IMessageService {
 
     try {
       logger.info('Connecting to STOMP server...');
-      
+
       // TODO: Implement actual STOMP connection logic
       // This is a placeholder for demonstration
-      logger.info('STOMP implementation would connect to:', this.config.connectionOptions.url);
-      
+      logger.info(
+        'STOMP implementation would connect to:',
+        this.config.connectionOptions.url,
+      );
+
       // Simulate connection
       this.connection = { connected: true };
       this.connectionStatus = 'connected';
@@ -137,19 +140,25 @@ export class StompImplementation implements IMessageService {
     options: RabbitMQMessageOptions = {},
   ): Promise<boolean> {
     if (!this.isConnected()) {
-      logger.error('STOMP implementation not connected when attempting to publish', {
-        connectionStatus: this.connectionStatus,
-        destination,
-      });
+      logger.error(
+        'STOMP implementation not connected when attempting to publish',
+        {
+          connectionStatus: this.connectionStatus,
+          destination,
+        },
+      );
       throw new Error('STOMP implementation not connected');
     }
 
     try {
       // TODO: Implement actual STOMP publish logic
-      logger.info(`STOMP would publish message to destination: ${destination}`, {
-        messageId: message.messageId,
-        eventType: message.eventType,
-      });
+      logger.info(
+        `STOMP would publish message to destination: ${destination}`,
+        {
+          messageId: message.messageId,
+          eventType: message.eventType,
+        },
+      );
 
       // Simulate successful publish
       return true;
@@ -174,7 +183,7 @@ export class StompImplementation implements IMessageService {
     try {
       // TODO: Implement actual STOMP subscribe logic
       const subscriptionId = `sub-${Date.now()}`;
-      
+
       logger.info(`STOMP would subscribe to destination: ${destination}`, {
         subscriptionId,
       });
@@ -182,7 +191,10 @@ export class StompImplementation implements IMessageService {
       // Simulate subscription
       return subscriptionId;
     } catch (error) {
-      logger.error(`Failed to subscribe to STOMP destination ${destination}:`, error);
+      logger.error(
+        `Failed to subscribe to STOMP destination ${destination}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -197,7 +209,9 @@ export class StompImplementation implements IMessageService {
 
     try {
       // TODO: Implement actual STOMP unsubscribe logic
-      logger.info(`STOMP would unsubscribe from subscription: ${subscriptionId}`);
+      logger.info(
+        `STOMP would unsubscribe from subscription: ${subscriptionId}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to unsubscribe from STOMP subscription ${subscriptionId}:`,
@@ -218,14 +232,17 @@ export class StompImplementation implements IMessageService {
     try {
       // TODO: Implement actual STOMP destination info logic
       logger.info(`STOMP would get info for destination: ${destination}`);
-      
+
       // Simulate destination info
       return {
         messageCount: 0,
         consumerCount: 0,
       };
     } catch (error) {
-      logger.error(`Failed to get STOMP destination info for ${destination}:`, error);
+      logger.error(
+        `Failed to get STOMP destination info for ${destination}:`,
+        error,
+      );
       return null;
     }
   }

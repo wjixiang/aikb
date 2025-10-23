@@ -31,8 +31,6 @@ vi.mock('../../logger', () => ({
   })),
 }));
 
-
-
 const mockPdfConvertor: MinerUPdfConvertor = {
   convertPdfToMarkdownFromS3: vi.fn(),
 } as any;
@@ -42,7 +40,9 @@ const mockPdfConversionService: IPdfConversionService = {
   convertPdfToMarkdown: vi.fn(),
   convertPdfPartToMarkdown: vi.fn(),
   isReady: vi.fn().mockReturnValue(true),
-  getStats: vi.fn().mockReturnValue({ isReady: true, pdfConvertorAvailable: true }),
+  getStats: vi
+    .fn()
+    .mockReturnValue({ isReady: true, pdfConvertorAvailable: true }),
 };
 
 const mockMessageHandler: IPdfConversionMessageHandler = {
@@ -129,7 +129,9 @@ describe('PdfConversionWorker (Refactored)', () => {
     });
 
     it('should handle start errors gracefully', async () => {
-      (mockMessageHandler.initialize as any).mockRejectedValueOnce(new Error('Test error'));
+      (mockMessageHandler.initialize as any).mockRejectedValueOnce(
+        new Error('Test error'),
+      );
 
       worker = new PdfConversionWorker(
         mockRabbitMQService,
@@ -218,10 +220,10 @@ describe('PdfConversionWorkerFactory', () => {
         pdfConversionService: mockPdfConversionService,
         messageHandler: mockMessageHandler,
       });
-      
+
       // Manually start the worker
       await worker.start();
-      
+
       expect(worker).toBeDefined();
       expect(worker.isWorkerRunning()).toBe(true);
       await worker.stop();

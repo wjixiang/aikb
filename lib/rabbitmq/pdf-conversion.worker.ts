@@ -8,13 +8,9 @@ import { getPdfPartTracker } from './pdf-part-tracker-factory';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
 import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
-import {
-  IPdfConversionService,
-} from './pdf-conversion.service.interface';
+import { IPdfConversionService } from './pdf-conversion.service.interface';
 import { PdfConversionService } from './pdf-conversion.service';
-import {
-  IPdfConversionMessageHandler,
-} from './pdf-conversion-message-handler.interface';
+import { IPdfConversionMessageHandler } from './pdf-conversion-message-handler.interface';
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler';
 import createLoggerWithPrefix from '../logger';
 import { IRabbitMQService } from './rabbitmq-service.interface';
@@ -45,25 +41,25 @@ export class PdfConversionWorker {
       const rabbitMQService = getRabbitMQService(protocol);
       // Access the internal message service from RabbitMQService
       // This is a workaround since RabbitMQService doesn't implement IMessageService directly
-      this.messageService = rabbitMQService
+      this.messageService = rabbitMQService;
     }
 
     // Initialize PDF conversion service with dependencies
     const pdfConvertor = createMinerUConvertorFromEnv();
     const partTracker = getPdfPartTracker();
     const markdownPartCache = getMarkdownPartCache();
-    
-    this.pdfConversionService = pdfConversionService || new PdfConversionService(
-      pdfConvertor,
-      partTracker,
-      markdownPartCache,
-    );
+
+    this.pdfConversionService =
+      pdfConversionService ||
+      new PdfConversionService(pdfConvertor, partTracker, markdownPartCache);
 
     // Initialize message handler with dependencies
-    this.messageHandler = messageHandler || new PdfConversionMessageHandler(
-      this.messageService,
-      this.pdfConversionService,
-    );
+    this.messageHandler =
+      messageHandler ||
+      new PdfConversionMessageHandler(
+        this.messageService,
+        this.pdfConversionService,
+      );
   }
 
   /**
@@ -133,9 +129,10 @@ export class PdfConversionWorker {
     messageServiceConnected: boolean;
   }> {
     // Check if message service has isConnected method, otherwise assume it's connected
-    const messageServiceConnected = typeof this.messageService.isConnected === 'function'
-      ? this.messageService.isConnected()
-      : true;
+    const messageServiceConnected =
+      typeof this.messageService.isConnected === 'function'
+        ? this.messageService.isConnected()
+        : true;
 
     return {
       isRunning: this.isWorkerRunning(),

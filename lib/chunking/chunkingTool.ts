@@ -63,7 +63,11 @@ export function chunkText(
 ): ChunkResult[] | string[] {
   // 转换为新的枚举系统
   const newStrategy = ChunkingStrategyCompatibility.fromLegacy(strategy);
-  const results = chunkingManager.chunkWithStrategyEnum(text, newStrategy, config);
+  const results = chunkingManager.chunkWithStrategyEnum(
+    text,
+    newStrategy,
+    config,
+  );
 
   if (strategy === ChunkingStrategyType.PARAGRAPH) {
     // 对于段落策略，返回字符串数组以保持向后兼容
@@ -91,24 +95,36 @@ export function chunkTextEnhanced(
   config?: ChunkingConfig,
 ): ChunkResult[] {
   let normalizedStrategy: ChunkingStrategy;
-  
+
   if (!strategy) {
     // 自动选择策略
     const selectedStrategy = chunkingManager.autoSelectStrategy(text);
-    normalizedStrategy = ChunkingStrategyUtils.fromString(selectedStrategy.name);
+    normalizedStrategy = ChunkingStrategyUtils.fromString(
+      selectedStrategy.name,
+    );
   } else if (typeof strategy === 'string') {
     // 处理字符串
     normalizedStrategy = ChunkingStrategyCompatibility.fromString(strategy);
-  } else if (Object.values(ChunkingStrategyType).includes(strategy as ChunkingStrategyType)) {
+  } else if (
+    Object.values(ChunkingStrategyType).includes(
+      strategy as ChunkingStrategyType,
+    )
+  ) {
     // 处理旧枚举
-    normalizedStrategy = ChunkingStrategyCompatibility.fromLegacy(strategy as ChunkingStrategyType);
+    normalizedStrategy = ChunkingStrategyCompatibility.fromLegacy(
+      strategy as ChunkingStrategyType,
+    );
   } else {
     // 处理新枚举
     normalizedStrategy = strategy as ChunkingStrategy;
   }
 
-  const results = chunkingManager.chunkWithStrategyEnum(text, normalizedStrategy, config);
-  
+  const results = chunkingManager.chunkWithStrategyEnum(
+    text,
+    normalizedStrategy,
+    config,
+  );
+
   // 统一返回ChunkResult数组
   return results.map((result) => ({
     title: 'title' in result ? result.title : undefined,
@@ -169,8 +185,14 @@ export function chunkTextWithFallback(
   preferredStrategy?: ChunkingStrategy,
   config?: ChunkingConfig,
 ): ChunkResult[] {
-  const strategy = chunkingManager.autoSelectStrategyWithFallback(text, preferredStrategy);
-  const results = strategy.chunk(text, { ...strategy.getDefaultConfig(), ...config });
+  const strategy = chunkingManager.autoSelectStrategyWithFallback(
+    text,
+    preferredStrategy,
+  );
+  const results = strategy.chunk(text, {
+    ...strategy.getDefaultConfig(),
+    ...config,
+  });
   return results.map((result) => ({
     title: 'title' in result ? result.title : undefined,
     content: result.content,
@@ -203,7 +225,9 @@ export function getAvailableStrategyEnums(): ChunkingStrategy[] {
 /**
  * 获取指定类别的策略
  */
-export function getStrategiesByCategory(category: ChunkingStrategyCategory): ChunkingStrategy[] {
+export function getStrategiesByCategory(
+  category: ChunkingStrategyCategory,
+): ChunkingStrategy[] {
   return ChunkingStrategyUtils.getStrategiesByCategory(category);
 }
 
@@ -240,7 +264,10 @@ export function canStrategyHandle(strategyName: string, text: string): boolean {
 /**
  * 检查指定枚举策略是否可以处理文本
  */
-export function canStrategyEnumHandle(strategyEnum: ChunkingStrategy, text: string): boolean {
+export function canStrategyEnumHandle(
+  strategyEnum: ChunkingStrategy,
+  text: string,
+): boolean {
   const strategy = chunkingManager.getStrategyByEnum(strategyEnum);
   return strategy ? strategy.canHandle(text) : false;
 }
@@ -257,7 +284,9 @@ export function getStrategyDefaultConfig(strategyName: string): ChunkingConfig {
 /**
  * 获取枚举策略的默认配置
  */
-export function getStrategyEnumDefaultConfig(strategyEnum: ChunkingStrategy): ChunkingConfig {
+export function getStrategyEnumDefaultConfig(
+  strategyEnum: ChunkingStrategy,
+): ChunkingConfig {
   return ChunkingStrategyUtils.getDefaultConfig(strategyEnum);
 }
 
@@ -326,7 +355,9 @@ export function isStrategyImplemented(strategyEnum: ChunkingStrategy): boolean {
 /**
  * 获取策略的回退策略
  */
-export function getFallbackStrategies(strategyEnum: ChunkingStrategy): ChunkingStrategy[] {
+export function getFallbackStrategies(
+  strategyEnum: ChunkingStrategy,
+): ChunkingStrategy[] {
   return ChunkingStrategyUtils.getFallbackStrategies(strategyEnum);
 }
 
@@ -368,12 +399,20 @@ export class ChunkingAdapter {
     config?: ChunkingConfig,
   ): ChunkResult[] | string[] {
     // 如果是旧枚举，先转换
-    const normalizedStrategy = Object.values(ChunkingStrategyType).includes(strategy as ChunkingStrategyType)
-      ? ChunkingStrategyCompatibility.fromLegacy(strategy as ChunkingStrategyType)
-      : strategy as ChunkingStrategy;
-    
-    const results = chunkingManager.chunkWithStrategyEnum(text, normalizedStrategy, config);
-    
+    const normalizedStrategy = Object.values(ChunkingStrategyType).includes(
+      strategy as ChunkingStrategyType,
+    )
+      ? ChunkingStrategyCompatibility.fromLegacy(
+          strategy as ChunkingStrategyType,
+        )
+      : (strategy as ChunkingStrategy);
+
+    const results = chunkingManager.chunkWithStrategyEnum(
+      text,
+      normalizedStrategy,
+      config,
+    );
+
     // 保持旧版返回格式
     if (strategy === ChunkingStrategyType.PARAGRAPH) {
       return results.map((result) => result.content);
@@ -385,7 +424,7 @@ export class ChunkingAdapter {
       }));
     }
   }
-  
+
   /**
    * 适配策略验证
    */
@@ -393,10 +432,14 @@ export class ChunkingAdapter {
     strategy: ChunkingStrategy | ChunkingStrategyType,
     config: ChunkingConfig,
   ): { valid: boolean; errors: string[] } {
-    const normalizedStrategy = Object.values(ChunkingStrategyType).includes(strategy as ChunkingStrategyType)
-      ? ChunkingStrategyCompatibility.fromLegacy(strategy as ChunkingStrategyType)
-      : strategy as ChunkingStrategy;
-    
+    const normalizedStrategy = Object.values(ChunkingStrategyType).includes(
+      strategy as ChunkingStrategyType,
+    )
+      ? ChunkingStrategyCompatibility.fromLegacy(
+          strategy as ChunkingStrategyType,
+        )
+      : (strategy as ChunkingStrategy);
+
     return validateStrategyEnumConfig(normalizedStrategy, config);
   }
 }
@@ -411,7 +454,7 @@ export function chunkTextLegacy(
   config?: ChunkingConfig,
 ): ChunkResult[] | string[] {
   console.warn(
-    'chunkTextLegacy is deprecated. Please use chunkTextEnhanced or chunkTextWithEnum instead.'
+    'chunkTextLegacy is deprecated. Please use chunkTextEnhanced or chunkTextWithEnum instead.',
   );
   return chunkText(text, strategy, config);
 }

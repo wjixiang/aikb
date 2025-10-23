@@ -55,7 +55,7 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
       maxChunkSize: finalConfig.maxChunkSize || 500,
       minChunkSize: finalConfig.minChunkSize || 50,
       overlap: finalConfig.overlap || 25,
-      strategy: finalConfig.strategy || '',
+      strategy: finalConfig.strategy ?? ChunkingStrategy.PARAGRAPH,
     });
   }
 

@@ -1,31 +1,45 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ChunkingEmbeddingWorker } from '../chunking-embedding.worker';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  ChunkingEmbeddingGroup,
+} from '../../../knowledgeBase/knowledgeImport/library';
 import Library from '../../../knowledgeBase/knowledgeImport/library';
 import {
-  ChunkingEmbeddingRequestMessage,
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
   MultiVersionChunkingEmbeddingRequestMessage,
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
-  RABBITMQ_CONSUMER_TAGS
+  RABBITMQ_CONSUMER_TAGS,
 } from '../message.types';
 import { MessageProtocol } from '../message-service.interface';
-import { getRabbitMQService, closeAllRabbitMQServices, RabbitMQService } from '../rabbitmq.service';
-import { EmbeddingProvider } from '../../embedding/embedding';
-import { ChunkingStrategy } from 'lib/chunking/chunkingStrategy';
+import {
+  getRabbitMQService,
+  closeAllRabbitMQServices,
+  RabbitMQService,
+} from '../rabbitmq.service';
+import {
+  defaultEmbeddingConfig,
+  EmbeddingProvider,
+} from '../../embedding/embedding';
+import {
+  ChunkingStrategy,
+  defaultChunkingConfig,
+} from 'lib/chunking/chunkingStrategy';
 
 // Mock the Library class
 vi.mock('../../../knowledgeBase/knowledgeImport/library', async () => {
-  const actual = await vi.importActual('../../../knowledgeBase/knowledgeImport/library');
+  const actual = await vi.importActual(
+    '../../../knowledgeBase/knowledgeImport/library',
+  );
   return {
     ...actual,
     default: vi.fn().mockImplementation(() => ({
       processItemChunks: vi.fn().mockResolvedValue(undefined),
       getItemChunks: vi.fn().mockResolvedValue([]),
-    }))
+    })),
   };
 });
 
@@ -36,6 +50,17 @@ const mockStorage: Partial<AbstractLibraryStorage> = {
   getMarkdown: vi.fn(),
 };
 
+const mockGroupConfig: ChunkingEmbeddingGroup = {
+  id: 'testid',
+  name: 'test_name',
+  chunkingConfig: defaultChunkingConfig,
+  embeddingConfig: defaultEmbeddingConfig,
+  isDefault: false,
+  isActive: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 // Create a simple test to verify protocol compatibility
 describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
   let worker: ChunkingEmbeddingWorker;
@@ -44,13 +69,13 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
   beforeEach(async () => {
     // Reset environment
     vi.clearAllMocks();
-    
+
     // Store original protocol
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
-    
+
     // Create a new worker instance for each test
     worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
-    
+
     // Mock the storage getMetadata to return a valid item
     (mockStorage.getMetadata as any).mockResolvedValue({
       id: 'test-item-id',
@@ -59,10 +84,12 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       pdfProcessingStatus: 'pending',
       dateModified: new Date(),
     });
-    
+
     // Mock getMarkdown to return content
-    (mockStorage.getMarkdown as any).mockResolvedValue('# Test Markdown Content');
-    
+    (mockStorage.getMarkdown as any).mockResolvedValue(
+      '# Test Markdown Content',
+    );
+
     // Mock updateMetadata to resolve successfully
     (mockStorage.updateMetadata as any).mockResolvedValue(undefined);
   });
@@ -74,7 +101,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     } else {
       delete process.env.RABBITMQ_PROTOCOL;
     }
-    
+
     // Stop the worker if it's running
     if (worker && worker.isWorkerRunning()) {
       await worker.stop();
@@ -93,10 +120,12 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should detect AMQP protocol from environment', () => {
       // Set protocol to AMQP
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      
+
       // Create a new worker to pick up the environment variable
-      const amqpWorker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
-      
+      const amqpWorker = new ChunkingEmbeddingWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       // The worker should be created with AMQP protocol
       expect(amqpWorker).toBeDefined();
       expect(amqpWorker.isWorkerRunning()).toBe(false);
@@ -105,10 +134,12 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should detect STOMP protocol from environment', () => {
       // Set protocol to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      
+
       // Create a new worker to pick up the environment variable
-      const stompWorker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
-      
+      const stompWorker = new ChunkingEmbeddingWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       // The worker should be created with STOMP protocol
       expect(stompWorker).toBeDefined();
       expect(stompWorker.isWorkerRunning()).toBe(false);
@@ -119,13 +150,17 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should handle protocol switching between AMQP and STOMP', async () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      const amqpWorker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
+      const amqpWorker = new ChunkingEmbeddingWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
       expect(amqpWorker).toBeDefined();
-      
+
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      const stompWorker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
-      
+      const stompWorker = new ChunkingEmbeddingWorker(
+        mockStorage as AbstractLibraryStorage,
+      );
+
       expect(stompWorker).toBeDefined();
       expect(stompWorker.isWorkerRunning()).toBe(false);
     });
@@ -141,34 +176,42 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       });
 
       it('should handle chunking embedding request message', async () => {
-        const testMessage: ChunkingEmbeddingRequestMessage = {
+        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
           messageId: `test_message_id_${Date.now()}`,
           timestamp: Date.now(),
-          eventType: 'CHUNKING_EMBEDDING_REQUEST',
+          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
-          markdownContent: '# Test Markdown Content\n\nThis is a test markdown content for chunking and embedding.',
-          chunkingStrategy: ChunkingStrategy.PARAGRAPH,
+          markdownContent:
+            '# test markdown content\n\nthis is a test markdown content for chunking and embedding.',
+          chunkingConfig: defaultChunkingConfig,
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
-          denseVectorIndexGroupId: 'test-group-id',
-          embeddingProvider: EmbeddingProvider.OPENAI,
+          groupConfig: mockGroupConfig,
         };
 
         // Create worker with AMQP protocol
-        const worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.AMQP);
-        
+        const worker = new ChunkingEmbeddingWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.AMQP,
+        );
+
         // Spy on the private handler method
-        const handleMessageSpy = vi.spyOn(worker as any, 'handleMessage').mockImplementation(async () => {});
+        const handleMessageSpy = vi
+          .spyOn(worker as any, 'handleMessage')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
         // Publish message
         await rabbitmqService.publishChunkingEmbeddingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(handleMessageSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
+        expect(handleMessageSpy).toHaveBeenCalledWith(
+          testMessage,
+          expect.anything(),
+        );
+
         await worker.stop();
       });
 
@@ -178,19 +221,15 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
           timestamp: Date.now(),
           eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
-          groupId: 'test-group-id',
           groupConfig: {
-            id: 'test-group-id',
             name: 'Test Group',
-            chunkingStrategy: ChunkingStrategy.H1,
-            embeddingProvider: EmbeddingProvider.OPENAI,
             embeddingConfig: {
               model: 'text-embedding-ada-002' as any,
               dimension: 1536,
               batchSize: 100,
               maxRetries: 3,
               timeout: 30000,
-              provider: EmbeddingProvider.OPENAI
+              provider: EmbeddingProvider.OPENAI,
             },
             chunkingConfig: { maxChunkSize: 1000 },
             isDefault: false,
@@ -206,19 +245,33 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
         };
 
         // Create worker with AMQP protocol
-        const worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.AMQP);
-        
+        const worker = new ChunkingEmbeddingWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.AMQP,
+        );
+
         // Spy on the private handler method
-        const handleMessageSpy = vi.spyOn(worker as any, 'handleMessage').mockImplementation(async () => {});
+        const handleMessageSpy = vi
+          .spyOn(worker as any, 'handleMessage')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
         // Publish the multi-version message directly using the generic publishMessage method
-        await rabbitmqService.publishMessage('chunking-embedding-request', testMessage, {
-          persistent: true,
-          priority: testMessage.priority === 'high' ? 10 : testMessage.priority === 'low' ? 1 : 5,
-        });
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await rabbitmqService.publishMessage(
+          'chunking-embedding-request',
+          testMessage,
+          {
+            persistent: true,
+            priority:
+              testMessage.priority === 'high'
+                ? 10
+                : testMessage.priority === 'low'
+                  ? 1
+                  : 5,
+          },
+        );
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Check that the handler was called with the correct message structure
         expect(handleMessageSpy).toHaveBeenCalledWith(
@@ -226,22 +279,22 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
             messageId: testMessage.messageId,
             eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
             itemId: testMessage.itemId,
-            groupId: testMessage.groupId,
             priority: testMessage.priority,
             retryCount: testMessage.retryCount,
             maxRetries: testMessage.maxRetries,
             forceReprocess: testMessage.forceReprocess,
             preserveExisting: testMessage.preserveExisting,
             groupConfig: expect.objectContaining({
-              id: testMessage.groupConfig?.id,
               name: testMessage.groupConfig?.name,
-              chunkingStrategy: testMessage.groupConfig?.chunkingStrategy,
-              embeddingProvider: testMessage.groupConfig?.embeddingProvider,
+              chunkingStrategy:
+                testMessage.groupConfig?.chunkingConfig.strategy,
+              embeddingProvider:
+                testMessage.groupConfig?.embeddingConfig.provider,
             }),
           }),
-          expect.anything()
+          expect.anything(),
         );
-        
+
         await worker.stop();
       });
     });
@@ -253,25 +306,30 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       });
 
       it('should handle chunking embedding request message', async () => {
-        const testMessage: ChunkingEmbeddingRequestMessage = {
+        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
           messageId: `test_message_id_${Date.now()}`,
           timestamp: Date.now(),
-          eventType: 'CHUNKING_EMBEDDING_REQUEST',
+          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
-          markdownContent: '# Test Markdown Content\n\nThis is a test markdown content for chunking and embedding.',
-          chunkingStrategy: ChunkingStrategy.H1,
+          markdownContent:
+            '# test markdown content\n\nthis is a test markdown content for chunking and embedding.',
+          chunkingConfig: defaultChunkingConfig,
           priority: 'normal',
           retryCount: 0,
           maxRetries: 3,
-          denseVectorIndexGroupId: 'test-group-id',
-          embeddingProvider: EmbeddingProvider.OPENAI,
+          groupConfig: mockGroupConfig,
         };
 
         // Create worker with STOMP protocol
-        const worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.STOMP);
-        
+        const worker = new ChunkingEmbeddingWorker(
+          mockStorage as AbstractLibraryStorage,
+          MessageProtocol.STOMP,
+        );
+
         // Spy on the private handler method
-        const handleMessageSpy = vi.spyOn(worker as any, 'handleMessage').mockImplementation(async () => {});
+        const handleMessageSpy = vi
+          .spyOn(worker as any, 'handleMessage')
+          .mockImplementation(async () => {});
 
         await worker.start();
 
@@ -280,84 +338,13 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
         // Publish message
         await rabbitmqService.publishChunkingEmbeddingRequest(testMessage);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(handleMessageSpy).toHaveBeenCalledWith(testMessage, expect.anything());
-        
-        await worker.stop();
-      });
-
-      it('should handle multi-version chunking embedding request message', async () => {
-        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
-          messageId: `test_message_id_mv_${Date.now()}`,
-          timestamp: Date.now(),
-          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
-          itemId: 'test_item_id',
-          groupId: 'test-group-id',
-          groupConfig: {
-            id: 'test-group-id',
-            name: 'Test Group',
-            chunkingStrategy: ChunkingStrategy.H1,
-            embeddingProvider: EmbeddingProvider.OPENAI,
-            embeddingConfig: {
-              model: 'text-embedding-ada-002' as any,
-              dimension: 1536,
-              batchSize: 100,
-              maxRetries: 3,
-              timeout: 30000,
-              provider: EmbeddingProvider.OPENAI
-            },
-            chunkingConfig: { maxChunkSize: 1000 },
-            isDefault: false,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          priority: 'high',
-          retryCount: 0,
-          maxRetries: 3,
-          forceReprocess: false,
-          preserveExisting: true,
-        };
-
-        // Create worker with STOMP protocol
-        const worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage, MessageProtocol.STOMP);
-        
-        // Spy on the private handler method
-        const handleMessageSpy = vi.spyOn(worker as any, 'handleMessage').mockImplementation(async () => {});
-
-        await worker.start();
-
-        // Publish message
-        // Publish the multi-version message directly using the generic publishMessage method
-        await rabbitmqService.publishMessage('chunking-embedding-request', testMessage, {
-          persistent: true,
-          priority: testMessage.priority === 'high' ? 10 : testMessage.priority === 'low' ? 1 : 5,
-        });
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Check that the handler was called with the correct message structure
         expect(handleMessageSpy).toHaveBeenCalledWith(
-          expect.objectContaining({
-            messageId: testMessage.messageId,
-            eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
-            itemId: testMessage.itemId,
-            groupId: testMessage.groupId,
-            priority: testMessage.priority,
-            retryCount: testMessage.retryCount,
-            maxRetries: testMessage.maxRetries,
-            forceReprocess: testMessage.forceReprocess,
-            preserveExisting: testMessage.preserveExisting,
-            groupConfig: expect.objectContaining({
-              id: testMessage.groupConfig?.id,
-              name: testMessage.groupConfig?.name,
-              chunkingStrategy: testMessage.groupConfig?.chunkingStrategy,
-              embeddingProvider: testMessage.groupConfig?.embeddingProvider,
-            }),
-          }),
-          expect.anything()
+          testMessage,
+          expect.anything(),
         );
-        
+
         await worker.stop();
       });
     });
@@ -367,13 +354,13 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should initialize RabbitMQ service with AMQP protocol', async () => {
       // Set protocol to AMQP
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      
+
       // Get the RabbitMQ service instance
       const rabbitmqService = getRabbitMQService(MessageProtocol.AMQP);
-      
+
       // Initialize the service
       await rabbitmqService.initialize();
-      
+
       // Verify the service is connected
       expect(rabbitmqService.isConnected()).toBe(true);
     });
@@ -381,13 +368,13 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should initialize RabbitMQ service with STOMP protocol', async () => {
       // Set protocol to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      
+
       // Get the RabbitMQ service instance
       const rabbitmqService = getRabbitMQService(MessageProtocol.STOMP);
-      
+
       // Initialize the service
       await rabbitmqService.initialize();
-      
+
       // Verify the service is connected
       expect(rabbitmqService.isConnected()).toBe(true);
     });
@@ -398,9 +385,9 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       // Create worker
       const worker = new ChunkingEmbeddingWorker(
         mockStorage as AbstractLibraryStorage,
-        MessageProtocol.AMQP
+        MessageProtocol.AMQP,
       );
-      
+
       // The worker should handle the error gracefully without throwing
       // Note: We can't directly test the private handler, but we can verify the worker doesn't crash
       expect(worker).toBeDefined();

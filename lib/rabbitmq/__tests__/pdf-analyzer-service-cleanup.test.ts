@@ -115,10 +115,10 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
 
     it('should not start if already running', async () => {
       await pdfAnalyzerService.start();
-      
+
       // Reset the mock to track subsequent calls
       mockRabbitMQService.initialize.mockClear();
-      
+
       // Try to start again
       await pdfAnalyzerService.start();
 
@@ -182,14 +182,19 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
       };
 
       // Get the handler function that was registered
-      const completedHandler = mockRabbitMQService.consumeMessages.mock.calls[0][1];
+      const completedHandler =
+        mockRabbitMQService.consumeMessages.mock.calls[0][1];
       await completedHandler(completedMessage, null);
 
       // Verify the part status was updated
       expect(mockStorage.updateMetadata).toHaveBeenCalled();
       const updatedMetadata = mockStorage.updateMetadata.mock.calls[0][0];
-      expect(updatedMetadata.pdfSplittingInfo.parts[1].status).toBe(PdfPartStatus.COMPLETED);
-      expect(updatedMetadata.pdfSplittingInfo.parts[1].processingTime).toBe(5000);
+      expect(updatedMetadata.pdfSplittingInfo.parts[1].status).toBe(
+        PdfPartStatus.COMPLETED,
+      );
+      expect(updatedMetadata.pdfSplittingInfo.parts[1].processingTime).toBe(
+        5000,
+      );
 
       // Verify the S3 file was deleted
       expect(deleteFromS3).toHaveBeenCalledWith(s3Key);
@@ -212,7 +217,8 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
         processingTime: 5000,
       };
 
-      const completedHandler = mockRabbitMQService.consumeMessages.mock.calls[0][1];
+      const completedHandler =
+        mockRabbitMQService.consumeMessages.mock.calls[0][1];
       await completedHandler(completedMessage, null);
 
       // Should not try to delete or update
@@ -243,7 +249,8 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
         processingTime: 5000,
       };
 
-      const completedHandler = mockRabbitMQService.consumeMessages.mock.calls[0][1];
+      const completedHandler =
+        mockRabbitMQService.consumeMessages.mock.calls[0][1];
       await completedHandler(completedMessage, null);
 
       // Should not try to delete or update
@@ -310,15 +317,22 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
       };
 
       // Get the handler function that was registered
-      const failedHandler = mockRabbitMQService.consumeMessages.mock.calls[1][1];
+      const failedHandler =
+        mockRabbitMQService.consumeMessages.mock.calls[1][1];
       await failedHandler(failedMessage, null);
 
       // Verify the part status was updated
       expect(mockStorage.updateMetadata).toHaveBeenCalled();
       const updatedMetadata = mockStorage.updateMetadata.mock.calls[0][0];
-      expect(updatedMetadata.pdfSplittingInfo.parts[1].status).toBe(PdfPartStatus.FAILED);
-      expect(updatedMetadata.pdfSplittingInfo.parts[1].error).toBe(errorMessage);
-      expect(updatedMetadata.pdfSplittingInfo.parts[1].processingTime).toBe(3000);
+      expect(updatedMetadata.pdfSplittingInfo.parts[1].status).toBe(
+        PdfPartStatus.FAILED,
+      );
+      expect(updatedMetadata.pdfSplittingInfo.parts[1].error).toBe(
+        errorMessage,
+      );
+      expect(updatedMetadata.pdfSplittingInfo.parts[1].processingTime).toBe(
+        3000,
+      );
 
       // Verify the S3 file was deleted even though conversion failed
       expect(deleteFromS3).toHaveBeenCalledWith(s3Key);
@@ -373,10 +387,13 @@ describe('PdfAnalyzerService - Part Cleanup', () => {
         processingTime: 5000,
       };
 
-      const completedHandler = mockRabbitMQService.consumeMessages.mock.calls[0][1];
-      
+      const completedHandler =
+        mockRabbitMQService.consumeMessages.mock.calls[0][1];
+
       // Should not throw an error even if S3 deletion fails
-      await expect(completedHandler(completedMessage, null)).resolves.not.toThrow();
+      await expect(
+        completedHandler(completedMessage, null),
+      ).resolves.not.toThrow();
 
       // Should still update the metadata
       expect(mockStorage.updateMetadata).toHaveBeenCalled();

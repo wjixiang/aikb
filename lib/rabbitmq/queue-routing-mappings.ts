@@ -13,38 +13,38 @@ export const QUEUE_TO_ROUTING_KEY_MAP: Record<string, string> = {
   'pdf-conversion-progress': 'pdf.conversion.progress',
   'pdf-conversion-completed': 'pdf.conversion.completed',
   'pdf-conversion-failed': 'pdf.conversion.failed',
-  
+
   // PDF analysis queues
   'pdf-analysis-request': 'pdf.analysis.request',
   'pdf-analysis-completed': 'pdf.analysis.completed',
   'pdf-analysis-failed': 'pdf.analysis.failed',
-  
+
   // PDF part conversion queues
   'pdf-part-conversion-request': 'pdf.part.conversion.request',
   'pdf-part-conversion-completed': 'pdf.part.conversion.completed',
   'pdf-part-conversion-failed': 'pdf.part.conversion.failed',
-  
+
   // PDF merging queues
   'pdf-merging-request': 'pdf.merging.request',
   'pdf-merging-progress': 'pdf.merging.progress',
-  
+
   // Markdown storage queues
   'markdown-storage-request': 'markdown.storage.request',
   'markdown-storage-completed': 'markdown.storage.completed',
   'markdown-storage-failed': 'markdown.storage.failed',
-  
+
   // Markdown part storage queues
   'markdown-part-storage-request': 'markdown.part.storage.request',
   'markdown-part-storage-progress': 'markdown.part.storage.progress',
   'markdown-part-storage-completed': 'markdown.part.storage.completed',
   'markdown-part-storage-failed': 'markdown.part.storage.failed',
-  
+
   // Chunking and embedding queues
   'chunking-embedding-request': 'chunking.embedding.request',
   'chunking-embedding-progress': 'chunking.embedding.progress',
   'chunking-embedding-completed': 'chunking.embedding-completed',
   'chunking-embedding-failed': 'chunking.embedding.failed',
-  
+
   // Dead letter queue
   'pdf-conversion-dlq': 'pdf.conversion.dlq',
 };
@@ -92,9 +92,14 @@ export function getAllRoutingKeys(): string[] {
  * @param queueName - The queue name
  * @param routingKey - The routing key
  */
-export function addQueueRoutingMapping(queueName: string, routingKey: string): void {
+export function addQueueRoutingMapping(
+  queueName: string,
+  routingKey: string,
+): void {
   if (QUEUE_TO_ROUTING_KEY_MAP[queueName]) {
-    console.warn(`Overriding existing mapping for queue ${queueName}: ${QUEUE_TO_ROUTING_KEY_MAP[queueName]} -> ${routingKey}`);
+    console.warn(
+      `Overriding existing mapping for queue ${queueName}: ${QUEUE_TO_ROUTING_KEY_MAP[queueName]} -> ${routingKey}`,
+    );
   }
   QUEUE_TO_ROUTING_KEY_MAP[queueName] = routingKey;
 }

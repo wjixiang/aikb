@@ -158,7 +158,10 @@ describe('Embedding', () => {
         .spyOn(embeddingManager, 'getProvider')
         .mockReturnValue(mockProvider);
 
-      const result = await embedding.embed('test text', EmbeddingProvider.OPENAI);
+      const result = await embedding.embed(
+        'test text',
+        EmbeddingProvider.OPENAI,
+      );
       expect(result).toEqual([0.4, 0.5, 0.6]);
       expect(mockProvider.embed).toHaveBeenCalledWith('test text');
       mockGetProvider.mockRestore();
@@ -399,11 +402,19 @@ describe('EmbeddingManager', () => {
     it('should return array of available providers', () => {
       const mockGetAvailableProviders = vi
         .fn()
-        .mockReturnValue([EmbeddingProvider.OPENAI, EmbeddingProvider.ALIBABA, EmbeddingProvider.ONNX]);
+        .mockReturnValue([
+          EmbeddingProvider.OPENAI,
+          EmbeddingProvider.ALIBABA,
+          EmbeddingProvider.ONNX,
+        ]);
       manager.getAvailableProviders = mockGetAvailableProviders as any;
 
       const providers = manager.getAvailableProviders();
-      expect(providers).toEqual([EmbeddingProvider.OPENAI, EmbeddingProvider.ALIBABA, EmbeddingProvider.ONNX]);
+      expect(providers).toEqual([
+        EmbeddingProvider.OPENAI,
+        EmbeddingProvider.ALIBABA,
+        EmbeddingProvider.ONNX,
+      ]);
     });
   });
 

@@ -55,21 +55,21 @@ describe('Logger with Meta Object Support - Simple Tests', () => {
         id: '12345',
         profile: {
           name: 'John Doe',
-          email: 'john@example.com'
-        }
+          email: 'john@example.com',
+        },
       },
       request: {
         method: 'POST',
         url: '/api/v1/users',
         headers: {
           'content-type': 'application/json',
-          'authorization': 'Bearer token123'
-        }
+          authorization: 'Bearer token123',
+        },
       },
       timestamps: {
         start: '2023-01-01T00:00:00Z',
-        end: '2023-01-01T00:00:05Z'
-      }
+        end: '2023-01-01T00:00:05Z',
+      },
     };
 
     // This should not throw errors
@@ -83,7 +83,7 @@ describe('Logger with Meta Object Support - Simple Tests', () => {
     const arrayMeta = {
       tags: ['user', 'login', 'success'],
       errors: ['Error 1', 'Error 2'],
-      numbers: [1, 2, 3, 4, 5]
+      numbers: [1, 2, 3, 4, 5],
     };
 
     // This should not throw errors
@@ -98,7 +98,7 @@ describe('Logger with Meta Object Support - Simple Tests', () => {
       userId: '12345',
       profile: null,
       settings: undefined,
-      tags: ['tag1', null, 'tag2']
+      tags: ['tag1', null, 'tag2'],
     };
 
     // This should not throw errors

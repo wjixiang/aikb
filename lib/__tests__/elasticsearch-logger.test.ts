@@ -52,10 +52,12 @@ describe('Elasticsearch Logger', () => {
     );
 
     expect(elasticsearchTransport).toBeDefined();
-    
+
     // Check that the transport has the correct configuration
     expect((elasticsearchTransport as any).indexName).toBe('test-logs');
-    expect((elasticsearchTransport as any).indexPattern).toBe('test-logs-YYYY.MM.DD');
+    expect((elasticsearchTransport as any).indexPattern).toBe(
+      'test-logs-YYYY.MM.DD',
+    );
   });
 
   it('should use default values when environment variables are not set', () => {
@@ -77,10 +79,12 @@ describe('Elasticsearch Logger', () => {
     );
 
     expect(elasticsearchTransport).toBeDefined();
-    
+
     // Check that the transport has default configuration
     expect((elasticsearchTransport as any).indexName).toBe('logs');
-    expect((elasticsearchTransport as any).indexPattern).toBe('logs-YYYY.MM.DD');
+    expect((elasticsearchTransport as any).indexPattern).toBe(
+      'logs-YYYY.MM.DD',
+    );
   });
 
   it('should log messages to Elasticsearch when enabled', () => {

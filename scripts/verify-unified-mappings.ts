@@ -5,7 +5,11 @@
  * This script validates that the mappings work correctly for both AMQP and STOMP protocols
  */
 
-import { getRoutingKeyForQueue, hasRoutingKeyMapping, getAllMappedQueueNames } from '../lib/rabbitmq/queue-routing-mappings';
+import {
+  getRoutingKeyForQueue,
+  hasRoutingKeyMapping,
+  getAllMappedQueueNames,
+} from '../lib/rabbitmq/queue-routing-mappings';
 import { getStompDestination } from '../lib/rabbitmq/stomp.config';
 import { RABBITMQ_ROUTING_KEYS } from '../lib/rabbitmq/message.types';
 import createLoggerWithPrefix from '../lib/logger';
@@ -30,8 +34,10 @@ async function testUnifiedMappings() {
     logger.info('Test 1: Verifying standard queue mappings...');
     for (const queueName of standardQueues) {
       const hasMapping = hasRoutingKeyMapping(queueName);
-      const routingKey = hasMapping ? getRoutingKeyForQueue(queueName) : 'NO MAPPING';
-      
+      const routingKey = hasMapping
+        ? getRoutingKeyForQueue(queueName)
+        : 'NO MAPPING';
+
       logger.info(`Queue mapping check: ${queueName}`, {
         hasMapping,
         routingKey,
@@ -49,7 +55,7 @@ async function testUnifiedMappings() {
       const routingKey = getRoutingKeyForQueue(queueName);
       const stompDestination = getStompDestination(routingKey);
       const expectedDestination = `/exchange/pdf-conversion-exchange/${routingKey}`;
-      
+
       logger.info(`STOMP destination check: ${queueName}`, {
         routingKey,
         stompDestination,
@@ -68,13 +74,17 @@ async function testUnifiedMappings() {
     const keyChecks = [
       { queue: 'pdf-conversion-request', constant: 'PDF_CONVERSION_REQUEST' },
       { queue: 'pdf-analysis-request', constant: 'PDF_ANALYSIS_REQUEST' },
-      { queue: 'pdf-part-conversion-request', constant: 'PDF_PART_CONVERSION_REQUEST' },
+      {
+        queue: 'pdf-part-conversion-request',
+        constant: 'PDF_PART_CONVERSION_REQUEST',
+      },
     ];
 
     for (const { queue, constant } of keyChecks) {
       const expectedRoutingKey = getRoutingKeyForQueue(queue);
-      const actualRoutingKey = RABBITMQ_ROUTING_KEYS[constant as keyof typeof RABBITMQ_ROUTING_KEYS];
-      
+      const actualRoutingKey =
+        RABBITMQ_ROUTING_KEYS[constant as keyof typeof RABBITMQ_ROUTING_KEYS];
+
       logger.info(`Routing key constant check: ${constant}`, {
         queue,
         expectedRoutingKey,
@@ -97,7 +107,7 @@ async function testUnifiedMappings() {
     for (const queueName of allQueues) {
       const routingKey = getRoutingKeyForQueue(queueName);
       const stompDestination = getStompDestination(routingKey);
-      
+
       // Verify the routing key appears in the STOMP destination
       if (!stompDestination.includes(routingKey)) {
         logger.warn(`Potential inconsistency for queue: ${queueName}`, {
@@ -109,20 +119,23 @@ async function testUnifiedMappings() {
     }
 
     if (inconsistencyCount > 0) {
-      logger.warn(`Found ${inconsistencyCount} potential mapping inconsistencies`);
+      logger.warn(
+        `Found ${inconsistencyCount} potential mapping inconsistencies`,
+      );
     } else {
       logger.info('✅ All mappings are consistent');
     }
 
-    logger.info('✅ Unified queue-to-routing-key mappings verification completed successfully');
-    
+    logger.info(
+      '✅ Unified queue-to-routing-key mappings verification completed successfully',
+    );
+
     // Summary
     logger.info('Summary:', {
       totalQueuesMapped: allQueues.length,
       standardQueuesTested: standardQueues.length,
       inconsistenciesFound: inconsistencyCount,
     });
-
   } catch (error) {
     logger.error('❌ Unified mappings verification failed:', error);
     process.exit(1);
@@ -130,7 +143,7 @@ async function testUnifiedMappings() {
 }
 
 // Run the test
-testUnifiedMappings().catch(error => {
+testUnifiedMappings().catch((error) => {
   logger.error('Unhandled error:', error);
   process.exit(1);
 });

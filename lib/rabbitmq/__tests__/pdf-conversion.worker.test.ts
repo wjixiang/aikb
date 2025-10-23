@@ -36,7 +36,6 @@ vi.mock('../../logger', () => ({
   })),
 }));
 
-
 const mockPdfConvertor: MinerUPdfConvertor = {
   convertPdfToMarkdownFromS3: vi.fn(),
 } as any;
@@ -46,7 +45,9 @@ const mockPdfConversionService: any = {
   convertPdfToMarkdown: vi.fn(),
   convertPdfPartToMarkdown: vi.fn(),
   isReady: vi.fn().mockReturnValue(true),
-  getStats: vi.fn().mockReturnValue({ isReady: true, pdfConvertorAvailable: true }),
+  getStats: vi
+    .fn()
+    .mockReturnValue({ isReady: true, pdfConvertorAvailable: true }),
 };
 
 const mockMessageHandler: any = {
@@ -87,7 +88,11 @@ const waitForMockCall = (mock: any, expectedCallCount = 1, timeout = 10000) => {
       if (mock.mock.calls.length >= initialCallCount + expectedCallCount) {
         resolve(mock.mock.calls.slice(initialCallCount));
       } else if (Date.now() - startTime > timeout) {
-        reject(new Error(`Mock not called ${expectedCallCount} times within ${timeout}ms`));
+        reject(
+          new Error(
+            `Mock not called ${expectedCallCount} times within ${timeout}ms`,
+          ),
+        );
       } else {
         setTimeout(checkMock, 100);
       }
@@ -207,10 +212,15 @@ describe('PdfConversionWorker', () => {
         processingTime: 1000,
       };
 
-      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(
+        mockConversionResult,
+      );
 
       // Call the message handler directly
-      const result = await mockMessageHandler.handlePdfConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(true);
       expect(result.shouldAcknowledge).toBe(true);
@@ -253,7 +263,9 @@ describe('PdfConversionWorker', () => {
         error: 'Test conversion error',
       };
 
-      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(
+        mockConversionResult,
+      );
 
       // Override the mock for this specific test to return failure
       mockMessageHandler.handlePdfConversionRequest.mockReset();
@@ -263,7 +275,10 @@ describe('PdfConversionWorker', () => {
       });
 
       // Call the message handler directly
-      const result = await mockMessageHandler.handlePdfConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(false);
       expect(result.shouldAcknowledge).toBe(true);
@@ -287,7 +302,9 @@ describe('PdfConversionWorker', () => {
         processingTime: 1000,
       };
 
-      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(
+        mockConversionResult,
+      );
 
       // Reset the mock to return the default value
       mockMessageHandler.handlePdfConversionRequest.mockReset();
@@ -313,7 +330,10 @@ describe('PdfConversionWorker', () => {
         maxRetries: 3,
       };
 
-      const result = await mockMessageHandler.handlePdfConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(true);
 
@@ -354,10 +374,15 @@ describe('PdfConversionWorker', () => {
         processingTime: 1000,
       };
 
-      (mockPdfConversionService.convertPdfPartToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (
+        mockPdfConversionService.convertPdfPartToMarkdown as any
+      ).mockResolvedValue(mockConversionResult);
 
       // Call the message handler directly
-      const result = await mockMessageHandler.handlePdfPartConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfPartConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(true);
       expect(result.shouldAcknowledge).toBe(true);
@@ -398,7 +423,9 @@ describe('PdfConversionWorker', () => {
         error: 'Test conversion error',
       };
 
-      (mockPdfConversionService.convertPdfPartToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (
+        mockPdfConversionService.convertPdfPartToMarkdown as any
+      ).mockResolvedValue(mockConversionResult);
 
       // Override the mock for this specific test to return failure
       mockMessageHandler.handlePdfPartConversionRequest.mockReturnValueOnce({
@@ -407,7 +434,10 @@ describe('PdfConversionWorker', () => {
       });
 
       // Call the message handler directly
-      const result = await mockMessageHandler.handlePdfPartConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfPartConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(false);
       expect(result.shouldAcknowledge).toBe(true);
@@ -441,7 +471,9 @@ describe('PdfConversionWorker', () => {
 
     it('should handle network errors during message publishing', async () => {
       // Mock publishMessage to throw an error
-      (mockRabbitMQService.publishMessage as any).mockRejectedValue(new Error('Network error'));
+      (mockRabbitMQService.publishMessage as any).mockRejectedValue(
+        new Error('Network error'),
+      );
 
       worker = new PdfConversionWorker(
         mockRabbitMQService,
@@ -452,7 +484,12 @@ describe('PdfConversionWorker', () => {
       await worker.start();
 
       // This should not throw an error, but log it instead
-      await mockMessageHandler.publishProgressMessage('test-id', 'processing', 50, 'Test message');
+      await mockMessageHandler.publishProgressMessage(
+        'test-id',
+        'processing',
+        50,
+        'Test message',
+      );
 
       expect(mockMessageHandler.publishProgressMessage).toHaveBeenCalled();
 
@@ -469,7 +506,10 @@ describe('PdfConversionWorker', () => {
       );
 
       // Reset the mock to return the default value
-      mockPdfConversionService.getStats.mockReturnValue({ isReady: true, pdfConvertorAvailable: true });
+      mockPdfConversionService.getStats.mockReturnValue({
+        isReady: true,
+        pdfConvertorAvailable: true,
+      });
 
       const stats = await worker.getWorkerStats();
 
@@ -514,7 +554,10 @@ describe('PdfConversionWorker', () => {
       });
 
       // This should handle the error gracefully
-      const result = await mockMessageHandler.handlePdfConversionRequest(malformedMessage, null);
+      const result = await mockMessageHandler.handlePdfConversionRequest(
+        malformedMessage,
+        null,
+      );
 
       // The result should indicate failure but not crash
       expect(result).toBeDefined();
@@ -560,7 +603,9 @@ describe('PdfConversionWorker', () => {
         error: 'Test conversion error',
       };
 
-      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(mockConversionResult);
+      (mockPdfConversionService.convertPdfToMarkdown as any).mockResolvedValue(
+        mockConversionResult,
+      );
 
       // Override the mock for this specific test to return failure
       mockMessageHandler.handlePdfConversionRequest.mockResolvedValueOnce({
@@ -569,7 +614,10 @@ describe('PdfConversionWorker', () => {
       });
 
       // Call the message handler directly
-      const result = await mockMessageHandler.handlePdfConversionRequest(testMessage, null);
+      const result = await mockMessageHandler.handlePdfConversionRequest(
+        testMessage,
+        null,
+      );
 
       expect(result.success).toBe(false);
       expect(result.shouldAcknowledge).toBe(true);

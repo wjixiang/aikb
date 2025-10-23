@@ -75,7 +75,9 @@ export class PdfConversionService implements IPdfConversionService {
     const startTime = Date.now();
     const { itemId, s3Key, pdfMetadata } = request;
 
-    logger.info(`Converting PDF to Markdown for item: ${itemId}, S3 Key: ${s3Key}`);
+    logger.info(
+      `Converting PDF to Markdown for item: ${itemId}, S3 Key: ${s3Key}`,
+    );
 
     try {
       // Notify progress if callback provided
@@ -110,7 +112,12 @@ export class PdfConversionService implements IPdfConversionService {
 
       // Notify progress
       if (onProgress) {
-        await onProgress(itemId, 'processing', 30, 'Converting PDF to Markdown');
+        await onProgress(
+          itemId,
+          'processing',
+          30,
+          'Converting PDF to Markdown',
+        );
       }
 
       // Generate presigned URL from s3Key
@@ -202,10 +209,8 @@ export class PdfConversionService implements IPdfConversionService {
       }
 
       const processingTime = Date.now() - startTime;
-      
-      logger.info(
-        `PDF conversion completed successfully for item: ${itemId}`,
-      );
+
+      logger.info(`PDF conversion completed successfully for item: ${itemId}`);
 
       return {
         success: true,
@@ -247,9 +252,8 @@ export class PdfConversionService implements IPdfConversionService {
     try {
       // Initialize PDF processing if not already done
       if (this.partTracker) {
-        const processingStatus = await this.partTracker.getPdfProcessingStatus(
-          itemId,
-        );
+        const processingStatus =
+          await this.partTracker.getPdfProcessingStatus(itemId);
         if (!processingStatus) {
           logger.info(`Initializing PDF processing for item ${itemId}`);
           await this.partTracker.initializePdfProcessing(itemId, totalParts);
@@ -376,7 +380,7 @@ export class PdfConversionService implements IPdfConversionService {
       }
 
       const processingTime = Date.now() - startTime;
-      
+
       logger.info(
         `PDF part conversion completed for item: ${itemId}, part: ${partIndex + 1}`,
       );

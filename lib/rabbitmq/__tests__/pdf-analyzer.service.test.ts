@@ -39,9 +39,13 @@ vi.mock('uuid', () => ({
 
 // Mock S3 service - use factory function to avoid hoisting issues
 vi.mock('../s3Service/S3Service', () => {
-  const mockUploadToS3 = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  const mockGetPdfDownloadUrl = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  
+  const mockUploadToS3 = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+  const mockGetPdfDownloadUrl = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+
   return {
     uploadToS3: mockUploadToS3,
     getPdfDownloadUrl: mockGetPdfDownloadUrl,
@@ -50,9 +54,13 @@ vi.mock('../s3Service/S3Service', () => {
 
 // Also mock the S3 service in the correct path
 vi.mock('../../lib/s3Service/S3Service', () => {
-  const mockUploadToS3 = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  const mockGetPdfDownloadUrl = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  
+  const mockUploadToS3 = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+  const mockGetPdfDownloadUrl = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+
   return {
     uploadToS3: mockUploadToS3,
     getPdfDownloadUrl: mockGetPdfDownloadUrl,
@@ -61,9 +69,13 @@ vi.mock('../../lib/s3Service/S3Service', () => {
 
 // Also mock the S3 service in the correct path
 vi.mock('../../../lib/s3Service/S3Service', () => {
-  const mockUploadToS3 = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  const mockGetPdfDownloadUrl = vi.fn().mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
-  
+  const mockUploadToS3 = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+  const mockGetPdfDownloadUrl = vi
+    .fn()
+    .mockResolvedValue('https://mock-s3-url.com/test-file.pdf');
+
   return {
     uploadToS3: mockUploadToS3,
     getPdfDownloadUrl: mockGetPdfDownloadUrl,
@@ -91,46 +103,49 @@ describe('PdfAnalyzerService', () => {
   const createMockPdfBuffer = (pageCount: number): Buffer => {
     // Create a valid PDF structure that pdf-lib can parse
     let pdfString = '%PDF-1.4\n';
-    
+
     // Catalog object
     pdfString += '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
-    
+
     // Pages object with kids array
     pdfString += '2 0 obj\n<< /Type /Pages /Kids [';
     for (let i = 0; i < pageCount; i++) {
       pdfString += ` ${3 + i} 0 R`;
     }
     pdfString += ` ] /Count ${pageCount} >>\nendobj\n`;
-    
+
     // Page objects
     for (let i = 0; i < pageCount; i++) {
       pdfString += `${3 + i} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${3 + pageCount + i} 0 R >>\nendobj\n`;
     }
-    
+
     // Content streams for each page
     for (let i = 0; i < pageCount; i++) {
       pdfString += `${3 + pageCount + i} 0 obj\n<< /Length 44 >>\nstream\nBT\n/F1 12 Tf\n72 720 Td\n(Page ${i + 1}) Tj\nET\nendstream\nendobj\n`;
     }
-    
+
     // Cross-reference table
     const objCount = 3 + pageCount * 2;
     pdfString += 'xref\n0 ' + (objCount + 1) + '\n';
     pdfString += '0000000000 65535 f\n';
-    
+
     let offset = 9; // Start after %PDF-1.4\n
     for (let i = 1; i <= objCount; i++) {
       pdfString += `${offset.toString().padStart(10, '0')} 00000 n\n`;
       // Rough estimate of object length (this is simplified)
-      if (i === 1) offset += 35; // Catalog
-      else if (i === 2) offset += 30 + pageCount * 8; // Pages
-      else if (i <= 3 + pageCount - 1) offset += 55; // Page objects
+      if (i === 1)
+        offset += 35; // Catalog
+      else if (i === 2)
+        offset += 30 + pageCount * 8; // Pages
+      else if (i <= 3 + pageCount - 1)
+        offset += 55; // Page objects
       else offset += 70; // Content streams
     }
-    
+
     // Trailer
     pdfString += 'trailer\n<< /Size ' + (objCount + 1) + ' /Root 1 0 R >>\n';
     pdfString += 'startxref\n' + offset + '\n%%EOF';
-    
+
     return Buffer.from(pdfString, 'latin1');
   };
 
@@ -270,7 +285,7 @@ describe('PdfAnalyzerService', () => {
 
       // Assert
       expect(mockStorage.getMetadata).toHaveBeenCalledWith(testItemId);
-      
+
       // For non-splitting PDFs, there should be only 2 calls (analyzing + final)
       const finalUpdateCall = mockStorage.updateMetadata.mock.calls[1][0];
       expect(finalUpdateCall).toMatchObject({

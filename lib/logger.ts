@@ -4,7 +4,8 @@ import { ElasticsearchTransport } from './elasticsearch-transport';
 const createLoggerWithPrefix = (prefix: string) => {
   const consoleFormat = winston.format.printf(
     ({ level, message, label, timestamp, meta }) => {
-      const metaStr = meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
+      const metaStr =
+        meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
       return `[${label}] ${message}${metaStr}`;
     },
   );
@@ -52,8 +53,13 @@ const createLoggerWithPrefix = (prefix: string) => {
 
   // Override log methods to support second parameter as any object
   const originalLog = logger.log.bind(logger);
-  
-  (logger as any).log = function (level: string, message: string, meta?: any, callback?: any) {
+
+  (logger as any).log = function (
+    level: string,
+    message: string,
+    meta?: any,
+    callback?: any,
+  ) {
     if (meta && typeof meta === 'object') {
       return originalLog(level, message, { meta }, callback);
     }
@@ -61,15 +67,21 @@ const createLoggerWithPrefix = (prefix: string) => {
   };
 
   // Override convenience methods
-  ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'].forEach(methodName => {
-    const originalMethod = (logger as any)[methodName].bind(logger);
-    (logger as any)[methodName] = function (message: string, meta?: any, callback?: any) {
-      if (meta && typeof meta === 'object') {
-        return originalMethod(message, { meta }, callback);
-      }
-      return originalMethod(message, meta, callback);
-    };
-  });
+  ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'].forEach(
+    (methodName) => {
+      const originalMethod = (logger as any)[methodName].bind(logger);
+      (logger as any)[methodName] = function (
+        message: string,
+        meta?: any,
+        callback?: any,
+      ) {
+        if (meta && typeof meta === 'object') {
+          return originalMethod(message, { meta }, callback);
+        }
+        return originalMethod(message, meta, callback);
+      };
+    },
+  );
 
   return logger;
 };

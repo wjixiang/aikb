@@ -48,7 +48,9 @@ export class ChunkingManager {
   /**
    * 根据枚举获取策略
    */
-  getStrategyByEnum(strategyEnum: ChunkingStrategy): IChunkingStrategy | undefined {
+  getStrategyByEnum(
+    strategyEnum: ChunkingStrategy,
+  ): IChunkingStrategy | undefined {
     return this.strategies.get(strategyEnum);
   }
 
@@ -92,8 +94,9 @@ export class ChunkingManager {
    */
   autoSelectStrategy(text: string): IChunkingStrategy {
     // 使用策略注册表中的优先级
-    const implementedStrategies = ChunkingStrategyUtils.getImplementedStrategies();
-    
+    const implementedStrategies =
+      ChunkingStrategyUtils.getImplementedStrategies();
+
     // 按优先级检查策略
     for (const strategyEnum of implementedStrategies) {
       const strategy = this.strategies.get(strategyEnum);
@@ -119,16 +122,20 @@ export class ChunkingManager {
   /**
    * 使用回退策略自动选择
    */
-  autoSelectStrategyWithFallback(text: string, preferredStrategy?: ChunkingStrategy): IChunkingStrategy {
+  autoSelectStrategyWithFallback(
+    text: string,
+    preferredStrategy?: ChunkingStrategy,
+  ): IChunkingStrategy {
     // 如果指定了首选策略，先尝试使用它
     if (preferredStrategy) {
       const strategy = this.strategies.get(preferredStrategy);
       if (strategy && strategy.canHandle(text)) {
         return strategy;
       }
-      
+
       // 尝试使用回退策略
-      const fallbackStrategies = ChunkingStrategyUtils.getFallbackStrategies(preferredStrategy);
+      const fallbackStrategies =
+        ChunkingStrategyUtils.getFallbackStrategies(preferredStrategy);
       for (const fallbackEnum of fallbackStrategies) {
         const fallbackStrategy = this.strategies.get(fallbackEnum);
         if (fallbackStrategy && fallbackStrategy.canHandle(text)) {
@@ -287,16 +294,18 @@ export class ChunkingManager {
    */
   getStrategyEnumsForText(text: string): ChunkingStrategy[] {
     return this.getStrategiesForText(text)
-      .map(strategy => ChunkingStrategyUtils.fromString(strategy.name))
-      .filter(strategy => strategy !== ChunkingStrategy.AUTO);
+      .map((strategy) => ChunkingStrategyUtils.fromString(strategy.name))
+      .filter((strategy) => strategy !== ChunkingStrategy.AUTO);
   }
 
   /**
    * 检查策略是否已实现
    */
   isStrategyImplemented(strategyEnum: ChunkingStrategy): boolean {
-    return ChunkingStrategyUtils.isImplemented(strategyEnum) &&
-           this.strategies.has(strategyEnum);
+    return (
+      ChunkingStrategyUtils.isImplemented(strategyEnum) &&
+      this.strategies.has(strategyEnum)
+    );
   }
 
   /**
@@ -314,7 +323,8 @@ export class ChunkingManager {
     legacyStrategy: ChunkingStrategyType,
     config?: ChunkingConfig,
   ): ChunkResult[] {
-    const newStrategy = ChunkingStrategyCompatibility.fromLegacy(legacyStrategy);
+    const newStrategy =
+      ChunkingStrategyCompatibility.fromLegacy(legacyStrategy);
     return this.chunkWithStrategyEnum(text, newStrategy, config);
   }
 }

@@ -114,7 +114,9 @@ export class MarkdownPartStorageWorker {
     originalMessage: any,
   ): Promise<void> {
     const startTime = Date.now();
-    logger.debug(`[DEBUG] handleMarkdownPartStorageRequest START: itemId=${message.itemId}, partIndex=${message.partIndex}`);
+    logger.debug(
+      `[DEBUG] handleMarkdownPartStorageRequest START: itemId=${message.itemId}, partIndex=${message.partIndex}`,
+    );
     logger.info(
       `Processing markdown part storage request for item: ${message.itemId}, part: ${message.partIndex + 1}/${message.totalParts}`,
     );
@@ -131,26 +133,39 @@ export class MarkdownPartStorageWorker {
     }
     try {
       // Initialize PDF processing if not already done
-      logger.debug(`[DEBUG] About to call getPdfProcessingStatus for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+      logger.debug(
+        `[DEBUG] About to call getPdfProcessingStatus for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+      );
       logger.debug(`Initialize PDF processing if not already done`);
       const processingStatus = await this.partTracker.getPdfProcessingStatus(
         message.itemId,
       );
-      logger.debug(`[DEBUG] getPdfProcessingStatus returned for itemId=${message.itemId}, partIndex=${message.partIndex}, result:`, processingStatus);
+      logger.debug(
+        `[DEBUG] getPdfProcessingStatus returned for itemId=${message.itemId}, partIndex=${message.partIndex}, result:`,
+        processingStatus,
+      );
       if (!processingStatus) {
-        logger.info(`[WORKER-${message.partIndex}] Initializing PDF processing for item ${message.itemId}`);
-        logger.debug(`[DEBUG] [WORKER-${message.partIndex}] About to call initializePdfProcessing for itemId=${message.itemId}`);
+        logger.info(
+          `[WORKER-${message.partIndex}] Initializing PDF processing for item ${message.itemId}`,
+        );
+        logger.debug(
+          `[DEBUG] [WORKER-${message.partIndex}] About to call initializePdfProcessing for itemId=${message.itemId}`,
+        );
         await this.partTracker.initializePdfProcessing(
           message.itemId,
           message.totalParts,
         );
-        logger.debug(`[DEBUG] [WORKER-${message.partIndex}] initializePdfProcessing completed for itemId=${message.itemId}`);
+        logger.debug(
+          `[DEBUG] [WORKER-${message.partIndex}] initializePdfProcessing completed for itemId=${message.itemId}`,
+        );
       } else {
-        logger.info(`[WORKER-${message.partIndex}] PDF processing already exists for item ${message.itemId}`);
+        logger.info(
+          `[WORKER-${message.partIndex}] PDF processing already exists for item ${message.itemId}`,
+        );
       }
 
       // Update part status to processing
-      logger.debug(`Update part status to processing`)
+      logger.debug(`Update part status to processing`);
       await this.updatePartStatus(
         message.itemId,
         message.partIndex,
@@ -170,7 +185,10 @@ export class MarkdownPartStorageWorker {
       );
 
       // Validate markdown content
-      if (!message.markdownContent || message.markdownContent.trim().length === 0) {
+      if (
+        !message.markdownContent ||
+        message.markdownContent.trim().length === 0
+      ) {
         throw new Error('Markdown content is empty or invalid');
       }
 
@@ -234,7 +252,9 @@ export class MarkdownPartStorageWorker {
       );
 
       // Check if all parts are completed and trigger merging if needed
-      logger.debug(`Check if all parts are completed and trigger merging if needed`)
+      logger.debug(
+        `Check if all parts are completed and trigger merging if needed`,
+      );
       await this.checkAndTriggerMerging(message.itemId, message.totalParts);
 
       // Publish progress
@@ -249,7 +269,9 @@ export class MarkdownPartStorageWorker {
 
       // Publish completion message
       const processingTime = Date.now() - startTime;
-      logger.debug(`[DEBUG] About to publish completion message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+      logger.debug(
+        `[DEBUG] About to publish completion message for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+      );
       await this.publishCompletionMessage(
         message.itemId,
         message.partIndex,
@@ -309,7 +331,9 @@ export class MarkdownPartStorageWorker {
 
       // Update part status in cache
       try {
-        console.log(`[DEBUG] About to update part status to 'failed' for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        console.log(
+          `[DEBUG] About to update part status to 'failed' for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+        );
         await this.markdownPartCache.updatePartStatus(
           message.itemId,
           message.partIndex,
@@ -317,7 +341,10 @@ export class MarkdownPartStorageWorker {
         );
         console.log(`[DEBUG] Part status updated to 'failed' successfully`);
       } catch (statusUpdateError) {
-        console.log(`[DEBUG] Failed to update part status to 'failed':`, statusUpdateError);
+        console.log(
+          `[DEBUG] Failed to update part status to 'failed':`,
+          statusUpdateError,
+        );
         logger.warn(
           `Failed to update failed status for markdown part ${message.partIndex + 1} for item ${message.itemId} in cache:`,
           statusUpdateError,
@@ -333,7 +360,9 @@ export class MarkdownPartStorageWorker {
         );
 
         // Publish failure message for this attempt before retrying
-        logger.debug(`[DEBUG] About to publish failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        logger.debug(
+          `[DEBUG] About to publish failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+        );
         await this.publishFailureMessage(
           message.itemId,
           message.partIndex,
@@ -353,12 +382,18 @@ export class MarkdownPartStorageWorker {
           retryCount: retryCount + 1,
         };
 
-        logger.debug(`[DEBUG] About to publish retry request for itemId=${message.itemId}, partIndex=${message.partIndex}`);
-        await this.rabbitMQService.publishMarkdownPartStorageRequest(retryRequest);
+        logger.debug(
+          `[DEBUG] About to publish retry request for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+        );
+        await this.rabbitMQService.publishMarkdownPartStorageRequest(
+          retryRequest,
+        );
         logger.debug(`[DEBUG] Retry request published successfully`);
       } else {
         // Final failure - publish failure message
-        logger.debug(`[DEBUG] About to publish final failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`);
+        logger.debug(
+          `[DEBUG] About to publish final failure message for itemId=${message.itemId}, partIndex=${message.partIndex}`,
+        );
         await this.publishFailureMessage(
           message.itemId,
           message.partIndex,
@@ -384,20 +419,20 @@ export class MarkdownPartStorageWorker {
     const maxRetries = 5;
     const baseDelayMs = 1000; // 1 second base delay
     try {
-      logger.info(`Checking if all parts are completed for item ${itemId} (attempt ${retryCount + 1}/${maxRetries})`);
+      logger.info(
+        `Checking if all parts are completed for item ${itemId} (attempt ${retryCount + 1}/${maxRetries})`,
+      );
 
       // Get all parts from MarkdownPartCache to check their status
       const allParts = await this.markdownPartCache.getAllParts(itemId);
-      logger.info(
-        `Found ${allParts.length} parts in cache for item ${itemId}`,
-      );
+      logger.info(`Found ${allParts.length} parts in cache for item ${itemId}`);
 
       // Check if we have all parts
       if (allParts.length < totalParts) {
         logger.info(
           `Not all parts are available yet for item ${itemId}. Have ${allParts.length}/${totalParts} parts. Continuing to wait...`,
         );
-        
+
         // Retry if we haven't reached max retries
         if (retryCount < maxRetries) {
           const delayMs = baseDelayMs * Math.pow(2, retryCount);
@@ -405,7 +440,9 @@ export class MarkdownPartStorageWorker {
             this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
           }, delayMs);
         } else {
-          logger.error(`Max retries reached for item ${itemId}. Still missing ${totalParts - allParts.length} parts.`);
+          logger.error(
+            `Max retries reached for item ${itemId}. Still missing ${totalParts - allParts.length} parts.`,
+          );
         }
         return;
       }
@@ -413,10 +450,13 @@ export class MarkdownPartStorageWorker {
       // Check if all parts are completed by checking their status in the cache
       let completedCount = 0;
       let failedCount = 0;
-      
+
       for (const part of allParts) {
         try {
-          const status = await this.markdownPartCache.getPartStatus(itemId, part.partIndex);
+          const status = await this.markdownPartCache.getPartStatus(
+            itemId,
+            part.partIndex,
+          );
           if (status === 'completed') {
             completedCount++;
           } else if (status === 'failed') {
@@ -442,7 +482,8 @@ export class MarkdownPartStorageWorker {
 
         try {
           // Merge all parts using MarkdownPartCache
-          const mergedMarkdown = await this.markdownPartCache.mergeAllParts(itemId);
+          const mergedMarkdown =
+            await this.markdownPartCache.mergeAllParts(itemId);
           logger.info(
             `Successfully merged ${allParts.length} parts for item ${itemId}. Merged content length: ${mergedMarkdown.length}`,
           );
@@ -454,7 +495,7 @@ export class MarkdownPartStorageWorker {
             eventType: 'PDF_MERGING_REQUEST',
             itemId,
             totalParts,
-            completedParts: allParts.map(part => part.partIndex),
+            completedParts: allParts.map((part) => part.partIndex),
             priority: 'normal',
           };
 
@@ -462,54 +503,63 @@ export class MarkdownPartStorageWorker {
           logger.info(
             `Published merging request for item ${itemId} with ${allParts.length} parts`,
           );
-          
+
           // Store the merged markdown content for later use by the merger service
           // The merger service can retrieve it from the cache using the itemId
           logger.info(
             `Merged markdown content is available in cache for item ${itemId}`,
           );
         } catch (mergeError) {
-          logger.error(
-            `Failed to merge parts for item ${itemId}:`,
-            mergeError,
-          );
+          logger.error(`Failed to merge parts for item ${itemId}:`, mergeError);
           throw mergeError;
         }
-      } else if (failedCount > 0 && completedCount + failedCount === totalParts) {
+      } else if (
+        failedCount > 0 &&
+        completedCount + failedCount === totalParts
+      ) {
         // All parts have been processed but some failed
         logger.error(
           `Processing completed for item ${itemId} but ${failedCount} parts failed. Merging not possible.`,
         );
-        
+
         // Here you could publish a failure message or trigger a different workflow
         // For now, we'll just log the error
       } else {
         logger.info(
           `Not all parts are completed yet for item ${itemId}. ${completedCount}/${totalParts} completed. Continuing to wait...`,
         );
-        
+
         // Retry if we haven't reached max retries
         if (retryCount < maxRetries) {
           const delayMs = baseDelayMs * Math.pow(2, retryCount);
-          logger.debug(`[DEBUG] Retrying checkAndTriggerMerging in ${delayMs}ms for itemId=${itemId}`);
+          logger.debug(
+            `[DEBUG] Retrying checkAndTriggerMerging in ${delayMs}ms for itemId=${itemId}`,
+          );
           setTimeout(() => {
             this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
           }, delayMs);
         } else {
-          logger.error(`Max retries reached for item ${itemId}. Only ${completedCount}/${totalParts} parts completed.`);
+          logger.error(
+            `Max retries reached for item ${itemId}. Only ${completedCount}/${totalParts} parts completed.`,
+          );
         }
       }
     } catch (error) {
-      logger.debug(`[DEBUG] Exception in checkAndTriggerMerging for itemId=${itemId}:`, error);
+      logger.debug(
+        `[DEBUG] Exception in checkAndTriggerMerging for itemId=${itemId}:`,
+        error,
+      );
       logger.error(
         `Failed to check and trigger merging for item ${itemId}:`,
         error,
       );
-      
+
       // Retry on error if we haven't reached max retries
       if (retryCount < maxRetries) {
         const delayMs = baseDelayMs * Math.pow(2, retryCount);
-        console.log(`[DEBUG] Retrying checkAndTriggerMerging after error in ${delayMs}ms for itemId=${itemId}`);
+        console.log(
+          `[DEBUG] Retrying checkAndTriggerMerging after error in ${delayMs}ms for itemId=${itemId}`,
+        );
         setTimeout(() => {
           this.checkAndTriggerMerging(itemId, totalParts, retryCount + 1);
         }, delayMs);
@@ -571,7 +621,9 @@ export class MarkdownPartStorageWorker {
         startedAt: Date.now(),
       };
 
-      await this.rabbitMQService.publishMarkdownPartStorageProgress(progressMessage);
+      await this.rabbitMQService.publishMarkdownPartStorageProgress(
+        progressMessage,
+      );
     } catch (error) {
       logger.error(
         `Failed to publish progress message for item ${itemId}, part ${partIndex}:`,
@@ -606,7 +658,9 @@ export class MarkdownPartStorageWorker {
         },
       };
 
-      await this.rabbitMQService.publishMarkdownPartStorageCompleted(completionMessage);
+      await this.rabbitMQService.publishMarkdownPartStorageCompleted(
+        completionMessage,
+      );
     } catch (error) {
       logger.error(
         `Failed to publish completion message for item ${itemId}, part ${partIndex}:`,
@@ -643,7 +697,9 @@ export class MarkdownPartStorageWorker {
         processingTime,
       };
 
-      await this.rabbitMQService.publishMarkdownPartStorageFailed(failureMessage);
+      await this.rabbitMQService.publishMarkdownPartStorageFailed(
+        failureMessage,
+      );
     } catch (publishError) {
       logger.error(
         `Failed to publish failure message for item ${itemId}, part ${partIndex}:`,
@@ -722,7 +778,9 @@ if (require.main === module) {
       });
 
       // Keep the process running
-      logger.info('Markdown Part Storage Worker is running. Press Ctrl+C to stop.');
+      logger.info(
+        'Markdown Part Storage Worker is running. Press Ctrl+C to stop.',
+      );
     } catch (error) {
       logger.error('Failed to start Markdown Part Storage Worker:', error);
       process.exit(1);

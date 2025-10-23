@@ -1,5 +1,4 @@
 import {
-  ChunkingEmbeddingRequestMessage,
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
@@ -12,11 +11,15 @@ import {
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
+import Library, {
+  AbstractLibraryStorage,
+} from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
+import { Embedding } from 'lib/embedding/embedding';
+import { ChunkingManager } from 'lib/chunking/chunkingManager';
 
 const logger = createLoggerWithPrefix('ChunkingEmbeddingWorker');
 
@@ -34,14 +37,13 @@ interface StatusUpdater {
   ): Promise<void>;
 }
 
-
 /**
  * Interface for retry handling
  */
 interface RetryHandler {
   shouldRetry(retryCount: number, maxRetries: number): boolean;
   handleRetry(
-    message: ChunkingEmbeddingRequestMessage | MultiVersionChunkingEmbeddingRequestMessage,
+    message: MultiVersionChunkingEmbeddingRequestMessage,
     retryCount: number,
     maxRetries: number,
   ): Promise<void>;
@@ -53,8 +55,6 @@ interface RetryHandler {
     processingTime: number,
   ): Promise<void>;
 }
-
-
 
 interface ProgressReporter {
   reportProgress(
@@ -72,7 +72,9 @@ interface ProgressReporter {
  * Chunking and Embedding Worker
  * Orchestrates the processing and communication for chunking and embedding requests from RabbitMQ queue
  */
-export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater, RetryHandler {
+export class ChunkingEmbeddingWorker
+  implements ProgressReporter, StatusUpdater, RetryHandler
+{
   private rabbitMQService;
   private processor: ChunkingEmbeddingProcessor;
   private consumerTag: string | null = null;
@@ -83,7 +85,9 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
     this.storage = storage;
     this.rabbitMQService = getRabbitMQService(protocol);
     this.processor = new ChunkingEmbeddingProcessor(
-      storage,
+      new Library(storage),
+      new Embedding(),
+      new ChunkingManager(),
       this, // ProgressReporter
       this, // StatusUpdater
       this, // RetryHandler
@@ -161,17 +165,19 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
       // Route message based on event type
       switch (message.eventType) {
         case 'CHUNKING_EMBEDDING_REQUEST':
-          await this.processor.processChunkingEmbeddingRequest(message as ChunkingEmbeddingRequestMessage);
+          throw new Error('CHUNKING_EMBEDDING_REQUEST not longer support');
           break;
         case 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST':
-          await this.processor.processMultiVersionChunkingEmbeddingRequest(message as MultiVersionChunkingEmbeddingRequestMessage);
+          await this.processor.processChunkingEmbeddingRequest(
+            message as MultiVersionChunkingEmbeddingRequestMessage,
+          );
           break;
         default:
           logger.warn(`Unknown message type: ${message.eventType}`);
           // Acknowledge the message to prevent reprocessing
           originalMessage.ack();
       }
-      
+
       // Acknowledge the message after successful processing
       originalMessage.ack();
     } catch (error) {
@@ -205,7 +211,9 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
         totalChunks,
       };
 
-      await this.rabbitMQService.publishChunkingEmbeddingProgress(progressMessage);
+      await this.rabbitMQService.publishChunkingEmbeddingProgress(
+        progressMessage,
+      );
     } catch (error) {
       logger.error(
         `Failed to publish progress message for item ${itemId}:`,
@@ -257,7 +265,7 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
   }
 
   async handleRetry(
-    message: ChunkingEmbeddingRequestMessage | MultiVersionChunkingEmbeddingRequestMessage,
+    message: MultiVersionChunkingEmbeddingRequestMessage,
     retryCount: number,
     maxRetries: number,
   ): Promise<void> {
@@ -273,31 +281,7 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
       retryCount: retryCount + 1,
     };
 
-    // Check if it's a multi-version message and convert to standard message for retry
-    if (message.eventType === 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST') {
-      const multiVersionMessage = message as MultiVersionChunkingEmbeddingRequestMessage;
-      const standardRetryRequest: ChunkingEmbeddingRequestMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_REQUEST',
-        itemId: multiVersionMessage.itemId,
-        markdownContent: multiVersionMessage.markdownContent,
-        chunkingStrategy: multiVersionMessage.groupConfig?.chunkingStrategy as ChunkingStrategy || 'h1',
-        priority: multiVersionMessage.priority,
-        retryCount: retryCount + 1,
-        maxRetries: multiVersionMessage.maxRetries,
-        denseVectorIndexGroupId: multiVersionMessage.groupId,
-        embeddingProvider: multiVersionMessage.groupConfig?.embeddingProvider,
-        embeddingConfig: multiVersionMessage.groupConfig?.embeddingConfig,
-        chunkingConfig: multiVersionMessage.groupConfig?.chunkingConfig,
-        forceReprocess: multiVersionMessage.forceReprocess,
-        preserveExisting: multiVersionMessage.preserveExisting,
-      };
-
-      await this.rabbitMQService.publishChunkingEmbeddingRequest(standardRetryRequest);
-    } else {
-      await this.rabbitMQService.publishChunkingEmbeddingRequest(retryRequest as ChunkingEmbeddingRequestMessage);
-    }
+    await this.rabbitMQService.publishChunkingEmbeddingRequest(retryRequest);
   }
 
   async handleFailure(
@@ -308,7 +292,13 @@ export class ChunkingEmbeddingWorker implements ProgressReporter, StatusUpdater,
     processingTime: number,
   ): Promise<void> {
     // Publish failure message
-    await this.publishFailureMessage(itemId, error, retryCount, maxRetries, processingTime);
+    await this.publishFailureMessage(
+      itemId,
+      error,
+      retryCount,
+      maxRetries,
+      processingTime,
+    );
   }
 
   /**

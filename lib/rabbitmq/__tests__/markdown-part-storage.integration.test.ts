@@ -70,15 +70,18 @@ describe('Markdown Part Storage Integration Tests', () => {
   const testParts = [
     {
       partIndex: 0,
-      content: '# Introduction\n\nThis is the introduction part of the document.',
+      content:
+        '# Introduction\n\nThis is the introduction part of the document.',
     },
     {
       partIndex: 1,
-      content: '# Chapter 1\n\nThis is the first chapter with detailed content.',
+      content:
+        '# Chapter 1\n\nThis is the first chapter with detailed content.',
     },
     {
       partIndex: 2,
-      content: '# Chapter 2\n\nThis is the second chapter with more information.',
+      content:
+        '# Chapter 2\n\nThis is the second chapter with more information.',
     },
     {
       partIndex: 3,
@@ -146,27 +149,40 @@ describe('Markdown Part Storage Integration Tests', () => {
         };
 
         // Simulate message handling by the worker
-        await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
 
         // Verify progress message was published
-        expect(mockRabbitMQService.publishMarkdownPartStorageProgress).toHaveBeenCalled();
+        expect(
+          mockRabbitMQService.publishMarkdownPartStorageProgress,
+        ).toHaveBeenCalled();
 
         // Verify completion message was published
-        expect(mockRabbitMQService.publishMarkdownPartStorageCompleted).toHaveBeenCalledWith(
+        expect(
+          mockRabbitMQService.publishMarkdownPartStorageCompleted,
+        ).toHaveBeenCalledWith(
           expect.objectContaining({
             itemId: testItemId,
             partIndex: part.partIndex,
             totalParts: testParts.length,
             status: PdfProcessingStatus.COMPLETED,
-          })
+          }),
         );
 
         // Verify part was stored in cache
-        const storedContent = await markdownCache.getPartMarkdown(testItemId, part.partIndex);
+        const storedContent = await markdownCache.getPartMarkdown(
+          testItemId,
+          part.partIndex,
+        );
         expect(storedContent).toBe(part.content);
 
         // Verify part status is completed
-        const partStatus = await markdownCache.getPartStatus(testItemId, part.partIndex);
+        const partStatus = await markdownCache.getPartStatus(
+          testItemId,
+          part.partIndex,
+        );
         expect(partStatus).toBe('completed');
       }
 
@@ -180,7 +196,7 @@ describe('Markdown Part Storage Integration Tests', () => {
           itemId: testItemId,
           totalParts: testParts.length,
           completedParts: [0, 1, 2, 3],
-        })
+        }),
       );
 
       // Verify merged content is available
@@ -207,7 +223,10 @@ describe('Markdown Part Storage Integration Tests', () => {
           priority: 'normal',
         };
 
-        await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       }
 
       // Verify all parts are stored
@@ -217,13 +236,21 @@ describe('Markdown Part Storage Integration Tests', () => {
       // Verify merged content is in correct order
       const mergedContent = await markdownCache.mergeAllParts(testItemId);
       const lines = mergedContent.split('\n');
-      
+
       // Check that parts are in correct order (0, 1, 2, 3)
-      const introIndex = lines.findIndex(line => line.includes('# Introduction'));
-      const chapter1Index = lines.findIndex(line => line.includes('# Chapter 1'));
-      const chapter2Index = lines.findIndex(line => line.includes('# Chapter 2'));
-      const conclusionIndex = lines.findIndex(line => line.includes('# Conclusion'));
-      
+      const introIndex = lines.findIndex((line) =>
+        line.includes('# Introduction'),
+      );
+      const chapter1Index = lines.findIndex((line) =>
+        line.includes('# Chapter 1'),
+      );
+      const chapter2Index = lines.findIndex((line) =>
+        line.includes('# Chapter 2'),
+      );
+      const conclusionIndex = lines.findIndex((line) =>
+        line.includes('# Conclusion'),
+      );
+
       expect(introIndex).toBeLessThan(chapter1Index);
       expect(chapter1Index).toBeLessThan(chapter2Index);
       expect(chapter2Index).toBeLessThan(conclusionIndex);
@@ -250,7 +277,10 @@ describe('Markdown Part Storage Integration Tests', () => {
           priority: 'normal',
         };
 
-        await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       }
 
       // Process failing part with empty content (should fail)
@@ -267,10 +297,15 @@ describe('Markdown Part Storage Integration Tests', () => {
         maxRetries,
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(failingRequestMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        failingRequestMessage,
+        null,
+      );
 
       // Verify failure message was published
-      expect(mockRabbitMQService.publishMarkdownPartStorageFailed).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageFailed,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           partIndex: failingPartIndex,
@@ -278,16 +313,18 @@ describe('Markdown Part Storage Integration Tests', () => {
           status: PdfProcessingStatus.FAILED,
           retryCount: 1,
           maxRetries,
-        })
+        }),
       );
 
       // Verify retry request was published
-      expect(mockRabbitMQService.publishMarkdownPartStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           partIndex: failingPartIndex,
           retryCount: 1,
-        })
+        }),
       );
 
       // Simulate retry attempts
@@ -299,26 +336,33 @@ describe('Markdown Part Storage Integration Tests', () => {
           retryCount: retry,
         };
 
-        await (storageWorker as any).handleMarkdownPartStorageRequest(retryRequestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          retryRequestMessage,
+          null,
+        );
 
         if (retry < maxRetries) {
           // Should retry again
-          expect(mockRabbitMQService.publishMarkdownPartStorageRequest).toHaveBeenCalledWith(
+          expect(
+            mockRabbitMQService.publishMarkdownPartStorageRequest,
+          ).toHaveBeenCalledWith(
             expect.objectContaining({
               itemId: testItemId,
               partIndex: failingPartIndex,
               retryCount: retry + 1,
-            })
+            }),
           );
         } else {
           // Final failure - should not retry anymore
-          expect(mockRabbitMQService.publishMarkdownPartStorageFailed).toHaveBeenCalledWith(
+          expect(
+            mockRabbitMQService.publishMarkdownPartStorageFailed,
+          ).toHaveBeenCalledWith(
             expect.objectContaining({
               itemId: testItemId,
               partIndex: failingPartIndex,
               retryCount: maxRetries,
               canRetry: false,
-            })
+            }),
           );
         }
       }
@@ -342,16 +386,23 @@ describe('Markdown Part Storage Integration Tests', () => {
         maxRetries,
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(failingRequestMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        failingRequestMessage,
+        null,
+      );
 
       // Verify failure and retry request
-      expect(mockRabbitMQService.publishMarkdownPartStorageFailed).toHaveBeenCalled();
-      expect(mockRabbitMQService.publishMarkdownPartStorageRequest).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageFailed,
+      ).toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageRequest,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           partIndex: failingPartIndex,
           retryCount: 1,
-        })
+        }),
       );
 
       // Second attempt - succeed with valid content
@@ -363,19 +414,27 @@ describe('Markdown Part Storage Integration Tests', () => {
         markdownContent: testParts[failingPartIndex].content, // Valid content now
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(retryRequestMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        retryRequestMessage,
+        null,
+      );
 
       // Verify success
-      expect(mockRabbitMQService.publishMarkdownPartStorageCompleted).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageCompleted,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           partIndex: failingPartIndex,
           status: PdfProcessingStatus.COMPLETED,
-        })
+        }),
       );
 
       // Verify part was stored
-      const storedContent = await markdownCache.getPartMarkdown(testItemId, failingPartIndex);
+      const storedContent = await markdownCache.getPartMarkdown(
+        testItemId,
+        failingPartIndex,
+      );
       expect(storedContent).toBe(testParts[failingPartIndex].content);
     });
   });
@@ -395,11 +454,16 @@ describe('Markdown Part Storage Integration Tests', () => {
           priority: 'normal',
         };
 
-        await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       }
 
       // Merging should not be triggered yet
-      expect(mockRabbitMQService.publishPdfMergingRequest).not.toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishPdfMergingRequest,
+      ).not.toHaveBeenCalled();
 
       // Process the last part
       const lastPartMessage: MarkdownPartStorageRequestMessage = {
@@ -413,7 +477,10 @@ describe('Markdown Part Storage Integration Tests', () => {
         priority: 'normal',
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(lastPartMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        lastPartMessage,
+        null,
+      );
 
       // Now merging should be triggered
       expect(mockRabbitMQService.publishPdfMergingRequest).toHaveBeenCalledWith(
@@ -421,7 +488,7 @@ describe('Markdown Part Storage Integration Tests', () => {
           itemId: testItemId,
           totalParts: testParts.length,
           completedParts: [0, 1, 2, 3],
-        })
+        }),
       );
     });
 
@@ -439,7 +506,10 @@ describe('Markdown Part Storage Integration Tests', () => {
           priority: 'normal',
         };
 
-        await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        await (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       }
 
       // Process last part with empty content (should fail)
@@ -455,13 +525,21 @@ describe('Markdown Part Storage Integration Tests', () => {
         maxRetries: 1, // Only try once to fail quickly
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(failingPartMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        failingPartMessage,
+        null,
+      );
 
       // Merging should not be triggered
-      expect(mockRabbitMQService.publishPdfMergingRequest).not.toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishPdfMergingRequest,
+      ).not.toHaveBeenCalled();
 
       // Verify part status is failed
-      const partStatus = await markdownCache.getPartStatus(testItemId, testParts[3].partIndex);
+      const partStatus = await markdownCache.getPartStatus(
+        testItemId,
+        testParts[3].partIndex,
+      );
       expect(partStatus).toBe('failed');
     });
   });
@@ -481,7 +559,10 @@ describe('Markdown Part Storage Integration Tests', () => {
           priority: 'normal',
         };
 
-        return (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        return (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       });
 
       // Wait for all parts to complete
@@ -497,7 +578,7 @@ describe('Markdown Part Storage Integration Tests', () => {
           itemId: testItemId,
           totalParts: testParts.length,
           completedParts: [0, 1, 2, 3],
-        })
+        }),
       );
 
       // Verify merged content is correct
@@ -523,21 +604,28 @@ describe('Markdown Part Storage Integration Tests', () => {
           maxRetries: 3, // Allow more retries
         };
 
-        return (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+        return (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        );
       });
 
       // Wait for all parts to complete or fail
       await Promise.allSettled(processingPromises);
-      
+
       // Add a longer delay to ensure all async operations have completed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Verify parts were stored successfully (excluding failed parts)
       const allParts = await markdownCache.getAllParts(testItemId);
-      const successfulParts = allParts.filter(part => part.status !== 'failed');
-      console.log(allParts)
+      const successfulParts = allParts.filter(
+        (part) => part.status !== 'failed',
+      );
+      console.log(allParts);
       // Check that at least parts 0, 1, and 3 are successful (part 2 should fail)
-      const successfulPartIndices = successfulParts.map(part => part.partIndex);
+      const successfulPartIndices = successfulParts.map(
+        (part) => part.partIndex,
+      );
       expect(successfulPartIndices).toContain(0);
       expect(successfulPartIndices).toContain(1);
       expect(successfulPartIndices).toContain(3);
@@ -548,7 +636,9 @@ describe('Markdown Part Storage Integration Tests', () => {
       expect(part2Status).toBe('failed');
 
       // Merging should not be triggered
-      expect(mockRabbitMQService.publishPdfMergingRequest).not.toHaveBeenCalled();
+      expect(
+        mockRabbitMQService.publishPdfMergingRequest,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -556,7 +646,9 @@ describe('Markdown Part Storage Integration Tests', () => {
     it('should handle cache errors gracefully', async () => {
       // Mock cache to throw error
       const originalStorePart = markdownCache.storePartMarkdown;
-      markdownCache.storePartMarkdown = vi.fn().mockRejectedValue(new Error('Cache error'));
+      markdownCache.storePartMarkdown = vi
+        .fn()
+        .mockRejectedValue(new Error('Cache error'));
 
       const requestMessage: MarkdownPartStorageRequestMessage = {
         messageId: uuidv4(),
@@ -569,16 +661,21 @@ describe('Markdown Part Storage Integration Tests', () => {
         priority: 'normal',
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        requestMessage,
+        null,
+      );
 
       // Verify failure message was published
-      expect(mockRabbitMQService.publishMarkdownPartStorageFailed).toHaveBeenCalledWith(
+      expect(
+        mockRabbitMQService.publishMarkdownPartStorageFailed,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           itemId: testItemId,
           partIndex: 0,
           status: PdfProcessingStatus.FAILED,
           error: expect.stringContaining('Cache error'),
-        })
+        }),
       );
 
       // Restore original method
@@ -588,7 +685,9 @@ describe('Markdown Part Storage Integration Tests', () => {
     it('should handle tracker errors gracefully', async () => {
       // Mock tracker to throw error
       const originalUpdateStatus = partTracker.updatePartStatus;
-      partTracker.updatePartStatus = vi.fn().mockRejectedValue(new Error('Tracker error'));
+      partTracker.updatePartStatus = vi
+        .fn()
+        .mockRejectedValue(new Error('Tracker error'));
 
       const requestMessage: MarkdownPartStorageRequestMessage = {
         messageId: uuidv4(),
@@ -601,7 +700,10 @@ describe('Markdown Part Storage Integration Tests', () => {
         priority: 'normal',
       };
 
-      await (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null);
+      await (storageWorker as any).handleMarkdownPartStorageRequest(
+        requestMessage,
+        null,
+      );
 
       // Verify part was still stored in cache
       const storedContent = await markdownCache.getPartMarkdown(testItemId, 0);
@@ -614,7 +716,7 @@ describe('Markdown Part Storage Integration Tests', () => {
     it('should handle RabbitMQ publish errors gracefully', async () => {
       // Mock RabbitMQ to throw error
       mockRabbitMQService.publishMarkdownPartStorageProgress.mockRejectedValueOnce(
-        new Error('RabbitMQ error')
+        new Error('RabbitMQ error'),
       );
 
       const requestMessage: MarkdownPartStorageRequestMessage = {
@@ -630,7 +732,10 @@ describe('Markdown Part Storage Integration Tests', () => {
 
       // Should not throw error
       await expect(
-        (storageWorker as any).handleMarkdownPartStorageRequest(requestMessage, null)
+        (storageWorker as any).handleMarkdownPartStorageRequest(
+          requestMessage,
+          null,
+        ),
       ).resolves.not.toThrow();
 
       // Verify part was still stored
@@ -643,8 +748,16 @@ describe('Markdown Part Storage Integration Tests', () => {
     it('should merge parts when requested', async () => {
       // First, store all parts
       for (const part of testParts) {
-        await markdownCache.storePartMarkdown(testItemId, part.partIndex, part.content);
-        await markdownCache.updatePartStatus(testItemId, part.partIndex, 'completed');
+        await markdownCache.storePartMarkdown(
+          testItemId,
+          part.partIndex,
+          part.content,
+        );
+        await markdownCache.updatePartStatus(
+          testItemId,
+          part.partIndex,
+          'completed',
+        );
       }
 
       // Mock storage methods
@@ -667,12 +780,15 @@ describe('Markdown Part Storage Integration Tests', () => {
       };
 
       // Handle merging request
-      await (mergerService as any).handlePdfMergingRequest(mergingRequest, null);
+      await (mergerService as any).handlePdfMergingRequest(
+        mergingRequest,
+        null,
+      );
 
       // Verify markdown was saved to storage
       expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
         testItemId,
-        expect.stringContaining('# Introduction')
+        expect.stringContaining('# Introduction'),
       );
 
       // Verify status was updated
@@ -680,7 +796,7 @@ describe('Markdown Part Storage Integration Tests', () => {
         expect.objectContaining({
           pdfProcessingStatus: PdfProcessingStatus.COMPLETED,
           pdfProcessingProgress: 100,
-        })
+        }),
       );
     });
 
@@ -693,7 +809,7 @@ describe('Markdown Part Storage Integration Tests', () => {
       });
 
       (mockStorage.getMarkdown as any).mockResolvedValue(
-        '--- PART 0 ---\n# Introduction\n\nThis is the introduction.\n\n--- PART 1 ---\n# Chapter 1\n\nThis is chapter 1.'
+        '--- PART 0 ---\n# Introduction\n\nThis is the introduction.\n\n--- PART 1 ---\n# Chapter 1\n\nThis is chapter 1.',
       );
 
       (mockStorage.saveMarkdown as any).mockResolvedValue(undefined);
@@ -709,12 +825,15 @@ describe('Markdown Part Storage Integration Tests', () => {
       };
 
       // Handle merging request
-      await (mergerService as any).handlePdfMergingRequest(mergingRequest, null);
+      await (mergerService as any).handlePdfMergingRequest(
+        mergingRequest,
+        null,
+      );
 
       // Verify markdown was saved to storage
       expect(mockStorage.saveMarkdown).toHaveBeenCalledWith(
         testItemId,
-        expect.stringContaining('# Merged PDF Document')
+        expect.stringContaining('# Merged PDF Document'),
       );
 
       // Verify status was updated
@@ -722,7 +841,7 @@ describe('Markdown Part Storage Integration Tests', () => {
         expect.objectContaining({
           pdfProcessingStatus: PdfProcessingStatus.COMPLETED,
           pdfProcessingProgress: 100,
-        })
+        }),
       );
     });
   });

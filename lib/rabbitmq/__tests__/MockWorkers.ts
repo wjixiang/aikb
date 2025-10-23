@@ -19,9 +19,9 @@ export class MockPdfAnalysisWorker {
     console.log('[MockPdfAnalysisWorker] Starting...');
     this.isRunningValue = true;
     this.consumerTag = 'mock-pdf-analysis-worker-' + Date.now();
-    
+
     // Simulate worker startup delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     console.log('[MockPdfAnalysisWorker] Started successfully');
   }
 
@@ -48,17 +48,27 @@ export class MockPdfAnalysisWorker {
    * Simulate PDF analysis process
    */
   async simulatePdfAnalysis(itemId: string): Promise<void> {
-    console.log(`[MockPdfAnalysisWorker] Simulating PDF analysis for item: ${itemId}`);
-    
+    console.log(
+      `[MockPdfAnalysisWorker] Simulating PDF analysis for item: ${itemId}`,
+    );
+
     // Update status to processing
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'Analyzing PDF structure...');
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'Analyzing PDF structure...',
+    );
+
     // Simulate analysis delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     // Update status to completed
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'PDF analysis completed');
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'PDF analysis completed',
+    );
+
     // Publish analysis completed message
     const mockRabbitMQService = getMockRabbitMQService();
     await mockRabbitMQService.publishPdfAnalysisCompleted({
@@ -94,7 +104,10 @@ export class MockPdfAnalysisWorker {
         });
       }
     } catch (error) {
-      console.error(`[MockPdfAnalysisWorker] Failed to update status for item ${itemId}:`, error);
+      console.error(
+        `[MockPdfAnalysisWorker] Failed to update status for item ${itemId}:`,
+        error,
+      );
     }
   }
 }
@@ -115,9 +128,9 @@ export class MockPdfProcessingCoordinatorWorker {
     console.log('[MockPdfProcessingCoordinatorWorker] Starting...');
     this.isRunningValue = true;
     this.analysisConsumerTag = 'mock-pdf-coordinator-worker-' + Date.now();
-    
+
     // Simulate worker startup delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     console.log('[MockPdfProcessingCoordinatorWorker] Started successfully');
   }
 
@@ -144,11 +157,17 @@ export class MockPdfProcessingCoordinatorWorker {
    * Simulate handling analysis completed event
    */
   async simulateAnalysisCompleted(itemId: string): Promise<void> {
-    console.log(`[MockPdfProcessingCoordinatorWorker] Simulating analysis completed for item: ${itemId}`);
-    
+    console.log(
+      `[MockPdfProcessingCoordinatorWorker] Simulating analysis completed for item: ${itemId}`,
+    );
+
     // Update status to processing
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'Starting PDF conversion...');
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'Starting PDF conversion...',
+    );
+
     // Publish conversion request
     const mockRabbitMQService = getMockRabbitMQService();
     await mockRabbitMQService.publishPdfConversionRequest({
@@ -192,7 +211,10 @@ export class MockPdfProcessingCoordinatorWorker {
         });
       }
     } catch (error) {
-      console.error(`[MockPdfProcessingCoordinatorWorker] Failed to update status for item ${itemId}:`, error);
+      console.error(
+        `[MockPdfProcessingCoordinatorWorker] Failed to update status for item ${itemId}:`,
+        error,
+      );
     }
   }
 }
@@ -210,9 +232,9 @@ export class MockPdfConversionWorker {
     this.isRunningValue = true;
     this.consumerTag = 'mock-pdf-conversion-worker-' + Date.now();
     this.partConsumerTag = 'mock-pdf-part-conversion-worker-' + Date.now();
-    
+
     // Simulate worker startup delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     console.log('[MockPdfConversionWorker] Started successfully');
   }
 
@@ -241,20 +263,32 @@ export class MockPdfConversionWorker {
    * Simulate PDF conversion process
    */
   async simulatePdfConversion(itemId: string): Promise<void> {
-    console.log(`[MockPdfConversionWorker] Simulating PDF conversion for item: ${itemId}`);
-    
+    console.log(
+      `[MockPdfConversionWorker] Simulating PDF conversion for item: ${itemId}`,
+    );
+
     // Update status to processing
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'Converting PDF to markdown...', 30);
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'Converting PDF to markdown...',
+      30,
+    );
+
     // Simulate conversion delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // Update status to almost complete
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'Finalizing conversion...', 80);
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'Finalizing conversion...',
+      80,
+    );
+
     // Generate mock markdown content
     const mockMarkdownContent = this.generateMockMarkdownContent(itemId);
-    
+
     // Send markdown storage request
     const mockRabbitMQService = getMockRabbitMQService();
     await mockRabbitMQService.publishMarkdownStorageRequest({
@@ -267,7 +301,7 @@ export class MockPdfConversionWorker {
       retryCount: 0,
       maxRetries: 3,
     });
-    
+
     // Publish conversion completion message
     await mockRabbitMQService.publishPdfConversionCompleted({
       messageId: 'mock-conversion-completed-' + Date.now(),
@@ -318,7 +352,10 @@ This test document demonstrates the PDF to markdown conversion capability of the
         message,
       });
     } catch (error) {
-      console.error(`[MockPdfConversionWorker] Failed to publish progress for item ${itemId}:`, error);
+      console.error(
+        `[MockPdfConversionWorker] Failed to publish progress for item ${itemId}:`,
+        error,
+      );
     }
   }
 }
@@ -339,9 +376,9 @@ export class MockMarkdownStorageWorker {
     console.log('[MockMarkdownStorageWorker] Starting...');
     this.isRunningValue = true;
     this.consumerTag = 'mock-markdown-storage-worker-' + Date.now();
-    
+
     // Simulate worker startup delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     console.log('[MockMarkdownStorageWorker] Started successfully');
   }
 
@@ -367,18 +404,32 @@ export class MockMarkdownStorageWorker {
   /**
    * Simulate markdown storage process
    */
-  async simulateMarkdownStorage(itemId: string, markdownContent: string): Promise<void> {
-    console.log(`[MockMarkdownStorageWorker] Simulating markdown storage for item: ${itemId}`);
-    
+  async simulateMarkdownStorage(
+    itemId: string,
+    markdownContent: string,
+  ): Promise<void> {
+    console.log(
+      `[MockMarkdownStorageWorker] Simulating markdown storage for item: ${itemId}`,
+    );
+
     // Update status to processing
-    await this.updateItemStatus(itemId, PdfProcessingStatus.PROCESSING, 'Storing markdown content...');
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.PROCESSING,
+      'Storing markdown content...',
+    );
+
     // Save markdown content
     await this.storage.saveMarkdown(itemId, markdownContent);
-    
+
     // Update status to completed
-    await this.updateItemStatus(itemId, PdfProcessingStatus.COMPLETED, 'PDF processing completed successfully', 100);
-    
+    await this.updateItemStatus(
+      itemId,
+      PdfProcessingStatus.COMPLETED,
+      'PDF processing completed successfully',
+      100,
+    );
+
     // Publish completion message
     const mockRabbitMQService = getMockRabbitMQService();
     await mockRabbitMQService.publishMarkdownStorageCompleted({
@@ -405,25 +456,33 @@ export class MockMarkdownStorageWorker {
           pdfProcessingStatus: status,
           pdfProcessingMessage: message,
           pdfProcessingProgress: progress,
-          pdfProcessingCompletedAt: status === PdfProcessingStatus.COMPLETED ? new Date() : undefined,
+          pdfProcessingCompletedAt:
+            status === PdfProcessingStatus.COMPLETED ? new Date() : undefined,
           dateModified: new Date(),
         });
       }
     } catch (error) {
-      console.error(`[MockMarkdownStorageWorker] Failed to update status for item ${itemId}:`, error);
+      console.error(
+        `[MockMarkdownStorageWorker] Failed to update status for item ${itemId}:`,
+        error,
+      );
     }
   }
 }
 
 // Mock worker creation functions
 
-export async function createPdfAnalysisWorker(storage: AbstractLibraryStorage): Promise<MockPdfAnalysisWorker> {
+export async function createPdfAnalysisWorker(
+  storage: AbstractLibraryStorage,
+): Promise<MockPdfAnalysisWorker> {
   const worker = new MockPdfAnalysisWorker(storage);
   await worker.start();
   return worker;
 }
 
-export async function createPdfProcessingCoordinatorWorker(storage: AbstractLibraryStorage): Promise<MockPdfProcessingCoordinatorWorker> {
+export async function createPdfProcessingCoordinatorWorker(
+  storage: AbstractLibraryStorage,
+): Promise<MockPdfProcessingCoordinatorWorker> {
   const worker = new MockPdfProcessingCoordinatorWorker(storage);
   await worker.start();
   return worker;
@@ -435,7 +494,9 @@ export async function createPdfConversionWorker(): Promise<MockPdfConversionWork
   return worker;
 }
 
-export async function startMarkdownStorageWorker(storage: AbstractLibraryStorage): Promise<MockMarkdownStorageWorker> {
+export async function startMarkdownStorageWorker(
+  storage: AbstractLibraryStorage,
+): Promise<MockMarkdownStorageWorker> {
   const worker = new MockMarkdownStorageWorker(storage);
   await worker.start();
   return worker;
@@ -444,35 +505,40 @@ export async function startMarkdownStorageWorker(storage: AbstractLibraryStorage
 /**
  * Simulate the complete PDF processing workflow for testing
  */
-export async function simulateCompletePdfProcessingWorkflow(itemId: string, storage: AbstractLibraryStorage): Promise<void> {
-  console.log(`[MockWorkflow] Starting complete PDF processing workflow for item: ${itemId}`);
-  
+export async function simulateCompletePdfProcessingWorkflow(
+  itemId: string,
+  storage: AbstractLibraryStorage,
+): Promise<void> {
+  console.log(
+    `[MockWorkflow] Starting complete PDF processing workflow for item: ${itemId}`,
+  );
+
   const mockRabbitMQService = getMockRabbitMQService();
-  
+
   // Step 1: PDF Analysis
   const analysisWorker = new MockPdfAnalysisWorker(storage);
   await analysisWorker.start();
   await analysisWorker.simulatePdfAnalysis(itemId);
-  
+
   // Wait a bit for analysis to complete
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Step 2: PDF Processing Coordinator
   const coordinatorWorker = new MockPdfProcessingCoordinatorWorker(storage);
   await coordinatorWorker.start();
   await coordinatorWorker.simulateAnalysisCompleted(itemId);
-  
+
   // Wait a bit for coordination to complete
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Step 3: PDF Conversion
   const conversionWorker = new MockPdfConversionWorker();
   await conversionWorker.start();
   await conversionWorker.simulatePdfConversion(itemId);
-  
+
   // Wait a bit for conversion to complete
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Step 4: Markdown Storage
   const markdownContent = `# Test Document: ${itemId}
 
@@ -501,10 +567,12 @@ Treatment for viral pneumonia depends on the specific virus causing the infectio
 This test document demonstrates the complete PDF processing workflow from analysis to storage.
 
 *Generated by MockPdfConversionWorker for testing purposes*`;
-  
+
   const storageWorker = new MockMarkdownStorageWorker(storage);
   await storageWorker.start();
   await storageWorker.simulateMarkdownStorage(itemId, markdownContent);
-  
-  console.log(`[MockWorkflow] Complete PDF processing workflow finished for item: ${itemId}`);
+
+  console.log(
+    `[MockWorkflow] Complete PDF processing workflow finished for item: ${itemId}`,
+  );
 }

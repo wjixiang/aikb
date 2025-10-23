@@ -36,8 +36,11 @@ export class PdfProcessingCoordinatorWorker {
   private consumerTags: Map<string, string> = new Map();
   private isRunning = false;
 
-  constructor(private storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
-    this.rabbitMQService = getRabbitMQService(protocol)
+  constructor(
+    private storage: AbstractLibraryStorage,
+    protocol?: MessageProtocol,
+  ) {
+    this.rabbitMQService = getRabbitMQService(protocol);
   }
 
   /**
@@ -62,58 +65,74 @@ export class PdfProcessingCoordinatorWorker {
         {
           queue: RABBITMQ_QUEUES.PDF_ANALYSIS_COMPLETED,
           handler: this.handleAnalysisCompleted.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator',
         },
         {
           queue: RABBITMQ_QUEUES.PDF_ANALYSIS_FAILED,
           handler: this.handleAnalysisFailed.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator-failed'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER + '-coordinator-failed',
         },
         {
           queue: RABBITMQ_QUEUES.PDF_CONVERSION_COMPLETED,
           handler: this.handleConversionCompleted.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER + '-coordinator'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER + '-coordinator',
         },
         {
           queue: RABBITMQ_QUEUES.PDF_CONVERSION_FAILED,
           handler: this.handleConversionFailed.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER + '-coordinator-failed'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER +
+            '-coordinator-failed',
         },
         {
           queue: RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS,
           handler: this.handleConversionProgress.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER + '-coordinator-progress'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.PDF_CONVERSION_WORKER +
+            '-coordinator-progress',
         },
         {
           queue: RABBITMQ_QUEUES.MARKDOWN_STORAGE_COMPLETED,
           handler: this.handleMarkdownStorageCompleted.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER + '-coordinator'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER + '-coordinator',
         },
         {
           queue: RABBITMQ_QUEUES.MARKDOWN_STORAGE_FAILED,
           handler: this.handleMarkdownStorageFailed.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER + '-coordinator-failed'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.MARKDOWN_STORAGE_WORKER +
+            '-coordinator-failed',
         },
         {
           queue: RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_COMPLETED,
           handler: this.handleMarkdownPartStorageCompleted.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER + '-coordinator'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER +
+            '-coordinator',
         },
         {
           queue: RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_FAILED,
           handler: this.handleMarkdownPartStorageFailed.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER + '-coordinator-failed'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER +
+            '-coordinator-failed',
         },
         {
           queue: RABBITMQ_QUEUES.MARKDOWN_PART_STORAGE_PROGRESS,
           handler: this.handleMarkdownPartStorageProgress.bind(this),
-          consumerTag: RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER + '-coordinator-progress'
+          consumerTag:
+            RABBITMQ_CONSUMER_TAGS.MARKDOWN_PART_STORAGE_WORKER +
+            '-coordinator-progress',
         },
         {
           queue: RABBITMQ_QUEUES.DEAD_LETTER_QUEUE,
           handler: this.handleDeadLetterMessage.bind(this),
-          consumerTag: 'dlq-handler-coordinator'
-        }
+          consumerTag: 'dlq-handler-coordinator',
+        },
       ];
 
       for (const { queue, handler, consumerTag } of queuesToConsume) {
@@ -161,7 +180,10 @@ export class PdfProcessingCoordinatorWorker {
             await this.rabbitMQService.stopConsuming(consumerTag);
             logger.info(`Stopped consuming from queue: ${queue}`);
           } catch (error) {
-            logger.error(`Failed to stop consuming from queue ${queue}:`, error);
+            logger.error(
+              `Failed to stop consuming from queue ${queue}:`,
+              error,
+            );
           }
         }
       }
@@ -308,9 +330,7 @@ export class PdfProcessingCoordinatorWorker {
     message: PdfConversionCompletedMessage,
     originalMessage: any,
   ): Promise<void> {
-    logger.info(
-      `Processing conversion completed for item: ${message.itemId}`,
-    );
+    logger.info(`Processing conversion completed for item: ${message.itemId}`);
 
     try {
       // Update item status to completed
@@ -323,7 +343,9 @@ export class PdfProcessingCoordinatorWorker {
         message.processingTime,
       );
 
-      logger.info(`Conversion completion processed for item: ${message.itemId}`);
+      logger.info(
+        `Conversion completion processed for item: ${message.itemId}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle conversion completed for item ${message.itemId}:`,
@@ -417,7 +439,9 @@ export class PdfProcessingCoordinatorWorker {
         message.processingTime,
       );
 
-      logger.info(`Markdown storage completion processed for item: ${message.itemId}`);
+      logger.info(
+        `Markdown storage completion processed for item: ${message.itemId}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle markdown storage completed for item ${message.itemId}:`,
@@ -448,7 +472,9 @@ export class PdfProcessingCoordinatorWorker {
         message.error,
       );
 
-      logger.info(`Markdown storage failure processed for item: ${message.itemId}`);
+      logger.info(
+        `Markdown storage failure processed for item: ${message.itemId}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle markdown storage failed for item ${message.itemId}:`,
@@ -478,7 +504,9 @@ export class PdfProcessingCoordinatorWorker {
         `Part ${message.partIndex + 1} storage completed successfully`,
       );
 
-      logger.info(`Markdown part storage completion processed for item: ${message.itemId}, part: ${message.partIndex + 1}`);
+      logger.info(
+        `Markdown part storage completion processed for item: ${message.itemId}, part: ${message.partIndex + 1}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle markdown part storage completed for item ${message.itemId}, part ${message.partIndex}:`,
@@ -509,7 +537,9 @@ export class PdfProcessingCoordinatorWorker {
         message.error,
       );
 
-      logger.info(`Markdown part storage failure processed for item: ${message.itemId}, part: ${message.partIndex + 1}`);
+      logger.info(
+        `Markdown part storage failure processed for item: ${message.itemId}, part: ${message.partIndex + 1}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle markdown part storage failed for item ${message.itemId}, part ${message.partIndex}:`,
@@ -540,7 +570,9 @@ export class PdfProcessingCoordinatorWorker {
         message.error,
       );
 
-      logger.debug(`Markdown part storage progress processed for item: ${message.itemId}, part: ${message.partIndex + 1}`);
+      logger.debug(
+        `Markdown part storage progress processed for item: ${message.itemId}, part: ${message.partIndex + 1}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to handle markdown part storage progress for item ${message.itemId}, part ${message.partIndex}:`,
@@ -559,17 +591,19 @@ export class PdfProcessingCoordinatorWorker {
   ): Promise<void> {
     logger.warn(
       `Processing dead letter message for item: ${message.originalMessage?.itemId || 'unknown'}, ` +
-      `original queue: ${message.originalQueue}, ` +
-      `failure reason: ${message.failureReason}, ` +
-      `retry count: ${message.retryCount}`
+        `original queue: ${message.originalQueue}, ` +
+        `failure reason: ${message.failureReason}, ` +
+        `retry count: ${message.retryCount}`,
     );
 
     try {
       // Analyze the failure and decide on action
       const action = await this.analyzeDeadLetterMessage(message);
-      
+
       // Log the action taken
-      logger.info(`DLQ action for message ${message.messageId}: ${action.action} - ${action.reason}`);
+      logger.info(
+        `DLQ action for message ${message.messageId}: ${action.action} - ${action.reason}`,
+      );
 
       // Send processed message notification
       await this.sendDeadLetterProcessedNotification(message, action);
@@ -581,10 +615,9 @@ export class PdfProcessingCoordinatorWorker {
           PdfProcessingStatus.FAILED,
           `Message failed and moved to DLQ: ${message.failureReason}`,
           undefined,
-          `${message.failureReason} (Retry count: ${message.retryCount})`
+          `${message.failureReason} (Retry count: ${message.retryCount})`,
         );
       }
-
     } catch (error) {
       logger.error(
         `Failed to handle dead letter message ${message.messageId}:`,
@@ -598,9 +631,13 @@ export class PdfProcessingCoordinatorWorker {
    * Analyze dead letter message and determine action
    */
   private async analyzeDeadLetterMessage(
-    message: DeadLetterQueueMessage
-  ): Promise<{ action: 'requeued' | 'discarded' | 'moved_to_error_storage', reason: string }> {
-    const { retryCount, failureReason, originalQueue, originalMessage } = message;
+    message: DeadLetterQueueMessage,
+  ): Promise<{
+    action: 'requeued' | 'discarded' | 'moved_to_error_storage';
+    reason: string;
+  }> {
+    const { retryCount, failureReason, originalQueue, originalMessage } =
+      message;
 
     // Check if it's a retryable error
     const isRetryableError = this.isRetryableError(failureReason);
@@ -613,10 +650,13 @@ export class PdfProcessingCoordinatorWorker {
         await this.requeueOriginalMessage(originalMessage, originalQueue);
         return {
           action: 'requeued',
-          reason: `Retryable error (${retryCount + 1}/${maxRetries})`
+          reason: `Retryable error (${retryCount + 1}/${maxRetries})`,
         };
       } catch (requeueError) {
-        logger.error(`Failed to requeue message ${message.messageId}:`, requeueError);
+        logger.error(
+          `Failed to requeue message ${message.messageId}:`,
+          requeueError,
+        );
       }
     }
 
@@ -626,17 +666,22 @@ export class PdfProcessingCoordinatorWorker {
         await this.moveToErrorStorage(message);
         return {
           action: 'moved_to_error_storage',
-          reason: !isRetryableError ? 'Non-retryable error' : `Max retries exceeded (${maxRetries})`
+          reason: !isRetryableError
+            ? 'Non-retryable error'
+            : `Max retries exceeded (${maxRetries})`,
         };
       } catch (storageError) {
-        logger.error(`Failed to move message ${message.messageId} to error storage:`, storageError);
+        logger.error(
+          `Failed to move message ${message.messageId} to error storage:`,
+          storageError,
+        );
       }
     }
 
     // Default action: discard
     return {
       action: 'discarded',
-      reason: 'Failed to requeue or move to error storage'
+      reason: 'Failed to requeue or move to error storage',
     };
   }
 
@@ -651,7 +696,7 @@ export class PdfProcessingCoordinatorWorker {
       /temporary/i,
       /resource.*busy/i,
       /rate.*limit/i,
-      /service.*unavailable/i
+      /service.*unavailable/i,
     ];
 
     const nonRetryablePatterns = [
@@ -660,7 +705,7 @@ export class PdfProcessingCoordinatorWorker {
       /invalid.*format/i,
       /corrupted/i,
       /not.*found/i,
-      /permission/i
+      /permission/i,
     ];
 
     // Check for non-retryable patterns first
@@ -690,7 +735,7 @@ export class PdfProcessingCoordinatorWorker {
       'pdf-analysis-request': 3,
       'markdown-storage-request': 2,
       'markdown-part-storage-request': 2,
-      'chunking-embedding-request': 3
+      'chunking-embedding-request': 3,
     };
 
     return retryLimits[queue] || 3; // Default to 3 retries
@@ -699,7 +744,10 @@ export class PdfProcessingCoordinatorWorker {
   /**
    * Requeue original message
    */
-  private async requeueOriginalMessage(originalMessage: any, originalQueue: string): Promise<void> {
+  private async requeueOriginalMessage(
+    originalMessage: any,
+    originalQueue: string,
+  ): Promise<void> {
     if (!originalMessage) {
       throw new Error('Original message is null or undefined');
     }
@@ -708,17 +756,21 @@ export class PdfProcessingCoordinatorWorker {
     const updatedMessage = {
       ...originalMessage,
       retryCount: (originalMessage.retryCount || 0) + 1,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     await this.rabbitMQService.publishMessage(originalQueue, updatedMessage);
-    logger.info(`Requeued message to ${originalQueue}, retry count: ${updatedMessage.retryCount}`);
+    logger.info(
+      `Requeued message to ${originalQueue}, retry count: ${updatedMessage.retryCount}`,
+    );
   }
 
   /**
    * Move message to error storage
    */
-  private async moveToErrorStorage(message: DeadLetterQueueMessage): Promise<void> {
+  private async moveToErrorStorage(
+    message: DeadLetterQueueMessage,
+  ): Promise<void> {
     // Store the failed message in error storage for manual review
     const errorRecord = {
       id: `error-${message.messageId}`,
@@ -731,13 +783,13 @@ export class PdfProcessingCoordinatorWorker {
       retryCount: message.retryCount,
       errorDetails: message.errorDetails,
       createdAt: new Date(),
-      status: 'pending_review'
+      status: 'pending_review',
     };
 
     // Store in a special error collection (implementation depends on storage backend)
     // For now, log the error record as storage doesn't have this method
     logger.error('Error record stored:', JSON.stringify(errorRecord, null, 2));
-    
+
     // TODO: Implement proper error storage when AbstractLibraryStorage is extended
     // if (this.storage.storeErrorRecord) {
     //   await this.storage.storeErrorRecord(errorRecord);
@@ -751,7 +803,10 @@ export class PdfProcessingCoordinatorWorker {
    */
   private async sendDeadLetterProcessedNotification(
     originalMessage: DeadLetterQueueMessage,
-    action: { action: 'requeued' | 'discarded' | 'moved_to_error_storage', reason: string }
+    action: {
+      action: 'requeued' | 'discarded' | 'moved_to_error_storage';
+      reason: string;
+    },
   ): Promise<void> {
     const notification: DeadLetterProcessedMessage = {
       messageId: uuidv4(),
@@ -760,12 +815,15 @@ export class PdfProcessingCoordinatorWorker {
       originalMessageId: originalMessage.messageId,
       action: action.action,
       reason: action.reason,
-      processedAt: Date.now()
+      processedAt: Date.now(),
     };
 
     // Send to a monitoring/notifications queue if available
     try {
-      await this.rabbitMQService.publishMessage('dlq-processed-notifications', notification);
+      await this.rabbitMQService.publishMessage(
+        'dlq-processed-notifications',
+        notification,
+      );
     } catch (error) {
       // Don't fail if notification queue doesn't exist
       logger.debug('Could not send DLQ processed notification:', error);
@@ -833,12 +891,17 @@ export class PdfProcessingCoordinatorWorker {
     try {
       // For now, we'll just log the part status update
       // In a full implementation, this would update part-specific tracking
-      logger.info(`Part status updated for item ${itemId}, part ${partIndex + 1}: ${status} - ${message || ''}`);
-      
+      logger.info(
+        `Part status updated for item ${itemId}, part ${partIndex + 1}: ${status} - ${message || ''}`,
+      );
+
       // If needed, we could update the main item status based on part status
       // This would require more complex logic to track all parts
     } catch (updateError) {
-      logger.error(`Failed to update part status for item ${itemId}, part ${partIndex}:`, updateError);
+      logger.error(
+        `Failed to update part status for item ${itemId}, part ${partIndex}:`,
+        updateError,
+      );
       // Don't throw here, as this is a secondary operation
     }
   }
@@ -853,7 +916,7 @@ export class PdfProcessingCoordinatorWorker {
       isRunning: this.isRunning,
       consumerTags: new Map(this.consumerTags),
       rabbitMQConnected: this.rabbitMQService.isConnected(),
-      protocol: this.rabbitMQService.protocol
+      protocol: this.rabbitMQService.protocol,
     };
   }
 }

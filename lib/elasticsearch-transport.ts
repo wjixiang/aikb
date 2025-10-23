@@ -177,24 +177,30 @@ export class ElasticsearchTransport extends Transport {
     if (obj === null || obj === undefined) {
       return;
     }
-    
+
     // Handle non-object types
     if (typeof obj !== 'object') {
       return;
     }
-    
+
     // Use Object.prototype.hasOwnProperty.call for safety
     // This works even if obj was created with Object.create(null)
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
-        
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+
+        if (
+          typeof obj[key] === 'object' &&
+          obj[key] !== null &&
+          !Array.isArray(obj[key])
+        ) {
           // Recursively flatten nested objects
           this.flattenObject(obj[key], result, newKey);
         } else {
           // Convert arrays and primitives to string for Elasticsearch
-          const value = Array.isArray(obj[key]) ? obj[key].join(', ') : obj[key];
+          const value = Array.isArray(obj[key])
+            ? obj[key].join(', ')
+            : obj[key];
           result[newKey] = value;
         }
       }

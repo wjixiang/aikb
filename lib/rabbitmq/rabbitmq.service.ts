@@ -21,7 +21,6 @@ import {
   MarkdownPartStorageProgressMessage,
   MarkdownPartStorageCompletedMessage,
   MarkdownPartStorageFailedMessage,
-  ChunkingEmbeddingRequestMessage,
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
@@ -31,6 +30,7 @@ import {
   RABBITMQ_ROUTING_KEYS,
   RABBITMQ_CONSUMER_TAGS,
   PdfProcessingStatus,
+  MultiVersionChunkingEmbeddingRequestMessage,
 } from './message.types';
 import {
   getValidatedRabbitMQConfig,
@@ -67,7 +67,10 @@ export class RabbitMQService implements IRabbitMQService {
   constructor(protocol?: MessageProtocol) {
     // Create the message service instance using the factory
     // console.log(process.env.RABBITMQ_PROTOCOL)
-    this.protocol = protocol ?? (process.env.RABBITMQ_PROTOCOL as MessageProtocol) ?? MessageProtocol.AMQP
+    this.protocol =
+      protocol ??
+      (process.env.RABBITMQ_PROTOCOL as MessageProtocol) ??
+      MessageProtocol.AMQP;
     this.messageService = createMessageService(this.protocol);
   }
 
@@ -79,35 +82,39 @@ export class RabbitMQService implements IRabbitMQService {
     if (this.isConnecting && this.initializationPromise) {
       return this.initializationPromise;
     }
-    
+
     if (this.isInitialized) {
       return;
     }
 
     this.isConnecting = true;
-    
+
     // 创建初始化Promise
     this.initializationPromise = new Promise((resolve) => {
       this.initializationResolver = resolve;
     });
 
     try {
-      logger.info('Initializing RabbitMQ service using message service interface...');
+      logger.info(
+        'Initializing RabbitMQ service using message service interface...',
+      );
       await this.messageService.initialize();
-      
+
       // 确保底层服务真正连接成功
       await this.waitForConnectionReady();
-      
+
       this.isInitialized = true;
       this.isConnecting = false;
-      
+
       // 解析等待的Promise
       if (this.initializationResolver) {
         this.initializationResolver();
         this.initializationResolver = null;
       }
-      
-      logger.info(`RabbitMQ service initialized successfully, protocol: ${this.protocol}`);
+
+      logger.info(
+        `RabbitMQ service initialized successfully, protocol: ${this.protocol}`,
+      );
     } catch (error) {
       this.isConnecting = false;
       this.initializationPromise = null;
@@ -125,28 +132,29 @@ export class RabbitMQService implements IRabbitMQService {
     const maxWaitTime = 10000; // 10秒超时
     const checkInterval = 100; // 100ms检查间隔
     let elapsed = 0;
-    
+
     logger.info('Waiting for RabbitMQ connection to be ready...');
-    
+
     while (!this.messageService.isConnected() && elapsed < maxWaitTime) {
-      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
       elapsed += checkInterval;
-      
+
       // 每秒记录一次进度
       if (elapsed % 1000 === 0 && elapsed > 0) {
         logger.debug(`Still waiting for connection... (${elapsed}ms elapsed)`);
       }
     }
-    
+
     if (!this.messageService.isConnected()) {
-      throw new Error(`RabbitMQ service initialization timeout - connection not ready after ${maxWaitTime}ms`);
+      throw new Error(
+        `RabbitMQ service initialization timeout - connection not ready after ${maxWaitTime}ms`,
+      );
     }
-    
+
     logger.info(`RabbitMQ connection is ready (took ${elapsed}ms)`);
   }
 
-
-/**
+  /**
    * Publish a message to RabbitMQ
    */
   async publishMessage(
@@ -529,7 +537,7 @@ export class RabbitMQService implements IRabbitMQService {
    * Publish chunking and embedding request
    */
   async publishChunkingEmbeddingRequest(
-    request: ChunkingEmbeddingRequestMessage,
+    request: MultiVersionChunkingEmbeddingRequestMessage,
   ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_REQUEST,
@@ -614,7 +622,7 @@ export class RabbitMQService implements IRabbitMQService {
       if (this.protocol === 'stomp') {
         // Map queue names to their corresponding routing keys
         let routingKey = queueName;
-        
+
         // Map queue names to their corresponding routing keys
         switch (queueName) {
           case 'pdf-conversion-request':
@@ -667,7 +675,7 @@ export class RabbitMQService implements IRabbitMQService {
             break;
           // Add more mappings as needed
         }
-        
+
         destination = getStompDestination(routingKey);
       }
 
@@ -677,7 +685,7 @@ export class RabbitMQService implements IRabbitMQService {
           logger.info(
             `DEBUG: Consumer callback triggered for queue: ${queueName}`,
           );
-          
+
           logger.info(`DEBUG: Received message from queue ${queueName}:`, {
             eventType: message.eventType,
             itemId: message.itemId,
@@ -725,9 +733,7 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Get queue information
    */
-  async getQueueInfo(
-    queueName: string,
-  ): Promise<any> {
+  async getQueueInfo(queueName: string): Promise<any> {
     if (!this.isInitialized) {
       throw new Error('RabbitMQ service not initialized');
     }
@@ -769,10 +775,11 @@ export class RabbitMQService implements IRabbitMQService {
     };
   }> {
     const healthResult = await this.messageService.healthCheck();
-    
+
     const details = {
       connected: healthResult.details.connected,
-      channelOpen: healthResult.details.channelOpen || healthResult.details.connected,
+      channelOpen:
+        healthResult.details.channelOpen || healthResult.details.connected,
       reconnectAttempts: healthResult.details.reconnectAttempts || 0,
     };
 
@@ -812,21 +819,29 @@ const rabbitMQServiceInstances: Map<string, RabbitMQService> = new Map();
 /**
  * Get or create the RabbitMQ service singleton instance for the specified protocol
  */
-export function getRabbitMQService(protocol?: MessageProtocol): RabbitMQService {
-  const resolvedProtocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp";
+export function getRabbitMQService(
+  protocol?: MessageProtocol,
+): RabbitMQService {
+  const resolvedProtocol =
+    protocol ?? (process.env.RABBITMQ_PROTOCOL as MessageProtocol) ?? 'amqp';
   const protocolKey = resolvedProtocol.toString();
-  
+
   if (!rabbitMQServiceInstances.has(protocolKey)) {
-    logger.info(`Creating new RabbitMQ service instance for protocol: ${resolvedProtocol}`);
+    logger.info(
+      `Creating new RabbitMQ service instance for protocol: ${resolvedProtocol}`,
+    );
     const newInstance = new RabbitMQService(protocol);
     rabbitMQServiceInstances.set(protocolKey, newInstance);
   } else {
     const existingInstance = rabbitMQServiceInstances.get(protocolKey)!;
-    logger.debug(`Returning existing RabbitMQ service instance for protocol: ${resolvedProtocol}`, {
-      isConnected: existingInstance.isConnected(),
-    });
+    logger.debug(
+      `Returning existing RabbitMQ service instance for protocol: ${resolvedProtocol}`,
+      {
+        isConnected: existingInstance.isConnected(),
+      },
+    );
   }
-  
+
   const service = rabbitMQServiceInstances.get(protocolKey)!;
   return service;
 }
@@ -845,15 +860,20 @@ export async function initializeRabbitMQService(
 /**
  * Close and cleanup a specific RabbitMQ service instance
  */
-export async function closeRabbitMQService(protocol?: MessageProtocol): Promise<void> {
-  const resolvedProtocol = protocol ?? process.env.RABBITMQ_PROTOCOL as MessageProtocol ?? "amqp";
+export async function closeRabbitMQService(
+  protocol?: MessageProtocol,
+): Promise<void> {
+  const resolvedProtocol =
+    protocol ?? (process.env.RABBITMQ_PROTOCOL as MessageProtocol) ?? 'amqp';
   const protocolKey = resolvedProtocol.toString();
-  
+
   if (rabbitMQServiceInstances.has(protocolKey)) {
     const service = rabbitMQServiceInstances.get(protocolKey)!;
     await service.close();
     rabbitMQServiceInstances.delete(protocolKey);
-    logger.info(`Closed RabbitMQ service instance for protocol: ${resolvedProtocol}`);
+    logger.info(
+      `Closed RabbitMQ service instance for protocol: ${resolvedProtocol}`,
+    );
   }
 }
 

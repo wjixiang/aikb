@@ -54,9 +54,12 @@ async function testStompConnection() {
 
       // Test 1: Subscribe to a test queue
       console.log('🧪 Test 1: Subscribing to test queue...');
-      const subscription = client.subscribe('/queue/test-stomp-queue', (message) => {
-        console.log('📨 Received message:', message.body);
-      });
+      const subscription = client.subscribe(
+        '/queue/test-stomp-queue',
+        (message) => {
+          console.log('📨 Received message:', message.body);
+        },
+      );
 
       // Test 2: Send a test message
       console.log('🧪 Test 2: Sending test message...');
@@ -82,7 +85,7 @@ async function testStompConnection() {
           // Clean up
           subscription.unsubscribe();
           client.deactivate();
-          
+
           testCompleted = true;
           resolve();
         }
@@ -93,10 +96,12 @@ async function testStompConnection() {
     client.onStompError = (frame) => {
       console.error('❌ STOMP connection error:', frame);
       console.error('📋 Error details:', frame.headers['message']);
-      
+
       if (!testCompleted) {
         testCompleted = true;
-        reject(new Error(`STOMP connection failed: ${frame.headers['message']}`));
+        reject(
+          new Error(`STOMP connection failed: ${frame.headers['message']}`),
+        );
       }
     };
 
@@ -127,7 +132,9 @@ async function testStompConnection() {
       if (!testCompleted) {
         testCompleted = true;
         if (isConnected) {
-          console.log('⚠️ Connection test timed out but connection was established');
+          console.log(
+            '⚠️ Connection test timed out but connection was established',
+          );
           client.deactivate();
           resolve();
         } else {
@@ -140,14 +147,16 @@ async function testStompConnection() {
 
 // Alternative test using direct WebSocket connection
 async function testWebSocketConnection() {
-  console.log('🔍 Testing direct WebSocket connection to RabbitMQ STOMP endpoint...');
-  
+  console.log(
+    '🔍 Testing direct WebSocket connection to RabbitMQ STOMP endpoint...',
+  );
+
   return new Promise<void>((resolve, reject) => {
     const ws = new WebSocket(stompUrl);
-    
+
     ws.on('open', () => {
       console.log('✅ WebSocket connection opened successfully!');
-      
+
       // Send CONNECT frame
       const connectFrame = [
         'CONNECT',
@@ -159,15 +168,15 @@ async function testWebSocketConnection() {
         '',
         '\u0000',
       ].join('\n');
-      
+
       ws.send(connectFrame);
       console.log('📤 Sent CONNECT frame');
     });
-    
+
     ws.on('message', (data) => {
       const message = data.toString();
       console.log('📥 Received:', message);
-      
+
       if (message.includes('CONNECTED')) {
         console.log('✅ STOMP handshake successful!');
         ws.close();
@@ -178,19 +187,22 @@ async function testWebSocketConnection() {
         reject(new Error('STOMP error during handshake'));
       }
     });
-    
+
     ws.on('error', (error) => {
       console.error('❌ WebSocket error:', error);
       reject(error);
     });
-    
+
     ws.on('close', () => {
       console.log('🔌 WebSocket connection closed');
     });
-    
+
     // Timeout
     setTimeout(() => {
-      if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
+      if (
+        ws.readyState === WebSocket.CONNECTING ||
+        ws.readyState === WebSocket.OPEN
+      ) {
         ws.close();
         reject(new Error('WebSocket connection timeout'));
       }
@@ -228,7 +240,6 @@ async function main() {
     console.log('='.repeat(60));
     console.log('🎉 TEST COMPLETED');
     console.log('='.repeat(60));
-    
   } catch (error) {
     console.error('💥 Test failed with error:', error);
     process.exit(1);

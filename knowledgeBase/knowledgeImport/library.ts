@@ -29,6 +29,7 @@ import {
 import {
   ChunkingStrategy,
   ChunkingConfig,
+  defaultChunkingConfig,
 } from '../../lib/chunking/chunkingStrategy';
 import {
   embeddingService,
@@ -36,12 +37,12 @@ import {
   EmbeddingProvider,
   OpenAIModel,
   AlibabaModel,
+  defaultEmbeddingConfig,
 } from '../../lib/embedding/embedding';
-import { DefaultGroupManager } from '../../lib/chunking/defaultGroupManager';
 import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,
-  ChunkingEmbeddingRequestMessage,
+  MultiVersionChunkingEmbeddingRequestMessage,
 } from '../../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -274,7 +275,7 @@ export interface AbstractLibrary {
   /**
    * Delete a book by ID
    */
-  deleteBook(id: string): Promise<boolean>;
+  deleteItem(id: string): Promise<boolean>;
 
   /**
    * Delete a collection by ID
@@ -286,128 +287,128 @@ export interface AbstractLibrary {
    */
   deleteItemsInCollection(collectionId: string): Promise<number>;
 
-  // Chunk-related methods
-  /**
-   * Process markdown content into chunks and generate embeddings
-   * @param itemId The ID of the item to process
-   * @param chunkingStrategy The chunking strategy to use
-   * @param options Optional configuration for chunking and embedding
-   */
-  processItemChunks(
-    itemId: string,
-    chunkingStrategy?: ChunkingStrategy,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      embeddingProvider?: string;
-      embeddingConfig?: EmbeddingConfig;
-      chunkingConfig?: ChunkingConfig;
-      forceReprocess?: boolean;
-      preserveExisting?: boolean;
-    },
-  ): Promise<void>;
+  // // Chunk-related methods
+  // /**
+  //  * Process markdown content into chunks and generate embeddings
+  //  * @param itemId The ID of the item to process
+  //  * @param chunkingStrategy The chunking strategy to use
+  //  * @param options Optional configuration for chunking and embedding
+  //  */
+  // processItemChunks(
+  //   itemId: string,
+  //   chunkingStrategy?: ChunkingStrategy,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     embeddingProvider?: string;
+  //     embeddingConfig?: EmbeddingConfig;
+  //     chunkingConfig?: ChunkingConfig;
+  //     forceReprocess?: boolean;
+  //     preserveExisting?: boolean;
+  //   },
+  // ): Promise<void>;
 
-  /**
-   * Get chunks for a specific item
-   * @param itemId The ID of the item
-   * @param options Optional filtering options
-   */
-  getItemChunks(
-    itemId: string,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-    },
-  ): Promise<ItemChunk[]>;
+  // /**
+  //  * Get chunks for a specific item
+  //  * @param itemId The ID of the item
+  //  * @param options Optional filtering options
+  //  */
+  // getItemChunks(
+  //   itemId: string,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //   },
+  // ): Promise<ItemChunk[]>;
 
-  /**
-   * Search chunks with filters
-   * @param filter Search filters
-   */
-  searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
+  // /**
+  //  * Search chunks with filters
+  //  * @param filter Search filters
+  //  */
+  // searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
 
-  /**
-   * Find similar chunks based on a query vector
-   * @param queryVector The query vector
-   * @param limit Maximum number of results
-   * @param threshold Similarity threshold
-   * @param itemIds Optional list of item IDs to search within
-   * @param options Optional search options
-   */
-  findSimilarChunks(
-    queryVector: number[],
-    limit?: number,
-    threshold?: number,
-    itemIds?: string[],
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-      provider?: string;
-    },
-  ): Promise<Array<ItemChunk & { similarity: number }>>;
+  // /**
+  //  * Find similar chunks based on a query vector
+  //  * @param queryVector The query vector
+  //  * @param limit Maximum number of results
+  //  * @param threshold Similarity threshold
+  //  * @param itemIds Optional list of item IDs to search within
+  //  * @param options Optional search options
+  //  */
+  // findSimilarChunks(
+  //   queryVector: number[],
+  //   limit?: number,
+  //   threshold?: number,
+  //   itemIds?: string[],
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //     provider?: string;
+  //   },
+  // ): Promise<Array<ItemChunk & { similarity: number }>>;
 
-  /**
-   * Find similar chunks within a specific LibraryItem
-   * @param itemId The LibraryItem ID to search within
-   * @param queryVector The query vector
-   * @param limit Maximum number of results
-   * @param threshold Similarity threshold
-   * @param options Optional search options
-   */
-  findSimilarChunksInItem(
-    itemId: string,
-    queryVector: number[],
-    limit?: number,
-    threshold?: number,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-      provider?: string;
-    },
-  ): Promise<Array<ItemChunk & { similarity: number }>>;
+  // /**
+  //  * Find similar chunks within a specific LibraryItem
+  //  * @param itemId The LibraryItem ID to search within
+  //  * @param queryVector The query vector
+  //  * @param limit Maximum number of results
+  //  * @param threshold Similarity threshold
+  //  * @param options Optional search options
+  //  */
+  // findSimilarChunksInItem(
+  //   itemId: string,
+  //   queryVector: number[],
+  //   limit?: number,
+  //   threshold?: number,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //     provider?: string;
+  //   },
+  // ): Promise<Array<ItemChunk & { similarity: number }>>;
 
-  /**
-   * Search chunks within a specific LibraryItem
-   * @param itemId The LibraryItem ID to search within
-   * @param query The search query
-   * @param limit Maximum number of results
-   * @param options Optional search options
-   */
-  searchChunksInItem(
-    itemId: string,
-    query: string,
-    limit?: number,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-    },
-  ): Promise<ItemChunk[]>;
+  // /**
+  //  * Search chunks within a specific LibraryItem
+  //  * @param itemId The LibraryItem ID to search within
+  //  * @param query The search query
+  //  * @param limit Maximum number of results
+  //  * @param options Optional search options
+  //  */
+  // searchChunksInItem(
+  //   itemId: string,
+  //   query: string,
+  //   limit?: number,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //   },
+  // ): Promise<ItemChunk[]>;
 
-  /**
-   * Re-process chunks for a specific item or all items
-   * @param itemId Optional ID of the item to re-process
-   * @param chunkingStrategy The chunking strategy to use
-   * @param options Optional configuration for chunking and embedding
-   */
-  reProcessChunks(
-    itemId?: string,
-    chunkingStrategy?: ChunkingStrategy,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      embeddingProvider?: string;
-      embeddingConfig?: EmbeddingConfig;
-      chunkingConfig?: ChunkingConfig;
-      forceReprocess?: boolean;
-      preserveExisting?: boolean;
-    },
-  ): Promise<void>;
+  // /**
+  //  * Re-process chunks for a specific item or all items
+  //  * @param itemId Optional ID of the item to re-process
+  //  * @param chunkingStrategy The chunking strategy to use
+  //  * @param options Optional configuration for chunking and embedding
+  //  */
+  // reProcessChunks(
+  //   itemId?: string,
+  //   chunkingStrategy?: ChunkingStrategy,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     embeddingProvider?: string;
+  //     embeddingConfig?: EmbeddingConfig;
+  //     chunkingConfig?: ChunkingConfig;
+  //     forceReprocess?: boolean;
+  //     preserveExisting?: boolean;
+  //   },
+  // ): Promise<void>;
 }
 
 /**
@@ -479,7 +480,7 @@ export default class Library implements AbstractLibrary {
       logger.info(
         `Item with same content already exists (ID: ${existingItem.id}), returning existing item. Status: ${existingItem.pdfProcessingStatus}`,
       );
-      return new LibraryItem(existingItem, this.storage, this);
+      return new LibraryItem(existingItem, this.storage);
     }
 
     // Upload to S3
@@ -508,7 +509,7 @@ export default class Library implements AbstractLibrary {
 
     // Save metadata first to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    const libraryItem = new LibraryItem(savedMetadata, this.storage, this);
+    const libraryItem = new LibraryItem(savedMetadata, this.storage);
 
     // Send PDF analysis request to RabbitMQ for async processing
     // Generate a presigned URL for the PDF analysis worker
@@ -525,6 +526,7 @@ export default class Library implements AbstractLibrary {
 
   /**
    * Update processing status for a library item
+   * @deprecated
    */
   private async updateProcessingStatus(
     itemId: string,
@@ -640,6 +642,7 @@ export default class Library implements AbstractLibrary {
 
   /**
    * Get processing status for a library item
+   * @deprecated
    */
   async getProcessingStatus(itemId: string): Promise<{
     status: PdfProcessingStatus;
@@ -677,6 +680,7 @@ export default class Library implements AbstractLibrary {
 
   /**
    * Check if PDF processing is completed for an item
+   * @deprecated
    */
   async isProcessingCompleted(itemId: string): Promise<boolean> {
     const status = await this.getProcessingStatus(itemId);
@@ -685,6 +689,7 @@ export default class Library implements AbstractLibrary {
 
   /**
    * Check if PDF processing failed for an item
+   * @deprecated
    */
   async isProcessingFailed(itemId: string): Promise<boolean> {
     const status = await this.getProcessingStatus(itemId);
@@ -693,6 +698,7 @@ export default class Library implements AbstractLibrary {
 
   /**
    * Wait for PDF processing to complete (with timeout)
+   * @deprecated
    */
   async waitForProcessingCompletion(
     itemId: string,
@@ -734,6 +740,10 @@ export default class Library implements AbstractLibrary {
     };
   }
 
+  /**
+   * @deprecated
+   * @param itemId
+   */
   async reExtractMarkdown(itemId?: string): Promise<void> {
     try {
       if (itemId) {
@@ -787,7 +797,7 @@ export default class Library implements AbstractLibrary {
   async getItem(id: string): Promise<LibraryItem | null> {
     const metadata = await this.storage.getMetadata(id);
     if (!metadata) return null;
-    return new LibraryItem(metadata, this.storage, this);
+    return new LibraryItem(metadata, this.storage);
   }
 
   /**
@@ -796,7 +806,7 @@ export default class Library implements AbstractLibrary {
   async searchItems(filter: SearchFilter): Promise<LibraryItem[]> {
     const metadataList = await this.storage.searchMetadata(filter);
     return metadataList.map(
-      (metadata) => new LibraryItem(metadata, this.storage, this),
+      (metadata) => new LibraryItem(metadata, this.storage),
     );
   }
 
@@ -874,7 +884,7 @@ export default class Library implements AbstractLibrary {
   /**
    * Delete a book by ID
    */
-  async deleteBook(id: string): Promise<boolean> {
+  async deleteItem(id: string): Promise<boolean> {
     const metadata = await this.storage.getMetadata(id);
     if (!metadata) {
       return false;
@@ -899,7 +909,7 @@ export default class Library implements AbstractLibrary {
     let deletedCount = 0;
 
     for (const item of items) {
-      const success = await this.deleteBook(item.metadata.id!);
+      const success = await this.deleteItem(item.metadata.id!);
       if (success) {
         deletedCount++;
       }
@@ -908,261 +918,274 @@ export default class Library implements AbstractLibrary {
     return deletedCount;
   }
 
-  // Chunk-related methods implementation
-  async processItemChunks(
-    itemId: string,
-    chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      embeddingProvider?: string;
-      embeddingConfig?: EmbeddingConfig;
-      chunkingConfig?: ChunkingConfig;
-      forceReprocess?: boolean;
-      preserveExisting?: boolean;
-    },
-  ): Promise<void> {
-    try {
-      // Get the item metadata
-      const item = await this.getItem(itemId);
-      if (!item) {
-        throw new Error(`Item with ID ${itemId} not found`);
-      }
+  // // Chunk-related methods implementation
+  // /**
+  //  * @deprecated
+  //  * @param itemId
+  //  * @param chunkingStrategy
+  //  * @param options
+  //  * @returns
+  //  */
+  // async processItemChunks(
+  //   itemId: string,
+  //   chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     embeddingProvider?: string;
+  //     embeddingConfig?: EmbeddingConfig;
+  //     chunkingConfig?: ChunkingConfig;
+  //     forceReprocess?: boolean;
+  //     preserveExisting?: boolean;
+  //   },
+  // ): Promise<void> {
+  //   try {
+  //     // Get the item metadata
+  //     const item = await this.getItem(itemId);
+  //     if (!item) {
+  //       throw new Error(`Item with ID ${itemId} not found`);
+  //     }
 
-      // Get the markdown content
-      const markdownContent = await item.getMarkdown();
-      if (!markdownContent) {
-        logger.warn(`No markdown content found for item: ${itemId}`);
-        return;
-      }
+  //     // Get the markdown content
+  //     const markdownContent = await item.getMarkdown();
+  //     if (!markdownContent) {
+  //       logger.warn(`No markdown content found for item: ${itemId}`);
+  //       return;
+  //     }
 
-      // Check if the markdown content is just a placeholder (no actual markdown was stored)
-      const storedMarkdown = await this.storage.getMarkdown(itemId);
-      if (!storedMarkdown) {
-        logger.warn(
-          `No actual markdown content stored for item: ${itemId}, skipping chunking`,
-        );
-        return;
-      }
+  //     // Check if the markdown content is just a placeholder (no actual markdown was stored)
+  //     const storedMarkdown = await this.storage.getMarkdown(itemId);
+  //     if (!storedMarkdown) {
+  //       logger.warn(
+  //         `No actual markdown content stored for item: ${itemId}, skipping chunking`,
+  //       );
+  //       return;
+  //     }
 
-      logger.info(
-        `Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`,
-      );
+  //     logger.info(
+  //       `Chunking markdown content for item: ${itemId} using strategy: ${chunkingStrategy}`,
+  //     );
 
-      // Handle chunking with default group manager
-      const defaultGroupManager = DefaultGroupManager.getInstance();
-      const defaultGroup =
-        defaultGroupManager.getDefaultGroup(chunkingStrategy);
+  //     // Handle chunking with default group manager
+  //     const defaultGroupManager = DefaultGroupManager.getInstance();
+  //     const defaultGroup =
+  //       defaultGroupManager.getDefaultGroup(chunkingStrategy);
 
-      const denseVectorIndexGroupId =
-        options?.denseVectorIndexGroupId ||
-        defaultGroup?.id ||
-        `default-${chunkingStrategy}`;
+  //     const denseVectorIndexGroupId =
+  //       options?.denseVectorIndexGroupId ||
+  //       defaultGroup?.id ||
+  //       `default-${chunkingStrategy}`;
 
-      const embeddingProvider =
-        options?.embeddingProvider ||
-        defaultGroup?.embeddingProvider ||
-        embeddingService.getProvider();
+  //     const embeddingProvider =
+  //       options?.embeddingProvider ||
+  //       defaultGroup?.embeddingProvider ||
+  //       embeddingService.getProvider();
 
-      const embeddingConfig: EmbeddingConfig = options?.embeddingConfig ||
-        defaultGroup?.embeddingConfig || {
-          model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
-          dimension: 1536,
-          batchSize: 32,
-          maxRetries: 3,
-          timeout: 30000,
-          provider: EmbeddingProvider.OPENAI,
-        };
+  //     const embeddingConfig: EmbeddingConfig = options?.embeddingConfig ||
+  //       defaultGroup?.embeddingConfig || {
+  //         model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+  //         dimension: 1536,
+  //         batchSize: 32,
+  //         maxRetries: 3,
+  //         timeout: 30000,
+  //         provider: EmbeddingProvider.OPENAI,
+  //       };
 
-      const chunkingConfig = options?.chunkingConfig ||
-        defaultGroup?.chunkingConfig || {
-          maxChunkSize: 1000,
-          minChunkSize: 100,
-          overlap: 50,
-        };
+  //     const chunkingConfig = options?.chunkingConfig ||
+  //       defaultGroup?.chunkingConfig || {
+  //         maxChunkSize: 1000,
+  //         minChunkSize: 100,
+  //         overlap: 50,
+  //       };
 
-      const forceReprocess = options?.forceReprocess || false;
-      const preserveExisting = options?.preserveExisting || false;
+  //     const forceReprocess = options?.forceReprocess || false;
+  //     const preserveExisting = options?.preserveExisting || false;
 
-      logger.info(
-        `Processing chunks for item ${itemId} with group: ${denseVectorIndexGroupId}, strategy: ${chunkingStrategy}, provider: ${embeddingProvider}`,
-      );
+  //     logger.info(
+  //       `Processing chunks for item ${itemId} with group: ${denseVectorIndexGroupId}, strategy: ${chunkingStrategy}, provider: ${embeddingProvider}`,
+  //     );
 
-      // Check if we need to delete existing chunks
-      if (forceReprocess) {
-        if (
-          preserveExisting &&
-          denseVectorIndexGroupId &&
-          typeof (this.storage as any).deleteChunksByGroup === 'function'
-        ) {
-          // Only delete chunks for this specific group
-          logger.info(
-            `Deleting existing chunks for group: ${denseVectorIndexGroupId}`,
-          );
-          await (this.storage as any).deleteChunksByGroup(
-            denseVectorIndexGroupId,
-          );
-        } else {
-          // Delete all chunks for this item
-          logger.info(`Deleting all existing chunks for item: ${itemId}`);
-          await this.storage.deleteChunksByItemId(itemId);
-        }
-      } else {
-        // Check if chunks already exist for this group
-        if (
-          denseVectorIndexGroupId &&
-          typeof (this.storage as any).getChunksByItemAndGroup === 'function'
-        ) {
-          const existingChunks = await (
-            this.storage as any
-          ).getChunksByItemAndGroup(itemId, denseVectorIndexGroupId);
-          if (existingChunks.length > 0) {
-            logger.info(
-              `Chunks already exist for item ${itemId} in group ${denseVectorIndexGroupId}, skipping processing`,
-            );
-            return;
-          }
-        }
-      }
+  //     // Check if we need to delete existing chunks
+  //     if (forceReprocess) {
+  //       if (
+  //         preserveExisting &&
+  //         denseVectorIndexGroupId &&
+  //         typeof (this.storage as any).deleteChunksByGroup === 'function'
+  //       ) {
+  //         // Only delete chunks for this specific group
+  //         logger.info(
+  //           `Deleting existing chunks for group: ${denseVectorIndexGroupId}`,
+  //         );
+  //         await (this.storage as any).deleteChunksByGroup(
+  //           denseVectorIndexGroupId,
+  //         );
+  //       } else {
+  //         // Delete all chunks for this item
+  //         logger.info(`Deleting all existing chunks for item: ${itemId}`);
+  //         await this.storage.deleteChunksByItemId(itemId);
+  //       }
+  //     } else {
+  //       // Check if chunks already exist for this group
+  //       if (
+  //         denseVectorIndexGroupId &&
+  //         typeof (this.storage as any).getChunksByItemAndGroup === 'function'
+  //       ) {
+  //         const existingChunks = await (
+  //           this.storage as any
+  //         ).getChunksByItemAndGroup(itemId, denseVectorIndexGroupId);
+  //         if (existingChunks.length > 0) {
+  //           logger.info(
+  //             `Chunks already exist for item ${itemId} in group ${denseVectorIndexGroupId}, skipping processing`,
+  //           );
+  //           return;
+  //         }
+  //       }
+  //     }
 
-      // Chunk the markdown content
-      let chunkResults: ChunkResult[] | string[];
-      if (chunkingStrategy === ChunkingStrategy.H1) {
-        chunkResults = h1Chunking(markdownContent);
-      } else {
-        chunkResults = paragraphChunking(markdownContent);
-      }
+  //     // Chunk the markdown content
+  //     let chunkResults: ChunkResult[] | string[];
+  //     if (chunkingStrategy === ChunkingStrategy.H1) {
+  //       chunkResults = h1Chunking(markdownContent);
+  //     } else {
+  //       chunkResults = paragraphChunking(markdownContent);
+  //     }
 
-      if (chunkResults.length === 0) {
-        logger.warn(`No chunks generated for item: ${itemId}`);
-        return;
-      }
+  //     if (chunkResults.length === 0) {
+  //       logger.warn(`No chunks generated for item: ${itemId}`);
+  //       return;
+  //     }
 
-      logger.info(
-        `Generated ${chunkResults.length} chunks for item: ${itemId}`,
-      );
+  //     logger.info(
+  //       `Generated ${chunkResults.length} chunks for item: ${itemId}`,
+  //     );
 
-      // Prepare chunks for storage
-      const chunks: ItemChunk[] = [];
-      const chunkTexts: string[] = [];
+  //     // Prepare chunks for storage
+  //     const chunks: ItemChunk[] = [];
+  //     const chunkTexts: string[] = [];
 
-      const processingStartTime = new Date();
+  //     const processingStartTime = new Date();
 
-      // The effective configurations are already set above
-      const effectiveChunkingConfig = chunkingConfig;
-      const effectiveEmbeddingConfig = embeddingConfig;
+  //     // The effective configurations are already set above
+  //     const effectiveChunkingConfig = chunkingConfig;
+  //     const effectiveEmbeddingConfig = embeddingConfig;
 
-      for (let i = 0; i < chunkResults.length; i++) {
-        const chunkResult = chunkResults[i];
+  //     for (let i = 0; i < chunkResults.length; i++) {
+  //       const chunkResult = chunkResults[i];
 
-        let title: string;
-        let content: string;
+  //       let title: string;
+  //       let content: string;
 
-        if (typeof chunkResult === 'string') {
-          // Paragraph chunking
-          title = `Paragraph ${i + 1}`;
-          content = chunkResult;
-        } else {
-          // H1 chunking
-          title = chunkResult.title || `Chunk ${i + 1}`;
-          content = chunkResult.content;
-        }
+  //       if (typeof chunkResult === 'string') {
+  //         // Paragraph chunking
+  //         title = `Paragraph ${i + 1}`;
+  //         content = chunkResult;
+  //       } else {
+  //         // H1 chunking
+  //         title = chunkResult.title || `Chunk ${i + 1}`;
+  //         content = chunkResult.content;
+  //       }
 
-        const chunk: ItemChunk = {
-          id: IdUtils.generateId(),
-          itemId,
-          title,
-          content,
-          index: i,
+  //       const chunk: ItemChunk = {
+  //         id: IdUtils.generateId(),
+  //         itemId,
+  //         title,
+  //         content,
+  //         index: i,
 
-          // Dense vector index group for organization
-          denseVectorIndexGroupId: denseVectorIndexGroupId,
+  //         // Dense vector index group for organization
+  //         denseVectorIndexGroupId: denseVectorIndexGroupId,
 
-          // Simplified single embedding field (will be populated after embedding generation)
-          embedding: [], // Will be populated with a single vector array
+  //         // Simplified single embedding field (will be populated after embedding generation)
+  //         embedding: [], // Will be populated with a single vector array
 
-          // Strategy and configuration metadata
-          strategyMetadata: {
-            chunkingStrategy,
-            chunkingConfig: effectiveChunkingConfig,
-            embeddingConfig: effectiveEmbeddingConfig,
-            processingTimestamp: processingStartTime,
-            processingDuration: 0, // Will be updated after processing
-          },
+  //         // Strategy and configuration metadata
+  //         strategyMetadata: {
+  //           chunkingStrategy,
+  //           chunkingConfig: effectiveChunkingConfig,
+  //           embeddingConfig: effectiveEmbeddingConfig,
+  //           processingTimestamp: processingStartTime,
+  //           processingDuration: 0, // Will be updated after processing
+  //         },
 
-          // Legacy metadata for backward compatibility
-          metadata: {
-            chunkType: chunkingStrategy,
-            wordCount: content.split(/\s+/).length,
-          },
+  //         // Legacy metadata for backward compatibility
+  //         metadata: {
+  //           chunkType: chunkingStrategy,
+  //           wordCount: content.split(/\s+/).length,
+  //         },
 
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+  //         createdAt: new Date(),
+  //         updatedAt: new Date(),
+  //       };
 
-        chunks.push(chunk);
-        chunkTexts.push(content);
-      }
+  //       chunks.push(chunk);
+  //       chunkTexts.push(content);
+  //     }
 
-      // Generate embeddings for all chunks
-      logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
-      const embeddings = await embeddingService.embedBatch(chunkTexts);
+  //     // Generate embeddings for all chunks
+  //     logger.info(`Generating embeddings for ${chunkTexts.length} chunks`);
+  //     const embeddings = await embeddingService.embedBatch(chunkTexts);
 
-      const processingEndTime = new Date();
-      const processingDuration =
-        processingEndTime.getTime() - processingStartTime.getTime();
+  //     const processingEndTime = new Date();
+  //     const processingDuration =
+  //       processingEndTime.getTime() - processingStartTime.getTime();
 
-      // Assign embeddings to chunks using simplified structure
-      for (let i = 0; i < chunks.length; i++) {
-        if (embeddings[i] && Array.isArray(embeddings[i])) {
-          // Update the embedding with simplified structure (single vector array)
-          chunks[i].embedding = embeddings[i]!;
+  //     // Assign embeddings to chunks using simplified structure
+  //     for (let i = 0; i < chunks.length; i++) {
+  //       if (embeddings[i] && Array.isArray(embeddings[i])) {
+  //         // Update the embedding with simplified structure (single vector array)
+  //         chunks[i].embedding = embeddings[i]!;
 
-          // Update processing duration
-          chunks[i].strategyMetadata.processingDuration = processingDuration;
-        } else {
-          logger.warn(`Invalid embedding for chunk ${i}, skipping`);
-        }
-      }
+  //         // Update processing duration
+  //         chunks[i].strategyMetadata.processingDuration = processingDuration;
+  //       } else {
+  //         logger.warn(`Invalid embedding for chunk ${i}, skipping`);
+  //       }
+  //     }
 
-      // Save chunks to storage
-      await this.storage.batchSaveChunks(chunks);
-      logger.info(
-        `Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`,
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
+  //     // Save chunks to storage
+  //     await this.storage.batchSaveChunks(chunks);
+  //     logger.info(
+  //       `Successfully saved ${chunks.length} chunks to storage for item: ${itemId}`,
+  //     );
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error instanceof Error ? error.message : 'Unknown error';
+  //     const errorStack = error instanceof Error ? error.stack : undefined;
 
-      logger.error(`Error processing chunks for item ${itemId}:`, {
-        error: errorMessage,
-        stack: errorStack,
-        itemId,
-        chunkingStrategy,
-        denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
-        embeddingProvider: options?.embeddingProvider,
-      });
+  //     logger.error(`Error processing chunks for item ${itemId}:`, {
+  //       error: errorMessage,
+  //       stack: errorStack,
+  //       itemId,
+  //       chunkingStrategy,
+  //       denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
+  //       embeddingProvider: options?.embeddingProvider,
+  //     });
 
-      // Update item status with error
-      try {
-        await this.updateProcessingStatus(
-          itemId,
-          PdfProcessingStatus.FAILED,
-          `Chunking and embedding failed: ${errorMessage}`,
-          undefined,
-          errorMessage,
-        );
-      } catch (statusUpdateError) {
-        logger.error(
-          `Failed to update processing status for item ${itemId}:`,
-          statusUpdateError,
-        );
-      }
+  //     // Update item status with error
+  //     try {
+  //       await this.updateProcessingStatus(
+  //         itemId,
+  //         PdfProcessingStatus.FAILED,
+  //         `Chunking and embedding failed: ${errorMessage}`,
+  //         undefined,
+  //         errorMessage,
+  //       );
+  //     } catch (statusUpdateError) {
+  //       logger.error(
+  //         `Failed to update processing status for item ${itemId}:`,
+  //         statusUpdateError,
+  //       );
+  //     }
 
-      throw error;
-    }
-  }
+  //     throw error;
+  //   }
+  // }
 
+  /**
+   * @deprecated
+   * @param itemId
+   * @param options
+   * @returns
+   */
   async getItemChunks(
     itemId: string,
     options?: {
@@ -1229,369 +1252,402 @@ export default class Library implements AbstractLibrary {
     return await this.storage.getChunksByItemId(itemId);
   }
 
+  /**
+   * @deprecated
+   * @param filter
+   * @returns
+   */
   async searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]> {
     return await this.storage.searchChunks(filter);
   }
 
-  async findSimilarChunks(
-    queryVector: number[],
-    limit: number = 10,
-    threshold: number = 0.7,
-    itemIds?: string[],
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-      provider?: string;
-    },
-  ): Promise<Array<ItemChunk & { similarity: number }>> {
-    // Handle fallback logic for strategy groups
-    let denseVectorIndexGroupId = options?.denseVectorIndexGroupId;
-    let groups = options?.groups;
+  // /**
+  //  * @deprecated
+  //  * @param queryVector
+  //  * @param limit
+  //  * @param threshold
+  //  * @param itemIds
+  //  * @param options
+  //  * @returns
+  //  */
+  // async findSimilarChunks(
+  //   queryVector: number[],
+  //   limit: number = 10,
+  //   threshold: number = 0.7,
+  //   itemIds?: string[],
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //     provider?: string;
+  //   },
+  // ): Promise<Array<ItemChunk & { similarity: number }>> {
+  //   // Handle fallback logic for strategy groups
+  //   let denseVectorIndexGroupId = options?.denseVectorIndexGroupId;
+  //   let groups = options?.groups;
 
-    if (
-      !denseVectorIndexGroupId &&
-      !groups &&
-      options?.chunkingStrategies &&
-      options.chunkingStrategies.length > 0
-    ) {
-      // If no group specified but strategies are, try to get group from strategy
-      const defaultGroupManager = DefaultGroupManager.getInstance();
-      const strategy = options.chunkingStrategies[0]; // Use first strategy
-      const group = defaultGroupManager.getDefaultGroup(strategy);
-      if (group) {
-        denseVectorIndexGroupId = group.id;
-      }
-    }
+  //   if (
+  //     !denseVectorIndexGroupId &&
+  //     !groups &&
+  //     options?.chunkingStrategies &&
+  //     options.chunkingStrategies.length > 0
+  //   ) {
+  //     // If no group specified but strategies are, try to get group from strategy
+  //     const defaultGroupManager = DefaultGroupManager.getInstance();
+  //     const strategy = options.chunkingStrategies[0]; // Use first strategy
+  //     const group = defaultGroupManager.getDefaultGroup(strategy);
+  //     if (group) {
+  //       denseVectorIndexGroupId = group.id;
+  //     }
+  //   }
 
-    // Create filter
-    const filter: ChunkSearchFilter = {
-      limit,
-      similarityThreshold: threshold,
-      itemIds: itemIds
-        ? Array.isArray(itemIds)
-          ? itemIds
-          : [itemIds]
-        : undefined,
-      denseVectorIndexGroupId,
-      groups,
-      chunkingStrategies: options?.chunkingStrategies,
-      embeddingProviders: options?.embeddingProviders,
-    };
+  //   // Create filter
+  //   const filter: ChunkSearchFilter = {
+  //     limit,
+  //     similarityThreshold: threshold,
+  //     itemIds: itemIds
+  //       ? Array.isArray(itemIds)
+  //         ? itemIds
+  //         : [itemIds]
+  //       : undefined,
+  //     denseVectorIndexGroupId,
+  //     groups,
+  //     chunkingStrategies: options?.chunkingStrategies,
+  //     embeddingProviders: options?.embeddingProviders,
+  //   };
 
-    // Use the enhanced findSimilarChunksWithFilter method if available
-    if (
-      typeof (this.storage as any).findSimilarChunksWithFilter === 'function'
-    ) {
-      return await (this.storage as any).findSimilarChunksWithFilter(
-        queryVector,
-        filter,
-        options?.provider,
-      );
-    }
+  //   // Use the enhanced findSimilarChunksWithFilter method if available
+  //   if (
+  //     typeof (this.storage as any).findSimilarChunksWithFilter === 'function'
+  //   ) {
+  //     return await (this.storage as any).findSimilarChunksWithFilter(
+  //       queryVector,
+  //       filter,
+  //       options?.provider,
+  //     );
+  //   }
 
-    // Fallback to legacy method
-    return await this.storage.findSimilarChunks(
-      queryVector,
-      limit,
-      threshold,
-      itemIds,
-    );
-  }
+  //   // Fallback to legacy method
+  //   return await this.storage.findSimilarChunks(
+  //     queryVector,
+  //     limit,
+  //     threshold,
+  //     itemIds,
+  //   );
+  // }
 
-  async findSimilarChunksInItem(
-    itemId: string,
-    queryVector: number[],
-    limit: number = 10,
-    threshold: number = 0.7,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-      provider?: string;
-    },
-  ): Promise<Array<ItemChunk & { similarity: number }>> {
-    return await this.findSimilarChunks(
-      queryVector,
-      limit,
-      threshold,
-      [itemId],
-      options,
-    );
-  }
+  // /**
+  //  * @deprecated
+  //  * @param itemId
+  //  * @param queryVector
+  //  * @param limit
+  //  * @param threshold
+  //  * @param options
+  //  * @returns
+  //  */
+  // async findSimilarChunksInItem(
+  //   itemId: string,
+  //   queryVector: number[],
+  //   limit: number = 10,
+  //   threshold: number = 0.7,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //     provider?: string;
+  //   },
+  // ): Promise<Array<ItemChunk & { similarity: number }>> {
+  //   return await this.findSimilarChunks(
+  //     queryVector,
+  //     limit,
+  //     threshold,
+  //     [itemId],
+  //     options,
+  //   );
+  // }
 
-  async searchChunksInItem(
-    itemId: string,
-    query: string,
-    limit: number = 10,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      groups?: string[];
-      chunkingStrategies?: string[];
-      embeddingProviders?: string[];
-    },
-  ): Promise<ItemChunk[]> {
-    return await this.searchChunks({
-      query,
-      itemId,
-      limit,
-      denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
-      groups: options?.groups,
-      chunkingStrategies: options?.chunkingStrategies,
-      embeddingProviders: options?.embeddingProviders,
-    });
-  }
+  // /**
+  //  * @deprecated
+  //  * @param itemId
+  //  * @param query
+  //  * @param limit
+  //  * @param options
+  //  * @returns
+  //  */
+  // async searchChunksInItem(
+  //   itemId: string,
+  //   query: string,
+  //   limit: number = 10,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     groups?: string[];
+  //     chunkingStrategies?: string[];
+  //     embeddingProviders?: string[];
+  //   },
+  // ): Promise<ItemChunk[]> {
+  //   return await this.searchChunks({
+  //     query,
+  //     itemId,
+  //     limit,
+  //     denseVectorIndexGroupId: options?.denseVectorIndexGroupId,
+  //     groups: options?.groups,
+  //     chunkingStrategies: options?.chunkingStrategies,
+  //     embeddingProviders: options?.embeddingProviders,
+  //   });
+  // }
 
-  /**
-   * Advanced search with enhanced filtering and sorting capabilities
-   */
-  async searchChunksAdvanced(
-    filter: ChunkSearchFilter,
-    options?: {
-      groupPriorities?: Record<string, number>;
-      strategyWeights?: Record<string, number>;
-      providerPreferences?: Record<string, number>;
-      deduplicate?: boolean;
-      deduplicationThreshold?: number;
-      sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
-      sortOrder?: 'asc' | 'desc';
-      rankFusion?: boolean;
-      weights?: Record<string, number>;
-      maxResultsPerGroup?: number;
-    },
-  ): Promise<ItemChunk[]> {
-    // Validate parameters
-    ChunkingErrorHandler.validateParams(
-      { filter, options },
-      'searchChunksAdvanced',
-      ['filter'],
-    );
+  // /**
+  //  * Advanced search with enhanced filtering and sorting capabilities
+  //  * @deprecated
+  //  */
+  // async searchChunksAdvanced(
+  //   filter: ChunkSearchFilter,
+  //   options?: {
+  //     groupPriorities?: Record<string, number>;
+  //     strategyWeights?: Record<string, number>;
+  //     providerPreferences?: Record<string, number>;
+  //     deduplicate?: boolean;
+  //     deduplicationThreshold?: number;
+  //     sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
+  //     sortOrder?: 'asc' | 'desc';
+  //     rankFusion?: boolean;
+  //     weights?: Record<string, number>;
+  //     maxResultsPerGroup?: number;
+  //   },
+  // ): Promise<ItemChunk[]> {
+  //   // Validate parameters
+  //   ChunkingErrorHandler.validateParams(
+  //     { filter, options },
+  //     'searchChunksAdvanced',
+  //     ['filter'],
+  //   );
 
-    const startTime = Date.now();
+  //   const startTime = Date.now();
 
-    return ChunkingErrorHandler.withRetry(
-      async () => {
-        // Get initial results from storage
-        let chunks: ItemChunk[];
+  //   return ChunkingErrorHandler.withRetry(
+  //     async () => {
+  //       // Get initial results from storage
+  //       let chunks: ItemChunk[];
 
-        if (filter.query || Object.keys(filter).length > 1) {
-          // Use storage search for complex queries
-          chunks = await this.storage.searchChunks(filter);
-        } else {
-          // For simple queries, get all chunks and filter locally
-          chunks = await this.storage.getChunksByItemId(filter.itemId || '');
-        }
+  //       if (filter.query || Object.keys(filter).length > 1) {
+  //         // Use storage search for complex queries
+  //         chunks = await this.storage.searchChunks(filter);
+  //       } else {
+  //         // For simple queries, get all chunks and filter locally
+  //         chunks = await this.storage.getChunksByItemId(filter.itemId || '');
+  //       }
 
-        // Apply advanced filtering using ChunkSearchUtils
-        const filteredChunks = ChunkSearchUtils.applyAdvancedFiltering(
-          chunks,
-          filter,
-          options,
-        );
+  //       // Apply advanced filtering using ChunkSearchUtils
+  //       const filteredChunks = ChunkSearchUtils.applyAdvancedFiltering(
+  //         chunks,
+  //         filter,
+  //         options,
+  //       );
 
-        logger.info(`Advanced search returned ${filteredChunks.length} chunks`);
-        return filteredChunks;
-      },
-      {
-        operation: 'searchChunksAdvanced',
-        maxRetries: 2,
-      },
-    )
-      .catch((error) => {
-        return ChunkingErrorHandler.handleSearchError(
-          error,
-          {
-            operation: 'searchChunksAdvanced',
-            query: filter.query,
-            filter,
-          },
-          () => [], // Return empty results as fallback
-        );
-      })
-      .finally(() => {
-        // Log performance metrics
-        ChunkingErrorHandler.logPerformance('searchChunksAdvanced', startTime, {
-          itemId: filter.itemId,
-          chunkCount: options?.maxResultsPerGroup,
-        });
-      });
-  }
+  //       logger.info(`Advanced search returned ${filteredChunks.length} chunks`);
+  //       return filteredChunks;
+  //     },
+  //     {
+  //       operation: 'searchChunksAdvanced',
+  //       maxRetries: 2,
+  //     },
+  //   )
+  //     .catch((error) => {
+  //       return ChunkingErrorHandler.handleSearchError(
+  //         error,
+  //         {
+  //           operation: 'searchChunksAdvanced',
+  //           query: filter.query,
+  //           filter,
+  //         },
+  //         () => [], // Return empty results as fallback
+  //       );
+  //     })
+  //     .finally(() => {
+  //       // Log performance metrics
+  //       ChunkingErrorHandler.logPerformance('searchChunksAdvanced', startTime, {
+  //         itemId: filter.itemId,
+  //         chunkCount: options?.maxResultsPerGroup,
+  //       });
+  //     });
+  // }
 
-  /**
-   * Find similar chunks with advanced filtering and rank fusion
-   */
-  async findSimilarChunksAdvanced(
-    queryVector: number[],
-    filter: ChunkSearchFilter,
-    options?: {
-      groupPriorities?: Record<string, number>;
-      strategyWeights?: Record<string, number>;
-      providerPreferences?: Record<string, number>;
-      deduplicate?: boolean;
-      deduplicationThreshold?: number;
-      sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
-      sortOrder?: 'asc' | 'desc';
-      rankFusion?: boolean;
-      weights?: Record<string, number>;
-      maxResultsPerGroup?: number;
-      provider?: string;
-    },
-  ): Promise<Array<ItemChunk & { similarity: number }>> {
-    // Validate parameters
-    ChunkingErrorHandler.validateParams(
-      { queryVector, filter, options },
-      'findSimilarChunksAdvanced',
-      ['queryVector', 'filter'],
-    );
+  // /**
+  //  * Find similar chunks with advanced filtering and rank fusion
+  //  * @deprecated
+  //  */
+  // async findSimilarChunksAdvanced(
+  //   queryVector: number[],
+  //   filter: ChunkSearchFilter,
+  //   options?: {
+  //     groupPriorities?: Record<string, number>;
+  //     strategyWeights?: Record<string, number>;
+  //     providerPreferences?: Record<string, number>;
+  //     deduplicate?: boolean;
+  //     deduplicationThreshold?: number;
+  //     sortBy?: 'relevance' | 'date' | 'title' | 'group' | 'similarity';
+  //     sortOrder?: 'asc' | 'desc';
+  //     rankFusion?: boolean;
+  //     weights?: Record<string, number>;
+  //     maxResultsPerGroup?: number;
+  //     provider?: string;
+  //   },
+  // ): Promise<Array<ItemChunk & { similarity: number }>> {
+  //   // Validate parameters
+  //   ChunkingErrorHandler.validateParams(
+  //     { queryVector, filter, options },
+  //     'findSimilarChunksAdvanced',
+  //     ['queryVector', 'filter'],
+  //   );
 
-    const startTime = Date.now();
+  //   const startTime = Date.now();
 
-    return ChunkingErrorHandler.withRetry(
-      async () => {
-        // Use enhanced findSimilarChunksWithFilter method if available
-        if (
-          typeof (this.storage as any).findSimilarChunksWithFilter ===
-          'function'
-        ) {
-          const results = await (
-            this.storage as any
-          ).findSimilarChunksWithFilter(
-            queryVector,
-            filter,
-            options?.provider,
-            {
-              rankFusion: options?.rankFusion,
-              weights: options?.weights,
-              maxResultsPerGroup: options?.maxResultsPerGroup,
-            },
-          );
+  //   return ChunkingErrorHandler.withRetry(
+  //     async () => {
+  //       // Use enhanced findSimilarChunksWithFilter method if available
+  //       if (
+  //         typeof (this.storage as any).findSimilarChunksWithFilter ===
+  //         'function'
+  //       ) {
+  //         const results = await (
+  //           this.storage as any
+  //         ).findSimilarChunksWithFilter(
+  //           queryVector,
+  //           filter,
+  //           options?.provider,
+  //           {
+  //             rankFusion: options?.rankFusion,
+  //             weights: options?.weights,
+  //             maxResultsPerGroup: options?.maxResultsPerGroup,
+  //           },
+  //         );
 
-          // Apply advanced filtering using ChunkSearchUtils
-          const filteredResults = ChunkSearchUtils.applyAdvancedFiltering(
-            results,
-            filter,
-            options,
-          );
+  //         // Apply advanced filtering using ChunkSearchUtils
+  //         const filteredResults = ChunkSearchUtils.applyAdvancedFiltering(
+  //           results,
+  //           filter,
+  //           options,
+  //         );
 
-          logger.info(
-            `Advanced similarity search returned ${filteredResults.length} chunks`,
-          );
-          return filteredResults as Array<ItemChunk & { similarity: number }>;
-        }
+  //         logger.info(
+  //           `Advanced similarity search returned ${filteredResults.length} chunks`,
+  //         );
+  //         return filteredResults as Array<ItemChunk & { similarity: number }>;
+  //       }
 
-        // Fallback to legacy method
-        return await this.findSimilarChunks(
-          queryVector,
-          filter.limit,
-          filter.similarityThreshold,
-          filter.itemIds,
-          {
-            denseVectorIndexGroupId: filter.denseVectorIndexGroupId,
-            groups: filter.groups,
-            chunkingStrategies: filter.chunkingStrategies,
-            embeddingProviders: filter.embeddingProviders,
-            provider: options?.provider,
-          },
-        );
-      },
-      {
-        operation: 'findSimilarChunksAdvanced',
-        maxRetries: 2,
-      },
-    )
-      .catch((error) => {
-        return ChunkingErrorHandler.handleSearchError(
-          error,
-          {
-            operation: 'findSimilarChunksAdvanced',
-            filter,
-          },
-          () => [], // Return empty results as fallback
-        );
-      })
-      .finally(() => {
-        // Log performance metrics
-        ChunkingErrorHandler.logPerformance(
-          'findSimilarChunksAdvanced',
-          startTime,
-          {
-            itemId: filter.itemId,
-            chunkCount: options?.maxResultsPerGroup,
-            provider: options?.provider,
-          },
-        );
-      });
-  }
+  //       // Fallback to legacy method
+  //       return await this.findSimilarChunks(
+  //         queryVector,
+  //         filter.limit,
+  //         filter.similarityThreshold,
+  //         filter.itemIds,
+  //         {
+  //           denseVectorIndexGroupId: filter.denseVectorIndexGroupId,
+  //           groups: filter.groups,
+  //           chunkingStrategies: filter.chunkingStrategies,
+  //           embeddingProviders: filter.embeddingProviders,
+  //           provider: options?.provider,
+  //         },
+  //       );
+  //     },
+  //     {
+  //       operation: 'findSimilarChunksAdvanced',
+  //       maxRetries: 2,
+  //     },
+  //   )
+  //     .catch((error) => {
+  //       return ChunkingErrorHandler.handleSearchError(
+  //         error,
+  //         {
+  //           operation: 'findSimilarChunksAdvanced',
+  //           filter,
+  //         },
+  //         () => [], // Return empty results as fallback
+  //       );
+  //     })
+  //     .finally(() => {
+  //       // Log performance metrics
+  //       ChunkingErrorHandler.logPerformance(
+  //         'findSimilarChunksAdvanced',
+  //         startTime,
+  //         {
+  //           itemId: filter.itemId,
+  //           chunkCount: options?.maxResultsPerGroup,
+  //           provider: options?.provider,
+  //         },
+  //       );
+  //     });
+  // }
 
-  async reProcessChunks(
-    itemId?: string,
-    chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
-    options?: {
-      denseVectorIndexGroupId?: string;
-      embeddingProvider?: string;
-      embeddingConfig?: EmbeddingConfig;
-      chunkingConfig?: ChunkingConfig;
-      forceReprocess?: boolean;
-      preserveExisting?: boolean;
-    },
-  ): Promise<void> {
-    try {
-      // Set forceReprocess to true by default for re-processing
-      const reProcessOptions = {
-        ...options,
-        forceReprocess: true,
-      };
+  // async reProcessChunks(
+  //   itemId?: string,
+  //   chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
+  //   options?: {
+  //     denseVectorIndexGroupId?: string;
+  //     embeddingProvider?: string;
+  //     embeddingConfig?: EmbeddingConfig;
+  //     chunkingConfig?: ChunkingConfig;
+  //     forceReprocess?: boolean;
+  //     preserveExisting?: boolean;
+  //   },
+  // ): Promise<void> {
+  //   try {
+  //     // Set forceReprocess to true by default for re-processing
+  //     const reProcessOptions = {
+  //       ...options,
+  //       forceReprocess: true,
+  //     };
 
-      if (itemId) {
-        // Re-process chunks for a specific item
-        logger.info(`Re-processing chunks for item: ${itemId}`);
-        await this.processItemChunks(
-          itemId,
-          chunkingStrategy,
-          reProcessOptions,
-        );
-        logger.info(`Successfully re-processed chunks for item: ${itemId}`);
-      } else {
-        // Re-process chunks for all items that have markdown content
-        logger.info(
-          'Re-processing chunks for all items with markdown content...',
-        );
+  //     if (itemId) {
+  //       // Re-process chunks for a specific item
+  //       logger.info(`Re-processing chunks for item: ${itemId}`);
+  //       await this.processItemChunks(
+  //         itemId,
+  //         chunkingStrategy,
+  //         reProcessOptions,
+  //       );
+  //       logger.info(`Successfully re-processed chunks for item: ${itemId}`);
+  //     } else {
+  //       // Re-process chunks for all items that have markdown content
+  //       logger.info(
+  //         'Re-processing chunks for all items with markdown content...',
+  //       );
 
-        // Get all items
-        const allItems = await this.searchItems({});
+  //       // Get all items
+  //       const allItems = await this.searchItems({});
 
-        for (const item of allItems) {
-          try {
-            const markdownContent = await item.getMarkdown();
-            if (markdownContent) {
-              logger.info(`Re-processing chunks for item: ${item.metadata.id}`);
-              await this.processItemChunks(
-                item.metadata.id!,
-                chunkingStrategy,
-                reProcessOptions,
-              );
-              logger.info(
-                `Successfully re-processed chunks for item: ${item.metadata.id}`,
-              );
-            }
-          } catch (error) {
-            logger.error(
-              `Failed to re-process chunks for item ${item.metadata.id}:`,
-              error,
-            );
-            // Continue with other items even if one fails
-          }
-        }
+  //       for (const item of allItems) {
+  //         try {
+  //           const markdownContent = await item.getMarkdown();
+  //           if (markdownContent) {
+  //             logger.info(`Re-processing chunks for item: ${item.metadata.id}`);
+  //             await this.processItemChunks(
+  //               item.metadata.id!,
+  //               chunkingStrategy,
+  //               reProcessOptions,
+  //             );
+  //             logger.info(
+  //               `Successfully re-processed chunks for item: ${item.metadata.id}`,
+  //             );
+  //           }
+  //         } catch (error) {
+  //           logger.error(
+  //             `Failed to re-process chunks for item ${item.metadata.id}:`,
+  //             error,
+  //           );
+  //           // Continue with other items even if one fails
+  //         }
+  //       }
 
-        logger.info('Completed re-processing of chunks for all items');
-      }
-    } catch (error) {
-      logger.error('Error in reProcessChunks:', error);
-      throw error;
-    }
-  }
+  //       logger.info('Completed re-processing of chunks for all items');
+  //     }
+  //   } catch (error) {
+  //     logger.error('Error in reProcessChunks:', error);
+  //     throw error;
+  //   }
+  // }
 }
 
 export class LibraryItem {
@@ -1600,7 +1656,6 @@ export class LibraryItem {
   constructor(
     public metadata: BookMetadata,
     private storage: AbstractLibraryStorage,
-    public library?: Library,
   ) {}
 
   /**
@@ -1941,6 +1996,7 @@ export class LibraryItem {
 
   /**
    * Delete all chunks for this item
+   * @deprecated
    */
   async deleteChunks(): Promise<number> {
     return await this.storage.deleteChunksByItemId(this.metadata.id!);
@@ -1992,6 +2048,7 @@ export class LibraryItem {
 
   /**
    * Advanced chunk embedding using the new unified chunking interface
+   * This method will create new chunking&embedding group
    * @param chunkingStrategy The chunking strategy to use
    * @param forceReprocess Whether to force reprocessing existing chunks
    * @param chunkingConfig Optional chunking configuration
@@ -2000,7 +2057,9 @@ export class LibraryItem {
   async chunkEmbed(
     chunkingStrategy: ChunkingStrategy = ChunkingStrategy.H1,
     forceReprocess: boolean = false,
-    chunkingConfig?: any,
+    chunkingConfig?: ChunkingConfig,
+    embeddingConfig?: EmbeddingConfig,
+    groupName?: string,
   ): Promise<ItemChunk[]> {
     const logger = createLoggerWithPrefix('LibraryItem.chunkEmbed');
     try {
@@ -2037,17 +2096,28 @@ export class LibraryItem {
         `Sending chunking and embedding request for item: ${this.metadata.id}`,
       );
 
-      const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_REQUEST',
-        itemId: this.metadata.id!,
-        markdownContent: this.metadata.markdownContent,
-        chunkingStrategy: chunkingStrategy,
-        priority: 'normal',
-        retryCount: 0,
-        maxRetries: 3,
-      };
+      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage =
+        {
+          messageId: uuidv4(),
+          timestamp: Date.now(),
+          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
+          itemId: this.metadata.id!,
+          markdownContent: this.metadata.markdownContent,
+          embeddingConfig: embeddingConfig,
+          chunkingConfig: chunkingConfig,
+          priority: 'normal',
+          retryCount: 0,
+          maxRetries: 3,
+          groupConfig: {
+            name: groupName ?? `chunk-embed-${Date.now()}`,
+            chunkingConfig: chunkingConfig ?? defaultChunkingConfig,
+            embeddingConfig: embeddingConfig ?? defaultEmbeddingConfig,
+            isDefault: false,
+            isActive: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        };
 
       // Publish the request to RabbitMQ
       await this.rabbitMQService.publishChunkingEmbeddingRequest(
@@ -4913,9 +4983,7 @@ export interface ChunkingEmbeddingGroup {
   description?: string;
 
   // Strategy and model configuration
-  chunkingStrategy: ChunkingStrategy;
   chunkingConfig: ChunkingConfig;
-  embeddingProvider: EmbeddingProvider;
   embeddingConfig: EmbeddingConfig;
 
   // Group settings
@@ -4936,17 +5004,19 @@ export interface ItemChunkSemanticSearchQuery {
 }
 
 export enum ItemVectorStorageStatus {
-  COMPLETED = "completed",
-  FAILED = "failed",
-  PROCESSING = "processing"
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  PROCESSING = 'processing',
 }
 
 export interface IItemVectorStorage {
   itemId: string;
   groupInfo: ChunkingEmbeddingGroup;
-  getStatus: ()=>Promise<ItemVectorStorageStatus>;
-  semanticSearch: (query: ItemChunkSemanticSearchQuery) => Promise<Omit<ItemChunk, 'embedding'>>;
-  insertItemChunk: (ItemChunk: ItemChunk)=> Promise<boolean>;
-  batchInsertItemChunks: (ItemChunks: ItemChunk[]) => Promise<boolean>;
+  getStatus: () => Promise<ItemVectorStorageStatus>;
+  semanticSearch: (
+    query: ItemChunkSemanticSearchQuery,
+  ) => Promise<Omit<ItemChunk, 'embedding'>>;
+  // insertItemChunk: (ItemChunk: ItemChunk)=> Promise<boolean>;
+  // batchInsertItemChunks: (ItemChunks: ItemChunk[]) => Promise<boolean>;
+  chunkEmbed: (text: string) => Promise<void>;
 }
-

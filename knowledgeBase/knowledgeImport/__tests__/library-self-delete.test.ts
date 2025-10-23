@@ -133,7 +133,7 @@ describe('LibraryItem.selfDelete', () => {
     // Clean up after each test if the item wasn't properly deleted
     if (testItem && testItem.metadata.id) {
       try {
-        await library.deleteBook(testItem.metadata.id);
+        await library.deleteItem(testItem.metadata.id);
       } catch (error) {
         // Ignore errors during cleanup
       }

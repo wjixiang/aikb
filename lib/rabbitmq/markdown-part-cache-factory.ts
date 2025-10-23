@@ -35,9 +35,7 @@ export class MarkdownPartCacheFactory {
   /**
    * 获取指定存储类型的Markdown部分缓存实例
    */
-  static getInstanceWithStorage(
-    storageType: 'mongodb',
-  ): MarkdownPartCache {
+  static getInstanceWithStorage(storageType: 'mongodb'): MarkdownPartCache {
     logger.info(
       `Creating new Markdown part cache instance with ${storageType} storage`,
     );

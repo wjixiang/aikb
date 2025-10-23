@@ -104,4 +104,4 @@ async selfDelete(): Promise<boolean>
 - The method is idempotent - calling it multiple times on the same item won't cause errors
 - S3 deletion failures are logged but don't prevent the method from completing
 - The method should be called when you want to permanently remove an item and all its data
-- Consider using this method instead of the library's `deleteBook()` method when you have direct access to a LibraryItem instance
+- Consider using this method instead of the library's `deleteItem()` method when you have direct access to a LibraryItem instance

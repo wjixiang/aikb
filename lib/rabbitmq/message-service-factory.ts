@@ -23,10 +23,10 @@ export class MessageServiceFactory implements IMessageServiceFactory {
     switch (config.protocol) {
       case MessageProtocol.AMQP:
         return new RabbitMQImplementation(config);
-      
+
       case MessageProtocol.STOMP:
         return new StompImplementation();
-      
+
       default:
         throw new Error(`Unsupported message protocol: ${config.protocol}`);
     }

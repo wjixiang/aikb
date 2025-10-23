@@ -46,16 +46,16 @@ describe('StompImplementation', () => {
       const originalPasscode = process.env.STOMP_PASSCODE;
       const originalMaxAttempts = process.env.STOMP_MAX_RECONNECT_ATTEMPTS;
       const originalReconnectDelay = process.env.STOMP_RECONNECT_DELAY;
-      
+
       // Set invalid configuration
       process.env.STOMP_BROKER_URL = 'ws://invalid-host:9999/ws';
       process.env.STOMP_LOGIN = 'invalid';
       process.env.STOMP_PASSCODE = 'invalid';
       process.env.STOMP_MAX_RECONNECT_ATTEMPTS = '1';
       process.env.STOMP_RECONNECT_DELAY = '100';
-      
+
       const invalidService = new StompImplementation();
-      
+
       // Restore environment variables after creating the service
       if (originalBrokerUrl) {
         process.env.STOMP_BROKER_URL = originalBrokerUrl;
@@ -102,16 +102,16 @@ describe('StompImplementation', () => {
       const originalPasscode = process.env.STOMP_PASSCODE;
       const originalMaxAttempts = process.env.STOMP_MAX_RECONNECT_ATTEMPTS;
       const originalReconnectDelay = process.env.STOMP_RECONNECT_DELAY;
-      
+
       // Set invalid configuration
       process.env.STOMP_BROKER_URL = 'ws://nonexistent-host-12345:9999/ws';
       process.env.STOMP_LOGIN = 'guest';
       process.env.STOMP_PASSCODE = 'guest';
       process.env.STOMP_MAX_RECONNECT_ATTEMPTS = '0';
       process.env.STOMP_RECONNECT_DELAY = '100';
-      
+
       const invalidService = new StompImplementation();
-      
+
       // Restore environment variables after creating the service
       if (originalBrokerUrl) {
         process.env.STOMP_BROKER_URL = originalBrokerUrl;
@@ -141,7 +141,7 @@ describe('StompImplementation', () => {
 
       // Should definitely throw an error
       await expect(invalidService.initialize()).rejects.toThrow();
-      
+
       // Should be disconnected after failed initialization
       expect(invalidService.getConnectionStatus()).toBe('disconnected');
       expect(invalidService.isConnected()).toBe(false);
@@ -179,7 +179,6 @@ describe('StompImplementation', () => {
     //       collections: [],
     //     },
     //   };
-
     //   await expect(
     //     stompService.publishMessage(RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST, message)
     //   ).rejects.toThrow('STOMP implementation not connected');
@@ -189,14 +188,14 @@ describe('StompImplementation', () => {
   describe('Message Consumption', () => {
     it('should throw error when consuming while not connected', async () => {
       await expect(
-        stompService.consumeMessages('test-destination', async () => {})
+        stompService.consumeMessages('test-destination', async () => {}),
       ).rejects.toThrow('STOMP implementation not connected');
     });
 
     it('should handle stopping consumption gracefully when not connected', async () => {
       // stopConsuming should not throw when not connected, it should just return
       await expect(
-        stompService.stopConsuming('test-subscription-id')
+        stompService.stopConsuming('test-subscription-id'),
       ).resolves.not.toThrow();
     });
   });
@@ -204,12 +203,12 @@ describe('StompImplementation', () => {
   describe('Connection Status Tracking', () => {
     it('should track connection status changes', () => {
       expect(stompService.getConnectionStatus()).toBe('disconnected');
-      
+
       // Status should change during initialization (but may not reach 'connected' in test)
       const initPromise = stompService.initialize();
       const status = stompService.getConnectionStatus();
       expect(status === 'connecting' || status === 'disconnected').toBe(true);
-      
+
       // Clean up
       initPromise.catch(() => {}); // Ignore potential connection errors
     });
@@ -225,8 +224,10 @@ describe('StompImplementation', () => {
 
 describe('STOMP Integration with Message Service Factory', () => {
   it('should be creatable through message service factory', async () => {
-    const { createMessageService } = await import('../message-service-factory.js');
-    
+    const { createMessageService } = await import(
+      '../message-service-factory.js'
+    );
+
     const stompService = createMessageService(MessageProtocol.STOMP, {
       connectionOptions: {
         brokerURL: 'ws://localhost:15674/ws',
@@ -246,7 +247,7 @@ describe('STOMP Integration with Message Service Factory', () => {
 describe('STOMP Configuration', () => {
   it('should provide valid default configuration', async () => {
     const { getValidatedStompConfig } = await import('../stomp.config.js');
-    
+
     const config = getValidatedStompConfig('test');
     expect(config).toBeDefined();
     expect(config?.protocol).toBe('stomp');
@@ -257,7 +258,7 @@ describe('STOMP Configuration', () => {
 
   it('should validate configuration correctly', async () => {
     const { validateStompConfig } = await import('../stomp.config.js');
-    
+
     const validConfig = {
       protocol: MessageProtocol.STOMP,
       connectionOptions: {
@@ -274,7 +275,7 @@ describe('STOMP Configuration', () => {
 
   it('should reject invalid configuration', async () => {
     const { validateStompConfig } = await import('../stomp.config.js');
-    
+
     const invalidConfig = {
       protocol: MessageProtocol.STOMP,
       connectionOptions: {

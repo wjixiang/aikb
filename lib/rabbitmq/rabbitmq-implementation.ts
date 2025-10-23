@@ -65,7 +65,10 @@ export class RabbitMQImplementation implements IMessageService {
    * Initialize RabbitMQ connection and setup topology
    */
   async initialize(): Promise<void> {
-    if (this.connectionStatus === 'connected' || this.connectionStatus === 'connecting') {
+    if (
+      this.connectionStatus === 'connected' ||
+      this.connectionStatus === 'connecting'
+    ) {
       return;
     }
 
@@ -134,7 +137,11 @@ export class RabbitMQImplementation implements IMessageService {
    * Check if the service is connected
    */
   isConnected(): boolean {
-    return this.connectionStatus === 'connected' && this.connection !== null && this.channel !== null;
+    return (
+      this.connectionStatus === 'connected' &&
+      this.connection !== null &&
+      this.channel !== null
+    );
   }
 
   /**
@@ -176,7 +183,7 @@ export class RabbitMQImplementation implements IMessageService {
       // });
       // throw new Error('RabbitMQ implementation not connected');
 
-      await this.initialize()
+      await this.initialize();
     }
 
     try {
@@ -270,10 +277,7 @@ export class RabbitMQImplementation implements IMessageService {
               `Error processing message from queue ${queueName}:`,
               error,
             );
-            logger.error(
-              `Message content was:`,
-              message.content.toString(),
-            );
+            logger.error(`Message content was:`, message.content.toString());
 
             if (!consumeOptions.noAck) {
               // Negative acknowledgment and requeue
@@ -305,7 +309,9 @@ export class RabbitMQImplementation implements IMessageService {
 
     try {
       await this.channel.cancel(consumerTag);
-      logger.info(`Stopped consuming messages for consumer tag: ${consumerTag}`);
+      logger.info(
+        `Stopped consuming messages for consumer tag: ${consumerTag}`,
+      );
     } catch (error) {
       logger.error(
         `Failed to stop consuming for consumer tag ${consumerTag}:`,
@@ -626,7 +632,9 @@ export class RabbitMQImplementation implements IMessageService {
     }
 
     this.connection.on('error', (error) => {
-      logger.error(`RabbitMQ connection error: ${JSON.stringify(error, null, 2)}` );
+      logger.error(
+        `RabbitMQ connection error: ${JSON.stringify(error, null, 2)}`,
+      );
       if (error.message !== 'Connection closing') {
         this.handleReconnection();
       }
@@ -690,8 +698,9 @@ export class RabbitMQImplementation implements IMessageService {
       clearInterval(this.heartbeatInterval);
     }
 
-    const interval = this.config.healthCheck?.interval || rabbitMQHealthCheckConfig.interval;
-    
+    const interval =
+      this.config.healthCheck?.interval || rabbitMQHealthCheckConfig.interval;
+
     this.heartbeatInterval = setInterval(async () => {
       if (this.connection && this.channel) {
         try {

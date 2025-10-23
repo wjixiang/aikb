@@ -6,14 +6,20 @@ import {
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
+  MultiVersionChunkingEmbeddingRequestMessage,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategy, ChunkingStrategyType } from '../chunking/chunkingStrategy';
+import { AbstractLibraryStorage, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import {
+  ChunkingStrategy,
+  ChunkingStrategyType,
+  defaultChunkingConfig,
+} from '../chunking/chunkingStrategy';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
+import { defaultEmbeddingConfig } from 'lib/embedding/embedding';
 
 const logger = createLoggerWithPrefix('PdfMergerService');
 
@@ -28,7 +34,10 @@ export class PdfMergerService {
   private storage: AbstractLibraryStorage;
   private markdownPartCache: MarkdownPartCache;
 
-  constructor(storage: AbstractLibraryStorage, markdownPartCache?: MarkdownPartCache) {
+  constructor(
+    storage: AbstractLibraryStorage,
+    markdownPartCache?: MarkdownPartCache,
+  ) {
     this.storage = storage;
     this.markdownPartCache = markdownPartCache || getMarkdownPartCache();
   }
@@ -123,27 +132,37 @@ export class PdfMergerService {
       );
 
       // Get the merged markdown content from MarkdownPartCache
-      logger.info(`Getting merged markdown content for item: ${message.itemId}`);
+      logger.info(
+        `Getting merged markdown content for item: ${message.itemId}`,
+      );
       let mergedMarkdown: string;
-      
+
       try {
         // Try to get the merged content from cache first
-        mergedMarkdown = await this.markdownPartCache.mergeAllParts(message.itemId);
-        logger.info(`Successfully retrieved merged markdown from cache for item: ${message.itemId}`);
+        mergedMarkdown = await this.markdownPartCache.mergeAllParts(
+          message.itemId,
+        );
+        logger.info(
+          `Successfully retrieved merged markdown from cache for item: ${message.itemId}`,
+        );
       } catch (cacheError) {
         logger.warn(
           `Failed to get merged markdown from cache for item ${message.itemId}, falling back to storage:`,
           cacheError,
         );
-        
+
         // Fallback to getting content from storage
         const markdownContent = await this.storage.getMarkdown(message.itemId);
         if (!markdownContent) {
-          throw new Error(`No markdown content found for item ${message.itemId}`);
+          throw new Error(
+            `No markdown content found for item ${message.itemId}`,
+          );
         }
 
         // Merge and clean up the markdown content
-        logger.info(`Merging markdown content from storage for item: ${message.itemId}`);
+        logger.info(
+          `Merging markdown content from storage for item: ${message.itemId}`,
+        );
         mergedMarkdown = await this.mergeMarkdownContent(
           markdownContent,
           message.itemId,
@@ -347,22 +366,36 @@ export class PdfMergerService {
     markdownContent: string,
   ): Promise<void> {
     try {
-      logger.info(`Starting chunking and embedding request for item: ${itemId}`);
-      
+      logger.info(
+        `Starting chunking and embedding request for item: ${itemId}`,
+      );
+
       // Simulate processing delay for testing purposes
-      logger.info(`Simulating 2-second delay for chunking and embedding processing`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const chunkingEmbeddingRequest = {
+      logger.info(
+        `Simulating 2-second delay for chunking and embedding processing`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const groupconfig: Omit<ChunkingEmbeddingGroup, "id"> = {
+        name: `chunk-embed-${Date.now()}`,
+        chunkingConfig: defaultChunkingConfig,
+        embeddingConfig: defaultEmbeddingConfig,
+        isDefault: false,
+        isActive: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
-        eventType: 'CHUNKING_EMBEDDING_REQUEST' as const,
+        eventType: "MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST",
         itemId,
         markdownContent,
-        chunkingStrategy: ChunkingStrategy.PARAGRAPH, // Default strategy
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,
+        groupConfig: groupconfig
       };
 
       await this.rabbitMQService.publishChunkingEmbeddingRequest(
@@ -390,13 +423,13 @@ export class PdfMergerService {
   ): Promise<void> {
     try {
       // Simulate processing delay for testing purposes
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // In a real implementation, this would:
       // 1. Split the markdown content into chunks
       // 2. Generate embeddings for each chunk
       // 3. Store the chunks and embeddings in the vector database
-      
+
       // For now, we just simulate the processing time
     } catch (error) {
       logger.error(
