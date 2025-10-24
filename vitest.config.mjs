@@ -7,7 +7,7 @@ export default defineConfig({
     hookTimeout: 30000, // Increase timeout for hooks to 30 seconds
     testTimeout: 10000, // Increase timeout for individual tests to 10 seconds
     setupFiles: ['./test/setup.ts'],
-    include: ['./knowledgeBase/**/*.test.ts', './pdfProcess-ts/**/*.test.ts', './lib/**/*.test.ts'],
+    include: ['./knowledgeBase/**/*.test.ts', './pdfProcess-ts/**/*.test.ts', './lib/**/*.test.ts', './libs/**/*.test.ts'],
     exclude: [
       '**/node_modules/**',
       '**/.venv/**',

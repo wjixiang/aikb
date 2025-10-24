@@ -1,4 +1,4 @@
-import { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../lib/MinerU/MinerUPdfConvertor';
 import type { IPdfConvertor } from './IPdfConvertor';
 
 /**
@@ -62,7 +62,7 @@ export function createMinerUConvertorFromEnv(
 }
 
 // Re-export MinerU classes for convenience
-export { MinerUPdfConvertor } from './MinerU/MinerUPdfConvertor';
+export { MinerUPdfConvertor } from '../../lib/MinerU/MinerUPdfConvertor';
 
 // Export PDF converter interface
 export type { IPdfConvertor } from './IPdfConvertor';
@@ -72,4 +72,4 @@ export type {
   ConversionResult,
   MinerUPdfConvertorConfig,
   ImageUploadResult,
-} from './MinerU/MinerUPdfConvertor';
+} from '../../lib/MinerU/MinerUPdfConvertor';

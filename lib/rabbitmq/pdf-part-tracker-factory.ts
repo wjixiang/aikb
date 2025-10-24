@@ -1,7 +1,7 @@
 import { IPdfPartTracker } from './pdf-part-tracker';
 import { PdfPartTrackerImpl } from './pdf-part-tracker-impl';
 import { PdfPartTrackerElasticsearchImpl } from './pdf-part-tracker-impl-elasticsearch';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfPartTrackerFactory');
 

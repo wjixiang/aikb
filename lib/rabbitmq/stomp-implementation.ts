@@ -16,7 +16,7 @@ import {
 } from './message.types';
 import { getValidatedStompConfig, getStompDestination } from './stomp.config';
 import { getRoutingKeyForQueue } from './queue-routing-mappings';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 const logger = createLoggerWithPrefix('StompImplementation');
 
 /**

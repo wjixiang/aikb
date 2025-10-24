@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import {
   MinerUConfig,
   MinerUDefaultConfig,
-} from './knowledgeImport/MinerU/MinerUClient';
+} from '../lib/MinerU/MinerUClient';
 dotenv.config();
 
 export interface AppConfig {

@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import {
   IItemVectorStorage,
   ItemVectorStorageStatus,

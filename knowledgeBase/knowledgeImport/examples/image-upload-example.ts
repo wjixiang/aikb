@@ -3,11 +3,11 @@
  * This example shows how images are automatically extracted and uploaded to S3
  */
 
-import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 import type {
   ConversionResult,
   ImageUploadResult,
-} from '../MinerU/MinerUPdfConvertor';
+} from '../../../lib/MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 
 async function demonstrateImageUpload() {

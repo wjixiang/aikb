@@ -7,7 +7,7 @@ import Library, {
 } from '../library';
 import * as fs from 'fs';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing

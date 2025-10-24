@@ -1,4 +1,4 @@
-import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';

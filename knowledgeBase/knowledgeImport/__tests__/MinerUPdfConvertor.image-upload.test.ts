@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
-import type { ImageUploadResult } from '../MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
+import type { ImageUploadResult } from '../../../lib/MinerU/MinerUPdfConvertor';
 
 // Mock the S3 service
 vi.mock('../../../lib/s3Service/S3Service', () => ({

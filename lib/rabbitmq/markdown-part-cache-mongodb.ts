@@ -1,11 +1,11 @@
 import { Collection, Db, ObjectId } from 'mongodb';
-import { connectToDatabase } from '../utils/mongodb';
+import { connectToDatabase } from '../../libs/utils/mongodb';
 import {
   MarkdownPartCache,
   MarkdownPartCacheError,
   MarkdownPartInfo,
 } from './markdown-part-cache';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('MongoDBMarkdownPartCache');
 

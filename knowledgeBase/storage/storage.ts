@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { MongodbEntityContentStorage } from './mongodb-entity-content-storage';
 import { MongodbKnowledgeContentStorage } from './mongodb-knowledge-content-storage';
 import { MongodbKnowledgeVectorStorage } from './mongodb-knowledge-vector-storage';

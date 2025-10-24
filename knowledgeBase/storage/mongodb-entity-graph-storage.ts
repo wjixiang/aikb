@@ -1,5 +1,5 @@
-import createLoggerWithPrefix from 'lib/logManagement/logger';
-import { connectToDatabase } from '../../lib/utils/mongodb';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { connectToDatabase } from '../../libs/utils/mongodb';
 import { AbstractEntityGraphStorage } from './abstract-storage';
 
 /**

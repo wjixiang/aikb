@@ -20,7 +20,7 @@ import {
 } from '../chunking/chunkingStrategy';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { defaultEmbeddingConfig } from 'lib/embedding/embedding';
 

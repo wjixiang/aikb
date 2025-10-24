@@ -1,4 +1,4 @@
-import type { IPdfConvertor } from '../IPdfConvertor';
+import type { IPdfConvertor } from '../../knowledgeBase/knowledgeImport/IPdfConvertor';
 import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,9 +9,9 @@ import * as yauzl from 'yauzl';
 import {
   uploadPdfFromPath,
   uploadToS3,
-} from '../../../lib/s3Service/S3Service';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
-import { app_config } from '../../config';
+} from '../s3Service/S3Service';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { app_config } from '../../knowledgeBase/config';
 
 /**
  * MinerU-based PDF converter implementation
@@ -118,7 +118,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
    */
   private extractTaskId(result: any): string {
     // Try direct task_id first
-    if (result?.task_id) {
+    if (result?.task_id) { 
       return result.task_id;
     }
 

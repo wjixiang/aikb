@@ -5,7 +5,7 @@ import {
 } from './pdf-part-tracker';
 import { PdfPartStatus } from './message.types';
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('PdfPartTrackerElasticsearchImpl');

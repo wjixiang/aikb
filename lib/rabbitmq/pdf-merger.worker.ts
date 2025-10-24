@@ -11,7 +11,7 @@ import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import { PdfMergerService, createPdfMergerService } from './pdf-merger.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfMergerWorker');
 

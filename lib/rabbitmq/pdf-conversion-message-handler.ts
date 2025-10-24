@@ -19,7 +19,7 @@ import {
   MessageHandlerResult,
 } from './pdf-conversion-message-handler.interface';
 import { v4 as uuidv4 } from 'uuid';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { RabbitMQService } from './rabbitmq.service';
 import { IRabbitMQService } from './rabbitmq-service.interface';
 

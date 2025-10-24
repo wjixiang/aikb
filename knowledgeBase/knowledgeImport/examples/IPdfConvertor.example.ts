@@ -3,7 +3,7 @@
  * with the MinerUPdfConvertor implementation
  */
 
-import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 import type { IPdfConvertor } from '../IPdfConvertor';
 import { createMinerUConvertorFromEnv } from '../PdfConvertor';
 

@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import {createLoggerWithPrefix} from '@aikb/log-management';
 
 /**
  * Error handling utility for multi-version chunking and embedding operations

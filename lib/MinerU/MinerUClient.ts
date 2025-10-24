@@ -6,7 +6,7 @@ import {
   uploadToS3,
   uploadPdfFromPath,
   getSignedUploadUrl,
-} from '../../../lib/s3Service/S3Service';
+} from '../s3Service/S3Service';
 
 /**
  * MinerU API Client for document parsing and conversion
@@ -20,7 +20,7 @@ export interface MinerUConfig {
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;
-  retryDelay?: number;
+  retryDelay?: number; 
   downloadDir: string;
   defaultOptions: {
     is_ocr: boolean;

@@ -19,7 +19,7 @@ import {
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
 } from '../message.types';
-import { MinerUPdfConvertor } from '../../../knowledgeBase/knowledgeImport/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../MinerU/MinerUPdfConvertor';
 import { v4 as uuidv4 } from 'uuid';
 import { getPdfDownloadUrl } from '../../s3Service/S3Service';
 

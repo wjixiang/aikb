@@ -4,9 +4,9 @@ import {
   PdfProcessingStatusInfo,
 } from './pdf-part-tracker';
 import { PdfPartStatus } from './message.types';
-import { connectToDatabase } from '../utils/mongodb';
+import { connectToDatabase } from '../../libs/utils/mongodb';
 import { Db, Collection } from 'mongodb';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('PdfPartTrackerImpl');

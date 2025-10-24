@@ -15,7 +15,7 @@ import {
   ChunkingEmbeddingGroup,
 } from '../../knowledgeBase/knowledgeImport/library';
 import { defaultChunkingConfig } from '../chunking/chunkingStrategy';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
 import { defaultEmbeddingConfig } from 'lib/embedding/embedding';

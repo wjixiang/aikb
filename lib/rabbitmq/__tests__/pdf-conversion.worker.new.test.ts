@@ -15,7 +15,7 @@ import { PdfConversionService } from '../pdf-conversion.service';
 import { PdfConversionMessageHandler } from '../pdf-conversion-message-handler';
 import { IPdfConversionService } from '../pdf-conversion.service.interface';
 import { IPdfConversionMessageHandler } from '../pdf-conversion-message-handler.interface';
-import { MinerUPdfConvertor } from '../../../knowledgeBase/knowledgeImport/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '../../MinerU/MinerUPdfConvertor';
 import { mockRabbitMQService } from '../__mocks__/rabbitmq.mock';
 
 // Load environment variables

@@ -13,7 +13,7 @@ import { PdfConversionService } from './pdf-conversion.service';
 import { IPdfConversionMessageHandler } from './pdf-conversion-message-handler.interface';
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler';
 import { PdfConversionWorker } from './pdf-conversion.worker';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { IRabbitMQService } from './rabbitmq-service.interface';
 
 const logger = createLoggerWithPrefix('PdfConversionWorkerFactory');

@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { embeddingManager } from './embedding-manager';
 import { EmbeddingProviderBase } from './embedding-providers';
 

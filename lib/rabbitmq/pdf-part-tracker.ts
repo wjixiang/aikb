@@ -1,5 +1,5 @@
 import { PdfPartStatus } from './message.types';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfPartTracker');
 

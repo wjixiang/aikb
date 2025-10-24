@@ -1,0 +1,42 @@
+{
+  "name": "@aikb/log-management",
+  "version": "0.0.1",
+  "description": "Log management utilities with Elasticsearch integration",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./logger": {
+      "import": "./src/logger.ts",
+      "types": "./src/logger.ts"
+    },
+    "./elasticsearch-transport": {
+      "import": "./src/elasticsearch-transport.ts",
+      "types": "./src/elasticsearch-transport.ts"
+    },
+    "./error-handler": {
+      "import": "./src/errorHandler.ts",
+      "types": "./src/errorHandler.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^9.1.1",
+    "winston": "^3.17.0",
+    "winston-transport": "^4.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import winston from 'winston';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 describe('Logger Format', () => {
   it('should create a logger with correct console format', () => {

@@ -4,12 +4,12 @@ import {
   getSignedUrlForDownload,
   deleteFromS3,
 } from '../../lib/s3Service/S3Service';
-import { connectToDatabase } from '../../lib/utils/mongodb';
+import { connectToDatabase } from '../../libs/utils/mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');

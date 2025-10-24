@@ -5,7 +5,7 @@ import { AbstractKnowledgeStorage } from '../storage/abstract-storage';
 import Knowledge from '../Knowledge';
 import Entity from '../Entity';
 import { EntityExtractor } from './EntityExtractor';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 /**
  * Workflow class for creating knowledge hierarchy from natural language text

@@ -2,7 +2,7 @@
 import type {
   ConversionResult,
   ImageUploadResult,
-} from './MinerU/MinerUPdfConvertor';
+} from '../../lib/MinerU/MinerUPdfConvertor';
 
 /**
  * Interface for PDF converters

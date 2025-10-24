@@ -2,7 +2,7 @@ import { KnowledgeEntryProxy } from '../knowledgeEntryProxy';
 import axios from 'axios';
 import WikiSearchApi, { WikiSearchApiConfig } from './WikiSearchApi';
 import { b } from 'baml_client';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 interface WikiSearchParams {
   language_code: string;
