@@ -297,6 +297,7 @@ export class LibraryItem {
    * Search within this item's chunks
    * @param query The search query
    * @param limit Maximum number of results
+   * @deprecated library storage will no longer support vector search
    */
   async semanticSearchWithDenseVector(
     query: string,
@@ -315,6 +316,7 @@ export class LibraryItem {
    * @param limit Maximum number of results
    * @param threshold Similarity threshold
    * @param options Optional search options
+   * @deprecated library storage will no longer support vector search
    */
   async findSimilarInChunks(
     queryVector: number[],
@@ -357,7 +359,7 @@ export class LibraryItem {
 
   /**
    * Delete all chunks for this item
-   * @deprecated
+   * @deprecated will migrate to chunkEmbedGroup service
    */
   async deleteChunks(): Promise<number> {
     return await this.storage.deleteChunksByItemId(this.metadata.id!);
@@ -365,6 +367,7 @@ export class LibraryItem {
 
   /**
    * Get chunk statistics for this item
+   * @deprecated will migrate to chunkEmbedGroup service
    */
   async getChunkStats(): Promise<{
     totalChunks: number;
