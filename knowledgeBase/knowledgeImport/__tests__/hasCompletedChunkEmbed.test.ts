@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LibraryItem, BookMetadata, ItemChunk } from '../library';
+import { BookMetadata, ItemChunk } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import {
   EmbeddingProvider,
   OpenAIModel,
 } from '../../../lib/embedding/embedding';
+import { LibraryItem } from '../libraryItem';
 
 describe('LibraryItem.hasCompletedChunkEmbed', () => {
   let mockStorage: MockLibraryStorage;

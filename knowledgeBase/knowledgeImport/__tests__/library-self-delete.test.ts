@@ -1,4 +1,4 @@
-import Library, { LibraryItem, S3MongoLibraryStorage } from '../library';
+import Library, { S3MongoLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { deleteFromS3 } from '../../../lib/s3Service/S3Service';
@@ -16,6 +16,7 @@ import {
   EmbeddingProvider,
   OpenAIModel,
 } from '../../../lib/embedding/embedding';
+import { LibraryItem } from '../libraryItem';
 
 // Mock the S3Service to avoid real S3 operations
 vi.mock('/lib/s3Service/S3Service', () => ({

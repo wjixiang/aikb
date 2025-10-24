@@ -1,4 +1,4 @@
-import { LibraryItem, ItemChunk } from '../library';
+import { ItemChunk } from '../library';
 import { AbstractLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
@@ -7,6 +7,7 @@ import {
   OpenAIModel,
   AlibabaModel,
 } from '../../../lib/embedding/embedding';
+import { LibraryItem } from '../libraryItem';
 
 // Mock storage implementation for testing
 class MockStorage implements AbstractLibraryStorage {

@@ -3,15 +3,11 @@ import { config } from 'dotenv';
 config({ path: '.env' });
 
 import Library, {
-  LibraryItem,
   S3ElasticSearchLibraryStorage,
 } from '../library';
-import { S3MongoLibraryStorage } from '../library';
 import * as fs from 'fs';
-import * as path from 'path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerU/MinerUPdfConvertor';
-import { skip } from 'rxjs';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing
