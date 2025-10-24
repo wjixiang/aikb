@@ -10,7 +10,7 @@ import {
   uploadPdfFromPath,
   uploadToS3,
 } from '../../../lib/s3Service/S3Service';
-import createLoggerWithPrefix from '../../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { app_config } from '../../config';
 
 /**

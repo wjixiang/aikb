@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { embeddingManager } from './embedding-manager';
 import { EmbeddingProviderBase } from './embedding-providers';
 

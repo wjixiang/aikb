@@ -14,7 +14,7 @@ import {
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliterWorker } from '../pdfProcess-ts/pdfSpliter';

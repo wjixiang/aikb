@@ -1,5 +1,5 @@
 import { MessageServiceConfig } from './message-service.interface';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('StompConfig');
 

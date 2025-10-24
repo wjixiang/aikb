@@ -16,7 +16,7 @@ import Library, {
 } from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { Embedding } from 'lib/embedding/embedding';
 import { ChunkingManager } from 'lib/chunking/chunkingManager';

@@ -49,7 +49,7 @@ import {
 import { IRabbitMQService } from './rabbitmq-service.interface';
 import { createMessageService } from './message-service-factory';
 import { getStompDestination } from './stomp.config';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQService');
 

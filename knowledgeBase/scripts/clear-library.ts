@@ -5,7 +5,7 @@ import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
 import { connectToDatabase } from '../../lib/mongodb';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import readline from 'readline';
 import { config } from 'dotenv';
 config();

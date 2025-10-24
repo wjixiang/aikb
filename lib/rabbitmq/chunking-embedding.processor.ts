@@ -8,7 +8,7 @@ import {
 } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
 import { Embedding } from 'lib/embedding/embedding';
 import { ChunkingManager } from 'lib/chunking/chunkingManager';

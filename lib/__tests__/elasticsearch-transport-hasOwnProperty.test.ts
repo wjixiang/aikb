@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Client } from '@elastic/elasticsearch';
-import { ElasticsearchTransport } from '../elasticsearch-transport';
+import { ElasticsearchTransport } from '../logManagement/elasticsearch-transport';
 
 describe('Elasticsearch Transport hasOwnProperty Fix', () => {
   let mockClient: any;

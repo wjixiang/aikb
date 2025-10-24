@@ -4,7 +4,7 @@
 import './polyfills';
 
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 /**
  * 测试脚本：创建测试索引并验证清空脚本功能

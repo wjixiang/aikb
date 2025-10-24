@@ -5,7 +5,7 @@ import {
   MarkdownPartCacheError,
   MarkdownPartInfo,
 } from './markdown-part-cache';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('MongoDBMarkdownPartCache');
 

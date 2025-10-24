@@ -22,7 +22,7 @@ import {
   getAllQueueConfigs,
   getAllExchangeConfigs,
 } from './rabbitmq.config';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQImplementation');
 

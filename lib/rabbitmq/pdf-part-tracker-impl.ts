@@ -6,7 +6,7 @@ import {
 import { PdfPartStatus } from './message.types';
 import { connectToDatabase } from '../mongodb';
 import { Db, Collection } from 'mongodb';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('PdfPartTrackerImpl');

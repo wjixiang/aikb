@@ -9,7 +9,7 @@ import KnowledgeStorage from '../storage/knowledgeStorage';
 import EntityStorage from '../storage/entityStorage';
 import Entity from '../Entity';
 import { KnowledgeCreationWorkflow } from '../knowledgeCreation/KnowledgeCreationWorkflow';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 /**
  * 验证运行器测试

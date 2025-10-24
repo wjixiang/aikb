@@ -43,7 +43,7 @@ import {
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import { v4 as uuidv4 } from 'uuid';
-import createLoggerWithPrefix from 'lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 // Load environment variables
 config({ path: '.env' });

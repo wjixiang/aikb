@@ -14,7 +14,7 @@ import {
   MessageServiceConfig,
 } from './message-service.interface';
 import { BaseRabbitMQMessage, RabbitMQMessageOptions } from './message.types';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('StompImplementation');
 

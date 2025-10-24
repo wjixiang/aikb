@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');

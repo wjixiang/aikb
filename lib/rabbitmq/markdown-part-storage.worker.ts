@@ -15,7 +15,7 @@ import { MarkdownPartCache } from './markdown-part-cache';
 import { getMarkdownPartCache } from './markdown-part-cache-factory';
 import { IPdfPartTracker } from './pdf-part-tracker';
 import { getPdfPartTracker } from './pdf-part-tracker-factory';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('MarkdownPartStorageWorker');

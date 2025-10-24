@@ -55,7 +55,7 @@ ELASTICSEARCH_URL=http://elasticsearch:9200
 日志系统已完全集成到现有的 `createLoggerWithPrefix` 函数中。无需更改现有代码，只需配置环境变量即可。
 
 ```typescript
-import createLoggerWithPrefix from './lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('MyService');
 

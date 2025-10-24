@@ -8,7 +8,7 @@ import { ElasticsearchVectorStorage } from '../../storage/elasticsearch-entity-v
 import EntityStorage from '../../storage/entityStorage';
 import KnowledgeStorage from '../../storage/knowledgeStorage';
 import { KBStorage } from '../../storage/storage';
-import createLoggerWithPrefix from '../../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('CLI-Storage');
 

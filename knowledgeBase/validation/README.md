@@ -249,7 +249,7 @@ const customKnowledge = {
 启用详细日志：
 
 ```typescript
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 // 设置日志级别为DEBUG
 process.env.LOG_LEVEL = 'debug';

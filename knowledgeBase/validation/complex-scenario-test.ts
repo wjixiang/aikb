@@ -9,7 +9,7 @@ import Entity from '../Entity';
 import { KnowledgeCreationWorkflow } from '../knowledgeCreation/KnowledgeCreationWorkflow';
 import { KnowledgeData, EntityData } from '../knowledge.type';
 import { RelationshipVisualizer } from './relationship-visualizer';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -428,7 +428,7 @@ import { createPdfAnalyzerService } from '../lib/rabbitmq/pdf-analyzer.service';
 import { createPdfMergerService } from '../lib/rabbitmq/pdf-merger.service';
 import { startMarkdownStorageWorker } from '../lib/rabbitmq/markdown-storage.worker';
 import { createStorage } from '../storage/storage';
-import createLoggerWithPrefix from '../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('WorkerManager');
 

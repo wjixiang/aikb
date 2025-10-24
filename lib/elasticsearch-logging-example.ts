@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from './logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 /**
  * 示例脚本：演示 Elasticsearch 日志功能

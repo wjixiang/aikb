@@ -12,7 +12,7 @@ import {
   createPdfAnalyzerService,
 } from './pdf-analyzer.service';
 import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
-import createLoggerWithPrefix from '../logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { IMessageService, MessageProtocol } from './message-service.interface';
 
 const logger = createLoggerWithPrefix('PdfAnalysisWorker');

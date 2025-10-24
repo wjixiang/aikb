@@ -8,7 +8,7 @@ import {
   checkDatabaseConnection,
   displayDatabaseStatus,
 } from './utils/storage';
-import createLoggerWithPrefix from '../../lib/logger';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
 
 const logger = createLoggerWithPrefix('CLI-Main');
 
