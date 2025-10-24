@@ -365,35 +365,10 @@ export interface MarkdownPartStorageFailedMessage extends BaseRabbitMQMessage {
 }
 
 /**
- * Chunking and embedding request message
- * @deprecated
+ * Multi-version chunking and embedding request message
  */
 export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   eventType: 'CHUNKING_EMBEDDING_REQUEST';
-  itemId: string;
-  markdownContent?: string; // Optional if markdown is already stored
-  chunkingStrategy: ChunkingStrategy;
-  priority?: 'low' | 'normal' | 'high';
-  retryCount?: number;
-  maxRetries?: number;
-
-  // Multi-version support
-  denseVectorIndexGroupId?: string; // Optional group ID for this chunking/embedding combination
-  embeddingProvider?: EmbeddingProvider; // Optional embedding provider override
-  embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
-  chunkingConfig?: ChunkingConfig; // Optional chunking configuration override
-
-  // Version control
-  forceReprocess?: boolean; // Force reprocessing even if chunks exist
-  preserveExisting?: boolean; // Keep existing chunks from other groups
-}
-
-/**
- * Multi-version chunking and embedding request message
- */
-export interface MultiVersionChunkingEmbeddingRequestMessage
-  extends BaseRabbitMQMessage {
-  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST';
   itemId: string;
   markdownContent?: string;
 
@@ -509,11 +484,10 @@ export type PdfConversionMessage =
   | MarkdownStorageRequestMessage
   | MarkdownStorageCompletedMessage
   | MarkdownStorageFailedMessage
-  | ChunkingEmbeddingRequestMessage
   | ChunkingEmbeddingProgressMessage
   | ChunkingEmbeddingCompletedMessage
   | ChunkingEmbeddingFailedMessage
-  | MultiVersionChunkingEmbeddingRequestMessage
+  | ChunkingEmbeddingRequestMessage
   | MultiVersionChunkingEmbeddingProgressMessage
   | MultiVersionChunkingEmbeddingCompletedMessage;
 

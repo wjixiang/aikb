@@ -272,8 +272,8 @@ export class MultiVersionVectorStorage {
 #### Enhanced RabbitMQ Messages
 
 ```typescript
-export interface MultiVersionChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
-  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST';
+export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
+  eventType: 'CHUNKING_EMBEDDING_REQUEST';
   itemId: string;
   markdownContent?: string;
   

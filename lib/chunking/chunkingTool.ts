@@ -202,6 +202,7 @@ export function chunkTextWithFallback(
 
 /**
  * 获取可用的切片策略列表
+ * @deprecated
  */
 export function getAvailableStrategies(): Array<{
   name: string;

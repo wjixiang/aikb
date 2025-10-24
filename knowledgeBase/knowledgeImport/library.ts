@@ -19,8 +19,6 @@ import {
 } from './PdfConvertor';
 // 导入新的统一chunking接口
 import { getAvailableStrategies } from '../../lib/chunking/chunkingTool';
-import { ChunkSearchUtils } from '../../lib/chunking/chunkSearchUtils';
-import { ChunkingErrorHandler } from '../../lib/error/errorHandler';
 import {
   h1Chunking,
   paragraphChunking,
@@ -42,7 +40,7 @@ import {
 import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from '../../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../../lib/rabbitmq/rabbitmq.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -2096,28 +2094,27 @@ export class LibraryItem {
         `Sending chunking and embedding request for item: ${this.metadata.id}`,
       );
 
-      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage =
-        {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
-          itemId: this.metadata.id!,
-          markdownContent: this.metadata.markdownContent,
-          embeddingConfig: embeddingConfig,
-          chunkingConfig: chunkingConfig,
-          priority: 'normal',
-          retryCount: 0,
-          maxRetries: 3,
-          groupConfig: {
-            name: groupName ?? `chunk-embed-${Date.now()}`,
-            chunkingConfig: chunkingConfig ?? defaultChunkingConfig,
-            embeddingConfig: embeddingConfig ?? defaultEmbeddingConfig,
-            isDefault: false,
-            isActive: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        };
+      const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
+        messageId: uuidv4(),
+        timestamp: Date.now(),
+        eventType: 'CHUNKING_EMBEDDING_REQUEST',
+        itemId: this.metadata.id!,
+        markdownContent: this.metadata.markdownContent,
+        embeddingConfig: embeddingConfig,
+        chunkingConfig: chunkingConfig,
+        priority: 'normal',
+        retryCount: 0,
+        maxRetries: 3,
+        groupConfig: {
+          name: groupName ?? `chunk-embed-${Date.now()}`,
+          chunkingConfig: chunkingConfig ?? defaultChunkingConfig,
+          embeddingConfig: embeddingConfig ?? defaultEmbeddingConfig,
+          isDefault: false,
+          isActive: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
 
       // Publish the request to RabbitMQ
       await this.rabbitMQService.publishChunkingEmbeddingRequest(
@@ -2141,10 +2138,10 @@ export class LibraryItem {
   }
 
   /**
-   * Get available chunking strategies
+   * Get available chunk/embed group
    * @returns Array of available strategies
    */
-  getAvailableChunkingStrategies(): Array<{
+  getAvailableChunkEmbedGroup(): Array<{
     name: string;
     description: string;
     version: string;

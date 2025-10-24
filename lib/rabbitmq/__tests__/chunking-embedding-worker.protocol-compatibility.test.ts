@@ -9,7 +9,7 @@ import {
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
@@ -176,10 +176,10 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       });
 
       it('should handle chunking embedding request message', async () => {
-        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
+        const testMessage: ChunkingEmbeddingRequestMessage = {
           messageId: `test_message_id_${Date.now()}`,
           timestamp: Date.now(),
-          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
+          eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
           markdownContent:
             '# test markdown content\n\nthis is a test markdown content for chunking and embedding.',
@@ -216,10 +216,10 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       });
 
       it('should handle multi-version chunking embedding request message', async () => {
-        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
+        const testMessage: ChunkingEmbeddingRequestMessage = {
           messageId: `test_message_id_mv_${Date.now()}`,
           timestamp: Date.now(),
-          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
+          eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
           groupConfig: {
             name: 'Test Group',
@@ -277,7 +277,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
         expect(handleMessageSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             messageId: testMessage.messageId,
-            eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
+            eventType: 'CHUNKING_EMBEDDING_REQUEST',
             itemId: testMessage.itemId,
             priority: testMessage.priority,
             retryCount: testMessage.retryCount,
@@ -306,10 +306,10 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       });
 
       it('should handle chunking embedding request message', async () => {
-        const testMessage: MultiVersionChunkingEmbeddingRequestMessage = {
+        const testMessage: ChunkingEmbeddingRequestMessage = {
           messageId: `test_message_id_${Date.now()}`,
           timestamp: Date.now(),
-          eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST',
+          eventType: 'CHUNKING_EMBEDDING_REQUEST',
           itemId: 'test_item_id',
           markdownContent:
             '# test markdown content\n\nthis is a test markdown content for chunking and embedding.',

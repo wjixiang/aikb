@@ -6,10 +6,13 @@ import {
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage, ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
+import {
+  AbstractLibraryStorage,
+  ChunkingEmbeddingGroup,
+} from '../../knowledgeBase/knowledgeImport/library';
 import {
   ChunkingStrategy,
   ChunkingStrategyType,
@@ -376,26 +379,26 @@ export class PdfMergerService {
       );
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const groupconfig: Omit<ChunkingEmbeddingGroup, "id"> = {
+      const groupconfig: Omit<ChunkingEmbeddingGroup, 'id'> = {
         name: `chunk-embed-${Date.now()}`,
         chunkingConfig: defaultChunkingConfig,
         embeddingConfig: defaultEmbeddingConfig,
         isDefault: false,
         isActive: false,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      };
 
-      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage = {
+      const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
-        eventType: "MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST",
+        eventType: 'CHUNKING_EMBEDDING_REQUEST',
         itemId,
         markdownContent,
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,
-        groupConfig: groupconfig
+        groupConfig: groupconfig,
       };
 
       await this.rabbitMQService.publishChunkingEmbeddingRequest(

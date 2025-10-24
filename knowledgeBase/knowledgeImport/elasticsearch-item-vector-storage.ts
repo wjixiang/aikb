@@ -9,10 +9,16 @@ import {
   ChunkSearchFilter,
 } from './library';
 import { IdUtils } from './library';
-import { Embedding } from '../../lib/embedding/embedding';
+import {
+  defaultEmbeddingConfig,
+  Embedding,
+  EmbeddingConfig,
+} from '../../lib/embedding/embedding';
 import { ChunkingManager } from 'lib/chunking/chunkingManager';
 import { v4 } from 'uuid';
 import { threadId } from 'worker_threads';
+import { ChunkingConfig } from 'lib/chunking/chunkingTool';
+import { defaultChunkingConfig } from 'lib/chunking/chunkingStrategy';
 
 const logger = createLoggerWithPrefix('ElasticSearchItemVectorStorage');
 
@@ -362,6 +368,34 @@ export class ElasticSearchItemVectorStorage implements IItemVectorStorage {
       return false;
     }
   }
+}
+
+export interface IChunkEmbedGroupStorage {
+  createNewGroup: (groupInfo: ChunkingEmbeddingGroup) => Promise<boolean>;
+  listGroup: () => Promise<ChunkingEmbeddingGroup[]>;
+  getGroupById: (id: string) => Promise<ChunkingEmbeddingGroup>;
+}
+
+export async function createItemChunkEmbedGroup(
+  itemId: string,
+  storage: IChunkEmbedGroupStorage,
+  groupName?: string,
+  chunkingConfig?: ChunkingConfig,
+  embeddingConfig?: EmbeddingConfig,
+) {
+  const groupId = `${itemId}-${groupName}-${Date.now()}`;
+  const groupInfo: ChunkingEmbeddingGroup = {
+    id: groupId,
+    name: groupName ?? `unamedGroup-${Date.now()}`,
+    chunkingConfig: chunkingConfig ?? defaultChunkingConfig,
+    embeddingConfig: embeddingConfig ?? defaultEmbeddingConfig,
+    isDefault: false,
+    isActive: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return await storage.createNewGroup(groupInfo);
 }
 
 /**

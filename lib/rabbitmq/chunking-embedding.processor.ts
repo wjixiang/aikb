@@ -1,5 +1,5 @@
 import {
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
   PdfProcessingStatus,
 } from './message.types';
 import {
@@ -49,7 +49,7 @@ export interface StatusUpdater {
 export interface RetryHandler {
   shouldRetry(retryCount: number, maxRetries: number): boolean;
   handleRetry(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
+    message: ChunkingEmbeddingRequestMessage,
     retryCount: number,
     maxRetries: number,
   ): Promise<void>;
@@ -100,7 +100,7 @@ export class ChunkingEmbeddingProcessor {
    * Process a chunking and embedding request
    */
   async processChunkingEmbeddingRequest(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
+    message: ChunkingEmbeddingRequestMessage,
   ): Promise<void> {
     // Get markdown content
     const markdown =

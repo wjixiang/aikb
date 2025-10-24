@@ -25,7 +25,7 @@ import {
   ChunkingEmbeddingFailedMessage,
   RabbitMQMessageOptions,
   PdfProcessingStatus,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from '../message.types';
 
 /**
@@ -308,7 +308,7 @@ export class MockRabbitMQService {
   }
 
   async publishChunkingEmbeddingRequest(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
+    message: ChunkingEmbeddingRequestMessage,
   ): Promise<boolean> {
     return this.publishMessage('chunking-embedding-request', message);
   }

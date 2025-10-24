@@ -26,7 +26,7 @@ import {
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
   PdfConversionMessage,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from './message.types';
 
 /**
@@ -186,7 +186,7 @@ export interface IRabbitMQService {
    * Publish chunking and embedding request
    */
   publishChunkingEmbeddingRequest(
-    request: MultiVersionChunkingEmbeddingRequestMessage,
+    request: ChunkingEmbeddingRequestMessage,
   ): Promise<boolean>;
 
   /**

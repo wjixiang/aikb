@@ -198,7 +198,7 @@ const chunks = await item.chunkEmbedAdvanced('h1', true, {
 });
 
 // 获取可用的chunking策略
-const strategies = item.getAvailableChunkingStrategies();
+const strategies = item.getAvailableChunkEmbedGroup();
 
 // 获取策略的默认配置
 const config = item.getChunkingStrategyDefaultConfig('paragraph');

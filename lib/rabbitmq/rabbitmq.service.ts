@@ -30,7 +30,7 @@ import {
   RABBITMQ_ROUTING_KEYS,
   RABBITMQ_CONSUMER_TAGS,
   PdfProcessingStatus,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from './message.types';
 import {
   getValidatedRabbitMQConfig,
@@ -537,7 +537,7 @@ export class RabbitMQService implements IRabbitMQService {
    * Publish chunking and embedding request
    */
   async publishChunkingEmbeddingRequest(
-    request: MultiVersionChunkingEmbeddingRequestMessage,
+    request: ChunkingEmbeddingRequestMessage,
   ): Promise<boolean> {
     return this.publishMessage(
       RABBITMQ_ROUTING_KEYS.CHUNKING_EMBEDDING_REQUEST,

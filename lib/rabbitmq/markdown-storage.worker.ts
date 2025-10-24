@@ -5,7 +5,7 @@ import {
   PdfProcessingStatus,
   RABBITMQ_QUEUES,
   RABBITMQ_CONSUMER_TAGS,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
 } from './message.types';
 import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
@@ -14,9 +14,7 @@ import {
   BookMetadata,
   ChunkingEmbeddingGroup,
 } from '../../knowledgeBase/knowledgeImport/library';
-import {
-  defaultChunkingConfig,
-} from '../chunking/chunkingStrategy';
+import { defaultChunkingConfig } from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '../logger';
 import { v4 as uuidv4 } from 'uuid';
 import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
@@ -252,27 +250,26 @@ export class MarkdownStorageWorker {
     markdownContent: string,
   ): Promise<void> {
     try {
-      const groupinfo: Omit<ChunkingEmbeddingGroup, "id"> = {
+      const groupinfo: Omit<ChunkingEmbeddingGroup, 'id'> = {
         name: `chunk-embed-${Date.now()}`,
         chunkingConfig: defaultChunkingConfig,
         embeddingConfig: defaultEmbeddingConfig,
         isDefault: false,
         isActive: false,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      
+        updatedAt: new Date(),
+      };
 
-      const chunkingEmbeddingRequest: MultiVersionChunkingEmbeddingRequestMessage = {
+      const chunkingEmbeddingRequest: ChunkingEmbeddingRequestMessage = {
         messageId: uuidv4(),
         timestamp: Date.now(),
-        eventType: "MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST",
+        eventType: 'CHUNKING_EMBEDDING_REQUEST',
         itemId,
         markdownContent,
         priority: 'normal' as const,
         retryCount: 0,
         maxRetries: 3,
-        groupConfig: groupinfo
+        groupConfig: groupinfo,
       };
 
       await this.rabbitMQService.publishChunkingEmbeddingRequest(

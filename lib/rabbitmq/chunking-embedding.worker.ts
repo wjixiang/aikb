@@ -2,7 +2,7 @@ import {
   ChunkingEmbeddingProgressMessage,
   ChunkingEmbeddingCompletedMessage,
   ChunkingEmbeddingFailedMessage,
-  MultiVersionChunkingEmbeddingRequestMessage,
+  ChunkingEmbeddingRequestMessage,
   MultiVersionChunkingEmbeddingProgressMessage,
   MultiVersionChunkingEmbeddingCompletedMessage,
   PdfProcessingStatus,
@@ -43,7 +43,7 @@ interface StatusUpdater {
 interface RetryHandler {
   shouldRetry(retryCount: number, maxRetries: number): boolean;
   handleRetry(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
+    message: ChunkingEmbeddingRequestMessage,
     retryCount: number,
     maxRetries: number,
   ): Promise<void>;
@@ -167,9 +167,9 @@ export class ChunkingEmbeddingWorker
         case 'CHUNKING_EMBEDDING_REQUEST':
           throw new Error('CHUNKING_EMBEDDING_REQUEST not longer support');
           break;
-        case 'MULTI_VERSION_CHUNKING_EMBEDDING_REQUEST':
+        case 'CHUNKING_EMBEDDING_REQUEST':
           await this.processor.processChunkingEmbeddingRequest(
-            message as MultiVersionChunkingEmbeddingRequestMessage,
+            message as ChunkingEmbeddingRequestMessage,
           );
           break;
         default:
@@ -265,7 +265,7 @@ export class ChunkingEmbeddingWorker
   }
 
   async handleRetry(
-    message: MultiVersionChunkingEmbeddingRequestMessage,
+    message: ChunkingEmbeddingRequestMessage,
     retryCount: number,
     maxRetries: number,
   ): Promise<void> {
