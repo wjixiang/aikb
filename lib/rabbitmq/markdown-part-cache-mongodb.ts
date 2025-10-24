@@ -1,5 +1,5 @@
 import { Collection, Db, ObjectId } from 'mongodb';
-import { connectToDatabase } from '../mongodb';
+import { connectToDatabase } from '../utils/mongodb';
 import {
   MarkdownPartCache,
   MarkdownPartCacheError,

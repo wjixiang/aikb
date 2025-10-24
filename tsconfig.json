@@ -24,7 +24,7 @@
     "types": ["vitest/globals"]
   },
   "exclude": [
-    "./web-frontend",
+    "apps/web-frontend",
     "./node_modules"
   ]
 }

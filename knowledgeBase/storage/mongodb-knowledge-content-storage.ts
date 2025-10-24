@@ -1,5 +1,5 @@
 import createLoggerWithPrefix from 'lib/logManagement/logger';
-import { connectToDatabase } from '../../lib/mongodb';
+import { connectToDatabase } from '../../lib/utils/mongodb';
 import { AbstractKnowledgeContentStorage } from './abstract-storage';
 import { KnowledgeData, KnowledgeDataWithId } from '../knowledge.type';
 

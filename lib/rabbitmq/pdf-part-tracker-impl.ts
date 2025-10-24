@@ -4,7 +4,7 @@ import {
   PdfProcessingStatusInfo,
 } from './pdf-part-tracker';
 import { PdfPartStatus } from './message.types';
-import { connectToDatabase } from '../mongodb';
+import { connectToDatabase } from '../utils/mongodb';
 import { Db, Collection } from 'mongodb';
 import createLoggerWithPrefix from 'lib/logManagement/logger';
 import { v4 as uuidv4 } from 'uuid';

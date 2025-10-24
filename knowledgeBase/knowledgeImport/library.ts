@@ -4,7 +4,7 @@ import {
   getSignedUrlForDownload,
   deleteFromS3,
 } from '../../lib/s3Service/S3Service';
-import { connectToDatabase } from '../../lib/mongodb';
+import { connectToDatabase } from '../../lib/utils/mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
