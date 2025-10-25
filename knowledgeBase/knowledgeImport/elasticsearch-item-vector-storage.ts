@@ -14,11 +14,11 @@ import {
   Embedding,
   EmbeddingConfig,
 } from '@aikb/embedding';
-import { ChunkingManager } from 'lib/chunking/chunkingManager';
+import { ChunkingManager } from '@aikb/chunking';
 import { v4 } from 'uuid';
 import { threadId } from 'worker_threads';
-import { ChunkingConfig } from 'lib/chunking/chunkingTool';
-import { defaultChunkingConfig } from 'lib/chunking/chunkingStrategy';
+import { ChunkingConfig } from '@aikb/chunking';
+import { defaultChunkingConfig } from '@aikb/chunking';
 
 const logger = createLoggerWithPrefix('ElasticSearchItemVectorStorage');
 

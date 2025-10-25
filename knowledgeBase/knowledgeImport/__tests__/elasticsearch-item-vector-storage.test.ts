@@ -9,16 +9,9 @@ import {
   ItemVectorStorageStatus,
   ItemChunkSemanticSearchQuery,
 } from '../library';
-import {
-  ChunkingStrategy,
-  ChunkingConfig,
-} from '../../../lib/chunking/chunkingStrategy';
-import {
-  EmbeddingProvider,
-  EmbeddingConfig,
-  Embedding,
-} from '@aikb/embedding';
-import { ChunkingManager } from 'lib/chunking/chunkingManager';
+import { ChunkingStrategy, ChunkingConfig } from '@aikb/chunking';
+import { EmbeddingProvider, EmbeddingConfig, Embedding } from '@aikb/embedding';
+import { ChunkingManager } from '@aikb/chunking';
 
 // Mock the embedding service
 vi.mock('../../../lib/embedding/embedding', async (importOriginal) => {

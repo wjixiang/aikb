@@ -2,11 +2,7 @@ import { ItemChunk } from '../library';
 import { AbstractLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { ObjectId } from 'mongodb';
-import {
-  EmbeddingProvider,
-  OpenAIModel,
-  AlibabaModel,
-} from '@aikb/embedding';
+import { EmbeddingProvider, OpenAIModel, AlibabaModel } from '@aikb/embedding';
 import { LibraryItem } from '../libraryItem';
 
 // Mock storage implementation for testing

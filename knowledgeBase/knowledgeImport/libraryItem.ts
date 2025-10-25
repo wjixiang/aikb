@@ -5,23 +5,22 @@ import {
   ChunkSearchFilter,
   ItemChunk,
 } from './library';
-import createLoggerWithPrefix from 'lib/logManagement/logger';
+import { createLoggerWithPrefix } from '@aikb/log-management';
 import { createMinerUConvertorFromEnv } from './PdfConvertor';
 import {
   ChunkingStrategy,
   ChunkingConfig,
   defaultChunkingConfig,
-} from 'lib/chunking/chunkingStrategy';
-import { getAvailableStrategies } from 'lib/chunking/chunkingTool';
-import {
-  EmbeddingConfig,
-  defaultEmbeddingConfig,
-} from 'lib/embedding/embedding';
+} from '@aikb/chunking';
+import { getAvailableStrategies } from '@aikb/chunking';
+import { EmbeddingConfig, defaultEmbeddingConfig } from '@aikb/embedding';
+
 import {
   ChunkingEmbeddingRequestMessage,
   PdfProcessingStatus,
 } from 'lib/rabbitmq';
-import { deleteFromS3 } from 'lib/s3Service/S3Service';
+
+import { deleteFromS3 } from '@aikb/s3-service';
 import { v4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('LibraryItem');
@@ -607,7 +606,7 @@ export class LibraryItem {
     // Import dynamically to avoid circular dependencies
     const {
       getStrategyDefaultConfig,
-    } = require('../lib/chunking/chunkingToolV2');
+    } = require('@aikb/chunking/chunking-tool');
     return getStrategyDefaultConfig(strategyName);
   }
 

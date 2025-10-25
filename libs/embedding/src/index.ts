@@ -10,10 +10,7 @@ export {
   embeddingService,
 } from './embedding.js';
 
-export {
-  EmbeddingManager,
-  embeddingManager,
-} from './embedding-manager.js';
+export { EmbeddingManager, embeddingManager } from './embedding-manager.js';
 
 export {
   EmbeddingProviderBase,

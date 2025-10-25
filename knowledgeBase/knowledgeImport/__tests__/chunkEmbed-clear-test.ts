@@ -1,7 +1,7 @@
 import Library from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
 import { BookMetadata } from '../library';
-import { ChunkingStrategy } from '../../../lib/chunking/chunkingStrategy';
+import { ChunkingStrategy } from '@aikb/chunking';
 import { LibraryItem } from '../libraryItem';
 
 describe('chunkEmbed clear existing chunks test', () => {

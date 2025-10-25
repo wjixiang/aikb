@@ -18,8 +18,8 @@ import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
-import { Embedding } from 'lib/embedding/embedding';
-import { ChunkingManager } from 'lib/chunking/chunkingManager';
+import { Embedding } from '@aikb/embedding';
+import { ChunkingManager } from '@aikb/chunking';
 
 const logger = createLoggerWithPrefix('ChunkingEmbeddingWorker');
 

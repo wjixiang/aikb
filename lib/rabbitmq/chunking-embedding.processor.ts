@@ -10,8 +10,8 @@ import Library from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingStrategy } from '../chunking/chunkingStrategy';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
-import { Embedding } from 'lib/embedding/embedding';
-import { ChunkingManager } from 'lib/chunking/chunkingManager';
+import { Embedding } from '@aikb/embedding';
+import { ChunkingManager } from '@aikb/chunking';
 import { error } from 'console';
 import { v4 } from 'uuid';
 

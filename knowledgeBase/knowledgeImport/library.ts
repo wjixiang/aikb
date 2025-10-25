@@ -14,11 +14,8 @@ import createLoggerWithPrefix from '@aikb/log-management/logger';
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
 import { MinerUPdfConvertor } from './PdfConvertor';
-import { ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
-import {
-  EmbeddingConfig,
-  defaultEmbeddingConfig,
-} from '@aikb/embedding';
+import { ChunkingConfig } from '@aikb/chunking';
+import { EmbeddingConfig, defaultEmbeddingConfig } from '@aikb/embedding';
 import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,

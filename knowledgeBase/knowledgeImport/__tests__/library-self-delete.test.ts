@@ -12,10 +12,7 @@ import {
   beforeAll,
   afterAll,
 } from 'vitest';
-import {
-  EmbeddingProvider,
-  OpenAIModel,
-} from '@aikb/embedding';
+import { EmbeddingProvider, OpenAIModel } from '@aikb/embedding';
 import { LibraryItem } from '../libraryItem';
 
 // Mock the S3Service to avoid real S3 operations
@@ -24,7 +21,7 @@ vi.mock('/lib/s3Service/S3Service', () => ({
 }));
 
 // Mock the MinerU PDF converter to avoid real PDF conversion
-vi.mock('/lib/chunking/chunkingTool', () => ({
+vi.mock('@aikb/chunking/chunking-tool', () => ({
   chunkTextAdvanced: vi.fn().mockResolvedValue([
     {
       index: 0,
