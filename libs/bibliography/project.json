@@ -1,0 +1,24 @@
+{
+  "name": "bibliography",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/bibliography",
+        "main": "libs/bibliography/src/index.ts",
+        "tsConfig": "libs/bibliography/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "configFile": "libs/bibliography/vitest.config.ts"
+      }
+    }
+  }
+}
