@@ -10,7 +10,7 @@ import {
 import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import { PdfMergerService, createPdfMergerService } from './pdf-merger.service';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfMergerWorker');
@@ -24,10 +24,10 @@ export class PdfMergerWorker {
   private mergerService: PdfMergerService;
   private consumerTag: string | null = null;
   private isRunning = false;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
   private workerId: string;
 
-  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
+  constructor(storage: ILibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
     this.mergerService = new PdfMergerService(storage);
     this.rabbitMQService = getRabbitMQService(protocol);
@@ -154,7 +154,7 @@ export class PdfMergerWorker {
  * Create and start a PDF merger worker
  */
 export async function createPdfMergerWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<PdfMergerWorker> {
   const worker = new PdfMergerWorker(storage);
   await worker.start();

@@ -26,7 +26,7 @@ import { PdfProcessingCoordinatorWorker } from '../pdf-processing-coordinator.wo
 import { MarkdownStorageWorker } from '../markdown-storage.worker';
 import { PdfMergerService } from '../pdf-merger.service';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import { MinerUPdfConvertor } from '../../pdfConvertor/PdfConvertor';
@@ -98,7 +98,7 @@ vi.mock('uuid', () => ({
 }));
 
 describe.skip('PDF Processing End-to-End Integration Tests', () => {
-  let mockStorage: Partial<AbstractLibraryStorage>;
+  let mockStorage: Partial<ILibraryStorage>;
   let mockPdfConvertor: any;
   let analysisWorker: PdfAnalysisWorker;
   let conversionWorker: PdfConversionWorker;
@@ -133,17 +133,13 @@ describe.skip('PDF Processing End-to-End Integration Tests', () => {
     };
 
     // Create workers
-    analysisWorker = new PdfAnalysisWorker(
-      mockStorage as AbstractLibraryStorage,
-    );
+    analysisWorker = new PdfAnalysisWorker(mockStorage as ILibraryStorage);
     conversionWorker = new PdfConversionWorker(mockPdfConvertor);
     coordinatorWorker = new PdfProcessingCoordinatorWorker(
-      mockStorage as AbstractLibraryStorage,
+      mockStorage as ILibraryStorage,
     );
-    storageWorker = new MarkdownStorageWorker(
-      mockStorage as AbstractLibraryStorage,
-    );
-    mergerService = new PdfMergerService(mockStorage as AbstractLibraryStorage);
+    storageWorker = new MarkdownStorageWorker(mockStorage as ILibraryStorage);
+    mergerService = new PdfMergerService(mockStorage as ILibraryStorage);
   });
 
   afterEach(async () => {

@@ -15,7 +15,7 @@ import {
   PdfPartStatus,
 } from '../message.types';
 import { getRabbitMQService } from '../rabbitmq.service';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock RabbitMQ service
@@ -57,7 +57,7 @@ const mockStorage = {
   addItemToCollection: vi.fn(),
   removeItemFromCollection: vi.fn(),
   clear: vi.fn(),
-} as unknown as AbstractLibraryStorage;
+} as unknown as ILibraryStorage;
 
 describe('Markdown Part Storage Integration Tests', () => {
   let markdownCache: MarkdownPartCache;

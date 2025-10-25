@@ -10,7 +10,7 @@ import {
 import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
   ChunkingEmbeddingGroup,
 } from '../../knowledgeBase/knowledgeImport/library';
@@ -30,9 +30,9 @@ export class MarkdownStorageWorker {
   private rabbitMQService: RabbitMQService;
   private consumerTag: string | null = null;
   private isRunning = false;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
+  constructor(storage: ILibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
     this.rabbitMQService = getRabbitMQService(protocol);
   }
@@ -360,7 +360,7 @@ export class MarkdownStorageWorker {
  * Create and start a markdown storage worker
  */
 export async function startMarkdownStorageWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<MarkdownStorageWorker> {
   const worker = new MarkdownStorageWorker(storage);
   await worker.start();

@@ -16,7 +16,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
     "allowImportingTsExtensions": true,
     "noEmit": true

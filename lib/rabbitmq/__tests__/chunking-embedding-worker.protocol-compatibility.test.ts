@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ChunkingEmbeddingWorker } from '../chunking-embedding.worker';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   ChunkingEmbeddingGroup,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import Library from '../../../knowledgeBase/knowledgeImport/library';
@@ -20,14 +20,8 @@ import {
   closeAllRabbitMQServices,
   RabbitMQService,
 } from '../rabbitmq.service';
-import {
-  defaultEmbeddingConfig,
-  EmbeddingProvider,
-} from '@aikb/embedding';
-import {
-  ChunkingStrategy,
-  defaultChunkingConfig,
-} from '@aikb/chunking';
+import { defaultEmbeddingConfig, EmbeddingProvider } from '@aikb/embedding';
+import { ChunkingStrategy, defaultChunkingConfig } from '@aikb/chunking';
 
 // Mock the Library class
 vi.mock('../../../knowledgeBase/knowledgeImport/library', async () => {
@@ -44,7 +38,7 @@ vi.mock('../../../knowledgeBase/knowledgeImport/library', async () => {
 });
 
 // Mock the storage implementation
-const mockStorage: Partial<AbstractLibraryStorage> = {
+const mockStorage: Partial<ILibraryStorage> = {
   getMetadata: vi.fn(),
   updateMetadata: vi.fn(),
   getMarkdown: vi.fn(),
@@ -74,7 +68,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
 
     // Create a new worker instance for each test
-    worker = new ChunkingEmbeddingWorker(mockStorage as AbstractLibraryStorage);
+    worker = new ChunkingEmbeddingWorker(mockStorage as ILibraryStorage);
 
     // Mock the storage getMetadata to return a valid item
     (mockStorage.getMetadata as any).mockResolvedValue({
@@ -123,7 +117,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const amqpWorker = new ChunkingEmbeddingWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with AMQP protocol
@@ -137,7 +131,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const stompWorker = new ChunkingEmbeddingWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with STOMP protocol
@@ -151,14 +145,14 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
       const amqpWorker = new ChunkingEmbeddingWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
       expect(amqpWorker).toBeDefined();
 
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
       const stompWorker = new ChunkingEmbeddingWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       expect(stompWorker).toBeDefined();
@@ -192,7 +186,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new ChunkingEmbeddingWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -246,7 +240,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new ChunkingEmbeddingWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -322,7 +316,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
 
         // Create worker with STOMP protocol
         const worker = new ChunkingEmbeddingWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
 
@@ -384,7 +378,7 @@ describe('ChunkingEmbeddingWorker Protocol Compatibility', () => {
     it('should handle handler errors gracefully', async () => {
       // Create worker
       const worker = new ChunkingEmbeddingWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.AMQP,
       );
 

@@ -3,7 +3,7 @@ import {
   ChunkingConfig,
   BaseChunkResult,
   ChunkingStrategy,
-} from '../chunking-strategy';
+} from '../chunking-strategy.js';
 
 /**
  * 基于段落的文本切片策略
@@ -222,5 +222,10 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
       minChunkSize: 50,
       overlap: 25,
     };
+  }
+
+  validateConfig(config: ChunkingConfig): { valid: boolean; errors: string[] } {
+    // Use the parent class implementation
+    return super.validateConfig(config);
   }
 }

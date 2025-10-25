@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
 import { IPdfConvertor } from '../types';
 
-
 describe('IPdfConvertor Interface', () => {
   it('should validate that MinerUPdfConvertor implements IPdfConvertor', () => {
     // Create a mock config for testing

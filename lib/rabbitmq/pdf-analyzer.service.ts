@@ -13,7 +13,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -33,7 +33,7 @@ export class PdfAnalyzerService {
   private partCompletedConsumerTag: string | null = null;
   private partFailedConsumerTag: string | null = null;
 
-  constructor(private storage: AbstractLibraryStorage) {}
+  constructor(private storage: ILibraryStorage) {}
 
   /**
    * Analyze a PDF file to determine if it needs to be split
@@ -1039,7 +1039,7 @@ export class PdfAnalyzerService {
  * Create PDF analyzer service
  */
 export function createPdfAnalyzerService(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): PdfAnalyzerService {
   return new PdfAnalyzerService(storage);
 }

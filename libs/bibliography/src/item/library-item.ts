@@ -1,7 +1,7 @@
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import { deleteFromS3 } from '@aikb/s3-service';
 import { v4 } from 'uuid';
-import { AbstractLibraryStorage } from '../library/storage.js';
+import { ILibraryStorage } from '../library/storage.js';
 import { BookMetadata, ItemChunk } from '../library/types.js';
 
 const logger = createLoggerWithPrefix('LibraryItem');
@@ -9,7 +9,7 @@ const logger = createLoggerWithPrefix('LibraryItem');
 export class LibraryItem {
   constructor(
     public metadata: BookMetadata,
-    private storage: AbstractLibraryStorage,
+    private storage: ILibraryStorage,
   ) {}
 
   /**
@@ -134,7 +134,7 @@ export class LibraryItem {
 
       // For now, just create a simple placeholder markdown
       // In a full implementation, you would use MinerUPdfConvertor here
-      const markdownContent = `# ${this.metadata.title}\n\n*Authors:* ${this.metadata.authors.map(a => `${a.firstName} ${a.lastName}`).join(', ')}\n\n*Publication Year:* ${this.metadata.publicationYear || 'Unknown'}\n\n## Abstract\n\n${this.metadata.abstract || 'No abstract available.'}\n\n## Content\n\n[PDF content would be extracted here using MinerUPdfConvertor]`;
+      const markdownContent = `# ${this.metadata.title}\n\n*Authors:* ${this.metadata.authors.map((a) => `${a.firstName} ${a.lastName}`).join(', ')}\n\n*Publication Year:* ${this.metadata.publicationYear || 'Unknown'}\n\n## Abstract\n\n${this.metadata.abstract || 'No abstract available.'}\n\n## Content\n\n[PDF content would be extracted here using MinerUPdfConvertor]`;
 
       // Save the markdown content to storage
       await this.storage.saveMarkdown(this.metadata.id!, markdownContent);
@@ -221,7 +221,9 @@ export class LibraryItem {
 
       // Step 5: Delete metadata (this should be the last step)
       logger.info(`Deleting metadata for item: ${this.metadata.id}`);
-      const metadataDeleted = await this.storage.deleteMetadata(this.metadata.id);
+      const metadataDeleted = await this.storage.deleteMetadata(
+        this.metadata.id,
+      );
 
       if (metadataDeleted) {
         logger.info(
@@ -233,10 +235,7 @@ export class LibraryItem {
         return false;
       }
     } catch (error) {
-      logger.error(
-        `Error in selfDelete for item ${this.metadata.id}:`,
-        error,
-      );
+      logger.error(`Error in selfDelete for item ${this.metadata.id}:`, error);
       throw error;
     }
   }

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Mocked } from 'vitest';
 import { PdfAnalyzerService } from '../pdf-analyzer.service';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import {
@@ -89,7 +89,7 @@ const mockedAxios = {
 
 describe('PdfAnalyzerService', () => {
   let pdfAnalyzerService: PdfAnalyzerService;
-  let mockStorage: Mocked<AbstractLibraryStorage>;
+  let mockStorage: Mocked<ILibraryStorage>;
   let mockRabbitMQService: Mocked<RabbitMQService>;
   let mockAxios: typeof mockedAxios;
 

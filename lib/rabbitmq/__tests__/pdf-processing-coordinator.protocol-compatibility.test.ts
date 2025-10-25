@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PdfProcessingCoordinatorWorker } from '../pdf-processing-coordinator.worker';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import {
   PdfAnalysisCompletedMessage,
   PdfAnalysisFailedMessage,
@@ -25,7 +25,7 @@ import {
 } from '../rabbitmq.service';
 
 // Mock the storage implementation
-const mockStorage: Partial<AbstractLibraryStorage> = {
+const mockStorage: Partial<ILibraryStorage> = {
   getMetadata: vi.fn(),
   updateMetadata: vi.fn(),
 };
@@ -43,9 +43,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
 
     // Create a new worker instance for each test
-    worker = new PdfProcessingCoordinatorWorker(
-      mockStorage as AbstractLibraryStorage,
-    );
+    worker = new PdfProcessingCoordinatorWorker(mockStorage as ILibraryStorage);
 
     // Mock the storage getMetadata to return a valid item
     (mockStorage.getMetadata as any).mockResolvedValue({
@@ -89,7 +87,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const amqpWorker = new PdfProcessingCoordinatorWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with AMQP protocol
@@ -103,7 +101,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const stompWorker = new PdfProcessingCoordinatorWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with STOMP protocol
@@ -117,14 +115,14 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
       const amqpWorker = new PdfProcessingCoordinatorWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
       expect(amqpWorker).toBeDefined();
 
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
       const stompWorker = new PdfProcessingCoordinatorWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
       const status = await stompWorker.getWorkerStats();
 
@@ -162,7 +160,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Start worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleAnalysisCompletedSpy = vi
@@ -198,7 +196,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleAnalysisFailedSpy = vi
@@ -235,7 +233,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleConversionCompletedSpy = vi
@@ -276,7 +274,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleConversionFailedSpy = vi
@@ -314,7 +312,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleConversionProgressSpy = vi
@@ -351,7 +349,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleMarkdownStorageCompletedSpy = vi
@@ -392,7 +390,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleMarkdownStorageFailedSpy = vi
@@ -431,7 +429,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleMarkdownPartStorageCompletedSpy = vi
@@ -474,7 +472,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleMarkdownPartStorageFailedSpy = vi
@@ -514,7 +512,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleMarkdownPartStorageProgressSpy = vi
@@ -554,7 +552,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
         const handleDeadLetterMessageSpy = vi
@@ -625,7 +623,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Start worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleAnalysisCompletedSpy = vi
@@ -664,7 +662,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleAnalysisFailedSpy = vi
@@ -701,7 +699,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleConversionCompletedSpy = vi
@@ -742,7 +740,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleConversionFailedSpy = vi
@@ -780,7 +778,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleConversionProgressSpy = vi
@@ -817,7 +815,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleMarkdownStorageCompletedSpy = vi
@@ -864,7 +862,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleMarkdownStorageFailedSpy = vi
@@ -903,7 +901,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleMarkdownPartStorageCompletedSpy = vi
@@ -946,7 +944,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleMarkdownPartStorageFailedSpy = vi
@@ -986,7 +984,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleMarkdownPartStorageProgressSpy = vi
@@ -1026,7 +1024,7 @@ describe('PdfProcessingCoordinator Protocol Compatibility', () => {
 
         // Create worker
         const worker = new PdfProcessingCoordinatorWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
         const handleDeadLetterMessageSpy = vi

@@ -3,7 +3,7 @@ import {
   PdfProcessingStatus,
 } from './message.types';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   ItemChunk,
 } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';

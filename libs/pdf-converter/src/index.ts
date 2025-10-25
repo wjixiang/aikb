@@ -10,7 +10,4 @@ export type {
 } from './types';
 
 // Factory exports
-export {
-  createMinerUConvertor,
-  createMinerUConvertorFromEnv,
-} from './factory';
+export { createMinerUConvertor, createMinerUConvertorFromEnv } from './factory';

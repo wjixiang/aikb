@@ -39,7 +39,7 @@ import {
   PdfProcessingStatus,
 } from '../message.types';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,7 +51,7 @@ config({ path: '.env' });
 describe('PdfMergerService - Comprehensive Tests', () => {
   let service: PdfMergerService;
   let mockRabbitMQService: any;
-  let mockStorage: AbstractLibraryStorage;
+  let mockStorage: ILibraryStorage;
   let mockLogger: any;
 
   beforeEach(() => {

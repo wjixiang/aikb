@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { getMockRabbitMQService } from '../__mocks__/MockRabbitMQService';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { PdfProcessingStatus } from '../message.types';
 
 /**
@@ -9,9 +9,9 @@ import { PdfProcessingStatus } from '../message.types';
 export class MockPdfAnalysisWorker {
   private isRunningValue = false;
   private consumerTag: string | null = null;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: ILibraryStorage) {
     this.storage = storage;
   }
 
@@ -118,9 +118,9 @@ export class MockPdfAnalysisWorker {
 export class MockPdfProcessingCoordinatorWorker {
   private isRunningValue = false;
   private analysisConsumerTag: string | null = null;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: ILibraryStorage) {
     this.storage = storage;
   }
 
@@ -366,9 +366,9 @@ This test document demonstrates the PDF to markdown conversion capability of the
 export class MockMarkdownStorageWorker {
   private isRunningValue = false;
   private consumerTag: string | null = null;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: ILibraryStorage) {
     this.storage = storage;
   }
 
@@ -473,7 +473,7 @@ export class MockMarkdownStorageWorker {
 // Mock worker creation functions
 
 export async function createPdfAnalysisWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<MockPdfAnalysisWorker> {
   const worker = new MockPdfAnalysisWorker(storage);
   await worker.start();
@@ -481,7 +481,7 @@ export async function createPdfAnalysisWorker(
 }
 
 export async function createPdfProcessingCoordinatorWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<MockPdfProcessingCoordinatorWorker> {
   const worker = new MockPdfProcessingCoordinatorWorker(storage);
   await worker.start();
@@ -495,7 +495,7 @@ export async function createPdfConversionWorker(): Promise<MockPdfConversionWork
 }
 
 export async function startMarkdownStorageWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<MockMarkdownStorageWorker> {
   const worker = new MockMarkdownStorageWorker(storage);
   await worker.start();
@@ -507,7 +507,7 @@ export async function startMarkdownStorageWorker(
  */
 export async function simulateCompletePdfProcessingWorkflow(
   itemId: string,
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<void> {
   console.log(
     `[MockWorkflow] Starting complete PDF processing workflow for item: ${itemId}`,

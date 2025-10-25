@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PdfAnalysisWorker } from '../pdf-analysis.worker';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { PdfAnalysisRequestMessage } from '../message.types';
 import { MessageProtocol } from '../message-service.interface';
 import { getRabbitMQService } from '../rabbitmq.service';
 import { createPdfAnalyzerService } from '../pdf-analyzer.service';
 
 // Mock the storage implementation
-const mockStorage: Partial<AbstractLibraryStorage> = {
+const mockStorage: Partial<ILibraryStorage> = {
   getMetadata: vi.fn(),
   updateMetadata: vi.fn(),
 };
@@ -32,7 +32,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
 
     // Create a new worker instance for each test
-    worker = new PdfAnalysisWorker(mockStorage as AbstractLibraryStorage);
+    worker = new PdfAnalysisWorker(mockStorage as ILibraryStorage);
 
     // Mock the storage getMetadata to return a valid item
     (mockStorage.getMetadata as any).mockResolvedValue({
@@ -62,9 +62,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
       process.env.RABBITMQ_PROTOCOL = 'amqp';
 
       // Create a new worker to pick up the environment variable
-      const amqpWorker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const amqpWorker = new PdfAnalysisWorker(mockStorage as ILibraryStorage);
 
       // The worker should be created with AMQP protocol
       expect(amqpWorker).toBeDefined();
@@ -76,7 +74,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const stompWorker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.STOMP,
       );
 
@@ -90,15 +88,13 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
     it('should handle protocol switching between AMQP and STOMP', async () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      const amqpWorker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const amqpWorker = new PdfAnalysisWorker(mockStorage as ILibraryStorage);
       expect(amqpWorker).toBeDefined();
 
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
       const stompWorker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.STOMP,
       );
       const status = await stompWorker.getWorkerStats();
@@ -111,7 +107,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
     it('should create worker with default protocol', () => {
       // Create worker without setting protocol
       const defaultWorker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
       expect(defaultWorker).toBeDefined();
       expect(defaultWorker.isWorkerRunning()).toBe(false);
@@ -138,7 +134,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
 
       // Now create the worker (it will use the same initialized service)
       const worker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.AMQP,
       );
       const handlePdfAnalysisRequestSpy = vi
@@ -202,7 +198,7 @@ describe('PdfAnalysisWorker Protocol Compatibility', () => {
 
       // Now create the worker (it will use the same initialized service)
       const worker = new PdfAnalysisWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.STOMP,
       );
       const handlePdfAnalysisRequestSpy = vi

@@ -3,7 +3,7 @@ import {
   PdfAnalyzerService,
   createPdfAnalyzerService,
 } from '../pdf-analyzer.service';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { getRabbitMQService } from '../rabbitmq.service';
 import { deleteFromS3 } from '@aikb/s3-service';
 import {

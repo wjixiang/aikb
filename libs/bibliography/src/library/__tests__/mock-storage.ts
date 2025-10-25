@@ -1,12 +1,12 @@
-import { AbstractLibraryStorage } from './storage.js';
+import { ILibraryStorage } from '../storage.js';
 import {
   BookMetadata,
   Collection,
   Citation,
   ItemChunk,
   ChunkSearchFilter,
-} from './types.js';
-import { IdUtils } from './utils.js';
+} from '../types.js';
+import { IdUtils } from '../utils.js';
 
 // Define AbstractPdf interface locally since it's not exported
 interface AbstractPdf {
@@ -21,7 +21,7 @@ interface AbstractPdf {
 /**
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
-export class MockLibraryStorage implements AbstractLibraryStorage {
+export class MockLibraryStorage implements ILibraryStorage {
   private metadataStore: Map<string, BookMetadata> = new Map();
   private pdfStore: Map<string, AbstractPdf> = new Map();
   private collectionStore: Map<string, Collection> = new Map();
@@ -303,7 +303,10 @@ export class MockLibraryStorage implements AbstractLibraryStorage {
         matches = false;
       }
 
-      if (filter.chunkType && chunk.metadata?.['chunkType'] !== filter.chunkType) {
+      if (
+        filter.chunkType &&
+        chunk.metadata?.['chunkType'] !== filter.chunkType
+      ) {
         matches = false;
       }
 

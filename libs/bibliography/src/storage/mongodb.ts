@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 // Try MONGODB_URI first (used in production)
-const uri = process.env.MONGODB_URI;
+const uri = process.env['MONGODB_URI'];
 if (!uri) {
   throw new Error(
     'Please add your MongoDB URI to environment variables (MONGODB_URI for production)',
@@ -13,7 +13,7 @@ if (!uri) {
 }
 
 // Database name can be from env or use default
-const dbName = process.env.DB_NAME || 'aikb';
+const dbName = process.env['DB_NAME'] || 'aikb';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;

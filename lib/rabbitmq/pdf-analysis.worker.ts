@@ -11,7 +11,7 @@ import {
   PdfAnalyzerService,
   createPdfAnalyzerService,
 } from './pdf-analyzer.service';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { IMessageService, MessageProtocol } from './message-service.interface';
 
@@ -27,7 +27,7 @@ export class PdfAnalysisWorker {
   private consumerTag: string | null = null;
   private isRunning = false;
 
-  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
+  constructor(storage: ILibraryStorage, protocol?: MessageProtocol) {
     this.analyzerService = createPdfAnalyzerService(storage);
     this.rabbitMQService = getRabbitMQService(protocol);
   }
@@ -143,7 +143,7 @@ export class PdfAnalysisWorker {
  * Create and start a PDF analysis worker
  */
 export async function createPdfAnalysisWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<PdfAnalysisWorker> {
   const worker = new PdfAnalysisWorker(storage);
   await worker.start();

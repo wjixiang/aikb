@@ -12,7 +12,7 @@ import {
 import { getRabbitMQService } from './rabbitmq.service';
 import { MessageProtocol } from './message-service.interface';
 import Library, {
-  AbstractLibraryStorage,
+  ILibraryStorage,
 } from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
 import { ChunkingStrategy } from '@aikb/chunking';
@@ -79,9 +79,9 @@ export class ChunkingEmbeddingWorker
   private processor: ChunkingEmbeddingProcessor;
   private consumerTag: string | null = null;
   private isRunning = false;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
 
-  constructor(storage: AbstractLibraryStorage, protocol?: MessageProtocol) {
+  constructor(storage: ILibraryStorage, protocol?: MessageProtocol) {
     this.storage = storage;
     this.rabbitMQService = getRabbitMQService(protocol);
     this.processor = new ChunkingEmbeddingProcessor(
@@ -395,7 +395,7 @@ export class ChunkingEmbeddingWorker
  * Create and start a chunking and embedding worker
  */
 export async function createChunkingEmbeddingWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
   protocol?: MessageProtocol,
 ): Promise<ChunkingEmbeddingWorker> {
   const worker = new ChunkingEmbeddingWorker(storage, protocol);

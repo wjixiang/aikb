@@ -9,7 +9,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from '../message.types';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
 import Library from '../../../knowledgeBase/knowledgeImport/library';
@@ -36,7 +36,7 @@ vi.mock('../../../knowledgeBase/knowledgeImport/library', () => ({
     processItemChunks: vi.fn(() => Promise.resolve()),
   })),
   // Import other needed exports from the module
-  AbstractLibraryStorage: class {},
+  ILibraryStorage: class {},
   BookMetadata: {},
   Author: {},
   Collection: {},
@@ -71,7 +71,7 @@ vi.mock('uuid', () => ({
 
 describe('MarkdownStorageWorker', () => {
   let worker: MarkdownStorageWorker;
-  let mockStorage: Partial<AbstractLibraryStorage>;
+  let mockStorage: Partial<ILibraryStorage>;
   let mockRabbitMQService: any;
   let mockLibrary: any;
 
@@ -111,7 +111,7 @@ describe('MarkdownStorageWorker', () => {
     (getRabbitMQService as any).mockReturnValue(mockRabbitMQService);
 
     // Create worker instance
-    worker = new MarkdownStorageWorker(mockStorage as AbstractLibraryStorage);
+    worker = new MarkdownStorageWorker(mockStorage as ILibraryStorage);
   });
 
   afterEach(() => {

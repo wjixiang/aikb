@@ -179,4 +179,3 @@ export enum ItemVectorStorageStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
 }
-

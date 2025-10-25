@@ -1,4 +1,11 @@
-import { BookMetadata, Collection, Citation, SearchFilter, ItemChunk, ChunkSearchFilter } from './types.js';
+import {
+  BookMetadata,
+  Collection,
+  Citation,
+  SearchFilter,
+  ItemChunk,
+  ChunkSearchFilter,
+} from './types.js';
 
 // Define AbstractPdf interface for PDF handling
 export interface AbstractPdf {
@@ -13,7 +20,7 @@ export interface AbstractPdf {
 /**
  * Storage interface for library operations
  */
-export interface AbstractLibraryStorage {
+export interface ILibraryStorage {
   // PDF operations
   uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
   uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
@@ -62,6 +69,9 @@ export interface AbstractLibraryStorage {
   batchSaveChunks(chunks: ItemChunk[]): Promise<void>;
 
   // Multi-version support methods
-  getChunksByItemAndGroup?(itemId: string, groupId: string): Promise<ItemChunk[]>;
+  getChunksByItemAndGroup?(
+    itemId: string,
+    groupId: string,
+  ): Promise<ItemChunk[]>;
   deleteChunksByGroup?(groupId: string): Promise<number>;
 }

@@ -1,5 +1,5 @@
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { connectToDatabase } from '../../libs/utils/mongodb';
+import { connectToDatabase } from '../../libs/bibliography/src/storage/mongodb';
 import { AbstractEntityContentStorage } from './abstract-storage';
 import { EntityData, EntityDataWithId } from '../knowledge.type';
 

@@ -6,10 +6,7 @@ import {
   ItemChunk,
   ChunkSearchFilter,
 } from '../library/types.js';
-import {
-  IItemVectorStorage,
-  ChunkingEmbeddingGroup,
-} from '../item/types.js';
+import { IItemVectorStorage, ChunkingEmbeddingGroup } from '../item/types.js';
 import { IdUtils } from '../library/utils.js';
 import {
   defaultEmbeddingConfig,

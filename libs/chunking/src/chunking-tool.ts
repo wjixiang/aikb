@@ -1,4 +1,4 @@
-import { chunkingManager } from './chunking-manager';
+import { chunkingManager } from './chunking-manager.js';
 import {
   ChunkingConfig as BaseChunkingConfig,
   ChunkResult as BaseChunkResult,
@@ -8,7 +8,7 @@ import {
   IChunkingStrategy,
   ChunkingStrategyUtils,
   ChunkingStrategyCompatibility,
-} from './chunking-strategy';
+} from './chunking-strategy.js';
 
 /**
  * 统一的文本切片工具 V2
@@ -377,7 +377,7 @@ export type {
   BaseChunkingStrategy,
   TitledChunkResult,
   IChunkingStrategy,
-} from './chunking-strategy';
+} from './chunking-strategy.js';
 
 // 导出新的枚举和工具类
 export {
@@ -387,7 +387,7 @@ export {
   ChunkingStrategyUtils,
   ChunkingStrategyCompatibility,
   CHUNKING_STRATEGY_REGISTRY,
-} from './chunking-strategy';
+} from './chunking-strategy.js';
 
 // 向后兼容的适配器类
 export class ChunkingAdapter {

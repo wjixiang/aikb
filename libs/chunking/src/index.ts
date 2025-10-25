@@ -16,10 +16,10 @@ export {
   defaultChunkingConfig,
   type ChunkingConfig,
   type ChunkResult as BaseChunkResultType,
-} from './chunking-strategy';
+} from './chunking-strategy.js';
 
 // Manager
-export { ChunkingManager, chunkingManager } from './chunking-manager';
+export { ChunkingManager, chunkingManager } from './chunking-manager.js';
 
 // Main tool functions - re-export with aliases to avoid conflicts
 export {
@@ -54,14 +54,17 @@ export {
   type BaseChunkingStrategy as ToolBaseChunkingStrategy,
   type TitledChunkResult as ToolTitledChunkResult,
   type IChunkingStrategy as ToolIChunkingStrategy,
-} from './chunking-tool';
+} from './chunking-tool.js';
 
 // Search utilities
 export {
   ChunkSearchUtils,
   type ItemChunk,
   type ChunkSearchFilter,
-} from './chunk-search-utils';
+} from './chunk-search-utils.js';
 
 // Strategy implementations
-export { H1ChunkingStrategy, ParagraphChunkingStrategy } from './strategies';
+export {
+  H1ChunkingStrategy,
+  ParagraphChunkingStrategy,
+} from './strategies/index.js';

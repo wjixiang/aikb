@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PdfAnalyzerService } from '../pdf-analyzer.service';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { PdfAnalysisRequestMessage } from '../message.types';
 
 // Mock the dependencies
@@ -17,7 +17,7 @@ vi.mock('../logger', () => ({
 
 describe('PDF Analysis Split Threshold', () => {
   let analyzerService: PdfAnalyzerService;
-  let mockStorage: AbstractLibraryStorage;
+  let mockStorage: ILibraryStorage;
 
   beforeEach(() => {
     // Create a mock storage

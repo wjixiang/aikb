@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MarkdownStorageWorker } from '../markdown-storage.worker';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import {
   MarkdownStorageRequestMessage,
   MarkdownStorageCompletedMessage,
@@ -17,7 +17,7 @@ import {
 } from '../rabbitmq.service';
 
 // Mock the storage implementation
-const mockStorage: Partial<AbstractLibraryStorage> = {
+const mockStorage: Partial<ILibraryStorage> = {
   getMetadata: vi.fn(),
   updateMetadata: vi.fn(),
   saveMarkdown: vi.fn(),
@@ -36,7 +36,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
 
     // Create a new worker instance for each test
-    worker = new MarkdownStorageWorker(mockStorage as AbstractLibraryStorage);
+    worker = new MarkdownStorageWorker(mockStorage as ILibraryStorage);
 
     // Mock the storage getMetadata to return a valid item
     (mockStorage.getMetadata as any).mockResolvedValue({
@@ -83,7 +83,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const amqpWorker = new MarkdownStorageWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with AMQP protocol
@@ -97,7 +97,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
       // Create a new worker to pick up the environment variable
       const stompWorker = new MarkdownStorageWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       // The worker should be created with STOMP protocol
@@ -111,14 +111,14 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
       const amqpWorker = new MarkdownStorageWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
       expect(amqpWorker).toBeDefined();
 
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
       const stompWorker = new MarkdownStorageWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
       );
 
       expect(stompWorker).toBeDefined();
@@ -155,7 +155,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new MarkdownStorageWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -198,7 +198,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new MarkdownStorageWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -248,7 +248,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
         expect(rabbitmqService.protocol).toBe(MessageProtocol.STOMP);
         // Create worker with STOMP protocol
         const worker = new MarkdownStorageWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
 
@@ -294,7 +294,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
         // Create worker with STOMP protocol
         const worker = new MarkdownStorageWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
 
@@ -369,7 +369,7 @@ describe('MarkdownStorageWorker Protocol Compatibility', () => {
 
       // Create worker
       const worker = new MarkdownStorageWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.AMQP,
       );
 

@@ -1,6 +1,6 @@
 import { getRabbitMQService } from 'lib/rabbitmq/rabbitmq.service';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
   ChunkSearchFilter,
   ItemChunk,
@@ -30,7 +30,7 @@ export class LibraryItem {
 
   constructor(
     public metadata: BookMetadata,
-    private storage: AbstractLibraryStorage,
+    private storage: ILibraryStorage,
   ) {}
 
   /**

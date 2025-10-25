@@ -1,5 +1,5 @@
 import Library, {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   BookMetadata,
   Collection,
   Citation,
@@ -20,7 +20,7 @@ interface AbstractPdf {
 /**
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
-export class MockLibraryStorage implements AbstractLibraryStorage {
+export class MockLibraryStorage implements ILibraryStorage {
   async deleteMetadata(id: string): Promise<boolean> {
     return this.metadataStore.delete(id);
   }

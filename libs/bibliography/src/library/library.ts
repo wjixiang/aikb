@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { createLoggerWithPrefix } from '@aikb/log-management';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
@@ -27,13 +27,13 @@ import {
   PdfProcessingStatus,
 } from './types.js';
 
-import { AbstractLibraryStorage, AbstractPdf } from './storage.js';
+import { ILibraryStorage, AbstractPdf } from './storage.js';
 import { HashUtils, IdUtils, CitationFormatter } from './utils.js';
 
 /**
  * Manage overall storage & retrieve of books/literatures/articles
  */
-export interface AbstractLibrary {
+export interface ILibrary {
   /**
    * Store a PDF file from a buffer
    * @param pdfBuffer The PDF file buffer
@@ -104,11 +104,11 @@ export interface AbstractLibrary {
 /**
  * Default implementation of Library
  */
-export default class Library implements AbstractLibrary {
-  protected storage: AbstractLibraryStorage;
+export default class Library implements ILibrary {
+  protected storage: ILibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: ILibraryStorage) {
     this.storage = storage;
     logger.debug('Library constructor initialized');
   }
@@ -171,7 +171,7 @@ export default class Library implements AbstractLibrary {
 
     // Note: RabbitMQ integration removed for simplified version
     // In a full implementation, you would queue this for processing here
-    
+
     return libraryItem;
   }
 
@@ -223,14 +223,20 @@ export default class Library implements AbstractLibrary {
   /**
    * Add item to collection
    */
-  async addItemToCollection(itemId: string, collectionId: string): Promise<void> {
+  async addItemToCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.storage.addItemToCollection(itemId, collectionId);
   }
 
   /**
    * Remove item from collection
    */
-  async removeItemFromCollection(itemId: string, collectionId: string): Promise<void> {
+  async removeItemFromCollection(
+    itemId: string,
+    collectionId: string,
+  ): Promise<void> {
     await this.storage.removeItemFromCollection(itemId, collectionId);
   }
 

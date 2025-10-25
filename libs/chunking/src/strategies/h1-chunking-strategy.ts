@@ -4,7 +4,7 @@ import {
   TitledChunkResult,
   ChunkingStrategy,
   CHUNKING_STRATEGY_REGISTRY,
-} from '../chunking-strategy';
+} from '../chunking-strategy.js';
 
 /**
  * 基于H1标题的文本切片策略

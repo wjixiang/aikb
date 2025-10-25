@@ -10,7 +10,7 @@ import {
 } from './message.types';
 import { getRabbitMQService } from './rabbitmq.service';
 import {
-  AbstractLibraryStorage,
+  ILibraryStorage,
   ChunkingEmbeddingGroup,
 } from '../../knowledgeBase/knowledgeImport/library';
 import {
@@ -34,13 +34,10 @@ export class PdfMergerService {
   private rabbitMQService = getRabbitMQService();
   private consumerTag: string | null = null;
   private isRunning = false;
-  private storage: AbstractLibraryStorage;
+  private storage: ILibraryStorage;
   private markdownPartCache: MarkdownPartCache;
 
-  constructor(
-    storage: AbstractLibraryStorage,
-    markdownPartCache?: MarkdownPartCache,
-  ) {
+  constructor(storage: ILibraryStorage, markdownPartCache?: MarkdownPartCache) {
     this.storage = storage;
     this.markdownPartCache = markdownPartCache || getMarkdownPartCache();
   }
@@ -610,7 +607,7 @@ export class PdfMergerService {
  * Create and start a PDF merger service
  */
 export async function createPdfMergerService(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
   markdownPartCache?: MarkdownPartCache,
 ): Promise<PdfMergerService> {
   const service = new PdfMergerService(storage, markdownPartCache);

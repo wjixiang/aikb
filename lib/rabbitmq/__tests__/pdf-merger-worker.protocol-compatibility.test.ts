@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PdfMergerWorker } from '../pdf-merger.worker';
-import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import {
   PdfMergingRequestMessage,
   PdfMergingProgressMessage,
@@ -18,7 +18,7 @@ import {
 } from '../rabbitmq.service';
 
 // Mock the storage implementation
-const mockStorage: Partial<AbstractLibraryStorage> = {
+const mockStorage: Partial<ILibraryStorage> = {
   getMetadata: vi.fn(),
   updateMetadata: vi.fn(),
   saveMarkdown: vi.fn(),
@@ -46,7 +46,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     originalProtocol = process.env.RABBITMQ_PROTOCOL;
 
     // Create a new worker instance for each test
-    worker = new PdfMergerWorker(mockStorage as AbstractLibraryStorage);
+    worker = new PdfMergerWorker(mockStorage as ILibraryStorage);
   });
 
   afterEach(async () => {
@@ -77,9 +77,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
       process.env.RABBITMQ_PROTOCOL = 'amqp';
 
       // Create a new worker to pick up the environment variable
-      const amqpWorker = new PdfMergerWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const amqpWorker = new PdfMergerWorker(mockStorage as ILibraryStorage);
 
       // The worker should be created with AMQP protocol
       expect(amqpWorker).toBeDefined();
@@ -91,9 +89,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
       process.env.RABBITMQ_PROTOCOL = 'stomp';
 
       // Create a new worker to pick up the environment variable
-      const stompWorker = new PdfMergerWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const stompWorker = new PdfMergerWorker(mockStorage as ILibraryStorage);
 
       // The worker should be created with STOMP protocol
       expect(stompWorker).toBeDefined();
@@ -105,16 +101,12 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should handle protocol switching between AMQP and STOMP', async () => {
       // Test with AMQP first
       process.env.RABBITMQ_PROTOCOL = 'amqp';
-      const amqpWorker = new PdfMergerWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const amqpWorker = new PdfMergerWorker(mockStorage as ILibraryStorage);
       expect(amqpWorker).toBeDefined();
 
       // Switch to STOMP
       process.env.RABBITMQ_PROTOCOL = 'stomp';
-      const stompWorker = new PdfMergerWorker(
-        mockStorage as AbstractLibraryStorage,
-      );
+      const stompWorker = new PdfMergerWorker(mockStorage as ILibraryStorage);
 
       expect(stompWorker).toBeDefined();
       expect(stompWorker.isWorkerRunning()).toBe(false);
@@ -145,7 +137,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new PdfMergerWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -183,7 +175,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
 
         // Create worker with AMQP protocol
         const worker = new PdfMergerWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.AMQP,
         );
 
@@ -228,7 +220,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
 
         // Create worker with STOMP protocol
         const worker = new PdfMergerWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
 
@@ -276,7 +268,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
 
         // Create worker with STOMP protocol
         const worker = new PdfMergerWorker(
-          mockStorage as AbstractLibraryStorage,
+          mockStorage as ILibraryStorage,
           MessageProtocol.STOMP,
         );
 
@@ -342,7 +334,7 @@ describe('PdfMergerWorker Protocol Compatibility', () => {
     it('should handle handler errors gracefully', async () => {
       // Create worker
       const worker = new PdfMergerWorker(
-        mockStorage as AbstractLibraryStorage,
+        mockStorage as ILibraryStorage,
         MessageProtocol.AMQP,
       );
 

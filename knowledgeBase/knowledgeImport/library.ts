@@ -4,7 +4,7 @@ import {
   getSignedUrlForDownload,
   deleteFromS3,
 } from '@aikb/s3-service';
-import { connectToDatabase } from '../../libs/utils/mongodb';
+import { connectToDatabase } from '../../libs/bibliography/src/storage/mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -191,7 +191,7 @@ export class IdUtils {
 /**
  * Manage overall storage & retrieve of books/literatures/articles
  */
-export interface AbstractLibrary {
+export interface ILibrary {
   /**
    * Store a PDF file from a buffer
    * @param pdfBuffer The PDF file buffer
@@ -419,12 +419,12 @@ export class CitationFormatter {
 /**
  * Default implementation of Library
  */
-export default class Library implements AbstractLibrary {
+export default class Library implements ILibrary {
   private rabbitMQService = getRabbitMQService();
-  protected storage: AbstractLibraryStorage;
+  protected storage: ILibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 
-  constructor(storage: AbstractLibraryStorage) {
+  constructor(storage: ILibraryStorage) {
     this.storage = storage;
     logger.debug('Library constructor - RabbitMQ service instance', {
       serviceId: this.rabbitMQService.constructor.name,
@@ -1636,7 +1636,7 @@ interface AbstractPdf {
   createDate: Date;
 }
 
-export interface AbstractLibraryStorage {
+export interface ILibraryStorage {
   uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
   uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
   getPdfDownloadUrl(s3Key: string): Promise<string>;
@@ -1676,7 +1676,7 @@ export interface AbstractLibraryStorage {
   batchSaveChunks(chunks: ItemChunk[]): Promise<void>;
 }
 
-export class S3MongoLibraryStorage implements AbstractLibraryStorage {
+export class S3MongoLibraryStorage implements ILibraryStorage {
   private pdfCollection = 'library_pdfs';
   private metadataCollection = 'library_metadata';
   private collectionsCollection = 'library_collections';
@@ -2164,7 +2164,7 @@ export class S3MongoLibraryStorage implements AbstractLibraryStorage {
   }
 }
 
-export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
+export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private readonly metadataIndexName = 'library_metadata';
   private readonly collectionsIndexName = 'library_collections';
   private readonly citationsIndexName = 'library_citations';
@@ -3290,7 +3290,7 @@ export class S3ElasticSearchLibraryStorage implements AbstractLibraryStorage {
     }
   }
 
-  // Implementation from AbstractLibraryStorage
+  // Implementation from ILibraryStorage
   async findSimilarChunks(
     queryVector: number[],
     limit: number = 10,

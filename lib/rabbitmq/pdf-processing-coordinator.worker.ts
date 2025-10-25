@@ -19,7 +19,7 @@ import {
   PdfMetadata,
 } from './message.types';
 import { getRabbitMQService, RabbitMQService } from './rabbitmq.service';
-import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
+import { ILibraryStorage } from '../../knowledgeBase/knowledgeImport/library';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { MessageProtocol } from './message-service.interface';
@@ -37,7 +37,7 @@ export class PdfProcessingCoordinatorWorker {
   private isRunning = false;
 
   constructor(
-    private storage: AbstractLibraryStorage,
+    private storage: ILibraryStorage,
     protocol?: MessageProtocol,
   ) {
     this.rabbitMQService = getRabbitMQService(protocol);
@@ -790,7 +790,7 @@ export class PdfProcessingCoordinatorWorker {
     // For now, log the error record as storage doesn't have this method
     logger.error('Error record stored:', JSON.stringify(errorRecord, null, 2));
 
-    // TODO: Implement proper error storage when AbstractLibraryStorage is extended
+    // TODO: Implement proper error storage when ILibraryStorage is extended
     // if (this.storage.storeErrorRecord) {
     //   await this.storage.storeErrorRecord(errorRecord);
     // }
@@ -925,7 +925,7 @@ export class PdfProcessingCoordinatorWorker {
  * Create and start a PDF processing coordinator worker
  */
 export async function createPdfProcessingCoordinatorWorker(
-  storage: AbstractLibraryStorage,
+  storage: ILibraryStorage,
 ): Promise<PdfProcessingCoordinatorWorker> {
   const worker = new PdfProcessingCoordinatorWorker(storage);
   await worker.start();

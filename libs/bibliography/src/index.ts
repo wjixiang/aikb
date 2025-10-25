@@ -22,8 +22,8 @@ export type {
 } from './item/types.js';
 
 // Export interfaces from library.ts and storage.ts
-export type { AbstractLibrary } from './library/library.js';
-export type { AbstractLibraryStorage } from './library/storage.js';
+export type { ILibrary } from './library/library.js';
+export type { ILibraryStorage } from './library/storage.js';
 
 // Export utility classes
 export { HashUtils, IdUtils, CitationFormatter } from './library/utils.js';

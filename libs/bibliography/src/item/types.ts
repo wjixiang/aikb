@@ -2,8 +2,8 @@
 export type { ItemChunk, ItemVectorStorageStatus } from '../library/types.js';
 
 // Import required types for the remaining interfaces
-import { ChunkingConfig } from "@aikb/chunking";
-import { EmbeddingConfig } from "@aikb/embedding";
+import { ChunkingConfig } from '@aikb/chunking';
+import { EmbeddingConfig } from '@aikb/embedding';
 
 // Import types from library/types for use in interfaces
 import type { ItemChunk, ItemVectorStorageStatus } from '../library/types.js';
@@ -58,7 +58,6 @@ export interface ItemChunkSemanticSearchQuery {
   resultNum: number;
   threshold: number;
 }
-
 
 export interface IItemVectorStorage {
   itemId: string;
