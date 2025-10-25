@@ -1,8 +1,8 @@
-import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from './MinerUPdfConvertor';
 import * as path from 'path';
 import * as fs from 'fs';
 import { config } from 'dotenv';
-import { UploadTestPdf } from './library.integrated.test';
+import { UploadTestPdf } from '../../knowledgeBase/knowledgeImport/__tests__/library.integrated.test';
 config();
 
 describe(MinerUPdfConvertor, () => {

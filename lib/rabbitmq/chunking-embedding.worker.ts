@@ -15,7 +15,7 @@ import Library, {
   AbstractLibraryStorage,
 } from '../../knowledgeBase/knowledgeImport/library';
 import { ChunkingEmbeddingProcessor } from './chunking-embedding.processor';
-import { ChunkingStrategy } from '../chunking/chunkingStrategy';
+import { ChunkingStrategy } from '@aikb/chunking';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { Embedding } from '@aikb/embedding';

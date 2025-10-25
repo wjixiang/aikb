@@ -13,7 +13,7 @@ import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
-import { MinerUPdfConvertor } from './PdfConvertor';
+import { MinerUPdfConvertor } from 'lib/pdfConvertor/MinerUPdfConvertor';
 import { ChunkingConfig } from '@aikb/chunking';
 import { EmbeddingConfig, defaultEmbeddingConfig } from '@aikb/embedding';
 import {

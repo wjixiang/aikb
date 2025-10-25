@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
-import type { IPdfConvertor } from '../IPdfConvertor';
+import { MinerUPdfConvertor } from 'lib/pdfConvertor/MinerUPdfConvertor';
+import { IPdfConvertor } from 'lib/pdfConvertor/pdfConvert';
+
 
 describe('IPdfConvertor Interface', () => {
   it('should validate that MinerUPdfConvertor implements IPdfConvertor', () => {

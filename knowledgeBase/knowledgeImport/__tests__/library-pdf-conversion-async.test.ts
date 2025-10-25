@@ -4,9 +4,7 @@ import { S3MongoLibraryStorage } from '../library';
 import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
 import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';
 import { createPdfConversionWorker } from '../../../lib/rabbitmq/pdf-conversion.worker';
-import { MinerUPdfConvertor } from '../PdfConvertor';
-import * as fs from 'fs';
-import * as path from 'path';
+import { MinerUPdfConvertor } from 'lib/pdfConvertor/MinerUPdfConvertor';
 
 // Mock RabbitMQ service
 const mockRabbitMQService = {

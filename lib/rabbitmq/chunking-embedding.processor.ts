@@ -7,7 +7,7 @@ import {
   ItemChunk,
 } from '../../knowledgeBase/knowledgeImport/library';
 import Library from '../../knowledgeBase/knowledgeImport/library';
-import { ChunkingStrategy } from '../chunking/chunkingStrategy';
+import { ChunkingStrategy } from '@aikb/chunking';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { createItemVectorStorage } from 'knowledgeBase/knowledgeImport/elasticsearch-item-vector-storage';
 import { Embedding } from '@aikb/embedding';

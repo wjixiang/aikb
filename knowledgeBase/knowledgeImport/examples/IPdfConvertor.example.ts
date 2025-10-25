@@ -5,7 +5,7 @@
 
 import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 import type { IPdfConvertor } from '../IPdfConvertor';
-import { createMinerUConvertorFromEnv } from '../PdfConvertor';
+import { createMinerUConvertorFromEnv } from '../../../lib/pdfConvertor/PdfConvertor';
 
 async function exampleUsingMinerUConvertor() {
   console.log('=== Example 1: Using MinerUPdfConvertor directly ===');

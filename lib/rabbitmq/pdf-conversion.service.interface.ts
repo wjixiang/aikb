@@ -1,7 +1,7 @@
 import {
   ConversionResult,
   MinerUPdfConvertor,
-} from '../../knowledgeBase/knowledgeImport/PdfConvertor';
+} from '../pdfConvertor/PdfConvertor';
 import { IPdfPartTracker } from './pdf-part-tracker';
 import { MarkdownPartCache } from './markdown-part-cache';
 

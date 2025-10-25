@@ -29,7 +29,7 @@ import {
   AbstractLibraryStorage,
   BookMetadata,
 } from '../../../knowledgeBase/knowledgeImport/library';
-import { MinerUPdfConvertor } from '../../../knowledgeBase/knowledgeImport/PdfConvertor';
+import { MinerUPdfConvertor } from '../../pdfConvertor/PdfConvertor';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock all external dependencies

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from './MinerUPdfConvertor';
 import type {
   ConversionResult,
   ImageUploadResult,
-} from '../../../lib/MinerU/MinerUPdfConvertor';
+} from './pdfConvert';
 import { uploadPdfFromPath } from '@aikb/s3-service';
 import * as fs from 'fs';
 import * as path from 'path';

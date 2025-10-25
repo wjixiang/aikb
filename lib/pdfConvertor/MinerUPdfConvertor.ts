@@ -1,4 +1,3 @@
-import type { IPdfConvertor } from '../../knowledgeBase/knowledgeImport/IPdfConvertor';
 import {
   MinerUClient,
   SingleFileRequest,
@@ -13,6 +12,8 @@ import * as yauzl from 'yauzl';
 import { uploadPdfFromPath, uploadToS3 } from '@aikb/s3-service';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { app_config } from '../../knowledgeBase/config';
+import { ConversionResult, ImageUploadResult } from './pdfConvert';
+import { IPdfConvertor } from './pdfConvert';
 
 /**
  * MinerU-based PDF converter implementation
@@ -29,22 +30,7 @@ export interface MinerUPdfConvertorConfig {
   downloadDir?: string;
 }
 
-export interface ConversionResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-  downloadedFiles?: string[];
-  taskId?: string;
-  uploadedImages?: ImageUploadResult[];
-}
 
-export interface ImageUploadResult {
-  originalPath: string; // Original path in ZIP file
-  s3Url: string; // S3 URL after upload
-  fileName: string; // S3 key/filename
-  success?: boolean; // Whether the upload was successful
-  error?: string; // Error message if upload failed
-}
 
 export class MinerUPdfConvertor implements IPdfConvertor {
   private logger = createLoggerWithPrefix('MinerUPdfConvertor');
@@ -1021,3 +1007,5 @@ export class MinerUPdfConvertor implements IPdfConvertor {
     this.config.downloadDir = directory;
   }
 }
+
+
