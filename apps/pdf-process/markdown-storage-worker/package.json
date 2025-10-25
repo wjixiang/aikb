@@ -1,7 +1,7 @@
 {
-  "name": "pdf-analysis-worker",
+  "name": "markdown-storage-worker",
   "version": "1.0.0",
-  "description": "PDF Analysis Worker for processing PDF documents",
+  "description": "Markdown storage Worker for processing PDF documents",
   "main": "./src/main.ts",
   "scripts": {
     "build": "tsc",

@@ -1,3 +1,4 @@
+import baseConfig from './eslint.base.config.mjs';
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -36,9 +37,9 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 );

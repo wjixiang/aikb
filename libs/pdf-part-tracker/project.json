@@ -1,0 +1,27 @@
+{
+  "name": "pdf-part-tracker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/pdf-part-tracker/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/pdf-part-tracker",
+        "main": "libs/pdf-part-tracker/src/index.ts",
+        "tsConfig": "libs/pdf-part-tracker/tsconfig.lib.json",
+        "assets": ["libs/pdf-part-tracker/*.md"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/pdf-part-tracker",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

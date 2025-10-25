@@ -1,37 +1,42 @@
 {
-  "name": "pdf-analysis-worker",
+  "name": "@aikb/pdf-conversion-worker",
   "version": "1.0.0",
-  "description": "PDF Analysis Worker for processing PDF documents",
+  "description": "PDF Conversion Worker for processing PDF documents to Markdown",
   "main": "./src/main.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/main.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "pdf",
-    "analysis",
+    "conversion",
     "worker",
     "rabbitmq",
-    "messaging"
+    "messaging",
+    "markdown"
   ],
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
     "@aikb/rabbitmq": "workspace:*",
     "@aikb/log-management": "workspace:*",
-    "@aikb/bibliography": "workspace:*",
-    "@aikb/pdf-splitter": "workspace:*",
+    "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
+    "@aikb/mineru-client": "workspace:*",
+    "@aikb/embedding": "workspace:*",
+    "@aikb/chunking": "workspace:*",
+    "@aikb/pdf-part-tracker": "workspace:*",
+    "@aikb/markdown-part-cache": "workspace:*",
     "dotenv": "^17.2.2",
-    "axios": "^1.6.0",
-    "uuid": "^9.0.0"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "@types/uuid": "^9.0.0",
+    "@types/uuid": "^9.0.8",
     "typescript": "^5.7.3",
     "vitest": "^3.2.4"
   }

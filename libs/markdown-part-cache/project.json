@@ -1,0 +1,27 @@
+{
+  "name": "markdown-part-cache",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/markdown-part-cache/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/markdown-part-cache",
+        "main": "libs/markdown-part-cache/src/index.ts",
+        "tsConfig": "libs/markdown-part-cache/tsconfig.lib.json",
+        "assets": ["libs/markdown-part-cache/*.md"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/markdown-part-cache",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
