@@ -2,7 +2,7 @@ import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import * as fs from 'fs';
 import * as path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { MinerUPdfConvertor } from 'lib/pdfConvertor/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '@aikb/pdf-converter';
 import { ChunkingStrategy, ChunkingStrategyType } from '@aikb/chunking';
 import { time } from 'console';
 import { delay } from 'rxjs';

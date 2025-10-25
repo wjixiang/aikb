@@ -2,6 +2,7 @@ import {
   MinerUClient,
   SingleFileRequest,
   TaskResult,
+  MinerUDefaultConfig,
 } from '@aikb/mineru-client';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,9 +12,7 @@ import { Transform } from 'stream';
 import * as yauzl from 'yauzl';
 import { uploadPdfFromPath, uploadToS3 } from '@aikb/s3-service';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { app_config } from '../../knowledgeBase/config';
-import { ConversionResult, ImageUploadResult } from './pdfConvert';
-import { IPdfConvertor } from './pdfConvert';
+import { ConversionResult, ImageUploadResult, IPdfConvertor } from './types';
 
 /**
  * MinerU-based PDF converter implementation
@@ -30,8 +29,6 @@ export interface MinerUPdfConvertorConfig {
   downloadDir?: string;
 }
 
-
-
 export class MinerUPdfConvertor implements IPdfConvertor {
   private logger = createLoggerWithPrefix('MinerUPdfConvertor');
   private client: MinerUClient;
@@ -47,7 +44,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
 
   constructor(config: MinerUPdfConvertorConfig) {
     this.config = {
-      token: config.token || app_config.MinerU.token,
+      token: config.token || MinerUDefaultConfig.token,
       baseUrl: config.baseUrl || 'https://mineru.net/api/v4',
       timeout: config.timeout || 30000,
       maxRetries: config.maxRetries || 3,
@@ -64,7 +61,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
     };
 
     this.client = new MinerUClient({
-      ...app_config.MinerU,
+      ...MinerUDefaultConfig,
       token: this.config.token,
       baseUrl: this.config.baseUrl,
       timeout: this.config.timeout,
@@ -885,7 +882,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
               });
             } catch (error) {
               this.logger.error(`Error during image upload process:`, error);
-              // Still return the markdown content even if image upload fails
+              // Still return markdown content even if image upload fails
               resolve({
                 markdownContent: markdownContent,
                 uploadedImages: uploadedImages,
@@ -1007,5 +1004,3 @@ export class MinerUPdfConvertor implements IPdfConvertor {
     this.config.downloadDir = directory;
   }
 }
-
-

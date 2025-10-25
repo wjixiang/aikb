@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Library, { HashUtils } from '../library';
 import { S3MongoLibraryStorage } from '../library';
-import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '@aikb/pdf-converter';
 import { getRabbitMQService } from '../../../lib/rabbitmq/rabbitmq.service';
 import { PdfProcessingStatus } from '../../../lib/rabbitmq/message.types';
 

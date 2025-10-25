@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "bibliography": {
+      "type": "library",
+      "root": "libs/bibliography",
+      "entryFile": "index",
+      "sourceRoot": "libs/bibliography/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/bibliography/tsconfig.lib.json"
+      }
+    }
+  },
+  "compilerOptions": {
+    "webpack": true
+  }
+}

@@ -20,11 +20,14 @@ import {
   closeAllRabbitMQServices,
   RabbitMQService,
 } from '../rabbitmq.service';
-import { defaultEmbeddingConfig, EmbeddingProvider } from '@aikb/embedding';
+import {
+  defaultEmbeddingConfig,
+  EmbeddingProvider,
+} from '@aikb/embedding';
 import {
   ChunkingStrategy,
   defaultChunkingConfig,
-} from '@aikb/chunking/chunking-strategy';
+} from '@aikb/chunking';
 
 // Mock the Library class
 vi.mock('../../../knowledgeBase/knowledgeImport/library', async () => {

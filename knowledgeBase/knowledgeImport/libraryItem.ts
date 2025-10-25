@@ -6,7 +6,7 @@ import {
   ItemChunk,
 } from './library';
 import { createLoggerWithPrefix } from '@aikb/log-management';
-import { createMinerUConvertorFromEnv } from 'lib/pdfConvertor/pdfConvert';
+import { createMinerUConvertorFromEnv } from '@aikb/pdf-converter';
 import {
   ChunkingStrategy,
   ChunkingConfig,

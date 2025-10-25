@@ -12,15 +12,19 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
     "sourceMap": true,
-    "outDir": "./dist-tsc",
+    "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@aikb/bibliography": ["libs/bibliography/src"],
+      "@aikb/bibliography/*": ["libs/bibliography/src/*"],
+      "@aikb/chunking": ["./libs/chunking/src/index.ts"],
+      "@aikb/embedding": ["./libs/embedding/src/index.ts"],
       "@aikb/log-management": ["./libs/log-management/src/index.ts"],
       "@aikb/mineru-client": ["./libs/mineru-client/src/index.ts"],
-      "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
+      "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
-      "@aikb/embedding": ["./libs/embedding/src/index.ts"],
-      "@aikb/chunking": ["./libs/chunking/src/index.ts"]
+      "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
+      "bibliography": ["libs/bibliography/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -31,8 +35,5 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["vitest/globals"]
   },
-  "exclude": [
-    "apps/web-frontend",
-    "./node_modules"
-  ]
+  "exclude": ["apps/web-frontend", "./node_modules", "dist"]
 }

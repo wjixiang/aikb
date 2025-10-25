@@ -5,7 +5,7 @@ config({ path: '.env' });
 import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import * as fs from 'fs';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
+import { MinerUPdfConvertor } from '@aikb/pdf-converter';
 
 // beforeAll(async () => {
 //   // Use MongoDB storage instead of Elasticsearch for more reliable testing

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { MinerUPdfConvertor } from 'lib/pdfConvertor/MinerUPdfConvertor';
-import { IPdfConvertor } from 'lib/pdfConvertor/pdfConvert';
+import { MinerUPdfConvertor } from '../MinerUPdfConvertor';
+import { IPdfConvertor } from '../types';
 
 
 describe('IPdfConvertor Interface', () => {
