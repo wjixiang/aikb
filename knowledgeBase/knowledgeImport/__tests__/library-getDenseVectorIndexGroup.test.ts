@@ -6,7 +6,7 @@ import {
   EmbeddingProvider,
   OpenAIModel,
   AlibabaModel,
-} from '../../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { LibraryItem } from '../libraryItem';
 
 // Mock storage implementation for testing

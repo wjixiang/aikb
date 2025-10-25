@@ -1,16 +1,16 @@
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import { Embedding, EmbeddingProvider } from './embedding';
-import { EmbeddingManager } from './embedding-manager';
+import { Embedding, EmbeddingProvider } from '../embedding.js';
+import { EmbeddingManager } from '../embedding-manager.js';
 import {
   EmbeddingProviderBase,
   OpenAIEmbeddingProvider,
   AlibabaEmbeddingProvider,
   ONNXEmbeddingProvider,
-} from './embedding-providers';
-import { embeddingManager } from './embedding-manager';
+} from '../embedding-providers.js';
+import { embeddingManager } from '../embedding-manager.js';
 
 // Mock the logger to avoid console output during tests
-vi.mock('../logger', () => ({
+vi.mock('@aikb/log-management/logger', () => ({
   default: vi.fn().mockImplementation((prefix: string) => ({
     info: vi.fn(),
     warn: vi.fn(),
@@ -19,8 +19,8 @@ vi.mock('../logger', () => ({
 }));
 
 // Mock the embeddingManager singleton
-vi.mock('./embedding-manager', async () => {
-  const actual = await vi.importActual('./embedding-manager');
+vi.mock('../embedding-manager', async () => {
+  const actual = await vi.importActual('../embedding-manager');
   return {
     ...actual,
     embeddingManager: {

@@ -14,7 +14,7 @@ import {
   defaultEmbeddingConfig,
   EmbeddingProvider,
   AlibabaModel,
-} from '../../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { Client } from '@elastic/elasticsearch';
 import * as dotenv from 'dotenv';
 

@@ -23,7 +23,7 @@ import {
 import {
   defaultEmbeddingConfig,
   EmbeddingProvider,
-} from '../../embedding/embedding';
+} from '@aikb/embedding';
 import {
   ChunkingStrategy,
   defaultChunkingConfig,

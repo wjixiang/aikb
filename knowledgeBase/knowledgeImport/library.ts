@@ -18,7 +18,7 @@ import { ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
 import {
   EmbeddingConfig,
   defaultEmbeddingConfig,
-} from '../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import {
   PdfProcessingStatus,
   PdfAnalysisRequestMessage,

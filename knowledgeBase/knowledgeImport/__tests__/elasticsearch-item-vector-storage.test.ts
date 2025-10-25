@@ -17,7 +17,7 @@ import {
   EmbeddingProvider,
   EmbeddingConfig,
   Embedding,
-} from '../../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { ChunkingManager } from 'lib/chunking/chunkingManager';
 
 // Mock the embedding service

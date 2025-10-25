@@ -13,7 +13,7 @@ import {
   defaultEmbeddingConfig,
   Embedding,
   EmbeddingConfig,
-} from '../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { ChunkingManager } from 'lib/chunking/chunkingManager';
 import { v4 } from 'uuid';
 import { threadId } from 'worker_threads';

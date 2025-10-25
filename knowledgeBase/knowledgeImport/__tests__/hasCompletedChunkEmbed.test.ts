@@ -4,7 +4,7 @@ import { MockLibraryStorage } from '../MockLibraryStorage';
 import {
   EmbeddingProvider,
   OpenAIModel,
-} from '../../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { LibraryItem } from '../libraryItem';
 
 describe('LibraryItem.hasCompletedChunkEmbed', () => {

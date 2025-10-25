@@ -4,7 +4,7 @@ import {
   ChunkingEmbeddingGroup,
 } from '../knowledgeImport/library';
 import { Client } from '@elastic/elasticsearch';
-import { EmbeddingProvider } from '../../lib/embedding/embedding';
+import { EmbeddingProvider } from '@aikb/embedding';
 
 /**
  * Multi-Version Vector Storage Interface

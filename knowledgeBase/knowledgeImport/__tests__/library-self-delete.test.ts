@@ -15,7 +15,7 @@ import {
 import {
   EmbeddingProvider,
   OpenAIModel,
-} from '../../../lib/embedding/embedding';
+} from '@aikb/embedding';
 import { LibraryItem } from '../libraryItem';
 
 // Mock the S3Service to avoid real S3 operations

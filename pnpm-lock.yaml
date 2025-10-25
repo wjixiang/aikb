@@ -8,12 +8,18 @@ importers:
 
   .:
     dependencies:
+      '@aikb/embedding':
+        specifier: workspace:*
+        version: link:libs/embedding
       '@aikb/log-management':
         specifier: workspace:*
         version: link:libs/log-management
       '@aikb/mineru-client':
         specifier: workspace:*
         version: link:libs/mineru-client
+      '@aikb/pdf-splitter':
+        specifier: workspace:*
+        version: link:libs/pdf-splitter
       '@aikb/s3-service':
         specifier: workspace:*
         version: link:libs/s3-service
@@ -199,6 +205,25 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@22.18.6)(jiti@2.6.0)(terser@5.44.0)(yaml@2.8.1)
 
+  libs/embedding:
+    dependencies:
+      '@aikb/log-management':
+        specifier: workspace:*
+        version: link:../log-management
+      axios:
+        specifier: ^1.12.2
+        version: 1.12.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.18.6
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.18.6)(jiti@2.6.0)(terser@5.44.0)(yaml@2.8.1)
+
   libs/log-management:
     dependencies:
       '@elastic/elasticsearch':
@@ -223,12 +248,34 @@ importers:
 
   libs/mineru-client:
     dependencies:
+      '@aikb/s3-service':
+        specifier: workspace:*
+        version: link:../s3-service
       axios:
         specifier: ^1.12.2
         version: 1.12.2
       dotenv:
         specifier: ^17.2.2
         version: 17.2.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.18.6
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.18.6)(jiti@2.6.0)(terser@5.44.0)(yaml@2.8.1)
+
+  libs/pdf-splitter:
+    dependencies:
+      '@aikb/log-management':
+        specifier: workspace:*
+        version: link:../log-management
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
     devDependencies:
       '@types/node':
         specifier: ^22.10.7

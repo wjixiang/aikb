@@ -9,7 +9,7 @@ export interface BaseRabbitMQMessage {
 
 // Import required types for multi-version support
 import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
-import { EmbeddingConfig, EmbeddingProvider } from '../embedding/embedding';
+import { EmbeddingConfig, EmbeddingProvider } from '@aikb/embedding';
 import { ChunkingConfig, ChunkingStrategy } from '../chunking/chunkingStrategy';
 
 /**

@@ -32,7 +32,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@aikb/s3-service": "^1.0.0",
+    "@aikb/s3-service": "workspace:*",
     "dotenv": "^17.2.2"
   },
   "files": [
