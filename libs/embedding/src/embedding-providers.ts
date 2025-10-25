@@ -1,16 +1,16 @@
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import axios, { AxiosError } from 'axios';
-import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding';
+import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding.js';
 
 const logger = createLoggerWithPrefix('EmbeddingProviders');
 
 // Configuration
-const MAX_RETRIES = parseInt(process.env.EMBEDDING_MAX_RETRIES || '100');
+const MAX_RETRIES = parseInt(process.env['EMBEDDING_MAX_RETRIES'] || '100');
 const RETRY_DELAY_BASE = parseInt(
-  process.env.EMBEDDING_RETRY_DELAY_BASE || '1000',
+  process.env['EMBEDDING_RETRY_DELAY_BASE'] || '1000',
 );
 const CONCURRENCY_LIMIT = parseInt(
-  process.env.EMBEDDING_CONCURRENCY_LIMIT || '5',
+  process.env['EMBEDDING_CONCURRENCY_LIMIT'] || '5',
 );
 
 /**
@@ -112,7 +112,12 @@ export class OpenAIEmbeddingProvider extends EmbeddingProviderBase {
     for (let i = 0; i < texts.length; i++) {
       const processItem = async (index: number) => {
         try {
-          results[index] = await this.embed(texts[index]);
+          const text = texts[index];
+          if (text) {
+            results[index] = await this.embed(text);
+          } else {
+            results[index] = null;
+          }
         } catch (error) {
           logger.error(`Error embedding text at index ${index}:`, error);
           results[index] = null;
@@ -309,7 +314,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
         // Copy batch results to the main results array
         for (let j = 0; j < batchResults.length; j++) {
-          results[batchStartIndex + j] = batchResults[j];
+          results[batchStartIndex + j] = batchResults[j] ?? null;
         }
       } catch (error) {
         logger.error(
@@ -428,29 +433,31 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
   }
 
   private async processBatchIndividually(
-    batch: string[],
-    batchStartIndex: number,
-    results: (number[] | null)[],
-    concurrencyLimit: number,
-  ): Promise<void> {
-    const processingQueue: Promise<void>[] = [];
-    const completedPromises = new Set<Promise<void>>();
+  batch: string[],
+  batchStartIndex: number,
+  results: (number[] | null)[],
+  concurrencyLimit: number,
+): Promise<void> {
+  const processingQueue: Promise<void>[] = [];
+  const completedPromises = new Set<Promise<void>>();
 
-    for (let j = 0; j < batch.length; j++) {
-      const processItem = async (batchIndex: number, globalIndex: number) => {
-        try {
-          results[globalIndex] = await this.embed(batch[batchIndex]);
-          logger.debug(
-            `Successfully processed individual text at index ${globalIndex}`,
-          );
-        } catch (error) {
-          logger.error(`Error embedding text at index ${globalIndex}:`, error);
-          results[globalIndex] = null;
-        }
-      };
+  for (let j = 0; j < batch.length; j++) {
+    const text = batch[j];
+    if (!text) continue;
+    const processItem = async (batchIndex: number, globalIndex: number) => {
+      try {
+        results[globalIndex] = await this.embed(text);
+        logger.debug(
+          `Successfully processed individual text at index ${globalIndex}`,
+        );
+      } catch (error) {
+        logger.error(`Error embedding text at index ${globalIndex}:`, error);
+        results[globalIndex] = null;
+      }
+    };
 
-      const promise = processItem(j, batchStartIndex + j);
-      processingQueue.push(promise);
+    const promise = processItem(j, batchStartIndex + j);
+    processingQueue.push(promise);
 
       // If we've reached the concurrency limit, wait for some to complete
       if (processingQueue.length >= concurrencyLimit) {
@@ -522,7 +529,12 @@ export class ONNXEmbeddingProvider extends EmbeddingProviderBase {
     for (let i = 0; i < texts.length; i++) {
       const processItem = async (index: number) => {
         try {
-          results[index] = await this.embed(texts[index]);
+          const text = texts[index];
+          if (text !== undefined) {
+            results[index] = await this.embed(text);
+          } else {
+            results[index] = null;
+          }
         } catch (error) {
           logger.error(`Error embedding text at index ${index}:`, error);
           results[index] = null;

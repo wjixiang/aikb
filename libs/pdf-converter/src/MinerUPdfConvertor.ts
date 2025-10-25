@@ -360,12 +360,10 @@ export class MinerUPdfConvertor implements IPdfConvertor {
       this.logger.info(`Batch task completed`);
 
       // Extract results
-      const result = taskResult.results.extract_result[0];
-      this.logger.info(`Task result state: ${result.state}`);
-
-      if (result.state === 'failed') {
+      const result = taskResult.results?.extract_result?.[0];
+      if (result?.state === 'failed') {
         this.logger.error(`Task failed: ${result.err_msg}`);
-
+        
         return {
           success: false,
           error: result.err_msg || 'Processing failed',

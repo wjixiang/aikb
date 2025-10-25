@@ -1,14 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import Entity from './Entity';
+import Entity from '../Entity';
 import { config } from 'dotenv';
-import { EntityData, EntityDataWithId } from './knowledge.type';
+import { EntityData, EntityDataWithId } from '../knowledge.type';
 import {
   AbstractEntityContentStorage,
   AbstractEntityGraphStorage,
   AbstractEntityVectorStorage,
-} from './storage/abstract-storage';
-import { ElasticsearchEntityContentStorage } from './storage/elasticsearch-entity-content-storage';
-import EntityStorage from './storage/entityStorage';
+} from '../storage/abstract-storage';
+import { ElasticsearchEntityContentStorage } from '../storage/elasticsearch-entity-content-storage';
+import EntityStorage from '../storage/entityStorage';
 config();
 
 // Mock the BAML client to avoid native binding issues

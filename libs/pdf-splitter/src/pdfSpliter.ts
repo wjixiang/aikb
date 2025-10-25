@@ -22,12 +22,19 @@ export class PdfSpliterWorker {
     const firstPage = pages[0];
 
     // Get the width and height of the first page
-    const { width, height } = firstPage.getSize();
-    logger.info(`PDF size: width=${width}, height=${height}`);
+    if (firstPage) {
+      const { width, height } = firstPage.getSize();
+      logger.info(`PDF size: width=${width}, height=${height}`);
+
+      return {
+        height: height,
+        width: width,
+      };
+    }
 
     return {
-      height: height,
-      width: width,
+      height: 0,
+      width: 0,
     };
   }
 

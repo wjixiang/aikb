@@ -1,5 +1,5 @@
 import winston, { level } from 'winston';
-import { ElasticsearchTransport } from './elasticsearch-transport';
+import { ElasticsearchTransport } from './elasticsearch-transport.js';
 
 const createLoggerWithPrefix = (prefix: string) => {
   const consoleFormat = winston.format.printf(
@@ -18,7 +18,7 @@ const createLoggerWithPrefix = (prefix: string) => {
 
   const transports: any[] = [
     new winston.transports.Console({
-      level: process.env.SYSTEM_LOG_LEVEL || 'info',
+      level: process.env['SYSTEM_LOG_LEVEL'] || 'info',
       format: consoleFormat,
     }),
     new winston.transports.File({
@@ -28,17 +28,17 @@ const createLoggerWithPrefix = (prefix: string) => {
   ];
 
   // Add Elasticsearch transport if enabled
-  if (process.env.ELASTICSEARCH_LOGGING_ENABLED === 'true') {
+  if (process.env['ELASTICSEARCH_LOGGING_ENABLED'] === 'true') {
     const elasticsearchTransport = new ElasticsearchTransport({
       level:
-        process.env.ELASTICSEARCH_LOG_LEVEL ||
-        process.env.SYSTEM_LOG_LEVEL ||
+        process.env['ELASTICSEARCH_LOG_LEVEL'] ||
+        process.env['SYSTEM_LOG_LEVEL'] ||
         'info',
       elasticsearchUrl:
-        process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
-      indexName: process.env.ELASTICSEARCH_LOG_INDEX || 'logs',
+        process.env['ELASTICSEARCH_URL'] || 'http://localhost:9200',
+      indexName: process.env['ELASTICSEARCH_LOG_INDEX'] || 'logs',
       indexPattern:
-        process.env.ELASTICSEARCH_LOG_INDEX_PATTERN || 'logs-YYYY.MM.DD',
+        process.env['ELASTICSEARCH_LOG_INDEX_PATTERN'] || 'logs-YYYY.MM.DD',
     });
     transports.push(elasticsearchTransport);
   }

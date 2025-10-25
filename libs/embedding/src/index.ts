@@ -5,7 +5,7 @@ export {
   OpenAIModel,
   AlibabaModel,
   OnnxModel,
-  EmbeddingConfig,
+  type EmbeddingConfig,
   defaultEmbeddingConfig,
   embeddingService,
 } from './embedding.js';

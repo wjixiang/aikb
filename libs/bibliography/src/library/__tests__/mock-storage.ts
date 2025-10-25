@@ -337,9 +337,11 @@ export class MockLibraryStorage implements ILibraryStorage {
       let normB = 0;
 
       for (let i = 0; i < queryVector.length; i++) {
-        dotProduct += queryVector[i] * (chunk.embedding[i] || 0);
-        normA += queryVector[i] * queryVector[i];
-        normB += (chunk.embedding[i] || 0) * (chunk.embedding[i] || 0);
+        const queryValue = queryVector[i] || 0;
+        const chunkValue = chunk.embedding?.[i] || 0;
+        dotProduct += queryValue * chunkValue;
+        normA += queryValue * queryValue;
+        normB += chunkValue * chunkValue;
       }
 
       const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));

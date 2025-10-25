@@ -57,13 +57,17 @@ export class H1ChunkingStrategy extends BaseChunkingStrategy {
 
     for (let i = 0; i < matches.length; i++) {
       const match = matches[i];
+      if (!match || !match[1]) continue;
       const title = match[1].trim();
       const startIndex = match.index || 0;
 
       // 确定内容结束位置：下一个H1标题的开始位置或文本末尾
       let endIndex = text.length;
       if (i < matches.length - 1) {
-        endIndex = matches[i + 1].index || text.length;
+        const nextMatch = matches[i + 1];
+        if (nextMatch && nextMatch.index !== undefined) {
+          endIndex = nextMatch.index || text.length;
+        }
       }
 
       // 提取内容（包括H1标题）

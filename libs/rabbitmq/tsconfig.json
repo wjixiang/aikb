@@ -6,20 +6,16 @@
     "declarationMap": true,
     "sourceMap": true,
     "target": "ES2020",
-    "module": "es2015",
-    "lib": ["ES2020"],
+    "module": "nodenext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "nodenext",
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@/*": ["../../src/*"]
-    }
   },
   "include": [
     "src/**/*"

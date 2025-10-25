@@ -1,0 +1,38 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "declaration": true,
+    "declarationMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "resolveJsonModule": true,
+    "baseUrl": "../../../",
+    "paths": {
+      "@aikb/bibliography": ["./libs/bibliography/src"],
+      "@aikb/chunking": ["./libs/chunking/src/index.ts"],
+      "@aikb/embedding": ["./libs/embedding/src/index.ts"],
+      "@aikb/log-management": ["./libs/log-management/src/index.ts"],
+      "@aikb/mineru-client": ["./libs/mineru-client/src/index.ts"],
+      "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
+      "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
+      "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
+      "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
+      "bibliography": ["./libs/bibliography/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}

@@ -28,18 +28,18 @@ export class ElasticsearchTransport extends Transport {
     } else {
       const elasticsearchUrl =
         options.elasticsearchUrl ||
-        process.env.ELASTICSEARCH_URL ||
+        process.env['ELASTICSEARCH_URL'] ||
         'http://localhost:9200';
 
       this.client = new Client({
         node: elasticsearchUrl,
         auth: {
-          apiKey: process.env.ELASTICSEARCH_API_KEY || '',
-          username: process.env.ELASTICSEARCH_USERNAME || 'elastic',
-          password: process.env.ELASTICSEARCH_PASSWORD || 'changeme',
+          apiKey: process.env['ELASTICSEARCH_API_KEY'] || '',
+          username: process.env['ELASTICSEARCH_USERNAME'] || 'elastic',
+          password: process.env['ELASTICSEARCH_PASSWORD'] || 'changeme',
         },
         tls: {
-          rejectUnauthorized: process.env.ELASTICSEARCH_VERIFY_SSL !== 'false',
+          rejectUnauthorized: process.env['ELASTICSEARCH_VERIFY_SSL'] !== 'false',
         },
       });
     }
@@ -128,7 +128,7 @@ export class ElasticsearchTransport extends Transport {
   /**
    * Log the info to Elasticsearch
    */
-  async log(info: any, callback: () => void): Promise<void> {
+  override async log(info: any, callback: () => void): Promise<void> {
     try {
       // Initialize index if needed
       await this.initializeIndex();
@@ -143,8 +143,8 @@ export class ElasticsearchTransport extends Transport {
         message: info.message,
         label: info.label,
         meta: info.meta || {},
-        service: process.env.SERVICE_NAME || 'aikb',
-        environment: process.env.NODE_ENV || 'development',
+        service: process.env['SERVICE_NAME'] || 'aikb',
+        environment: process.env['NODE_ENV'] || 'development',
       };
 
       // Ensure meta is properly serialized and flattened for Elasticsearch

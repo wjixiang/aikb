@@ -1,0 +1,45 @@
+{
+  "name": "pdf-analysis-worker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/pdf-process/pdf-analysis-worker/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "apps/pdf-process/pdf-analysis-worker/dist",
+        "main": "apps/pdf-process/pdf-analysis-worker/src/main.ts",
+        "tsConfig": "apps/pdf-process/pdf-analysis-worker/tsconfig.json",
+        "assets": ["apps/pdf-process/pdf-analysis-worker/*.json"]
+      }
+    },
+    "serve": {
+      "executor": "@nx/node:execute",
+      "options": {
+        "buildTarget": "pdf-analysis-worker:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "pdf-analysis-worker:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/pdf-analysis-worker"
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/pdf-analysis-worker/**/*.ts"]
+      }
+    }
+  },
+  "tags": []
+}

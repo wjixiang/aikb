@@ -1,0 +1,38 @@
+{
+  "name": "@aikb/pdf-analysis-worker",
+  "version": "1.0.0",
+  "description": "PDF Analysis Worker for processing PDF documents",
+  "main": "./src/main.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "pdf",
+    "analysis",
+    "worker",
+    "rabbitmq",
+    "messaging"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@aikb/rabbitmq": "workspace:*",
+    "@aikb/log-management": "workspace:*",
+    "@aikb/bibliography": "workspace:*",
+    "@aikb/pdf-splitter": "workspace:*",
+    "@aikb/s3-service": "workspace:*",
+    "dotenv": "^17.2.2",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
+  }
+}

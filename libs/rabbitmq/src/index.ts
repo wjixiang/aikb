@@ -1,21 +1,7 @@
-// Export the main RabbitMQ service and interface
-export { RabbitMQService } from './rabbitmq.service';
-export type { IRabbitMQService } from './rabbitmq-service.interface';
-
-// Export helper functions
-export {
-  getRabbitMQService,
-  initializeRabbitMQService,
-  closeRabbitMQService,
-  closeAllRabbitMQServices,
-} from './rabbitmq.service';
-
-// Export message service interface and types
-export type {
-  IMessageService,
-  MessageProtocol,
-} from './message-service.interface';
+// Export message types and interfaces
 export * from './message.types';
+export * from './message-service.interface';
+export * from './rabbitmq-service.interface';
 
 // Export configuration
 export * from './rabbitmq.config';
@@ -34,3 +20,6 @@ export { StompMessageService } from './stomp-implementation';
 
 // Export RabbitMQ implementation
 export { RabbitMQMessageService } from './rabbitmq-implementation';
+
+// Export RabbitMQ service
+export { getRabbitMQService } from './rabbitmq.service';

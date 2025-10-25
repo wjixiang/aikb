@@ -27,3 +27,6 @@ export type { ILibraryStorage } from './library/storage.js';
 
 // Export utility classes
 export { HashUtils, IdUtils, CitationFormatter } from './library/utils.js';
+
+// Export mock storage for testing
+export { MockLibraryStorage } from './library/__tests__/mock-storage.js';

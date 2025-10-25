@@ -6,7 +6,7 @@ const logger = createLoggerWithPrefix('Embedding');
 
 // Configuration
 const CONCURRENCY_LIMIT = parseInt(
-  process.env.EMBEDDING_CONCURRENCY_LIMIT || '5',
+  process.env['EMBEDDING_CONCURRENCY_LIMIT'] || '5',
 );
 
 // Embedding provider enums

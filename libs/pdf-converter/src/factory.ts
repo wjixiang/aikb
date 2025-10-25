@@ -38,24 +38,24 @@ export function createMinerUConvertorFromEnv(
     };
   } = {},
 ): MinerUPdfConvertor {
-  const token = process.env.MINERU_TOKEN;
+  const token = process.env['MINERU_TOKEN'];
   if (!token) {
     throw new Error('MINERU_TOKEN environment variable is required');
   }
 
   return new MinerUPdfConvertor({
     token,
-    baseUrl: process.env.MINERU_BASE_URL,
-    timeout: process.env.MINERU_TIMEOUT
-      ? parseInt(process.env.MINERU_TIMEOUT)
+    baseUrl: process.env['MINERU_BASE_URL'],
+    timeout: process.env['MINERU_TIMEOUT']
+      ? parseInt(process.env['MINERU_TIMEOUT'])
       : undefined,
-    maxRetries: process.env.MINERU_MAX_RETRIES
-      ? parseInt(process.env.MINERU_MAX_RETRIES)
+    maxRetries: process.env['MINERU_MAX_RETRIES']
+      ? parseInt(process.env['MINERU_MAX_RETRIES'])
       : undefined,
-    retryDelay: process.env.MINERU_RETRY_DELAY
-      ? parseInt(process.env.MINERU_RETRY_DELAY)
+    retryDelay: process.env['MINERU_RETRY_DELAY']
+      ? parseInt(process.env['MINERU_RETRY_DELAY'])
       : undefined,
-    downloadDir: options.downloadDir || process.env.MINERU_DOWNLOAD_DIR,
+    downloadDir: options.downloadDir || process.env['MINERU_DOWNLOAD_DIR'],
     defaultOptions: options.defaultOptions,
   });
 }

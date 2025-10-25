@@ -27,7 +27,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private isInitialized = false;
   private vectorDimensions: number;
 
-  logger = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
+  logger: any = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
 
   // Performance optimization caches
   private searchCache: Map<string, { results: any; timestamp: number }> =
@@ -626,8 +626,8 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
         },
       } as any);
 
-      const hits = result.hits.hits;
-      if (hits.length > 0) {
+      const hits = result.hits?.hits || [];
+      if (hits.length > 0 && hits[0]) {
         return hits[0]._source as BookMetadata;
       }
       return null;
@@ -1449,14 +1449,16 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
         const rank = i + 1;
 
         // Calculate weighted score using reciprocal rank fusion
-        const weightedScore = (chunk.similarity * groupWeight) / (rank + 60); // k=60 for RRF
+        if (chunk && chunk.similarity !== undefined) {
+          const weightedScore = (chunk.similarity * groupWeight) / (rank + 60); // k=60 for RRF
 
-        allResults.push({
-          chunk,
-          group,
-          rank,
-          weightedScore,
-        });
+          allResults.push({
+            chunk,
+            group,
+            rank,
+            weightedScore,
+          });
+        }
       }
     }
 

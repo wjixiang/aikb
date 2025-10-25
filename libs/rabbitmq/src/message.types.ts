@@ -7,11 +7,6 @@ export interface BaseRabbitMQMessage {
   eventType: string;
 }
 
-// Import required types for multi-version support
-import { ChunkingEmbeddingGroup } from '../../knowledgeBase/knowledgeImport/library';
-import { EmbeddingConfig, EmbeddingProvider } from '@aikb/embedding';
-import { ChunkingConfig, ChunkingStrategy } from '@aikb/chunking';
-
 /**
  * PDF processing status enum
  */
@@ -34,6 +29,21 @@ export enum PdfPartStatus {
   PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
+}
+
+/**
+ * PDF metadata information
+ */
+export interface PdfMetadata {
+  pageCount: number;
+  fileSize: number;
+  title?: string;
+  author?: string;
+  subject?: string;
+  creator?: string;
+  producer?: string;
+  creationDate?: string;
+  modificationDate?: string;
 }
 
 /**
@@ -122,21 +132,6 @@ export interface PdfAnalysisRequestMessage extends BaseRabbitMQMessage {
   maxRetries?: number;
   splitThreshold?: number; // Number of pages above which PDF should be split
   splitSize?: number; // Number of pages per split part
-}
-
-/**
- * PDF metadata information
- */
-export interface PdfMetadata {
-  pageCount: number;
-  fileSize: number;
-  title?: string;
-  author?: string;
-  subject?: string;
-  creator?: string;
-  producer?: string;
-  creationDate?: string;
-  modificationDate?: string;
 }
 
 /**
@@ -316,8 +311,7 @@ export interface MarkdownPartStorageRequestMessage extends BaseRabbitMQMessage {
 /**
  * Markdown part storage progress message
  */
-export interface MarkdownPartStorageProgressMessage
-  extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_PROGRESS';
   itemId: string;
   partIndex: number;
@@ -333,8 +327,7 @@ export interface MarkdownPartStorageProgressMessage
 /**
  * Markdown part storage completed message
  */
-export interface MarkdownPartStorageCompletedMessage
-  extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageCompletedMessage extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_COMPLETED';
   itemId: string;
   partIndex: number;
@@ -365,61 +358,19 @@ export interface MarkdownPartStorageFailedMessage extends BaseRabbitMQMessage {
 }
 
 /**
- * Multi-version chunking and embedding request message
+ * Chunking and embedding request message
  */
 export interface ChunkingEmbeddingRequestMessage extends BaseRabbitMQMessage {
   eventType: 'CHUNKING_EMBEDDING_REQUEST';
   itemId: string;
   markdownContent?: string;
-
-  // Multi-version support
-  groupConfig: Omit<ChunkingEmbeddingGroup, 'id'>; // Create new group with this config
-  embeddingConfig?: EmbeddingConfig; // Optional embedding configuration override
-  chunkingConfig?: ChunkingConfig; // Optional chunking configuration overrid
-
   // Processing options
   priority?: 'low' | 'normal' | 'high';
   retryCount?: number;
   maxRetries?: number;
-
   // Version control
   forceReprocess?: boolean; // Force reprocessing even if chunks exist
   preserveExisting?: boolean; // Keep existing chunks from other groups
-}
-
-/**
- * Multi-version chunking and embedding progress message
- */
-export interface MultiVersionChunkingEmbeddingProgressMessage
-  extends BaseRabbitMQMessage {
-  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_PROGRESS';
-  itemId: string;
-  groupId?: string;
-  status: PdfProcessingStatus;
-  progress: number;
-  message?: string;
-  chunksProcessed?: number;
-  totalChunks?: number;
-  currentGroup?: string;
-  totalGroups?: number;
-  startedAt?: number;
-  estimatedCompletion?: number;
-}
-
-/**
- * Multi-version chunking and embedding completed message
- */
-export interface MultiVersionChunkingEmbeddingCompletedMessage
-  extends BaseRabbitMQMessage {
-  eventType: 'MULTI_VERSION_CHUNKING_EMBEDDING_COMPLETED';
-  itemId: string;
-  groupId: string;
-  status: PdfProcessingStatus.COMPLETED;
-  chunksCount: number;
-  processingTime: number;
-  strategy: string;
-  provider: string;
-  version: string;
 }
 
 /**
@@ -447,7 +398,6 @@ export interface ChunkingEmbeddingCompletedMessage extends BaseRabbitMQMessage {
   status: PdfProcessingStatus.COMPLETED;
   chunksCount: number;
   processingTime: number; // in milliseconds
-  chunkingStrategy: ChunkingStrategy;
 }
 
 /**
@@ -487,9 +437,7 @@ export type PdfConversionMessage =
   | ChunkingEmbeddingProgressMessage
   | ChunkingEmbeddingCompletedMessage
   | ChunkingEmbeddingFailedMessage
-  | ChunkingEmbeddingRequestMessage
-  | MultiVersionChunkingEmbeddingProgressMessage
-  | MultiVersionChunkingEmbeddingCompletedMessage;
+  | ChunkingEmbeddingRequestMessage;
 
 /**
  * PDF part information
@@ -564,35 +512,6 @@ export interface RabbitMQMessageOptions {
   correlationId?: string;
   replyTo?: string;
   headers?: Record<string, any>;
-}
-
-/**
- * Dead letter queue message
- */
-export interface DeadLetterQueueMessage extends BaseRabbitMQMessage {
-  eventType: 'DEAD_LETTER';
-  originalMessage: any; // The original message that failed
-  originalRoutingKey: string;
-  failureReason: string;
-  failureTimestamp: number;
-  retryCount: number;
-  originalQueue: string;
-  errorDetails?: {
-    stack?: string;
-    errorCode?: string;
-    errorMessage?: string;
-  };
-}
-
-/**
- * Dead letter queue handler message types
- */
-export interface DeadLetterProcessedMessage extends BaseRabbitMQMessage {
-  eventType: 'DEAD_LETTER_PROCESSED';
-  originalMessageId: string;
-  action: 'requeued' | 'discarded' | 'moved_to_error_storage';
-  reason: string;
-  processedAt: number;
 }
 
 /**

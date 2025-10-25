@@ -72,7 +72,7 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
     let chunkIndex = 0;
 
     for (let i = 0; i < paragraphs.length; i++) {
-      const paragraph = paragraphs[i];
+      const paragraph = paragraphs[i] || '';
 
       // 如果当前段落本身就很长，需要分割
       if (paragraph.length > maxChunkSize) {
@@ -215,7 +215,7 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
     return mergedChunks;
   }
 
-  getDefaultConfig(): ChunkingConfig {
+  override getDefaultConfig(): ChunkingConfig {
     return {
       // Don't set a default maxChunkSize to allow each paragraph to be returned as a separate chunk
       maxChunkSize: undefined,
@@ -224,7 +224,7 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
     };
   }
 
-  validateConfig(config: ChunkingConfig): { valid: boolean; errors: string[] } {
+  override validateConfig(config: ChunkingConfig): { valid: boolean; errors: string[] } {
     // Use the parent class implementation
     return super.validateConfig(config);
   }

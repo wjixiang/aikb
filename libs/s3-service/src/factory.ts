@@ -40,13 +40,13 @@ export function createS3ServiceFromEnv(): S3Service {
   }
 
   const s3Config: S3ServiceConfig = {
-    accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY!,
-    bucketName: process.env.PDF_OSS_BUCKET_NAME!,
-    region: process.env.OSS_REGION!,
-    endpoint: process.env.S3_ENDPOINT!,
+    accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
+    secretAccessKey: process.env['OSS_SECRET_ACCESS_KEY']!,
+    bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
+    region: process.env['OSS_REGION']!,
+    endpoint: process.env['S3_ENDPOINT']!,
     forcePathStyle: false, // Use virtual hosted style for Aliyun OSS
-    signingRegion: process.env.OSS_REGION || 'us-east-1',
+    signingRegion: process.env['OSS_REGION'] || 'us-east-1',
   };
 
   return new S3Service(s3Config);

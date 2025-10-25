@@ -4,15 +4,15 @@ import {
   OpenAIEmbeddingProvider,
   AlibabaEmbeddingProvider,
   ONNXEmbeddingProvider,
-} from './embedding-providers';
-import { EmbeddingProvider } from './embedding';
+} from './embedding-providers.js';
+import { EmbeddingProvider } from './embedding.js';
 
 const logger = createLoggerWithPrefix('EmbeddingManager');
 
 // Configuration
-const EMBEDDING_API_KEY = process.env.EMBEDDING_API_KEY;
-const EMBEDDING_API_BASE = process.env.EMBEDDING_API_BASE;
-const ALIBABA_API_KEY = process.env.ALIBABA_API_KEY;
+const EMBEDDING_API_KEY = process.env['EMBEDDING_API_KEY'];
+const EMBEDDING_API_BASE = process.env['EMBEDDING_API_BASE'];
+const ALIBABA_API_KEY = process.env['ALIBABA_API_KEY'];
 
 /**
  * Manager class for embedding providers initialization and collection
