@@ -1,8 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { elasticsearchChunkEmbedGroupStorage, IChunkEmbedGroupStorage } from '../chunkEmbedGroupStorage';
+import {
+  elasticsearchChunkEmbedGroupStorage,
+  IChunkEmbedGroupStorage,
+} from '../chunkEmbedGroupStorage';
 import { ChunkingEmbeddingGroup } from '../../knowledgeImport/library';
-import { ChunkingConfig, defaultChunkingConfig, ChunkingStrategy } from '../../../lib/chunking/chunkingStrategy';
-import { EmbeddingConfig, defaultEmbeddingConfig, EmbeddingProvider, AlibabaModel } from '../../../lib/embedding/embedding';
+import {
+  ChunkingConfig,
+  defaultChunkingConfig,
+  ChunkingStrategy,
+} from '../../../lib/chunking/chunkingStrategy';
+import {
+  EmbeddingConfig,
+  defaultEmbeddingConfig,
+  EmbeddingProvider,
+  AlibabaModel,
+} from '../../../lib/embedding/embedding';
 import { Client } from '@elastic/elasticsearch';
 import * as dotenv from 'dotenv';
 
@@ -209,7 +221,9 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
       delete (groupWithoutId as any).id;
 
       // Act & Assert
-      await expect(storage.createNewGroup(groupWithoutId)).rejects.toThrow('Group ID is required');
+      await expect(storage.createNewGroup(groupWithoutId)).rejects.toThrow(
+        'Group ID is required',
+      );
     });
 
     it('should throw error when group with same ID already exists', async () => {
@@ -222,7 +236,9 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
       });
 
       // Act & Assert
-      await expect(storage.createNewGroup(testGroup1)).rejects.toThrow(`Group with ID ${testGroup1.id} already exists`);
+      await expect(storage.createNewGroup(testGroup1)).rejects.toThrow(
+        `Group with ID ${testGroup1.id} already exists`,
+      );
     });
 
     it('should set timestamps when not provided', async () => {
@@ -279,12 +295,16 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
 
     it('should throw error when group is not found', async () => {
       // Act & Assert
-      await expect(storage.getGroupById('non-existent-group')).rejects.toThrow('Group with ID non-existent-group not found');
+      await expect(storage.getGroupById('non-existent-group')).rejects.toThrow(
+        'Group with ID non-existent-group not found',
+      );
     });
 
     it('should handle 404 errors correctly', async () => {
       // Act & Assert
-      await expect(storage.getGroupById('non-existent-group')).rejects.toThrow('Group with ID non-existent-group not found');
+      await expect(storage.getGroupById('non-existent-group')).rejects.toThrow(
+        'Group with ID non-existent-group not found',
+      );
     });
   });
 
@@ -312,10 +332,11 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
       expect(result.length).toBe(2);
       expect(result.some((g) => g.id === testGroup1.id)).toBe(true);
       expect(result.some((g) => g.id === testGroup2.id)).toBe(true);
-      
+
       // Verify sorting by createdAt (descending)
-      const sortedResult = [...result].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      const sortedResult = [...result].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
       expect(result).toEqual(sortedResult);
     }, 30000);
@@ -331,8 +352,16 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
 
     it('should return groups in correct order when multiple groups exist', async () => {
       // Arrange - Create groups with different timestamps
-      const olderGroup = { ...testGroup1, id: 'older-group', createdAt: new Date('2023-01-01T00:00:00Z') };
-      const newerGroup = { ...testGroup2, id: 'newer-group', createdAt: new Date('2023-01-02T00:00:00Z') };
+      const olderGroup = {
+        ...testGroup1,
+        id: 'older-group',
+        createdAt: new Date('2023-01-01T00:00:00Z'),
+      };
+      const newerGroup = {
+        ...testGroup2,
+        id: 'newer-group',
+        createdAt: new Date('2023-01-02T00:00:00Z'),
+      };
 
       await client.index({
         index: indexName,
@@ -371,7 +400,9 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
       expect(retrievedGroup.name).toBe(testGroup1.name);
       expect(retrievedGroup.description).toBe(testGroup1.description);
       expect(retrievedGroup.chunkingConfig).toEqual(testGroup1.chunkingConfig);
-      expect(retrievedGroup.embeddingConfig).toEqual(testGroup1.embeddingConfig);
+      expect(retrievedGroup.embeddingConfig).toEqual(
+        testGroup1.embeddingConfig,
+      );
       expect(retrievedGroup.isDefault).toBe(testGroup1.isDefault);
       expect(retrievedGroup.isActive).toBe(testGroup1.isActive);
       expect(retrievedGroup.createdBy).toBe(testGroup1.createdBy);
@@ -412,13 +443,19 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
       expect(retrievedGroup2.name).toBe(testGroup2.name);
       expect(retrievedGroup2.description).toBe(testGroup2.description);
       expect(retrievedGroup2.chunkingConfig).toEqual(testGroup2.chunkingConfig);
-      expect(retrievedGroup2.embeddingConfig).toEqual(testGroup2.embeddingConfig);
+      expect(retrievedGroup2.embeddingConfig).toEqual(
+        testGroup2.embeddingConfig,
+      );
       expect(retrievedGroup2.isDefault).toBe(testGroup2.isDefault);
       expect(retrievedGroup2.isActive).toBe(testGroup2.isActive);
       expect(retrievedGroup2.createdBy).toBe(testGroup2.createdBy);
       expect(retrievedGroup2.tags).toEqual(testGroup2.tags);
-      expect(retrievedGroup2.createdAt).toBe(testGroup2.createdAt.toISOString());
-      expect(retrievedGroup2.updatedAt).toBe(testGroup2.updatedAt.toISOString());
+      expect(retrievedGroup2.createdAt).toBe(
+        testGroup2.createdAt.toISOString(),
+      );
+      expect(retrievedGroup2.updatedAt).toBe(
+        testGroup2.updatedAt.toISOString(),
+      );
     }, 30000);
   });
 

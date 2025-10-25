@@ -1,15 +1,16 @@
 import type { IPdfConvertor } from '../../knowledgeBase/knowledgeImport/IPdfConvertor';
-import { MinerUClient, SingleFileRequest, TaskResult } from '@aikb/mineru-client';
+import {
+  MinerUClient,
+  SingleFileRequest,
+  TaskResult,
+} from '@aikb/mineru-client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 import * as yauzl from 'yauzl';
-import {
-  uploadPdfFromPath,
-  uploadToS3,
-} from '@aikb/s3-service';
+import { uploadPdfFromPath, uploadToS3 } from '@aikb/s3-service';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { app_config } from '../../knowledgeBase/config';
 
@@ -118,7 +119,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
    */
   private extractTaskId(result: any): string {
     // Try direct task_id first
-    if (result?.task_id) { 
+    if (result?.task_id) {
       return result.task_id;
     }
 

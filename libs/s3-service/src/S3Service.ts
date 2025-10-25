@@ -31,7 +31,7 @@ export class S3Service {
 
   constructor(config: S3ServiceConfig) {
     this.validateConfig(config);
-    
+
     this.bucketName = config.bucketName;
     this.region = config.region;
     this.endpoint = config.endpoint;
@@ -52,13 +52,21 @@ export class S3Service {
    * Validates the configuration object
    */
   private validateConfig(config: S3ServiceConfig): void {
-    const requiredFields = ['accessKeyId', 'secretAccessKey', 'bucketName', 'region', 'endpoint'];
-    const missingFields = requiredFields.filter(field => !config[field as keyof S3ServiceConfig]);
+    const requiredFields = [
+      'accessKeyId',
+      'secretAccessKey',
+      'bucketName',
+      'region',
+      'endpoint',
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !config[field as keyof S3ServiceConfig],
+    );
 
     if (missingFields.length > 0) {
       throw new S3ServiceError(
         S3ServiceErrorType.CONFIGURATION_ERROR,
-        `Missing required configuration fields: ${missingFields.join(', ')}`
+        `Missing required configuration fields: ${missingFields.join(', ')}`,
       );
     }
   }
@@ -82,7 +90,7 @@ export class S3Service {
   async uploadToS3(
     buffer: Buffer,
     fileName: string,
-    options: UploadOptions
+    options: UploadOptions,
   ): Promise<UploadResult> {
     try {
       console.log(
@@ -111,20 +119,22 @@ export class S3Service {
       };
     } catch (error) {
       console.error('[S3Service] Error uploading to S3:', error);
-      
+
       if (error instanceof Error) {
-        console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+        console.error(
+          `[S3Service] Error details: ${error.name} - ${error.message}`,
+        );
         throw new S3ServiceError(
           S3ServiceErrorType.UPLOAD_ERROR,
           `Failed to upload file to S3: ${error.message}`,
-          error
+          error,
         );
       }
-      
+
       console.error('[S3Service] Unknown error type');
       throw new S3ServiceError(
         S3ServiceErrorType.UPLOAD_ERROR,
-        'Failed to upload file to S3: Unknown error'
+        'Failed to upload file to S3: Unknown error',
       );
     }
   }
@@ -139,7 +149,7 @@ export class S3Service {
    */
   async getSignedUploadUrl(
     fileName: string,
-    options: SignedUrlOptions
+    options: SignedUrlOptions,
   ): Promise<string> {
     try {
       console.log(
@@ -153,28 +163,30 @@ export class S3Service {
         // Note: ACL parameter is removed for Aliyun OSS compatibility
       });
 
-      const signedUrl = await getSignedUrl(this.s3Client, command, { 
-        expiresIn: options.expiresIn || 3600 
+      const signedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: options.expiresIn || 3600,
       });
-      
+
       console.log(`[S3Service] Signed URL generated successfully`);
       return signedUrl;
     } catch (error) {
       console.error('[S3Service] Error generating signed URL:', error);
-      
+
       if (error instanceof Error) {
-        console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+        console.error(
+          `[S3Service] Error details: ${error.name} - ${error.message}`,
+        );
         throw new S3ServiceError(
           S3ServiceErrorType.SIGNED_URL_ERROR,
           `Failed to generate signed URL: ${error.message}`,
-          error
+          error,
         );
       }
-      
+
       console.error('[S3Service] Unknown error type');
       throw new S3ServiceError(
         S3ServiceErrorType.SIGNED_URL_ERROR,
-        'Failed to generate signed URL: Unknown error'
+        'Failed to generate signed URL: Unknown error',
       );
     }
   }
@@ -191,7 +203,7 @@ export class S3Service {
   async uploadPdfFromPath(
     pdfPath: string,
     s3Key?: string,
-    options: { acl?: ObjectCannedACL } = {}
+    options: { acl?: ObjectCannedACL } = {},
   ): Promise<UploadResult> {
     try {
       console.log(
@@ -202,7 +214,7 @@ export class S3Service {
       if (!fs.existsSync(pdfPath)) {
         throw new S3ServiceError(
           S3ServiceErrorType.FILE_NOT_FOUND,
-          `PDF file not found at path: ${pdfPath}`
+          `PDF file not found at path: ${pdfPath}`,
         );
       }
 
@@ -211,7 +223,7 @@ export class S3Service {
       if (fileExtension !== '.pdf') {
         throw new S3ServiceError(
           S3ServiceErrorType.INVALID_FILE_TYPE,
-          `File is not a PDF: ${pdfPath}`
+          `File is not a PDF: ${pdfPath}`,
         );
       }
 
@@ -228,29 +240,31 @@ export class S3Service {
         contentType: 'application/pdf',
         acl: options.acl || 'private',
       });
-      
+
       console.log(`[S3Service] uploadPdfFromPath successful: ${result.url}`);
       return result;
     } catch (error) {
       console.error('[S3Service] Error uploading PDF from path:', error);
-      
+
       if (error instanceof S3ServiceError) {
         throw error;
       }
-      
+
       if (error instanceof Error) {
-        console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+        console.error(
+          `[S3Service] Error details: ${error.name} - ${error.message}`,
+        );
         throw new S3ServiceError(
           S3ServiceErrorType.UPLOAD_ERROR,
           `Failed to upload PDF from path: ${error.message}`,
-          error
+          error,
         );
       }
-      
+
       console.error('[S3Service] Unknown error type');
       throw new S3ServiceError(
         S3ServiceErrorType.UPLOAD_ERROR,
-        'Failed to upload PDF from path: Unknown error'
+        'Failed to upload PDF from path: Unknown error',
       );
     }
   }
@@ -266,35 +280,35 @@ export class S3Service {
    */
   async getSignedDownloadUrl(
     s3Key: string,
-    options: DownloadUrlOptions & { bucketName?: string } = {}
+    options: DownloadUrlOptions & { bucketName?: string } = {},
   ): Promise<string> {
     try {
       const bucketName = options.bucketName || this.bucketName;
-      
+
       const command = new GetObjectCommand({
         Bucket: bucketName,
         Key: s3Key,
       });
-      
-      const signedUrl = await getSignedUrl(this.s3Client, command, { 
-        expiresIn: options.expiresIn || 3600 
+
+      const signedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: options.expiresIn || 3600,
       });
-      
+
       return signedUrl;
     } catch (error) {
       console.error('[S3Service] Error generating download URL:', error);
-      
+
       if (error instanceof Error) {
         throw new S3ServiceError(
           S3ServiceErrorType.DOWNLOAD_ERROR,
           `Failed to generate download URL: ${error.message}`,
-          error
+          error,
         );
       }
-      
+
       throw new S3ServiceError(
         S3ServiceErrorType.DOWNLOAD_ERROR,
-        'Failed to generate download URL: Unknown error'
+        'Failed to generate download URL: Unknown error',
       );
     }
   }
@@ -323,20 +337,22 @@ export class S3Service {
       return true;
     } catch (error) {
       console.error('[S3Service] Error deleting from S3:', error);
-      
+
       if (error instanceof Error) {
-        console.error(`[S3Service] Error details: ${error.name} - ${error.message}`);
+        console.error(
+          `[S3Service] Error details: ${error.name} - ${error.message}`,
+        );
         throw new S3ServiceError(
           S3ServiceErrorType.DELETE_ERROR,
           `Failed to delete file from S3: ${error.message}`,
-          error
+          error,
         );
       }
-      
+
       console.error('[S3Service] Unknown error type');
       throw new S3ServiceError(
         S3ServiceErrorType.DELETE_ERROR,
-        'Failed to delete file from S3: Unknown error'
+        'Failed to delete file from S3: Unknown error',
       );
     }
   }

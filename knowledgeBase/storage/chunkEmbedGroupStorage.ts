@@ -1,7 +1,13 @@
-import { ChunkingConfig, defaultChunkingConfig } from "lib/chunking/chunkingStrategy";
-import { EmbeddingConfig, defaultEmbeddingConfig } from "lib/embedding/embedding";
-import { ChunkingEmbeddingGroup } from "knowledgeBase/knowledgeImport/library";
-import { Client } from "@elastic/elasticsearch";
+import {
+  ChunkingConfig,
+  defaultChunkingConfig,
+} from 'lib/chunking/chunkingStrategy';
+import {
+  EmbeddingConfig,
+  defaultEmbeddingConfig,
+} from 'lib/embedding/embedding';
+import { ChunkingEmbeddingGroup } from 'knowledgeBase/knowledgeImport/library';
+import { Client } from '@elastic/elasticsearch';
 
 export interface IChunkEmbedGroupStorage {
   createNewGroup: (groupInfo: ChunkingEmbeddingGroup) => Promise<boolean>;
@@ -9,12 +15,17 @@ export interface IChunkEmbedGroupStorage {
   getGroupById: (id: string) => Promise<ChunkingEmbeddingGroup>;
 }
 
-export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStorage {
+export class elasticsearchChunkEmbedGroupStorage
+  implements IChunkEmbedGroupStorage
+{
   private client: Client;
   private indexName = 'chunk_embed_groups';
   private isInitialized = false;
 
-  constructor(elasticsearchUrl: string = process.env.ELASTICSEARCH_URL ?? 'http://elasticsearch:9200') {
+  constructor(
+    elasticsearchUrl: string = process.env.ELASTICSEARCH_URL ??
+      'http://elasticsearch:9200',
+  ) {
     this.client = new Client({
       node: elasticsearchUrl,
       auth: {
@@ -46,8 +57,8 @@ export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStor
               name: {
                 type: 'text',
                 fields: {
-                  keyword: { type: 'keyword' }
-                }
+                  keyword: { type: 'keyword' },
+                },
               },
               description: { type: 'text' },
               chunkingConfig: { type: 'object' },
@@ -60,8 +71,8 @@ export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStor
               tags: {
                 type: 'text',
                 fields: {
-                  keyword: { type: 'keyword' }
-                }
+                  keyword: { type: 'keyword' },
+                },
               },
             },
           },
@@ -70,7 +81,9 @@ export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStor
 
       this.isInitialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize elasticsearchChunkEmbedGroupStorage: ${error}`);
+      throw new Error(
+        `Failed to initialize elasticsearchChunkEmbedGroupStorage: ${error}`,
+      );
     }
   }
 
@@ -135,16 +148,17 @@ export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStor
           match_all: {},
         },
         size: 10000, // Adjust based on expected number of groups
-        sort: [
-          { createdAt: { order: 'desc' } },
-        ],
+        sort: [{ createdAt: { order: 'desc' } }],
       });
 
       const hits = response.hits.hits as any[];
-      return hits.map(hit => hit._source as ChunkingEmbeddingGroup);
+      return hits.map((hit) => hit._source as ChunkingEmbeddingGroup);
     } catch (error) {
       // If index doesn't exist, return empty array
-      if (error?.meta?.statusCode === 404 || error?.meta?.body?.error?.type === 'index_not_found_exception') {
+      if (
+        error?.meta?.statusCode === 404 ||
+        error?.meta?.body?.error?.type === 'index_not_found_exception'
+      ) {
         return [];
       }
       throw new Error(`Failed to list groups: ${error}`);
@@ -176,7 +190,6 @@ export class elasticsearchChunkEmbedGroupStorage implements IChunkEmbedGroupStor
     }
   }
 }
-
 
 export async function createItemChunkEmbedGroup(
   itemId: string,

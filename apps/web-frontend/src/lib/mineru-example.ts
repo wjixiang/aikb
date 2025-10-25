@@ -16,14 +16,14 @@ export const createMinerUClient = () => {
 // 示例函数：处理单个文件
 export const processDocument = async (fileUrl: string) => {
   const client = createMinerUClient();
-  
+
   try {
     const result = await client.processSingleFile({
       url: fileUrl,
       is_ocr: true,
       language: 'ch',
     });
-    
+
     return {
       success: true,
       taskId: result.result.task_id,
@@ -41,7 +41,7 @@ export const processDocument = async (fileUrl: string) => {
 // 示例函数：验证令牌
 export const validateToken = async () => {
   const client = createMinerUClient();
-  
+
   try {
     const isValid = await client.validateToken();
     return {

@@ -2,9 +2,7 @@ import { config } from 'dotenv';
 // Load environment variables from .env file
 config({ path: '.env' });
 
-import Library, {
-  S3ElasticSearchLibraryStorage,
-} from '../library';
+import Library, { S3ElasticSearchLibraryStorage } from '../library';
 import * as fs from 'fs';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';

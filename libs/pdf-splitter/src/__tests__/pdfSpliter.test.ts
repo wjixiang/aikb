@@ -1,4 +1,4 @@
-import { PdfSpliterWorker } from './pdfSpliter';
+import { PdfSpliterWorker } from '../pdfSpliter';
 import { PDFDocument } from 'pdf-lib';
 
 describe('PdfSpliterWorker', () => {

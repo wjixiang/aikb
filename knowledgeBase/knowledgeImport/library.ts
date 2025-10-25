@@ -13,13 +13,8 @@ import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
-import {
-  MinerUPdfConvertor,
-
-} from './PdfConvertor';
-import {
-  ChunkingConfig,
-} from '../../lib/chunking/chunkingStrategy';
+import { MinerUPdfConvertor } from './PdfConvertor';
+import { ChunkingConfig } from '../../lib/chunking/chunkingStrategy';
 import {
   EmbeddingConfig,
   defaultEmbeddingConfig,
@@ -1634,8 +1629,6 @@ export default class Library implements AbstractLibrary {
   //   }
   // }
 }
-
-
 
 interface AbstractPdf {
   id: string;

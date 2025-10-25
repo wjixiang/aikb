@@ -17,7 +17,8 @@
     "paths": {
       "@aikb/log-management": ["./libs/log-management/src/index.ts"],
       "@aikb/mineru-client": ["./libs/mineru-client/src/index.ts"],
-      "@aikb/s3-service": ["./libs/s3-service/src/index.ts"]
+      "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
+      "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

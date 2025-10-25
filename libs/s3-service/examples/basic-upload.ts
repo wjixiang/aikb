@@ -1,22 +1,26 @@
 /**
  * Basic Upload Example
- * 
+ *
  * This example demonstrates how to use the S3Service to upload files
  * using both the new class-based API and legacy functions.
  */
 
-import { S3Service, createAWSS3Service, createAliyunOSSService } from '../src/index';
+import {
+  S3Service,
+  createAWSS3Service,
+  createAliyunOSSService,
+} from '../src/index';
 import { uploadToS3 } from '../src/index'; // Legacy function
 
 // Example 1: Using AWS S3
 async function awsS3Example() {
   console.log('=== AWS S3 Example ===');
-  
+
   const s3Service = createAWSS3Service(
     'your-aws-access-key-id',
     'your-aws-secret-access-key',
     'your-s3-bucket-name',
-    'us-east-1'
+    'us-east-1',
   );
 
   try {
@@ -37,12 +41,12 @@ async function awsS3Example() {
 // Example 2: Using Aliyun OSS
 async function aliyunOSSExample() {
   console.log('\n=== Aliyun OSS Example ===');
-  
+
   const ossService = createAliyunOSSService(
     'your-aliyun-access-key-id',
     'your-aliyun-secret-access-key',
     'your-oss-bucket-name',
-    'oss-cn-hangzhou'
+    'oss-cn-hangzhou',
   );
 
   try {
@@ -63,7 +67,7 @@ async function aliyunOSSExample() {
 // Example 3: Using custom configuration
 async function customConfigExample() {
   console.log('\n=== Custom Configuration Example ===');
-  
+
   const customService = new S3Service({
     accessKeyId: 'your-access-key',
     secretAccessKey: 'your-secret-key',
@@ -92,14 +96,14 @@ async function customConfigExample() {
 // Example 4: Using legacy function (backward compatibility)
 async function legacyExample() {
   console.log('\n=== Legacy Function Example ===');
-  
+
   // Note: This requires environment variables to be set
   // OSS_ACCESS_KEY_ID, OSS_SECRET_ACCESS_KEY, PDF_OSS_BUCKET_NAME, OSS_REGION, S3_ENDPOINT
-  
+
   try {
     const buffer = Buffer.from('Hello, Legacy API!');
     const url = await uploadToS3(buffer, 'hello-legacy.txt', 'text/plain');
-    
+
     console.log('Upload successful!');
     console.log('URL:', url);
   } catch (error) {
@@ -111,17 +115,29 @@ async function legacyExample() {
 // Example 5: Upload with different content types
 async function differentContentTypesExample() {
   console.log('\n=== Different Content Types Example ===');
-  
+
   const s3Service = createAWSS3Service(
     'your-aws-access-key-id',
     'your-aws-secret-access-key',
-    'your-s3-bucket-name'
+    'your-s3-bucket-name',
   );
 
   const examples = [
-    { name: 'example.json', content: '{"message": "Hello, JSON!"}', type: 'application/json' },
-    { name: 'example.html', content: '<h1>Hello, HTML!</h1>', type: 'text/html' },
-    { name: 'example.xml', content: '<message>Hello, XML!</message>', type: 'application/xml' },
+    {
+      name: 'example.json',
+      content: '{"message": "Hello, JSON!"}',
+      type: 'application/json',
+    },
+    {
+      name: 'example.html',
+      content: '<h1>Hello, HTML!</h1>',
+      type: 'text/html',
+    },
+    {
+      name: 'example.xml',
+      content: '<message>Hello, XML!</message>',
+      type: 'application/xml',
+    },
   ];
 
   for (const example of examples) {
@@ -141,15 +157,17 @@ async function differentContentTypesExample() {
 // Run all examples
 async function runExamples() {
   console.log('S3 Service Basic Upload Examples\n');
-  
+
   // Uncomment the examples you want to run:
   // await awsS3Example();
   // await aliyunOSSExample();
   // await customConfigExample();
   // await legacyExample();
   // await differentContentTypesExample();
-  
-  console.log('\nNote: Uncomment the examples above and update credentials to run them');
+
+  console.log(
+    '\nNote: Uncomment the examples above and update credentials to run them',
+  );
 }
 
 // Run if this file is executed directly

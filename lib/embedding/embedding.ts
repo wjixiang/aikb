@@ -50,9 +50,9 @@ export const defaultEmbeddingConfig: EmbeddingConfig = {
 };
 
 // Re-export the provider base class and implementations for convenience
-export { EmbeddingProviderBase } from './embedding-providers';
+// export { EmbeddingProviderBase } from './embedding-providers';
 
-export { embeddingManager, EmbeddingManager } from './embedding-manager';
+// export { embeddingManager, EmbeddingManager } from './embedding-manager';
 
 export class Embedding {
   private activeProvider: EmbeddingProvider = EmbeddingProvider.ALIBABA; // Default to alibaba

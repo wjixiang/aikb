@@ -30,7 +30,7 @@ export class MockS3Service {
   async uploadToS3(
     buffer: Buffer,
     fileName: string,
-    options: UploadOptions
+    options: UploadOptions,
   ): Promise<UploadResult> {
     console.log(
       `[MockS3Service] Mock uploading: bucket=${this.bucketName}, key=${fileName}, contentType=${options.contentType}`,
@@ -54,7 +54,7 @@ export class MockS3Service {
    */
   async getSignedUploadUrl(
     fileName: string,
-    options: SignedUrlOptions
+    options: SignedUrlOptions,
   ): Promise<string> {
     console.log(
       `[MockS3Service] Mock generating signed URL: key=${fileName}, expiresIn=${options.expiresIn || 3600}`,
@@ -74,7 +74,7 @@ export class MockS3Service {
   async uploadPdfFromPath(
     pdfPath: string,
     s3Key?: string,
-    options: { acl?: ObjectCannedACL } = {}
+    options: { acl?: ObjectCannedACL } = {},
   ): Promise<UploadResult> {
     console.log(
       `[MockS3Service] Mock uploadPdfFromPath: path=${pdfPath}, s3Key=${s3Key}`,
@@ -99,10 +99,10 @@ export class MockS3Service {
    */
   async getSignedDownloadUrl(
     s3Key: string,
-    options: DownloadUrlOptions & { bucketName?: string } = {}
+    options: DownloadUrlOptions & { bucketName?: string } = {},
   ): Promise<string> {
     const bucketName = options.bucketName || this.bucketName;
-    
+
     console.log(
       `[MockS3Service] Mock generating download URL: bucket=${bucketName}, key=${s3Key}, expiresIn=${options.expiresIn || 3600}`,
     );
@@ -137,17 +137,14 @@ export class MockS3Service {
     buffer: Buffer,
     fileName: string,
     options: UploadOptions,
-    errorMessage: string = 'Mock upload error'
+    errorMessage: string = 'Mock upload error',
   ): Promise<UploadResult> {
     console.log(`[MockS3Service] Simulating upload error for: ${fileName}`);
-    
+
     // Simulate processing delay before error
     await new Promise((resolve) => setTimeout(resolve, 100));
-    
-    throw new S3ServiceError(
-      S3ServiceErrorType.UPLOAD_ERROR,
-      errorMessage
-    );
+
+    throw new S3ServiceError(S3ServiceErrorType.UPLOAD_ERROR, errorMessage);
   }
 
   /**
@@ -155,17 +152,14 @@ export class MockS3Service {
    */
   async getSignedDownloadUrlWithError(
     s3Key: string,
-    errorMessage: string = 'Mock download URL error'
+    errorMessage: string = 'Mock download URL error',
   ): Promise<string> {
     console.log(`[MockS3Service] Simulating download URL error for: ${s3Key}`);
-    
+
     // Simulate processing delay before error
     await new Promise((resolve) => setTimeout(resolve, 50));
-    
-    throw new S3ServiceError(
-      S3ServiceErrorType.DOWNLOAD_ERROR,
-      errorMessage
-    );
+
+    throw new S3ServiceError(S3ServiceErrorType.DOWNLOAD_ERROR, errorMessage);
   }
 
   /**
@@ -202,7 +196,10 @@ export async function uploadToS3(
   contentType: string,
   acl: string = 'private',
 ): Promise<string> {
-  const result = await defaultMockS3Service.uploadToS3(buffer, fileName, { contentType, acl: acl as ObjectCannedACL });
+  const result = await defaultMockS3Service.uploadToS3(buffer, fileName, {
+    contentType,
+    acl: acl as ObjectCannedACL,
+  });
   return result.url;
 }
 
@@ -215,7 +212,11 @@ export async function getSignedUploadUrl(
   expiresIn: number = 3600,
   acl: string = 'private',
 ): Promise<string> {
-  return await defaultMockS3Service.getSignedUploadUrl(s3Key, { contentType, expiresIn, acl: acl as ObjectCannedACL });
+  return await defaultMockS3Service.getSignedUploadUrl(s3Key, {
+    contentType,
+    expiresIn,
+    acl: acl as ObjectCannedACL,
+  });
 }
 
 /**
@@ -226,6 +227,8 @@ export async function uploadPdfFromPath(
   s3Key?: string,
   acl: string = 'private',
 ): Promise<string> {
-  const result = await defaultMockS3Service.uploadPdfFromPath(pdfPath, s3Key, { acl: acl as ObjectCannedACL });
+  const result = await defaultMockS3Service.uploadPdfFromPath(pdfPath, s3Key, {
+    acl: acl as ObjectCannedACL,
+  });
   return result.url;
 }

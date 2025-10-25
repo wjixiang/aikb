@@ -1,15 +1,30 @@
-import { getRabbitMQService } from "lib/rabbitmq/rabbitmq.service";
-import { AbstractLibraryStorage, BookMetadata, ChunkSearchFilter, ItemChunk } from "./library";
-import createLoggerWithPrefix from "lib/logManagement/logger";
-import { createMinerUConvertorFromEnv } from "./PdfConvertor";
-import { ChunkingStrategy, ChunkingConfig, defaultChunkingConfig } from "lib/chunking/chunkingStrategy";
-import { getAvailableStrategies } from "lib/chunking/chunkingTool";
-import { EmbeddingConfig, defaultEmbeddingConfig } from "lib/embedding/embedding";
-import { ChunkingEmbeddingRequestMessage, PdfProcessingStatus } from "lib/rabbitmq";
-import { deleteFromS3 } from "lib/s3Service/S3Service";
-import { v4 } from "uuid";
+import { getRabbitMQService } from 'lib/rabbitmq/rabbitmq.service';
+import {
+  AbstractLibraryStorage,
+  BookMetadata,
+  ChunkSearchFilter,
+  ItemChunk,
+} from './library';
+import createLoggerWithPrefix from 'lib/logManagement/logger';
+import { createMinerUConvertorFromEnv } from './PdfConvertor';
+import {
+  ChunkingStrategy,
+  ChunkingConfig,
+  defaultChunkingConfig,
+} from 'lib/chunking/chunkingStrategy';
+import { getAvailableStrategies } from 'lib/chunking/chunkingTool';
+import {
+  EmbeddingConfig,
+  defaultEmbeddingConfig,
+} from 'lib/embedding/embedding';
+import {
+  ChunkingEmbeddingRequestMessage,
+  PdfProcessingStatus,
+} from 'lib/rabbitmq';
+import { deleteFromS3 } from 'lib/s3Service/S3Service';
+import { v4 } from 'uuid';
 
-const logger = createLoggerWithPrefix('LibraryItem')
+const logger = createLoggerWithPrefix('LibraryItem');
 
 export class LibraryItem {
   private rabbitMQService = getRabbitMQService();

@@ -17,12 +17,8 @@ import { AbstractLibraryStorage } from '../../knowledgeBase/knowledgeImport/libr
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { PdfSpliterWorker } from '../pdfProcess-ts/pdfSpliter';
-import {
-  uploadToS3,
-  getPdfDownloadUrl,
-  deleteFromS3,
-} from '@aikb/s3-service';
+import { PdfSpliterWorker } from '@aikb/pdf-splitter';
+import { uploadToS3, getPdfDownloadUrl, deleteFromS3 } from '@aikb/s3-service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 

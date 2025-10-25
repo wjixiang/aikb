@@ -15,7 +15,7 @@ export interface MinerUConfig {
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;
-  retryDelay?: number; 
+  retryDelay?: number;
   downloadDir: string;
   defaultOptions: {
     is_ocr: boolean;
@@ -658,8 +658,12 @@ export class MinerUClient {
 
         // Note: This method requires S3 service to be available
         // Users need to install @aikb/s3-service and provide uploadPdfFromPath function
-        console.log(`[MinerUClient] Please install @aikb/s3-service for file upload functionality`);
-        throw new Error('S3 upload functionality requires @aikb/s3-service package');
+        console.log(
+          `[MinerUClient] Please install @aikb/s3-service for file upload functionality`,
+        );
+        throw new Error(
+          'S3 upload functionality requires @aikb/s3-service package',
+        );
       } catch (error) {
         console.error(
           `[MinerUClient] Error uploading ${info.fileName}:`,
@@ -699,7 +703,9 @@ export class MinerUClient {
     );
 
     // Note: This method requires S3 service to be available
-    console.log(`[MinerUClient] Please install @aikb/s3-service for batch file processing functionality`);
+    console.log(
+      `[MinerUClient] Please install @aikb/s3-service for batch file processing functionality`,
+    );
     throw new Error('Batch file processing requires @aikb/s3-service package');
   }
 

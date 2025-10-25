@@ -82,7 +82,7 @@ export class S3ServiceError extends Error {
   constructor(
     public type: S3ServiceErrorType,
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'S3ServiceError';

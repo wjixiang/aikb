@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { createLoggerWithPrefix } from '@aikb/log-management';
 
 const logger = createLoggerWithPrefix('PdfSpliterWorker');
 

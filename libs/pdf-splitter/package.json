@@ -1,0 +1,29 @@
+{
+  "name": "@aikb/pdf-splitter",
+  "version": "0.0.1",
+  "description": "PDF splitting utilities for processing PDF documents",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@aikb/log-management": "workspace:*",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

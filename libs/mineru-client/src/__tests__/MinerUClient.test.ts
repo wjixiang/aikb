@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MinerUClient, MinerUApiError, MinerUTimeoutError, MinerUDefaultConfig } from '../MinerUClient';
+import {
+  MinerUClient,
+  MinerUApiError,
+  MinerUTimeoutError,
+  MinerUDefaultConfig,
+} from '../MinerUClient';
 
 // Mock axios
 const mockAxiosInstance = {
@@ -84,10 +89,10 @@ describe('MinerUClient', () => {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const isValid = await testClient.validateToken();
       expect(isValid).toBe(true);
     });
@@ -95,15 +100,19 @@ describe('MinerUClient', () => {
     it('should return false for invalid token (401 response)', async () => {
       const axios = await import('axios');
       const mockAxiosInstance = {
-        get: vi.fn().mockRejectedValue(new MinerUApiError('UNAUTHORIZED', 'Invalid token')),
+        get: vi
+          .fn()
+          .mockRejectedValue(
+            new MinerUApiError('UNAUTHORIZED', 'Invalid token'),
+          ),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const isValid = await testClient.validateToken();
       expect(isValid).toBe(false);
     });
@@ -117,21 +126,21 @@ describe('MinerUClient', () => {
           data: { task_id: 'test-task-id' },
         },
       };
-      
+
       const mockAxiosInstance = {
         post: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const taskId = await testClient.createSingleFileTask({
         url: 'https://example.com/test.pdf',
       });
-      
+
       expect(taskId).toBe('test-task-id');
     });
 
@@ -142,21 +151,21 @@ describe('MinerUClient', () => {
           data: { id: 'alternative-id' },
         },
       };
-      
+
       const mockAxiosInstance = {
         post: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const taskId = await testClient.createSingleFileTask({
         url: 'https://example.com/test.pdf',
       });
-      
+
       expect(taskId).toBe('alternative-id');
     });
   });
@@ -169,23 +178,23 @@ describe('MinerUClient', () => {
         state: 'done',
         full_zip_url: 'https://example.com/result.zip',
       };
-      
+
       const mockResponse = {
         data: {
           data: mockResult,
         },
       };
-      
+
       const mockAxiosInstance = {
         get: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const result = await testClient.getTaskResult('test-task-id');
       expect(result).toEqual(mockResult);
     });
@@ -199,17 +208,17 @@ describe('MinerUClient', () => {
           data: { cancelled: true },
         },
       };
-      
+
       const mockAxiosInstance = {
         delete: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const cancelled = await testClient.cancelTask('test-task-id');
       expect(cancelled).toBe(true);
     });
@@ -223,21 +232,21 @@ describe('MinerUClient', () => {
           data: { batch_id: 'test-batch-id' },
         },
       };
-      
+
       const mockAxiosInstance = {
         post: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const batchId = await testClient.createBatchUrlTask({
         files: [{ url: 'https://example.com/test1.pdf' }],
       });
-      
+
       expect(batchId).toBe('test-batch-id');
     });
   });
@@ -255,23 +264,23 @@ describe('MinerUClient', () => {
           },
         ],
       };
-      
+
       const mockResponse = {
         data: {
           data: mockResults,
         },
       };
-      
+
       const mockAxiosInstance = {
         get: vi.fn().mockResolvedValue(mockResponse),
         interceptors: {
           response: { use: vi.fn() },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
+
       const results = await testClient.getBatchTaskResults('test-batch-id');
       expect(results).toEqual(mockResults);
     });
@@ -308,15 +317,17 @@ describe('MinerUClient', () => {
           response: {
             use: vi.fn((_, error) => {
               throw new MinerUApiError('BAD_REQUEST', 'Invalid request');
-            })
+            }),
           },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
-      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(MinerUApiError);
+
+      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(
+        MinerUApiError,
+      );
     });
 
     it('should handle network errors correctly', async () => {
@@ -326,16 +337,20 @@ describe('MinerUClient', () => {
         interceptors: {
           response: {
             use: vi.fn((_, error) => {
-              throw new MinerUTimeoutError('Network request failed: Network error');
-            })
+              throw new MinerUTimeoutError(
+                'Network request failed: Network error',
+              );
+            }),
           },
         },
       };
-      
+
       vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
       const testClient = new MinerUClient(mockConfig);
-      
-      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(MinerUTimeoutError);
+
+      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(
+        MinerUTimeoutError,
+      );
     });
   });
 

@@ -7,10 +7,7 @@ export type {
   UploadResult,
   DownloadUrlOptions,
 } from './types';
-export {
-  S3ServiceErrorType,
-  S3ServiceError,
-} from './types';
+export { S3ServiceErrorType, S3ServiceError } from './types';
 
 // Mock service for testing
 export { MockS3Service } from './mock';
@@ -47,7 +44,10 @@ export async function uploadToS3(
   contentType: string,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  const result = await getDefaultS3Service().uploadToS3(buffer, fileName, { contentType, acl });
+  const result = await getDefaultS3Service().uploadToS3(buffer, fileName, {
+    contentType,
+    acl,
+  });
   return result.url;
 }
 
@@ -61,7 +61,11 @@ export async function getSignedUploadUrl(
   expiresIn: number = 3600,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  return await getDefaultS3Service().getSignedUploadUrl(s3Key, { contentType, expiresIn, acl });
+  return await getDefaultS3Service().getSignedUploadUrl(s3Key, {
+    contentType,
+    expiresIn,
+    acl,
+  });
 }
 
 /**
@@ -73,7 +77,9 @@ export async function uploadPdfFromPath(
   s3Key?: string,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  const result = await getDefaultS3Service().uploadPdfFromPath(pdfPath, s3Key, { acl });
+  const result = await getDefaultS3Service().uploadPdfFromPath(pdfPath, s3Key, {
+    acl,
+  });
   return result.url;
 }
 
@@ -102,5 +108,8 @@ export async function getSignedUrlForDownload(
   s3Key: string,
   expiresInSeconds = 3600,
 ): Promise<string> {
-  return await getDefaultS3Service().getSignedDownloadUrl(s3Key, { bucketName, expiresIn: expiresInSeconds });
+  return await getDefaultS3Service().getSignedDownloadUrl(s3Key, {
+    bucketName,
+    expiresIn: expiresInSeconds,
+  });
 }

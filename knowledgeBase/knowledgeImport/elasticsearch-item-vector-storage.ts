@@ -370,8 +370,6 @@ export class ElasticSearchItemVectorStorage implements IItemVectorStorage {
   }
 }
 
-
-
 /**
  * Factory function to create an ElasticSearchItemVectorStorage instance
  * @param itemId The ID of the item
