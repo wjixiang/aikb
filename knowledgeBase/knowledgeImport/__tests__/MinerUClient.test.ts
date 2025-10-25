@@ -1,5 +1,5 @@
 import { app_config } from 'knowledgeBase/config';
-import { MinerUClient } from '../../../lib/MinerU/MinerUClient';
+import { MinerUClient } from '@aikb/mineru-client';
 import { MinerUPdfConvertor } from '../../../lib/MinerU/MinerUPdfConvertor';
 import { config } from 'dotenv';
 config();

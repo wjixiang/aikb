@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import {
   MinerUConfig,
   MinerUDefaultConfig,
-} from '../lib/MinerU/MinerUClient';
+} from '@aikb/mineru-client';
 dotenv.config();
 
 export interface AppConfig {

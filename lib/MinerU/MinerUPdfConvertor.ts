@@ -1,5 +1,5 @@
 import type { IPdfConvertor } from '../../knowledgeBase/knowledgeImport/IPdfConvertor';
-import { MinerUClient, SingleFileRequest, TaskResult } from './MinerUClient';
+import { MinerUClient, SingleFileRequest, TaskResult } from '@aikb/mineru-client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createReadStream } from 'fs';
