@@ -21,7 +21,7 @@ import {
 } from '../message.types';
 import { MinerUPdfConvertor } from '../../MinerU/MinerUPdfConvertor';
 import { v4 as uuidv4 } from 'uuid';
-import { getPdfDownloadUrl } from '../../s3Service/S3Service';
+import { getPdfDownloadUrl } from '@aikb/s3-service';
 
 // Load environment variables
 config({ path: '.env' });

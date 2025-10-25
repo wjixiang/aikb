@@ -1,7 +1,7 @@
 import Library, { S3MongoLibraryStorage } from '../library';
 import { BookMetadata } from '../library';
 import { MockLibraryStorage } from '../MockLibraryStorage';
-import { deleteFromS3 } from '../../../lib/s3Service/S3Service';
+import { deleteFromS3 } from '@aikb/s3-service';
 import {
   vi,
   describe,

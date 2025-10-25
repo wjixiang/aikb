@@ -6,7 +6,7 @@ import {
   uploadToS3,
   uploadPdfFromPath,
   getSignedUploadUrl,
-} from '../s3Service/S3Service';
+} from '@aikb/s3-service';
 
 
 /**

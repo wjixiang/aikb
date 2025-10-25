@@ -22,7 +22,7 @@ import {
   uploadToS3,
   getPdfDownloadUrl,
   deleteFromS3,
-} from '../s3Service/S3Service';
+} from '@aikb/s3-service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 

@@ -4,7 +4,7 @@ import type {
   ConversionResult,
   ImageUploadResult,
 } from '../../../lib/MinerU/MinerUPdfConvertor';
-import { uploadPdfFromPath } from '../../../lib/s3Service/S3Service';
+import { uploadPdfFromPath } from '@aikb/s3-service';
 import * as fs from 'fs';
 import * as path from 'path';
 

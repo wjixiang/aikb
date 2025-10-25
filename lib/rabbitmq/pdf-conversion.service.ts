@@ -3,7 +3,7 @@ import {
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
 } from '../../knowledgeBase/knowledgeImport/PdfConvertor';
-import { getPdfDownloadUrl } from '../s3Service/S3Service';
+import { getPdfDownloadUrl } from '@aikb/s3-service';
 import { IPdfPartTracker } from './pdf-part-tracker';
 import { MarkdownPartCache } from './markdown-part-cache';
 import {

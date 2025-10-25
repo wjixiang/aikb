@@ -3,7 +3,7 @@ import {
   uploadPdfFromPath,
   getSignedUrlForDownload,
   deleteFromS3,
-} from '../../lib/s3Service/S3Service';
+} from '@aikb/s3-service';
 import { connectToDatabase } from '../../libs/utils/mongodb';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -5,7 +5,7 @@ import {
 } from '../pdf-analyzer.service';
 import { AbstractLibraryStorage } from '../../../knowledgeBase/knowledgeImport/library';
 import { getRabbitMQService } from '../rabbitmq.service';
-import { deleteFromS3 } from '../../s3Service/S3Service';
+import { deleteFromS3 } from '@aikb/s3-service';
 import {
   PdfPartConversionCompletedMessage,
   PdfPartConversionFailedMessage,

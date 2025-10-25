@@ -9,7 +9,7 @@ import * as yauzl from 'yauzl';
 import {
   uploadPdfFromPath,
   uploadToS3,
-} from '../s3Service/S3Service';
+} from '@aikb/s3-service';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { app_config } from '../../knowledgeBase/config';
 

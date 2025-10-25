@@ -12,6 +12,9 @@ export {
   S3ServiceError,
 } from './types';
 
+// Mock service for testing
+export { MockS3Service } from './mock';
+
 // Factory functions for easy instantiation
 export {
   createS3ServiceFromEnv,
@@ -24,8 +27,15 @@ export {
 import { createS3ServiceFromEnv } from './factory';
 import { ObjectCannedACL } from '@aws-sdk/client-s3';
 
-// Create a default instance for backward compatibility
-const defaultS3Service = createS3ServiceFromEnv();
+// Lazy initialization for default instance
+let defaultS3Service: ReturnType<typeof createS3ServiceFromEnv> | null = null;
+
+function getDefaultS3Service() {
+  if (!defaultS3Service) {
+    defaultS3Service = createS3ServiceFromEnv();
+  }
+  return defaultS3Service;
+}
 
 /**
  * Legacy function: Uploads a buffer to S3 and returns the public URL
@@ -37,7 +47,7 @@ export async function uploadToS3(
   contentType: string,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  const result = await defaultS3Service.uploadToS3(buffer, fileName, { contentType, acl });
+  const result = await getDefaultS3Service().uploadToS3(buffer, fileName, { contentType, acl });
   return result.url;
 }
 
@@ -51,7 +61,7 @@ export async function getSignedUploadUrl(
   expiresIn: number = 3600,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  return await defaultS3Service.getSignedUploadUrl(s3Key, { contentType, expiresIn, acl });
+  return await getDefaultS3Service().getSignedUploadUrl(s3Key, { contentType, expiresIn, acl });
 }
 
 /**
@@ -63,7 +73,7 @@ export async function uploadPdfFromPath(
   s3Key?: string,
   acl: ObjectCannedACL = 'private',
 ): Promise<string> {
-  const result = await defaultS3Service.uploadPdfFromPath(pdfPath, s3Key, { acl });
+  const result = await getDefaultS3Service().uploadPdfFromPath(pdfPath, s3Key, { acl });
   return result.url;
 }
 
@@ -72,7 +82,7 @@ export async function uploadPdfFromPath(
  * @deprecated Use S3Service class instance instead
  */
 export async function getPdfDownloadUrl(s3Key: string): Promise<string> {
-  return await defaultS3Service.getSignedDownloadUrl(s3Key);
+  return await getDefaultS3Service().getSignedDownloadUrl(s3Key);
 }
 
 /**
@@ -80,7 +90,7 @@ export async function getPdfDownloadUrl(s3Key: string): Promise<string> {
  * @deprecated Use S3Service class instance instead
  */
 export async function deleteFromS3(s3Key: string): Promise<boolean> {
-  return await defaultS3Service.deleteFromS3(s3Key);
+  return await getDefaultS3Service().deleteFromS3(s3Key);
 }
 
 /**
@@ -92,5 +102,5 @@ export async function getSignedUrlForDownload(
   s3Key: string,
   expiresInSeconds = 3600,
 ): Promise<string> {
-  return await defaultS3Service.getSignedDownloadUrl(s3Key, { bucketName, expiresIn: expiresInSeconds });
+  return await getDefaultS3Service().getSignedDownloadUrl(s3Key, { bucketName, expiresIn: expiresInSeconds });
 }

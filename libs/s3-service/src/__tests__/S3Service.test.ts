@@ -119,6 +119,8 @@ describe('S3Service', () => {
     it('should handle upload errors', async () => {
       // Create a service that will fail
       const { S3Client } = await import('@aws-sdk/client-s3');
+      const originalS3ClientMock = vi.mocked(S3Client).getMockImplementation();
+      
       vi.mocked(S3Client).mockImplementation(() => ({
         send: vi.fn().mockRejectedValue(new Error('Upload failed')),
         config: {
@@ -148,6 +150,9 @@ describe('S3Service', () => {
       }));
 
       const errorS3Service = new S3Service(mockConfig);
+      
+      // Restore the original mock after creating the service
+      vi.mocked(S3Client).mockImplementation(originalS3ClientMock!);
 
       const buffer = Buffer.from('test content');
       const fileName = 'test-file.txt';
@@ -171,9 +176,8 @@ describe('S3Service', () => {
     });
 
     it('should handle URL generation errors', async () => {
-      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-
       // Override the mock to reject
+      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
       vi.mocked(getSignedUrl).mockRejectedValue(
         new Error('URL generation failed'),
       );
@@ -190,22 +194,67 @@ describe('S3Service', () => {
 
   describe('uploadPdfFromPath', () => {
     it('should upload PDF from path successfully', async () => {
+      // Get the mocked S3Client and override it before creating the service
+      const { S3Client } = await import('@aws-sdk/client-s3');
+      const mockS3Client = vi.mocked(S3Client);
+      const originalImplementation = mockS3Client.getMockImplementation();
+      
+      // Create a new implementation that returns success
+      mockS3Client.mockImplementation(() => ({
+        send: vi.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
+        config: {
+          requestHandler: {},
+          apiVersion: '2006-03-01',
+        } as any,
+        destroy: vi.fn(),
+        middlewareStack: {
+          add: vi.fn(),
+          addRelativeTo: vi.fn(),
+          remove: vi.fn(),
+          removeByTag: vi.fn(),
+          use: vi.fn(),
+          concat: vi.fn(),
+          applyToStack: vi.fn(),
+          clone: vi.fn().mockReturnValue({
+            add: vi.fn(),
+            addRelativeTo: vi.fn(),
+            remove: vi.fn(),
+            removeByTag: vi.fn(),
+            use: vi.fn(),
+            concat: vi.fn(),
+            applyToStack: vi.fn(),
+            clone: vi.fn(),
+          }),
+        } as any,
+      }));
+      
+      // Create a new service instance with the overridden mock
+      const testS3Service = new S3Service(mockConfig);
+      
       const { existsSync } = await import('fs');
-      vi.mocked(existsSync).mockReturnValue(true);
+      const { readFileSync } = await import('fs');
+      const mockExistsSync = vi.mocked(existsSync);
+      const mockReadFileSync = vi.mocked(readFileSync);
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(Buffer.from('mock pdf content'));
       
       const pdfPath = '/path/to/test.pdf';
       const s3Key = 'uploads/test.pdf';
 
-      const result = await s3Service.uploadPdfFromPath(pdfPath, s3Key);
+      const result = await testS3Service.uploadPdfFromPath(pdfPath, s3Key);
 
       expect(result.url).toBe('https://test-bucket.us-east-1.aliyuncs.com/uploads/test.pdf');
       expect(result.bucket).toBe('test-bucket');
       expect(result.key).toBe('uploads/test.pdf');
+      
+      // Restore the original implementation
+      mockS3Client.mockImplementation(originalImplementation!);
     });
 
     it('should handle file not found error', async () => {
       const { existsSync } = await import('fs');
-      vi.mocked(existsSync).mockReturnValue(false);
+      const mockExistsSync = vi.mocked(existsSync);
+      mockExistsSync.mockReturnValue(false);
 
       const pdfPath = '/path/to/nonexistent.pdf';
 
@@ -218,8 +267,10 @@ describe('S3Service', () => {
     it('should handle invalid file type error', async () => {
       const { existsSync } = await import('fs');
       const { extname } = await import('path');
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(extname).mockReturnValue('.txt');
+      const mockExistsSync = vi.mocked(existsSync);
+      const mockExtname = vi.mocked(extname);
+      mockExistsSync.mockReturnValue(true);
+      mockExtname.mockReturnValue('.txt');
 
       const pdfPath = '/path/to/test.txt';
 
@@ -232,27 +283,58 @@ describe('S3Service', () => {
 
   describe('getSignedDownloadUrl', () => {
     it('should return a signed download URL', async () => {
+      // Create a new service instance for this test to avoid mock interference
+      const testS3Service = new S3Service(mockConfig);
+      
+      // Get the mocked getSignedUrl and override it
+      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+      const mockGetSignedUrl = vi.mocked(getSignedUrl);
+      const originalImplementation = mockGetSignedUrl.getMockImplementation();
+      
+      // Override to return the expected value
+      mockGetSignedUrl.mockResolvedValue('https://mock-signed-url.com');
+      
       const s3Key = 'test-file.pdf';
 
-      const result = await s3Service.getSignedDownloadUrl(s3Key);
+      const result = await testS3Service.getSignedDownloadUrl(s3Key);
 
       expect(result).toBe('https://mock-signed-url.com');
+      
+      // Restore the original implementation
+      mockGetSignedUrl.mockImplementation(originalImplementation!);
     });
 
     it('should return a signed download URL with custom bucket', async () => {
+      // Create a new service instance for this test to avoid mock interference
+      const testS3Service = new S3Service(mockConfig);
+      
+      // Get the mocked getSignedUrl and override it
+      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+      const mockGetSignedUrl = vi.mocked(getSignedUrl);
+      const originalImplementation = mockGetSignedUrl.getMockImplementation();
+      
+      // Override to return the expected value
+      mockGetSignedUrl.mockResolvedValue('https://mock-signed-url.com');
+      
       const s3Key = 'test-file.pdf';
       const customBucket = 'custom-bucket';
 
-      const result = await s3Service.getSignedDownloadUrl(s3Key, { bucketName: customBucket });
+      const result = await testS3Service.getSignedDownloadUrl(s3Key, { bucketName: customBucket });
 
       expect(result).toBe('https://mock-signed-url.com');
+      
+      // Restore the original implementation
+      mockGetSignedUrl.mockImplementation(originalImplementation!);
     });
 
     it('should handle download URL generation errors', async () => {
+      // Get the mocked getSignedUrl and override it
       const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-
-      // Override the mock to reject
-      vi.mocked(getSignedUrl).mockRejectedValue(
+      const mockGetSignedUrl = vi.mocked(getSignedUrl);
+      const originalImplementation = mockGetSignedUrl.getMockImplementation();
+      
+      // Override to reject
+      mockGetSignedUrl.mockRejectedValue(
         new Error('Download URL generation failed'),
       );
 
@@ -262,23 +344,69 @@ describe('S3Service', () => {
         .rejects.toThrow(S3ServiceError);
       await expect(s3Service.getSignedDownloadUrl(s3Key))
         .rejects.toThrow('Failed to generate download URL: Download URL generation failed');
+      
+      // Restore the original implementation
+      mockGetSignedUrl.mockImplementation(originalImplementation!);
     });
   });
 
   describe('deleteFromS3', () => {
     it('should delete file successfully', async () => {
+      // Get the mocked S3Client and override it before creating the service
+      const { S3Client } = await import('@aws-sdk/client-s3');
+      const mockS3Client = vi.mocked(S3Client);
+      const originalImplementation = mockS3Client.getMockImplementation();
+      
+      // Create a new implementation that returns success
+      mockS3Client.mockImplementation(() => ({
+        send: vi.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
+        config: {
+          requestHandler: {},
+          apiVersion: '2006-03-01',
+        } as any,
+        destroy: vi.fn(),
+        middlewareStack: {
+          add: vi.fn(),
+          addRelativeTo: vi.fn(),
+          remove: vi.fn(),
+          removeByTag: vi.fn(),
+          use: vi.fn(),
+          concat: vi.fn(),
+          applyToStack: vi.fn(),
+          clone: vi.fn().mockReturnValue({
+            add: vi.fn(),
+            addRelativeTo: vi.fn(),
+            remove: vi.fn(),
+            removeByTag: vi.fn(),
+            use: vi.fn(),
+            concat: vi.fn(),
+            applyToStack: vi.fn(),
+            clone: vi.fn(),
+          }),
+        } as any,
+      }));
+      
+      // Create a new service instance with the overridden mock
+      const testS3Service = new S3Service(mockConfig);
+      
       const s3Key = 'test-file.txt';
 
-      const result = await s3Service.deleteFromS3(s3Key);
+      const result = await testS3Service.deleteFromS3(s3Key);
 
       expect(result).toBe(true);
+      
+      // Restore the original implementation
+      mockS3Client.mockImplementation(originalImplementation!);
     });
 
     it('should handle delete errors', async () => {
+      // Get the mocked S3Client and override it before creating the service
       const { S3Client } = await import('@aws-sdk/client-s3');
-
-      // Create a new mock that rejects
-      vi.mocked(S3Client).mockImplementation(() => ({
+      const mockS3Client = vi.mocked(S3Client);
+      const originalImplementation = mockS3Client.getMockImplementation();
+      
+      // Create a new implementation that rejects
+      mockS3Client.mockImplementation(() => ({
         send: vi.fn().mockRejectedValue(new Error('Delete failed')),
         config: {
           requestHandler: {},
@@ -305,15 +433,19 @@ describe('S3Service', () => {
           }),
         } as any,
       }));
-
-      const errorS3Service = new S3Service(mockConfig);
+      
+      // Create a new service instance with the overridden mock
+      const testS3Service = new S3Service(mockConfig);
 
       const s3Key = 'test-file.txt';
 
-      await expect(errorS3Service.deleteFromS3(s3Key))
+      await expect(testS3Service.deleteFromS3(s3Key))
         .rejects.toThrow(S3ServiceError);
-      await expect(errorS3Service.deleteFromS3(s3Key))
+      await expect(testS3Service.deleteFromS3(s3Key))
         .rejects.toThrow('Failed to delete file from S3: Delete failed');
+      
+      // Restore the original implementation
+      mockS3Client.mockImplementation(originalImplementation!);
     });
   });
 });
