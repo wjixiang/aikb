@@ -1,38 +1,21 @@
 {
   "name": "markdown-storage-worker",
-  "version": "1.0.0",
-  "description": "Markdown storage Worker for processing PDF documents",
-  "main": "./src/main.ts",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "start": "node dist/main.js",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run"
   },
-  "keywords": [
-    "pdf",
-    "analysis",
-    "worker",
-    "rabbitmq",
-    "messaging"
-  ],
-  "author": "",
-  "license": "UNLICENSED",
   "dependencies": {
-    "@aikb/rabbitmq": "workspace:*",
-    "@aikb/log-management": "workspace:*",
-    "@aikb/bibliography": "workspace:*",
-    "@aikb/pdf-splitter": "workspace:*",
-    "@aikb/s3-service": "workspace:*",
-    "dotenv": "^17.2.2",
-    "axios": "^1.6.0",
+    "@nestjs/core": "^11.1.7",
+    "@nestjs/microservices": "^11.1.7",
+    "@aikb/bibliography": "*",
+    "@aikb/chunking": "*",
+    "@aikb/embedding": "*",
+    "@aikb/log-management": "*",
+    "@aikb/rabbitmq": "*",
+    "tslib": "^2.3.0",
     "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.7",
-    "@types/uuid": "^9.0.0",
-    "typescript": "^5.7.3",
-    "vitest": "^3.2.4"
   }
 }

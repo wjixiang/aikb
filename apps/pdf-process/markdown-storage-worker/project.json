@@ -1,0 +1,19 @@
+{
+  "name": "markdown-storage-worker",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/pdf-process/markdown-storage-worker/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/pdf-process/markdown-storage-worker",
+        "main": "apps/pdf-process/markdown-storage-worker/src/index.ts",
+        "tsConfig": "apps/pdf-process/markdown-storage-worker/tsconfig.lib.json",
+        "assets": ["apps/pdf-process/markdown-storage-worker/*.md"]
+      }
+    }
+  }
+}
