@@ -1,0 +1,32 @@
+{
+  "name": "chunk-embed",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "bin": {
+    "chunk-embed": "./dist/apps/pdf-process/chunk-embed/src/main.js"
+  },
+  "scripts": {
+    "start": "node ./dist/apps/pdf-process/chunk-embed/src/main.js",
+    "dev": "npx tsx ./src/main.ts",
+    "build": "nx build chunk-embed",
+    "test": "nx test chunk-embed"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@aikb/bibliography": "*",
+    "@aikb/chunking": "*",
+    "@aikb/embedding": "*",
+    "@aikb/log-management": "*",
+    "amqplib": "^0.10.3",
+    "@stomp/stompjs": "^7.0.0",
+    "sockjs-client": "^1.6.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.4",
+    "@types/uuid": "^9.0.0"
+  }
+}

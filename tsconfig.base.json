@@ -29,7 +29,8 @@
       "@aikb/markdown-part-cache": ["libs/markdown-part-cache/src/index.ts"],
       "markdown-storage-worker": [
         "apps/pdf-process/markdown-storage-worker/src/index.ts"
-      ]
+      ],
+      "chunk-embed": ["apps/pdf-process/chunk-embed/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
