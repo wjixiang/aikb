@@ -7,7 +7,6 @@ import {
   ItemVectorStorageStatus,
   ChunkingEmbeddingGroupInfo,
 } from './types.ts';
-import { Embedding } from '@aikb/embedding';
 
 /**
  * Elasticsearch implementation of IItemVectorStorage
