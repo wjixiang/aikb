@@ -1,21 +1,12 @@
 import {
-  uploadToS3,
-  uploadPdfFromPath,
-  getSignedUrlForDownload,
   deleteFromS3,
 } from '@aikb/s3-service';
-import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
-import { Client } from '@elastic/elasticsearch';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');
 import { MinerUPdfConvertor } from '@aikb/pdf-converter';
-import { ChunkingConfig } from '@aikb/chunking';
-import { EmbeddingConfig, defaultEmbeddingConfig } from '@aikb/embedding';
-import { v4 as uuidv4 } from 'uuid';
 import { LibraryItem } from '../item/library-item.js';
 
 import {
