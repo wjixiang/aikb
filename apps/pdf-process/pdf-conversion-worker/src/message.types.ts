@@ -155,4 +155,8 @@ export const RABBITMQ_CONSUMER_TAGS = {
 /**
  * PDF processing status
  */
-export type PdfProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type PdfProcessingStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed';

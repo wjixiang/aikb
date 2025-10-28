@@ -1,6 +1,9 @@
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { IPdfPartTracker, PdfPartTrackingData } from './pdf-part-tracker.interface';
+import {
+  IPdfPartTracker,
+  PdfPartTrackingData,
+} from './pdf-part-tracker.interface';
 
 const logger = createLoggerWithPrefix('PdfPartTrackerElasticsearch');
 
@@ -13,8 +16,10 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
   private indexName: string;
 
   constructor(
-    elasticsearchUrl: string = process.env['ELASTICSEARCH_URL'] || 'http://localhost:9200',
-    indexName: string = process.env['PDF_PART_TRACKING_INDEX'] || 'pdf-part-tracking'
+    elasticsearchUrl: string = process.env['ELASTICSEARCH_URL'] ||
+      'http://localhost:9200',
+    indexName: string = process.env['PDF_PART_TRACKING_INDEX'] ||
+      'pdf-part-tracking',
   ) {
     this.client = new Client({ node: elasticsearchUrl });
     this.indexName = indexName;
@@ -68,7 +73,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
   async initializeTracking(pdfId: string, totalParts: number): Promise<string> {
     const trackingId = `tracking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
-    
+
     const trackingData: PdfPartTrackingData = {
       trackingId,
       pdfId,
@@ -87,8 +92,10 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
         id: trackingId,
         body: trackingData,
       });
-      
-      logger.info(`Initialized tracking for PDF ${pdfId} with ${totalParts} parts, tracking ID: ${trackingId}`);
+
+      logger.info(
+        `Initialized tracking for PDF ${pdfId} with ${totalParts} parts, tracking ID: ${trackingId}`,
+      );
       return trackingId;
     } catch (error) {
       logger.error('Failed to initialize tracking:', error);
@@ -102,7 +109,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
   async markPartCompleted(
     trackingId: string,
     partNumber: number,
-    partData?: any
+    partData?: any,
   ): Promise<boolean> {
     try {
       // Get current tracking data
@@ -112,7 +119,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
       });
 
       const trackingData = getResult._source as PdfPartTrackingData;
-      
+
       if (!trackingData) {
         logger.warn(`Tracking session not found: ${trackingId}`);
         return false;
@@ -120,7 +127,9 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
 
       // Check if part is already completed
       if (trackingData.completedPartNumbers.includes(partNumber)) {
-        logger.warn(`Part ${partNumber} already completed for tracking ID: ${trackingId}`);
+        logger.warn(
+          `Part ${partNumber} already completed for tracking ID: ${trackingId}`,
+        );
         return false;
       }
 
@@ -149,7 +158,9 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
         doc: trackingData,
       });
 
-      logger.debug(`Marked part ${partNumber} as completed for tracking ID: ${trackingId}`);
+      logger.debug(
+        `Marked part ${partNumber} as completed for tracking ID: ${trackingId}`,
+      );
       return true;
     } catch (error) {
       if ((error as any).statusCode === 404) {
@@ -199,7 +210,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
       });
 
       const trackingData = getResult._source as PdfPartTrackingData;
-      
+
       if (!trackingData) {
         throw new Error(`Tracking session not found: ${trackingId}`);
       }
@@ -223,11 +234,13 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
   /**
    * Get all completed parts data
    */
-  async getCompletedParts(trackingId: string): Promise<Array<{
-    partNumber: number;
-    data?: any;
-    completedAt: Date;
-  }>> {
+  async getCompletedParts(trackingId: string): Promise<
+    Array<{
+      partNumber: number;
+      data?: any;
+      completedAt: Date;
+    }>
+  > {
     try {
       const getResult = await this.client.get({
         index: this.indexName,
@@ -235,7 +248,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
       });
 
       const trackingData = getResult._source as PdfPartTrackingData;
-      
+
       if (!trackingData) {
         throw new Error(`Tracking session not found: ${trackingId}`);
       }
@@ -260,7 +273,7 @@ export class PdfPartTrackerElasticsearch implements IPdfPartTracker {
         index: this.indexName,
         id: trackingId,
       });
-      
+
       logger.info(`Cleaned up tracking session: ${trackingId}`);
       return true;
     } catch (error) {

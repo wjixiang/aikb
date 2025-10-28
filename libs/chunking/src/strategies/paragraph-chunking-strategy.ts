@@ -224,7 +224,10 @@ export class ParagraphChunkingStrategy extends BaseChunkingStrategy {
     };
   }
 
-  override validateConfig(config: ChunkingConfig): { valid: boolean; errors: string[] } {
+  override validateConfig(config: ChunkingConfig): {
+    valid: boolean;
+    errors: string[];
+  } {
     // Use the parent class implementation
     return super.validateConfig(config);
   }

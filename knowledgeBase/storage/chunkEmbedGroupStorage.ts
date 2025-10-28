@@ -23,7 +23,7 @@ export class elasticsearchChunkEmbedGroupStorage
     this.client = new Client({
       node: elasticsearchUrl,
       auth: {
-        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+        apiKey: process.env.ELASTICSEARCH_API_KEY || '',
       },
     });
   }

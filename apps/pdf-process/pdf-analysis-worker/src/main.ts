@@ -1,5 +1,8 @@
 import { config } from 'dotenv';
-import { PdfAnalyzerService, createPdfAnalyzerService } from './pdf-analysis.service';
+import {
+  PdfAnalyzerService,
+  createPdfAnalyzerService,
+} from './pdf-analysis.service';
 import { ILibraryStorage, MockLibraryStorage } from '@aikb/bibliography';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
@@ -31,7 +34,7 @@ class PdfAnalysisWorker {
 
     try {
       logger.info('Starting PDF analysis worker...');
-      
+
       // Start the analyzer service
       await this.analyzerService.start();
 
@@ -55,10 +58,10 @@ class PdfAnalysisWorker {
     try {
       logger.info('Stopping PDF analysis worker...');
       this.isRunning = false;
-      
+
       // Stop the analyzer service
       await this.analyzerService.stop();
-      
+
       logger.info('PDF analysis worker stopped successfully');
     } catch (error) {
       logger.error('Failed to stop PDF analysis worker:', error);
@@ -75,7 +78,7 @@ async function main(): Promise<void> {
     // Initialize storage (this would be injected via dependency injection in a real app)
     // For now, we'll use the mock storage from the bibliography library
     const storage = new MockLibraryStorage();
-    
+
     const worker = new PdfAnalysisWorker(storage);
     await worker.start();
 
@@ -91,7 +94,6 @@ async function main(): Promise<void> {
       await worker.stop();
       process.exit(0);
     });
-
   } catch (error) {
     logger.error('Failed to start PDF analysis worker:', error);
     process.exit(1);

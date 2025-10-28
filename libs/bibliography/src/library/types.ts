@@ -1,6 +1,3 @@
-import { ChunkingConfig } from '@aikb/chunking';
-import { EmbeddingConfig } from '@aikb/embedding';
-
 // Enhanced metadata interfaces for Zotero-like functionality
 export interface Author {
   firstName: string;
@@ -114,68 +111,4 @@ export interface SearchFilter {
     end: Date;
   };
   fileType?: string[];
-}
-
-// Chunk-related interfaces
-export interface ItemChunk {
-  id: string;
-  itemId: string; // Reference to the parent book item
-
-  // Dense vector index group for organization
-  denseVectorIndexGroupId: string; // Group identifier for this chunking/embedding combination
-
-  // Content and metadata
-  title: string;
-  content: string;
-  index: number; // Position in the document
-
-  // Simplified embedding field - single dense vector
-  embedding: number[]; // Vector embedding of the content (single vector, not versioned)
-
-  // Strategy and configuration metadata
-  strategyMetadata: {
-    chunkingStrategy: string; // e.g., 'h1', 'paragraph', 'semantic'
-    chunkingConfig: ChunkingConfig; // Original chunking configuration
-    embeddingConfig: EmbeddingConfig; // Original embedding configuration
-    processingTimestamp: Date;
-    processingDuration: number;
-  };
-
-  // Additional metadata
-  metadata?: {
-    chunkType?: string; // Changed to string to support any chunking strategy
-    startPosition?: number;
-    endPosition?: number;
-    wordCount?: number;
-    chunkingConfig?: string; // JSON string of chunking configuration (deprecated, use strategyMetadata instead)
-  };
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ChunkSearchFilter {
-  query?: string;
-  itemId?: string;
-  itemIds?: string[];
-  chunkType?: string;
-  limit?: number;
-  similarityThreshold?: number;
-  denseVectorIndexGroupId?: string;
-  groups?: string[];
-  chunkingStrategies?: string[];
-  embeddingProviders?: string[];
-}
-
-export interface ItemChunkSemanticSearchQuery {
-  searchText: string;
-  resultNum: number;
-  threshold: number;
-}
-
-export enum ItemVectorStorageStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
 }

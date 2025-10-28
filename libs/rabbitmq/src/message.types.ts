@@ -311,7 +311,8 @@ export interface MarkdownPartStorageRequestMessage extends BaseRabbitMQMessage {
 /**
  * Markdown part storage progress message
  */
-export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageProgressMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_PROGRESS';
   itemId: string;
   partIndex: number;
@@ -327,7 +328,8 @@ export interface MarkdownPartStorageProgressMessage extends BaseRabbitMQMessage 
 /**
  * Markdown part storage completed message
  */
-export interface MarkdownPartStorageCompletedMessage extends BaseRabbitMQMessage {
+export interface MarkdownPartStorageCompletedMessage
+  extends BaseRabbitMQMessage {
   eventType: 'MARKDOWN_PART_STORAGE_COMPLETED';
   itemId: string;
   partIndex: number;

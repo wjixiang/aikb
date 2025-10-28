@@ -1,5 +1,8 @@
 import { config } from 'dotenv';
-import { PdfConversionWorker, createPdfConversionWorker } from './pdf-conversion.worker';
+import {
+  PdfConversionWorker,
+  createPdfConversionWorker,
+} from './pdf-conversion.worker';
 
 // Load environment variables
 config();
@@ -11,9 +14,9 @@ async function main(): Promise<void> {
   try {
     // Create and start worker
     const worker = await createPdfConversionWorker();
-    
+
     console.log('PDF Conversion Worker started successfully');
-    
+
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
       console.log('Received SIGINT, shutting down gracefully...');
@@ -29,7 +32,7 @@ async function main(): Promise<void> {
 
     // Keep the process running
     console.log('PDF Conversion Worker is running. Press Ctrl+C to stop.');
-    
+
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
       console.error('Uncaught Exception:', error);
@@ -41,7 +44,6 @@ async function main(): Promise<void> {
       console.error('Unhandled Rejection at:', promise, 'reason:', reason);
       process.exit(1);
     });
-    
   } catch (error) {
     console.error('Failed to start PDF Conversion Worker:', error);
     process.exit(1);

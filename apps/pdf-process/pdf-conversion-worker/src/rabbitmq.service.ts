@@ -54,9 +54,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF conversion request
    */
-  async publishPdfConversionRequest(request: PdfConversionRequestMessage): Promise<boolean> {
+  async publishPdfConversionRequest(
+    request: PdfConversionRequestMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing PDF conversion request for item: ${request.itemId}`);
+      logger.info(
+        `Publishing PDF conversion request for item: ${request.itemId}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -68,9 +72,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF conversion progress
    */
-  async publishPdfConversionProgress(progress: PdfConversionProgressMessage): Promise<boolean> {
+  async publishPdfConversionProgress(
+    progress: PdfConversionProgressMessage,
+  ): Promise<boolean> {
     try {
-      logger.debug(`Publishing PDF conversion progress for item: ${progress.itemId}`);
+      logger.debug(
+        `Publishing PDF conversion progress for item: ${progress.itemId}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -82,9 +90,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF conversion completed
    */
-  async publishPdfConversionCompleted(completed: PdfConversionCompletedMessage): Promise<boolean> {
+  async publishPdfConversionCompleted(
+    completed: PdfConversionCompletedMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing PDF conversion completed for item: ${completed.itemId}`);
+      logger.info(
+        `Publishing PDF conversion completed for item: ${completed.itemId}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -96,9 +108,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF conversion failed
    */
-  async publishPdfConversionFailed(failed: PdfConversionFailedMessage): Promise<boolean> {
+  async publishPdfConversionFailed(
+    failed: PdfConversionFailedMessage,
+  ): Promise<boolean> {
     try {
-      logger.error(`Publishing PDF conversion failed for item: ${failed.itemId}`);
+      logger.error(
+        `Publishing PDF conversion failed for item: ${failed.itemId}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -110,9 +126,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF part conversion request
    */
-  async publishPdfPartConversionRequest(request: PdfPartConversionRequestMessage): Promise<boolean> {
+  async publishPdfPartConversionRequest(
+    request: PdfPartConversionRequestMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing PDF part conversion request for item: ${request.itemId}, part: ${request.partIndex + 1}`);
+      logger.info(
+        `Publishing PDF part conversion request for item: ${request.itemId}, part: ${request.partIndex + 1}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -124,9 +144,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF part conversion completed
    */
-  async publishPdfPartConversionCompleted(completed: PdfPartConversionCompletedMessage): Promise<boolean> {
+  async publishPdfPartConversionCompleted(
+    completed: PdfPartConversionCompletedMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing PDF part conversion completed for item: ${completed.itemId}, part: ${completed.partIndex + 1}`);
+      logger.info(
+        `Publishing PDF part conversion completed for item: ${completed.itemId}, part: ${completed.partIndex + 1}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -138,9 +162,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF part conversion failed
    */
-  async publishPdfPartConversionFailed(failed: PdfPartConversionFailedMessage): Promise<boolean> {
+  async publishPdfPartConversionFailed(
+    failed: PdfPartConversionFailedMessage,
+  ): Promise<boolean> {
     try {
-      logger.error(`Publishing PDF part conversion failed for item: ${failed.itemId}, part: ${failed.partIndex + 1}`);
+      logger.error(
+        `Publishing PDF part conversion failed for item: ${failed.itemId}, part: ${failed.partIndex + 1}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -152,9 +180,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish markdown storage request
    */
-  async publishMarkdownStorageRequest(request: MarkdownStorageRequestMessage): Promise<boolean> {
+  async publishMarkdownStorageRequest(
+    request: MarkdownStorageRequestMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing markdown storage request for item: ${request.itemId}`);
+      logger.info(
+        `Publishing markdown storage request for item: ${request.itemId}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -166,9 +198,13 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish markdown part storage request
    */
-  async publishMarkdownPartStorageRequest(request: MarkdownPartStorageRequestMessage): Promise<boolean> {
+  async publishMarkdownPartStorageRequest(
+    request: MarkdownPartStorageRequestMessage,
+  ): Promise<boolean> {
     try {
-      logger.info(`Publishing markdown part storage request for item: ${request.itemId}, part: ${request.partIndex + 1}`);
+      logger.info(
+        `Publishing markdown part storage request for item: ${request.itemId}, part: ${request.partIndex + 1}`,
+      );
       // In a real implementation, this would publish to RabbitMQ
       return true;
     } catch (error) {
@@ -192,12 +228,14 @@ export class RabbitMQService implements IRabbitMQService {
   ): Promise<string> {
     try {
       const consumerTag = options.consumerTag || `consumer-${Date.now()}`;
-      
-      logger.info(`Starting consumer for queue: ${queueName} with tag: ${consumerTag}`);
-      
+
+      logger.info(
+        `Starting consumer for queue: ${queueName} with tag: ${consumerTag}`,
+      );
+
       // Store consumer for later cleanup
       this.consumers.set(consumerTag, { queueName, onMessage, options });
-      
+
       // In a real implementation, this would start consuming from RabbitMQ
       // For now, we'll simulate message processing
       setTimeout(() => {
@@ -211,7 +249,7 @@ export class RabbitMQService implements IRabbitMQService {
         };
         onMessage(simulatedMessage, null);
       }, 30000);
-      
+
       return consumerTag;
     } catch (error) {
       logger.error(`Failed to start consumer for queue ${queueName}:`, error);
@@ -225,7 +263,7 @@ export class RabbitMQService implements IRabbitMQService {
   async stopConsuming(consumerTag: string): Promise<void> {
     try {
       logger.info(`Stopping consumer with tag: ${consumerTag}`);
-      
+
       const consumer = this.consumers.get(consumerTag);
       if (consumer) {
         this.consumers.delete(consumerTag);
@@ -243,7 +281,7 @@ export class RabbitMQService implements IRabbitMQService {
   async getQueueInfo(queueName: string): Promise<any> {
     try {
       logger.debug(`Getting queue info for: ${queueName}`);
-      
+
       // In a real implementation, this would get queue info from RabbitMQ
       return {
         name: queueName,
@@ -308,15 +346,15 @@ export class RabbitMQService implements IRabbitMQService {
   async close(): Promise<void> {
     try {
       logger.info('Closing RabbitMQ service...');
-      
+
       // Stop all consumers
       for (const [consumerTag] of this.consumers.keys()) {
         await this.stopConsuming(consumerTag);
       }
-      
+
       this._isConnected = false;
       this.isInitialized = false;
-      
+
       logger.info('RabbitMQ service closed successfully');
     } catch (error) {
       logger.error('Failed to close RabbitMQ service:', error);

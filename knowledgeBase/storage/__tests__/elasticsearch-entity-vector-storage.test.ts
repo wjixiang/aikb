@@ -119,7 +119,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
 
     it('should use API key from environment variable', () => {
       // Arrange
-      process.env.ELASTICSEARCH_URL_API_KEY = 'test-api-key';
+      process.env.ELASTICSEARCH_API_KEY = 'test-api-key';
 
       // Act
       const storage = new ElasticsearchVectorStorage(
@@ -136,7 +136,7 @@ describe('ElasticsearchEntityVectorStorage', () => {
       });
 
       // Cleanup
-      delete process.env.ELASTICSEARCH_URL_API_KEY;
+      delete process.env.ELASTICSEARCH_API_KEY;
     });
   });
 

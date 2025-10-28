@@ -89,9 +89,6 @@ importers:
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
-      plugin:
-        specifier: link:@nx/eslint/plugin
-        version: link:@nx/eslint/plugin
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -210,9 +207,6 @@ importers:
       nx:
         specifier: 22.0.1
         version: 22.0.1(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.2))(@swc/core@1.5.29(@swc/helpers@0.5.17))
-      plugin@latest:
-        specifier: link:@nx/eslint/plugin@latest
-        version: link:@nx/eslint/plugin@latest
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
@@ -326,6 +320,24 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@22.18.6)(@vitest/ui@3.2.4)(jiti@2.6.0)(terser@5.44.0)(yaml@2.8.1)
+
+  libs/item-vector-storage:
+    dependencies:
+      '@aikb/chunking':
+        specifier: workspace:*
+        version: link:../chunking
+      '@aikb/embedding':
+        specifier: workspace:*
+        version: link:../embedding
+      '@aikb/log-management':
+        specifier: workspace:*
+        version: link:../log-management
+      '@elastic/elasticsearch':
+        specifier: ^9.1.1
+        version: 9.1.1
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   libs/log-management:
     dependencies:
@@ -526,6 +538,28 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.18.6
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.18.6)(@vitest/ui@3.2.4)(jiti@2.6.0)(terser@5.44.0)(yaml@2.8.1)
+
+  libs/utils:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.18.6
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       typescript:
         specifier: ^5.7.3
         version: 5.9.2

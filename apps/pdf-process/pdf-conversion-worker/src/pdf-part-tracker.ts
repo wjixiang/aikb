@@ -51,7 +51,10 @@ export interface IPdfPartTracker {
   /**
    * Get part status
    */
-  getPartStatus(itemId: string, partIndex: number): Promise<PdfPartStatus | null>;
+  getPartStatus(
+    itemId: string,
+    partIndex: number,
+  ): Promise<PdfPartStatus | null>;
 
   /**
    * Get all part statuses for an item

@@ -1,0 +1,442 @@
+import { Client } from '@elastic/elasticsearch';
+import createLoggerWithPrefix from '@aikb/log-management/logger';
+import {
+  IItemVectorStorage,
+  ItemChunk,
+  ItemChunkSemanticSearchQuery,
+  ItemVectorStorageStatus,
+  ChunkingEmbeddingGroupInfo,
+} from './types';
+
+/**
+ * Elasticsearch implementation of IItemVectorStorage
+ */
+export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
+  private readonly client: Client;
+  private readonly chunksIndexName = 'item_chunks';
+  private readonly groupsIndexName = 'chunk_embedding_groups';
+
+  readonly logger: ReturnType<typeof createLoggerWithPrefix>;
+
+  constructor(
+    elasticsearchUrl = process.env['ELASTICSEARCH_URL'] ?? 'http://elasticsearch:9200',
+  ) {
+    this.logger = createLoggerWithPrefix('ElasticsearchItemVectorStorage');
+    this.client = new Client({
+      node: elasticsearchUrl,
+      auth: {
+        apiKey: process.env['ELASTICSEARCH_API_KEY'] || '',
+      },
+    });
+  }
+
+  /**
+   * Initialize the indices with proper mappings
+   */
+  private async initializeIndices(): Promise<void> {
+    try {
+      // Initialize chunks index
+      const chunksExists = await this.client.indices.exists({
+        index: this.chunksIndexName,
+      });
+
+      if (!chunksExists) {
+        await this.client.indices.create({
+          index: this.chunksIndexName,
+          mappings: {
+            properties: {
+              id: { type: 'keyword' },
+              itemId: { type: 'keyword' },
+              denseVectorIndexGroupId: { type: 'keyword' },
+              title: { type: 'text' },
+              content: { type: 'text' },
+              index: { type: 'integer' },
+              embedding: {
+                type: 'dense_vector',
+                dims: 1536, // Default dimension, will be updated per group
+              },
+              strategyMetadata: {
+                properties: {
+                  chunkingStrategy: { type: 'keyword' },
+                  chunkingConfig: { type: 'object', dynamic: true },
+                  embeddingConfig: { type: 'object', dynamic: true },
+                  processingTimestamp: { type: 'date' },
+                  processingDuration: { type: 'float' },
+                },
+              },
+              metadata: {
+                type: 'object',
+                dynamic: true,
+              },
+              createdAt: { type: 'date' },
+              updatedAt: { type: 'date' },
+            },
+          },
+        } as any);
+        this.logger.info(`Created chunks index: ${this.chunksIndexName}`);
+      }
+
+      // Initialize groups index
+      const groupsExists = await this.client.indices.exists({
+        index: this.groupsIndexName,
+      });
+
+      if (!groupsExists) {
+        await this.client.indices.create({
+          index: this.groupsIndexName,
+          mappings: {
+            properties: {
+              id: { type: 'keyword' },
+              name: { type: 'text' },
+              description: { type: 'text' },
+              chunkingConfig: { type: 'object', dynamic: true },
+              embeddingConfig: { type: 'object', dynamic: true },
+              isDefault: { type: 'boolean' },
+              isActive: { type: 'boolean' },
+              createdAt: { type: 'date' },
+              updatedAt: { type: 'date' },
+              createdBy: { type: 'keyword' },
+              tags: { type: 'keyword' },
+            },
+          },
+        } as any);
+        this.logger.info(`Created groups index: ${this.groupsIndexName}`);
+      }
+    } catch (error) {
+      if (
+        (error as any)?.meta?.body?.error?.type === 'resource_already_exists_exception'
+      ) {
+        this.logger.info('Indices already exist, continuing');
+        return;
+      }
+      this.logger.error('Failed to initialize indices:', error);
+      throw error;
+    }
+  }
+
+  async getStatus(groupId: string): Promise<ItemVectorStorageStatus> {
+    try {
+      const group = await this.getChunkEmbedGroupInfoById(groupId);
+      
+      if (!group.isActive) {
+        return ItemVectorStorageStatus.FAILED;
+      }
+
+      // Check if there are any chunks in processing state for this group
+      const result = await this.client.search({
+        index: this.chunksIndexName,
+        body: {
+          query: {
+            term: {
+              denseVectorIndexGroupId: groupId,
+            },
+          },
+        },
+        size: 1,
+      } as any);
+
+      if (result.hits.hits.length === 0) {
+        return ItemVectorStorageStatus.PENDING;
+      }
+
+      return ItemVectorStorageStatus.COMPLETED;
+    } catch (error) {
+      this.logger.error(`Failed to get status for group ${groupId}:`, error);
+      return ItemVectorStorageStatus.FAILED;
+    }
+  }
+
+  async semanticSearch(
+    query: ItemChunkSemanticSearchQuery,
+  ): Promise<Omit<ItemChunk, 'embedding'>> {
+    try {
+      // First, get the embedding for the search text
+      // Note: This assumes you have an embedding service available
+      // You might need to inject this dependency or use a service
+      const queryEmbedding = await this.getEmbeddingForText(query.searchText);
+
+      const result = await this.client.search({
+        index: this.chunksIndexName,
+        body: {
+          query: {
+            bool: {
+              must: [
+                {
+                  terms: {
+                    itemId: query.itemId,
+                  },
+                },
+                {
+                  term: {
+                    denseVectorIndexGroupId: query.groupId,
+                  },
+                },
+              ],
+              should: [
+                {
+                  script_score: {
+                    query: { match_all: {} },
+                    script: {
+                      source: "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
+                      params: {
+                        query_vector: queryEmbedding,
+                      },
+                    },
+                  },
+                },
+              ],
+              minimum_should_match: 1,
+            },
+          },
+          size: query.resultNum,
+          min_score: query.threshold,
+        },
+      } as any);
+
+      const hits = result.hits.hits;
+      const chunks = hits.map((hit): Omit<ItemChunk, 'embedding'> & { similarity: number } => {
+        const { _source } = hit as any;
+        const { embedding: _embedding, ...chunkWithoutEmbedding } = _source;
+        return {
+          ...chunkWithoutEmbedding,
+          similarity: hit._score || 0,
+        };
+      });
+
+      // NOTE: There's a design mismatch in the interface. The query includes `resultNum`
+      // suggesting multiple results should be returned, but the interface expects a single ItemChunk.
+      // For now, we'll return the first result as that's what the interface specifies.
+      // Consider updating the interface to return an array for better semantic search functionality.
+      
+      if (chunks.length === 0) {
+        throw new Error('No matching chunks found');
+      }
+
+      return chunks[0];
+    } catch (error) {
+      this.logger.error('Failed to perform semantic search:', error);
+      throw error;
+    }
+  }
+
+  async insertItemChunk(
+    group: ChunkingEmbeddingGroupInfo,
+    itemChunk: ItemChunk,
+  ): Promise<boolean> {
+    try {
+      await this.initializeIndices();
+
+      // Validate vector dimensions against group configuration
+      if (itemChunk.embedding.length !== group.embeddingConfig.dimension) {
+        throw new Error(
+          `Vector dimensions mismatch. Expected: ${group.embeddingConfig.dimension}, Got: ${itemChunk.embedding.length}`,
+        );
+      }
+
+      const document = {
+        ...itemChunk,
+        denseVectorIndexGroupId: group.id,
+        createdAt: itemChunk.createdAt.toISOString(),
+        updatedAt: itemChunk.updatedAt.toISOString(),
+        strategyMetadata: {
+          ...itemChunk.strategyMetadata,
+          processingTimestamp: itemChunk.strategyMetadata.processingTimestamp.toISOString(),
+        },
+      };
+
+      await this.client.index({
+        index: this.chunksIndexName,
+        id: itemChunk.id,
+        body: document,
+      } as any);
+
+      this.logger.info(`Inserted item chunk: ${itemChunk.id}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to insert item chunk ${itemChunk.id}:`, error);
+      throw error;
+    }
+  }
+
+  async batchInsertItemChunks(
+    group: ChunkingEmbeddingGroupInfo,
+    itemChunks: ItemChunk[],
+  ): Promise<boolean> {
+    try {
+      await this.initializeIndices();
+
+      // Validate all vectors have correct dimensions based on group configuration
+      for (const chunk of itemChunks) {
+        if (chunk.embedding.length !== group.embeddingConfig.dimension) {
+          throw new Error(
+            `Vector dimensions mismatch for chunk ${chunk.id}. Expected: ${group.embeddingConfig.dimension}, Got: ${chunk.embedding.length}`,
+          );
+        }
+      }
+
+      const body = itemChunks.flatMap((chunk) => [
+        { index: { _index: this.chunksIndexName, _id: chunk.id } },
+        {
+          ...chunk,
+          denseVectorIndexGroupId: group.id,
+          createdAt: chunk.createdAt.toISOString(),
+          updatedAt: chunk.updatedAt.toISOString(),
+          strategyMetadata: {
+            ...chunk.strategyMetadata,
+            processingTimestamp: chunk.strategyMetadata.processingTimestamp.toISOString(),
+          },
+        },
+      ]);
+
+      await this.client.bulk({
+        body,
+      });
+
+      this.logger.info(`Batch inserted ${itemChunks.length} item chunks`);
+      return true;
+    } catch (error) {
+      this.logger.error('Failed to batch insert item chunks:', error);
+      throw error;
+    }
+  }
+
+  async createNewChunkEmbedGroupInfo(
+    config: Omit<ChunkingEmbeddingGroupInfo, 'id'>,
+  ): Promise<ChunkingEmbeddingGroupInfo> {
+    try {
+      await this.initializeIndices();
+
+      const id = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date();
+
+      const groupInfo: ChunkingEmbeddingGroupInfo = {
+        ...config,
+        id,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const document = {
+        ...groupInfo,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+
+      await this.client.index({
+        index: this.groupsIndexName,
+        id,
+        body: document,
+      } as any);
+
+      this.logger.info(`Created new chunk embedding group: ${id}`);
+      return groupInfo;
+    } catch (error) {
+      this.logger.error('Failed to create new chunk embedding group:', error);
+      throw error;
+    }
+  }
+
+  async getChunkEmbedGroupInfoById(
+    groupId: string,
+  ): Promise<ChunkingEmbeddingGroupInfo> {
+    try {
+      const result = await this.client.get({
+        index: this.groupsIndexName,
+        id: groupId,
+      });
+
+      if (result.found) {
+        const { _source } = result as any;
+        return {
+          ..._source,
+          createdAt: new Date(_source.createdAt),
+          updatedAt: new Date(_source.updatedAt),
+        } as ChunkingEmbeddingGroupInfo;
+      }
+
+      throw new Error(`Chunk embedding group ${groupId} not found`);
+    } catch (error) {
+      if ((error as any)?.meta?.statusCode === 404) {
+        throw new Error(`Chunk embedding group ${groupId} not found`);
+      }
+      this.logger.error(
+        `Failed to get chunk embedding group ${groupId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async deleteChunkEmbedGroupById(groupId: string): Promise<{
+    deletedGroupId: string;
+    deletedChunkNum: number;
+  }> {
+    try {
+      // First, count and delete all chunks associated with this group
+      const countResult = await this.client.count({
+        index: this.chunksIndexName,
+        body: {
+          query: {
+            term: {
+              denseVectorIndexGroupId: groupId,
+            },
+          },
+        },
+      } as any);
+
+      const chunkCount = countResult.count;
+
+      if (chunkCount > 0) {
+        await this.client.deleteByQuery({
+          index: this.chunksIndexName,
+          body: {
+            query: {
+              term: {
+                denseVectorIndexGroupId: groupId,
+              },
+            },
+          },
+        } as any);
+      }
+
+      // Delete the group itself
+      await this.client.delete({
+        index: this.groupsIndexName,
+        id: groupId,
+      });
+
+      this.logger.info(
+        `Deleted group ${groupId} and ${chunkCount} associated chunks`,
+      );
+
+      return {
+        deletedGroupId: groupId,
+        deletedChunkNum: chunkCount,
+      };
+    } catch (error) {
+      if ((error as any)?.meta?.statusCode === 404) {
+        this.logger.warn(`Group ${groupId} not found for deletion`);
+        return {
+          deletedGroupId: groupId,
+          deletedChunkNum: 0,
+        };
+      }
+      this.logger.error(`Failed to delete group ${groupId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper method to get embedding for text
+   * This should be implemented based on your embedding service
+   */
+  private getEmbeddingForText(_text: string): Promise<number[]> {
+    // This is a placeholder implementation
+    // In a real scenario, you would integrate with your embedding service
+    // For example, OpenAI, Cohere, or a local embedding model
+    
+    // For now, return a zero vector of default dimensions
+    // This should be replaced with actual embedding logic
+    return Promise.resolve(new Array(1536).fill(0) as number[]);
+  }
+}

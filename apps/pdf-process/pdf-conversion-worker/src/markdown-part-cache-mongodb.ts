@@ -54,7 +54,7 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
     try {
       const now = new Date();
       const cacheKey = `${itemId}-${partIndex}`;
-      
+
       const cacheEntry: MarkdownPartCacheEntry = {
         itemId,
         partIndex,
@@ -66,7 +66,10 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
       this.cacheEntries.set(cacheKey, cacheEntry);
       logger.debug(`Cached markdown part ${partIndex} for item ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to cache markdown part for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to cache markdown part for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -84,7 +87,10 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
       const cacheKey = `${itemId}-${partIndex}`;
       return this.cacheEntries.get(cacheKey) || null;
     } catch (error) {
-      logger.error(`Failed to get cached markdown part for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to get cached markdown part for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -92,12 +98,15 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
   /**
    * Get all cached markdown parts for an item
    */
-  async getAllCachedMarkdownParts(itemId: string): Promise<MarkdownPartCacheEntry[]> {
+  async getAllCachedMarkdownParts(
+    itemId: string,
+  ): Promise<MarkdownPartCacheEntry[]> {
     await this.ensureInitialized();
 
     try {
       const parts: MarkdownPartCacheEntry[] = [];
-      for (let i = 0; i < 1000; i++) { // Reasonable limit
+      for (let i = 0; i < 1000; i++) {
+        // Reasonable limit
         const cacheKey = `${itemId}-${i}`;
         const cacheEntry = this.cacheEntries.get(cacheKey);
         if (cacheEntry) {
@@ -109,7 +118,10 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
       }
       return parts.sort((a, b) => a.partIndex - b.partIndex);
     } catch (error) {
-      logger.error(`Failed to get all cached markdown parts for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get all cached markdown parts for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -117,14 +129,20 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
   /**
    * Check if a PDF part is cached
    */
-  async isMarkdownPartCached(itemId: string, partIndex: number): Promise<boolean> {
+  async isMarkdownPartCached(
+    itemId: string,
+    partIndex: number,
+  ): Promise<boolean> {
     await this.ensureInitialized();
 
     try {
       const cacheKey = `${itemId}-${partIndex}`;
       return this.cacheEntries.has(cacheKey);
     } catch (error) {
-      logger.error(`Failed to check if markdown part is cached for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to check if markdown part is cached for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -141,14 +159,21 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
     try {
       const cacheKey = `${itemId}-${partIndex}`;
       const deleted = this.cacheEntries.delete(cacheKey);
-      
+
       if (deleted) {
-        logger.debug(`Removed cached markdown part ${partIndex} for item ${itemId}`);
+        logger.debug(
+          `Removed cached markdown part ${partIndex} for item ${itemId}`,
+        );
       } else {
-        logger.warn(`No cached markdown part found to remove for item ${itemId}, part ${partIndex}`);
+        logger.warn(
+          `No cached markdown part found to remove for item ${itemId}, part ${partIndex}`,
+        );
       }
     } catch (error) {
-      logger.error(`Failed to remove cached markdown part for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to remove cached markdown part for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -167,10 +192,15 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
           deletedCount++;
         }
       });
-      
-      logger.info(`Removed ${deletedCount} cached markdown parts for item ${itemId}`);
+
+      logger.info(
+        `Removed ${deletedCount} cached markdown parts for item ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to remove all cached markdown parts for item ${itemId}:`, error);
+      logger.error(
+        `Failed to remove all cached markdown parts for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -192,7 +222,9 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
         }
       });
 
-      logger.info(`Cleaned up ${cleanedCount} old cache entries older than ${olderThanHours} hours`);
+      logger.info(
+        `Cleaned up ${cleanedCount} old cache entries older than ${olderThanHours} hours`,
+      );
     } catch (error) {
       logger.error(`Failed to cleanup old cache entries:`, error);
       throw error;
@@ -212,16 +244,22 @@ export class MongoDBMarkdownPartCache implements MarkdownPartCache {
 
     try {
       const entries = Array.from(this.cacheEntries.values());
-      const itemIds = new Set(entries.map(entry => entry.itemId));
-      
+      const itemIds = new Set(entries.map((entry) => entry.itemId));
+
       let oldestEntry: Date | null = null;
       let newestEntry: Date | null = null;
-      
+
       if (entries.length > 0) {
-        oldestEntry = entries.reduce((oldest, entry) => 
-          entry.createdAt < oldest ? entry.createdAt : oldest, entries[0].createdAt);
-        newestEntry = entries.reduce((newest, entry) => 
-          entry.createdAt > newest ? entry.createdAt : newest, entries[0].createdAt);
+        oldestEntry = entries.reduce(
+          (oldest, entry) =>
+            entry.createdAt < oldest ? entry.createdAt : oldest,
+          entries[0].createdAt,
+        );
+        newestEntry = entries.reduce(
+          (newest, entry) =>
+            entry.createdAt > newest ? entry.createdAt : newest,
+          entries[0].createdAt,
+        );
       }
 
       return {

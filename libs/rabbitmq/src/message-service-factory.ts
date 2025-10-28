@@ -1,4 +1,8 @@
-import { IMessageService, MessageServiceConfig, MessageProtocol } from './message-service.interface';
+import {
+  IMessageService,
+  MessageServiceConfig,
+  MessageProtocol,
+} from './message-service.interface';
 
 /**
  * Message Service Factory
@@ -38,4 +42,5 @@ export interface IMessageServiceFactory {
 /**
  * Export singleton factory instance
  */
-export const messageServiceFactory: IMessageServiceFactory = MessageServiceFactory;
+export const messageServiceFactory: IMessageServiceFactory =
+  MessageServiceFactory;

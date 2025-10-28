@@ -15,7 +15,7 @@ export interface IMarkdownPartCache {
     pdfId: string,
     partNumber: number,
     markdownContent: string,
-    metadata?: any
+    metadata?: any,
   ): Promise<boolean>;
 
   /**
@@ -24,7 +24,10 @@ export interface IMarkdownPartCache {
    * @param partNumber - Part number
    * @returns Promise resolving to cached content or null if not found
    */
-  getPart(pdfId: string, partNumber: number): Promise<{
+  getPart(
+    pdfId: string,
+    partNumber: number,
+  ): Promise<{
     content: string;
     metadata?: any;
     cachedAt: Date;
@@ -35,12 +38,14 @@ export interface IMarkdownPartCache {
    * @param pdfId - Unique identifier for the PDF
    * @returns Promise resolving to array of all cached parts
    */
-  getAllParts(pdfId: string): Promise<Array<{
-    partNumber: number;
-    content: string;
-    metadata?: any;
-    cachedAt: Date;
-  }>>;
+  getAllParts(pdfId: string): Promise<
+    Array<{
+      partNumber: number;
+      content: string;
+      metadata?: any;
+      cachedAt: Date;
+    }>
+  >;
 
   /**
    * Check if a part exists in the cache

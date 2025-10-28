@@ -1,4 +1,12 @@
-import { IMessageService, MessageProtocol, ConnectionStatus, HealthCheckResult, QueueInfo, ConsumerOptions, MessageConsumer } from './message-service.interface';
+import {
+  IMessageService,
+  MessageProtocol,
+  ConnectionStatus,
+  HealthCheckResult,
+  QueueInfo,
+  ConsumerOptions,
+  MessageConsumer,
+} from './message-service.interface';
 import { BaseRabbitMQMessage, RabbitMQMessageOptions } from './message.types';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
@@ -23,13 +31,13 @@ export class StompMessageService implements IMessageService {
   async initialize(): Promise<void> {
     try {
       logger.info('Initializing STOMP message service...');
-      
+
       // This is a placeholder implementation
       // In a real implementation, you would:
       // 1. Create STOMP client connection
       // 2. Connect to the STOMP broker
       // 3. Setup subscriptions and message handlers
-      
+
       this.connectionStatus = 'connected';
       logger.info('STOMP message service initialized successfully');
     } catch (error) {
@@ -45,13 +53,13 @@ export class StompMessageService implements IMessageService {
   async close(): Promise<void> {
     try {
       logger.info('Closing STOMP message service...');
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Disconnect the STOMP client
       // 2. Cleanup subscriptions
       // 3. Clear any pending messages
-      
+
       this.connectionStatus = 'disconnected';
       logger.info('STOMP message service closed successfully');
     } catch (error) {
@@ -109,12 +117,12 @@ export class StompMessageService implements IMessageService {
   ): Promise<boolean> {
     try {
       logger.debug(`Publishing message to ${routingKey}:`, message);
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Serialize the message
       // 2. Send it via STOMP client
-      
+
       return true;
     } catch (error) {
       logger.error('Failed to publish message:', error);
@@ -132,13 +140,13 @@ export class StompMessageService implements IMessageService {
   ): Promise<string> {
     try {
       logger.debug(`Starting to consume messages from ${queueName}`);
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Subscribe to the queue/topic
       // 2. Setup message handler
       // 3. Return consumer tag
-      
+
       return `stomp-consumer-${Date.now()}`;
     } catch (error) {
       logger.error('Failed to consume messages:', error);
@@ -152,7 +160,7 @@ export class StompMessageService implements IMessageService {
   async stopConsuming(consumerTag: string): Promise<void> {
     try {
       logger.debug(`Stopping consumer: ${consumerTag}`);
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Unsubscribe from the queue/topic
@@ -169,12 +177,12 @@ export class StompMessageService implements IMessageService {
   async getQueueInfo(queueName: string): Promise<QueueInfo | null> {
     try {
       logger.debug(`Getting queue info for: ${queueName}`);
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Query the STOMP broker for queue information
       // 2. Return queue stats
-      
+
       return {
         messageCount: 0,
         consumerCount: 0,
@@ -191,7 +199,7 @@ export class StompMessageService implements IMessageService {
   async purgeQueue(queueName: string): Promise<void> {
     try {
       logger.debug(`Purging queue: ${queueName}`);
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Send a purge command to the STOMP broker
@@ -208,13 +216,13 @@ export class StompMessageService implements IMessageService {
   async setupTopology(): Promise<void> {
     try {
       logger.info('Setting up STOMP topology...');
-      
+
       // Placeholder implementation
       // In a real implementation, you would:
       // 1. Declare exchanges
       // 2. Declare queues
       // 3. Setup bindings
-      
+
       logger.info('STOMP topology setup completed');
     } catch (error) {
       logger.error('Failed to setup STOMP topology:', error);

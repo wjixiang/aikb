@@ -21,13 +21,13 @@ export class PdfPartTrackerFactory {
     }
 
     const trackerType = process.env['PDF_PART_TRACKER_TYPE'] || 'memory';
-    
+
     switch (trackerType.toLowerCase()) {
       case 'elasticsearch':
         logger.info('Creating Elasticsearch PDF part tracker');
         this.instance = new PdfPartTrackerElasticsearch();
         break;
-      
+
       case 'memory':
       default:
         logger.info('Creating in-memory PDF part tracker');
@@ -49,16 +49,18 @@ export class PdfPartTrackerFactory {
     options?: {
       elasticsearchUrl?: string;
       indexName?: string;
-    }
+    },
   ): IPdfPartTracker {
     switch (type) {
       case 'elasticsearch':
-        logger.info('Creating Elasticsearch PDF part tracker with custom options');
+        logger.info(
+          'Creating Elasticsearch PDF part tracker with custom options',
+        );
         return new PdfPartTrackerElasticsearch(
           options?.elasticsearchUrl,
-          options?.indexName
+          options?.indexName,
         );
-      
+
       case 'memory':
       default:
         logger.info('Creating in-memory PDF part tracker');
@@ -88,7 +90,7 @@ export class PdfPartTrackerFactory {
   static isElasticsearchConfigured(): boolean {
     const elasticsearchUrl = process.env['ELASTICSEARCH_URL'];
     const indexName = process.env['PDF_PART_TRACKING_INDEX'];
-    
+
     return !!(elasticsearchUrl && indexName);
   }
 }
@@ -112,7 +114,7 @@ export function createPdfPartTracker(
   options?: {
     elasticsearchUrl?: string;
     indexName?: string;
-  }
+  },
 ): IPdfPartTracker {
   return PdfPartTrackerFactory.createTracker(type, options);
 }

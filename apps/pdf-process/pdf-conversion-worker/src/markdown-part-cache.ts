@@ -49,10 +49,7 @@ export interface MarkdownPartCache {
   /**
    * Remove cached markdown content for a PDF part
    */
-  removeCachedMarkdownPart(
-    itemId: string,
-    partIndex: number,
-  ): Promise<void>;
+  removeCachedMarkdownPart(itemId: string, partIndex: number): Promise<void>;
 
   /**
    * Remove all cached markdown content for an item

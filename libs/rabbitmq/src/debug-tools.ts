@@ -1,4 +1,4 @@
-import {  MessageProtocol } from './message-service.interface';
+import { MessageProtocol } from './message-service.interface';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { IRabbitMQService } from './rabbitmq-service.interface';
 
@@ -56,7 +56,11 @@ export class MockRabbitMQService implements IRabbitMQService {
   async healthCheck(): Promise<any> {
     return {
       status: this.connected ? 'healthy' : 'unhealthy',
-      details: { connected: this.connected, channelOpen: this.connected, reconnectAttempts: 0 },
+      details: {
+        connected: this.connected,
+        channelOpen: this.connected,
+        reconnectAttempts: 0,
+      },
     };
   }
 
@@ -69,7 +73,11 @@ export class MockRabbitMQService implements IRabbitMQService {
     return this.connected;
   }
 
-  getConnectionStatus(): 'connected' | 'disconnected' | 'connecting' | 'reconnecting' {
+  getConnectionStatus():
+    | 'connected'
+    | 'disconnected'
+    | 'connecting'
+    | 'reconnecting' {
     return this.connected ? 'connected' : 'disconnected';
   }
 
@@ -177,7 +185,9 @@ export class RabbitMQDebugTools {
    * @param protocol - The message protocol to use
    * @returns Mock RabbitMQ service instance
    */
-  static getMockService(protocol: MessageProtocol = MessageProtocol.AMQP): IRabbitMQService {
+  static getMockService(
+    protocol: MessageProtocol = MessageProtocol.AMQP,
+  ): IRabbitMQService {
     return new MockRabbitMQService(protocol);
   }
 

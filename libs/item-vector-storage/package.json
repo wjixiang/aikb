@@ -1,0 +1,19 @@
+{
+  "name": "item-vector-storage",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "npx eslint"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@elastic/elasticsearch": "^9.1.1",
+    "@aikb/log-management": "workspace:*",
+    "@aikb/chunking": "workspace:*",
+    "@aikb/embedding": "workspace:*"
+  }
+}

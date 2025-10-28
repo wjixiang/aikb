@@ -2,9 +2,15 @@ import {
   MinerUPdfConvertor,
   createMinerUConvertorFromEnv,
 } from '@aikb/pdf-converter';
-import { IPdfPartTracker as IPdfPartTrackerLib, getPdfPartTracker } from '@aikb/pdf-part-tracker';
+import {
+  IPdfPartTracker as IPdfPartTrackerLib,
+  getPdfPartTracker,
+} from '@aikb/pdf-part-tracker';
 import { IPdfPartTracker } from './pdf-part-tracker';
-import { IMarkdownPartCache as IMarkdownPartCacheLib, getMarkdownPartCache } from '@aikb/markdown-part-cache';
+import {
+  IMarkdownPartCache as IMarkdownPartCacheLib,
+  getMarkdownPartCache,
+} from '@aikb/markdown-part-cache';
 import { MarkdownPartCache } from './markdown-part-cache';
 import { IRabbitMQService } from './rabbitmq-service.interface';
 import { RabbitMQService } from './rabbitmq.service';
@@ -47,7 +53,11 @@ export class PdfConversionWorker {
 
     this.pdfConversionService =
       pdfConversionService ||
-      new PdfConversionService(pdfConvertor, partTracker as unknown as IPdfPartTracker, markdownPartCache as unknown as MarkdownPartCache);
+      new PdfConversionService(
+        pdfConvertor,
+        partTracker as unknown as IPdfPartTracker,
+        markdownPartCache as unknown as MarkdownPartCache,
+      );
 
     // Initialize message handler with dependencies
     this.messageHandler =

@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { IPdfPartTracker, PdfPartTrackingData } from './pdf-part-tracker.interface';
+import {
+  IPdfPartTracker,
+  PdfPartTrackingData,
+} from './pdf-part-tracker.interface';
 
 const logger = createLoggerWithPrefix('PdfPartTracker');
 
@@ -17,7 +20,7 @@ export class PdfPartTracker implements IPdfPartTracker {
   async initializeTracking(pdfId: string, totalParts: number): Promise<string> {
     const trackingId = uuidv4();
     const now = new Date();
-    
+
     const trackingData: PdfPartTrackingData = {
       trackingId,
       pdfId,
@@ -31,8 +34,10 @@ export class PdfPartTracker implements IPdfPartTracker {
     };
 
     this.trackingSessions.set(trackingId, trackingData);
-    logger.info(`Initialized tracking for PDF ${pdfId} with ${totalParts} parts, tracking ID: ${trackingId}`);
-    
+    logger.info(
+      `Initialized tracking for PDF ${pdfId} with ${totalParts} parts, tracking ID: ${trackingId}`,
+    );
+
     return trackingId;
   }
 
@@ -42,10 +47,10 @@ export class PdfPartTracker implements IPdfPartTracker {
   async markPartCompleted(
     trackingId: string,
     partNumber: number,
-    partData?: any
+    partData?: any,
   ): Promise<boolean> {
     const trackingData = this.trackingSessions.get(trackingId);
-    
+
     if (!trackingData) {
       logger.warn(`Tracking session not found: ${trackingId}`);
       return false;
@@ -53,7 +58,9 @@ export class PdfPartTracker implements IPdfPartTracker {
 
     // Check if part is already completed
     if (trackingData.completedPartNumbers.includes(partNumber)) {
-      logger.warn(`Part ${partNumber} already completed for tracking ID: ${trackingId}`);
+      logger.warn(
+        `Part ${partNumber} already completed for tracking ID: ${trackingId}`,
+      );
       return false;
     }
 
@@ -76,8 +83,10 @@ export class PdfPartTracker implements IPdfPartTracker {
     }
 
     this.trackingSessions.set(trackingId, trackingData);
-    logger.debug(`Marked part ${partNumber} as completed for tracking ID: ${trackingId}`);
-    
+    logger.debug(
+      `Marked part ${partNumber} as completed for tracking ID: ${trackingId}`,
+    );
+
     return true;
   }
 
@@ -86,7 +95,7 @@ export class PdfPartTracker implements IPdfPartTracker {
    */
   async isTrackingComplete(trackingId: string): Promise<boolean> {
     const trackingData = this.trackingSessions.get(trackingId);
-    
+
     if (!trackingData) {
       logger.warn(`Tracking session not found: ${trackingId}`);
       return false;
@@ -105,7 +114,7 @@ export class PdfPartTracker implements IPdfPartTracker {
     completedPartNumbers: number[];
   }> {
     const trackingData = this.trackingSessions.get(trackingId);
-    
+
     if (!trackingData) {
       logger.warn(`Tracking session not found: ${trackingId}`);
       throw new Error(`Tracking session not found: ${trackingId}`);
@@ -122,13 +131,15 @@ export class PdfPartTracker implements IPdfPartTracker {
   /**
    * Get all completed parts data
    */
-  async getCompletedParts(trackingId: string): Promise<Array<{
-    partNumber: number;
-    data?: any;
-    completedAt: Date;
-  }>> {
+  async getCompletedParts(trackingId: string): Promise<
+    Array<{
+      partNumber: number;
+      data?: any;
+      completedAt: Date;
+    }>
+  > {
     const trackingData = this.trackingSessions.get(trackingId);
-    
+
     if (!trackingData) {
       logger.warn(`Tracking session not found: ${trackingId}`);
       throw new Error(`Tracking session not found: ${trackingId}`);
@@ -142,7 +153,7 @@ export class PdfPartTracker implements IPdfPartTracker {
    */
   async cleanupTracking(trackingId: string): Promise<boolean> {
     const trackingData = this.trackingSessions.get(trackingId);
-    
+
     if (!trackingData) {
       logger.warn(`Tracking session not found: ${trackingId}`);
       return false;
@@ -150,7 +161,7 @@ export class PdfPartTracker implements IPdfPartTracker {
 
     this.trackingSessions.delete(trackingId);
     logger.info(`Cleaned up tracking session: ${trackingId}`);
-    
+
     return true;
   }
 

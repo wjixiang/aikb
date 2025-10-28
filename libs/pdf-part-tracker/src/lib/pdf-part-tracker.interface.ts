@@ -21,7 +21,7 @@ export interface IPdfPartTracker {
   markPartCompleted(
     trackingId: string,
     partNumber: number,
-    partData?: any
+    partData?: any,
   ): Promise<boolean>;
 
   /**
@@ -48,11 +48,13 @@ export interface IPdfPartTracker {
    * @param trackingId - Tracking session ID
    * @returns Promise resolving to array of completed parts data
    */
-  getCompletedParts(trackingId: string): Promise<Array<{
-    partNumber: number;
-    data?: any;
-    completedAt: Date;
-  }>>;
+  getCompletedParts(trackingId: string): Promise<
+    Array<{
+      partNumber: number;
+      data?: any;
+      completedAt: Date;
+    }>
+  >;
 
   /**
    * Clean up tracking session

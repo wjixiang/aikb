@@ -1,11 +1,4 @@
-import {
-  BookMetadata,
-  Collection,
-  Citation,
-  SearchFilter,
-  ItemChunk,
-  ChunkSearchFilter,
-} from './types.js';
+import { BookMetadata, Collection, Citation, SearchFilter } from './types.js';
 
 // Define AbstractPdf interface for PDF handling
 export interface AbstractPdf {
@@ -51,27 +44,4 @@ export interface ILibraryStorage {
   saveMarkdown(itemId: string, markdownContent: string): Promise<void>;
   getMarkdown(itemId: string): Promise<string | null>;
   deleteMarkdown(itemId: string): Promise<boolean>;
-
-  // Chunk operations
-  saveChunk(chunk: ItemChunk): Promise<ItemChunk>;
-  getChunk(chunkId: string): Promise<ItemChunk | null>;
-  getChunksByItemId(itemId: string): Promise<ItemChunk[]>;
-  updateChunk(chunk: ItemChunk): Promise<void>;
-  deleteChunk(chunkId: string): Promise<boolean>;
-  deleteChunksByItemId(itemId: string): Promise<number>;
-  searchChunks(filter: ChunkSearchFilter): Promise<ItemChunk[]>;
-  findSimilarChunks(
-    queryVector: number[],
-    limit?: number,
-    threshold?: number,
-    itemIds?: string[],
-  ): Promise<Array<ItemChunk & { similarity: number }>>;
-  batchSaveChunks(chunks: ItemChunk[]): Promise<void>;
-
-  // Multi-version support methods
-  getChunksByItemAndGroup?(
-    itemId: string,
-    groupId: string,
-  ): Promise<ItemChunk[]>;
-  deleteChunksByGroup?(groupId: string): Promise<number>;
 }

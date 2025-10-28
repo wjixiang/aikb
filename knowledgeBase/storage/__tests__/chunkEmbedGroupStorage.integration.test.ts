@@ -25,7 +25,7 @@ async function isElasticSearchAvailable(url: string): Promise<boolean> {
   const client = new Client({
     node: url,
     auth: {
-      apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+      apiKey: process.env.ELASTICSEARCH_API_KEY || '',
     },
   });
   try {
@@ -123,7 +123,7 @@ describe('elasticsearchChunkEmbedGroupStorage Integration Tests', () => {
     client = new Client({
       node: esUrl,
       auth: {
-        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+        apiKey: process.env.ELASTICSEARCH_API_KEY || '',
       },
     });
 

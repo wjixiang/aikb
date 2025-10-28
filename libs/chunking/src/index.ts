@@ -56,13 +56,6 @@ export {
   type IChunkingStrategy as ToolIChunkingStrategy,
 } from './chunking-tool.js';
 
-// Search utilities
-export {
-  ChunkSearchUtils,
-  type ItemChunk,
-  type ChunkSearchFilter,
-} from './chunk-search-utils.js';
-
 // Strategy implementations
 export {
   H1ChunkingStrategy,

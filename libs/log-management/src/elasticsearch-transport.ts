@@ -39,7 +39,8 @@ export class ElasticsearchTransport extends Transport {
           password: process.env['ELASTICSEARCH_PASSWORD'] || 'changeme',
         },
         tls: {
-          rejectUnauthorized: process.env['ELASTICSEARCH_VERIFY_SSL'] !== 'false',
+          rejectUnauthorized:
+            process.env['ELASTICSEARCH_VERIFY_SSL'] !== 'false',
         },
       });
     }

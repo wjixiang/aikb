@@ -27,7 +27,7 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
       const testClient = new Client({
         node: url,
         auth: {
-          apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+          apiKey: process.env.ELASTICSEARCH_API_KEY || '',
         },
       });
       await testClient.ping();
@@ -50,7 +50,7 @@ describe('PdfPartTrackerElasticsearchImpl', () => {
     client = new Client({
       node: elasticsearchUrl,
       auth: {
-        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+        apiKey: process.env.ELASTICSEARCH_API_KEY || '',
       },
     });
   });

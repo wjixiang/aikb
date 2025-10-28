@@ -1,7 +1,9 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { IMarkdownPartCache, MarkdownPartCacheData } from './markdown-part-cache.interface';
+import {
+  IMarkdownPartCache,
+  MarkdownPartCacheData,
+} from './markdown-part-cache.interface';
 
 const logger = createLoggerWithPrefix('MarkdownPartCache');
 
@@ -19,10 +21,10 @@ export class MarkdownPartCache implements IMarkdownPartCache {
     pdfId: string,
     partNumber: number,
     markdownContent: string,
-    metadata?: any
+    metadata?: any,
   ): Promise<boolean> {
     const now = new Date();
-    
+
     const cacheData: MarkdownPartCacheData = {
       pdfId,
       partNumber,
@@ -37,7 +39,7 @@ export class MarkdownPartCache implements IMarkdownPartCache {
     }
 
     this.cache.get(pdfId)!.set(partNumber, cacheData);
-    
+
     logger.debug(`Stored markdown part ${partNumber} for PDF ${pdfId}`);
     return true;
   }
@@ -45,20 +47,23 @@ export class MarkdownPartCache implements IMarkdownPartCache {
   /**
    * Retrieve a markdown part from the cache
    */
-  async getPart(pdfId: string, partNumber: number): Promise<{
+  async getPart(
+    pdfId: string,
+    partNumber: number,
+  ): Promise<{
     content: string;
     metadata?: any;
     cachedAt: Date;
   } | null> {
     const pdfCache = this.cache.get(pdfId);
-    
+
     if (!pdfCache) {
       logger.debug(`PDF cache not found for PDF ${pdfId}`);
       return null;
     }
 
     const cacheData = pdfCache.get(partNumber);
-    
+
     if (!cacheData) {
       logger.debug(`Part ${partNumber} not found in cache for PDF ${pdfId}`);
       return null;
@@ -74,14 +79,16 @@ export class MarkdownPartCache implements IMarkdownPartCache {
   /**
    * Retrieve all parts for a PDF
    */
-  async getAllParts(pdfId: string): Promise<Array<{
-    partNumber: number;
-    content: string;
-    metadata?: any;
-    cachedAt: Date;
-  }>> {
+  async getAllParts(pdfId: string): Promise<
+    Array<{
+      partNumber: number;
+      content: string;
+      metadata?: any;
+      cachedAt: Date;
+    }>
+  > {
     const pdfCache = this.cache.get(pdfId);
-    
+
     if (!pdfCache) {
       logger.debug(`PDF cache not found for PDF ${pdfId}`);
       return [];
@@ -105,7 +112,7 @@ export class MarkdownPartCache implements IMarkdownPartCache {
 
     // Sort by part number
     parts.sort((a, b) => a.partNumber - b.partNumber);
-    
+
     logger.debug(`Retrieved ${parts.length} parts from cache for PDF ${pdfId}`);
     return parts;
   }
@@ -115,7 +122,7 @@ export class MarkdownPartCache implements IMarkdownPartCache {
    */
   async hasPart(pdfId: string, partNumber: number): Promise<boolean> {
     const pdfCache = this.cache.get(pdfId);
-    
+
     if (!pdfCache) {
       return false;
     }
@@ -128,17 +135,17 @@ export class MarkdownPartCache implements IMarkdownPartCache {
    */
   async removePart(pdfId: string, partNumber: number): Promise<boolean> {
     const pdfCache = this.cache.get(pdfId);
-    
+
     if (!pdfCache) {
       logger.debug(`PDF cache not found for PDF ${pdfId}`);
       return false;
     }
 
     const result = pdfCache.delete(partNumber);
-    
+
     if (result) {
       logger.debug(`Removed part ${partNumber} from cache for PDF ${pdfId}`);
-      
+
       // If no more parts for this PDF, remove the PDF entry
       if (pdfCache.size === 0) {
         this.cache.delete(pdfId);
@@ -154,7 +161,7 @@ export class MarkdownPartCache implements IMarkdownPartCache {
    */
   async removeAllParts(pdfId: string): Promise<number> {
     const pdfCache = this.cache.get(pdfId);
-    
+
     if (!pdfCache) {
       logger.debug(`PDF cache not found for PDF ${pdfId}`);
       return 0;
@@ -162,7 +169,7 @@ export class MarkdownPartCache implements IMarkdownPartCache {
 
     const count = pdfCache.size;
     this.cache.delete(pdfId);
-    
+
     logger.info(`Removed all ${count} parts from cache for PDF ${pdfId}`);
     return count;
   }
@@ -197,9 +204,9 @@ export class MarkdownPartCache implements IMarkdownPartCache {
    */
   async clear(): Promise<boolean> {
     const totalParts = (await this.getStats()).totalCachedParts;
-    
+
     this.cache.clear();
-    
+
     logger.info(`Cleared entire cache, removed ${totalParts} parts`);
     return true;
   }

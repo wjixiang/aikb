@@ -31,12 +31,17 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
 
     try {
       // In a real implementation, this would initialize Elasticsearch connection
-      logger.info(`Initializing Elasticsearch PDF part tracker at ${this.elasticsearchUrl}`);
-      
+      logger.info(
+        `Initializing Elasticsearch PDF part tracker at ${this.elasticsearchUrl}`,
+      );
+
       this.isInitialized = true;
       logger.info('Elasticsearch PDF part tracker initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Elasticsearch PDF part tracker:', error);
+      logger.error(
+        'Failed to initialize Elasticsearch PDF part tracker:',
+        error,
+      );
       throw error;
     }
   }
@@ -53,12 +58,15 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * Initialize PDF processing for an item
    */
-  async initializePdfProcessing(itemId: string, totalParts: number): Promise<void> {
+  async initializePdfProcessing(
+    itemId: string,
+    totalParts: number,
+  ): Promise<void> {
     await this.ensureInitialized();
 
     try {
       const now = new Date();
-      
+
       const processingStatus: PdfProcessingStatus = {
         itemId,
         totalParts,
@@ -84,9 +92,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         this.partStatuses.set(partKey, partStatus);
       }
 
-      logger.info(`Initialized PDF processing for item ${itemId} with ${totalParts} parts`);
+      logger.info(
+        `Initialized PDF processing for item ${itemId} with ${totalParts} parts`,
+      );
     } catch (error) {
-      logger.error(`Failed to initialize PDF processing for item ${itemId}:`, error);
+      logger.error(
+        `Failed to initialize PDF processing for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -94,13 +107,18 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * Get PDF processing status for an item
    */
-  async getPdfProcessingStatus(itemId: string): Promise<PdfProcessingStatus | null> {
+  async getPdfProcessingStatus(
+    itemId: string,
+  ): Promise<PdfProcessingStatus | null> {
     await this.ensureInitialized();
 
     try {
       return this.processingStatuses.get(itemId) || null;
     } catch (error) {
-      logger.error(`Failed to get PDF processing status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get PDF processing status for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -119,7 +137,7 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
     try {
       const partKey = `${itemId}-${partIndex}`;
       const existingPartStatus = this.partStatuses.get(partKey);
-      
+
       if (!existingPartStatus) {
         logger.warn(`No part found for item ${itemId}, part ${partIndex}`);
         return;
@@ -138,9 +156,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       // Update overall processing status
       await this.updateOverallStatus(itemId);
 
-      logger.debug(`Updated part ${partIndex} status to ${status} for item ${itemId}`);
+      logger.debug(
+        `Updated part ${partIndex} status to ${status} for item ${itemId}`,
+      );
     } catch (error) {
-      logger.error(`Failed to update part status for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to update part status for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -148,14 +171,20 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   /**
    * Get part status
    */
-  async getPartStatus(itemId: string, partIndex: number): Promise<PdfPartStatus | null> {
+  async getPartStatus(
+    itemId: string,
+    partIndex: number,
+  ): Promise<PdfPartStatus | null> {
     await this.ensureInitialized();
 
     try {
       const partKey = `${itemId}-${partIndex}`;
       return this.partStatuses.get(partKey) || null;
     } catch (error) {
-      logger.error(`Failed to get part status for item ${itemId}, part ${partIndex}:`, error);
+      logger.error(
+        `Failed to get part status for item ${itemId}, part ${partIndex}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -168,7 +197,8 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
 
     try {
       const parts: PdfPartStatus[] = [];
-      for (let i = 0; i < 1000; i++) { // Reasonable limit
+      for (let i = 0; i < 1000; i++) {
+        // Reasonable limit
         const partKey = `${itemId}-${i}`;
         const partStatus = this.partStatuses.get(partKey);
         if (partStatus) {
@@ -180,7 +210,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       }
       return parts.sort((a, b) => a.partIndex - b.partIndex);
     } catch (error) {
-      logger.error(`Failed to get all part statuses for item ${itemId}:`, error);
+      logger.error(
+        `Failed to get all part statuses for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -207,7 +240,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       this.processingStatuses.set(itemId, updatedStatus);
       logger.info(`Marked PDF processing as completed for item ${itemId}`);
     } catch (error) {
-      logger.error(`Failed to mark PDF processing as completed for item ${itemId}:`, error);
+      logger.error(
+        `Failed to mark PDF processing as completed for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -232,9 +268,14 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
       };
 
       this.processingStatuses.set(itemId, updatedStatus);
-      logger.info(`Marked PDF processing as failed for item ${itemId}: ${error}`);
+      logger.info(
+        `Marked PDF processing as failed for item ${itemId}: ${error}`,
+      );
     } catch (error) {
-      logger.error(`Failed to mark PDF processing as failed for item ${itemId}:`, error);
+      logger.error(
+        `Failed to mark PDF processing as failed for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -245,12 +286,16 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
   private async updateOverallStatus(itemId: string): Promise<void> {
     try {
       const allParts = await this.getAllPartStatuses(itemId);
-      
-      const completedParts = allParts.filter(part => part.status === 'completed').length;
-      const failedParts = allParts.filter(part => part.status === 'failed').length;
-      
+
+      const completedParts = allParts.filter(
+        (part) => part.status === 'completed',
+      ).length;
+      const failedParts = allParts.filter(
+        (part) => part.status === 'failed',
+      ).length;
+
       let overallStatus: 'pending' | 'processing' | 'completed' | 'failed';
-      
+
       if (failedParts > 0 && completedParts === 0) {
         overallStatus = 'failed';
       } else if (completedParts === allParts.length) {
@@ -273,7 +318,10 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         this.processingStatuses.set(itemId, updatedStatus);
       }
     } catch (error) {
-      logger.error(`Failed to update overall status for item ${itemId}:`, error);
+      logger.error(
+        `Failed to update overall status for item ${itemId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -304,7 +352,9 @@ export class PdfPartTrackerElasticsearchImpl implements IPdfPartTracker {
         }
       }
 
-      logger.info(`Cleaned up ${cleanedCount} old records older than ${olderThanHours} hours`);
+      logger.info(
+        `Cleaned up ${cleanedCount} old records older than ${olderThanHours} hours`,
+      );
     } catch (error) {
       logger.error(`Failed to cleanup old records:`, error);
       throw error;

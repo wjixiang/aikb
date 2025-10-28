@@ -433,31 +433,31 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
   }
 
   private async processBatchIndividually(
-  batch: string[],
-  batchStartIndex: number,
-  results: (number[] | null)[],
-  concurrencyLimit: number,
-): Promise<void> {
-  const processingQueue: Promise<void>[] = [];
-  const completedPromises = new Set<Promise<void>>();
+    batch: string[],
+    batchStartIndex: number,
+    results: (number[] | null)[],
+    concurrencyLimit: number,
+  ): Promise<void> {
+    const processingQueue: Promise<void>[] = [];
+    const completedPromises = new Set<Promise<void>>();
 
-  for (let j = 0; j < batch.length; j++) {
-    const text = batch[j];
-    if (!text) continue;
-    const processItem = async (batchIndex: number, globalIndex: number) => {
-      try {
-        results[globalIndex] = await this.embed(text);
-        logger.debug(
-          `Successfully processed individual text at index ${globalIndex}`,
-        );
-      } catch (error) {
-        logger.error(`Error embedding text at index ${globalIndex}:`, error);
-        results[globalIndex] = null;
-      }
-    };
+    for (let j = 0; j < batch.length; j++) {
+      const text = batch[j];
+      if (!text) continue;
+      const processItem = async (batchIndex: number, globalIndex: number) => {
+        try {
+          results[globalIndex] = await this.embed(text);
+          logger.debug(
+            `Successfully processed individual text at index ${globalIndex}`,
+          );
+        } catch (error) {
+          logger.error(`Error embedding text at index ${globalIndex}:`, error);
+          results[globalIndex] = null;
+        }
+      };
 
-    const promise = processItem(j, batchStartIndex + j);
-    processingQueue.push(promise);
+      const promise = processItem(j, batchStartIndex + j);
+      processingQueue.push(promise);
 
       // If we've reached the concurrency limit, wait for some to complete
       if (processingQueue.length >= concurrencyLimit) {

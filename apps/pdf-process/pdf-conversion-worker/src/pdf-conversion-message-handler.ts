@@ -464,7 +464,9 @@ export class PdfConversionMessageHandler
         processingTime,
       };
 
-      await this.messageService.publishPdfConversionCompleted(completionMessage);
+      await this.messageService.publishPdfConversionCompleted(
+        completionMessage,
+      );
     } catch (error) {
       logger.error(
         `Failed to publish conversion completion message for item ${itemId}:`,
@@ -529,7 +531,9 @@ export class PdfConversionMessageHandler
         processingTime,
       };
 
-      await this.messageService.publishPdfPartConversionCompleted(completionMessage);
+      await this.messageService.publishPdfPartConversionCompleted(
+        completionMessage,
+      );
     } catch (error) {
       logger.error(
         `Failed to publish part completion message for item ${itemId}, part ${partIndex}:`,
@@ -637,7 +641,9 @@ export class PdfConversionMessageHandler
         maxRetries: 3,
       };
 
-      await this.messageService.publishMarkdownPartStorageRequest(storageRequest);
+      await this.messageService.publishMarkdownPartStorageRequest(
+        storageRequest,
+      );
       logger.info(
         `Markdown part storage request sent for item: ${itemId}, part: ${partIndex + 1}`,
       );

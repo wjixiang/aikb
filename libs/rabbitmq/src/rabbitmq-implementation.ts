@@ -1,7 +1,19 @@
 import { ConsumeMessage } from 'amqplib';
-import { IMessageService, MessageProtocol, ConnectionStatus, HealthCheckResult, QueueInfo, ConsumerOptions, MessageConsumer } from './message-service.interface';
+import {
+  IMessageService,
+  MessageProtocol,
+  ConnectionStatus,
+  HealthCheckResult,
+  QueueInfo,
+  ConsumerOptions,
+  MessageConsumer,
+} from './message-service.interface';
 import { BaseRabbitMQMessage, RabbitMQMessageOptions } from './message.types';
-import { getRabbitMQConfig, rabbitMQQueueConfigs, rabbitMQExchangeConfigs } from './rabbitmq.config';
+import {
+  getRabbitMQConfig,
+  rabbitMQQueueConfigs,
+  rabbitMQExchangeConfigs,
+} from './rabbitmq.config';
 import { getRoutingKeyForQueue } from './queue-routing-mappings';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
@@ -28,19 +40,19 @@ export class RabbitMQMessageService implements IMessageService {
   async initialize(): Promise<void> {
     try {
       logger.info('Initializing RabbitMQ message service...');
-      
+
       const amqp = require('amqplib');
       const { connect } = amqp;
-      
+
       this.connection = await connect(this.config.connectionOptions);
       this.channel = await this.connection.createChannel();
-      
+
       logger.info('RabbitMQ connection established');
       this.connectionStatus = 'connected';
-      
+
       // Setup topology
       await this.setupTopology();
-      
+
       logger.info('RabbitMQ message service initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize RabbitMQ message service:', error);
@@ -55,20 +67,20 @@ export class RabbitMQMessageService implements IMessageService {
   async close(): Promise<void> {
     try {
       logger.info('Closing RabbitMQ message service...');
-      
+
       if (this.channel) {
         await this.channel.close();
         this.channel = null;
       }
-      
+
       if (this.connection) {
         await this.connection.close();
         this.connection = null;
       }
-      
+
       this.connectionStatus = 'disconnected';
       this.consumers.clear();
-      
+
       logger.info('RabbitMQ message service closed successfully');
     } catch (error) {
       logger.error('Failed to close RabbitMQ message service:', error);
@@ -80,7 +92,9 @@ export class RabbitMQMessageService implements IMessageService {
    * Check if the service is connected
    */
   isConnected(): boolean {
-    return this.connectionStatus === 'connected' && this.connection && this.channel;
+    return (
+      this.connectionStatus === 'connected' && this.connection && this.channel
+    );
   }
 
   /**
@@ -172,31 +186,40 @@ export class RabbitMQMessageService implements IMessageService {
       }
 
       const consumerTag = options?.consumerTag || `consumer-${Date.now()}`;
-      
-      await this.channel.consume(queueName, async (msg: ConsumeMessage) => {
-        try {
-          const messageContent = msg.content.toString();
-          const message = JSON.parse(messageContent);
-          
-          logger.debug(`Received message from ${queueName}:`, message.messageId);
-          
-          await onMessage(message, msg);
-          
-          this.channel.ack(msg);
-        } catch (error) {
-          logger.error('Error processing message:', error);
-          this.channel.nack(msg, false, false);
-        }
-      }, {
-        consumerTag,
-        noAck: options?.noAck ?? false,
-        exclusive: options?.exclusive ?? false,
-        priority: options?.priority,
-      });
+
+      await this.channel.consume(
+        queueName,
+        async (msg: ConsumeMessage) => {
+          try {
+            const messageContent = msg.content.toString();
+            const message = JSON.parse(messageContent);
+
+            logger.debug(
+              `Received message from ${queueName}:`,
+              message.messageId,
+            );
+
+            await onMessage(message, msg);
+
+            this.channel.ack(msg);
+          } catch (error) {
+            logger.error('Error processing message:', error);
+            this.channel.nack(msg, false, false);
+          }
+        },
+        {
+          consumerTag,
+          noAck: options?.noAck ?? false,
+          exclusive: options?.exclusive ?? false,
+          priority: options?.priority,
+        },
+      );
 
       this.consumers.set(consumerTag, { queueName, onMessage, options });
-      
-      logger.info(`Started consuming from ${queueName} with tag: ${consumerTag}`);
+
+      logger.info(
+        `Started consuming from ${queueName} with tag: ${consumerTag}`,
+      );
       return consumerTag;
     } catch (error) {
       logger.error('Failed to consume messages:', error);
@@ -215,7 +238,7 @@ export class RabbitMQMessageService implements IMessageService {
 
       await this.channel.cancel(consumerTag);
       this.consumers.delete(consumerTag);
-      
+
       logger.info(`Stopped consuming with tag: ${consumerTag}`);
     } catch (error) {
       logger.error('Failed to stop consuming:', error);
@@ -233,7 +256,7 @@ export class RabbitMQMessageService implements IMessageService {
       }
 
       const info = await this.channel.checkQueue(queueName);
-      
+
       return {
         messageCount: info.messageCount,
         consumerCount: info.consumerCount,
@@ -282,16 +305,19 @@ export class RabbitMQMessageService implements IMessageService {
 
       // Create queues
       for (const queueConfig of Object.values(rabbitMQQueueConfigs)) {
-        await this.channel.assertQueue(
-          queueConfig.name,
-          queueConfig.arguments,
-        );
+        await this.channel.assertQueue(queueConfig.name, queueConfig.arguments);
         logger.debug(`Created queue: ${queueConfig.name}`);
 
         // Bind queue to exchange with routing key
         const routingKey = getRoutingKeyForQueue(queueConfig.name);
-        await this.channel.bindQueue(queueConfig.name, 'pdf-conversion-exchange', routingKey);
-        logger.debug(`Bound queue ${queueConfig.name} to exchange with routing key: ${routingKey}`);
+        await this.channel.bindQueue(
+          queueConfig.name,
+          'pdf-conversion-exchange',
+          routingKey,
+        );
+        logger.debug(
+          `Bound queue ${queueConfig.name} to exchange with routing key: ${routingKey}`,
+        );
       }
 
       logger.info('RabbitMQ topology setup completed');

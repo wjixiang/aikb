@@ -363,7 +363,7 @@ export class MinerUPdfConvertor implements IPdfConvertor {
       const result = taskResult.results?.extract_result?.[0];
       if (result?.state === 'failed') {
         this.logger.error(`Task failed: ${result.err_msg}`);
-        
+
         return {
           success: false,
           error: result.err_msg || 'Processing failed',

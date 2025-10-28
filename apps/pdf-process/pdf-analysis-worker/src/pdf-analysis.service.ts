@@ -832,11 +832,11 @@ export class PdfAnalyzerService {
     try {
       logger.info('Stopping PDF analyzer service...');
       this.isRunning = false;
-      
+
       // Note: In a real implementation, you would store the consumer tag
       // and use it to stop consuming. For this example, we'll
       // just set the running flag to false.
-      
+
       logger.info('PDF analyzer service stopped successfully');
     } catch (error) {
       logger.error('Failed to stop PDF analyzer service:', error);
@@ -852,10 +852,15 @@ export class PdfAnalyzerService {
     originalMessage: any,
   ): Promise<void> {
     try {
-      logger.info(`Processing PDF analysis request for item: ${message.itemId}`);
+      logger.info(
+        `Processing PDF analysis request for item: ${message.itemId}`,
+      );
       await this.analyzePdf(message);
     } catch (error) {
-      logger.error(`Failed to process PDF analysis request for item: ${message.itemId}:`, error);
+      logger.error(
+        `Failed to process PDF analysis request for item: ${message.itemId}:`,
+        error,
+      );
       throw error;
     }
   }

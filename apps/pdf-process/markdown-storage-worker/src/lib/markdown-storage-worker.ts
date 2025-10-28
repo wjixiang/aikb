@@ -10,11 +10,7 @@ import {
 import { getRabbitMQService } from '@aikb/rabbitmq';
 import { IRabbitMQService } from '@aikb/rabbitmq';
 import { MessageProtocol } from '@aikb/rabbitmq';
-import {
-  ILibraryStorage,
-  BookMetadata,
-  ChunkingEmbeddingGroup,
-} from '@aikb/bibliography';
+import { ILibraryStorage, BookMetadata } from '@aikb/bibliography';
 import { defaultChunkingConfig } from '@aikb/chunking';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -377,9 +373,7 @@ export async function stopMarkdownStorageWorker(
 
 // Direct execution support
 if (require.main === module) {
-  const {
-    S3ElasticSearchLibraryStorage,
-  } = require('@aikb/bibliography');
+  const { S3ElasticSearchLibraryStorage } = require('@aikb/bibliography');
 
   async function main() {
     try {

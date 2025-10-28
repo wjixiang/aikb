@@ -10,23 +10,14 @@ export type {
   Collection,
   Citation,
   SearchFilter,
-  ItemChunk,
-  ChunkSearchFilter,
-  ItemVectorStorageStatus,
-  ItemChunkSemanticSearchQuery,
 } from './library/types.js';
-
-export type {
-  IItemVectorStorage,
-  ChunkingEmbeddingGroup,
-} from './item/types.js';
 
 // Export interfaces from library.ts and storage.ts
 export type { ILibrary } from './library/library.js';
 export type { ILibraryStorage } from './library/storage.js';
 
 // Export utility classes
-export { HashUtils, IdUtils, CitationFormatter } from './library/utils.js';
+export { HashUtils, CitationFormatter } from './library/utils.js';
 
 // Export mock storage for testing
 export { MockLibraryStorage } from './library/__tests__/mock-storage.js';

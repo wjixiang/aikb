@@ -1,7 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import {
-  IRabbitMQService,
-} from './rabbitmq-service.interface';
+import { IRabbitMQService } from './rabbitmq-service.interface';
 import { MessageProtocol } from './message-service.interface';
 import {
   IMessageService,
@@ -52,7 +50,7 @@ export class RabbitMQService implements IRabbitMQService {
 
   constructor(protocol: MessageProtocol = MessageProtocol.AMQP) {
     this.messageProtocol = protocol;
-    
+
     const config: MessageServiceConfig = {
       protocol,
       connectionOptions: getRabbitMQConfig(),
@@ -119,7 +117,11 @@ export class RabbitMQService implements IRabbitMQService {
         message.timestamp = Date.now();
       }
 
-      return await this.messageService.publishMessage(routingKey, message, options);
+      return await this.messageService.publishMessage(
+        routingKey,
+        message,
+        options,
+      );
     } catch (error) {
       logger.error('Failed to publish message:', error);
       throw error;
@@ -183,7 +185,9 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF analysis failed
    */
-  async publishPdfAnalysisFailed(failed: PdfAnalysisFailedMessage): Promise<boolean> {
+  async publishPdfAnalysisFailed(
+    failed: PdfAnalysisFailedMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.analysis.failed', failed);
   }
 
@@ -217,7 +221,9 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Publish PDF merging request
    */
-  async publishPdfMergingRequest(request: PdfMergingRequestMessage): Promise<boolean> {
+  async publishPdfMergingRequest(
+    request: PdfMergingRequestMessage,
+  ): Promise<boolean> {
     return this.publishMessage('pdf.merging.request', request);
   }
 
@@ -334,10 +340,7 @@ export class RabbitMQService implements IRabbitMQService {
    */
   async consumeMessages(
     queueName: string,
-    onMessage: (
-      message: PdfConversionMessage,
-      originalMessage: any,
-    ) => void,
+    onMessage: (message: PdfConversionMessage, originalMessage: any) => void,
     options?: {
       consumerTag?: string;
       noAck?: boolean;
@@ -346,7 +349,11 @@ export class RabbitMQService implements IRabbitMQService {
     },
   ): Promise<string> {
     try {
-      return await this.messageService.consumeMessages(queueName, onMessage, options);
+      return await this.messageService.consumeMessages(
+        queueName,
+        onMessage,
+        options,
+      );
     } catch (error) {
       logger.error('Failed to consume messages:', error);
       throw error;
@@ -447,7 +454,11 @@ export class RabbitMQService implements IRabbitMQService {
   /**
    * Get current connection status
    */
-  getConnectionStatus(): 'connected' | 'disconnected' | 'connecting' | 'reconnecting' {
+  getConnectionStatus():
+    | 'connected'
+    | 'disconnected'
+    | 'connecting'
+    | 'reconnecting' {
     return this.messageService.isConnected() ? 'connected' : 'disconnected';
   }
 }

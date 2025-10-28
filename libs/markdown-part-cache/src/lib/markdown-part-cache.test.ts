@@ -1,4 +1,3 @@
-
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MarkdownPartCache } from './markdown-part-cache-impl';
 import { MarkdownPartCacheFactory } from './markdown-part-cache-factory';
@@ -16,7 +15,12 @@ describe('MarkdownPartCache', () => {
   });
 
   it('should store and retrieve a markdown part', async () => {
-    const result = await cache.storePart('test-pdf-123', 1, '# Part 1 Content', { title: 'Part 1' });
+    const result = await cache.storePart(
+      'test-pdf-123',
+      1,
+      '# Part 1 Content',
+      { title: 'Part 1' },
+    );
     expect(result).toBe(true);
 
     const part = await cache.getPart('test-pdf-123', 1);
@@ -27,9 +31,15 @@ describe('MarkdownPartCache', () => {
   });
 
   it('should retrieve all parts for a PDF', async () => {
-    await cache.storePart('test-pdf-123', 1, '# Part 1 Content', { title: 'Part 1' });
-    await cache.storePart('test-pdf-123', 2, '# Part 2 Content', { title: 'Part 2' });
-    await cache.storePart('test-pdf-123', 3, '# Part 3 Content', { title: 'Part 3' });
+    await cache.storePart('test-pdf-123', 1, '# Part 1 Content', {
+      title: 'Part 1',
+    });
+    await cache.storePart('test-pdf-123', 2, '# Part 2 Content', {
+      title: 'Part 2',
+    });
+    await cache.storePart('test-pdf-123', 3, '# Part 3 Content', {
+      title: 'Part 3',
+    });
 
     const allParts = await cache.getAllParts('test-pdf-123');
     expect(allParts).toHaveLength(3);
@@ -153,4 +163,3 @@ describe('MarkdownPartCacheFactory', () => {
     expect(MarkdownPartCacheFactory.getCacheType()).toBe('memory');
   });
 });
-   

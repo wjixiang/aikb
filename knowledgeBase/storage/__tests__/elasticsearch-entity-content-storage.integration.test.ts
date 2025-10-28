@@ -12,7 +12,7 @@ async function isElasticSearchAvailable(url: string): Promise<boolean> {
     node: url,
     auth: {
       apiKey:
-        process.env.ELASTICSEARCH_URL_API_KEY ||
+        process.env.ELASTICSEARCH_API_KEY ||
         'X2xNeEM1a0JuWUJ6SHhoMlBSNTI6d3d3NXZGM2J0NjJqVHhjN29RZEp1UQ==',
     },
   });
@@ -77,7 +77,7 @@ describe('ElasticsearchEntityContentStorage Integration Tests', () => {
     client = new Client({
       node: esUrl,
       auth: {
-        apiKey: process.env.ELASTICSEARCH_URL_API_KEY || '',
+        apiKey: process.env.ELASTICSEARCH_API_KEY || '',
       },
     });
 

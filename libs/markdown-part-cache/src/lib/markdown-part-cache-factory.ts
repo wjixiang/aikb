@@ -20,7 +20,7 @@ export class MarkdownPartCacheFactory {
     }
 
     const cacheType = process.env['MARKDOWN_PART_CACHE_TYPE'] || 'memory';
-    
+
     switch (cacheType.toLowerCase()) {
       case 'memory':
       default:

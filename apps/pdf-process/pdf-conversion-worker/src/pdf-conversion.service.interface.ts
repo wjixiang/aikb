@@ -1,7 +1,4 @@
-import {
-  ConversionResult,
-  MinerUPdfConvertor,
-} from '@aikb/pdf-converter';
+import { ConversionResult, MinerUPdfConvertor } from '@aikb/pdf-converter';
 import { IPdfPartTracker } from './pdf-part-tracker.js';
 import { MarkdownPartCache } from './markdown-part-cache.js';
 
