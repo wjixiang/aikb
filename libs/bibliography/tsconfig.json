@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "nodenext",
+    "moduleResolution": "nodenext",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "importHelpers": true,

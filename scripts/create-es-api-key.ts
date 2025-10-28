@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 import { Client } from '@elastic/elasticsearch';
 
 /**
@@ -44,8 +44,9 @@ interface ScriptConfig {
  * This script can work with both basic auth and existing API key authentication
  */
 async function createApiKey(config: ScriptConfig): Promise<ApiKeyResponse> {
-  const { elasticsearchUrl, username, password, apiKeyName, expiration } = config;
-  
+  const { elasticsearchUrl, username, password, apiKeyName, expiration } =
+    config;
+
   // Create Elasticsearch client with appropriate authentication
   const clientConfig: any = {
     node: elasticsearchUrl,
@@ -68,7 +69,9 @@ async function createApiKey(config: ScriptConfig): Promise<ApiKeyResponse> {
   try {
     // Validate expiration format if provided (do this early)
     if (expiration && !isValidExpirationFormat(expiration)) {
-      throw new Error(`Invalid expiration format: ${expiration}. Use formats like '1d', '7d', '30d', '1h', '1M', or ISO date string.`);
+      throw new Error(
+        `Invalid expiration format: ${expiration}. Use formats like '1d', '7d', '30d', '1h', '1M', or ISO date string.`,
+      );
     }
 
     // First, check if Elasticsearch is accessible
@@ -82,27 +85,35 @@ async function createApiKey(config: ScriptConfig): Promise<ApiKeyResponse> {
       await client.security.getUser({ username: 'test' });
       securityEnabled = true;
     } catch (securityError: any) {
-      if (securityError.meta?.statusCode === 401 || securityError.meta?.statusCode === 403) {
+      if (
+        securityError.meta?.statusCode === 401 ||
+        securityError.meta?.statusCode === 403
+      ) {
         // 401/403 means security is enabled but we need proper auth
         securityEnabled = true;
-      } else if (securityError.meta?.statusCode === 404 ||
-                 (securityError.message && securityError.message.includes('no handler found'))) {
+      } else if (
+        securityError.meta?.statusCode === 404 ||
+        (securityError.message &&
+          securityError.message.includes('no handler found'))
+      ) {
         // 404 or "no handler found" means security is not enabled
         securityEnabled = false;
       }
     }
-    
+
     if (!securityEnabled) {
-      throw new Error('Elasticsearch security is not enabled. API keys require security features to be enabled.');
+      throw new Error(
+        'Elasticsearch security is not enabled. API keys require security features to be enabled.',
+      );
     }
 
     // Prepare API key creation request
     const createRequest: CreateApiKeyRequest = {};
-    
+
     if (apiKeyName) {
       createRequest.name = apiKeyName;
     }
-    
+
     if (expiration) {
       createRequest.expiration = expiration;
     }
@@ -131,13 +142,19 @@ async function createApiKey(config: ScriptConfig): Promise<ApiKeyResponse> {
     return apiKeyData;
   } catch (error: any) {
     if (error.meta?.statusCode === 401) {
-      throw new Error('Authentication failed. Please provide valid credentials or ensure security is enabled.');
+      throw new Error(
+        'Authentication failed. Please provide valid credentials or ensure security is enabled.',
+      );
     }
     if (error.meta?.statusCode === 403) {
-      throw new Error('Insufficient permissions. User needs manage_api_key privilege.');
+      throw new Error(
+        'Insufficient permissions. User needs manage_api_key privilege.',
+      );
     }
     if (error.message && error.message.includes('no handler found')) {
-      throw new Error('Elasticsearch security is not enabled. API keys require security features to be enabled.');
+      throw new Error(
+        'Elasticsearch security is not enabled. API keys require security features to be enabled.',
+      );
     }
     throw error;
   }
@@ -161,7 +178,9 @@ API_KEY_EXPIRATION=${response.expiration || 'never'}
 
     case 'table':
     default:
-      const createdDate = response.created ? new Date(response.created).toISOString() : 'Unknown';
+      const createdDate = response.created
+        ? new Date(response.created).toISOString()
+        : 'Unknown';
       const createdBy = response.created_by || 'Unknown';
       return `
 ┌─────────────────────────────────────────────────────────────────┐
@@ -185,7 +204,8 @@ async function main(): Promise<void> {
   try {
     // Parse command line arguments or use defaults
     const config: ScriptConfig = {
-      elasticsearchUrl: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+      elasticsearchUrl:
+        process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
       username: process.env.ELASTICSEARCH_USERNAME,
       password: process.env.ELASTICSEARCH_PASSWORD,
       apiKeyName: process.argv[2] || 'api-key-' + Date.now(),
@@ -193,9 +213,11 @@ async function main(): Promise<void> {
       outputFormat: (process.argv[4] as any) || 'table',
     };
 
-    console.log(`Creating API key for Elasticsearch at: ${config.elasticsearchUrl}`);
+    console.log(
+      `Creating API key for Elasticsearch at: ${config.elasticsearchUrl}`,
+    );
     console.log(`API Key Name: ${config.apiKeyName}`);
-    
+
     if (config.expiration) {
       console.log(`Expiration: ${config.expiration}`);
     }
@@ -211,7 +233,7 @@ async function main(): Promise<void> {
     if (config.outputFormat === 'env') {
       const fs = require('fs');
       const envPath = '.env';
-      
+
       // Read existing .env file
       let envContent = '';
       if (fs.existsSync(envPath)) {
@@ -221,8 +243,10 @@ async function main(): Promise<void> {
       // Update or add the API key
       const apiKeyLine = `ELASTICSEARCH_API_KEY=${apiKeyResponse.encoded}`;
       const lines = envContent.split('\n');
-      const apiKeyIndex = lines.findIndex(line => line.startsWith('ELASTICSEARCH_API_KEY='));
-      
+      const apiKeyIndex = lines.findIndex((line) =>
+        line.startsWith('ELASTICSEARCH_API_KEY='),
+      );
+
       if (apiKeyIndex >= 0) {
         lines[apiKeyIndex] = apiKeyLine;
       } else {
@@ -232,19 +256,24 @@ async function main(): Promise<void> {
       fs.writeFileSync(envPath, lines.join('\n'));
       console.log(`API key saved to ${envPath}`);
     }
-
   } catch (error: any) {
     console.error('Error creating API key:', error.message);
-    
+
     if (error.message.includes('security is not enabled')) {
       console.log('\n💡 To enable security in Elasticsearch:');
-      console.log('1. Update docker-compose.yml to set xpack.security.enabled=true');
+      console.log(
+        '1. Update docker-compose.yml to set xpack.security.enabled=true',
+      );
       console.log('2. Add environment variables for elastic user password');
-      console.log('3. Restart the containers: docker-compose down && docker-compose up -d');
+      console.log(
+        '3. Restart the containers: docker-compose down && docker-compose up -d',
+      );
       console.log('4. Run this script again with credentials:');
-      console.log('   ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=yourpassword npx tsx scripts/create-es-api-key.ts');
+      console.log(
+        '   ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=yourpassword npx tsx scripts/create-es-api-key.ts',
+      );
     }
-    
+
     if (error.message.includes('Authentication failed')) {
       console.log('\n💡 Authentication tips:');
       console.log('1. Ensure Elasticsearch security is enabled');
@@ -253,7 +282,7 @@ async function main(): Promise<void> {
       console.log('   export ELASTICSEARCH_PASSWORD=yourpassword');
       console.log('3. Or use an existing API key via ELASTICSEARCH_API_KEY');
     }
-    
+
     process.exit(1);
   }
 }
@@ -261,7 +290,10 @@ async function main(): Promise<void> {
 /**
  * Helper function to test API key
  */
-async function testApiKey(encodedApiKey: string, elasticsearchUrl: string): Promise<boolean> {
+async function testApiKey(
+  encodedApiKey: string,
+  elasticsearchUrl: string,
+): Promise<boolean> {
   try {
     const client = new Client({
       node: elasticsearchUrl,
@@ -286,13 +318,13 @@ function isValidExpirationFormat(expiration: string): boolean {
   if (timeUnitPattern.test(expiration)) {
     return true;
   }
-  
+
   // Check for ISO date string
   const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
   if (isoDatePattern.test(expiration)) {
     return true;
   }
-  
+
   return false;
 }
 

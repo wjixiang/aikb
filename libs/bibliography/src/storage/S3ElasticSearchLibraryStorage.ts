@@ -6,9 +6,8 @@ import {
   Collection,
   Citation,
   SearchFilter,
-  ItemChunk,
-  ChunkSearchFilter,
 } from '../library/types.js';
+import { IdUtils } from '@aikb/utils';
 import path from 'path';
 import fs from 'fs';
 import {
@@ -16,7 +15,7 @@ import {
   uploadPdfFromPath,
   getSignedUrlForDownload,
 } from '@aikb/s3-service';
-import { IdUtils } from '../library/utils.js';
+import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
 
 export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private readonly metadataIndexName = 'library_metadata';

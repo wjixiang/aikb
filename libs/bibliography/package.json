@@ -32,6 +32,8 @@
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "@elastic/elasticsearch": "^8.17.0",
+    "@aikb/utils":"workspace:*", 
+    "@aikb/item-vector-storage":"workspace:*",
     "uuid": "^11.0.5",
     "tslib": "^2.3.0"
   },

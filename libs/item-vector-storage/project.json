@@ -1,5 +1,5 @@
 {
-  "name": "item-vector-storage",
+  "name": "@aikb/item-vector-storage",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/item-vector-storage/src",
   "projectType": "library",

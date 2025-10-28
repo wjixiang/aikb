@@ -29,6 +29,9 @@ importers:
       '@aikb/s3-service':
         specifier: workspace:*
         version: link:libs/s3-service
+      '@aikb/utils':
+        specifier: workspace:*
+        version: link:libs/utils
       '@aws-sdk/client-s3':
         specifier: ^3.901.0
         version: 3.901.0
@@ -258,6 +261,9 @@ importers:
       '@aikb/embedding':
         specifier: workspace:*
         version: link:../embedding
+      '@aikb/item-vector-storage':
+        specifier: workspace:*
+        version: link:../item-vector-storage
       '@aikb/log-management':
         specifier: workspace:*
         version: link:../log-management
@@ -267,6 +273,9 @@ importers:
       '@aikb/s3-service':
         specifier: workspace:*
         version: link:../s3-service
+      '@aikb/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@elastic/elasticsearch':
         specifier: ^8.17.0
         version: 8.19.1
@@ -307,6 +316,9 @@ importers:
       '@aikb/log-management':
         specifier: workspace:*
         version: link:../log-management
+      '@aikb/utils':
+        specifier: workspace:*
+        version: link:../utils
       axios:
         specifier: ^1.12.2
         version: 1.12.2

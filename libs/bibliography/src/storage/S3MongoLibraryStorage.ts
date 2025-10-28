@@ -3,7 +3,6 @@ import { ItemChunk, ChunkSearchFilter } from '../item/types.js';
 import {
   AbstractPdf,
   BookMetadata,
-  IdUtils,
   ILibraryStorage,
   SearchFilter,
   Collection,
@@ -15,6 +14,7 @@ import {
   uploadPdfFromPath,
   getSignedUrlForDownload,
 } from '@aikb/s3-service';
+import { IdUtils } from '@aikb/utils';
 import path from 'path';
 import fs from 'fs';
 

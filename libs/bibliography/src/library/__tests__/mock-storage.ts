@@ -1,12 +1,7 @@
 import { ILibraryStorage } from '../storage.js';
-import {
-  BookMetadata,
-  Collection,
-  Citation,
-  ItemChunk,
-  ChunkSearchFilter,
-} from '../types.js';
-import { IdUtils } from '../utils.js';
+import { BookMetadata, Collection, Citation } from '../types.js';
+// import { IdUtils } from '@aikb/utils';
+import { IdUtils } from 'libs/utils/src/index.js';
 
 // Define AbstractPdf interface locally since it's not exported
 interface AbstractPdf {

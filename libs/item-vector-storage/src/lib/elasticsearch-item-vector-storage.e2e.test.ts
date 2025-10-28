@@ -1,6 +1,14 @@
 import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-storage';
-import { ItemVectorStorageStatus, ItemChunk, ChunkingEmbeddingGroupInfo } from './types';
-import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from '@aikb/embedding';
+import {
+  ItemVectorStorageStatus,
+  ItemChunk,
+  ChunkingEmbeddingGroupInfo,
+} from './types';
+import {
+  EmbeddingConfig,
+  EmbeddingProvider,
+  OpenAIModel,
+} from '@aikb/embedding';
 import { ChunkingStrategy } from '@aikb/chunking';
 
 describe('ElasticsearchItemVectorStorage E2E Tests', () => {
@@ -11,7 +19,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
   beforeAll(async () => {
     // Use a test-specific Elasticsearch instance
     storage = new ElasticsearchItemVectorStorage();
-    
+
     // Clean up any existing test indices
     try {
       await storage['client'].indices.delete({ index: testIndexName });
@@ -58,34 +66,43 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
 
     it('should create and retrieve a chunk embedding group', async () => {
       let createdGroup: ChunkingEmbeddingGroupInfo;
-      createdGroup = await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
-      
+      createdGroup =
+        await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
+
       expect(createdGroup).toBeDefined();
       expect(createdGroup.id).toBeDefined();
       expect(createdGroup.name).toBe(testGroupConfig.name);
       expect(createdGroup.description).toBe(testGroupConfig.description);
-      expect(createdGroup.embeddingConfig.dimension).toBe(testGroupConfig.embeddingConfig.dimension);
+      expect(createdGroup.embeddingConfig.dimension).toBe(
+        testGroupConfig.embeddingConfig.dimension,
+      );
       expect(createdGroup.isActive).toBe(true);
 
       // Retrieve the group
-      const retrievedGroup = await storage.getChunkEmbedGroupInfoById(createdGroup.id);
-      
+      const retrievedGroup = await storage.getChunkEmbedGroupInfoById(
+        createdGroup.id,
+      );
+
       expect(retrievedGroup.id).toBe(createdGroup.id);
       expect(retrievedGroup.name).toBe(createdGroup.name);
-      expect(retrievedGroup.embeddingConfig.dimension).toBe(createdGroup.embeddingConfig.dimension);
+      expect(retrievedGroup.embeddingConfig.dimension).toBe(
+        createdGroup.embeddingConfig.dimension,
+      );
     });
 
     it('should get status for a group', async () => {
-      const createdGroup = await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
-      
+      const createdGroup =
+        await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
+
       // Initially should be pending (no chunks yet)
       const status = await storage.getStatus(createdGroup.id);
       expect(status).toBe(ItemVectorStorageStatus.PENDING);
     });
 
     it('should delete a group and associated chunks', async () => {
-      const createdGroup = await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
-      
+      const createdGroup =
+        await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
+
       // Add some chunks first
       const testChunk: ItemChunk = {
         id: 'test-chunk-1',
@@ -94,7 +111,9 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
         title: 'Test Chunk',
         content: 'This is a test chunk for E2E testing',
         index: 0,
-        embedding: new Array(testGroupConfig.embeddingConfig.dimension).fill(0.1),
+        embedding: new Array(testGroupConfig.embeddingConfig.dimension).fill(
+          0.1,
+        ),
         strategyMetadata: {
           chunkingStrategy: 'paragraph',
           chunkingConfig: testGroupConfig.chunkingConfig,
@@ -109,13 +128,17 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
       await storage.insertItemChunk(createdGroup, testChunk);
 
       // Delete the group
-      const deleteResult = await storage.deleteChunkEmbedGroupById(createdGroup.id);
-      
+      const deleteResult = await storage.deleteChunkEmbedGroupById(
+        createdGroup.id,
+      );
+
       expect(deleteResult.deletedGroupId).toBe(createdGroup.id);
       expect(deleteResult.deletedChunkNum).toBe(1);
 
       // Verify group is gone
-      await expect(storage.getChunkEmbedGroupInfoById(createdGroup.id)).rejects.toThrow();
+      await expect(
+        storage.getChunkEmbedGroupInfoById(createdGroup.id),
+      ).rejects.toThrow();
     });
   });
 
@@ -242,8 +265,10 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
         updatedAt: new Date(),
       };
 
-      await expect(storage.insertItemChunk(testGroup, wrongDimensionChunk)).rejects.toThrow(
-        `Vector dimensions mismatch. Expected: ${testGroup.embeddingConfig.dimension}, Got: 512`
+      await expect(
+        storage.insertItemChunk(testGroup, wrongDimensionChunk),
+      ).rejects.toThrow(
+        `Vector dimensions mismatch. Expected: ${testGroup.embeddingConfig.dimension}, Got: 512`,
       );
     });
   });
@@ -334,13 +359,17 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
       };
 
       // Both should succeed
-      await expect(storage.insertItemChunk(group1536, chunk1536)).resolves.toBe(true);
-      await expect(storage.insertItemChunk(group768, chunk768)).resolves.toBe(true);
+      await expect(storage.insertItemChunk(group1536, chunk1536)).resolves.toBe(
+        true,
+      );
+      await expect(storage.insertItemChunk(group768, chunk768)).resolves.toBe(
+        true,
+      );
 
       // Verify both groups have completed status
       const status1536 = await storage.getStatus(group1536.id);
       const status768 = await storage.getStatus(group768.id);
-      
+
       expect(status1536).toBe(ItemVectorStorageStatus.COMPLETED);
       expect(status768).toBe(ItemVectorStorageStatus.COMPLETED);
     });
@@ -349,14 +378,17 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
   describe('Error Handling E2E', () => {
     it('should handle non-existent group operations gracefully', async () => {
       // Test getting non-existent group
-      await expect(storage.getChunkEmbedGroupInfoById('non-existent')).rejects.toThrow();
-      
+      await expect(
+        storage.getChunkEmbedGroupInfoById('non-existent'),
+      ).rejects.toThrow();
+
       // Test getting status for non-existent group
       const status = await storage.getStatus('non-existent');
       expect(status).toBe(ItemVectorStorageStatus.FAILED);
-      
+
       // Test deleting non-existent group
-      const deleteResult = await storage.deleteChunkEmbedGroupById('non-existent');
+      const deleteResult =
+        await storage.deleteChunkEmbedGroupById('non-existent');
       expect(deleteResult.deletedGroupId).toBe('non-existent');
       expect(deleteResult.deletedChunkNum).toBe(0);
     });

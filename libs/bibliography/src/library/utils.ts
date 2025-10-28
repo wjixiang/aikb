@@ -48,8 +48,6 @@ export class HashUtils {
   }
 }
 
-
-
 /**
  * Utility functions for formatting citations
  */

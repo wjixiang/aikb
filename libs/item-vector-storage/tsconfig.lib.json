@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
-    "types": ["node"]
+    "emitDeclarationOnly": true,
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts"],
   "exclude": [

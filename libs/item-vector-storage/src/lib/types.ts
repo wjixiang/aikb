@@ -1,5 +1,5 @@
 import { ChunkingConfig } from '@aikb/chunking';
-import { EmbeddingConfig } from '@aikb/embedding';
+import { Embedding, EmbeddingConfig } from '@aikb/embedding';
 
 export enum ItemVectorStorageStatus {
   PENDING = 'pending',
@@ -7,7 +7,6 @@ export enum ItemVectorStorageStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
 }
-
 
 export interface ItemChunk {
   id: string;
@@ -62,7 +61,7 @@ export interface ChunkSearchFilter {
 export interface ItemChunkSemanticSearchQuery {
   itemId: string[];
   groupId: string;
-  searchText: string;
+  searchVector: number[];
   resultNum: number;
   threshold: number;
 }
@@ -87,16 +86,25 @@ export interface ChunkingEmbeddingGroupInfo {
   tags?: string[]; // For categorization and filtering
 }
 
-
 export interface IItemVectorStorage {
   getStatus: (groupId: string) => Promise<ItemVectorStorageStatus>;
   semanticSearch: (
-    query: ItemChunkSemanticSearchQuery,
+    query: ItemChunkSemanticSearchQuery
   ) => Promise<Omit<ItemChunk, 'embedding'>>;
-  insertItemChunk: (group: ChunkingEmbeddingGroupInfo, ItemChunk: ItemChunk)=> Promise<boolean>;
-  batchInsertItemChunks: (group: ChunkingEmbeddingGroupInfo,ItemChunks: ItemChunk[]) => Promise<boolean>;
-  createNewChunkEmbedGroupInfo: (config: Omit<ChunkingEmbeddingGroupInfo,"id">)=>Promise<ChunkingEmbeddingGroupInfo>;
-  getChunkEmbedGroupInfoById: (groupId: string) => Promise<ChunkingEmbeddingGroupInfo>;
+  insertItemChunk: (
+    group: ChunkingEmbeddingGroupInfo,
+    ItemChunk: ItemChunk,
+  ) => Promise<boolean>;
+  batchInsertItemChunks: (
+    group: ChunkingEmbeddingGroupInfo,
+    ItemChunks: ItemChunk[],
+  ) => Promise<boolean>;
+  createNewChunkEmbedGroupInfo: (
+    config: Omit<ChunkingEmbeddingGroupInfo, 'id'>,
+  ) => Promise<ChunkingEmbeddingGroupInfo>;
+  getChunkEmbedGroupInfoById: (
+    groupId: string,
+  ) => Promise<ChunkingEmbeddingGroupInfo>;
   deleteChunkEmbedGroupById: (groupId: string) => Promise<{
     deletedGroupId: string;
     deletedChunkNum: number;

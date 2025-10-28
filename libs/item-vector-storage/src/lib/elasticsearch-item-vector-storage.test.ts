@@ -14,7 +14,9 @@ describe('ElasticsearchItemVectorStorage', () => {
     });
 
     it('should create an instance with custom URL', () => {
-      const customStorage = new ElasticsearchItemVectorStorage('http://custom:9200');
+      const customStorage = new ElasticsearchItemVectorStorage(
+        'http://custom:9200',
+      );
       expect(customStorage).toBeInstanceOf(ElasticsearchItemVectorStorage);
     });
   });
@@ -23,11 +25,11 @@ describe('ElasticsearchItemVectorStorage', () => {
     it('should return a status for a group', async () => {
       // This is a basic test structure
       // In a real test, you would mock the Elasticsearch client
-      
+
       // Mock implementation would go here
       // For now, we'll just test that the method exists and can be called
       expect(typeof storage.getStatus).toBe('function');
-      
+
       // The actual test would require mocking Elasticsearch client
       // which is beyond the scope of this basic implementation
     });

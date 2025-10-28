@@ -38,6 +38,7 @@
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/pdf-splitter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
+    "@aikb/utils": "workspace:*",
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/s3-request-presigner": "^3.901.0",
     "@elastic/elasticsearch": "^9.1.1",

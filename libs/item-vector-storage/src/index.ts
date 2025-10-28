@@ -1,5 +1,4 @@
-import { ElasticsearchItemVectorStorage } from './lib/elasticsearch-item-vector-storage';
+import { ElasticsearchItemVectorStorage } from './lib/elasticsearch-item-vector-storage.js';
 
-export * from './lib/item-vector-storage';
-export * from './lib/types';
+export * from './lib/types.js';
 export { ElasticsearchItemVectorStorage };

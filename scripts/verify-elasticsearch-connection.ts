@@ -1,29 +1,31 @@
 import { Client } from '@elastic/elasticsearch';
 import { config } from 'dotenv';
-config()
+config();
 
 const client = new Client({
-  node: process.env['ELASTICSEARCH_URL']
-})
+  node: process.env['ELASTICSEARCH_URL'],
+});
 
 async function verifyElasticsearchConnection() {
   try {
     console.log('Verifying Elasticsearch connection...');
-    console.log(`Elasticsearch URL: ${process.env['ELASTICSEARCH_URL'] || 'Not set'}`);
-    
+    console.log(
+      `Elasticsearch URL: ${process.env['ELASTICSEARCH_URL'] || 'Not set'}`,
+    );
+
     // Ping the Elasticsearch cluster
     const pingResponse = await client.ping();
-    
+
     if (pingResponse) {
       console.log('✅ Successfully connected to Elasticsearch!');
-      
+
       // Get cluster info for additional verification
       const infoResponse = await client.info();
       console.log(`📊 Cluster info:`);
       console.log(`   - Name: ${infoResponse.cluster_name}`);
       console.log(`   - Version: ${infoResponse.version.number}`);
       console.log(`   - Tagline: ${infoResponse.tagline}`);
-      
+
       return true;
     } else {
       console.log('❌ Failed to ping Elasticsearch');
@@ -45,10 +47,10 @@ async function verifyElasticsearchConnection() {
 
 // Run the verification
 verifyElasticsearchConnection()
-  .then(success => {
+  .then((success) => {
     process.exit(success ? 0 : 1);
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('Unexpected error:', error);
     process.exit(1);
   });

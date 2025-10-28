@@ -1,7 +1,6 @@
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { embeddingManager } from './embedding-manager.js';
 import { EmbeddingProviderBase } from './embedding-providers.js';
-
 const logger = createLoggerWithPrefix('Embedding');
 
 // Configuration
