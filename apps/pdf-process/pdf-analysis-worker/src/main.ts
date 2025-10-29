@@ -1,7 +1,6 @@
 import { config } from 'dotenv';
 import {
   PdfAnalyzerService,
-  createPdfAnalyzerService,
 } from './pdf-analysis.service';
 import { ILibraryStorage, MockLibraryStorage } from '@aikb/bibliography';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
@@ -36,7 +35,7 @@ class PdfAnalysisWorker {
       logger.info('Starting PDF analysis worker...');
 
       // Start the analyzer service
-      await this.analyzerService.start();
+      // await this.analyzerService.start();
 
       this.isRunning = true;
       logger.info('PDF analysis worker started successfully');
@@ -60,7 +59,7 @@ class PdfAnalysisWorker {
       this.isRunning = false;
 
       // Stop the analyzer service
-      await this.analyzerService.stop();
+      // await this.analyzerService.stop();
 
       logger.info('PDF analysis worker stopped successfully');
     } catch (error) {

@@ -50,11 +50,11 @@ export class PdfAnalyzerService {
       }
 
       // Update item status to analyzing
-      await this.updateItemStatus(
-        request.itemId,
-        PdfProcessingStatus.ANALYZING,
-        'Analyzing PDF structure',
-      );
+      // await this.updateItemStatus(
+      //   request.itemId,
+      //   PdfProcessingStatus.ANALYZING,
+      //   'Analyzing PDF structure',
+      // );
 
       // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
@@ -124,12 +124,12 @@ export class PdfAnalyzerService {
           `PDF requires splitting for item ${request.itemId}: ${pageCount} pages, suggested split size: ${suggestedSplitSize}`,
         );
 
-        // Update status to splitting
-        await this.updateItemStatus(
-          request.itemId,
-          PdfProcessingStatus.SPLITTING,
-          'Splitting PDF into parts',
-        );
+        // // Update status to splitting
+        // await this.updateItemStatus(
+        //   request.itemId,
+        //   PdfProcessingStatus.SPLITTING,
+        //   'Splitting PDF into parts',
+        // );
 
         // Split the PDF directly
         splitParts = await this.splitPdfAndUploadParts(
@@ -189,26 +189,26 @@ export class PdfAnalyzerService {
 
       // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
-      await this.publishAnalysisCompleted(
-        request.itemId,
-        pageCount,
-        requiresSplitting,
-        suggestedSplitSize,
-        processingTime,
-        pdfMetadata,
-        undefined,
-        request.s3Key,
-      );
+      // await this.publishAnalysisCompleted(
+      //   request.itemId,
+      //   pageCount,
+      //   requiresSplitting,
+      //   suggestedSplitSize,
+      //   processingTime,
+      //   pdfMetadata,
+      //   undefined,
+      //   request.s3Key,
+      // );
 
       // If splitting was done, publish individual part conversion requests
       if (requiresSplitting && splitParts.length > 0) {
-        await this.publishPartConversionRequests(
-          request.itemId,
-          request.fileName,
-          splitParts,
-          request.priority,
-          pdfMetadata,
-        );
+        // await this.publishPartConversionRequests(
+        //   request.itemId,
+        //   request.fileName,
+        //   splitParts,
+        //   request.priority,
+        //   pdfMetadata,
+        // );
       }
 
       logger.info(
@@ -248,16 +248,16 @@ export class PdfAnalyzerService {
           retryCount: retryCount + 1,
         };
 
-        await this.rabbitMQService.publishPdfAnalysisRequest(retryRequest);
+        // await this.rabbitMQService.publishPdfAnalysisRequest(retryRequest);
       } else {
         // Publish failure message
-        await this.publishAnalysisFailed(
-          request.itemId,
-          errorMessage,
-          retryCount,
-          maxRetries,
-          processingTime,
-        );
+        // await this.publishAnalysisFailed(
+        //   request.itemId,
+        //   errorMessage,
+        //   retryCount,
+        //   maxRetries,
+        //   processingTime,
+        // );
       }
     }
   }
@@ -432,73 +432,73 @@ export class PdfAnalyzerService {
     }
   }
 
-  /**
-   * Publish analysis completed message
-   */
-  private async publishAnalysisCompleted(
-    itemId: string,
-    pageCount: number,
-    requiresSplitting: boolean,
-    suggestedSplitSize: number,
-    processingTime: number,
-    pdfMetadata?: PdfMetadata,
-    s3Url?: string,
-    s3Key?: string,
-  ): Promise<void> {
-    try {
-      const completedMessage: PdfAnalysisCompletedMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'PDF_ANALYSIS_COMPLETED',
-        itemId,
-        pageCount,
-        requiresSplitting,
-        suggestedSplitSize,
-        processingTime,
-        pdfMetadata,
-        s3Key,
-      };
+  // /**
+  //  * Publish analysis completed message
+  //  */
+  // private async publishAnalysisCompleted(
+  //   itemId: string,
+  //   pageCount: number,
+  //   requiresSplitting: boolean,
+  //   suggestedSplitSize: number,
+  //   processingTime: number,
+  //   pdfMetadata?: PdfMetadata,
+  //   s3Url?: string,
+  //   s3Key?: string,
+  // ): Promise<void> {
+  //   try {
+  //     const completedMessage: PdfAnalysisCompletedMessage = {
+  //       messageId: uuidv4(),
+  //       timestamp: Date.now(),
+  //       eventType: 'PDF_ANALYSIS_COMPLETED',
+  //       itemId,
+  //       pageCount,
+  //       requiresSplitting,
+  //       suggestedSplitSize,
+  //       processingTime,
+  //       pdfMetadata,
+  //       s3Key,
+  //     };
 
-      await this.rabbitMQService.publishPdfAnalysisCompleted(completedMessage);
-    } catch (error) {
-      logger.error(
-        `Failed to publish analysis completed message for item ${itemId}:`,
-        error,
-      );
-    }
-  }
+  //     // await this.rabbitMQService.publishPdfAnalysisCompleted(completedMessage);
+  //   } catch (error) {
+  //     logger.error(
+  //       `Failed to publish analysis completed message for item ${itemId}:`,
+  //       error,
+  //     );
+  //   }
+  // }
 
-  /**
-   * Publish analysis failed message
-   */
-  private async publishAnalysisFailed(
-    itemId: string,
-    error: string,
-    retryCount: number,
-    maxRetries: number,
-    processingTime: number,
-  ): Promise<void> {
-    try {
-      const failedMessage: PdfAnalysisFailedMessage = {
-        messageId: uuidv4(),
-        timestamp: Date.now(),
-        eventType: 'PDF_ANALYSIS_FAILED',
-        itemId,
-        error,
-        retryCount,
-        maxRetries,
-        canRetry: retryCount < maxRetries,
-        processingTime,
-      };
+  // /**
+  //  * Publish analysis failed message
+  //  */
+  // private async publishAnalysisFailed(
+  //   itemId: string,
+  //   error: string,
+  //   retryCount: number,
+  //   maxRetries: number,
+  //   processingTime: number,
+  // ): Promise<void> {
+  //   try {
+  //     const failedMessage: PdfAnalysisFailedMessage = {
+  //       messageId: uuidv4(),
+  //       timestamp: Date.now(),
+  //       eventType: 'PDF_ANALYSIS_FAILED',
+  //       itemId,
+  //       error,
+  //       retryCount,
+  //       maxRetries,
+  //       canRetry: retryCount < maxRetries,
+  //       processingTime,
+  //     };
 
-      await this.rabbitMQService.publishPdfAnalysisFailed(failedMessage);
-    } catch (publishError) {
-      logger.error(
-        `Failed to publish analysis failed message for item ${itemId}:`,
-        publishError,
-      );
-    }
-  }
+  //     // await this.rabbitMQService.publishPdfAnalysisFailed(failedMessage);
+  //   } catch (publishError) {
+  //     logger.error(
+  //       `Failed to publish analysis failed message for item ${itemId}:`,
+  //       publishError,
+  //     );
+  //   }
+  // }
 
   /**
    * Split PDF and upload parts to S3
@@ -729,159 +729,159 @@ export class PdfAnalyzerService {
     }
   }
 
-  /**
-   * Publish part conversion requests for each split part
-   */
-  private async publishPartConversionRequests(
-    itemId: string,
-    fileName: string,
-    splitParts: PdfPartInfo[],
-    priority?: 'low' | 'normal' | 'high',
-    pdfMetadata?: PdfMetadata,
-  ): Promise<void> {
-    logger.info(
-      `Publishing conversion requests for ${splitParts.length} parts of item ${itemId}`,
-    );
+  // /**
+  //  * Publish part conversion requests for each split part
+  //  */
+  // private async publishPartConversionRequests(
+  //   itemId: string,
+  //   fileName: string,
+  //   splitParts: PdfPartInfo[],
+  //   priority?: 'low' | 'normal' | 'high',
+  //   pdfMetadata?: PdfMetadata,
+  // ): Promise<void> {
+  //   logger.info(
+  //     `Publishing conversion requests for ${splitParts.length} parts of item ${itemId}`,
+  //   );
 
-    try {
-      const totalParts = splitParts.length;
+  //   try {
+  //     const totalParts = splitParts.length;
 
-      for (const part of splitParts) {
-        const partConversionRequest = {
-          messageId: uuidv4(),
-          timestamp: Date.now(),
-          eventType: 'PDF_PART_CONVERSION_REQUEST' as const,
-          itemId,
-          partIndex: part.partIndex,
-          totalParts,
-          s3Url: undefined,
-          s3Key: part.s3Key,
-          fileName: `${fileName}_part_${part.partIndex + 1}_pages_${part.startPage + 1}-${part.endPage + 1}.pdf`,
-          startPage: part.startPage,
-          endPage: part.endPage,
-          priority,
-          retryCount: 0,
-          maxRetries: 3,
-          pdfMetadata,
-        };
+  //     for (const part of splitParts) {
+  //       const partConversionRequest = {
+  //         messageId: uuidv4(),
+  //         timestamp: Date.now(),
+  //         eventType: 'PDF_PART_CONVERSION_REQUEST' as const,
+  //         itemId,
+  //         partIndex: part.partIndex,
+  //         totalParts,
+  //         s3Url: undefined,
+  //         s3Key: part.s3Key,
+  //         fileName: `${fileName}_part_${part.partIndex + 1}_pages_${part.startPage + 1}-${part.endPage + 1}.pdf`,
+  //         startPage: part.startPage,
+  //         endPage: part.endPage,
+  //         priority,
+  //         retryCount: 0,
+  //         maxRetries: 3,
+  //         pdfMetadata,
+  //       };
 
-        await this.rabbitMQService.publishPdfPartConversionRequest(
-          partConversionRequest,
-        );
-        logger.info(
-          `Published conversion request for part ${part.partIndex + 1}/${totalParts} of item ${itemId}`,
-        );
-      }
+  //       await this.rabbitMQService.publishPdfPartConversionRequest(
+  //         partConversionRequest,
+  //       );
+  //       logger.info(
+  //         `Published conversion request for part ${part.partIndex + 1}/${totalParts} of item ${itemId}`,
+  //       );
+  //     }
 
-      logger.info(
-        `Successfully published all conversion requests for item ${itemId}`,
-      );
-    } catch (error) {
-      logger.error(
-        `Failed to publish part conversion requests for item ${itemId}:`,
-        error,
-      );
-      throw new Error(
-        `Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
+  //     logger.info(
+  //       `Successfully published all conversion requests for item ${itemId}`,
+  //     );
+  //   } catch (error) {
+  //     logger.error(
+  //       `Failed to publish part conversion requests for item ${itemId}:`,
+  //       error,
+  //     );
+  //     throw new Error(
+  //       `Failed to publish part conversion requests: ${error instanceof Error ? error.message : 'Unknown error'}`,
+  //     );
+  //   }
+  // }
 
-  /**
-   * Start the PDF analyzer service with part cleanup functionality
-   */
-  async start(): Promise<void> {
-    if (this.isRunning) {
-      logger.warn('PDF analyzer service is already running');
-      return;
-    }
+  // /**
+  //  * Start the PDF analyzer service with part cleanup functionality
+  //  */
+  // async start(): Promise<void> {
+  //   if (this.isRunning) {
+  //     logger.warn('PDF analyzer service is already running');
+  //     return;
+  //   }
 
-    try {
-      // Ensure RabbitMQ service is initialized
-      if (!this.rabbitMQService.isConnected()) {
-        await this.rabbitMQService.initialize();
-      }
+  //   try {
+  //     // Ensure RabbitMQ service is initialized
+  //     // if (!this.rabbitMQService.isConnected()) {
+  //     //   await this.rabbitMQService.initialize();
+  //     // }
 
-      // Start consuming messages from the analysis request queue
-      const consumerTag = await this.rabbitMQService.consumeMessages(
-        RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST,
-        this.handlePdfAnalysisRequest.bind(this),
-        {
-          consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER,
-          noAck: false, // Manual acknowledgment
-        },
-      );
+  //     // Start consuming messages from the analysis request queue
+  //     // const consumerTag = await this.rabbitMQService.consumeMessages(
+  //     //   RABBITMQ_QUEUES.PDF_ANALYSIS_REQUEST,
+  //     //   this.handlePdfAnalysisRequest.bind(this),
+  //     //   {
+  //     //     consumerTag: RABBITMQ_CONSUMER_TAGS.PDF_ANALYSIS_WORKER,
+  //     //     noAck: false, // Manual acknowledgment
+  //     //   },
+  //     // );
 
-      this.isRunning = true;
-      logger.info('PDF analyzer service started successfully');
-    } catch (error) {
-      logger.error('Failed to start PDF analyzer service:', error);
-      throw error;
-    }
-  }
+  //     this.isRunning = true;
+  //     logger.info('PDF analyzer service started successfully');
+  //   } catch (error) {
+  //     logger.error('Failed to start PDF analyzer service:', error);
+  //     throw error;
+  //   }
+  // }
 
-  /**
-   * Stop the PDF analyzer service
-   */
-  async stop(): Promise<void> {
-    if (!this.isRunning) {
-      logger.warn('PDF analyzer service is not running');
-      return;
-    }
+  // /**
+  //  * Stop the PDF analyzer service
+  //  */
+  // async stop(): Promise<void> {
+  //   if (!this.isRunning) {
+  //     logger.warn('PDF analyzer service is not running');
+  //     return;
+  //   }
 
-    try {
-      logger.info('Stopping PDF analyzer service...');
-      this.isRunning = false;
+  //   try {
+  //     logger.info('Stopping PDF analyzer service...');
+  //     this.isRunning = false;
 
-      // Note: In a real implementation, you would store the consumer tag
-      // and use it to stop consuming. For this example, we'll
-      // just set the running flag to false.
+  //     // Note: In a real implementation, you would store the consumer tag
+  //     // and use it to stop consuming. For this example, we'll
+  //     // just set the running flag to false.
 
-      logger.info('PDF analyzer service stopped successfully');
-    } catch (error) {
-      logger.error('Failed to stop PDF analyzer service:', error);
-      throw error;
-    }
-  }
+  //     logger.info('PDF analyzer service stopped successfully');
+  //   } catch (error) {
+  //     logger.error('Failed to stop PDF analyzer service:', error);
+  //     throw error;
+  //   }
+  // }
 
-  /**
-   * Handle PDF analysis request
-   */
-  private async handlePdfAnalysisRequest(
-    message: PdfAnalysisRequestMessage,
-    originalMessage: any,
-  ): Promise<void> {
-    try {
-      logger.info(
-        `Processing PDF analysis request for item: ${message.itemId}`,
-      );
-      await this.analyzePdf(message);
-    } catch (error) {
-      logger.error(
-        `Failed to process PDF analysis request for item: ${message.itemId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
+  // /**
+  //  * Handle PDF analysis request
+  //  */
+  // private async handlePdfAnalysisRequest(
+  //   message: PdfAnalysisRequestMessage,
+  //   originalMessage: any,
+  // ): Promise<void> {
+  //   try {
+  //     logger.info(
+  //       `Processing PDF analysis request for item: ${message.itemId}`,
+  //     );
+  //     await this.analyzePdf(message);
+  //   } catch (error) {
+  //     logger.error(
+  //       `Failed to process PDF analysis request for item: ${message.itemId}:`,
+  //       error,
+  //     );
+  //     throw error;
+  //   }
+  // }
 }
 
-/**
- * Create and start a PDF analyzer service with default dependencies
- */
-export async function createPdfAnalyzerService(
-  storage: ILibraryStorage,
-): Promise<PdfAnalyzerService> {
-  const service = new PdfAnalyzerService(storage);
-  await service.start();
-  return service;
-}
+// /**
+//  * Create and start a PDF analyzer service with default dependencies
+//  */
+// export async function createPdfAnalyzerService(
+//   storage: ILibraryStorage,
+// ): Promise<PdfAnalyzerService> {
+//   const service = new PdfAnalyzerService(storage);
+//   await service.start();
+//   return service;
+// }
 
-/**
- * Stop a PDF analyzer service
- */
-export async function stopPdfAnalyzerService(
-  service: PdfAnalyzerService,
-): Promise<void> {
-  await service.stop();
-}
+// /**
+//  * Stop a PDF analyzer service
+//  */
+// export async function stopPdfAnalyzerService(
+//   service: PdfAnalyzerService,
+// ): Promise<void> {
+//   await service.stop();
+// }
