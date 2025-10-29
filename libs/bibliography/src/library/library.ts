@@ -11,7 +11,7 @@ import { LibraryItem } from '../item/library-item.js';
 
 import {
   Author,
-  BookMetadata,
+  ItemMetadata,
   Collection,
   Citation,
   SearchFilter,
@@ -35,7 +35,7 @@ export interface ILibrary {
   storePdf(
     pdfBuffer: Buffer,
     fileName: string,
-    metadata: Partial<BookMetadata>,
+    metadata: Partial<ItemMetadata>,
   ): Promise<LibraryItem>;
 
   /**
@@ -114,7 +114,7 @@ export default class Library implements ILibrary {
   async storePdf(
     pdfBuffer: Buffer,
     fileName: string,
-    metadata: Partial<BookMetadata>,
+    metadata: Partial<ItemMetadata>,
   ): Promise<LibraryItem> {
     // Validate inputs
     if (!fileName) {
@@ -137,7 +137,7 @@ export default class Library implements ILibrary {
     logger.info(`Pdf not exist, uploading to s3...`);
     const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
 
-    const fullMetadata: BookMetadata = {
+    const fullMetadata: ItemMetadata = {
       ...metadata,
       title: metadata.title || path.basename(fileName, '.pdf'),
       s3Key: pdfInfo.s3Key,

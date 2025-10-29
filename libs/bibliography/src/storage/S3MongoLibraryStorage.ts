@@ -2,7 +2,7 @@ import { createLoggerWithPrefix } from '@aikb/log-management';
 import { ItemChunk } from '@aikb/item-vector-storage';
 import {
   AbstractPdf,
-  BookMetadata,
+  ItemMetadata,
   ILibraryStorage,
   SearchFilter,
   Collection,
@@ -128,8 +128,8 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
   }
 
   async saveMetadata(
-    metadata: BookMetadata,
-  ): Promise<BookMetadata & { id: string }> {
+    metadata: ItemMetadata,
+  ): Promise<ItemMetadata & { id: string }> {
     if (!metadata.id) {
       metadata.id = IdUtils.generateId();
     }
@@ -138,33 +138,33 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
       .collection(this.metadataCollection)
       .updateOne({ id: metadata.id }, { $set: metadata }, { upsert: true });
 
-    return metadata as BookMetadata & { id: string };
+    return metadata as ItemMetadata & { id: string };
   }
 
-  async getMetadata(id: string): Promise<BookMetadata | null> {
+  async getMetadata(id: string): Promise<ItemMetadata | null> {
     const { db } = await connectToDatabase();
     const metadata = await db
-      .collection<BookMetadata>(this.metadataCollection)
+      .collection<ItemMetadata>(this.metadataCollection)
       .findOne({ id });
-    return (metadata as BookMetadata) || null;
+    return (metadata as ItemMetadata) || null;
   }
 
-  async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
+  async getMetadataByHash(contentHash: string): Promise<ItemMetadata | null> {
     const { db } = await connectToDatabase();
     const metadata = await db
-      .collection<BookMetadata>(this.metadataCollection)
+      .collection<ItemMetadata>(this.metadataCollection)
       .findOne({ contentHash });
-    return (metadata as BookMetadata) || null;
+    return (metadata as ItemMetadata) || null;
   }
 
-  async updateMetadata(metadata: BookMetadata): Promise<void> {
+  async updateMetadata(metadata: ItemMetadata): Promise<void> {
     const { db } = await connectToDatabase();
     await db
       .collection(this.metadataCollection)
       .updateOne({ id: metadata.id }, { $set: metadata });
   }
 
-  async searchMetadata(filter: SearchFilter): Promise<BookMetadata[]> {
+  async searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]> {
     const query: any = {};
 
     if (filter.query) {
@@ -200,10 +200,10 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
     }
     const { db } = await connectToDatabase();
     const results = await db
-      .collection<BookMetadata>(this.metadataCollection)
+      .collection<ItemMetadata>(this.metadataCollection)
       .find(query)
       .toArray();
-    return results as BookMetadata[];
+    return results as ItemMetadata[];
   }
 
   async saveCollection(collection: Collection): Promise<Collection> {

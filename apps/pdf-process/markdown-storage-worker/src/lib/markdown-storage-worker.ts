@@ -10,7 +10,7 @@ import {
 import { getRabbitMQService } from '@aikb/rabbitmq';
 import { IRabbitMQService } from '@aikb/rabbitmq';
 import { MessageProtocol } from '@aikb/rabbitmq';
-import { ILibraryStorage, BookMetadata } from '@aikb/bibliography';
+import { ILibraryStorage, ItemMetadata } from '@aikb/bibliography';
 import { defaultChunkingConfig } from '@aikb/chunking';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -220,7 +220,7 @@ export class MarkdownStorageWorker {
       }
 
       // Update status fields
-      const updatedMetadata: BookMetadata = {
+      const updatedMetadata: ItemMetadata = {
         ...metadata,
         pdfProcessingStatus: status,
         pdfProcessingMessage: message,

@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { BookMetadata } from './types.js';
+import { ItemMetadata } from './types.js';
 
 /**
  * Utility functions for generating content hashes
@@ -25,7 +25,7 @@ export class HashUtils {
   /**
    * Generate hash from metadata fields (for articles without files)
    */
-  static generateHashFromMetadata(metadata: Partial<BookMetadata>): string {
+  static generateHashFromMetadata(metadata: Partial<ItemMetadata>): string {
     const hashInput = {
       title: metadata.title || '',
       authors:
@@ -55,7 +55,7 @@ export class CitationFormatter {
   /**
    * Helper method to format citation
    */
-  static formatCitation(metadata: BookMetadata, style: string): string {
+  static formatCitation(metadata: ItemMetadata, style: string): string {
     const authors = metadata.authors
       .map(
         (author) =>

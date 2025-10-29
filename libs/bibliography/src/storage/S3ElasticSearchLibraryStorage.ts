@@ -2,7 +2,7 @@ import { Client } from '@elastic/elasticsearch';
 import { ILibraryStorage, AbstractPdf } from '../library/storage.js';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import {
-  BookMetadata,
+  ItemMetadata,
   Collection,
   Citation,
   SearchFilter,
@@ -15,7 +15,6 @@ import {
   uploadPdfFromPath,
   getSignedUrlForDownload,
 } from '@aikb/s3-service';
-import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
 
 export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private readonly metadataIndexName = 'library_metadata';
@@ -242,8 +241,8 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   }
 
   async saveMetadata(
-    metadata: BookMetadata,
-  ): Promise<BookMetadata & { id: string }> {
+    metadata: ItemMetadata,
+  ): Promise<ItemMetadata & { id: string }> {
     await this.checkInitialized();
 
     if (!metadata.id) {
@@ -257,10 +256,10 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       refresh: true, // Refresh index to make document immediately available
     } as any);
 
-    return metadata as BookMetadata & { id: string };
+    return metadata as ItemMetadata & { id: string };
   }
 
-  async getMetadata(id: string): Promise<BookMetadata | null> {
+  async getMetadata(id: string): Promise<ItemMetadata | null> {
     await this.checkInitialized();
 
     try {
@@ -270,7 +269,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       });
 
       if (result.found) {
-        return result._source as BookMetadata;
+        return result._source as ItemMetadata;
       }
       return null;
     } catch (error) {
@@ -281,7 +280,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
     }
   }
 
-  async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
+  async getMetadataByHash(contentHash: string): Promise<ItemMetadata | null> {
     await this.checkInitialized();
 
     try {
@@ -298,7 +297,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
       const hits = result.hits?.hits || [];
       if (hits.length > 0 && hits[0]) {
-        return hits[0]._source as BookMetadata;
+        return hits[0]._source as ItemMetadata;
       }
       return null;
     } catch (error) {
@@ -311,7 +310,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
     }
   }
 
-  async updateMetadata(metadata: BookMetadata): Promise<void> {
+  async updateMetadata(metadata: ItemMetadata): Promise<void> {
     await this.checkInitialized();
 
     await this.client.update({
@@ -324,7 +323,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
     } as any);
   }
 
-  async searchMetadata(filter: SearchFilter): Promise<BookMetadata[]> {
+  async searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]> {
     await this.checkInitialized();
 
     const query: any = {};
@@ -408,7 +407,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       } as any);
 
       const hits = result.hits.hits;
-      return hits.map((hit) => hit._source as BookMetadata);
+      return hits.map((hit) => hit._source as ItemMetadata);
     } catch (error) {
       if (
         (error as any)?.meta?.body?.error?.type === 'index_not_found_exception'
@@ -649,7 +648,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
       // Update each item to remove the collection
       for (const hit of searchResult.hits.hits) {
-        const metadata = hit._source as BookMetadata;
+        const metadata = hit._source as ItemMetadata;
         const index = metadata.collections.indexOf(id);
         if (index > -1) {
           metadata.collections.splice(index, 1);

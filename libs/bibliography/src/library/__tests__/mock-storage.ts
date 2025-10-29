@@ -1,7 +1,9 @@
+import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
 import { ILibraryStorage } from '../storage.js';
-import { BookMetadata, Collection, Citation } from '../types.js';
+import { ItemMetadata, Collection, Citation } from '../types.js';
 // import { IdUtils } from '@aikb/utils';
-import { IdUtils } from 'libs/utils/src/index.js';
+// import { IdUtils } from 'utils';
+import { IdUtils } from '@aikb/utils';
 
 // Define AbstractPdf interface locally since it's not exported
 interface AbstractPdf {
@@ -17,7 +19,7 @@ interface AbstractPdf {
  * Mock storage implementation for testing hash functionality without requiring S3 credentials
  */
 export class MockLibraryStorage implements ILibraryStorage {
-  private metadataStore: Map<string, BookMetadata> = new Map();
+  private metadataStore: Map<string, ItemMetadata> = new Map();
   private pdfStore: Map<string, AbstractPdf> = new Map();
   private collectionStore: Map<string, Collection> = new Map();
   private citationStore: Map<string, Citation[]> = new Map();
@@ -82,21 +84,21 @@ export class MockLibraryStorage implements ILibraryStorage {
   }
 
   async saveMetadata(
-    metadata: BookMetadata,
-  ): Promise<BookMetadata & { id: string }> {
+    metadata: ItemMetadata,
+  ): Promise<ItemMetadata & { id: string }> {
     if (!metadata.id) {
       metadata.id = IdUtils.generateId();
     }
 
-    this.metadataStore.set(metadata.id, metadata);
-    return metadata as BookMetadata & { id: string };
+    this.metadataStore.set(metadata.id!, metadata);
+    return metadata as ItemMetadata & { id: string };
   }
 
-  async getMetadata(id: string): Promise<BookMetadata | null> {
+  async getMetadata(id: string): Promise<ItemMetadata | null> {
     return this.metadataStore.get(id) || null;
   }
 
-  async getMetadataByHash(contentHash: string): Promise<BookMetadata | null> {
+  async getMetadataByHash(contentHash: string): Promise<ItemMetadata | null> {
     const metadataList = Array.from(this.metadataStore.values());
     for (const metadata of metadataList) {
       if (metadata.contentHash === contentHash) {
@@ -106,14 +108,14 @@ export class MockLibraryStorage implements ILibraryStorage {
     return null;
   }
 
-  async updateMetadata(metadata: BookMetadata): Promise<void> {
+  async updateMetadata(metadata: ItemMetadata): Promise<void> {
     if (metadata.id) {
       this.metadataStore.set(metadata.id, metadata);
     }
   }
 
-  async searchMetadata(filter: any): Promise<BookMetadata[]> {
-    const results: BookMetadata[] = [];
+  async searchMetadata(filter: any): Promise<ItemMetadata[]> {
+    const results: ItemMetadata[] = [];
     const metadataList = Array.from(this.metadataStore.values());
 
     for (const metadata of metadataList) {
@@ -174,7 +176,7 @@ export class MockLibraryStorage implements ILibraryStorage {
       collection.id = IdUtils.generateId();
     }
 
-    this.collectionStore.set(collection.id, collection);
+    this.collectionStore.set(collection.id!, collection);
     return collection;
   }
 
@@ -400,7 +402,7 @@ export class MockLibraryStorage implements ILibraryStorage {
     this.chunkStore.clear();
   }
 
-  getAllMetadata(): BookMetadata[] {
+  getAllMetadata(): ItemMetadata[] {
     return Array.from(this.metadataStore.values());
   }
 

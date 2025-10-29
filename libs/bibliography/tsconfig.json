@@ -1,16 +1,16 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "importHelpers": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true
-  },
+  "extends": "../../tsconfig.base.json",
+  // "compilerOptions": {
+  //   "module": "nodenext",
+  //   "moduleResolution": "nodenext",
+  //   "forceConsistentCasingInFileNames": true,
+  //   "strict": true,
+  //   "importHelpers": true,
+  //   "noImplicitOverride": true,
+  //   "noImplicitReturns": true,
+  //   "noFallthroughCasesInSwitch": true,
+  //   "noPropertyAccessFromIndexSignature": true
+  // },
   "files": [],
   "include": [],
   "references": [

@@ -1,1 +1,1 @@
-export { IdUtils } from './lib/utils';
+export { IdUtils } from './lib/utils.js';

@@ -1,4 +1,4 @@
-import { BookMetadata, Collection, Citation, SearchFilter } from './types.js';
+import { ItemMetadata, Collection, Citation, SearchFilter } from './types.js';
 
 // Define AbstractPdf interface for PDF handling
 export interface AbstractPdf {
@@ -21,11 +21,11 @@ export interface ILibraryStorage {
   getPdf(s3Key: string): Promise<Buffer>;
 
   // Metadata operations
-  saveMetadata(metadata: BookMetadata): Promise<BookMetadata & { id: string }>;
-  getMetadata(id: string): Promise<BookMetadata | null>;
-  getMetadataByHash(contentHash: string): Promise<BookMetadata | null>;
-  updateMetadata(metadata: BookMetadata): Promise<void>;
-  searchMetadata(filter: SearchFilter): Promise<BookMetadata[]>;
+  saveMetadata(metadata: ItemMetadata): Promise<ItemMetadata & { id: string }>;
+  getMetadata(id: string): Promise<ItemMetadata | null>;
+  getMetadataByHash(contentHash: string): Promise<ItemMetadata | null>;
+  updateMetadata(metadata: ItemMetadata): Promise<void>;
+  searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]>;
   deleteMetadata(id: string): Promise<boolean>;
 
   // Collection operations

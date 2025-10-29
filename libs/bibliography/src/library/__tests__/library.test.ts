@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import Library from '../library.js';
 import { MockLibraryStorage } from './mock-storage.js';
 import {
-  BookMetadata,
+  ItemMetadata,
   Author,
   Collection,
   PdfProcessingStatus,
@@ -62,7 +62,7 @@ describe('Library', () => {
   describe('storePdf', () => {
     const pdfBuffer = Buffer.from('mock pdf content');
     const fileName = 'test.pdf';
-    const metadata: Partial<BookMetadata> = {
+    const metadata: Partial<ItemMetadata> = {
       title: 'Test Document',
       authors: [{ firstName: 'John', lastName: 'Doe' }],
       abstract: 'Test abstract',
@@ -86,7 +86,7 @@ describe('Library', () => {
       const firstId = firstResult.getItemId();
 
       // Store same PDF content with different metadata
-      const differentMetadata: Partial<BookMetadata> = {
+      const differentMetadata: Partial<ItemMetadata> = {
         title: 'Different Title',
         authors: [{ firstName: 'Jane', lastName: 'Smith' }],
       };

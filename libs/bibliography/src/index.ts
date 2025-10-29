@@ -5,7 +5,7 @@ export * from './item/index.js';
 
 // Re-export commonly used types and interfaces
 export type {
-  BookMetadata,
+  ItemMetadata,
   Author,
   Collection,
   Citation,

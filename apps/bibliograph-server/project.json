@@ -62,6 +62,9 @@
           "buildTarget": "bibliograph-server:build:production"
         }
       }
+    },
+    "test": {
+      "executor": "@nx/vite:test"
     }
-  }
+   }
 }

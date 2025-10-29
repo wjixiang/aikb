@@ -6,7 +6,7 @@ import {
   ItemChunkSemanticSearchQuery,
   ItemVectorStorageStatus,
   ChunkingEmbeddingGroupInfo,
-} from './types.ts';
+} from './types.js';
 
 /**
  * Elasticsearch implementation of IItemVectorStorage

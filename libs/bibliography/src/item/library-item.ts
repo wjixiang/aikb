@@ -2,13 +2,13 @@ import { createLoggerWithPrefix } from '@aikb/log-management';
 import { deleteFromS3 } from '@aikb/s3-service';
 import { v4 } from 'uuid';
 import { ILibraryStorage } from '../library/storage.js';
-import { BookMetadata, ItemChunk } from '../library/types.js';
+import { ItemMetadata } from '../library/types.js';
 
 const logger = createLoggerWithPrefix('LibraryItem');
 
 export class LibraryItem {
   constructor(
-    public metadata: BookMetadata,
+    public metadata: ItemMetadata,
     private storage: ILibraryStorage,
   ) {}
 
@@ -66,7 +66,7 @@ export class LibraryItem {
   /**
    * Update the metadata of this item
    */
-  async updateMetadata(updates: Partial<BookMetadata>): Promise<void> {
+  async updateMetadata(updates: Partial<ItemMetadata>): Promise<void> {
     this.metadata = { ...this.metadata, ...updates, dateModified: new Date() };
     await this.storage.updateMetadata(this.metadata);
   }
@@ -157,24 +157,7 @@ export class LibraryItem {
     }
   }
 
-  /**
-   * Get all chunks for this item
-   */
-  async getChunks(): Promise<ItemChunk[]> {
-    const chunks = await this.storage.getChunksByItemId(this.metadata.id!);
-    logger.info(
-      `Retrieved ${chunks.length} chunks for item: ${this.metadata.id}`,
-    );
-    return chunks;
-  }
-
-  /**
-   * Delete all chunks for this item
-   */
-  async deleteChunks(): Promise<number> {
-    return await this.storage.deleteChunksByItemId(this.metadata.id!);
-  }
-
+  
   /**
    * Delete this item and all associated data
    */
@@ -189,10 +172,10 @@ export class LibraryItem {
 
       // Step 1: Delete all chunks and embeddings
       logger.info(`Deleting chunks for item: ${this.metadata.id}`);
-      const deletedChunksCount = await this.deleteChunks();
-      logger.info(
-        `Deleted ${deletedChunksCount} chunks for item: ${this.metadata.id}`,
-      );
+      // const deletedChunksCount = await this.deleteChunks();
+      // logger.info(
+      //   `Deleted ${deletedChunksCount} chunks for item: ${this.metadata.id}`,
+      // );
 
       // Step 2: Delete citations
       logger.info(`Deleting citations for item: ${this.metadata.id}`);

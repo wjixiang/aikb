@@ -20,7 +20,7 @@ export enum PdfProcessingStatus {
   CONVERTING = 'converting',
 }
 
-export interface BookMetadata {
+export interface ItemMetadata {
   id?: string;
   title: string;
   authors: Author[];

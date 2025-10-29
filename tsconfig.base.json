@@ -24,7 +24,6 @@
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
       "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
-      "@aikb/utils": ["./libs/utils/src/index.ts"],
       "bibliography": ["./libs/bibliography/src/index.ts"],
       "@aikb/pdf-part-tracker": ["libs/pdf-part-tracker/src/index.ts"],
       "@aikb/markdown-part-cache": ["libs/markdown-part-cache/src/index.ts"],
