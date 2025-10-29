@@ -47,6 +47,9 @@ export const QUEUE_TO_ROUTING_KEY_MAP: Record<string, string> = {
 
   // Dead letter queue
   'pdf-conversion-dlq': 'pdf.conversion.dlq',
+
+  // Health check queue
+  'health-check': 'health.check',
 };
 
 /**

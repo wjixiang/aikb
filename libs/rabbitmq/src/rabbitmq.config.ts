@@ -10,11 +10,11 @@ import {
 export const defaultRabbitMQConfig: RabbitMQConfig = {
   url:
     process.env.RABBITMQ_URL &&
-    process.env.RABBITMQ_URL !== 'amqp://rabbitmq:5672'
+    process.env.RABBITMQ_URL !== 'amqp://rabbitmq:15672'
       ? process.env.RABBITMQ_URL
-      : `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
+      : `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '15672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
   hostname: process.env.RABBITMQ_HOSTNAME || 'rabbitmq',
-  port: parseInt(process.env.RABBITMQ_PORT || '5672'),
+  port: parseInt(process.env.RABBITMQ_PORT || '15672'),
   username: process.env.RABBITMQ_USERNAME || 'admin',
   password: process.env.RABBITMQ_PASSWORD || 'admin123',
   vhost: process.env.RABBITMQ_VHOST || 'my_vhost',
@@ -29,18 +29,18 @@ export const defaultRabbitMQConfig: RabbitMQConfig = {
 export const rabbitMQConfigs = {
   development: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_DEV || 'amqp://rabbitmq:5672',
+    url: process.env.RABBITMQ_URL_DEV || 'amqp://rabbitmq:15672',
   },
   production: {
     ...defaultRabbitMQConfig,
-    url: process.env.RABBITMQ_URL_PROD || 'amqp://rabbitmq:5672',
+    url: process.env.RABBITMQ_URL_PROD || 'amqp://rabbitmq:15672',
     heartbeat: 120,
   },
   test: {
     ...defaultRabbitMQConfig,
     url:
       process.env.RABBITMQ_URL_TEST ||
-      `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '5672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
+      `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOSTNAME || 'rabbitmq'}:${process.env.RABBITMQ_PORT || '15672'}${process.env.RABBITMQ_VHOST ? '/' + process.env.RABBITMQ_VHOST : ''}`,
     heartbeat: 30,
   },
 };

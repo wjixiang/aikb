@@ -16,10 +16,10 @@ export { RabbitMQDebugTools, getDebugMockRabbitMQService } from './debug-tools';
 export { MessageServiceFactory } from './message-service-factory';
 
 // Export STOMP implementation
-export { StompMessageService } from './stomp-implementation';
+export { StompMessageService } from './implementation/stomp-implementation';
 
 // Export RabbitMQ implementation
-export { RabbitMQMessageService } from './rabbitmq-implementation';
+export { RabbitMQMessageService } from './implementation/amqp-implementation';
 
 // Export RabbitMQ service
 export { getRabbitMQService } from './rabbitmq.service';
