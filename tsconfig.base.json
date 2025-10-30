@@ -38,7 +38,9 @@
         "libs/library-item-chunkembed-storage/src/index.ts"
       ],
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
-      "utils": ["libs/utils/src/index.ts"]
+      "utils": ["libs/utils/src/index.ts"],
+      "@aikb/library-shared": ["libs/library-shared/src/index.ts"],
+      "library-shared": ["libs/library-shared/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

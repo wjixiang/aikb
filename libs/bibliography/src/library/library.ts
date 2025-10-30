@@ -20,7 +20,7 @@ import {
 
 import { ILibraryStorage, AbstractPdf } from './storage.js';
 import { HashUtils, CitationFormatter } from './utils.js';
-import { IdUtils } from '@aikb/utils';
+import { IdUtils } from 'utils';
 
 /**
  * Manage overall storage & retrieve of books/literatures/articles

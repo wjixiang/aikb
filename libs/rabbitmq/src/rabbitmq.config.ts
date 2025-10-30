@@ -2,7 +2,7 @@ import {
   RabbitMQConfig,
   RabbitMQQueueConfig,
   RabbitMQExchangeConfig,
-} from './message.types';
+} from './messages/message.types';
 
 /**
  * Default RabbitMQ configuration

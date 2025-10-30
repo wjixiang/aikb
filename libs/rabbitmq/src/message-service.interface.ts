@@ -2,7 +2,7 @@ import {
   BaseRabbitMQMessage,
   PdfConversionMessage,
   RabbitMQMessageOptions,
-} from './message.types';
+} from './messages/message.types';
 
 /**
  * Connection status for message service

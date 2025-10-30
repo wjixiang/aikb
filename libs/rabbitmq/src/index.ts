@@ -1,5 +1,5 @@
 // Export message types and interfaces
-export * from './message.types';
+export * from './messages/message.types';
 export * from './message-service.interface';
 export * from './rabbitmq-service.interface';
 

@@ -1,9 +1,9 @@
 import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
 import { ILibraryStorage } from '../storage.js';
 import { ItemMetadata, Collection, Citation } from '../types.js';
-// import { IdUtils } from '@aikb/utils';
 // import { IdUtils } from 'utils';
-import { IdUtils } from '@aikb/utils';
+// import { IdUtils } from 'utils';
+import { IdUtils } from 'utils';
 
 // Define AbstractPdf interface locally since it's not exported
 interface AbstractPdf {

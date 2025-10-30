@@ -7,7 +7,7 @@ import {
   Citation,
   SearchFilter,
 } from '../library/types.js';
-import { IdUtils } from '@aikb/utils';
+import { IdUtils } from 'utils';
 import path from 'path';
 import fs from 'fs';
 import {

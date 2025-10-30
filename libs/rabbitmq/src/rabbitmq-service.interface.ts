@@ -27,7 +27,7 @@ import {
   ChunkingEmbeddingFailedMessage,
   PdfConversionMessage,
   ChunkingEmbeddingRequestMessage,
-} from './message.types';
+} from './messages/message.types';
 
 /**
  * Interface for RabbitMQ service

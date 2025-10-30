@@ -14,7 +14,7 @@ import {
   uploadPdfFromPath,
   getSignedUrlForDownload,
 } from '@aikb/s3-service';
-import { IdUtils } from '@aikb/utils';
+import { IdUtils } from 'utils';
 import path from 'path';
 import fs from 'fs';
 

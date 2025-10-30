@@ -7,7 +7,7 @@ import {
   ConsumerOptions,
   MessageConsumer,
 } from '../message-service.interface';
-import { BaseRabbitMQMessage, RabbitMQMessageOptions } from '../message.types';
+import { BaseRabbitMQMessage, RabbitMQMessageOptions } from '../messages/message.types';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { Client, StompSubscription, StompFrame, StompMessage, StompHeaders, StompConnectionConfig } from '../types/stomp';
 import { v4 as uuidv4 } from 'uuid';

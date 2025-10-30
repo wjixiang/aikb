@@ -32,7 +32,7 @@
   "dependencies": {
     "@aikb/log-management": "workspace:*",
     "axios": "^1.12.2",
-    "@aikb/utils":"workspace:*"
+    "utils":"workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

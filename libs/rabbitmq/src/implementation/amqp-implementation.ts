@@ -8,7 +8,7 @@ import {
   ConsumerOptions,
   MessageConsumer,
 } from '../message-service.interface';
-import { BaseRabbitMQMessage, RabbitMQMessageOptions, RabbitMQConfig } from '../message.types';
+import { BaseRabbitMQMessage, RabbitMQMessageOptions, RabbitMQConfig } from '../messages/message.types';
 import {
   getRabbitMQConfig,
   rabbitMQQueueConfigs,

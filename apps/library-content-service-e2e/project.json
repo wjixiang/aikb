@@ -1,0 +1,20 @@
+{
+  "name": "library-content-service-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "implicitDependencies": ["library-content-service"],
+  "projectType": "application",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "apps/library-content-service-e2e/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "dependsOn": [
+        "library-content-service:build",
+        "library-content-service:serve"
+      ]
+    }
+  }
+}
