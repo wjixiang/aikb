@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import {createLoggerWithPrefix} from '@aikb/log-management';
 import {
   EmbeddingProviderBase,
   OpenAIEmbeddingProvider,
@@ -6,6 +6,8 @@ import {
   ONNXEmbeddingProvider,
 } from './embedding-providers.js';
 import { EmbeddingProvider } from './embedding.js';
+
+
 
 const logger = createLoggerWithPrefix('EmbeddingManager');
 

@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import {
   PdfAnalyzerService,
 } from './pdf-analysis.service';
-import { ILibraryStorage, MockLibraryStorage } from '@aikb/bibliography';
+import { BibliographyApiClient } from './bibliography-api.client';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 // Load environment variables
@@ -18,8 +18,8 @@ class PdfAnalysisWorker {
   private analyzerService: PdfAnalyzerService;
   private isRunning = false;
 
-  constructor(storage: ILibraryStorage) {
-    this.analyzerService = new PdfAnalyzerService(storage);
+  constructor(apiClient: BibliographyApiClient) {
+    this.analyzerService = new PdfAnalyzerService(apiClient);
   }
 
   /**
@@ -74,25 +74,14 @@ class PdfAnalysisWorker {
  */
 async function main(): Promise<void> {
   try {
-    // Initialize storage (this would be injected via dependency injection in a real app)
-    // For now, we'll use the mock storage from the bibliography library
-    const storage = new MockLibraryStorage();
+    // Initialize API client for bibliography service
+    const bibliographyServiceUrl = process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
+    const apiClient = new BibliographyApiClient(bibliographyServiceUrl);
 
-    const worker = new PdfAnalysisWorker(storage);
+    const worker = new PdfAnalysisWorker(apiClient);
     await worker.start();
 
-    // Handle graceful shutdown
-    process.on('SIGINT', async () => {
-      logger.info('Received SIGINT, shutting down gracefully...');
-      await worker.stop();
-      process.exit(0);
-    });
-
-    process.on('SIGTERM', async () => {
-      logger.info('Received SIGTERM, shutting down gracefully...');
-      await worker.stop();
-      process.exit(0);
-    });
+   
   } catch (error) {
     logger.error('Failed to start PDF analysis worker:', error);
     process.exit(1);

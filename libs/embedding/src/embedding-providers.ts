@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import {createLoggerWithPrefix} from '@aikb/log-management';
 import axios, { AxiosError } from 'axios';
 import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding.js';
 

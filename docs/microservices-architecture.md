@@ -45,7 +45,7 @@ The original monolithic `bibliograph-server` has been converted into a microserv
 
 ## Shared Library
 
-### Library Shared (`@aikb/library-shared`)
+### Library Shared (`library-shared`)
 - **Purpose**: Common DTOs and interfaces shared across services
 - **Contents**:
   - `CreateLibraryItemDto`

@@ -13,7 +13,8 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from '@aikb/rabbitmq';
 import { getRabbitMQService } from '@aikb/rabbitmq';
-import { ILibraryStorage } from '@aikb/bibliography';
+import { BibliographyApiClient } from './bibliography-api.client';
+import { UpdateMetadataDto, UpdateProcessingStatusDto } from 'library-shared';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -33,7 +34,7 @@ export class PdfAnalyzerService {
   private partCompletedConsumerTag: string | null = null;
   private partFailedConsumerTag: string | null = null;
 
-  constructor(private storage: ILibraryStorage) {}
+  constructor(private apiClient: BibliographyApiClient) {}
 
   /**
    * Analyze a PDF file to determine if it needs to be split
@@ -44,10 +45,11 @@ export class PdfAnalyzerService {
 
     try {
       // Get the item metadata
-      const itemMetadata = await this.storage.getMetadata(request.itemId);
-      if (!itemMetadata) {
+      const libraryItem = await this.apiClient.getLibraryItem(request.itemId);
+      if (!libraryItem) {
         throw new Error(`Item ${request.itemId} not found`);
       }
+      const itemMetadata = libraryItem.metadata;
 
       // Update item status to analyzing
       // await this.updateItemStatus(
@@ -58,7 +60,7 @@ export class PdfAnalyzerService {
 
       // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
-      const pdfBuffer = await this.downloadPdfFromS3(request.s3Key);
+      const pdfBuffer = await this.downloadPdfFromS3(request.itemId, request.s3Key);
 
       // Analyze PDF to get page count and metadata
       logger.info(
@@ -185,7 +187,7 @@ export class PdfAnalyzerService {
         };
       }
 
-      await this.storage.updateMetadata(updatedMetadata);
+      await this.apiClient.updateLibraryItemMetadata(request.itemId, updatedMetadata);
 
       // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
@@ -265,12 +267,13 @@ export class PdfAnalyzerService {
   /**
    * Download PDF from S3 using s3Key
    */
-  private async downloadPdfFromS3(s3Key: string): Promise<Buffer> {
+  private async downloadPdfFromS3(itemId: string, s3Key: string): Promise<Buffer> {
     try {
       logger.info(`Attempting to download PDF from S3 using s3Key: ${s3Key}`);
 
-      // Generate a presigned URL for downloading
-      const presignedUrl = await getPdfDownloadUrl(s3Key);
+      // Get download URL from API client
+      const pdfDownloadUrl = await this.apiClient.getPdfDownloadUrl(itemId);
+      const presignedUrl = pdfDownloadUrl.downloadUrl;
 
       // Use axios to download the PDF using the presigned URL
       const response = await axios.get(presignedUrl, {
@@ -402,33 +405,16 @@ export class PdfAnalyzerService {
     error?: string,
   ): Promise<void> {
     try {
-      const metadata = await this.storage.getMetadata(itemId);
-      if (!metadata) {
-        logger.warn(`Item ${itemId} not found for status update`);
-        return;
-      }
-
-      const updates: any = {
-        pdfProcessingStatus: status,
-        pdfProcessingMessage: message,
-        pdfProcessingProgress: progress,
-        pdfProcessingError: error,
-        dateModified: new Date(),
+      const statusUpdate: UpdateProcessingStatusDto = {
+        status,
+        message,
+        progress,
+        error,
       };
 
-      if (
-        status === PdfProcessingStatus.ANALYZING &&
-        !metadata.pdfProcessingStartedAt
-      ) {
-        updates.pdfProcessingStartedAt = new Date();
-      } else if (status === PdfProcessingStatus.FAILED) {
-        updates.pdfProcessingRetryCount =
-          (metadata.pdfProcessingRetryCount || 0) + 1;
-      }
-
-      await this.storage.updateMetadata({ ...metadata, ...updates });
-    } catch (error) {
-      logger.error(`Failed to update item status for ${itemId}:`, error);
+      await this.apiClient.updatePdfProcessingStatus(itemId, statusUpdate);
+    } catch (updateError) {
+      logger.error(`Failed to update item status for ${itemId}:`, updateError);
     }
   }
 

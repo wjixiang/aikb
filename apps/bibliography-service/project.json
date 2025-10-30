@@ -52,11 +52,16 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "bibliography-service:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "watch": true,
+        "env": {
+          "ELASTICSEARCH_LOGGING_ENABLED": true
+        }
       },
       "configurations": {
         "development": {
-          "buildTarget": "bibliography-service:build:development"
+          "buildTarget": "bibliography-service:build:development",
+          "watch": true
         },
         "production": {
           "buildTarget": "bibliography-service:build:production"

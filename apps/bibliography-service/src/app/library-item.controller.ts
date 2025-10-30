@@ -1,6 +1,11 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { LibraryItemService } from './library-item.service';
-import { CreateLibraryItemDto } from '@aikb/library-shared';
+import {
+  CreateLibraryItemDto,
+  UpdateMetadataDto,
+  UpdateProcessingStatusDto,
+  PdfDownloadUrlDto
+} from 'library-shared';
 import { LibraryItem } from '@aikb/bibliography';
 
 @Controller('library-items')
@@ -93,6 +98,74 @@ export class LibraryItemController {
       }
       throw new HttpException(
         `Failed to delete library item: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Update library item metadata
+   * @param id The ID of the library item
+   * @param updateMetadataDto The metadata to update
+   * @returns The updated library item
+   */
+  @Put(':id/metadata')
+  async updateMetadata(
+    @Param('id') id: string,
+    @Body() updateMetadataDto: UpdateMetadataDto
+  ): Promise<LibraryItem> {
+    try {
+      return await this.libraryItemService.updateLibraryItemMetadata(id, updateMetadataDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Failed to update library item metadata: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Update PDF processing status
+   * @param id The ID of the library item
+   * @param updateProcessingStatusDto The processing status update
+   * @returns The updated library item
+   */
+  @Put(':id/processing-status')
+  async updateProcessingStatus(
+    @Param('id') id: string,
+    @Body() updateProcessingStatusDto: UpdateProcessingStatusDto
+  ): Promise<LibraryItem> {
+    try {
+      return await this.libraryItemService.updatePdfProcessingStatus(id, updateProcessingStatusDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Failed to update PDF processing status: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get PDF download URL
+   * @param id The ID of the library item
+   * @returns The download URL and expiration time
+   */
+  @Get(':id/download-url')
+  async getDownloadUrl(@Param('id') id: string): Promise<PdfDownloadUrlDto> {
+    try {
+      return await this.libraryItemService.getPdfDownloadUrl(id);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Failed to get PDF download URL: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

@@ -11,13 +11,20 @@
         "outputPath": "apps/pdf-process/pdf-analysis-worker/dist",
         "main": "apps/pdf-process/pdf-analysis-worker/src/main.ts",
         "tsConfig": "apps/pdf-process/pdf-analysis-worker/tsconfig.json",
-        "assets": ["apps/pdf-process/pdf-analysis-worker/*.json"]
+        "assets": ["apps/pdf-process/pdf-analysis-worker/*.json"],
+        "envFile": [
+          ".env"
+        ]
+
       }
     },
     "serve": {
       "executor": "@nx/node:execute",
       "options": {
-        "buildTarget": "pdf-analysis-worker:build"
+        "buildTarget": "pdf-analysis-worker:build",
+        "envFile": [
+          ".env"
+        ]
       },
       "configurations": {
         "production": {
