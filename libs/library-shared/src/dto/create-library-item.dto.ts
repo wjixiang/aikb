@@ -3,10 +3,10 @@ import { Author } from '@aikb/bibliography';
 
 export class CreateLibraryItemDto {
   @IsString()
-  title: string;
+  title!: string;
 
   @IsArray()
-  authors: Author[];
+  authors!: Author[];
 
   @IsOptional()
   @IsString()
@@ -33,17 +33,17 @@ export class CreateLibraryItemDto {
   url?: string;
 
   @IsArray()
-  tags: string[];
+  tags!: string[];
 
   @IsOptional()
   @IsString()
   notes?: string;
 
   @IsArray()
-  collections: string[];
+  collections!: string[];
 
   @IsEnum(['pdf', 'article', 'book', 'other'])
-  fileType: 'pdf' | 'article' | 'book' | 'other';
+  fileType!: 'pdf' | 'article' | 'book' | 'other';
 
   @IsOptional()
   @IsString()

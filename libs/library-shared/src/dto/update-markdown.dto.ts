@@ -2,8 +2,8 @@ import { IsString } from 'class-validator';
 
 export class UpdateMarkdownDto {
   @IsString()
-  id: string;
+  id!: string;
 
   @IsString()
-  markdownContent: string;
+  markdownContent!: string;
 }

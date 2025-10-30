@@ -96,7 +96,7 @@ export interface ILibrary {
 /**
  * Default implementation of Library
  */
-export default class Library implements ILibrary {
+export  class Library implements ILibrary {
   protected storage: ILibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 
