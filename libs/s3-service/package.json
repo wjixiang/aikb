@@ -2,8 +2,8 @@
   "name": "@aikb/s3-service",
   "version": "1.0.0",
   "description": "Independent S3 service module for file upload, download, and management",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
@@ -39,14 +39,14 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js"
     },
     "./mock": {
-      "types": "./dist/mock.d.ts",
-      "import": "./dist/mock.js",
-      "require": "./dist/mock.js"
+      "types": "./src/mock.d.ts",
+      "import": "./src/mock.js",
+      "require": "./src/mock.js"
     }
   }
 }

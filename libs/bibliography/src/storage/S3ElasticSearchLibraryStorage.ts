@@ -24,7 +24,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private client: Client;
   private isInitialized = false;
 
-  logger: any = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
+  private logger: any = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
 
   constructor(
     elasticsearchUrl: string = 'http://elasticsearch:9200',

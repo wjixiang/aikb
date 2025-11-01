@@ -13,6 +13,16 @@ export class LibraryItem {
   ) {}
 
   /**
+   * Custom JSON serialization to avoid circular references
+   */
+  toJSON() {
+    // Return only the metadata, excluding the storage property which contains circular references
+    return {
+      metadata: this.metadata
+    };
+  }
+
+  /**
    * Get the ID of this library item
    */
   getItemId(): string {

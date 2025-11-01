@@ -16,7 +16,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   private readonly chunksIndexName = 'item_chunks';
   private readonly groupsIndexName = 'chunk_embedding_groups';
 
-  readonly logger: ReturnType<typeof createLoggerWithPrefix>;
+  private readonly logger: ReturnType<typeof createLoggerWithPrefix>;
 
   /**
    * Get the chunks index name for a specific dimension

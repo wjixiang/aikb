@@ -3,28 +3,28 @@
   "version": "0.0.1",
   "description": "Log management utilities with Elasticsearch integration",
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "types": "./src/index.d.ts"
     },
     "./logger": {
-      "import": "./dist/logger.js",
-      "require": "./dist/logger.js",
-      "types": "./dist/logger.d.ts"
+      "import": "./src/logger.js",
+      "require": "./src/logger.js",
+      "types": "./src/logger.d.ts"
     },
     "./elasticsearch-transport": {
-      "import": "./dist/elasticsearch-transport.js",
-      "require": "./dist/elasticsearch-transport.js",
-      "types": "./dist/elasticsearch-transport.d.ts"
+      "import": "./src/elasticsearch-transport.js",
+      "require": "./src/elasticsearch-transport.js",
+      "types": "./src/elasticsearch-transport.d.ts"
     },
     "./error-handler": {
-      "import": "./dist/errorHandler.js",
-      "require": "./dist/errorHandler.js",
-      "types": "./dist/errorHandler.d.ts"
+      "import": "./src/errorHandler.js",
+      "require": "./src/errorHandler.js",
+      "types": "./src/errorHandler.d.ts"
     }
   },
   "scripts": {

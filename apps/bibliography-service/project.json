@@ -48,24 +48,11 @@
     "serve": {
       "continuous": true,
       "executor": "@nx/js:node",
-      "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "bibliography-service:build",
         "runBuildTargetDependencies": false,
-        "watch": true,
-        "env": {
-          "ELASTICSEARCH_LOGGING_ENABLED": true
-        }
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "bibliography-service:build:development",
-          "watch": true
-        },
-        "production": {
-          "buildTarget": "bibliography-service:build:production"
-        }
+        "watch": true
       }
     }
   }

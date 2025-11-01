@@ -1,3 +1,3 @@
-export { ElasticsearchTransport } from './elasticsearch-transport.js';
-export { ChunkingErrorHandler } from './errorHandler.js';
-export { default as createLoggerWithPrefix } from './logger.js';
+export { ElasticsearchTransport } from './elasticsearch-transport';
+export { ChunkingErrorHandler } from './errorHandler';
+export { default as createLoggerWithPrefix } from './logger';
