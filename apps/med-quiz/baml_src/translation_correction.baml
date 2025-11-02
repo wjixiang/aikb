@@ -37,10 +37,3 @@ function CorrectTranslation(original: string, translation: string, context: stri
   "#
 }
 
-test TestCorrectTranslation {
-  functions [CorrectTranslation]
-  args {
-    original "The patient presented with fever and headache for three days."
-    translation "患者出现发烧和头疼三天了。"
-  }
-}

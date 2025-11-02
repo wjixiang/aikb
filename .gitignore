@@ -37,6 +37,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
+.env
 .*.env
 .env.development.local
 .env.test.local
@@ -70,3 +71,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .github/instructions/nx.instructions.md
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# Next.js
+.next
+out

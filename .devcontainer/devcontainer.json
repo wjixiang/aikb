@@ -12,7 +12,8 @@
 				"vitest.explorer",
 				"ms-python.vscode-pylance",
 				"rooveterinaryinc.roo-cline",
-				"naveenvignesh5nv.html-live-server"
+				"naveenvignesh5nv.html-live-server",
+				"shellomo.enhanced-toml"
 			]
 		}
 	}

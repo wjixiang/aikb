@@ -32,7 +32,9 @@ async function testApi() {
       return;
     }
     
-    // Test 1: Get library item (this should work)
+    let testItemId = null;
+    
+    // Test 1: Create and get library item
     try {
       console.log('1. Testing GET /api/library-items/:id');
       // First we need to create a test item
@@ -48,60 +50,65 @@ async function testApi() {
         language: 'en'
       });
       
-      if (createResponse.data && createResponse.data.id) {
-        const testItemId = createResponse.data.id;
+      if (createResponse.data && createResponse.data.metadata && createResponse.data.metadata.id) {
+        testItemId = createResponse.data.metadata.id;
         console.log(`Created test item with ID: ${testItemId}`);
         
         // Now test getting the item
         const getResponse = await axios.get(`${API_BASE_URL}/library-items/${testItemId}`);
-        console.log('GET response:', getResponse.data);
+        console.log('✓ GET request successful');
+      } else {
+        console.log('✗ Create response did not contain an ID');
       }
     } catch (error) {
-      console.error('Error in test 1:', error.response?.data || error.message);
+      console.error('✗ Error in test 1:', error.response?.data || error.message);
     }
     
     // Test 2: Update metadata
     try {
       console.log('2. Testing PUT /api/library-items/:id/metadata');
-      if (createResponse.data && createResponse.data.id) {
-        const testItemId = createResponse.data.id;
+      if (testItemId) {
         const updateResponse = await axios.put(`${API_BASE_URL}/library-items/${testItemId}/metadata`, {
           pageCount: 100,
           pdfProcessingStatus: 'processing',
           pdfProcessingMessage: 'API test update'
         });
-        console.log('PUT metadata response:', updateResponse.data);
+        console.log('✓ PUT metadata request successful');
+      } else {
+        console.log('✗ Skipping test 2: No test item ID available');
       }
     } catch (error) {
-      console.error('Error in test 2:', error.response?.data || error.message);
+      console.error('✗ Error in test 2:', error.response?.data || error.message);
     }
     
     // Test 3: Update processing status
     try {
       console.log('3. Testing PUT /api/library-items/:id/processing-status');
-      if (createResponse.data && createResponse.data.id) {
-        const testItemId = createResponse.data.id;
+      if (testItemId) {
         const statusResponse = await axios.put(`${API_BASE_URL}/library-items/${testItemId}/processing-status`, {
           status: 'completed',
           message: 'API test status update',
           progress: 100
         });
-        console.log('PUT status response:', statusResponse.data);
+        console.log('✓ PUT processing status request successful');
+      } else {
+        console.log('✗ Skipping test 3: No test item ID available');
       }
     } catch (error) {
-      console.error('Error in test 3:', error.response?.data || error.message);
+      console.error('✗ Error in test 3:', error.response?.data || error.message);
     }
     
     // Test 4: Get download URL
     try {
       console.log('4. Testing GET /api/library-items/:id/download-url');
-      if (createResponse.data && createResponse.data.id) {
-        const testItemId = createResponse.data.id;
+      if (testItemId) {
         const downloadResponse = await axios.get(`${API_BASE_URL}/library-items/${testItemId}/download-url`);
-        console.log('GET download URL response:', downloadResponse.data);
+        console.log('✓ GET download URL request successful');
+      } else {
+        console.log('✗ Skipping test 4: No test item ID available');
       }
     } catch (error) {
-      console.error('Error in test 4:', error.response?.data || error.message);
+      console.error('✗ Error in test 4:', error.response?.data || error.message);
     }
     
   } catch (error) {

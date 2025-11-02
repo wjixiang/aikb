@@ -1,0 +1,32 @@
+# Quiz Parser Configuration
+
+[quiz]
+source = "2026小凯模拟卷5"
+tags = ["2026"]
+extractedYear = "2026"
+withExp =  true
+
+[exam_paper]
+name = "2026yanda万人模考四"
+subject = "综合"
+year = "2026"
+
+[processing]
+default_chunks = 1
+retry_failed = false
+check_failed = false
+
+# 并发控制配置
+[concurrency]
+# QuizParser 内部并发限制 (默认: 20)
+quiz_parser_limit = 15
+# QuizProcessingService 批处理并发数 (默认: 5)
+batch_processing_limit = 5
+# 批处理之间的延迟时间，毫秒 (默认: 500)
+batch_delay_ms = 500
+# 重试失败任务时的并发数 (默认: 3)
+retry_concurrency_limit = 3
+# 单个任务的最大重试次数 (默认: 3)
+max_retries = 3
+# 重试的基础延迟时间，毫秒 (默认: 1000)
+retry_base_delay_ms = 1000

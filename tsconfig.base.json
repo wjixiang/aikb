@@ -40,7 +40,10 @@
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
       "utils": ["libs/utils/src/index.ts"],
       "library-shared": ["libs/library-shared/src/index.ts"],
-
+      "components": ["libs/components/src/index.ts"],
+      "components/server": ["libs/components/src/server.ts"],
+      "quiz-shared": ["libs/quiz-shared/src/index.ts"],
+      "quiz-management-client": ["apps/quiz-management-client/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

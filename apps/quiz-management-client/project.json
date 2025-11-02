@@ -1,0 +1,19 @@
+{
+  "name": "quiz-management-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/quiz-management-client/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/quiz-management-client",
+        "main": "apps/quiz-management-client/src/index.ts",
+        "tsConfig": "apps/quiz-management-client/tsconfig.lib.json",
+        "assets": ["apps/quiz-management-client/*.md"]
+      }
+    }
+  }
+}

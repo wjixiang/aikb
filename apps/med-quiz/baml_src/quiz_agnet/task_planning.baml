@@ -42,12 +42,3 @@ function PlanNextStep(user_query:string, tasks_avaliable: Task[]) -> Decision {
 
     "#
 }
-
-test TestName {
-  functions [PlanNextStep]
-  args {
-    user_query #"
-      hello world
-    "#
-  }
-}
