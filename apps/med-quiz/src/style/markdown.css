@@ -1,0 +1,99 @@
+/* Syntax highlighting */
+pre[class*="language-"] {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow: auto;
+  background: #f8f8f8 !important;
+}
+
+.dark pre[class*="language-"] {
+  background: #2d2d2d !important;
+}
+
+code:not([class*="language-"]) {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 0.3rem;
+  font-family: "Fira Code", Monaco, Consolas, "Courier New", monospace;
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  background-color: white;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+.dark .mermaid {
+  background-color: #1e1e1e;
+}
+
+/* MathJax styling */
+.MathJax {
+  font-size: 1.1em;
+  color: #2f2f2f;
+}
+
+.dark .MathJax {
+  color: #e5e7eb;
+}
+
+/* Display math (block) */
+.math-display {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+  font-size: 1.2em;
+}
+
+/* Inline math */
+.math-inline {
+  display: inline;
+  vertical-align: middle;
+  font-size: 1em;
+  margin: 0 0.1em;
+}
+
+/* Numbered equations */
+.math-display mjx-container[jax="CHTML"][display="block"] {
+  counter-increment: equation;
+}
+
+.math-display mjx-container[jax="CHTML"][display="block"]::after {
+  content: "(" counter(equation) ")";
+  display: block;
+  text-align: right;
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0.5em;
+}
+
+.dark .math-display mjx-container[jax="CHTML"][display="block"]::after {
+  color: #aaa;
+}
+
+/* Embed styling */
+.embed {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.5rem;
+}
+
+.dark .embed {
+  border-color: #374151;
+}
+
+.embed-title {
+  font-weight: 600;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.embed-content {
+  padding: 0.5rem;
+}

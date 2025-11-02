@@ -1,0 +1,213 @@
+/* Workspace Styles using Tailwind theme variables */
+.workspace-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* PageTabs Styles */
+.page-tabs-container {
+  display: flex;
+  align-items: center;
+  background-color: hsl(var(--secondary));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  min-width: 120px;
+  max-width: 200px;
+  border-right: 1px solid hsl(var(--border));
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.tab-item.active {
+  background-color: hsl(var(--background));
+  border-bottom: 2px solid hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.tab-item.inactive {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--muted-foreground));
+}
+
+.tab-item.inactive:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.tab-item.dragging {
+  opacity: 0.5;
+}
+
+.tab-item.drag-over {
+  border-left: 2px solid hsl(var(--primary));
+}
+
+.tab-close-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 0.125rem;
+  padding: 0.125rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.tab-item:hover .tab-close-btn {
+  opacity: 1;
+}
+
+.tab-close-btn:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+/* Leaf Styles */
+.leaf-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.leaf-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+}
+
+.leaf-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--destructive));
+}
+
+/* Document Display Enhancements */
+.document-display-wrapper {
+  height: 100%;
+  overflow: auto;
+  background-color: hsl(var(--background));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tab-item {
+    min-width: 80px;
+    max-width: 120px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted));
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Drag and Drop Styles */
+.drag-preview {
+  opacity: 0.5;
+  background-color: hsl(var(--accent));
+  border: 2px dashed hsl(var(--border));
+}
+
+.drop-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: hsl(var(--primary));
+}
+
+/* Dark mode adjustments */
+.dark .tab-item.active {
+  background-color: hsl(var(--background));
+  border-bottom-color: hsl(var(--primary));
+}
+
+.dark .tab-item.inactive {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .tab-item.inactive:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Loading spinner color */
+.leaf-loading svg {
+  color: hsl(var(--primary));
+}
+
+/* Error icon color */
+.leaf-error svg {
+  color: hsl(var(--destructive));
+}
+
+/* Ensure proper contrast in both themes */
+.tab-item {
+  border-color: hsl(var(--border));
+}
+
+.tab-close-btn {
+  color: hsl(var(--muted-foreground));
+}
+
+.tab-close-btn:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}

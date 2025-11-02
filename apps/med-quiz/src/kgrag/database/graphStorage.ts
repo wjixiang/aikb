@@ -1,0 +1,190 @@
+import { d, Surreal } from "surrealdb";
+import { RecordId } from "surrealdb";
+
+type Any = any; // Using 'any' for simplicity, can be refined later
+
+interface BaseGraphStorage {
+  createNode(data: Record<string, Any>): Promise<Record<string, Any>[]>;
+  createEdge(
+    fromNodeId: RecordId,
+    edgeTable: string,
+    toNodeId: RecordId,
+    data?: Record<string, Any>,
+  ): Promise<Record<string, Any>[]>;
+  getConnectedNodes(
+    fromNodeId: RecordId,
+    edgeTable: string,
+  ): Promise<Record<string, Any>[]>;
+  getEdges(
+    fromNodeId: RecordId,
+    edgeTable: string,
+  ): Promise<Record<string, Any>[]>;
+  deleteNode(
+    nodeId: RecordId,
+  ): Promise<{ [x: string]: unknown; id: RecordId<string> }>;
+  deleteEdge(
+    edgeId: RecordId,
+  ): Promise<{ [x: string]: unknown; id: RecordId<string> }>;
+}
+
+export default class GraphStorage implements BaseGraphStorage {
+  private db: Surreal;
+  private nodeTableName: string; // Table for generic nodes
+  private quizTableName: string; // Table for quizzes
+
+  constructor(
+    db: Surreal,
+    nodeTableName: string = "nodes",
+    quizTableName: string = "quiz",
+  ) {
+    this.db = db;
+    this.nodeTableName = nodeTableName;
+    this.quizTableName = quizTableName;
+  }
+
+  /**
+   * Save a quiz object to the quiz table.
+   */
+  async saveQuiz(
+    quizData: Record<string, Any>,
+  ): Promise<Array<Record<string, Any> & { id: RecordId }>> {
+    try {
+      // Use the quizTableName for saving quiz data
+      const result = await this.db.create(this.quizTableName, quizData);
+      return result;
+    } catch (error: any) {
+      console.error(`Error saving quiz to table ${this.quizTableName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new node.
+   */
+  async createNode(
+    data: Record<string, Any>,
+  ): Promise<Array<Record<string, Any> & { id: RecordId }>> {
+    try {
+      // Use the generic nodeTableName for creating nodes
+      const result = await this.db.create(this.nodeTableName, data);
+      return result;
+    } catch (error: any) {
+      console.error(
+        `Error creating node in table ${this.nodeTableName}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Create an edge between two nodes.
+   */
+  async createEdge(
+    fromNodeId: RecordId,
+    edgeTable: string,
+    toNodeId: RecordId,
+    data: Record<string, Any> = {},
+  ): Promise<Record<string, Any>[]> {
+    try {
+      const result = await this.db.insertRelation(edgeTable, {
+        in: fromNodeId,
+        out: toNodeId,
+        data: data,
+      });
+      return result;
+    } catch (error: any) {
+      console.error(
+        `Error creating edge from ${fromNodeId} to ${toNodeId} in table ${edgeTable}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get nodes connected from a specific node via a specific edge type.
+   */
+  async getConnectedNodes(
+    fromNodeId: RecordId,
+    edgeTable: string,
+  ): Promise<Record<string, RecordId>[]> {
+    try {
+      // Perform a graph traversal to get the connected 'out' nodes
+      const result = await this.db.query(
+        `SELECT out FROM ${fromNodeId}->${edgeTable}`,
+      );
+      // The result of a graph traversal is typically an array of records
+      // We expect the connected nodes to be directly in the result array
+      if (result && result.length > 0) {
+        // Assuming the result is an array of connected node records
+        return result as Array<Record<string, RecordId>>;
+      }
+      return [];
+    } catch (error: any) {
+      console.error(
+        `Error getting connected nodes from ${fromNodeId} via ${edgeTable}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get edges originating from a specific node via a specific edge type.
+   */
+  async getEdges(
+    fromNodeId: RecordId,
+    edgeTable: string,
+  ): Promise<Record<string, Any>[]> {
+    try {
+      // Select all edges originating from the node via the specified edge table
+      const result = await this.db.query(
+        `SELECT * FROM ${fromNodeId}->${edgeTable}`,
+      );
+      // The result of a SELECT query is typically an array of records
+      // We expect the edge records to be directly in the result array
+      if (result && result.length > 0) {
+        return result as Array<Record<string, Any>>;
+      }
+      return [];
+    } catch (error: any) {
+      console.error(
+        `Error getting edges from ${fromNodeId} via ${edgeTable}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a node by its ID.
+   * Deleting a node in SurrealDB also deletes its incoming and outgoing edges.
+   */
+  async deleteNode(
+    nodeId: RecordId,
+  ): Promise<{ [x: string]: unknown; id: RecordId<string> }> {
+    try {
+      const result = await this.db.delete(nodeId);
+      return result;
+    } catch (error: any) {
+      console.error(`Error deleting node with id ${nodeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an edge by its ID.
+   */
+  async deleteEdge(
+    edgeId: RecordId,
+  ): Promise<{ [x: string]: unknown; id: RecordId<string> }> {
+    try {
+      const result = await this.db.delete(edgeId);
+      return result;
+    } catch (error: any) {
+      console.error(`Error deleting edge with id ${edgeId}:`, error);
+      throw error;
+    }
+  }
+}
