@@ -1,13 +1,21 @@
 import * as amqp from 'amqplib';
-import { getValidatedRabbitMQConfig } from 'lib/rabbitmq/rabbitmq.config';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { config } from 'dotenv';
+import { hostname } from 'os';
+config()
 
 const logger = createLoggerWithPrefix('RabbitMQConnectionVerify');
 
 async function verifyConnection(): Promise<boolean> {
   logger.info('🔍 验证 RabbitMQ 连接...');
 
-  const config = getValidatedRabbitMQConfig();
+  const config:amqp.Options.Connect = {
+    hostname: process.env['RABBITMQ_HOSTNAME'] as string,
+    port: Number(process.env['RABBITMQ_AMQP_PORT']),
+    username: process.env['RABBITMQ_USERNAME'] as string,
+    vhost: process.env['RABBITMQ_VHOST'] as string,
+    password: process.env['RABBITMQ_PASSWORD'] as string
+  };
   if (!config) {
     logger.error('❌ 无效的 RabbitMQ 配置');
     return false;

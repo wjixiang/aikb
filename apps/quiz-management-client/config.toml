@@ -1,7 +1,7 @@
 # Quiz Parser Configuration
 
 [quiz]
-source = "2026小凯模拟卷5"
+source = "小凯精选模拟题"
 tags = ["2026"]
 extractedYear = "2026"
 withExp =  true

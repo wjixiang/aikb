@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { S3MongoLibraryStorage, LibraryItem, Library } from '@aikb/bibliography';
 import {
   CreateLibraryItemDto,
@@ -6,12 +6,16 @@ import {
   UpdateProcessingStatusDto,
   PdfDownloadUrlDto
 } from 'library-shared';
+import { ClientProxy } from '@nestjs/microservices';
+import { Pdf2MArkdownDto } from './pdf_process.dto';
 
 @Injectable()
 export class LibraryItemService {
   private library: Library;
 
-  constructor() {
+  constructor(
+    @Inject("PDF_2_MARKDOWN_SERVICE") private rabbitClient: ClientProxy
+  ) {
     // Initialize the storage and library
     const storage = new S3MongoLibraryStorage();
     this.library = new Library(storage);
@@ -198,5 +202,23 @@ export class LibraryItemService {
       downloadUrl,
       expiresAt,
     };
+  }
+
+  async producePdf2MarkdownRequest(req: Pdf2MArkdownDto) {
+    console.log('producePdf2MarkdownRequest called with:', req);
+    try {
+      // Send message to the configured queue
+      // The pattern name should match to routing key expected by consumers
+      console.log('Emitting message to RabbitMQ...');
+      this.rabbitClient.emit("request-pdf-2-markdown-conversion", req);
+      console.log('Message emitted successfully');
+    } catch (error) {
+      console.error('Error sending message to RabbitMQ:', error);
+      throw error;
+    }
+
+    return {
+        message: "pdf2md request published"
+    }
   }
 }

@@ -1,0 +1,40 @@
+{
+  "name": "bibliography-service",
+  "version": "0.0.1",
+  "description": "Bibliography service for managing library items",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "webpack-cli build --node-env=production",
+    "build:dev": "webpack-cli build --node-env=development",
+    "start": "node dist/main.js",
+    "start:dev": "webpack-cli serve --node-env=development",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.config.ts --testNamePattern=e2e"
+  },
+  "dependencies": {
+    "@aikb/bibliography": "workspace:*",
+    "@aikb/log-management": "workspace:*",
+    "@aikb/rabbitmq": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/microservices": "^11.1.8",
+    "@nestjs/platform-express": "^11.0.0",
+    "amqplib": "^0.10.9",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.1",
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^22.10.7",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4",
+    "webpack-cli": "^5.1.4"
+  }
+}

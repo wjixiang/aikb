@@ -1,0 +1,40 @@
+[
+  {
+    "quiz": {
+      "type": "X",
+      "class": "内科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "以下哪种病毒与Burkitt淋巴瘤的发病密切相关？",
+      "options": [
+        {
+          "oid": "A",
+          "text": "人类T淋巴细胞病毒I型"
+        },
+        {
+          "oid": "B",
+          "text": "人类T淋巴细胞病毒II型"
+        },
+        {
+          "oid": "C",
+          "text": "Kaposi肉瘤病毒"
+        },
+        {
+          "oid": "D",
+          "text": "EB病毒"
+        }
+      ],
+      "answer": "D",
+      "analysis": {
+        "point": null,
+        "discuss": "解析：ABCD\n\n人类T淋巴细胞病毒I型是成人T细胞白血病/淋巴瘤的病因，人类T淋巴细胞病毒II型与T细胞皮肤淋巴瘤的发病有关。 Kaposi肉瘤病毒是原发于体腔的淋巴瘤的病因。 幽门螺杆菌可能是B细胞黏膜相关性淋巴样组织淋巴瘤的病因。 EB病毒与Burkitt淋巴瘤的发病密切相关。",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-03T03:31:33.144Z"
+  }
+]

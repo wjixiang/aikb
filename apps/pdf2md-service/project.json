@@ -1,7 +1,7 @@
 {
-  "name": "bibliography-service",
+  "name": "pdf2md-service",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/bibliography-service/src",
+  "sourceRoot": "apps/pdf2md-service/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "options": {
         "command": "webpack-cli build",
         "args": ["--node-env=production"],
-        "cwd": "apps/bibliography-service"
+        "cwd": "apps/pdf2md-service"
       },
       "configurations": {
         "development": {
@@ -23,8 +23,8 @@
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
-        "{workspaceRoot}/dist/apps/bibliography-service/package.json",
-        "{workspaceRoot}/dist/apps/bibliography-service/pnpm-lock.yaml"
+        "{workspaceRoot}/dist/apps/pdf2md-service/package.json",
+        "{workspaceRoot}/dist/apps/pdf2md-service/pnpm-lock.yaml"
       ],
       "options": {
         "buildTarget": "build"
@@ -33,9 +33,7 @@
     "copy-workspace-modules": {
       "dependsOn": ["build"],
       "cache": true,
-      "outputs": [
-        "{workspaceRoot}/dist/apps/bibliography-service/workspace_modules"
-      ],
+      "outputs": ["{workspaceRoot}/dist/apps/pdf2md-service/workspace_modules"],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
         "buildTarget": "build"
@@ -48,24 +46,19 @@
     "serve": {
       "continuous": true,
       "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
-        "buildTarget": "bibliography-service:build",
-        "runBuildTargetDependencies": false,
-        "watch": true
-      }
-    },
-    "test": {
-      "executor": "@nx/vite:test",
-      "options": {
-        "vitestConfig": "apps/bibliography-service/vitest.config.ts"
-      }
-    },
-    "test:e2e": {
-      "executor": "@nx/vite:test",
-      "options": {
-        "vitestConfig": "apps/bibliography-service/vitest.config.ts",
-        "testNamePattern": "e2e"
+        "buildTarget": "pdf2md-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "pdf2md-service:build:development"
+        },
+        "production": {
+          "buildTarget": "pdf2md-service:build:production"
+        }
       }
     }
   }
