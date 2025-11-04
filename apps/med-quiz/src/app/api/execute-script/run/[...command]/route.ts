@@ -1,7 +1,7 @@
-import { testAllProviders } from "@/lib/langchain/provider";
-import noteEmbedding from "@/lib/milvus/embedding/noteEmbedding";
-import { QdrantClient } from "@qdrant/js-client-rest";
-import { NextRequest, NextResponse } from "next/server";
+import { testAllProviders } from '@/lib/langchain/provider';
+import noteEmbedding from '@/lib/milvus/embedding/noteEmbedding';
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   request: NextRequest,
@@ -18,24 +18,24 @@ export async function POST(
       //   console.log("Qdrant note collection has been deleted", result);
       //   break;
 
-      case "embed-all-note":
+      case 'embed-all-note':
         const embed = new noteEmbedding();
         await embed.embedAllNotes();
         break;
 
-      case "testAllProviders":
+      case 'testAllProviders':
         testAllProviders();
         break;
 
       default:
-        return NextResponse.json({ error: "Invalid command" }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid command' }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Command processed successfully" });
+    return NextResponse.json({ message: 'Command processed successfully' });
   } catch (error) {
-    console.error("Error processing command:", error);
+    console.error('Error processing command:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

@@ -2,7 +2,7 @@
  * MongoDB schema and indexes for link relationships
  */
 
-import { connectToDatabase } from "@/lib/db/mongodb";
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 export class LinkSchemaManager {
   /**
@@ -11,7 +11,7 @@ export class LinkSchemaManager {
   static async createIndexes(): Promise<void> {
     try {
       const { db } = await connectToDatabase();
-      const linksCollection = db.collection("links");
+      const linksCollection = db.collection('links');
 
       // Compound indexes for common queries - allow duplicates for different link types
       await linksCollection.createIndex(
@@ -28,17 +28,17 @@ export class LinkSchemaManager {
 
       // Text indexes for title searches
       await linksCollection.createIndex({
-        sourceTitle: "text",
-        targetTitle: "text",
+        sourceTitle: 'text',
+        targetTitle: 'text',
       });
 
       // Date indexes for sorting
       await linksCollection.createIndex({ createdAt: -1 });
       await linksCollection.createIndex({ updatedAt: -1 });
 
-      console.log("Link indexes created successfully");
+      console.log('Link indexes created successfully');
     } catch (error) {
-      console.error("Failed to create link indexes:", error);
+      console.error('Failed to create link indexes:', error);
       throw error;
     }
   }
@@ -51,17 +51,17 @@ export class LinkSchemaManager {
       const { db } = await connectToDatabase();
 
       // Create collection if it doesn't exist
-      const collections = await db.listCollections({ name: "links" }).toArray();
+      const collections = await db.listCollections({ name: 'links' }).toArray();
       if (collections.length === 0) {
-        await db.createCollection("links");
+        await db.createCollection('links');
       }
 
       // Create indexes
       await this.createIndexes();
 
-      console.log("Links collection initialized successfully");
+      console.log('Links collection initialized successfully');
     } catch (error) {
-      console.error("Failed to initialize links collection:", error);
+      console.error('Failed to initialize links collection:', error);
       throw error;
     }
   }
@@ -75,17 +75,17 @@ export class LinkSchemaManager {
       const { db } = await connectToDatabase();
 
       // Drop collection if it exists
-      const collections = await db.listCollections({ name: "links" }).toArray();
+      const collections = await db.listCollections({ name: 'links' }).toArray();
       if (collections.length > 0) {
-        await db.collection("links").drop();
+        await db.collection('links').drop();
       }
 
       // Recreate collection
       await this.initializeCollection();
 
-      console.log("Links collection reset successfully");
+      console.log('Links collection reset successfully');
     } catch (error) {
-      console.error("Failed to reset links collection:", error);
+      console.error('Failed to reset links collection:', error);
       throw error;
     }
   }

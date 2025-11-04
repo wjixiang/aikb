@@ -1,4 +1,4 @@
-import { Reference } from "./agents/agent.types";
+import { Reference } from './agents/agent.types';
 
 export default class quote {
   content: string;

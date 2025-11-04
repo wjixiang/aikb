@@ -1,6 +1,6 @@
-import crypto from "crypto";
-import { getChatModel } from "./provider";
-import { HumanMessage } from "@langchain/core/messages";
+import crypto from 'crypto';
+import { getChatModel } from './provider';
+import { HumanMessage } from '@langchain/core/messages';
 
 interface BaseChunk {
   id: string;
@@ -59,22 +59,22 @@ function splitSentences(text: string): string[] {
 }
 
 function generateHash(content: string): string {
-  return crypto.createHash("md5").update(content).digest("hex");
+  return crypto.createHash('md5').update(content).digest('hex');
 }
 
 async function callLlm(prompt: string): Promise<string> {
   try {
-    const chatModel = getChatModel()("gpt-4o-mini", 0.1);
+    const chatModel = getChatModel()('gpt-4o-mini', 0.1);
     const response = await chatModel.invoke([new HumanMessage(prompt)]);
     const content = response.content;
-    if (typeof content !== "string") {
-      console.error("LLM response content is not a string:", content);
+    if (typeof content !== 'string') {
+      console.error('LLM response content is not a string:', content);
       return JSON.stringify(content);
     }
     return content;
   } catch (error) {
-    console.error("Error calling LLM:", error);
-    return "";
+    console.error('Error calling LLM:', error);
+    return '';
   }
 }
 
@@ -144,8 +144,8 @@ export default class TextSplitter {
           );
           if (
             chunks.length > 0 &&
-            chunks[chunks.length - 1].join("\n") !==
-              currentChunkSentences.join("\n")
+            chunks[chunks.length - 1].join('\n') !==
+              currentChunkSentences.join('\n')
           ) {
             const truncatedSentence = sentence.substring(0, splitLength);
             chunks.push([truncatedSentence]);
@@ -164,8 +164,8 @@ export default class TextSplitter {
           if (currentChunkSentences.length > 0) {
             if (
               chunks.length === 0 ||
-              chunks[chunks.length - 1].join("\n") !==
-                currentChunkSentences.join("\n")
+              chunks[chunks.length - 1].join('\n') !==
+                currentChunkSentences.join('\n')
             ) {
               chunks.push([...currentChunkSentences]);
             }
@@ -195,15 +195,15 @@ export default class TextSplitter {
     if (currentChunkSentences.length > 0) {
       if (
         chunks.length === 0 ||
-        chunks[chunks.length - 1].join("\n") !==
-          currentChunkSentences.join("\n")
+        chunks[chunks.length - 1].join('\n') !==
+          currentChunkSentences.join('\n')
       ) {
         chunks.push(currentChunkSentences);
       }
     }
 
     const result: LengthChunk[] = chunks.map((chunkSentences) => {
-      const content = chunkSentences.join("\n");
+      const content = chunkSentences.join('\n');
       return {
         id: generateHash(content),
         content: content,
@@ -218,10 +218,10 @@ export default class TextSplitter {
     const prompt = `...`; // Keep original prompt
     const llmResponse = await callLlm(prompt);
     const outlines: [string, number][] = [];
-    llmResponse.split("\n").forEach((line) => {
-      if (line.includes(",")) {
-        const parts = line.split(",");
-        const title = parts[0].replace(/^- /, "").trim();
+    llmResponse.split('\n').forEach((line) => {
+      if (line.includes(',')) {
+        const parts = line.split(',');
+        const title = parts[0].replace(/^- /, '').trim();
         const level = parseInt(parts[1].trim(), 10);
         if (title && !isNaN(level)) {
           outlines.push([title, level]);
@@ -260,7 +260,7 @@ export default class TextSplitter {
     const chunks: OutlineChunk[] = [];
     let lastPos = 0;
     let parentLevel = 0;
-    let parentTitle = "Start";
+    let parentTitle = 'Start';
 
     for (let i = 0; i < outlines.length; i++) {
       const [title, level] = outlines[i];
@@ -326,7 +326,7 @@ export default class TextSplitter {
         currentContentLength < minLength ||
         currentContentLength + nextContentLength <= targetSize
       ) {
-        currentChunk.content += "\n\n" + chunk.content;
+        currentChunk.content += '\n\n' + chunk.content;
         currentChunk.level = Math.min(currentChunk.level, chunk.level);
       } else {
         if (currentContentLength >= minLength) {
@@ -351,7 +351,7 @@ export default class TextSplitter {
             lastMerged.content.length + currentChunk.content.length <=
             targetSize
           ) {
-            lastMerged.content += "\n\n" + currentChunk.content;
+            lastMerged.content += '\n\n' + currentChunk.content;
             lastMerged.level = Math.min(lastMerged.level, currentChunk.level);
             console.log(
               `Merged final small chunk ("${currentChunk.title}") into the previous one ("${lastMerged.title}").`,
@@ -381,8 +381,8 @@ export default class TextSplitter {
   ): Promise<OutlineChunk[]> {
     const rawOutlines = await this.extractOutlines(text);
     if (rawOutlines.length === 0) {
-      console.warn("No outlines extracted. Returning single chunk.");
-      return [{ title: "Full Text", content: text, level: 0 }];
+      console.warn('No outlines extracted. Returning single chunk.');
+      return [{ title: 'Full Text', content: text, level: 0 }];
     }
     const alignedOutlines = this.alignOutlines(rawOutlines);
     const initialChunks = this.splitByOutlines(text, alignedOutlines);
@@ -413,11 +413,11 @@ export default class TextSplitter {
           match[groupIndex] !== undefined
         ) {
           matchedGroups[key] = match[groupIndex].trim();
-          if (key === "content" && matchedGroups[key]) {
+          if (key === 'content' && matchedGroups[key]) {
             hasContent = true;
           }
         } else {
-          matchedGroups[key] = "";
+          matchedGroups[key] = '';
         }
       }
       if (hasContent) {
@@ -439,11 +439,11 @@ export default class TextSplitter {
     matches: Record<string, string>[],
   ): PatternChunk[] {
     return matches.map((match) => {
-      const content = match["content"] || "";
+      const content = match['content'] || '';
       return {
         id: generateHash(content),
-        header: match["header"],
-        name: match["name"],
+        header: match['header'],
+        name: match['name'],
         content: content,
         length: content.length,
       };
@@ -474,11 +474,11 @@ export default class TextSplitter {
 
         if (currentLength > 0 && currentLength + sentenceLength > chunkSize) {
           if (currentChunkSentences.length > 0) {
-            const currentContent = currentChunkSentences.join("\n");
+            const currentContent = currentChunkSentences.join('\n');
             windowChunks.push({
               id: generateHash(currentContent),
               header: chunk.header,
-              name: `${chunk.name || "part"}-p${windowChunks.length + 1}`,
+              name: `${chunk.name || 'part'}-p${windowChunks.length + 1}`,
               content: currentContent,
               length: currentContent.length,
             });
@@ -537,13 +537,13 @@ export default class TextSplitter {
             if (
               windowChunks.length > 0 &&
               windowChunks[windowChunks.length - 1].content !==
-                currentChunkSentences.join("\n")
+                currentChunkSentences.join('\n')
             ) {
               const truncatedSentence = sentence.substring(0, chunkSize);
               windowChunks.push({
                 id: generateHash(truncatedSentence),
                 header: chunk.header,
-                name: `${chunk.name || "part"}-p${windowChunks.length + 1}`,
+                name: `${chunk.name || 'part'}-p${windowChunks.length + 1}`,
                 content: truncatedSentence,
                 length: truncatedSentence.length,
               });
@@ -560,7 +560,7 @@ export default class TextSplitter {
             currentLength += sentenceLength;
           } else {
             if (currentChunkSentences.length > 0) {
-              const currentContent = currentChunkSentences.join("\n");
+              const currentContent = currentChunkSentences.join('\n');
               if (
                 windowChunks.length === 0 ||
                 windowChunks[windowChunks.length - 1].content !== currentContent
@@ -568,7 +568,7 @@ export default class TextSplitter {
                 windowChunks.push({
                   id: generateHash(currentContent),
                   header: chunk.header,
-                  name: `${chunk.name || "part"}-p${windowChunks.length + 1}`,
+                  name: `${chunk.name || 'part'}-p${windowChunks.length + 1}`,
                   content: currentContent,
                   length: currentContent.length,
                 });
@@ -589,7 +589,7 @@ export default class TextSplitter {
             windowChunks.push({
               id: generateHash(truncatedSentence),
               header: chunk.header,
-              name: `${chunk.name || "part"}-p${windowChunks.length + 1}`,
+              name: `${chunk.name || 'part'}-p${windowChunks.length + 1}`,
               content: truncatedSentence,
               length: truncatedSentence.length,
             });
@@ -604,7 +604,7 @@ export default class TextSplitter {
       }
 
       if (currentChunkSentences.length > 0) {
-        const content = currentChunkSentences.join("\n");
+        const content = currentChunkSentences.join('\n');
         if (
           windowChunks.length === 0 ||
           windowChunks[windowChunks.length - 1].content !== content
@@ -612,7 +612,7 @@ export default class TextSplitter {
           windowChunks.push({
             id: generateHash(content),
             header: chunk.header,
-            name: `${chunk.name || "part"}-p${windowChunks.length + 1}`,
+            name: `${chunk.name || 'part'}-p${windowChunks.length + 1}`,
             content: content,
             length: content.length,
           });
@@ -638,11 +638,11 @@ export default class TextSplitter {
       try {
         pattern = new RegExp(
           pattern.source,
-          pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g",
+          pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g',
         );
       } catch (e) {
         console.error(
-          "Failed to add global flag to regex. Proceeding with original.",
+          'Failed to add global flag to regex. Proceeding with original.',
           e,
         );
       }
@@ -650,7 +650,7 @@ export default class TextSplitter {
     const matches = this.findPatternMatches(text, pattern, groupMapping);
     if (matches.length === 0) {
       console.warn(
-        "No matches found for the pattern. Returning the whole text as one chunk.",
+        'No matches found for the pattern. Returning the whole text as one chunk.',
       );
       const content = text;
       return [
@@ -658,7 +658,7 @@ export default class TextSplitter {
           id: generateHash(content),
           content: content,
           length: content.length,
-          name: "Full Text (No Pattern Match)",
+          name: 'Full Text (No Pattern Match)',
         },
       ];
     }
@@ -683,22 +683,22 @@ export default class TextSplitter {
       const jsonResponse = JSON.parse(llmResponse);
       if (Array.isArray(jsonResponse)) {
         jsonResponse.forEach((item) => {
-          if (typeof item.start_pos === "number" && item.summary) {
+          if (typeof item.start_pos === 'number' && item.summary) {
             segments.push([item.start_pos, item.summary]);
           }
         });
         return segments;
       }
     } catch (e) {
-      llmResponse.split("\n").forEach((line) => {
+      llmResponse.split('\n').forEach((line) => {
         line = line.trim();
-        if (line.startsWith("-")) {
+        if (line.startsWith('-')) {
           line = line.substring(1).trim();
         }
-        if (line.includes(",")) {
-          const parts = line.split(",", 2);
+        if (line.includes(',')) {
+          const parts = line.split(',', 2);
           const posStr = parts[0].trim();
-          const summary = parts[1]?.trim() || "";
+          const summary = parts[1]?.trim() || '';
           const pos = parseInt(posStr, 10);
           if (!isNaN(pos)) {
             segments.push([pos, summary]);
@@ -734,7 +734,7 @@ export default class TextSplitter {
         const initialContent = text.substring(0, firstActualStart).trim();
         if (initialContent) {
           chunks.push({
-            summary: "Initial section",
+            summary: 'Initial section',
             content: initialContent,
             start_pos: 0,
             end_pos: firstActualStart,
@@ -781,7 +781,7 @@ export default class TextSplitter {
     language: string,
     globalOffset: number,
     depth: number = 0,
-    parentName: string = "",
+    parentName: string = '',
   ): Promise<SemanticChunk[]> {
     if (!text || text.length === 0) {
       return [];
@@ -801,7 +801,7 @@ export default class TextSplitter {
           name: parentName
             ? `${parentName}.trunc`
             : `Segment@${globalOffset}.trunc`,
-          summary: "Recursion depth limit reached",
+          summary: 'Recursion depth limit reached',
           content: text,
           start_pos: globalOffset,
           end_pos: globalOffset + text.length,
@@ -823,7 +823,7 @@ export default class TextSplitter {
         finalChunks.push({
           id: this.generateSemanticId(trimmedText, startPos, endPos),
           name: name,
-          summary: "",
+          summary: '',
           content: trimmedText,
           start_pos: startPos,
           end_pos: endPos,
@@ -851,7 +851,7 @@ export default class TextSplitter {
         const chunk = initialChunks[i];
         const currentGlobalStart = globalOffset + chunk.start_pos;
         const currentName = chunk.summary
-          ? `${parentName ? parentName + "." : ""}${chunk.summary.replace(/\s+/g, "_")}`
+          ? `${parentName ? parentName + '.' : ''}${chunk.summary.replace(/\s+/g, '_')}`
           : `seg${i + 1}`;
 
         if (chunk.content.length > chunkSize) {
@@ -874,7 +874,7 @@ export default class TextSplitter {
               endPos,
             ),
             name: currentName,
-            summary: chunk.summary || "",
+            summary: chunk.summary || '',
             content: trimmedContent,
             start_pos: currentGlobalStart,
             end_pos: endPos,
@@ -921,7 +921,7 @@ export default class TextSplitter {
   ): Promise<SemanticChunk[]> {
     const finalChunks: SemanticChunk[] = [];
     const sentences = splitSentences(text);
-    let currentContent = "";
+    let currentContent = '';
     let currentStart = 0;
 
     for (const sentence of sentences) {
@@ -943,8 +943,8 @@ export default class TextSplitter {
             chunkStartPos,
             chunkEndPos,
           ),
-          name: `${parentName || "section"}.${depth}.${finalChunks.length + 1}`,
-          summary: "Sentence-based Split",
+          name: `${parentName || 'section'}.${depth}.${finalChunks.length + 1}`,
+          summary: 'Sentence-based Split',
           content: currentContent,
           start_pos: chunkStartPos,
           end_pos: chunkEndPos,
@@ -955,7 +955,7 @@ export default class TextSplitter {
         if (!currentContent) {
           currentStart = sentenceStartIndex;
         }
-        currentContent += (currentContent ? "\n" : "") + sentence;
+        currentContent += (currentContent ? '\n' : '') + sentence;
       }
     }
 
@@ -964,8 +964,8 @@ export default class TextSplitter {
       const chunkEndPos = chunkStartPos + currentContent.length;
       finalChunks.push({
         id: this.generateSemanticId(currentContent, chunkStartPos, chunkEndPos),
-        name: `${parentName || "section"}.${depth}.${finalChunks.length + 1}`,
-        summary: "Sentence-based Split",
+        name: `${parentName || 'section'}.${depth}.${finalChunks.length + 1}`,
+        summary: 'Sentence-based Split',
         content: currentContent,
         start_pos: chunkStartPos,
         end_pos: chunkEndPos,

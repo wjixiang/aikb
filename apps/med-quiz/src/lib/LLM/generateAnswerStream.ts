@@ -1,5 +1,5 @@
-import { HTTPRequest } from "@boundaryml/baml";
-import { SupportedLLM, get_provider } from "./LLMProvider";
+import { HTTPRequest } from '@boundaryml/baml';
+import { SupportedLLM, get_provider } from './LLMProvider';
 
 /**
  * Generates an answer stream using the LLM provider with BAML ClientRegistry

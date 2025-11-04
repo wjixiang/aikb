@@ -1,10 +1,10 @@
-import { NextRequest } from "next/server";
-import { AgentChatService } from "@/lib/services/AgentChatService";
-import { language } from "@/kgrag/type";
+import { NextRequest } from 'next/server';
+import { AgentChatService } from '@/lib/services/AgentChatService';
+import { language } from '@/kgrag/type';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Chat agent API called with:", {
+    console.log('Chat agent API called with:', {
       url: req.url,
       method: req.method,
       headers: Object.fromEntries(req.headers.entries()),
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       useHybrid,
     } = requestData;
 
-    console.log("Processing chat request:", {
+    console.log('Processing chat request:', {
       sessionId,
       message,
       mode,
@@ -30,12 +30,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (!sessionId || !message) {
-      console.error("Missing required fields:", { sessionId, message });
+      console.error('Missing required fields:', { sessionId, message });
       return new Response(
-        JSON.stringify({ error: "sessionId and message are required" }),
+        JSON.stringify({ error: 'sessionId and message are required' }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
     }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         useHyDE: useHyDE || false,
         useHybrid: useHybrid || false,
         topK: 10,
-        language: "zh" as language,
+        language: 'zh' as language,
       },
     };
 
@@ -65,17 +65,17 @@ export async function POST(req: NextRequest) {
     });
 
     return new Response(JSON.stringify({ success: true, sessionId }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error("Error in agent chat API:", error);
+    console.error('Error in agent chat API:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       },
     );
   }

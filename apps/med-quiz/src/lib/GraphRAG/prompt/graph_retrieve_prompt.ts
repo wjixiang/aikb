@@ -1,4 +1,4 @@
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from '@langchain/core/prompts';
 
 export const keywords_extraction_examples = [
   `Example 1:
@@ -65,5 +65,5 @@ export const keywords_extraction = new PromptTemplate({
   ######################
   The \`Output\` should be human text, not unicode characters. Keep the same language as \`Query\`.
   Output:`,
-  inputVariables: ["history", "query", "examples"],
+  inputVariables: ['history', 'query', 'examples'],
 });

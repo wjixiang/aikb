@@ -5,19 +5,19 @@
  * 使用RAG对quiz数据添加解析内容的CLI脚本
  */
 
-import { Command } from "commander";
-import dotenv from "dotenv";
-import QuizStorage from "@/lib/quiz/QuizStorage";
+import { Command } from 'commander';
+import dotenv from 'dotenv';
+import QuizStorage from '@/lib/quiz/QuizStorage';
 import rag_workflow, {
   rag_workflow_sync,
-} from "@/kgrag/lib/llm_workflow/rag_workflow";
-import { quiz } from "@/types/quizData.types";
-import { ObjectId } from "mongodb";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import pLimit from "p-limit";
-import cliProgress from "cli-progress";
-import { SupportedLLM } from "@/lib/LLM/LLMProvider";
-import { language } from "@/kgrag/type";
+} from '@/kgrag/lib/llm_workflow/rag_workflow';
+import { quiz } from '@/types/quizData.types';
+import { ObjectId } from 'mongodb';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import pLimit from 'p-limit';
+import cliProgress from 'cli-progress';
+import { SupportedLLM } from '@/lib/LLM/LLMProvider';
+import { language } from '@/kgrag/type';
 
 // Load environment variables
 dotenv.config();
@@ -74,10 +74,10 @@ class QuizRAGAnalyzer {
     const query: any = {
       // 筛选ai_analysis字段为空的记录
       $or: [
-        { "analysis.ai_analysis": { $exists: false } },
-        { "analysis.ai_analysis": { $eq: null } },
-        { "analysis.ai_analysis": { $eq: "" } },
-        { "analysis.ai_analysis": { $regex: /^\s*$/ } },
+        { 'analysis.ai_analysis': { $exists: false } },
+        { 'analysis.ai_analysis': { $eq: null } },
+        { 'analysis.ai_analysis': { $eq: '' } },
+        { 'analysis.ai_analysis': { $regex: /^\s*$/ } },
       ],
     };
 
@@ -99,11 +99,11 @@ class QuizRAGAnalyzer {
     }
 
     // 限制查询结果数量
-    const limit = parseInt(this.options.limit?.toString() || "100");
+    const limit = parseInt(this.options.limit?.toString() || '100');
 
     // 执行查询
     const quizzes = await db
-      .collection<quiz>("quiz")
+      .collection<quiz>('quiz')
       .find(query)
       .limit(limit)
       .toArray();
@@ -115,32 +115,32 @@ class QuizRAGAnalyzer {
    * 格式化quiz内容为查询文本
    */
   private formatQuizForRAG(quiz: quiz): string {
-    let questionText = "";
-    let optionsText = "";
-    let answerText = "";
+    let questionText = '';
+    let optionsText = '';
+    let answerText = '';
 
-    if (quiz.type === "A3") {
+    if (quiz.type === 'A3') {
       questionText =
         quiz.mainQuestion +
-        "\n" +
-        quiz.subQuizs.map((sq) => `${sq.subQuizId}. ${sq.question}`).join("\n");
+        '\n' +
+        quiz.subQuizs.map((sq) => `${sq.subQuizId}. ${sq.question}`).join('\n');
       optionsText = JSON.stringify(quiz.subQuizs[0].options.map((e) => e.text));
       answerText = quiz.subQuizs
         .map((sq) => `${sq.subQuizId}. ${sq.answer}`)
-        .join("\n");
-    } else if (quiz.type === "B") {
+        .join('\n');
+    } else if (quiz.type === 'B') {
       questionText = quiz.questions
         .map((q) => `${q.questionId}. ${q.questionText}`)
-        .join("\n");
+        .join('\n');
       optionsText = JSON.stringify(quiz.options.map((e) => e.text));
       answerText = quiz.questions
         .map((q) => `${q.questionId}. ${q.answer}`)
-        .join("\n");
+        .join('\n');
     } else {
       questionText = quiz.question;
       optionsText = JSON.stringify(quiz.options.map((e) => e.text));
       answerText = Array.isArray(quiz.answer)
-        ? quiz.answer.join(", ")
+        ? quiz.answer.join(', ')
         : quiz.answer.toString();
     }
 
@@ -156,8 +156,8 @@ ${optionsText}
 ${answerText}
 
 # 现有解析
-${quiz.analysis.discuss || "无"}
-${quiz.analysis.point || "无"}
+${quiz.analysis.discuss || '无'}
+${quiz.analysis.point || '无'}
 
 请基于医学知识库，提供更详细、准确的解析，包括：
 1. 答案解析
@@ -177,8 +177,8 @@ ${quiz.analysis.point || "无"}
       useHybrid: true,
       useReasoning: true,
       topK: 10,
-      language: (this.options.language || "zh") as language,
-      llm: (this.options.model || "GLM45Flash") as SupportedLLM,
+      language: (this.options.language || 'zh') as language,
+      llm: (this.options.model || 'GLM45Flash') as SupportedLLM,
     };
 
     try {
@@ -199,13 +199,13 @@ ${quiz.analysis.point || "无"}
     analysis: string,
   ): Promise<void> {
     const { db } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
+    const quizCollection = db.collection<quiz>('quiz');
 
     await quizCollection.updateOne(
       { _id: new ObjectId(quizId) as unknown as string },
       {
         $set: {
-          "analysis.ai_analysis": analysis,
+          'analysis.ai_analysis': analysis,
         },
       },
     );
@@ -234,7 +234,7 @@ ${quiz.analysis.point || "无"}
       if (
         !this.options.force &&
         quiz.analysis.ai_analysis &&
-        quiz.analysis.ai_analysis.trim() !== ""
+        quiz.analysis.ai_analysis.trim() !== ''
       ) {
         return {
           quizId: quiz._id.toString(),
@@ -253,7 +253,7 @@ ${quiz.analysis.point || "无"}
       return {
         quizId: quiz._id.toString(),
         success: true,
-        analysis: analysis.substring(0, 100) + "...", // 只返回前100个字符作为预览
+        analysis: analysis.substring(0, 100) + '...', // 只返回前100个字符作为预览
         processingTime: Date.now() - startTime,
       };
     } catch (error) {
@@ -276,30 +276,30 @@ ${quiz.analysis.point || "无"}
    * 批量处理quizzes
    */
   async processQuizzes(): Promise<void> {
-    console.log("开始RAG分析处理...");
+    console.log('开始RAG分析处理...');
 
     // 获取quiz数据 - 只获取没有AI分析或AI分析为空的题目
     const quizzes = await this.fetchQuizzesWithEmptyAIAnalysis();
     console.log(`找到 ${quizzes.length} 个需要处理的题目`);
 
     if (quizzes.length === 0) {
-      console.log("没有找到匹配的题目，任务结束");
+      console.log('没有找到匹配的题目，任务结束');
       return;
     }
 
     // 创建进度条
     this.progressBar = new cliProgress.SingleBar({
       format:
-        "处理进度 |{bar}| {percentage}% | {value}/{total} | 成功: {success} | 失败: {failed} | 速度: {speed} 题/分钟",
-      barCompleteChar: "\u2588",
-      barIncompleteChar: "\u2591",
+        '处理进度 |{bar}| {percentage}% | {value}/{total} | 成功: {success} | 失败: {failed} | 速度: {speed} 题/分钟',
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
       hideCursor: true,
     });
 
     this.progressBar.start(quizzes.length, 0, {
       success: 0,
       failed: 0,
-      speed: "N/A",
+      speed: 'N/A',
     });
 
     let processed = 0;
@@ -358,37 +358,37 @@ async function main() {
   const program = new Command();
 
   program
-    .name("rag-quiz-analysis")
-    .description("使用RAG对quiz数据添加解析内容")
-    .version("1.0.0");
+    .name('rag-quiz-analysis')
+    .description('使用RAG对quiz数据添加解析内容')
+    .version('1.0.0');
 
   program
-    .option("-c, --class <className>", "题目分类，如: 内科学, 外科学等")
-    .option("-m, --mode <mode>", "题目类型，如: A1, A2, A3, B, X")
-    .option("-u, --unit <unit>", "题目单元")
-    .option("-s, --source <source>", "题目来源")
-    .option("-y, --year <year>", "年份，如: 2023")
-    .option("-l, --limit <number>", "处理题目数量限制", "100")
-    .option("--concurrency <number>", "并发处理数量", "5")
-    .option("--dry-run", "试运行模式，不实际修改数据")
-    .option("--force", "强制重新生成已有解析的内容")
-    .option("--language <language>", "语言设置 (zh/en)", "zh")
+    .option('-c, --class <className>', '题目分类，如: 内科学, 外科学等')
+    .option('-m, --mode <mode>', '题目类型，如: A1, A2, A3, B, X')
+    .option('-u, --unit <unit>', '题目单元')
+    .option('-s, --source <source>', '题目来源')
+    .option('-y, --year <year>', '年份，如: 2023')
+    .option('-l, --limit <number>', '处理题目数量限制', '100')
+    .option('--concurrency <number>', '并发处理数量', '5')
+    .option('--dry-run', '试运行模式，不实际修改数据')
+    .option('--force', '强制重新生成已有解析的内容')
+    .option('--language <language>', '语言设置 (zh/en)', 'zh')
     .option(
-      "--model <model>",
-      "使用的LLM模型 (如: GLM45Flash, GLM4Plus, Gpt4o等)",
-      "GLM45Flash",
+      '--model <model>',
+      '使用的LLM模型 (如: GLM45Flash, GLM4Plus, Gpt4o等)',
+      'GLM45Flash',
     )
     .action(async (options: CLIOptions) => {
       try {
-        console.log("🚀 开始RAG Quiz分析任务");
-        console.log("参数:", JSON.stringify(options, null, 2));
+        console.log('🚀 开始RAG Quiz分析任务');
+        console.log('参数:', JSON.stringify(options, null, 2));
 
         const analyzer = new QuizRAGAnalyzer(options);
         await analyzer.processQuizzes();
 
-        console.log("✅ 任务完成");
+        console.log('✅ 任务完成');
       } catch (error) {
-        console.error("❌ 任务执行失败:", error);
+        console.error('❌ 任务执行失败:', error);
         process.exit(1);
       }
     });

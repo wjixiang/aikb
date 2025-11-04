@@ -32,24 +32,31 @@ describe('LibraryItemService - End to End', () => {
     // Set test environment variables
     process.env.NODE_ENV = 'test';
     process.env.MONGODB_URI = 'mongodb://localhost:27017/test_bibliography';
-    
+
     // Create a real RabbitMQ connection for testing
     try {
-      connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://admin:admin123@rabbitmq:5672/my_vhost');
+      connection = await amqp.connect(
+        process.env.RABBITMQ_URL ||
+          'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+      );
       channel = await connection.createChannel();
       // console.log(connection)
       // Declare unique test queues for isolation
       await channel.assertQueue(uniqueQueueName, { durable: true });
-      await channel.assertQueue('request-pdf-2-markdown-conversion', { durable: true });
+      await channel.assertQueue('request-pdf-2-markdown-conversion', {
+        durable: true,
+      });
       await channel.assertQueue(uniqueServiceQueueName, { durable: true });
-      
+
       console.log(`Using unique test queue: ${uniqueQueueName}`);
-      
+
       console.log('RabbitMQ connection established for testing');
     } catch (error) {
       console.error('Failed to connect to RabbitMQ:', error);
       // Don't fail the test if RabbitMQ is not available - skip tests instead
-      console.log('RabbitMQ connection not available, skipping tests that require it');
+      console.log(
+        'RabbitMQ connection not available, skipping tests that require it',
+      );
       // Don't throw error, just log it and continue with mock testing
       console.log('Will proceed with mock RabbitMQ testing');
     }
@@ -76,7 +83,10 @@ describe('LibraryItemService - End to End', () => {
             name: 'PDF_2_MARKDOWN_SERVICE',
             transport: Transport.RMQ,
             options: {
-              urls: [process.env.RABBITMQ_URL || 'amqp://admin:admin123@rabbitmq:5672/my_vhost'],
+              urls: [
+                process.env.RABBITMQ_URL ||
+                  'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+              ],
               queue: uniqueServiceQueueName,
               // Add connection options for better debugging
               connectionInitOptions: { timeout: 30000 },
@@ -105,62 +115,83 @@ describe('LibraryItemService - End to End', () => {
         console.log('Skipping test - RabbitMQ connection not available');
         return;
       }
-      
+
       // Clear any existing messages in the queues
       await channel.purgeQueue('request-pdf-2-markdown-conversion');
       await channel.purgeQueue(uniqueServiceQueueName);
       await channel.purgeQueue(uniqueQueueName);
-      
+
       // Create test data
       const testDto = new Pdf2MArkdownDto('test-item-id-123');
-      
+
       // Set up a consumer to capture the message
       let receivedMessage: any = null;
       let messageReceived = false;
-      
+
       // Listen to all queues to capture the message
-      const consumer1 = await channel.consume('request-pdf-2-markdown-conversion', (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          messageReceived = true;
-          console.log('Message received in request-pdf-2-markdown-conversion queue:', parsedMessage);
-          channel.ack(msg);
-        }
-      }, { noAck: false });
-      
-      const consumer2 = await channel.consume(uniqueServiceQueueName, (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          messageReceived = true;
-          console.log('Message received in pdf_2_markdown_queue queue:', parsedMessage);
-          channel.ack(msg);
-        }
-      }, { noAck: false });
-      
-      const consumer3 = await channel.consume(uniqueQueueName, (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          messageReceived = true;
-          console.log(`Message received in ${uniqueQueueName} queue:`, parsedMessage);
-          channel.ack(msg);
-        }
-      }, { noAck: false });
+      const consumer1 = await channel.consume(
+        'request-pdf-2-markdown-conversion',
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            messageReceived = true;
+            console.log(
+              'Message received in request-pdf-2-markdown-conversion queue:',
+              parsedMessage,
+            );
+            channel.ack(msg);
+          }
+        },
+        { noAck: false },
+      );
+
+      const consumer2 = await channel.consume(
+        uniqueServiceQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            messageReceived = true;
+            console.log(
+              'Message received in pdf_2_markdown_queue queue:',
+              parsedMessage,
+            );
+            channel.ack(msg);
+          }
+        },
+        { noAck: false },
+      );
+
+      const consumer3 = await channel.consume(
+        uniqueQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            messageReceived = true;
+            console.log(
+              `Message received in ${uniqueQueueName} queue:`,
+              parsedMessage,
+            );
+            channel.ack(msg);
+          }
+        },
+        { noAck: false },
+      );
 
       try {
         // Call the method under test
         const result = await service.producePdf2MarkdownRequest(testDto);
-        
+
         // Wait a bit for the message to be processed
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Verify the result
         expect(result).toEqual({
-          message: "pdf2md request published"
+          message: 'pdf2md request published',
         });
-        
+
         // Verify the message was received
         expect(messageReceived).toBe(true);
         expect(receivedMessage).toBeDefined();
@@ -181,7 +212,7 @@ describe('LibraryItemService - End to End', () => {
 
     it('should handle connection errors gracefully', async () => {
       console.log('Starting connection error test...');
-      
+
       try {
         console.log('Creating module with invalid RabbitMQ configuration...');
         // Create a module with invalid RabbitMQ configuration
@@ -192,7 +223,9 @@ describe('LibraryItemService - End to End', () => {
                 name: 'PDF_2_MARKDOWN_SERVICE',
                 transport: Transport.RMQ,
                 options: {
-                  urls: ['amqp://invalid:invalid@invalid-host:5672/invalid_vhost'],
+                  urls: [
+                    'amqp://invalid:invalid@invalid-host:5672/invalid_vhost',
+                  ],
                   queue: `pdf_2_markdown_queue_invalid_${Date.now()}`,
                   connectionInitOptions: { timeout: 1000 },
                 },
@@ -201,22 +234,25 @@ describe('LibraryItemService - End to End', () => {
           ],
           providers: [LibraryItemService],
         }).compile();
-        
+
         console.log('Module created successfully, getting service...');
-        const invalidService = invalidModule.get<LibraryItemService>(LibraryItemService);
-        
+        const invalidService =
+          invalidModule.get<LibraryItemService>(LibraryItemService);
+
         const testDto = new Pdf2MArkdownDto('test-item-id-456');
-        
-        console.log('Calling producePdf2MarkdownRequest with invalid connection...');
+
+        console.log(
+          'Calling producePdf2MarkdownRequest with invalid connection...',
+        );
         // This should either succeed (if emit is fire-and-forget) or fail gracefully
         // We're testing that it doesn't crash the application
         const result = await invalidService.producePdf2MarkdownRequest(testDto);
-        
+
         console.log('Result received:', result);
         expect(result).toEqual({
-          message: "pdf2md request published"
+          message: 'pdf2md request published',
         });
-        
+
         console.log('Closing invalid module...');
         await invalidModule.close();
       } catch (error) {
@@ -231,61 +267,73 @@ describe('LibraryItemService - End to End', () => {
         console.log('Skipping test - RabbitMQ connection not available');
         return;
       }
-      
+
       // Clear any existing messages in the queues
       await channel.purgeQueue('request-pdf-2-markdown-conversion');
       await channel.purgeQueue(uniqueServiceQueueName);
       await channel.purgeQueue(uniqueQueueName);
-      
+
       const testDto = new Pdf2MArkdownDto('debug-item-id-789');
-      
+
       // Set up a consumer to capture the message
       let receivedMessage: any = null;
       let messageReceived = false;
-      
-      const consumer1 = await channel.consume('request-pdf-2-markdown-conversion', (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          console.log('Debug - Message properties:', msg.properties);
-          console.log('Debug - Message fields:', msg.fields);
-          console.log('Debug - Message content:', parsedMessage);
-          channel.ack(msg);
-          messageReceived = true;
-        }
-      }, { noAck: false });
-      
-      const consumer2 = await channel.consume(uniqueServiceQueueName, (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          console.log('Debug - Message properties:', msg.properties);
-          console.log('Debug - Message fields:', msg.fields);
-          console.log('Debug - Message content:', parsedMessage);
-          channel.ack(msg);
-          messageReceived = true;
-        }
-      }, { noAck: false });
-      
-      const consumer3 = await channel.consume(uniqueQueueName, (msg) => {
-        if (msg && !messageReceived) {
-          const parsedMessage = JSON.parse(msg.content.toString());
-          receivedMessage = parsedMessage.data || parsedMessage;
-          console.log('Debug - Message properties:', msg.properties);
-          console.log('Debug - Message fields:', msg.fields);
-          console.log('Debug - Message content:', parsedMessage);
-          channel.ack(msg);
-          messageReceived = true;
-        }
-      }, { noAck: false });
+
+      const consumer1 = await channel.consume(
+        'request-pdf-2-markdown-conversion',
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            console.log('Debug - Message properties:', msg.properties);
+            console.log('Debug - Message fields:', msg.fields);
+            console.log('Debug - Message content:', parsedMessage);
+            channel.ack(msg);
+            messageReceived = true;
+          }
+        },
+        { noAck: false },
+      );
+
+      const consumer2 = await channel.consume(
+        uniqueServiceQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            console.log('Debug - Message properties:', msg.properties);
+            console.log('Debug - Message fields:', msg.fields);
+            console.log('Debug - Message content:', parsedMessage);
+            channel.ack(msg);
+            messageReceived = true;
+          }
+        },
+        { noAck: false },
+      );
+
+      const consumer3 = await channel.consume(
+        uniqueQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            console.log('Debug - Message properties:', msg.properties);
+            console.log('Debug - Message fields:', msg.fields);
+            console.log('Debug - Message content:', parsedMessage);
+            channel.ack(msg);
+            messageReceived = true;
+          }
+        },
+        { noAck: false },
+      );
 
       try {
         // Call the method under test
         await service.producePdf2MarkdownRequest(testDto);
-        
+
         // Wait a bit for the message to be processed
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Verify the message was received and log details
         expect(receivedMessage).toBeDefined();
         expect(receivedMessage.itemId).toBe('debug-item-id-789');

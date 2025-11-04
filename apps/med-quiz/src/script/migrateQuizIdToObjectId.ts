@@ -1,17 +1,17 @@
-import { MongoClient, ObjectId } from "mongodb";
-import { connectToDatabase } from "@/lib/db/mongodb";
+import { MongoClient, ObjectId } from 'mongodb';
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 async function migrateQuizIdToObjectId() {
   let client: MongoClient | undefined;
   try {
     const { db, client: mongoClient } = await connectToDatabase();
     client = mongoClient;
-    const practiceRecordsCollection = db.collection("practicerecords");
+    const practiceRecordsCollection = db.collection('practicerecords');
 
-    console.log("Starting migration of practicerecords.quizid to ObjectId...");
+    console.log('Starting migration of practicerecords.quizid to ObjectId...');
 
     const cursor = practiceRecordsCollection.find({
-      quizid: { $type: "string" },
+      quizid: { $type: 'string' },
     });
 
     let migratedCount = 0;
@@ -53,11 +53,11 @@ async function migrateQuizIdToObjectId() {
       );
     }
   } catch (e) {
-    console.error("Migration failed:", e);
+    console.error('Migration failed:', e);
   } finally {
     if (client) {
       await client.close();
-      console.log("MongoDB connection closed.");
+      console.log('MongoDB connection closed.');
     }
   }
 }

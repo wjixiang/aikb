@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Connect to database
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Get all favorite sentences for the user
     const favorites = await db
-      .collection("translationFavorites")
+      .collection('translationFavorites')
       .aggregate([
         {
           $match: {
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
         },
         {
           $lookup: {
-            from: "translationPractice",
-            localField: "documentId",
-            foreignField: "_id",
-            as: "document",
+            from: 'translationPractice',
+            localField: 'documentId',
+            foreignField: '_id',
+            as: 'document',
           },
         },
         {
-          $unwind: "$document",
+          $unwind: '$document',
         },
         {
           $project: {
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
             sentenceIndex: 1,
             sentence: 1,
             createdAt: 1,
-            documentTitle: "$document.title",
-            documentContent: "$document.text",
+            documentTitle: '$document.title',
+            documentContent: '$document.text',
           },
         },
         {
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error) {
-    console.error("Error fetching favorites:", error);
+    console.error('Error fetching favorites:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

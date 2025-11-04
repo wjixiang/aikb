@@ -10,7 +10,7 @@ import { QuizProcessingService } from './services/QuizProcessingService';
 async function main() {
   const processingService = new QuizProcessingService();
   const args = process.argv.slice(2);
-  
+
   if (args.includes('--check')) {
     const count = processingService.getFailedQuizzesCount();
     if (count === 0) {
@@ -21,7 +21,7 @@ async function main() {
     }
     return;
   }
-  
+
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
 Usage: npx tsx src/retryFailedQuizzes.ts [options]
@@ -37,9 +37,9 @@ Description:
     `);
     return;
   }
-  
+
   console.log('🔄 Retrying failed quizzes...');
-  
+
   try {
     const successCount = await processingService.retryFailedQuizzes();
     if (successCount > 0) {
@@ -47,10 +47,12 @@ Description:
     } else {
       console.log('ℹ️ No quizzes were successfully retried.');
     }
-    
+
     const remainingCount = processingService.getFailedQuizzesCount();
     if (remainingCount > 0) {
-      console.log(`⚠️ ${remainingCount} quizzes still failed. They will be retried next time.`);
+      console.log(
+        `⚠️ ${remainingCount} quizzes still failed. They will be retried next time.`,
+      );
     }
   } catch (error) {
     console.error('❌ Error retrying failed quizzes:', error);

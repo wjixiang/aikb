@@ -1,15 +1,15 @@
-import { semanticSearchResult } from "../../database/chunkStorage";
-import Logger from "@/lib/console/logger";
-import { b } from "../../../baml_client/async_client";
-import { language } from "../../type";
-import { Reference } from "@/lib/agents/agent.types";
-import TextbookMilvusStorage from "@/kgrag/textbookMilvusStorage";
-import { textbookSearchResultItem } from "../../textbookMilvusStorage";
-import { Collector, ClientRegistry } from "@boundaryml/baml";
-import OpenAI from "openai";
-import { ChatMessage } from "@/lib/agents/agent.types";
-import { generateAnswerStream } from "@/lib/LLM/generateAnswerStream";
-import { clientRegistry, SupportedLLM } from "@/lib/LLM/LLMProvider";
+import { semanticSearchResult } from '../../database/chunkStorage';
+import Logger from '@/lib/console/logger';
+import { b } from '../../../baml_client/async_client';
+import { language } from '../../type';
+import { Reference } from '@/lib/agents/agent.types';
+import TextbookMilvusStorage from '@/kgrag/textbookMilvusStorage';
+import { textbookSearchResultItem } from '../../textbookMilvusStorage';
+import { Collector, ClientRegistry } from '@boundaryml/baml';
+import OpenAI from 'openai';
+import { ChatMessage } from '@/lib/agents/agent.types';
+import { generateAnswerStream } from '@/lib/LLM/generateAnswerStream';
+import { clientRegistry, SupportedLLM } from '@/lib/LLM/LLMProvider';
 
 export interface rag_config {
   useHyDE: boolean;
@@ -43,12 +43,12 @@ export default async function rag_workflow(
   bamlDocuments: Reference[];
   collector: Collector;
 }> {
-  const logger = new Logger("rag_workflow");
+  const logger = new Logger('rag_workflow');
   let retrievalQuery = query;
 
   if (config.useHyDE) {
     logger.info(
-      "HyDE is enabled. Generating hypothetical answer for retrieval.",
+      'HyDE is enabled. Generating hypothetical answer for retrieval.',
     );
     try {
       const hydeResult = await b.HyDE_rewrite(query, config.language);
@@ -64,9 +64,9 @@ export default async function rag_workflow(
     // Convert milvus docs to semanticSearchResult format
     const milvusResults: semanticSearchResult[] = [];
     const milvus_retriever = new TextbookMilvusStorage({
-      textbook_chunk_mongodb_collection_name: "pdf_pages",
-      textbook_milvus_collection_name: "textbooks",
-      milvus_collection_name: "textbooks",
+      textbook_chunk_mongodb_collection_name: 'pdf_pages',
+      textbook_milvus_collection_name: 'textbooks',
+      milvus_collection_name: 'textbooks',
       chunk_size: 25,
       chunk_overlap: 200,
       embedding_batch_size: 20,
@@ -97,11 +97,11 @@ export default async function rag_workflow(
       );
     } else {
       logger.info(
-        "No documents retrieved from Milvus. Proceeding with empty document set to generate response.",
+        'No documents retrieved from Milvus. Proceeding with empty document set to generate response.',
       );
       // This is intentional - we still want to generate a response even when no documents are found
     }
-    console.log("文档取回");
+    console.log('文档取回');
     // Combine both result sets
 
     // Map retrieved documents to the BAML RetrievedDocument type
@@ -111,21 +111,21 @@ export default async function rag_workflow(
       (doc: semanticSearchResult) => ({
         content: doc.document.content, // Assuming the retrieved document has a 'text' property for content
         score: doc.score,
-        title: doc.document.title ?? "",
+        title: doc.document.title ?? '',
         presigned_url: doc.document.presigned_url,
         page_number: doc.document.page_number,
       }),
     );
 
     // console.log('Retrieved documents:', bamlDocuments);
-    const collector = new Collector("rag");
+    const collector = new Collector('rag');
     logger.info(
       `Retrieved ${bamlDocuments.length} documents. Generating answer.`,
     );
 
     const history = messages
       ?.slice(-6)
-      .map((e) => e.sender + " : " + e.content);
+      .map((e) => e.sender + ' : ' + e.content);
     // const concat_docs = concat_documents(bamlDocuments)
     const concat_docs = bamlDocuments;
 
@@ -151,11 +151,11 @@ export default async function rag_workflow(
     logger.debug(`req: ${JSON.stringify(req, null, 2)}`);
     const stream = await generateAnswerStream(
       req,
-      config.llm ?? "GLM4Flash",
+      config.llm ?? 'GLM4Flash',
       config.useReasoning ?? true,
     );
 
-    logger.info("Answer stream initiated.");
+    logger.info('Answer stream initiated.');
     return { stream, bamlDocuments, collector };
   } catch (error) {
     logger.error(
@@ -170,10 +170,10 @@ export function concat_documents(docs: Reference[]): Reference[] {
 
   // Filter documents that have page numbers and parse them
   const docsWithPages = docs
-    .filter((doc) => doc.page_number && doc.page_number.trim() !== "")
+    .filter((doc) => doc.page_number && doc.page_number.trim() !== '')
     .map((doc) => {
       const pageArray = doc
-        .page_number!.split("-")
+        .page_number!.split('-')
         .map((p) => parseInt(p.trim(), 10));
       return {
         doc,
@@ -215,7 +215,7 @@ export function concat_documents(docs: Reference[]): Reference[] {
 
   // Add documents without page numbers at the end
   const docsWithoutPages = docs.filter(
-    (doc) => !doc.page_number || doc.page_number.trim() === "",
+    (doc) => !doc.page_number || doc.page_number.trim() === '',
   );
   mergedDocs.push(...docsWithoutPages);
 
@@ -234,7 +234,7 @@ function mergeDocGroup(group: any[]): Reference {
   const combinedContent = group
     .sort((a, b) => a.startPage - b.startPage)
     .map((item) => item.doc.content)
-    .join("\n\n");
+    .join('\n\n');
 
   // Use the first document as base, but update page range and content
   const baseDoc = group[0].doc;
@@ -254,12 +254,12 @@ export async function rag_workflow_sync(
   bamlDocuments: Reference[];
   collector: Collector;
 }> {
-  const logger = new Logger("rag_workflow");
+  const logger = new Logger('rag_workflow');
   let retrievalQuery = query;
 
   if (config.useHyDE) {
     logger.info(
-      "HyDE is enabled. Generating hypothetical answer for retrieval.",
+      'HyDE is enabled. Generating hypothetical answer for retrieval.',
     );
     try {
       const hydeResult = await b.HyDE_rewrite(query, config.language);
@@ -275,9 +275,9 @@ export async function rag_workflow_sync(
     // Convert milvus docs to semanticSearchResult format
     const milvusResults: semanticSearchResult[] = [];
     const milvus_retriever = new TextbookMilvusStorage({
-      textbook_chunk_mongodb_collection_name: "pdf_pages",
-      textbook_milvus_collection_name: "textbooks",
-      milvus_collection_name: "textbooks",
+      textbook_chunk_mongodb_collection_name: 'pdf_pages',
+      textbook_milvus_collection_name: 'textbooks',
+      milvus_collection_name: 'textbooks',
       chunk_size: 25,
       chunk_overlap: 200,
       embedding_batch_size: 20,
@@ -308,11 +308,11 @@ export async function rag_workflow_sync(
       );
     } else {
       logger.info(
-        "No documents retrieved from Milvus. Proceeding with empty document set to generate response.",
+        'No documents retrieved from Milvus. Proceeding with empty document set to generate response.',
       );
       // This is intentional - we still want to generate a response even when no documents are found
     }
-    console.log("文档取回");
+    console.log('文档取回');
     // Combine both result sets
 
     // Map retrieved documents to the BAML RetrievedDocument type
@@ -322,21 +322,21 @@ export async function rag_workflow_sync(
       (doc: semanticSearchResult) => ({
         content: doc.document.content, // Assuming the retrieved document has a 'text' property for content
         score: doc.score,
-        title: doc.document.title ?? "",
+        title: doc.document.title ?? '',
         presigned_url: doc.document.presigned_url,
         page_number: doc.document.page_number,
       }),
     );
 
     // console.log('Retrieved documents:', bamlDocuments);
-    const collector = new Collector("rag");
+    const collector = new Collector('rag');
     logger.info(
       `Retrieved ${bamlDocuments.length} documents. Generating answer.`,
     );
 
     const history = messages
       ?.slice(-6)
-      .map((e) => e.sender + " : " + e.content);
+      .map((e) => e.sender + ' : ' + e.content);
     // const concat_docs = concat_documents(bamlDocuments)
     const concat_docs = bamlDocuments;
 

@@ -105,21 +105,21 @@ export class FileExamPaperStorage implements IExamPaperStorage {
    */
   async save(examPaper: ExamPaper): Promise<ExamPaper> {
     const index = this.readIndex();
-    
+
     // 如果是更新，保留原有的创建时间
     if (index[examPaper.id]) {
       examPaper.createdAt = new Date(index[examPaper.id].createdAt);
     } else {
       examPaper.createdAt = new Date();
     }
-    
+
     examPaper.updatedAt = new Date();
-    
+
     // 保存到索引和单独文件
     index[examPaper.id] = examPaper;
     this.writeIndex(index);
     this.saveExamPaperFile(examPaper);
-    
+
     return examPaper;
   }
 
@@ -135,10 +135,10 @@ export class FileExamPaperStorage implements IExamPaperStorage {
    */
   async findAll(): Promise<ExamPaper[]> {
     const index = this.readIndex();
-    return Object.values(index).map(examPaper => ({
+    return Object.values(index).map((examPaper) => ({
       ...examPaper,
       createdAt: new Date(examPaper.createdAt),
-      updatedAt: new Date(examPaper.updatedAt)
+      updatedAt: new Date(examPaper.updatedAt),
     }));
   }
 
@@ -150,15 +150,15 @@ export class FileExamPaperStorage implements IExamPaperStorage {
     if (!existingExamPaper) {
       throw new Error(`Exam paper with id ${id} not found`);
     }
-    
+
     const updatedExamPaper: ExamPaper = {
       ...existingExamPaper,
       ...updates,
       id, // 确保ID不被覆盖
       createdAt: existingExamPaper.createdAt, // 保留原创建时间
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
+
     return this.save(updatedExamPaper);
   }
 
@@ -170,14 +170,14 @@ export class FileExamPaperStorage implements IExamPaperStorage {
     if (!index[id]) {
       return false;
     }
-    
+
     // 从索引中删除
     delete index[id];
     this.writeIndex(index);
-    
+
     // 删除单独文件
     this.deleteExamPaperFile(id);
-    
+
     return true;
   }
 }

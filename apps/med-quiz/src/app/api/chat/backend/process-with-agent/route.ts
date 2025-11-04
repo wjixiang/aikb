@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { chatBackendService } from "@/lib/services/ChatBackendService";
+import { NextRequest, NextResponse } from 'next/server';
+import { chatBackendService } from '@/lib/services/ChatBackendService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,14 +9,14 @@ export async function POST(request: NextRequest) {
     chatBackendService
       .processWithAgent(sessionId, userQuery, agentConfig)
       .catch((error) => {
-        console.error("Error in background agent processing:", error);
+        console.error('Error in background agent processing:', error);
       });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error starting agent processing:", error);
+    console.error('Error starting agent processing:', error);
     return NextResponse.json(
-      { error: "Failed to start agent processing" },
+      { error: 'Failed to start agent processing' },
       { status: 500 },
     );
   }

@@ -2,9 +2,9 @@
  * Link statistics and analytics service
  */
 
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { LinkIndexingService } from "./linkIndexingService";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { LinkIndexingService } from './linkIndexingService';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
 export interface LinkStats {
   totalDocuments: number;
@@ -30,7 +30,7 @@ export interface LinkStats {
 }
 
 export class LinkStatsService {
-  private logger = createLoggerWithPrefix("LinkStatsService");
+  private logger = createLoggerWithPrefix('LinkStatsService');
   private linkService = new LinkIndexingService();
 
   /**
@@ -40,15 +40,15 @@ export class LinkStatsService {
   async getLinkStats(): Promise<LinkStats> {
     try {
       const { db } = await connectToDatabase();
-      const documentsCollection = db.collection("knowledgeBase");
-      const linksCollection = db.collection("links");
+      const documentsCollection = db.collection('knowledgeBase');
+      const linksCollection = db.collection('links');
 
       // Get total documents
       const totalDocuments = await documentsCollection.countDocuments();
 
       // Get total links
       const totalLinks = await linksCollection.countDocuments({
-        linkType: "forward",
+        linkType: 'forward',
       });
 
       // Get documents with link metadata
@@ -58,9 +58,9 @@ export class LinkStatsService {
           _id: 1,
           key: 1,
           title: 1,
-          "metadata.linkCount": 1,
-          "metadata.forwardLinks": 1,
-          "metadata.backwardLinks": 1,
+          'metadata.linkCount': 1,
+          'metadata.forwardLinks': 1,
+          'metadata.backwardLinks': 1,
         })
         .toArray();
 
@@ -79,8 +79,8 @@ export class LinkStatsService {
       // Get most linked documents
       const mostLinked = await linksCollection
         .aggregate([
-          { $match: { linkType: "backward" } },
-          { $group: { _id: "$targetId", count: { $sum: 1 } } },
+          { $match: { linkType: 'backward' } },
+          { $group: { _id: '$targetId', count: { $sum: 1 } } },
           { $sort: { count: -1 } },
           { $limit: 10 },
         ])
@@ -91,7 +91,7 @@ export class LinkStatsService {
           const doc = await documentsCollection.findOne({ _id: item._id });
           return {
             documentId: item._id.toString(),
-            title: doc?.title || doc?.key || "Unknown",
+            title: doc?.title || doc?.key || 'Unknown',
             linkCount: item.count,
           };
         }),
@@ -99,7 +99,7 @@ export class LinkStatsService {
 
       // Get recent links
       const recentLinks = await linksCollection
-        .find({ linkType: "forward" })
+        .find({ linkType: 'forward' })
         .sort({ createdAt: -1 })
         .limit(10)
         .toArray();
@@ -123,7 +123,7 @@ export class LinkStatsService {
         },
       };
     } catch (error) {
-      this.logger.error("Failed to get link stats", { error });
+      this.logger.error('Failed to get link stats', { error });
       throw error;
     }
   }
@@ -135,13 +135,13 @@ export class LinkStatsService {
   async getOrphanedDocuments() {
     try {
       const { db } = await connectToDatabase();
-      const documentsCollection = db.collection("knowledgeBase");
+      const documentsCollection = db.collection('knowledgeBase');
 
       const documents = await documentsCollection
         .find({
           $or: [
-            { "metadata.linkCount": { $exists: false } },
-            { "metadata.linkCount": 0 },
+            { 'metadata.linkCount': { $exists: false } },
+            { 'metadata.linkCount': 0 },
           ],
         })
         .sort({ lastModified: -1 })
@@ -153,13 +153,13 @@ export class LinkStatsService {
         title:
           doc.title ||
           doc.key
-            .split("/")
+            .split('/')
             .pop()
-            ?.replace(/\.(md|txt|markdown)$/i, ""),
+            ?.replace(/\.(md|txt|markdown)$/i, ''),
         lastModified: doc.lastModified || new Date(),
       }));
     } catch (error) {
-      this.logger.error("Failed to get orphaned documents", { error });
+      this.logger.error('Failed to get orphaned documents', { error });
       throw error;
     }
   }
@@ -171,12 +171,12 @@ export class LinkStatsService {
   async getBrokenLinks() {
     try {
       const { db } = await connectToDatabase();
-      const linksCollection = db.collection("links");
-      const documentsCollection = db.collection("knowledgeBase");
+      const linksCollection = db.collection('links');
+      const documentsCollection = db.collection('knowledgeBase');
 
       // Get all forward links
       const forwardLinks = await linksCollection
-        .find({ linkType: "forward" })
+        .find({ linkType: 'forward' })
         .toArray();
 
       const brokenLinks = [];
@@ -189,7 +189,7 @@ export class LinkStatsService {
               key: {
                 $regex: new RegExp(
                   `^${this.escapeRegExp(link.targetTitle)}$`,
-                  "i",
+                  'i',
                 ),
               },
             },
@@ -197,7 +197,7 @@ export class LinkStatsService {
               title: {
                 $regex: new RegExp(
                   `^${this.escapeRegExp(link.targetTitle)}$`,
-                  "i",
+                  'i',
                 ),
               },
             },
@@ -217,7 +217,7 @@ export class LinkStatsService {
 
       return brokenLinks;
     } catch (error) {
-      this.logger.error("Failed to get broken links", { error });
+      this.logger.error('Failed to get broken links', { error });
       throw error;
     }
   }
@@ -230,7 +230,7 @@ export class LinkStatsService {
   async getLinkActivity(days: number = 30) {
     try {
       const { db } = await connectToDatabase();
-      const linksCollection = db.collection("links");
+      const linksCollection = db.collection('links');
 
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
@@ -240,21 +240,21 @@ export class LinkStatsService {
           {
             $match: {
               createdAt: { $gte: startDate },
-              linkType: "forward",
+              linkType: 'forward',
             },
           },
           {
             $group: {
               _id: {
-                year: { $year: "$createdAt" },
-                month: { $month: "$createdAt" },
-                day: { $dayOfMonth: "$createdAt" },
+                year: { $year: '$createdAt' },
+                month: { $month: '$createdAt' },
+                day: { $dayOfMonth: '$createdAt' },
               },
               count: { $sum: 1 },
             },
           },
           {
-            $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+            $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 },
           },
         ])
         .toArray();
@@ -264,7 +264,7 @@ export class LinkStatsService {
         count: item.count,
       }));
     } catch (error) {
-      this.logger.error("Failed to get link activity", { error });
+      this.logger.error('Failed to get link activity', { error });
       throw error;
     }
   }
@@ -273,6 +273,6 @@ export class LinkStatsService {
    * Escape special characters for regex
    */
   private escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

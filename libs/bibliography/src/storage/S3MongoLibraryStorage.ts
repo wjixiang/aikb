@@ -334,5 +334,4 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
 
     return result.deletedCount > 0;
   }
-
 }

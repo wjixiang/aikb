@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
 import {
   getFsrsInstance,
   processReview,
   convertToFsrsItem,
   convertFromFsrsItem,
-} from "@/lib/fsrs/fsrs";
-import { CardState, UserSubscription } from "@/types/anki.types";
-import { ObjectId } from "mongodb";
-import { refreshCollection } from "@/lib/fsrs/refreshCollection";
+} from '@/lib/fsrs/fsrs';
+import { CardState, UserSubscription } from '@/types/anki.types';
+import { ObjectId } from 'mongodb';
+import { refreshCollection } from '@/lib/fsrs/refreshCollection';
 
 /**
  * Interface representing the structure of the review request payload.
@@ -57,41 +57,41 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const data: ReviewRequestPayload = await request.json();
 
     if (!data.cardOid || !data.rating || data.rating < 1 || data.rating > 4) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
     const { db } = await connectToDatabase();
 
     // 获取卡片状态
-    const cardState = await db.collection<CardState>("cardStates").findOne({
+    const cardState = await db.collection<CardState>('cardStates').findOne({
       userId: session.user?.email as string,
       cardOid: data.cardOid,
     });
 
     if (!cardState) {
       return NextResponse.json(
-        { error: "Card state not found" },
+        { error: 'Card state not found' },
         { status: 404 },
       );
     }
 
     // 找到包含这张卡片的牌组
     const presetCollections = await db
-      .collection("presetCollections")
+      .collection('presetCollections')
       .find({
-        "cards.oid": data.cardOid,
+        'cards.oid': data.cardOid,
       })
       .toArray();
 
     if (presetCollections.length === 0) {
       return NextResponse.json(
-        { error: "Card not found in any collection" },
+        { error: 'Card not found in any collection' },
         { status: 404 },
       );
     }
@@ -99,14 +99,14 @@ export async function POST(request: Request) {
     const collectionIds = presetCollections.map((c) => c._id.toString());
 
     // 找到用户订阅的这个牌组
-    const subscription = await db.collection("userSubscriptions").findOne({
+    const subscription = await db.collection('userSubscriptions').findOne({
       userId: session.user?.email,
       collectionId: { $in: collectionIds },
     });
 
     if (!subscription) {
       return NextResponse.json(
-        { error: "Subscription not found" },
+        { error: 'Subscription not found' },
         { status: 404 },
       );
     }
@@ -123,14 +123,14 @@ export async function POST(request: Request) {
 
     // 更新卡片状态
     await db
-      .collection("cardStates")
+      .collection('cardStates')
       .updateOne(
         { _id: cardState._id },
         { $set: { state: convertFromFsrsItem(newFsrsItem) } },
       );
 
     // 记录复习日志
-    await db.collection("reviewLogs").insertOne({
+    await db.collection('reviewLogs').insertOne({
       userId: session.user?.email,
       cardOid: data.cardOid,
       rating: data.rating,
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
 
     if (cardState.state.state === 0) {
       // 更新新学记录
-      await db.collection<UserSubscription>("userSubscriptions").updateOne(
+      await db.collection<UserSubscription>('userSubscriptions').updateOne(
         { _id: new ObjectId(subscription._id) },
         {
           $inc: {
@@ -152,25 +152,25 @@ export async function POST(request: Request) {
             newCardsToday: 1,
           },
           $set: {
-            dueCount: await db.collection("cardStates").countDocuments({
+            dueCount: await db.collection('cardStates').countDocuments({
               userId: session.user?.email,
-              "state.due": { $lte: new Date() },
+              'state.due': { $lte: new Date() },
             }),
           },
         },
       );
     } else {
       // 更新复习记录
-      await db.collection("userSubscriptions").updateOne(
+      await db.collection('userSubscriptions').updateOne(
         { _id: new ObjectId(subscription._id) },
         {
           $inc: {
             reviewedToday: 1, // 增加今日复习计数
           },
           $set: {
-            dueCount: await db.collection("cardStates").countDocuments({
+            dueCount: await db.collection('cardStates').countDocuments({
               userId: session.user?.email,
-              "state.due": { $lte: new Date() },
+              'state.due': { $lte: new Date() },
             }),
           },
         },
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
       newDueDate: newFsrsItem.due,
     });
   } catch (error) {
-    console.error("Error in POST /api/fsrs/review:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in POST /api/fsrs/review:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

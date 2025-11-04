@@ -2,20 +2,20 @@
  * Debug script for link indexing issues
  */
 
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { LinkIndexingService } from "@/kgrag/services/linkIndexingService";
-import { LinkExtractor } from "@/kgrag/lib/linkExtractor";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { LinkIndexingService } from '@/kgrag/services/linkIndexingService';
+import { LinkExtractor } from '@/kgrag/lib/linkExtractor';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
-const logger = createLoggerWithPrefix("DebugLinkIndexing");
+const logger = createLoggerWithPrefix('DebugLinkIndexing');
 
 async function debugLinkIndexing() {
   try {
-    logger.info("Starting link indexing debug...");
+    logger.info('Starting link indexing debug...');
 
     const { db } = await connectToDatabase();
-    const documentsCollection = db.collection("knowledgeBase");
-    const linksCollection = db.collection("links");
+    const documentsCollection = db.collection('knowledgeBase');
+    const linksCollection = db.collection('links');
 
     // Check existing documents
     const documents = await documentsCollection.find({}).limit(5).toArray();
@@ -23,7 +23,7 @@ async function debugLinkIndexing() {
 
     for (const doc of documents) {
       logger.info(
-        `Document: id=${doc._id.toString()}, key=${doc.key}, title=${doc.title || "N/A"}`,
+        `Document: id=${doc._id.toString()}, key=${doc.key}, title=${doc.title || 'N/A'}`,
       );
 
       if (doc.content) {
@@ -35,7 +35,7 @@ async function debugLinkIndexing() {
 
         for (const link of links) {
           logger.info(
-            `Link found: title=${link.title}, alias=${link.alias || "N/A"}`,
+            `Link found: title=${link.title}, alias=${link.alias || 'N/A'}`,
           );
 
           // Test document lookup for each link
@@ -48,24 +48,24 @@ async function debugLinkIndexing() {
           // Try case-insensitive title match
           if (!targetDoc) {
             targetDoc = await documentsCollection.findOne({
-              title: { $regex: new RegExp(`^${searchTitle}$`, "i") },
+              title: { $regex: new RegExp(`^${searchTitle}$`, 'i') },
             });
           }
 
           // Try key contains title
           if (!targetDoc) {
             targetDoc = await documentsCollection.findOne({
-              key: { $regex: new RegExp(searchTitle, "i") },
+              key: { $regex: new RegExp(searchTitle, 'i') },
             });
           }
 
           // Try filename extraction
           if (!targetDoc) {
-            const filename = searchTitle.replace(/\.(md|txt|markdown)$/i, "");
+            const filename = searchTitle.replace(/\.(md|txt|markdown)$/i, '');
             targetDoc = await documentsCollection.findOne({
               $or: [
                 { title: filename },
-                { key: { $regex: new RegExp(filename, "i") } },
+                { key: { $regex: new RegExp(filename, 'i') } },
               ],
             });
           }
@@ -93,7 +93,7 @@ async function debugLinkIndexing() {
       const service = new LinkIndexingService();
       await service.indexDocument(
         testDoc._id.toString(),
-        testDoc.content || "",
+        testDoc.content || '',
         testDoc.title || testDoc.key,
       );
 
@@ -108,10 +108,10 @@ async function debugLinkIndexing() {
       }
     }
 
-    logger.info("Debug completed");
+    logger.info('Debug completed');
   } catch (error) {
     logger.error(`Debug failed: ${error}`);
-    console.error("Debug error:", error);
+    console.error('Debug error:', error);
   }
 }
 

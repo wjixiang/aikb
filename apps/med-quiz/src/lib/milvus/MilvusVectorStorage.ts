@@ -1,10 +1,10 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { MilvusClient, DataType, FunctionType } from "@zilliz/milvus2-sdk-node";
-import { embeddingInstance } from "../langchain/provider";
-import Logger from "../console/logger";
+import { MilvusClient, DataType, FunctionType } from '@zilliz/milvus2-sdk-node';
+import { embeddingInstance } from '../langchain/provider';
+import Logger from '../console/logger';
 
 interface MilvusVectorStorageConfig {
   StorageNameSpace: string;
@@ -33,12 +33,12 @@ export default class MilvusVectorStorage {
   private logger: Logger;
 
   constructor(config: MilvusVectorStorageConfig) {
-    this.logger = new Logger("MilvusVectorStorage");
+    this.logger = new Logger('MilvusVectorStorage');
     this.embedding_ins = config.embedding_ins;
     this.StorageNameSpace = config.StorageNameSpace;
     // Initialize Milvus client using environment variables
     if (!process.env.MILVUS_URI) {
-      throw new Error("env empty: MILVUS_URI");
+      throw new Error('env empty: MILVUS_URI');
     }
     this.milvusClient = new MilvusClient({
       address: process.env.MILVUS_URI,
@@ -61,33 +61,33 @@ export default class MilvusVectorStorage {
       collection_name: this.StorageNameSpace,
       fields: [
         {
-          name: "id",
+          name: 'id',
           data_type: DataType.VarChar,
           is_primary_key: true,
           max_length: 256, // Assuming a reasonable max length for IDs
         },
         {
-          name: "description",
+          name: 'description',
           data_type: DataType.VarChar,
           max_length: 65535, // Assuming a reasonable max length for description
           enable_analyzer: true, // Enable analyzer for BM25 input field
         },
         {
-          name: "referenceIds",
+          name: 'referenceIds',
           data_type: DataType.VarChar,
           max_length: 65535, // Assuming a reasonable max length for stringified referenceIds
         },
         {
-          name: "dense_vector",
+          name: 'dense_vector',
           data_type: DataType.FloatVector,
           dim: 1536, // Placeholder: Dimension should be determined by this.embedding_ins
         },
         {
-          name: "sparse_vector",
+          name: 'sparse_vector',
           data_type: DataType.SparseFloatVector,
         },
       ],
-      description: "Vector storage collection for " + this.StorageNameSpace,
+      description: 'Vector storage collection for ' + this.StorageNameSpace,
     };
 
     try {
@@ -99,11 +99,11 @@ export default class MilvusVectorStorage {
       // Define the BM25 function
       const functions = [
         {
-          name: "text_bm25_emb", // Function name
-          description: "bm25 function for description field",
+          name: 'text_bm25_emb', // Function name
+          description: 'bm25 function for description field',
           type: FunctionType.BM25,
-          input_field_names: ["description"], // Input field is the raw text field
-          output_field_names: ["sparse_vector"], // Output field is the sparse vector field
+          input_field_names: ['description'], // Input field is the raw text field
+          output_field_names: ['sparse_vector'], // Output field is the sparse vector field
           params: {},
         },
       ];
@@ -112,15 +112,15 @@ export default class MilvusVectorStorage {
         // Define index parameters
         const indexParams = [
           {
-            field_name: "dense_vector",
-            index_type: "HNSW", // Or other appropriate index type
-            metric_type: "COSINE", // Or other appropriate metric type
+            field_name: 'dense_vector',
+            index_type: 'HNSW', // Or other appropriate index type
+            metric_type: 'COSINE', // Or other appropriate metric type
             params: { nlist: 1024 }, // Adjust nlist as needed
           },
           {
-            field_name: "sparse_vector",
-            index_type: "AUTOINDEX", // Or other appropriate index type for sparse vectors
-            metric_type: "BM25", // Or other appropriate metric type for sparse vectors
+            field_name: 'sparse_vector',
+            index_type: 'AUTOINDEX', // Or other appropriate index type for sparse vectors
+            metric_type: 'BM25', // Or other appropriate metric type for sparse vectors
             params: {}, // Adjust params as needed
           },
         ];
@@ -174,7 +174,7 @@ export default class MilvusVectorStorage {
     ids: string[] | null = null,
   ): Promise<Record<string, any>[]> {
     // Placeholder implementation
-    this.logger.info("query method called");
+    this.logger.info('query method called');
     return [];
   }
 
@@ -192,7 +192,7 @@ export default class MilvusVectorStorage {
       // Ensure referenceIds is a string, stringify if it's an array
       if (Array.isArray(referenceIds)) {
         referenceIds = JSON.stringify(referenceIds);
-      } else if (typeof referenceIds !== "string") {
+      } else if (typeof referenceIds !== 'string') {
         // Handle cases where referenceIds is neither string nor array, maybe convert to string or log a warning
         referenceIds = String(referenceIds);
       }
@@ -232,34 +232,34 @@ export default class MilvusVectorStorage {
         throw error; // Re-throw the error to be handled by the caller
       }
     } else {
-      this.logger.info("No entities to upsert.");
+      this.logger.info('No entities to upsert.');
     }
   }
 
   async delete_entity(entity_name: string): Promise<void> {
     // Placeholder implementation
-    this.logger.info("delete_entity method called");
+    this.logger.info('delete_entity method called');
   }
 
   async delete_entity_relation(entity_name: string): Promise<void> {
     // Placeholder implementation
-    this.logger.info("delete_entity_relation method called");
+    this.logger.info('delete_entity_relation method called');
   }
 
   async get_by_id(id: string): Promise<Record<string, any> | null> {
     // Placeholder implementation
-    this.logger.info("get_by_id method called");
+    this.logger.info('get_by_id method called');
     return null;
   }
 
   async get_by_ids(ids: string[]): Promise<Record<string, any>[]> {
     // Placeholder implementation
-    this.logger.info("get_by_ids method called");
+    this.logger.info('get_by_ids method called');
     return [];
   }
 
   async delete(ids: string[]): Promise<void> {
     // Placeholder implementation
-    this.logger.info("delete method called");
+    this.logger.info('delete method called');
   }
 }

@@ -14,8 +14,7 @@ const logger = createLoggerWithPrefix('RabbitMQService');
  * RabbitMQ Service Implementation
  * Provides a high-level interface for RabbitMQ operations
  */
-export class RabbitMQService   {
-  
+export class RabbitMQService {
   private messageService: IMessageService;
   private messageProtocol: MessageProtocol;
   private isInitialized = false;
@@ -72,12 +71,11 @@ export class RabbitMQService   {
     return this.messageProtocol;
   }
   async close() {
-    await this.messageService.close()
+    await this.messageService.close();
   }
   /**
    * Publish a message to RabbitMQ
    */
-  
 }
 
 // Service instance management

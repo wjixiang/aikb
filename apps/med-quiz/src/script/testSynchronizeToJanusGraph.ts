@@ -3,15 +3,15 @@
 import KnowledgeGraphWeaver, {
   defaultKnowledgeGraphWeaverConfig,
   KnowledgeGraphWeaverConfig,
-} from "../lib/GraphRAG/KnowledgeGraphWeaver";
-import { JanusGraphConfig } from "../lib/GraphRAG/janusGraphClient";
+} from '../lib/GraphRAG/KnowledgeGraphWeaver';
+import { JanusGraphConfig } from '../lib/GraphRAG/janusGraphClient';
 
 async function main() {
-  console.log("Starting test for synchronizeToJanusGraph...");
+  console.log('Starting test for synchronizeToJanusGraph...');
 
   // TODO: Replace with your actual JanusGraph configuration
   const janusGraphConfig: JanusGraphConfig = {
-    host: "localhost",
+    host: 'localhost',
     port: 8182,
     // username: 'your_username',
     // password: 'your_password',
@@ -34,9 +34,9 @@ async function main() {
   try {
     const waver = new KnowledgeGraphWeaver(defaultKnowledgeGraphWeaverConfig);
     await waver.synchronizeToJanusGraph();
-    console.log("✅ synchronizeToJanusGraph test completed successfully.");
+    console.log('✅ synchronizeToJanusGraph test completed successfully.');
   } catch (error) {
-    console.error("❌ synchronizeToJanusGraph test failed:", error);
+    console.error('❌ synchronizeToJanusGraph test failed:', error);
   }
 }
 

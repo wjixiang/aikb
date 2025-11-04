@@ -1,9 +1,9 @@
-import { note } from "@/types/noteData.types";
-import milvusCollectionOperator from "../milvus/milvusCollectionOperator";
-import { connectToDatabase } from "./mongodb";
-import { Neo4jManager } from "./neo4jManager";
-import { embeddings } from "../langchain/provider";
-import dotenv from "dotenv";
+import { note } from '@/types/noteData.types';
+import milvusCollectionOperator from '../milvus/milvusCollectionOperator';
+import { connectToDatabase } from './mongodb';
+import { Neo4jManager } from './neo4jManager';
+import { embeddings } from '../langchain/provider';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -58,11 +58,11 @@ export default class KDBManager {
       !process.env.NEO4J_USERNAME ||
       !process.env.NEO4J_PASSWORD
     ) {
-      throw new Error("Missing Neo4j environment variables");
+      throw new Error('Missing Neo4j environment variables');
     }
 
-    this.mongodbNoteCollectionName = "note";
-    this.milvusNoteCollectionName = "note";
+    this.mongodbNoteCollectionName = 'note';
+    this.milvusNoteCollectionName = 'note';
 
     // Initialize Milvus operator with full embedding instance
     this.milvusCollectionOperator = new milvusCollectionOperator(
@@ -102,7 +102,7 @@ export default class KDBManager {
     );
     const result: SyncResult = {
       status: SyncStatus.CREATED,
-      message: "",
+      message: '',
       recordIds: {},
     };
 
@@ -114,13 +114,13 @@ export default class KDBManager {
 
       // Check Neo4j
       try {
-        const neo4jNodes = await this.neo4jManager.findNodes("Note", {
+        const neo4jNodes = await this.neo4jManager.findNodes('Note', {
           oid: note.oid,
         });
         if (neo4jNodes.length === 0) {
           await this.syncToNeo4j(note);
           result.status = SyncStatus.PARTIAL_SYNC;
-          result.message += " but was missing in Neo4j - now synced";
+          result.message += ' but was missing in Neo4j - now synced';
         }
       } catch (error) {
         result.status = SyncStatus.SYNC_FAILED;
@@ -138,9 +138,9 @@ export default class KDBManager {
             result.status === SyncStatus.ALREADY_EXISTS
               ? SyncStatus.PARTIAL_SYNC
               : result.status;
-          result.message += result.message.includes("missing")
-            ? " and Milvus - now synced"
-            : " but was missing in Milvus - now synced";
+          result.message += result.message.includes('missing')
+            ? ' and Milvus - now synced'
+            : ' but was missing in Milvus - now synced';
         }
       } catch (error) {
         result.status = SyncStatus.SYNC_FAILED;
@@ -153,7 +153,7 @@ export default class KDBManager {
     // Insert to MongoDB
     const insertResult = await mongodbNoteCollection.insertOne(note);
     if (!insertResult.acknowledged) {
-      throw new Error("Failed to insert note to MongoDB");
+      throw new Error('Failed to insert note to MongoDB');
     }
     result.recordIds!.mongoId = insertResult.insertedId.toString();
 
@@ -166,7 +166,7 @@ export default class KDBManager {
       result.recordIds!.neo4jId = neo4jId;
 
       result.status = SyncStatus.FULL_SYNC;
-      result.message = "Successfully synced to all databases";
+      result.message = 'Successfully synced to all databases';
       return result;
     } catch (error) {
       // Rollback MongoDB insertion if other operations fail
@@ -186,7 +186,7 @@ export default class KDBManager {
     const milvusDoc = {
       oid: note.oid,
       title: note.fileName,
-      content: note.content[0]?.fileContent || "",
+      content: note.content[0]?.fileContent || '',
       partition_key: null,
     };
     await this.milvusCollectionOperator.insertDocuments([milvusDoc]);
@@ -199,10 +199,10 @@ export default class KDBManager {
    * @private
    */
   private async syncToNeo4j(note: note): Promise<string> {
-    return await this.neo4jManager.createNode("Note", {
+    return await this.neo4jManager.createNode('Note', {
       oid: note.oid,
       fileName: note.fileName,
-      content: note.content[0]?.fileContent || "",
+      content: note.content[0]?.fileContent || '',
       metaData: note.metaData || {},
     });
   }
@@ -225,7 +225,7 @@ export default class KDBManager {
     const { batchSize = 100, onProgress } = options;
     const results: SyncResult[] = Array(notes.length).fill({
       status: SyncStatus.SYNC_FAILED,
-      message: "Not processed yet",
+      message: 'Not processed yet',
       recordIds: {},
     });
 
@@ -263,7 +263,7 @@ export default class KDBManager {
           mongoInsertResult =
             await mongodbNoteCollection.insertMany(notesToInsertMongo);
           if (!mongoInsertResult.acknowledged) {
-            throw new Error("Failed to bulk insert notes to MongoDB");
+            throw new Error('Failed to bulk insert notes to MongoDB');
           }
         }
         // 4. Check existing notes in Milvus and Neo4j using available methods
@@ -277,10 +277,10 @@ export default class KDBManager {
             await this.milvusCollectionOperator.milvusClient.query({
               collection_name: this.milvusNoteCollectionName,
               filter: milvusFilter,
-              output_fields: ["oid"], // Only need oid to check existence
+              output_fields: ['oid'], // Only need oid to check existence
             });
           if (
-            milvusResult.status.error_code === "Success" &&
+            milvusResult.status.error_code === 'Success' &&
             milvusResult.data
           ) {
             existingMilvusOidSet = new Set(
@@ -288,7 +288,7 @@ export default class KDBManager {
             );
           } else {
             console.warn(
-              "Milvus query for existing OIDs failed or returned no data:",
+              'Milvus query for existing OIDs failed or returned no data:',
               milvusResult.status.reason,
             );
             // Decide how to handle failure - potentially skip Milvus inserts for this batch or throw error
@@ -300,10 +300,10 @@ export default class KDBManager {
             const neo4jResult =
               await this.neo4jManager.executeQuery(neo4jQuery);
             existingNeo4jOidSet = new Set(
-              neo4jResult.records.map((record: any) => record.get("oid")),
+              neo4jResult.records.map((record: any) => record.get('oid')),
             );
           } catch (error) {
-            console.warn("Neo4j query for existing OIDs failed:", error);
+            console.warn('Neo4j query for existing OIDs failed:', error);
             // Decide how to handle failure - potentially skip Neo4j inserts for this batch or throw error
           }
         }
@@ -315,7 +315,7 @@ export default class KDBManager {
         const milvusDocsToInsert = notesToInsertMilvus.map((note) => ({
           oid: note.oid,
           title: note.fileName,
-          content: note.content[0]?.fileContent || "",
+          content: note.content[0]?.fileContent || '',
           partition_key: null, // Assuming partition_key is handled or null
         }));
 
@@ -326,7 +326,7 @@ export default class KDBManager {
         const neo4jNodesToCreate = notesToCreateNeo4j.map((note) => ({
           oid: note.oid,
           fileName: note.fileName,
-          content: note.content[0]?.fileContent || "",
+          content: note.content[0]?.fileContent || '',
           metaData: note.metaData || {},
         }));
 
@@ -339,11 +339,11 @@ export default class KDBManager {
             ? this.milvusCollectionOperator.insertDocuments(milvusDocsToInsert)
             : Promise.resolve({
                 status: {
-                  error_code: "Success",
+                  error_code: 'Success',
                 } /* mock success for empty insert */,
               }),
           neo4jNodesToCreate.length > 0
-            ? this.neo4jManager.bulkCreateNodes("Note", neo4jNodesToCreate)
+            ? this.neo4jManager.bulkCreateNodes('Note', neo4jNodesToCreate)
             : Promise.resolve(undefined), // Avoid empty create
         ]);
 
@@ -367,24 +367,24 @@ export default class KDBManager {
               mongoId =
                 mongoInsertResult?.insertedIds?.[mongoInsertIndex]?.toString();
             }
-            messageParts.push("MongoDB: Inserted");
+            messageParts.push('MongoDB: Inserted');
           } else {
-            messageParts.push("MongoDB: Existed");
+            messageParts.push('MongoDB: Existed');
           }
 
           // Milvus status
           if (attemptedMilvusInsert) {
             // Check actual insert result if available, otherwise assume success if no error thrown
-            if (milvusInsertResult?.status?.error_code === "Success") {
-              messageParts.push("Milvus: Inserted");
+            if (milvusInsertResult?.status?.error_code === 'Success') {
+              messageParts.push('Milvus: Inserted');
             } else {
               messageParts.push(
-                `Milvus: Insert Failed (${milvusInsertResult?.status?.reason || "Unknown"})`,
+                `Milvus: Insert Failed (${milvusInsertResult?.status?.reason || 'Unknown'})`,
               );
               // Potentially adjust overall status if insert failed
             }
           } else {
-            messageParts.push("Milvus: Skipped (Exists)");
+            messageParts.push('Milvus: Skipped (Exists)');
           }
 
           // Neo4j status
@@ -396,13 +396,13 @@ export default class KDBManager {
               neo4jCreateResult.includes(note.oid)
             ) {
               neo4jId = note.oid; // Use oid as the identifier for merged nodes
-              messageParts.push("Neo4j: Created/Merged");
+              messageParts.push('Neo4j: Created/Merged');
             } else {
-              messageParts.push("Neo4j: Create/Merge Failed");
+              messageParts.push('Neo4j: Create/Merge Failed');
               // Potentially adjust overall status if create failed
             }
           } else {
-            messageParts.push("Neo4j: Skipped (Exists)");
+            messageParts.push('Neo4j: Skipped (Exists)');
           }
 
           // Determine final status
@@ -414,7 +414,7 @@ export default class KDBManager {
             status = SyncStatus.ALREADY_EXISTS; // Existed everywhere checked
             messageParts.length = 0; // Clear parts for a concise message
             messageParts.push(
-              "Note already existed in MongoDB, Milvus, and Neo4j",
+              'Note already existed in MongoDB, Milvus, and Neo4j',
             );
           } else if (
             wasNewInMongo &&
@@ -423,14 +423,14 @@ export default class KDBManager {
           ) {
             status = SyncStatus.FULL_SYNC; // Fully synced a new note
             messageParts.length = 0; // Clear parts for a concise message
-            messageParts.push("Successfully synced new note to all databases");
+            messageParts.push('Successfully synced new note to all databases');
           } else {
             status = SyncStatus.PARTIAL_SYNC; // Covers all other cases (new but skipped, existed but synced missing parts)
           }
 
           batchResults[index] = {
             status: status,
-            message: messageParts.join(" | "),
+            message: messageParts.join(' | '),
             recordIds: {
               oid: note.oid,
               mongoId,
@@ -449,7 +449,7 @@ export default class KDBManager {
         batch.forEach((note, index) => {
           results[i + index] = {
             status: SyncStatus.SYNC_FAILED,
-            message: error instanceof Error ? error.message : "Unknown error",
+            message: error instanceof Error ? error.message : 'Unknown error',
             recordIds: { oid: note.oid },
           };
         });

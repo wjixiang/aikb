@@ -1,5 +1,4 @@
-
-export type oid = "A" | "B" | "C" | "D" | "E";
+export type oid = 'A' | 'B' | 'C' | 'D' | 'E';
 
 export interface analysis {
   point: string | null;
@@ -10,7 +9,7 @@ export interface analysis {
 
 export interface A1 {
   _id: string;
-  type: "A1";
+  type: 'A1';
   class: string;
   unit: string;
   tags: string[];
@@ -23,7 +22,7 @@ export interface A1 {
 
 export interface A2 {
   _id: string;
-  type: "A2";
+  type: 'A2';
   class: string;
   unit: string;
   tags: string[];
@@ -35,7 +34,7 @@ export interface A2 {
 }
 export interface A3 {
   _id: string;
-  type: "A3";
+  type: 'A3';
   class: string;
   unit: string;
   tags: string[];
@@ -52,7 +51,7 @@ export interface A3 {
 
 export interface X {
   _id: string;
-  type: "X";
+  type: 'X';
   class: string;
   unit: string;
   tags: string[];
@@ -65,7 +64,7 @@ export interface X {
 
 export interface B {
   _id: string;
-  type: "B";
+  type: 'B';
   class: string;
   unit: string;
   tags: string[];
@@ -80,10 +79,9 @@ export interface B {
 }
 
 export type quiz = A1 | A2 | A3 | B | X;
-export type quizTypeID = "A1" | "A2" | "A3" | "B" | "X";
+export type quizTypeID = 'A1' | 'A2' | 'A3' | 'B' | 'X';
 export type answerType = string | string[];
 
 export type QuizWithUserAnswer = quiz & {
   userAnswer?: answerType;
 };
-

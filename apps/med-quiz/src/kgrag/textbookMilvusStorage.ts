@@ -1,22 +1,22 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { Db, WithId } from "mongodb";
-import Progress from "progress";
-import { embedding } from "@/kgrag/lib/embedding";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { Db, WithId } from 'mongodb';
+import Progress from 'progress';
+import { embedding } from '@/kgrag/lib/embedding';
 import {
   DataType,
   FunctionType,
   MilvusClient,
   RRFRanker,
-} from "@zilliz/milvus2-sdk-node";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
-import pLimit from "p-limit";
-import oss from "ali-oss";
-import { Reference } from "@/lib/agents/agent.types";
-import notebook_s3_storage from "./notebook_s3_storage";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { chunkit, ChunkitOptions } from "semantic-chunking";
+} from '@zilliz/milvus2-sdk-node';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
+import pLimit from 'p-limit';
+import oss from 'ali-oss';
+import { Reference } from '@/lib/agents/agent.types';
+import notebook_s3_storage from './notebook_s3_storage';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import { chunkit, ChunkitOptions } from 'semantic-chunking';
 
-require("dotenv").config(); // Explicitly load environment variables
+require('dotenv').config(); // Explicitly load environment variables
 
 export interface textbookSearchResultItem {
   id: string;
@@ -86,7 +86,7 @@ export default class TextbookMilvusStorage {
   MILVUS_SAVE_BATCH_SIZE: number = 100;
 
   milvusCollectionName: string;
-  logger = createLoggerWithPrefix("TextbookMilvusStorage");
+  logger = createLoggerWithPrefix('TextbookMilvusStorage');
 
   s3_storage = new notebook_s3_storage();
 
@@ -112,17 +112,17 @@ export default class TextbookMilvusStorage {
     this.CHUNK_OVERLAP = config.chunk_overlap || 200;
     this.EMBEDDING_BATCH_SIZE =
       config.embedding_batch_size ||
-      parseInt(process.env.EMBEDDING_BATCH_SIZE || "100");
+      parseInt(process.env.EMBEDDING_BATCH_SIZE || '100');
     this.MILVUS_SAVE_BATCH_SIZE =
       config.milvus_batch_size ||
-      parseInt(process.env.MILVUS_SAVE_BATCH_SIZE || "100");
+      parseInt(process.env.MILVUS_SAVE_BATCH_SIZE || '100');
 
     this.bm25Function = {
-      name: "text_bm25_emb",
-      description: "bm25 function",
-      type: "BM25",
-      input_field_names: ["content"],
-      output_field_names: ["sparse_embedding"],
+      name: 'text_bm25_emb',
+      description: 'bm25 function',
+      type: 'BM25',
+      input_field_names: ['content'],
+      output_field_names: ['sparse_embedding'],
       params: {},
     };
 
@@ -158,7 +158,7 @@ export default class TextbookMilvusStorage {
 
   private async fetch_textbook_chunks(db: Db, pdf_name: string) {
     const cursor = db
-      .collection<PDFPageRecord>("pdf_pages")
+      .collection<PDFPageRecord>('pdf_pages')
       .find({ pdf_name: pdf_name })
       .sort({ page_number: 1 });
     return cursor;
@@ -271,82 +271,82 @@ export default class TextbookMilvusStorage {
       collection_name: this.milvusCollectionName,
       fields: [
         {
-          name: "id",
+          name: 'id',
           data_type: DataType.Int64,
           is_primary_key: true,
           autoID: true, // Enable auto-generation of primary key IDs
-          description: "Primary Key",
+          description: 'Primary Key',
         },
         {
-          name: "content",
+          name: 'content',
           data_type: DataType.VarChar,
-          description: "text content of embedding",
+          description: 'text content of embedding',
           enable_analyzer: true,
           enable_match: true,
           type_params: {
-            max_length: "10000",
+            max_length: '10000',
           },
         },
         {
-          name: "embedding",
+          name: 'embedding',
           data_type: DataType.FloatVector,
-          description: "",
+          description: '',
           type_params: {
             dim: String(await this.checkEmbeddingDimension()),
           },
         },
         {
-          name: "sparse_embedding",
+          name: 'sparse_embedding',
           data_type: DataType.SparseFloatVector,
-          description: "BM25 sparse embeddings for full-text search",
+          description: 'BM25 sparse embeddings for full-text search',
           // type_params: {
           //     dim: '768'
           // }
         },
         {
-          name: "pdf_name",
+          name: 'pdf_name',
           data_type: DataType.VarChar,
           is_partition_key: true,
           type_params: {
-            max_length: "100",
+            max_length: '100',
           },
         },
         {
-          name: "page_number",
+          name: 'page_number',
           data_type: DataType.VarChar,
           type_params: {
-            max_length: "100",
+            max_length: '100',
           },
         },
         {
-          name: "s3_key",
+          name: 's3_key',
           data_type: DataType.VarChar,
           type_params: {
-            max_length: "10000",
+            max_length: '10000',
           },
         },
       ],
       functions: [
         {
-          name: "text_bm25_emb",
-          description: "bm25 function",
+          name: 'text_bm25_emb',
+          description: 'bm25 function',
           type: FunctionType.BM25,
-          input_field_names: ["content"],
-          output_field_names: ["sparse_embedding"],
+          input_field_names: ['content'],
+          output_field_names: ['sparse_embedding'],
           params: {},
         },
       ],
       index_params: [
         {
-          field_name: "sparse_embedding",
-          metric_type: "BM25",
-          index_type: "AUTOINDEX",
+          field_name: 'sparse_embedding',
+          metric_type: 'BM25',
+          index_type: 'AUTOINDEX',
         },
       ],
     });
 
     this.logger.info(
-      "--- Create collection ---",
+      '--- Create collection ---',
       createRes,
       this.milvusCollectionName,
     );
@@ -358,12 +358,12 @@ export default class TextbookMilvusStorage {
    * @returns 当前embedding实例的嵌入长度
    */
   async checkEmbeddingDimension() {
-    const query = "hello";
+    const query = 'hello';
     const vector = await embedding(query);
     if (vector === null) {
-      throw new Error("Failed to generate embedding for dimension check.");
+      throw new Error('Failed to generate embedding for dimension check.');
     }
-    this.logger.info("生成的向量长度：", vector.length);
+    this.logger.info('生成的向量长度：', vector.length);
     return vector.length;
   }
 
@@ -386,7 +386,7 @@ export default class TextbookMilvusStorage {
 
       // 如果集合存在，直接返回 true
       if (
-        hasCollectionRes.status.error_code === "Success" &&
+        hasCollectionRes.status.error_code === 'Success' &&
         hasCollectionRes.value === true
       ) {
         console.log(
@@ -402,7 +402,7 @@ export default class TextbookMilvusStorage {
       const createRes = await this.createCollection();
 
       // 检查创建是否成功
-      if (createRes.error_code === "Success") {
+      if (createRes.error_code === 'Success') {
         console.log(
           `Successfully created collection '${this.milvusCollectionName}'.`,
         );
@@ -430,29 +430,29 @@ export default class TextbookMilvusStorage {
     // 定义需要索引的字段及其配置
     const indexConfigs = [
       {
-        field: "content",
-        indexType: "INVERTED",
+        field: 'content',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "embedding",
-        indexType: "HNSW",
+        field: 'embedding',
+        indexType: 'HNSW',
         params: {
-          metric_type: "COSINE",
-          M: "8",
-          efConstruction: "64",
+          metric_type: 'COSINE',
+          M: '8',
+          efConstruction: '64',
         },
       },
       {
-        field: "sparse_embedding",
-        indexType: "AUTOINDEX",
+        field: 'sparse_embedding',
+        indexType: 'AUTOINDEX',
         params: {
-          metric_type: "BM25",
+          metric_type: 'BM25',
         },
       },
       {
-        field: "pdf_name",
-        indexType: "INVERTED",
+        field: 'pdf_name',
+        indexType: 'INVERTED',
         params: {},
       },
     ];
@@ -479,7 +479,7 @@ export default class TextbookMilvusStorage {
         }),
       );
     } catch (error) {
-      console.error("索引验证失败:", error);
+      console.error('索引验证失败:', error);
       throw error;
     }
   }
@@ -504,7 +504,7 @@ export default class TextbookMilvusStorage {
 
         const res = await this.milvusClient.createIndex(indexParams);
 
-        if (res.error_code === "Success") {
+        if (res.error_code === 'Success') {
           console.log(
             `成功创建 ${config.indexType} 索引于字段 ${config.field}`,
           );
@@ -533,7 +533,7 @@ export default class TextbookMilvusStorage {
       collection_name: this.milvusCollectionName,
     });
 
-    if (loadStatus.state !== "LoadStateLoaded") {
+    if (loadStatus.state !== 'LoadStateLoaded') {
       await this.milvusClient.loadCollectionSync({
         collection_name: this.milvusCollectionName,
         timeout: 30, // 30秒超时
@@ -563,7 +563,7 @@ export default class TextbookMilvusStorage {
 
     const query_vector = await embedding(query);
     if (query_vector === null) {
-      throw new Error("Failed to generate embedding for query.");
+      throw new Error('Failed to generate embedding for query.');
     }
 
     // Placeholder for multimodal vector. In a real scenario, this would come from a dedicated multimodal embedding model.
@@ -574,7 +574,7 @@ export default class TextbookMilvusStorage {
 
     const search_param_text_dense = {
       data: query_vector,
-      anns_field: "embedding", // Assuming 'embedding' is the text_dense field
+      anns_field: 'embedding', // Assuming 'embedding' is the text_dense field
       param: { nprobe: 10 },
       limit: limit,
       expr: commonExpr,
@@ -582,7 +582,7 @@ export default class TextbookMilvusStorage {
 
     const search_param_text_sparse = {
       data: query,
-      anns_field: "sparse_embedding",
+      anns_field: 'sparse_embedding',
       param: { drop_ratio_search: 0.2 },
       limit: limit,
       expr: commonExpr,
@@ -590,7 +590,7 @@ export default class TextbookMilvusStorage {
 
     const search_param_image_dense = {
       data: query_multimodal_vector,
-      anns_field: "embedding", // Assuming 'embedding' can also serve as image_dense for now
+      anns_field: 'embedding', // Assuming 'embedding' can also serve as image_dense for now
       param: { nprobe: 10 },
       limit: limit,
       expr: commonExpr,
@@ -607,10 +607,10 @@ export default class TextbookMilvusStorage {
       ],
       limit: topK, // Use topK for the final limit after reranking
       rerank: rerank,
-      output_fields: ["content", "pdf_name", "s3_key", "page_number"], // Specify fields to return
+      output_fields: ['content', 'pdf_name', 's3_key', 'page_number'], // Specify fields to return
     });
 
-    this.logger.info("Hybrid search completed.");
+    this.logger.info('Hybrid search completed.');
     // this.logger.debug(`${JSON.stringify(searchResults,null,2)}`)
     const results = searchResults.results;
     this.logger.debug(`Raw searchResults.results length: ${results.length}`);
@@ -621,7 +621,7 @@ export default class TextbookMilvusStorage {
     const results_with_pdf_url = await Promise.all(
       results.map(async (e) => {
         this.logger.debug(`Processing result with s3_key: ${e.s3_key}`);
-        let presigned_url = "";
+        let presigned_url = '';
         try {
           presigned_url = await this.get_url(e.s3_key);
           this.logger.debug(`Generated presigned_url: ${presigned_url}`);
@@ -661,11 +661,11 @@ export default class TextbookMilvusStorage {
       data: [searchVector], // required, vector used to compare other vectors in milvus
       params: { nprobe: 64 }, // optional, specify the search parameters
       limit: topK, // specify the number of nearest neighbors to return
-      metric_type: "COSINE", // optional, metric to calculate similarity of two vectors
-      output_fields: ["content", "pdf_name", "s3_key", "page_number"], // optional, specify the fields to return in the search results
+      metric_type: 'COSINE', // optional, metric to calculate similarity of two vectors
+      output_fields: ['content', 'pdf_name', 's3_key', 'page_number'], // optional, specify the fields to return in the search results
     });
 
-    this.logger.info("Vector search completed.");
+    this.logger.info('Vector search completed.');
     // this.logger.debug(`${JSON.stringify(searchResults,null,2)}`)
     const results = searchResults.results;
     this.logger.debug(`Raw searchResults.results length: ${results.length}`);
@@ -674,7 +674,7 @@ export default class TextbookMilvusStorage {
     const results_with_pdf_url = await Promise.all(
       results.map(async (e) => {
         this.logger.debug(`Processing result with s3_key: ${e.s3_key}`);
-        let presigned_url = "";
+        let presigned_url = '';
         try {
           presigned_url = await this.get_url(e.s3_key);
           this.logger.debug(`Generated presigned_url: ${presigned_url}`);
@@ -713,10 +713,10 @@ export default class TextbookMilvusStorage {
       baseDelay = 1000,
       maxDelay = 100000,
       retryableErrors = [
-        "rate limit",
-        "too many requests",
-        "timeout",
-        "network",
+        'rate limit',
+        'too many requests',
+        'timeout',
+        'network',
       ],
       circuitBreakerTimeout = 30000,
     } = options;
@@ -760,9 +760,9 @@ export default class TextbookMilvusStorage {
         const axiosError = error as {
           response?: { headers?: Record<string, string> };
         };
-        if (axiosError.response?.headers?.["retry-after"]) {
+        if (axiosError.response?.headers?.['retry-after']) {
           delay = Math.min(
-            parseInt(axiosError.response.headers["retry-after"]) * 1000,
+            parseInt(axiosError.response.headers['retry-after']) * 1000,
             maxDelay,
           );
         } else {
@@ -838,14 +838,14 @@ export default class TextbookMilvusStorage {
         const isRateLimit =
           (error as any)?.status === 429 ||
           (error instanceof Error &&
-            error.message.toLowerCase().includes("rate limit"));
+            error.message.toLowerCase().includes('rate limit'));
 
         if (isRateLimit) {
           // Check for Retry-After header
-          if ((error as any)?.headers?.["retry-after"]) {
+          if ((error as any)?.headers?.['retry-after']) {
             delay = Math.max(
               delay,
-              parseInt((error as any).headers["retry-after"]) * 1000,
+              parseInt((error as any).headers['retry-after']) * 1000,
             );
           }
 
@@ -860,7 +860,7 @@ export default class TextbookMilvusStorage {
         }
 
         this.logger.warn(
-          `Attempt ${attempt} failed (${error instanceof Error ? error.message : "Unknown error"}), retrying in ${Math.round(delay)}ms...`,
+          `Attempt ${attempt} failed (${error instanceof Error ? error.message : 'Unknown error'}), retrying in ${Math.round(delay)}ms...`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }

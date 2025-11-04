@@ -1,5 +1,5 @@
-import { Collection, MongoClient } from "mongodb";
-import { quiz, A1, A2, A3, X, B } from "../../../types/quizData.types";
+import { Collection, MongoClient } from 'mongodb';
+import { quiz, A1, A2, A3, X, B } from '../../../types/quizData.types';
 
 /**
  * 检查多个集合中是否存在与上传数据相同的记录（并行版本）
@@ -41,22 +41,22 @@ export async function isDuplicateQuiz(
   let specificQuery: Record<string, any> = {};
 
   switch (quiz.type) {
-    case "A1":
-    case "A2":
+    case 'A1':
+    case 'A2':
       specificQuery = {
         question: (quiz as A1 | A2).question,
         options: { $size: (quiz as A1 | A2).options.length },
       };
       break;
 
-    case "A3":
+    case 'A3':
       specificQuery = {
         mainQuestion: (quiz as A3).mainQuestion,
         subQuizs: { $size: (quiz as A3).subQuizs.length },
       };
       break;
 
-    case "X":
+    case 'X':
       specificQuery = {
         question: (quiz as X).question,
         options: { $size: (quiz as X).options.length },
@@ -64,7 +64,7 @@ export async function isDuplicateQuiz(
       };
       break;
 
-    case "B":
+    case 'B':
       specificQuery = {
         questions: { $size: (quiz as B).questions.length },
         options: { $size: (quiz as B).options.length },
@@ -104,8 +104,8 @@ function isDeepDuplicate(newQuiz: quiz, existingQuiz: any): boolean {
   const { _id: existingId, ...existingQuizWithoutId } = existingQuiz;
 
   switch (newQuiz.type) {
-    case "A1":
-    case "A2": {
+    case 'A1':
+    case 'A2': {
       const typedNewQuiz = newQuiz as A1 | A2;
       return (
         typedNewQuiz.question === existingQuizWithoutId.question &&
@@ -113,7 +113,7 @@ function isDeepDuplicate(newQuiz: quiz, existingQuiz: any): boolean {
         typedNewQuiz.answer === existingQuizWithoutId.answer
       );
     }
-    case "A3": {
+    case 'A3': {
       const typedNewQuiz = newQuiz as A3;
       if (typedNewQuiz.mainQuestion !== existingQuizWithoutId.mainQuestion) {
         return false;
@@ -139,7 +139,7 @@ function isDeepDuplicate(newQuiz: quiz, existingQuiz: any): boolean {
       }
       return true;
     }
-    case "X": {
+    case 'X': {
       const typedNewQuiz = newQuiz as X;
       return (
         typedNewQuiz.question === existingQuizWithoutId.question &&
@@ -147,7 +147,7 @@ function isDeepDuplicate(newQuiz: quiz, existingQuiz: any): boolean {
         areArraysEqual(typedNewQuiz.answer, existingQuizWithoutId.answer)
       );
     }
-    case "B": {
+    case 'B': {
       const typedNewQuiz = newQuiz as B;
       if (
         !areOptionsEqual(typedNewQuiz.options, existingQuizWithoutId.options)

@@ -1,12 +1,12 @@
-import dotenv from "dotenv";
-import { QdrantClient } from "@qdrant/js-client-rest";
-import { connectToDatabase } from "../db/mongodb";
-import { ObjectId } from "mongodb";
+import dotenv from 'dotenv';
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { connectToDatabase } from '../db/mongodb';
+import { ObjectId } from 'mongodb';
 
 dotenv.config();
 
-const QDRANT_URL: string = process.env.QDRANT_URL || "http://localhost:6333";
-const COLLECTION_NAME: string = process.env.COLLECTION_NAME || "a2";
+const QDRANT_URL: string = process.env.QDRANT_URL || 'http://localhost:6333';
+const COLLECTION_NAME: string = process.env.COLLECTION_NAME || 'a2';
 
 export async function searchSimilarObjects(queryVector: number[]) {
   // 初始化 Qdrant 客户端
@@ -23,12 +23,12 @@ export async function searchSimilarObjects(queryVector: number[]) {
 
     return searchResults;
   } catch (error) {
-    console.error("搜索出错:", error);
+    console.error('搜索出错:', error);
   }
 }
 
 export async function retrive(oidList: string[]) {
-  const collectionName = "a2";
+  const collectionName = 'a2';
   const { client, db } = await connectToDatabase();
 
   try {
@@ -44,7 +44,7 @@ export async function retrive(oidList: string[]) {
       .toArray();
     return documents;
   } catch (err) {
-    console.error("查询出错:", err);
+    console.error('查询出错:', err);
     throw err;
   } finally {
     await client.close();

@@ -1,8 +1,8 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { embeddings } from "@/lib/langchain/provider";
-import QuizEmbeddingManager from "@/lib/milvus/embedding/MilvusQuizCollectionManager";
-import { ObjectId } from "mongodb";
-import { NextRequest, NextResponse } from "next/server";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { embeddings } from '@/lib/langchain/provider';
+import QuizEmbeddingManager from '@/lib/milvus/embedding/MilvusQuizCollectionManager';
+import { ObjectId } from 'mongodb';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * @description Searches for quizzes similar to the provided description text using vector embeddings
@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
       filter: data.filter,
       searchStr:
         data.searchStr.substring(0, 100) +
-        (data.searchStr.length > 100 ? "..." : ""),
+        (data.searchStr.length > 100 ? '...' : ''),
     });
 
     const { db } = await connectToDatabase();
     console.log(`[API] Connected to database`);
 
     const quizManager = new QuizEmbeddingManager(
-      "quiz",
+      'quiz',
       embeddings().Embeddings,
       undefined,
       true,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const mongoLookupStart = Date.now();
     const quizes = await db
-      .collection("quiz")
+      .collection('quiz')
       .find({
         _id: {
           $in: abstractQuizes.map((e) => ObjectId.createFromHexString(e.oid)),
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     console.error(`[API] Error in similar search:`, error);
     return new NextResponse(
       JSON.stringify({
-        error: "Failed to fetch quizzes",
+        error: 'Failed to fetch quizzes',
         details: error instanceof Error ? error.message : String(error),
       }),
       {

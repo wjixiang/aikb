@@ -2,19 +2,19 @@
  * API endpoint for retrieving forward links
  */
 
-import { NextResponse } from "next/server";
-import knowledgeBase from "@/kgrag/knowledgeBase";
+import { NextResponse } from 'next/server';
+import knowledgeBase from '@/kgrag/knowledgeBase';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    console.log("searchParams", searchParams);
+    console.log('searchParams', searchParams);
     const documentId =
-      searchParams.get("documentId") || searchParams.get("path");
+      searchParams.get('documentId') || searchParams.get('path');
 
     if (!documentId) {
       return NextResponse.json(
-        { error: "documentId or path parameter is required" },
+        { error: 'documentId or path parameter is required' },
         { status: 400 },
       );
     }
@@ -29,13 +29,13 @@ export async function GET(request: Request) {
       sourceId: link.sourceId,
       targetId: link.targetId,
       targetTitle:
-        link.targetTitle || link.targetId.split("/").pop() || "Untitled",
+        link.targetTitle || link.targetId.split('/').pop() || 'Untitled',
       linkType: link.linkType,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,
     }));
 
-    console.log("forward:", formattedLinks);
+    console.log('forward:', formattedLinks);
 
     return NextResponse.json({
       documentId,
@@ -43,11 +43,11 @@ export async function GET(request: Request) {
       count: formattedLinks.length,
     });
   } catch (error) {
-    console.error("Error retrieving forward links:", error);
+    console.error('Error retrieving forward links:', error);
     return NextResponse.json(
       {
-        error: "Failed to retrieve forward links",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to retrieve forward links',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     );

@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import { toast } from "sonner";
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import { toast } from 'sonner';
 
 interface BatchUpdate {
   quizId: string;
@@ -74,7 +74,7 @@ export const useQuizBatchSync = ({
             return { quizId, success: true };
           } catch (error) {
             const errorMessage =
-              error instanceof Error ? error.message : "保存失败";
+              error instanceof Error ? error.message : '保存失败';
             errors[quizId] = errorMessage;
             return { quizId, success: false, error: errorMessage };
           }
@@ -89,17 +89,17 @@ export const useQuizBatchSync = ({
         setSyncErrors((prev) => ({ ...prev, ...errors }));
 
         const successful = results.filter(
-          (r) => r.status === "fulfilled" && r.value.success,
+          (r) => r.status === 'fulfilled' && r.value.success,
         ).length;
         const failed = results.filter(
           (r) =>
-            r.status === "rejected" ||
-            (r.status === "fulfilled" && !r.value.success),
+            r.status === 'rejected' ||
+            (r.status === 'fulfilled' && !r.value.success),
         ).length;
 
         if (failed > 0) {
           toast.error(`同步失败: ${failed}个答案`, {
-            description: "部分答案未能保存，将自动重试",
+            description: '部分答案未能保存，将自动重试',
             duration: 3000,
           });
         } else if (successful > 0) {
@@ -179,13 +179,13 @@ export const useQuizBatchSync = ({
           });
 
           try {
-            await onAnswerChange(quizId, quiz.userAnswer || "");
-            toast.success("重试成功");
+            await onAnswerChange(quizId, quiz.userAnswer || '');
+            toast.success('重试成功');
           } catch (error) {
             const errorMessage =
-              error instanceof Error ? error.message : "重试失败";
+              error instanceof Error ? error.message : '重试失败';
             setSyncErrors((prev) => ({ ...prev, [quizId]: errorMessage }));
-            toast.error("重试失败", { description: errorMessage });
+            toast.error('重试失败', { description: errorMessage });
           }
         }
       }

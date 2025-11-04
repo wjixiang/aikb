@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import QuizMilvusStorage from "@/lib/quiz/QuizMilvusStorage";
-import { quiz, QuizWithUserAnswer } from "@/types/quizData.types";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { NextRequest, NextResponse } from 'next/server';
+import QuizMilvusStorage from '@/lib/quiz/QuizMilvusStorage';
+import { quiz, QuizWithUserAnswer } from '@/types/quizData.types';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
-const logger = createLoggerWithPrefix("simiarquiz");
+const logger = createLoggerWithPrefix('simiarquiz');
 
 /**
  * Finds quizzes that are semantically similar to a given quiz using vector similarity search.
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (!quizId) {
       return NextResponse.json(
-        { error: "Quiz ID is required" },
+        { error: 'Quiz ID is required' },
         { status: 400 },
       );
     }
@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
     const quiz = await storage.fetchQuizzesByOids([quizId]);
 
     if (quiz.length < 1) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
     }
 
     // Convert the retrieved record to the 'quiz' type
     const formattedQuiz: quiz = quiz[0];
 
     // Ensure quiz.answer is an array for type 'X' quizzes to prevent join() errors
-    if (formattedQuiz.type === "X" && !Array.isArray(formattedQuiz.answer)) {
+    if (formattedQuiz.type === 'X' && !Array.isArray(formattedQuiz.answer)) {
       formattedQuiz.answer = [];
     }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(similarQuizzes);
   } catch (error: any) {
-    logger.error("Error in similar-quizzes API:", error);
+    logger.error('Error in similar-quizzes API:', error);
     return NextResponse.json(
       { error: `Internal Server Error: ${error.message || error}` },
       { status: 500 },

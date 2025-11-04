@@ -1,7 +1,7 @@
-import { RecordId, Surreal } from "surrealdb";
+import { RecordId, Surreal } from 'surrealdb';
 
-import winston from "winston";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import winston from 'winston';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
 // Define the structure for a chunk document, combining document and vector properties
 export interface ChunkDocument {
@@ -23,7 +23,7 @@ interface BaseChunkStorage {
   cosine_better_than_threshold: number;
   meta_fields: Set<string>; // Although not explicitly required for ChunkDocument, keeping for potential future use or compatibility
 
-  create(data: Omit<ChunkDocument, "id">): Promise<ChunkDocument[]>;
+  create(data: Omit<ChunkDocument, 'id'>): Promise<ChunkDocument[]>;
   read(id?: string): Promise<ChunkDocument[]>;
   update(id: string, data: Partial<ChunkDocument>): Promise<ChunkDocument[]>;
   delete(id: string): Promise<ChunkDocument[]>;
@@ -33,13 +33,13 @@ interface BaseChunkStorage {
     ids?: string[] | null,
   ): Promise<
     {
-      document: Omit<ChunkDocument, "embedding">;
+      document: Omit<ChunkDocument, 'embedding'>;
       score: number;
     }[]
   >;
-  upsert(data: Record<string, Omit<ChunkDocument, "id">>): Promise<void>;
-  get_by_id(id: RecordId): Promise<Omit<ChunkDocument, "embedding"> | null>;
-  get_by_ids(ids: RecordId[]): Promise<Omit<ChunkDocument, "embedding">[]>;
+  upsert(data: Record<string, Omit<ChunkDocument, 'id'>>): Promise<void>;
+  get_by_id(id: RecordId): Promise<Omit<ChunkDocument, 'embedding'> | null>;
+  get_by_ids(ids: RecordId[]): Promise<Omit<ChunkDocument, 'embedding'>[]>;
   delete_by_ids(ids: string[]): Promise<void>; // Renamed to avoid conflict with delete(id)
 }
 
@@ -63,7 +63,7 @@ export default class ChunkStorage implements BaseChunkStorage {
   ) {
     this.db = db;
     this.tableName = tableName;
-    this.logger = createLoggerWithPrefix("ChunkStorage");
+    this.logger = createLoggerWithPrefix('ChunkStorage');
     this.embedding_func = embedding_func;
     this.cosine_better_than_threshold = cosine_better_than_threshold;
     this.meta_fields = meta_fields;
@@ -72,7 +72,7 @@ export default class ChunkStorage implements BaseChunkStorage {
   /**
    * Create a new chunk document in the specified table.
    */
-  async create(data: Omit<ChunkDocument, "id">): Promise<ChunkDocument[]> {
+  async create(data: Omit<ChunkDocument, 'id'>): Promise<ChunkDocument[]> {
     try {
       const result = await this.db.create(this.tableName, data);
       return result as unknown as ChunkDocument[];
@@ -154,7 +154,7 @@ export default class ChunkStorage implements BaseChunkStorage {
 
     if (queryEmbedding === null) {
       this.logger.error(
-        "Failed to generate embedding for query. Cannot perform vector search.",
+        'Failed to generate embedding for query. Cannot perform vector search.',
       );
       return []; // Return empty array if embedding generation failed
     }
@@ -167,12 +167,12 @@ export default class ChunkStorage implements BaseChunkStorage {
     const conditions: string[] = [];
     if (ids && ids.length > 0) {
       conditions.push(
-        `id IN [${ids.map((id) => `'${this.tableName}:${id}'`).join(", ")}]`,
+        `id IN [${ids.map((id) => `'${this.tableName}:${id}'`).join(', ')}]`,
       );
     }
 
     if (conditions.length > 0) {
-      surrealQL += ` WHERE ${conditions.join(" AND ")}`;
+      surrealQL += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     surrealQL += `
@@ -182,7 +182,7 @@ export default class ChunkStorage implements BaseChunkStorage {
 
     try {
       const result = await this.db.query(surrealQL);
-      this.logger.info("query raw result:", JSON.stringify(result, null, 2));
+      this.logger.info('query raw result:', JSON.stringify(result, null, 2));
       if (
         result &&
         Array.isArray(result) &&
@@ -203,11 +203,11 @@ export default class ChunkStorage implements BaseChunkStorage {
                 Object.entries(item).filter(
                   ([key]) =>
                     ![
-                      "id",
-                      "referenceIds",
-                      "content",
-                      "embedding",
-                      "score",
+                      'id',
+                      'referenceIds',
+                      'content',
+                      'embedding',
+                      'score',
                     ].includes(key),
                 ),
               ), // Include other properties
@@ -217,7 +217,7 @@ export default class ChunkStorage implements BaseChunkStorage {
       }
       return [];
     } catch (error) {
-      this.logger.error("Error during chunk query:", error);
+      this.logger.error('Error during chunk query:', error);
       throw error;
     }
   }
@@ -226,7 +226,7 @@ export default class ChunkStorage implements BaseChunkStorage {
    * Insert or update chunks in the storage.
    * Uses the `create` method which handles both insert and update based on ID.
    */
-  async upsert(data: Record<string, Omit<ChunkDocument, "id">>): Promise<void> {
+  async upsert(data: Record<string, Omit<ChunkDocument, 'id'>>): Promise<void> {
     const recordsToInsert = Object.entries(data).map(([id, recordData]) => ({
       id: `${this.tableName}`, // SurrealDB record ID format
       ...recordData,
@@ -242,7 +242,7 @@ export default class ChunkStorage implements BaseChunkStorage {
         await this.db.create(id, dataWithoutId);
       }
     } catch (error) {
-      this.logger.error("Error during chunk upsert:", error);
+      this.logger.error('Error during chunk upsert:', error);
       throw error;
     }
   }
@@ -252,7 +252,7 @@ export default class ChunkStorage implements BaseChunkStorage {
    */
   async get_by_id(
     id: RecordId,
-  ): Promise<Omit<ChunkDocument, "embedding"> | null> {
+  ): Promise<Omit<ChunkDocument, 'embedding'> | null> {
     try {
       const result = await this.db.select(id);
       // this.logger.info(`Result from select for id ${id}:`, JSON.stringify(result, null, 2));
@@ -265,7 +265,7 @@ export default class ChunkStorage implements BaseChunkStorage {
       }
       return null;
     } catch (error) {
-      this.logger.error("Error getting chunk by id:", error);
+      this.logger.error('Error getting chunk by id:', error);
       throw error;
     }
   }
@@ -275,11 +275,11 @@ export default class ChunkStorage implements BaseChunkStorage {
    */
   async get_by_ids(
     ids: RecordId[],
-  ): Promise<Omit<ChunkDocument, "embedding">[]> {
+  ): Promise<Omit<ChunkDocument, 'embedding'>[]> {
     if (ids.length === 0) {
       return [];
     }
-    const surrealQL = `SELECT * FROM ${this.tableName} WHERE id IN [${ids.map((id) => `'${this.tableName}:${id.id}'`).join(", ")}];`;
+    const surrealQL = `SELECT * FROM ${this.tableName} WHERE id IN [${ids.map((id) => `'${this.tableName}:${id.id}'`).join(', ')}];`;
     try {
       const result = await this.db.query(surrealQL);
       // this.logger.info("get_by_ids raw result:", JSON.stringify(result, null, 2));
@@ -297,7 +297,7 @@ export default class ChunkStorage implements BaseChunkStorage {
       }
       return [];
     } catch (error) {
-      this.logger.error("Error getting chunks by ids:", error);
+      this.logger.error('Error getting chunks by ids:', error);
       throw error;
     }
   }
@@ -311,17 +311,17 @@ export default class ChunkStorage implements BaseChunkStorage {
     }
     const recordIdsToDelete = ids.map((id) => `${this.tableName}:${id}`);
     try {
-      const surrealQL = `DELETE ${this.tableName} WHERE id IN [${recordIdsToDelete.map((id) => `'${id}'`).join(", ")}];`;
+      const surrealQL = `DELETE ${this.tableName} WHERE id IN [${recordIdsToDelete.map((id) => `'${id}'`).join(', ')}];`;
       const result = await this.db.query(surrealQL);
       // this.logger.info("delete_by_ids raw result:", JSON.stringify(result, null, 2));
     } catch (error) {
-      this.logger.error("Error deleting chunks:", error);
+      this.logger.error('Error deleting chunks:', error);
       throw error;
     }
   }
 }
 
 export interface semanticSearchResult {
-  document: Omit<ChunkDocument, "embedding">;
+  document: Omit<ChunkDocument, 'embedding'>;
   score: number;
 }

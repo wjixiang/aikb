@@ -4,16 +4,16 @@
  * CLI script to test the example usage of AgentV2
  */
 
-import { runExample } from "../lib/agents/exampleUsage";
+import { runExample } from '../lib/agents/exampleUsage';
 
 async function main() {
-  console.log("Running AgentV2 example usage test...\n");
+  console.log('Running AgentV2 example usage test...\n');
 
   try {
     await runExample();
-    console.log("\nTest completed successfully.");
+    console.log('\nTest completed successfully.');
   } catch (error) {
-    console.error("Error running test:", error);
+    console.error('Error running test:', error);
     process.exit(1);
   }
 }

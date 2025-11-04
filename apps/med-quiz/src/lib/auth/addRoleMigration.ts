@@ -1,16 +1,16 @@
-import { clientPromise } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
+import { clientPromise } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
 
 async function migrateUserRoles(email?: string) {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.QUIZ_DB);
-    const usersCollection = db.collection("User");
+    const usersCollection = db.collection('User');
 
     // Add role field to all users who don't have it
     const result = await usersCollection.updateMany(
       { role: { $exists: false } },
-      { $set: { role: "user" } },
+      { $set: { role: 'user' } },
     );
     console.log(`Added role field to ${result.modifiedCount} users`);
 
@@ -18,7 +18,7 @@ async function migrateUserRoles(email?: string) {
     if (email) {
       const adminResult = await usersCollection.updateOne(
         { email: email.toLowerCase().trim() },
-        { $set: { role: "admin" } },
+        { $set: { role: 'admin' } },
       );
       if (adminResult.modifiedCount === 1) {
         console.log(`Promoted ${email} to admin`);
@@ -27,7 +27,7 @@ async function migrateUserRoles(email?: string) {
       }
     }
   } catch (error) {
-    console.error("Migration failed:", error);
+    console.error('Migration failed:', error);
     process.exit(1);
   } finally {
     process.exit(0);

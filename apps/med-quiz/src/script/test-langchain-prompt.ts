@@ -5,11 +5,11 @@
  * @description This script provides a command-line interface to test various
  * prompt templates from LangChain with different input parameters and LLM providers.
  */
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import * as prompts from "../lib/GraphRAG/prompt/prompt";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { getChatModel } from "../lib/langchain/provider";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import * as prompts from '../lib/GraphRAG/prompt/prompt';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { getChatModel } from '../lib/langchain/provider';
 
 /**
  * Command-line arguments configuration
@@ -20,10 +20,10 @@ import { getChatModel } from "../lib/langchain/provider";
  * @property {number} temperature - Model temperature
  */
 const argv = yargs(hideBin(process.argv))
-  .option("template", {
-    alias: "t",
-    type: "string",
-    description: "Name of prompt template to test",
+  .option('template', {
+    alias: 't',
+    type: 'string',
+    description: 'Name of prompt template to test',
     choices: Object.keys(prompts)
       .concat(Object.keys(prompts.ENTITY_EXTRACTION_EXAMPLE))
       .filter((k: string) => {
@@ -31,16 +31,16 @@ const argv = yargs(hideBin(process.argv))
         // Handle both direct PromptTemplates and nested ones (like ENTITY_EXTRACTION_PROMPT)
         if (
           prompt instanceof Object &&
-          "format" in prompt &&
-          typeof prompt.format === "function"
+          'format' in prompt &&
+          typeof prompt.format === 'function'
         ) {
           return true;
         }
         if (
           prompt instanceof Object &&
-          "DEFAULT" in prompt &&
+          'DEFAULT' in prompt &&
           prompt.DEFAULT instanceof Object &&
-          "format" in prompt.DEFAULT
+          'format' in prompt.DEFAULT
         ) {
           return true;
         }
@@ -48,21 +48,21 @@ const argv = yargs(hideBin(process.argv))
       }),
     demandOption: true,
   })
-  .option("params", {
-    alias: "p",
-    type: "string",
-    description: "JSON string of template parameters",
-    default: "{}",
+  .option('params', {
+    alias: 'p',
+    type: 'string',
+    description: 'JSON string of template parameters',
+    default: '{}',
   })
-  .option("model", {
-    alias: "m",
-    type: "string",
-    description: "Model name to use",
-    default: "gpt-4o-mini",
+  .option('model', {
+    alias: 'm',
+    type: 'string',
+    description: 'Model name to use',
+    default: 'gpt-4o-mini',
   })
-  .option("temperature", {
-    type: "number",
-    description: "Model temperature",
+  .option('temperature', {
+    type: 'number',
+    description: 'Model temperature',
     default: 0.7,
   })
   .parseSync();
@@ -84,12 +84,12 @@ async function main() {
 
     // Handle both direct PromptTemplates and nested ones (like ENTITY_EXTRACTION_PROMPT)
     let promptTemplate;
-    if ("format" in template) {
+    if ('format' in template) {
       promptTemplate = template;
     } else if (
-      "DEFAULT" in template &&
+      'DEFAULT' in template &&
       template.DEFAULT instanceof Object &&
-      "format" in template.DEFAULT
+      'format' in template.DEFAULT
     ) {
       promptTemplate = template.DEFAULT;
     } else {
@@ -100,19 +100,19 @@ async function main() {
 
     const prompt = await (promptTemplate as PromptTemplate).format(params);
 
-    console.log("Formatted Prompt:\n", prompt);
+    console.log('Formatted Prompt:\n', prompt);
 
     const chatModel = getChatModel()(argv.model, argv.temperature);
     const result = await chatModel.invoke(prompt);
 
-    console.log("\nLLM Output:\n", result);
+    console.log('\nLLM Output:\n', result);
   } catch (error) {
     console.error(
-      "Error:",
+      'Error:',
       error instanceof Error ? error.message : String(error),
     );
     if (error instanceof SyntaxError) {
-      console.error("Invalid JSON parameters format");
+      console.error('Invalid JSON parameters format');
     }
   }
 }

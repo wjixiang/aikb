@@ -1,11 +1,11 @@
-import Qdrant from "./qdrant";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { EmbeddedNote, note } from "@/types/noteData.types";
-import { connectToDatabase } from "../db/mongodb";
-import Progress from "progress";
-import dotenv from "dotenv";
-import { embeddings } from "../langchain/provider";
-import { writeFileSync } from "fs";
+import Qdrant from './qdrant';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import { EmbeddedNote, note } from '@/types/noteData.types';
+import { connectToDatabase } from '../db/mongodb';
+import Progress from 'progress';
+import dotenv from 'dotenv';
+import { embeddings } from '../langchain/provider';
+import { writeFileSync } from 'fs';
 
 dotenv.config();
 
@@ -21,7 +21,7 @@ export default class noteEmbedding extends Qdrant {
     if (chunkSize) this.CHUNK_SIZE = chunkSize;
     // 在构造函数中初始化 textSplitter，以确保使用最新的 CHUNK_SIZE
     this.textSplitter = RecursiveCharacterTextSplitter.fromLanguage(
-      "markdown",
+      'markdown',
       {
         chunkSize: this.CHUNK_SIZE,
       },
@@ -33,9 +33,9 @@ export default class noteEmbedding extends Qdrant {
    */
   async embedAllNotes() {
     const { db, client } = await connectToDatabase();
-    this.mongoNoteCollection = db.collection<note>("note");
+    this.mongoNoteCollection = db.collection<note>('note');
     const documents = await this.mongoNoteCollection
-      .find({ "metaData.tags": { $nin: ["excalidraw"] } })
+      .find({ 'metaData.tags': { $nin: ['excalidraw'] } })
       .toArray();
     console.log(
       `共找到 ${documents.length} 个文档，开始逐个处理并同步到 Qdrant...`,
@@ -44,7 +44,7 @@ export default class noteEmbedding extends Qdrant {
     await this.ensureCollectionExists(this.NOTE_COLECTION_NAME);
 
     // 创建进度条实例，total 为文档总数
-    const bar = new Progress(":embedding :percent", {
+    const bar = new Progress(':embedding :percent', {
       total: documents.length,
       width: 40,
     });
@@ -141,9 +141,9 @@ export default class noteEmbedding extends Qdrant {
 
       return embeddingResult;
     } catch (error) {
-      console.log("嵌入异常", JSON.stringify(error));
+      console.log('嵌入异常', JSON.stringify(error));
       console.log(allChunks);
-      writeFileSync("chunk.json", JSON.stringify(allChunks));
+      writeFileSync('chunk.json', JSON.stringify(allChunks));
       throw error;
     }
   }

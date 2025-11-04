@@ -1,7 +1,7 @@
 // Local ChatMessage interface for the client service
 export interface ChatMessage {
   id: string;
-  type: "user" | "ai" | "system" | "status";
+  type: 'user' | 'ai' | 'system' | 'status';
   content: string;
   data?: any;
   timestamp: Date;
@@ -14,7 +14,7 @@ export interface ChatSession {
   userId: string;
   title: string;
   messages: ChatMessage[];
-  status: "active" | "completed" | "archived";
+  status: 'active' | 'completed' | 'archived';
   createdAt: string;
   updatedAt: string;
   lastActivity: string;
@@ -52,17 +52,17 @@ export class ChatClientService {
    */
   async createSession(title?: string): Promise<string> {
     try {
-      const response = await fetch("/api/chat/backend/create-session", {
-        method: "POST",
+      const response = await fetch('/api/chat/backend/create-session', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ title }),
       });
 
       if (!response.ok) {
         // Try to get error details from the response
-        let errorMessage = "Failed to create session";
+        let errorMessage = 'Failed to create session';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
@@ -86,19 +86,18 @@ export class ChatClientService {
     }
   }
 
-
   /**
    * Push a message to the current session
    */
   async pushMessage(type: string, content: string, data?: any): Promise<void> {
     if (!this.currentSessionId) {
-      throw new Error("No active session");
+      throw new Error('No active session');
     }
 
-    const response = await fetch("/api/chat/backend/push-message", {
-      method: "POST",
+    const response = await fetch('/api/chat/backend/push-message', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         sessionId: this.currentSessionId,
@@ -109,7 +108,7 @@ export class ChatClientService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to push message");
+      throw new Error('Failed to push message');
     }
   }
 
@@ -119,19 +118,19 @@ export class ChatClientService {
   async clearSession(sessionId?: string): Promise<void> {
     const targetSessionId = sessionId || this.currentSessionId;
     if (!targetSessionId) {
-      throw new Error("No session ID provided");
+      throw new Error('No session ID provided');
     }
 
-    const response = await fetch("/api/chat/backend/clear-session", {
-      method: "POST",
+    const response = await fetch('/api/chat/backend/clear-session', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ sessionId: targetSessionId }),
     });
 
     if (!response.ok) {
-      throw new Error("Failed to clear session");
+      throw new Error('Failed to clear session');
     }
   }
 
@@ -139,24 +138,24 @@ export class ChatClientService {
    * Delete a session
    */
   async deleteSession(sessionId: string): Promise<void> {
-    console.log("ChatClientService: Deleting session", sessionId);
+    console.log('ChatClientService: Deleting session', sessionId);
     const response = await fetch(`/api/chat/backend/sessions/${sessionId}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || "Failed to delete session";
+      const errorMessage = errorData.error || 'Failed to delete session';
       console.error(
-        "ChatClientService: Failed to delete session",
+        'ChatClientService: Failed to delete session',
         errorMessage,
       );
       throw new Error(errorMessage);
     }
-    console.log("ChatClientService: Session deleted successfully", sessionId);
+    console.log('ChatClientService: Session deleted successfully', sessionId);
   }
 
   /**

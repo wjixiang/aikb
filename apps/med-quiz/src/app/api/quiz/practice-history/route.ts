@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import QuizStorage from "../../../../lib/quiz/QuizStorage";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
+import { NextResponse } from 'next/server';
+import QuizStorage from '../../../../lib/quiz/QuizStorage';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
 
 /**
  * Retrieves practice history for a specific quiz for the authenticated user.
@@ -22,18 +22,18 @@ import { ObjectId } from "mongodb";
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const quizId = searchParams.get("quizId");
+  const quizId = searchParams.get('quizId');
 
   const session = await getServerSession(authOptions);
   const userId = session?.user?.email;
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   if (!quizId) {
     return NextResponse.json(
-      { error: "Missing quizId parameter" },
+      { error: 'Missing quizId parameter' },
       { status: 400 },
     );
   }
@@ -46,9 +46,9 @@ export async function GET(request: Request) {
     );
     return NextResponse.json(practiceHistory);
   } catch (error) {
-    console.error("Error fetching practice history:", error);
+    console.error('Error fetching practice history:', error);
     return NextResponse.json(
-      { error: "Failed to fetch practice history" },
+      { error: 'Failed to fetch practice history' },
       { status: 500 },
     );
   }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   const userId = session?.user?.email;
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -84,9 +84,9 @@ export async function POST(request: Request) {
     await quizStorage.pushRecord({ ...data, userid: userId });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error saving practice record:", error);
+    console.error('Error saving practice record:', error);
     return NextResponse.json(
-      { error: "Failed to save practice record" },
+      { error: 'Failed to save practice record' },
       { status: 500 },
     );
   }

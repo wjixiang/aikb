@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createEnhancedLogger } from "@/lib/console/enhanced-logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { createEnhancedLogger } from '@/lib/console/enhanced-logger';
 
 // 创建API日志记录器
-const apiLogger = createEnhancedLogger("API", {
-  level: process.env.LOG_LEVEL || "info",
-  enableConsole: process.env.NODE_ENV !== "production",
+const apiLogger = createEnhancedLogger('API', {
+  level: process.env.LOG_LEVEL || 'info',
+  enableConsole: process.env.NODE_ENV !== 'production',
   enableFile: true,
-  enableRemote: process.env.NODE_ENV === "production"
+  enableRemote: process.env.NODE_ENV === 'production',
 });
 
 // 生成唯一请求ID
@@ -54,22 +54,17 @@ export function logResponse(
   response: NextResponse,
   requestId: string,
   startTime: number,
-  userInfo: { userId?: string; sessionId?: string }
+  userInfo: { userId?: string; sessionId?: string },
 ): void {
   const responseTime = measureResponseTime(startTime);
   const statusCode = response.status;
 
   // 记录响应
-  apiLogger.logResponse(
-    request,
-    statusCode,
-    responseTime,
-    {
-      requestId,
-      userId: userInfo.userId,
-      sessionId: userInfo.sessionId
-    }
-  );
+  apiLogger.logResponse(request, statusCode, responseTime, {
+    requestId,
+    userId: userInfo.userId,
+    sessionId: userInfo.sessionId,
+  });
 
   // 如果是错误响应，记录更多详细信息
   if (statusCode >= 400) {
@@ -82,8 +77,8 @@ export function logResponse(
         statusCode,
         responseTime,
         method: request.method,
-        url: request.url
-      }
+        url: request.url,
+      },
     );
   }
 }
@@ -92,7 +87,7 @@ export function logError(
   request: NextRequest,
   error: Error,
   requestId: string,
-  userInfo: { userId?: string; sessionId?: string }
+  userInfo: { userId?: string; sessionId?: string },
 ): void {
   apiLogger.error(
     `API Error: ${error.message}`,
@@ -102,15 +97,15 @@ export function logError(
       sessionId: userInfo.sessionId,
       method: request.method,
       url: request.url,
-      stack: error.stack
+      stack: error.stack,
     },
-    error
+    error,
   );
 }
 
 // 高阶函数：包装API处理器以自动记录日志
 export function withLogging<T extends any[]>(
-  handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
+  handler: (request: NextRequest, ...args: T) => Promise<NextResponse>,
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     const { requestId, startTime, userInfo } = await logRequest(request);
@@ -129,29 +124,29 @@ export function withLogging<T extends any[]>(
 // 性能监控装饰器
 export function withPerformanceLogging<T extends any[]>(
   operationName: string,
-  handler: (...args: T) => Promise<any>
+  handler: (...args: T) => Promise<any>,
 ) {
   return async (...args: T): Promise<any> => {
     const startTime = Date.now();
-    const logger = createEnhancedLogger("PERFORMANCE");
+    const logger = createEnhancedLogger('PERFORMANCE');
 
     try {
       const result = await handler(...args);
       const duration = Date.now() - startTime;
-      
+
       logger.logPerformance(operationName, duration, {
         success: true,
-        args: args.length
+        args: args.length,
       });
 
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       logger.logPerformance(operationName, duration, {
         success: false,
         error: (error as Error).message,
-        args: args.length
+        args: args.length,
       });
 
       throw error;

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import QuizStorage from "@/lib/quiz/QuizStorage";
+import { NextRequest, NextResponse } from 'next/server';
+import QuizStorage from '@/lib/quiz/QuizStorage';
 
 /**
  * Fetches related markdown cards for a quiz by its MongoDB ID.
@@ -34,11 +34,11 @@ import QuizStorage from "@/lib/quiz/QuizStorage";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const mongoId = searchParams.get("mongoId");
+    const mongoId = searchParams.get('mongoId');
 
     if (!mongoId) {
       return NextResponse.json(
-        { error: "Missing mongoId parameter" },
+        { error: 'Missing mongoId parameter' },
         { status: 400 },
       );
     }
@@ -48,9 +48,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(relatedCards);
   } catch (error) {
-    console.error("Error fetching related cards:", error);
+    console.error('Error fetching related cards:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }

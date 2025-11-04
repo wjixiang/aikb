@@ -1,31 +1,31 @@
-import axios from "axios";
-import * as dotenv from "dotenv";
+import axios from 'axios';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 const DASHSCOPE_SUBMIT_TASK_URL =
-  "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding";
-const DASHSCOPE_FETCH_TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks";
+  'https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding';
+const DASHSCOPE_FETCH_TASK_URL = 'https://dashscope.aliyuncs.com/api/v1/tasks';
 
 export enum BatchTextEmbeddingModel {
-  TextEmbeddingV1 = "text-embedding-v1",
-  TextEmbeddingV2 = "text-embedding-v2",
-  TextEmbeddingAsyncV1 = "text-embedding-async-v1",
-  TextEmbeddingAsyncV2 = "text-embedding-async-v2",
+  TextEmbeddingV1 = 'text-embedding-v1',
+  TextEmbeddingV2 = 'text-embedding-v2',
+  TextEmbeddingAsyncV1 = 'text-embedding-async-v1',
+  TextEmbeddingAsyncV2 = 'text-embedding-async-v2',
 }
 
 export enum TextType {
-  Document = "document",
-  Query = "query",
+  Document = 'document',
+  Query = 'query',
 }
 
 export enum TaskStatus {
-  Succeeded = "SUCCEEDED",
-  Failed = "FAILED",
-  Canceled = "CANCELED",
-  Pending = "PENDING",
-  Suspended = "SUSPENDED",
-  Running = "RUNNING",
-  Unknown = "UNKNOWN", // From documentation for fetch status
+  Succeeded = 'SUCCEEDED',
+  Failed = 'FAILED',
+  Canceled = 'CANCELED',
+  Pending = 'PENDING',
+  Suspended = 'SUSPENDED',
+  Running = 'RUNNING',
+  Unknown = 'UNKNOWN', // From documentation for fetch status
 }
 
 interface CreateAsyncTaskRequest {
@@ -79,7 +79,7 @@ export async function createAsyncTask(
 ): Promise<CreateAsyncTaskResponse> {
   const apiKey = process.env.ALIBABA_API_KEY;
   if (!apiKey) {
-    throw new Error("ALIBABA_API_KEY is not set in environment variables.");
+    throw new Error('ALIBABA_API_KEY is not set in environment variables.');
   }
 
   const requestBody: CreateAsyncTaskRequest = {
@@ -95,15 +95,15 @@ export async function createAsyncTask(
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "X-DashScope-Async": "enable",
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
         },
       },
     );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      console.error("Error creating async task:", error.response.data);
+      console.error('Error creating async task:', error.response.data);
       throw error;
     }
     throw error;
@@ -120,7 +120,7 @@ export async function fetchTaskStatus(
 ): Promise<FetchTaskStatusResponse> {
   const apiKey = process.env.ALIBABA_API_KEY;
   if (!apiKey) {
-    throw new Error("DASHSCOPE_API_KEY is not set in environment variables.");
+    throw new Error('DASHSCOPE_API_KEY is not set in environment variables.');
   }
 
   try {
@@ -172,7 +172,7 @@ export async function waitForTaskCompletion(
         if (Date.now() - startTime > timeoutMs) {
           return reject(
             new Error(
-              `Task ${taskId} timed out after ${timeoutMs}ms. Last status: ${lastStatus || "unknown"}`,
+              `Task ${taskId} timed out after ${timeoutMs}ms. Last status: ${lastStatus || 'unknown'}`,
             ),
           );
         }
@@ -186,7 +186,7 @@ export async function waitForTaskCompletion(
           const errorMessage = statusResponse.output?.message;
           return reject(
             new Error(
-              `Task ${taskId} failed with status: ${taskStatus}. Code: ${errorCode || "N/A"}, Message: ${errorMessage || "N/A"}`,
+              `Task ${taskId} failed with status: ${taskStatus}. Code: ${errorCode || 'N/A'}, Message: ${errorMessage || 'N/A'}`,
             ),
           );
         }

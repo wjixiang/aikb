@@ -1,15 +1,15 @@
-import { AgentMessage, ChatMessage } from "./agent.types";
-import { ToolRegistry, toolRegistry } from "./toolRegistry";
-import { b } from "../../baml_client";
+import { AgentMessage, ChatMessage } from './agent.types';
+import { ToolRegistry, toolRegistry } from './toolRegistry';
+import { b } from '../../baml_client';
 import type {
   Message as BamlMessage,
   ToolDefinition,
   ToolResult,
   AgentDecision,
   StepResponse,
-} from "@/types/baml";
+} from '@/types/baml';
 
-type agent_action = "send_notification" | "stream_message";
+type agent_action = 'send_notification' | 'stream_message';
 
 export default class AgentV2 {
   context: ChatMessage[] = [];
@@ -40,11 +40,11 @@ export default class AgentV2 {
    */
   private convertFromBamlMessage(bamlMessage: BamlMessage): ChatMessage {
     return {
-      sender: bamlMessage.role as "user" | "ai" | "system",
+      sender: bamlMessage.role as 'user' | 'ai' | 'system',
       content: bamlMessage.content,
       timestamp: new Date(bamlMessage.timestamp),
       isVisible: true,
-      messageType: "content",
+      messageType: 'content',
     };
   }
 
@@ -95,7 +95,7 @@ export default class AgentV2 {
       bamlParameters[key] = {
         name: key,
         type: typeof value,
-        description: "",
+        description: '',
         required: true,
       };
     }
@@ -143,13 +143,13 @@ export default class AgentV2 {
     const conversationHistory: BamlMessage[] = [
       ...this.context.map((msg) => this.convertToBamlMessage(msg)),
       {
-        role: "user",
+        role: 'user',
         content: query,
         timestamp: new Date().toISOString(),
       },
     ];
 
-    let accumulatedInformation = "";
+    let accumulatedInformation = '';
     this.currentStep = 0;
 
     // Tool calling loop
@@ -159,9 +159,9 @@ export default class AgentV2 {
       try {
         // Step 1: Decide next action
         yield {
-          type: "step",
+          type: 'step',
           content: `Step ${this.currentStep}: Deciding next action...`,
-          task: "agent_decision",
+          task: 'agent_decision',
         };
 
         const availableTools = this.getAvailableTools();
@@ -180,16 +180,16 @@ export default class AgentV2 {
         }
 
         yield {
-          type: "notice",
+          type: 'notice',
           content: `Decision: ${decision.reasoning}`,
-          task: "agent_decision",
+          task: 'agent_decision',
         };
 
         // Step 2: Execute selected tool
         yield {
-          type: "step",
+          type: 'step',
           content: `Executing tool: ${decision.selected_tool}`,
-          task: "tool_execution",
+          task: 'tool_execution',
         };
 
         // For now, we'll use empty parameters - in a real implementation,
@@ -204,7 +204,7 @@ export default class AgentV2 {
 
           // Add tool result to conversation history
           conversationHistory.push({
-            role: "tool",
+            role: 'tool',
             content: JSON.stringify(toolResult),
             timestamp: new Date().toISOString(),
             tool_results: [toolResult],
@@ -213,31 +213,31 @@ export default class AgentV2 {
           accumulatedInformation += `\nTool ${decision.selected_tool} result: ${toolResult.result}`;
 
           yield {
-            type: "update",
-            content: `Tool ${decision.selected_tool} executed ${toolResult.success ? "successfully" : "with error"}`,
-            task: "tool_execution",
+            type: 'update',
+            content: `Tool ${decision.selected_tool} executed ${toolResult.success ? 'successfully' : 'with error'}`,
+            task: 'tool_execution',
           };
 
           if (!toolResult.success && toolResult.error_message) {
             yield {
-              type: "error",
+              type: 'error',
               content: `Tool error: ${toolResult.error_message}`,
-              task: "tool_execution",
+              task: 'tool_execution',
             };
           }
         } catch (error) {
           yield {
-            type: "error",
-            content: `Error executing tool ${decision.selected_tool}: ${error instanceof Error ? error.message : "Unknown error"}`,
-            task: "tool_execution",
+            type: 'error',
+            content: `Error executing tool ${decision.selected_tool}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            task: 'tool_execution',
           };
           break;
         }
       } catch (error) {
         yield {
-          type: "error",
-          content: `Error in agent decision step: ${error instanceof Error ? error.message : "Unknown error"}`,
-          task: "agent_decision",
+          type: 'error',
+          content: `Error in agent decision step: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          task: 'agent_decision',
         };
         break;
       }
@@ -246,9 +246,9 @@ export default class AgentV2 {
     // Finalize response
     try {
       yield {
-        type: "step",
-        content: "Generating final response...",
-        task: "final_response",
+        type: 'step',
+        content: 'Generating final response...',
+        task: 'final_response',
       };
 
       const finalResponse: StepResponse = await this.finalizeAgentResponse(
@@ -257,15 +257,15 @@ export default class AgentV2 {
       );
 
       yield {
-        type: "result",
+        type: 'result',
         content: finalResponse.response,
-        task: "final_response",
+        task: 'final_response',
       };
     } catch (error) {
       yield {
-        type: "error",
-        content: `Error generating final response: ${error instanceof Error ? error.message : "Unknown error"}`,
-        task: "final_response",
+        type: 'error',
+        content: `Error generating final response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        task: 'final_response',
       };
     }
   }

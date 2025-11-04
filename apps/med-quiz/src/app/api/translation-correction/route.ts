@@ -1,6 +1,6 @@
-import { b } from "@/baml_client";
-import { NextRequest, NextResponse } from "next/server";
-import type { TranslationCorrection } from "@/types/baml";
+import { b } from '@/baml_client';
+import { NextRequest, NextResponse } from 'next/server';
+import type { TranslationCorrection } from '@/types/baml';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,11 +12,11 @@ export async function POST(req: NextRequest) {
       fullText,
     );
     let preChunk: TranslationCorrection = {
-      correction: "",
-      fullTrans: "",
-      grammar_teach: "",
+      correction: '',
+      fullTrans: '',
+      grammar_teach: '',
       score: 0,
-      suggestions: "",
+      suggestions: '',
     };
     const stream = new ReadableStream({
       async start(controller) {
@@ -27,24 +27,24 @@ export async function POST(req: NextRequest) {
             correction:
               chunk.correction &&
               preChunk.correction &&
-              typeof chunk.correction === "string" &&
-              typeof preChunk.correction === "string" &&
+              typeof chunk.correction === 'string' &&
+              typeof preChunk.correction === 'string' &&
               chunk.correction.startsWith(preChunk.correction)
                 ? chunk.correction.substring(preChunk.correction.length)
                 : chunk.correction,
             fullTrans:
               chunk.fullTrans &&
               preChunk.fullTrans &&
-              typeof chunk.fullTrans === "string" &&
-              typeof preChunk.fullTrans === "string" &&
+              typeof chunk.fullTrans === 'string' &&
+              typeof preChunk.fullTrans === 'string' &&
               chunk.fullTrans.startsWith(preChunk.fullTrans)
                 ? chunk.fullTrans.substring(preChunk.fullTrans.length)
                 : chunk.fullTrans,
             grammar_teach:
               chunk.grammar_teach &&
               preChunk.grammar_teach &&
-              typeof chunk.grammar_teach === "string" &&
-              typeof preChunk.grammar_teach === "string" &&
+              typeof chunk.grammar_teach === 'string' &&
+              typeof preChunk.grammar_teach === 'string' &&
               chunk.grammar_teach.startsWith(preChunk.grammar_teach)
                 ? chunk.grammar_teach.substring(preChunk.grammar_teach.length)
                 : chunk.grammar_teach,
@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
             suggestions:
               chunk.suggestions &&
               preChunk.suggestions &&
-              typeof chunk.suggestions === "string" &&
-              typeof preChunk.suggestions === "string" &&
+              typeof chunk.suggestions === 'string' &&
+              typeof preChunk.suggestions === 'string' &&
               chunk.suggestions.startsWith(preChunk.suggestions)
                 ? chunk.suggestions.substring(preChunk.suggestions.length)
                 : chunk.suggestions,
@@ -63,22 +63,22 @@ export async function POST(req: NextRequest) {
           );
           preChunk = chunk as TranslationCorrection;
         }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
       },
     });
 
     return new NextResponse(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {
-    console.error("Translation correction error:", error);
+    console.error('Translation correction error:', error);
     return NextResponse.json(
-      { error: "Failed to process translation correction" },
+      { error: 'Failed to process translation correction' },
       { status: 500 },
     );
   }

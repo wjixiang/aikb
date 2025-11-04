@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StompMessageService } from './stomp-implementation';
 import { BaseRabbitMQMessage, RabbitMQMessageOptions } from '../message.types';
-import { ConnectionStatus, HealthCheckResult, QueueInfo } from '../message-service.interface';
+import {
+  ConnectionStatus,
+  HealthCheckResult,
+  QueueInfo,
+} from '../message-service.interface';
 
 // Mock the STOMP library
 const mockClient = {
@@ -71,7 +75,7 @@ describe('StompMessageService', () => {
     it('should initialize the STOMP connection', async () => {
       const { Client } = await import('@stomp/stompjs');
       const ClientMock = Client as any;
-      
+
       // Mock the connection process
       setTimeout(() => {
         if (mockClient.onConnect) {
@@ -81,14 +85,16 @@ describe('StompMessageService', () => {
 
       await stompService.initialize();
 
-      expect(ClientMock).toHaveBeenCalledWith(expect.objectContaining({
-        brokerURL: `ws://${mockConfig.hostname}:${mockConfig.port}/ws`,
-        connectHeaders: {
-          login: mockConfig.username,
-          passcode: mockConfig.passcode,
-          host: mockConfig.vhost,
-        },
-      }));
+      expect(ClientMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          brokerURL: `ws://${mockConfig.hostname}:${mockConfig.port}/ws`,
+          connectHeaders: {
+            login: mockConfig.username,
+            passcode: mockConfig.passcode,
+            host: mockConfig.vhost,
+          },
+        }),
+      );
       expect(mockClient.activate).toHaveBeenCalled();
       expect(stompService.getConnectionStatus()).toBe('connected');
     });
@@ -100,7 +106,9 @@ describe('StompMessageService', () => {
         throw new Error('Connection failed');
       });
 
-      await expect(stompService.initialize()).rejects.toThrow('Connection failed');
+      await expect(stompService.initialize()).rejects.toThrow(
+        'Connection failed',
+      );
       expect(stompService.getConnectionStatus()).toBe('disconnected');
     });
   });
@@ -115,7 +123,7 @@ describe('StompMessageService', () => {
       }, 100);
 
       await stompService.initialize();
-      
+
       // Now close it
       await stompService.close();
 
@@ -150,9 +158,9 @@ describe('StompMessageService', () => {
       }, 100);
 
       await stompService.initialize();
-      
+
       const result = await stompService.healthCheck();
-      
+
       expect(result.status).toBe('healthy');
       expect(result.details.connected).toBe(true);
       expect(result.details.protocol).toBe('stomp');
@@ -160,7 +168,7 @@ describe('StompMessageService', () => {
 
     it('should return unhealthy status when not connected', async () => {
       const result = await stompService.healthCheck();
-      
+
       expect(result.status).toBe('unhealthy');
       expect(result.details.connected).toBe(false);
     });
@@ -184,8 +192,11 @@ describe('StompMessageService', () => {
     });
 
     it('should publish a message successfully', async () => {
-      const result = await stompService.publishMessage('test.routing.key', testMessage);
-      
+      const result = await stompService.publishMessage(
+        'test.routing.key',
+        testMessage,
+      );
+
       expect(result).toBe(true);
       expect(mockClient.publish).toHaveBeenCalledWith({
         destination: '/exchange/pdf-conversion-exchange/test.routing.key',
@@ -193,9 +204,9 @@ describe('StompMessageService', () => {
         headers: expect.objectContaining({
           'content-type': 'application/json',
           'message-id': testMessage.messageId,
-          'timestamp': testMessage.timestamp.toString(),
+          timestamp: testMessage.timestamp.toString(),
           'event-type': testMessage.eventType,
-          'persistent': 'true',
+          persistent: 'true',
         }),
       });
     });
@@ -209,17 +220,21 @@ describe('StompMessageService', () => {
         headers: { 'custom-header': 'custom-value' },
       };
 
-      await stompService.publishMessage('test.routing.key', testMessage, options);
-      
+      await stompService.publishMessage(
+        'test.routing.key',
+        testMessage,
+        options,
+      );
+
       expect(mockClient.publish).toHaveBeenCalledWith({
         destination: '/exchange/pdf-conversion-exchange/test.routing.key',
         body: JSON.stringify(testMessage),
         headers: expect.objectContaining({
           'content-type': 'application/json',
           'message-id': testMessage.messageId,
-          'timestamp': testMessage.timestamp.toString(),
+          timestamp: testMessage.timestamp.toString(),
           'event-type': testMessage.eventType,
-          'priority': '5',
+          priority: '5',
           'correlation-id': 'test-correlation-id',
           'reply-to': 'test-reply-to',
           'custom-header': 'custom-value',
@@ -229,9 +244,10 @@ describe('StompMessageService', () => {
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.publishMessage('test.routing.key', testMessage))
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(
+        stompService.publishMessage('test.routing.key', testMessage),
+      ).rejects.toThrow('STOMP service is not connected');
     });
   });
 
@@ -249,16 +265,19 @@ describe('StompMessageService', () => {
     });
 
     it('should start consuming messages successfully', async () => {
-      const consumerTag = await stompService.consumeMessages('test-queue', mockOnMessage);
-      
+      const consumerTag = await stompService.consumeMessages(
+        'test-queue',
+        mockOnMessage,
+      );
+
       expect(consumerTag).toMatch(/^stomp-consumer-/);
       expect(mockClient.subscribe).toHaveBeenCalledWith(
         '/queue/test-queue',
         expect.any(Function),
         expect.objectContaining({
-          'ack': 'client',
-          'exclusive': 'false',
-        })
+          ack: 'client',
+          exclusive: 'false',
+        }),
       );
     });
 
@@ -271,24 +290,25 @@ describe('StompMessageService', () => {
       };
 
       await stompService.consumeMessages('test-queue', mockOnMessage, options);
-      
+
       expect(mockClient.subscribe).toHaveBeenCalledWith(
         '/queue/test-queue',
         expect.any(Function),
         expect.objectContaining({
-          'ack': 'auto',
-          'id': 'test-consumer-tag',
-          'exclusive': 'true',
-          'priority': '10',
-        })
+          ack: 'auto',
+          id: 'test-consumer-tag',
+          exclusive: 'true',
+          priority: '10',
+        }),
       );
     });
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.consumeMessages('test-queue', mockOnMessage))
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(
+        stompService.consumeMessages('test-queue', mockOnMessage),
+      ).rejects.toThrow('STOMP service is not connected');
     });
   });
 
@@ -306,19 +326,23 @@ describe('StompMessageService', () => {
     it('should stop consuming messages successfully', async () => {
       const mockSubscription = { unsubscribe: vi.fn() };
       mockClient.subscribe.mockReturnValue(mockSubscription);
-      
-      const consumerTag = await stompService.consumeMessages('test-queue', vi.fn());
-      
+
+      const consumerTag = await stompService.consumeMessages(
+        'test-queue',
+        vi.fn(),
+      );
+
       await stompService.stopConsuming(consumerTag);
-      
+
       expect(mockSubscription.unsubscribe).toHaveBeenCalled();
     });
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.stopConsuming('test-consumer-tag'))
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(
+        stompService.stopConsuming('test-consumer-tag'),
+      ).rejects.toThrow('STOMP service is not connected');
     });
   });
 
@@ -335,7 +359,7 @@ describe('StompMessageService', () => {
 
     it('should return queue information', async () => {
       const result = await stompService.getQueueInfo('test-queue');
-      
+
       expect(result).toEqual({
         messageCount: 0,
         consumerCount: 0,
@@ -344,9 +368,10 @@ describe('StompMessageService', () => {
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.getQueueInfo('test-queue'))
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(stompService.getQueueInfo('test-queue')).rejects.toThrow(
+        'STOMP service is not connected',
+      );
     });
   });
 
@@ -363,16 +388,17 @@ describe('StompMessageService', () => {
 
     it('should log purge request', async () => {
       await stompService.purgeQueue('test-queue');
-      
+
       // Since purge is not fully implemented, we just expect it not to throw
       expect(true).toBe(true);
     });
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.purgeQueue('test-queue'))
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(stompService.purgeQueue('test-queue')).rejects.toThrow(
+        'STOMP service is not connected',
+      );
     });
   });
 
@@ -389,16 +415,17 @@ describe('StompMessageService', () => {
 
     it('should complete topology setup', async () => {
       await stompService.setupTopology();
-      
+
       // Since topology setup is minimal for STOMP, we just expect it not to throw
       expect(true).toBe(true);
     });
 
     it('should throw error when not connected', async () => {
       await stompService.close();
-      
-      await expect(stompService.setupTopology())
-        .rejects.toThrow('STOMP service is not connected');
+
+      await expect(stompService.setupTopology()).rejects.toThrow(
+        'STOMP service is not connected',
+      );
     });
   });
 });

@@ -1,4 +1,4 @@
-declare module "semantic-chunking" {
+declare module 'semantic-chunking' {
   /**
    * Represents the input document structure for chunking.
    */

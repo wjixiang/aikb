@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { quizSelector } from "@/types/quizSelector.types";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { quizSelector } from '@/types/quizSelector.types';
 
 function corsHeaders(origin: string | null) {
   return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
@@ -22,11 +22,11 @@ export async function OPTIONS() {
 const getUniqueUnitCount = async (selector: quizSelector) => {
   try {
     const { db } = await connectToDatabase();
-    const results = db.collection("quiz").distinct("class");
+    const results = db.collection('quiz').distinct('class');
 
     return results;
   } catch (error) {
-    console.error("Error fetching unique unit count:", error);
+    console.error('Error fetching unique unit count:', error);
     throw error; // 处理错误
   }
 };
@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
       headers: headers,
     });
   } catch (error) {
-    console.error("Quiz fetch error:", error);
+    console.error('Quiz fetch error:', error);
     return new NextResponse(
-      JSON.stringify({ error: "Failed to fetch quizzes", req: request }),
+      JSON.stringify({ error: 'Failed to fetch quizzes', req: request }),
       {
         status: 500,
         headers: headers,

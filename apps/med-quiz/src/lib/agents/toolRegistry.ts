@@ -1,9 +1,5 @@
-import type {
-  ToolDefinition,
-  ToolResult,
-  ToolParameter,
-} from "@/types/baml";
-import * as get_forecast from "./tools/get_weather_tool";
+import type { ToolDefinition, ToolResult, ToolParameter } from '@/types/baml';
+import * as get_forecast from './tools/get_weather_tool';
 
 // Define a type for our tool handlers
 export type ToolHandler = (args: any) => Promise<any>;
@@ -24,8 +20,8 @@ function convertToBamlToolDefinition(meta: any): ToolDefinition {
     for (const [key, value] of Object.entries(meta.parameters.properties)) {
       parameters.push({
         name: key,
-        type: (value as any).type || "string",
-        description: (value as any).description || "",
+        type: (value as any).type || 'string',
+        description: (value as any).description || '',
         required: meta.parameters.required?.includes(key) || false,
       });
 
@@ -75,7 +71,7 @@ export class ToolRegistry {
     if (!tool) {
       return {
         tool_id: name,
-        result: "",
+        result: '',
         success: false,
         error_message: `Tool ${name} not found`,
       };
@@ -91,9 +87,9 @@ export class ToolRegistry {
     } catch (error) {
       return {
         tool_id: name,
-        result: "",
+        result: '',
         success: false,
-        error_message: error instanceof Error ? error.message : "Unknown error",
+        error_message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

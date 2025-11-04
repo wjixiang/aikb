@@ -18,10 +18,19 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@aikb/bibliography': resolve(__dirname, '../../libs/bibliography/src/index.ts'),
-      '@aikb/log-management': resolve(__dirname, '../../libs/log-management/src/index.ts'),
+      '@aikb/bibliography': resolve(
+        __dirname,
+        '../../libs/bibliography/src/index.ts',
+      ),
+      '@aikb/log-management': resolve(
+        __dirname,
+        '../../libs/log-management/src/index.ts',
+      ),
       '@aikb/rabbitmq': resolve(__dirname, '../../libs/rabbitmq/src/index.ts'),
-      'library-shared': resolve(__dirname, '../../libs/library-shared/src/index.ts'),
+      'library-shared': resolve(
+        __dirname,
+        '../../libs/library-shared/src/index.ts',
+      ),
     },
   },
 });

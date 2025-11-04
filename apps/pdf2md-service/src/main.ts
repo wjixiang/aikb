@@ -6,19 +6,18 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { Transport } from '@nestjs/microservices'
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
+    name: 'pdf_2_markdown_service',
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://rabbitmq:15672'],
-      queue: 'pdf_2_md_queue',
-      noAck: false, // Enable manual ackownledge
-      queueOptions: {
-        durable: false
-      }
-    }
+      urls: [
+        `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
+      ],
+      queue: 'pdf_2_markdown_queue',
+    },
   });
 
   // const globalPrefix = 'api';

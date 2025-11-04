@@ -1,9 +1,9 @@
-import { EventEmitter } from "events";
-import { getApiUrl } from "@/lib/config/environment";
+import { EventEmitter } from 'events';
+import { getApiUrl } from '@/lib/config/environment';
 
 interface ChatMessage {
   id: string;
-  type: "user" | "ai" | "system" | "status";
+  type: 'user' | 'ai' | 'system' | 'status';
   content: string;
   data?: any;
   timestamp: string;
@@ -12,7 +12,7 @@ interface ChatMessage {
 interface ChatSession {
   sessionId: string;
   messages: ChatMessage[];
-  status: "active" | "completed" | "error";
+  status: 'active' | 'completed' | 'error';
   createdAt: string;
   lastActivity: string;
 }
@@ -42,7 +42,7 @@ export class ChatBackendService {
     this.sessions.set(id, {
       sessionId: id,
       messages: [],
-      status: "active",
+      status: 'active',
       createdAt: new Date().toISOString(),
       lastActivity: new Date().toISOString(),
     });
@@ -71,7 +71,7 @@ export class ChatBackendService {
    */
   async pushMessage(
     sessionId: string,
-    message: Omit<ChatMessage, "id" | "timestamp">,
+    message: Omit<ChatMessage, 'id' | 'timestamp'>,
   ): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -91,9 +91,9 @@ export class ChatBackendService {
     const baseUrl = getApiUrl();
     try {
       await fetch(`${baseUrl}/api/chat/stream`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId,
@@ -105,7 +105,7 @@ export class ChatBackendService {
     } catch (error) {
       // In development/testing, just log the error but don't fail
       console.warn(
-        "Could not push message to frontend (server may not be running):",
+        'Could not push message to frontend (server may not be running):',
         error,
       );
     }
@@ -119,7 +119,7 @@ export class ChatBackendService {
     initialPrompt: string,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "ai",
+      type: 'ai',
       content: initialPrompt,
     });
   }
@@ -133,7 +133,7 @@ export class ChatBackendService {
     data?: any,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "ai",
+      type: 'ai',
       content: message,
       data,
     });
@@ -148,7 +148,7 @@ export class ChatBackendService {
     data?: any,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "status",
+      type: 'status',
       content: status,
       data,
     });
@@ -163,25 +163,25 @@ export class ChatBackendService {
   ): Promise<void> {
     if (finalMessage) {
       await this.pushMessage(sessionId, {
-        type: "ai",
+        type: 'ai',
         content: finalMessage,
       });
     }
 
     const session = this.sessions.get(sessionId);
     if (session) {
-      session.status = "completed";
+      session.status = 'completed';
     }
 
     // Send completion signal
     await fetch(`${getApiUrl()}/api/chat/stream`, {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         sessionId,
-        type: "done",
+        type: 'done',
       }),
     });
   }
@@ -218,24 +218,24 @@ export class ChatBackendService {
   ): Promise<void> {
     try {
       // Send initial status
-      await this.sendStatus(sessionId, "正在分析您的问题...");
+      await this.sendStatus(sessionId, '正在分析您的问题...');
 
       // Import agent service dynamically to avoid circular dependencies
-      const { AgentService } = await import("@/lib/services/agentService");
-      const { Agent } = await import("@/lib/agents/Agent");
+      const { AgentService } = await import('@/lib/services/agentService');
+      const { Agent } = await import('@/lib/agents/Agent');
 
       const agent = new Agent(agentConfig);
       const agentService = new AgentService(agent, agentConfig);
 
       const agentStream = agentService.processRequest({
-        mode: "agent",
+        mode: 'agent',
         messages: [
           {
             content: userQuery,
-            sender: "user",
+            sender: 'user',
             timestamp: new Date(),
             isVisible: true,
-            messageType: "content",
+            messageType: 'content',
           },
         ],
         rag_config: agentConfig.rag_config,
@@ -246,30 +246,30 @@ export class ChatBackendService {
       // Stream agent responses
       for await (const step of transformedStream) {
         switch (step.type) {
-          case "step":
+          case 'step':
             await this.sendStatus(sessionId, step.content);
             break;
-          case "update":
+          case 'update':
             await this.pushMessage(sessionId, {
-              type: "ai",
+              type: 'ai',
               content: step.content,
             });
             break;
-          case "done":
+          case 'done':
             await this.completeConversation(sessionId, step.content);
             break;
-          case "error":
+          case 'error':
             await this.pushMessage(sessionId, {
-              type: "system",
+              type: 'system',
               content: `错误: ${step.content}`,
             });
             break;
-          case "quizzes":
+          case 'quizzes':
             const quizzesData = (step as any).quizzes;
             if (quizzesData) {
               await this.pushMessage(sessionId, {
-                type: "ai",
-                content: "为您找到了相关练习题",
+                type: 'ai',
+                content: '为您找到了相关练习题',
                 data: { quizzes: quizzesData },
               });
             }
@@ -277,10 +277,10 @@ export class ChatBackendService {
         }
       }
     } catch (error) {
-      console.error("Error processing with agent:", error);
+      console.error('Error processing with agent:', error);
       await this.pushMessage(sessionId, {
-        type: "system",
-        content: `处理失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        type: 'system',
+        content: `处理失败: ${error instanceof Error ? error.message : '未知错误'}`,
       });
     }
   }

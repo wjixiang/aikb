@@ -1,9 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth from 'next-auth';
 // import CredentialsProvider from "next-auth/providers/credentials";
 // import { compare } from "bcryptjs";
 // import prisma from "@/lib/prisma";
 // import { PrismaAdapter } from "@auth/prisma-adapter";
-import { authOptions } from "@/lib/auth/authOptions";
+import { authOptions } from '@/lib/auth/authOptions';
 
 /**
  * NextAuth.js API route handler for authentication

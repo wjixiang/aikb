@@ -1,9 +1,9 @@
-import { Embeddings } from "@langchain/core/embeddings";
-import { ChatOpenAI } from "@langchain/openai";
-import provide_gptio from "./provider/provider_gptio";
-import provide_gptapi from "./provider/provider_gptapi";
-import * as dotenv from "dotenv";
-import provide_zhizeng from "./provider/provider_zhizengzeng";
+import { Embeddings } from '@langchain/core/embeddings';
+import { ChatOpenAI } from '@langchain/openai';
+import provide_gptio from './provider/provider_gptio';
+import provide_gptapi from './provider/provider_gptapi';
+import * as dotenv from 'dotenv';
+import provide_zhizeng from './provider/provider_zhizengzeng';
 dotenv.config();
 
 /**
@@ -29,7 +29,7 @@ export interface provider {
 
 export class LLMProvider {
   static providerList: Record<string, provider> = {};
-  
+
   static getProvider(providerName: string): provider {
     if (!this.providerList[providerName]) {
       switch (providerName) {
@@ -64,17 +64,17 @@ export function testAllProviders(): void {
       const providerInstance = LLMProvider.getProvider(providerKey);
       console.log(`正在测试 provider: ${providerKey}`);
       try {
-        const chatModel = providerInstance.getChatModal("gpt-4o-mini", 0.7);
-        await chatModel.invoke("hello");
+        const chatModel = providerInstance.getChatModal('gpt-4o-mini', 0.7);
+        await chatModel.invoke('hello');
         console.log(`  ${providerKey}: Chat 模型实例创建成功。`);
       } catch (error) {
         console.error(`  ${providerKey}: Chat 模型实例创建失败：`, error);
       }
       try {
         const embeddingModel = providerInstance.getEmbeddingModal(
-          "text-embedding-3-large",
+          'text-embedding-3-large',
         ).Embeddings;
-        await embeddingModel.embedDocuments(["hello world"]);
+        await embeddingModel.embedDocuments(['hello world']);
         console.log(`  ${providerKey}: Embedding 模型实例创建成功。`);
       } catch (error) {
         console.error(`  ${providerKey}: Embedding 模型实例创建失败：`, error);
@@ -86,7 +86,7 @@ export function testAllProviders(): void {
 }
 
 if (!process.env.NOTE_COLLECTION_NAME) {
-  throw new Error("NOTE_COLLECTION_NAME 环境变量未提供！");
+  throw new Error('NOTE_COLLECTION_NAME 环境变量未提供！');
 }
 
 let llmprovider: LLMProvider | null = null;
@@ -94,7 +94,7 @@ let llmprovider: LLMProvider | null = null;
 function getLLMProvider(): LLMProvider {
   if (!llmprovider) {
     if (!process.env.NOTE_COLLECTION_NAME) {
-      throw new Error("NOTE_COLLECTION_NAME 环境变量未提供！");
+      throw new Error('NOTE_COLLECTION_NAME 环境变量未提供！');
     }
     llmprovider = new LLMProvider(
       new provide_zhizeng(),
@@ -104,9 +104,8 @@ function getLLMProvider(): LLMProvider {
   return llmprovider;
 }
 
-export const embeddings = () => getLLMProvider().provider.getEmbeddingModal(
-  "text-embedding-3-large",
-);
+export const embeddings = () =>
+  getLLMProvider().provider.getEmbeddingModal('text-embedding-3-large');
 
 export const getEmbeddings = () => getLLMProvider().provider.getEmbeddingModal;
 

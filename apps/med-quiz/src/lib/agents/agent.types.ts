@@ -1,16 +1,16 @@
-import { QuizWithUserAnswer } from "@/types/quizData.types";
+import { QuizWithUserAnswer } from '@/types/quizData.types';
 
-import { retrieveTextBookSource } from "../langchain/retriever/noteBookRetriever";
-import { Document } from "@langchain/core/documents";
-import { rag_config } from "@/kgrag/lib/llm_workflow/rag_workflow";
+import { retrieveTextBookSource } from '../langchain/retriever/noteBookRetriever';
+import { Document } from '@langchain/core/documents';
+import { rag_config } from '@/kgrag/lib/llm_workflow/rag_workflow';
 
 export interface ChatMessage {
   originalMessage?: string;
-  sender: "user" | "ai" | "system";
+  sender: 'user' | 'ai' | 'system';
   timestamp: Date;
   isVisible: boolean;
-  messageType: "content" | "status";
-  status?: "processing" | "completed" | "failed";
+  messageType: 'content' | 'status';
+  status?: 'processing' | 'completed' | 'failed';
   sources?: Reference[];
   CoT?: string;
   content: string;
@@ -66,17 +66,17 @@ export interface AgentConfig {
  */
 
 export type AgentMessageType =
-  | "step" // Progress update
-  | "update" // Content update
-  | "done" // Completion
-  | "error" // Error occurred
-  | "notice" // Informational message
-  | "result" // Final result
-  | "references" // References/citations
-  | "quizzes" // Quiz data
-  | "stream"
-  | "cot" // Chain of Thought reasoning
-  | "speech"; // Speech synthesis data
+  | 'step' // Progress update
+  | 'update' // Content update
+  | 'done' // Completion
+  | 'error' // Error occurred
+  | 'notice' // Informational message
+  | 'result' // Final result
+  | 'references' // References/citations
+  | 'quizzes' // Quiz data
+  | 'stream'
+  | 'cot' // Chain of Thought reasoning
+  | 'speech'; // Speech synthesis data
 
 export interface AgentMessage {
   type: AgentMessageType;
@@ -85,7 +85,7 @@ export interface AgentMessage {
   data?: any; // Additional data payload
   references?: []; // References/citations
   node?: string; // Node name if applicable
-  status?: "start" | "end" | "error"; // Node status
+  status?: 'start' | 'end' | 'error'; // Node status
   error?: string; // Error details if type is 'error'
   quizzes?: QuizWithUserAnswer[]; // Quiz data if type is 'quizzes'
   speechData?: {
@@ -98,12 +98,12 @@ export interface AgentMessage {
 
 export interface NodeStatus {
   node: string;
-  status: "start" | "end" | "error";
+  status: 'start' | 'end' | 'error';
   error?: string;
 }
 
 export interface ChatReq {
-  mode: "simple" | "agent";
+  mode: 'simple' | 'agent';
   messages: ChatMessage[];
   analysisLLMId?: string;
   workerLLMId?: string;
@@ -124,7 +124,7 @@ export interface AgentStep {
   data?: {
     documents?: Reference[];
   };
-  status?: "start" | "end" | "error";
+  status?: 'start' | 'end' | 'error';
   speechData?: {
     text: string;
     audioUrl?: string;

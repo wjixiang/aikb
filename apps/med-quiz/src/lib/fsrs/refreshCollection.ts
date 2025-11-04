@@ -1,6 +1,6 @@
-import { UserSubscription } from "@/types/anki.types";
-import { ObjectId } from "mongodb";
-import { connectToDatabase } from "../db/mongodb";
+import { UserSubscription } from '@/types/anki.types';
+import { ObjectId } from 'mongodb';
+import { connectToDatabase } from '../db/mongodb';
 
 /**
  * 刷新用户指定的fsrs卡组全局状态，fsrs功能的核心组件，需要再所有fsrs操作前后进行调用
@@ -16,7 +16,7 @@ export async function refreshCollection(
 
   // 检查订阅是否存在
   const subscription = await db
-    .collection<UserSubscription>("userSubscriptions")
+    .collection<UserSubscription>('userSubscriptions')
     .findOne({
       userId: userEmail,
       collectionId: collectionId,
@@ -54,14 +54,14 @@ export async function refreshCollection(
     0,
     scheduleParams.maxReviewsPerDay - reviewedToday,
   );
-  console.log("availableReviews", availableReviews);
+  console.log('availableReviews', availableReviews);
 
   // 获取所有到期的卡片
   const dueCards = await db
-    .collection("cardStates")
+    .collection('cardStates')
     .find({
       userId: userEmail,
-      "state.due": { $lte: new Date() },
+      'state.due': { $lte: new Date() },
       collectionId: collectionId,
     })
     .toArray();
@@ -82,10 +82,10 @@ export async function refreshCollection(
   // 计算当前可学习的卡片数量
   // 计算可用的新卡片数量
   const NewCardsAvaliableCount = await db
-    .collection("cardStates")
+    .collection('cardStates')
     .countDocuments({
       userId: userEmail,
-      "state.state": 0,
+      'state.state': 0,
       collectionId: collectionId,
     });
 
@@ -97,12 +97,12 @@ export async function refreshCollection(
     availableReviews,
     dueLearningCards.length + dueReviewCards.length,
   );
-  console.log("newCardCount", newCardCount);
+  console.log('newCardCount', newCardCount);
   // 计算总的到期卡片数量（考虑每日限制）
   const totalDueCount = newCardCount + reviewCardCount;
 
   // 更新订阅信息
-  await db.collection("userSubscriptions").updateOne(
+  await db.collection('userSubscriptions').updateOne(
     { _id: new ObjectId(subscription._id) },
     {
       $set: {
@@ -122,7 +122,7 @@ export async function refreshAllCollection(userid_email: string) {
   const { db } = await connectToDatabase();
 
   const subscriptions = await db
-    .collection<UserSubscription>("userSubscriptions")
+    .collection<UserSubscription>('userSubscriptions')
     .find({ userId: userid_email })
     .toArray();
 

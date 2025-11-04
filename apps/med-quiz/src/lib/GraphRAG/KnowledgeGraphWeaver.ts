@@ -1,18 +1,18 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { connectToDatabase } from "../db/mongodb";
-import LLMNer, { entity, relation } from "./LLMNer";
-import { JanusGraphClient, JanusGraphConfig } from "./janusGraphClient";
-import { entity_types } from "./prompt/prompt";
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import { connectToDatabase } from '../db/mongodb';
+import LLMNer, { entity, relation } from './LLMNer';
+import { JanusGraphClient, JanusGraphConfig } from './janusGraphClient';
+import { entity_types } from './prompt/prompt';
 import milvusCollectionOperator, {
   MilvusDocument,
-} from "../milvus/milvusCollectionOperator";
+} from '../milvus/milvusCollectionOperator';
 import {
   embeddingInstance,
   embeddings,
   getEmbeddings,
-} from "../langchain/provider";
+} from '../langchain/provider';
 
 export interface KnowledgeGraphWeaverConfig {
   chunkThreshold: number;
@@ -36,19 +36,19 @@ export const defaultKnowledgeGraphWeaverConfig: KnowledgeGraphWeaverConfig = {
   chunkOverlap: 200, // Example value
   debug: true,
   janusGraphConfig: {
-    host: "localhost", // Example host
+    host: 'localhost', // Example host
     port: 8182, // Example port - assuming default JanusGraph port
     // Add other JanusGraph config properties as needed
     // Add other JanusGraph config properties as needed
   },
-  extract_llm_modal_name: "glm-4-flash", // Example value
-  language: "Chinese", // Example value
-  tuple_delimiter: "|", // Example value
-  record_delimiter: "---", // Example value
-  completion_delimiter: "DONE", // Example value
+  extract_llm_modal_name: 'glm-4-flash', // Example value
+  language: 'Chinese', // Example value
+  tuple_delimiter: '|', // Example value
+  record_delimiter: '---', // Example value
+  completion_delimiter: 'DONE', // Example value
   parallelLimit: 5,
-  embeddingInstance: getEmbeddings()("text-embedding-3-large"), // Example value
-  milvusCollectionName: "knowledge_graph_chunks", // Example value
+  embeddingInstance: getEmbeddings()('text-embedding-3-large'), // Example value
+  milvusCollectionName: 'knowledge_graph_chunks', // Example value
 };
 
 export interface ReferenceDocument {
@@ -93,10 +93,10 @@ export default class KnowledgeGraphWeaver {
     }
   };
 
-  generate_knowledge_graph = async (doc: Omit<ReferenceDocument, "id">) => {
+  generate_knowledge_graph = async (doc: Omit<ReferenceDocument, 'id'>) => {
     const id = uuidv4();
     const newDoc: ReferenceDocument = { ...doc, id };
-    this.log("Generating knowledge graph from reference document:", newDoc.id);
+    this.log('Generating knowledge graph from reference document:', newDoc.id);
     try {
       await this.save_reference_document_to_mongodb(newDoc);
       const chunks = await this.chunk_spliter(newDoc.content, newDoc.id); // Pass doc.id
@@ -107,12 +107,12 @@ export default class KnowledgeGraphWeaver {
       await this.preliminaryEntityCleaning();
       await this.synchronizeToJanusGraph();
       this.log(
-        "Knowledge graph generation completed successfully for document:",
+        'Knowledge graph generation completed successfully for document:',
         newDoc.id,
       );
     } catch (error) {
       this.log(
-        "Error generating knowledge graph for document:",
+        'Error generating knowledge graph for document:',
         newDoc.id,
         error,
       );
@@ -122,14 +122,14 @@ export default class KnowledgeGraphWeaver {
   };
 
   save_reference_document_to_mongodb = async (doc: ReferenceDocument) => {
-    this.log("Saving reference document to MongoDB:", doc.id);
+    this.log('Saving reference document to MongoDB:', doc.id);
     try {
       const { db } = await connectToDatabase();
-      const collection = db.collection("reference_documents");
+      const collection = db.collection('reference_documents');
       await collection.insertOne(doc);
-      this.log("Reference document saved:", doc.id);
+      this.log('Reference document saved:', doc.id);
     } catch (error) {
-      this.log("Error saving reference document to MongoDB:", doc.id, error);
+      this.log('Error saving reference document to MongoDB:', doc.id, error);
       throw error;
     }
   };
@@ -138,11 +138,11 @@ export default class KnowledgeGraphWeaver {
     this.log(`Saving ${chunks.length} reference chunks to MongoDB`);
     try {
       const { db } = await connectToDatabase();
-      const collection = db.collection("reference_chunks");
+      const collection = db.collection('reference_chunks');
       await collection.insertMany(chunks);
       this.log(`${chunks.length} reference chunks saved.`);
     } catch (error) {
-      this.log("Error saving reference chunks to MongoDB:", error);
+      this.log('Error saving reference chunks to MongoDB:', error);
       throw error;
     }
   };
@@ -151,17 +151,17 @@ export default class KnowledgeGraphWeaver {
     rawText: string,
     documentId: string,
   ): Promise<ReferenceChunk[]> => {
-    this.log("Starting chunk splitting process.");
+    this.log('Starting chunk splitting process.');
     try {
-      this.log("Raw text length:", rawText.length);
-      this.log("Chunk threshold:", this.config.chunkThreshold);
+      this.log('Raw text length:', rawText.length);
+      this.log('Chunk threshold:', this.config.chunkThreshold);
 
       if (rawText.length > this.config.chunkThreshold) {
-        this.log("Text length exceeds threshold, splitting into chunks.");
+        this.log('Text length exceeds threshold, splitting into chunks.');
         const splitter = new RecursiveCharacterTextSplitter({
           chunkSize: this.config.chunkThreshold,
           chunkOverlap: this.config.chunkOverlap,
-          separators: ["\n\n", "\n", "。", "！", "？", "，", "、", ""], // Add Chinese separators
+          separators: ['\n\n', '\n', '。', '！', '？', '，', '、', ''], // Add Chinese separators
         });
         const chunks = await splitter.splitText(rawText);
         this.log(`Split into ${chunks.length} chunks.`);
@@ -174,10 +174,10 @@ export default class KnowledgeGraphWeaver {
           }),
         );
         await this.save_reference_chunk_to_mongodb(referenceChunks);
-        this.log("Finished chunk splitting and saving.");
+        this.log('Finished chunk splitting and saving.');
         return referenceChunks;
       } else {
-        this.log("Text length within threshold, saving as a single chunk.");
+        this.log('Text length within threshold, saving as a single chunk.');
         const referenceChunks: ReferenceChunk[] = [
           {
             id: `${documentId}-0`, // Simple ID generation using documentId
@@ -187,11 +187,11 @@ export default class KnowledgeGraphWeaver {
           },
         ];
         await this.save_reference_chunk_to_mongodb(referenceChunks);
-        this.log("Finished saving single chunk.");
+        this.log('Finished saving single chunk.');
         return referenceChunks;
       }
     } catch (error) {
-      this.log("Error during chunk splitting:", error);
+      this.log('Error during chunk splitting:', error);
       throw error;
     }
   };
@@ -231,7 +231,7 @@ export default class KnowledgeGraphWeaver {
       this.config.parallelLimit,
     );
 
-    this.log("Finished extracting entities and relations from all chunks.");
+    this.log('Finished extracting entities and relations from all chunks.');
     // You might want to aggregate results here if needed, but LLMNer already caches to MongoDB
     return results;
   };
@@ -263,10 +263,10 @@ export default class KnowledgeGraphWeaver {
   };
 
   preliminaryEntityCleaning = async (): Promise<void> => {
-    this.log("Starting preliminary entity cleaning and database update.");
+    this.log('Starting preliminary entity cleaning and database update.');
     try {
       const { db } = await connectToDatabase();
-      const entitiesCollection = db.collection<entity>("Entities");
+      const entitiesCollection = db.collection<entity>('Entities');
 
       // Read all entities from the collection
       const entities = await entitiesCollection.find({}).toArray();
@@ -308,7 +308,7 @@ export default class KnowledgeGraphWeaver {
           }
 
           this.log(
-            `Merged "${entity.name}": referenceId updated from [${initialReferenceIds.join(", ")}] to [${existingEntity.referenceId.join(", ")}], alias updated from [${initialAliases.join(", ")}] to [${existingEntity.alias.join(", ")}].`,
+            `Merged "${entity.name}": referenceId updated from [${initialReferenceIds.join(', ')}] to [${existingEntity.referenceId.join(', ')}], alias updated from [${initialAliases.join(', ')}] to [${existingEntity.alias.join(', ')}].`,
           );
 
           // Add the current entity's _id to the list for deletion
@@ -349,25 +349,25 @@ export default class KnowledgeGraphWeaver {
           `Performing bulk update for ${bulkOperations.length} merged entities.`,
         );
         await entitiesCollection.bulkWrite(bulkOperations);
-        this.log("Bulk update completed.");
+        this.log('Bulk update completed.');
       } else {
-        this.log("No entities to update.");
+        this.log('No entities to update.');
       }
 
       // Perform bulk delete for entities that were merged
       if (entitiesToDelete.length > 0) {
         this.log(`Deleting ${entitiesToDelete.length} merged entities.`);
         await entitiesCollection.deleteMany({ _id: { $in: entitiesToDelete } });
-        this.log("Bulk deletion completed.");
+        this.log('Bulk deletion completed.');
       } else {
-        this.log("No entities to delete.");
+        this.log('No entities to delete.');
       }
 
       this.log(
         `Finished preliminary entity cleaning and database update. Merged ${entities.length} entities into ${mergedEntities.length}.`,
       );
     } catch (error) {
-      this.log("Error during preliminary entity cleaning:", error);
+      this.log('Error during preliminary entity cleaning:', error);
       throw error;
     }
   };
@@ -376,11 +376,11 @@ export default class KnowledgeGraphWeaver {
    * Synchronizes entities and relationships from MongoDB to JanusGraph.
    */
   synchronizeToJanusGraph = async (): Promise<void> => {
-    this.log("Starting synchronization to JanusGraph.");
+    this.log('Starting synchronization to JanusGraph.');
     try {
       const { db } = await connectToDatabase();
-      const entitiesCollection = db.collection<entity>("Entities");
-      const relationshipsCollection = db.collection<relation>("Relationships"); // Assuming a 'Relationships' collection
+      const entitiesCollection = db.collection<entity>('Entities');
+      const relationshipsCollection = db.collection<relation>('Relationships'); // Assuming a 'Relationships' collection
 
       // Fetch entities and relationships from MongoDB
       const entities = await entitiesCollection.find({}).toArray();
@@ -392,7 +392,7 @@ export default class KnowledgeGraphWeaver {
       // Log first few relationships to inspect structure
       if (relationships.length > 0) {
         this.log(
-          "First few relationships fetched:",
+          'First few relationships fetched:',
           JSON.stringify(relationships.slice(0, 3), null, 2),
         );
       }
@@ -451,7 +451,7 @@ export default class KnowledgeGraphWeaver {
             }
 
             const newVertex = await this.janusGraphClient.createVertex(
-              entity.type || "entity",
+              entity.type || 'entity',
               vertexProperties,
             );
             if (newVertex && newVertex.id) {
@@ -490,7 +490,7 @@ export default class KnowledgeGraphWeaver {
 
           // Log names being used for lookup
           this.log(
-            `Looking up IDs for source: "${sourceName}", target: "${targetName}", type: "${relationship.type.join(",")}"`,
+            `Looking up IDs for source: "${sourceName}", target: "${targetName}", type: "${relationship.type.join(',')}"`,
           );
 
           const sourceVertexId = entityNameToVertexIdMap.get(sourceName);
@@ -524,12 +524,12 @@ export default class KnowledgeGraphWeaver {
             const newEdge = await this.janusGraphClient.createEdge(
               sourceName,
               targetName,
-              relationship.type.join(","), // Use variable
+              relationship.type.join(','), // Use variable
               edgeProperties,
             );
             if (newEdge && newEdge.id) {
               this.log(
-                `Synchronized relationship "${sourceName}" -> "${targetName}" (${relationship.type.join(",")}) (Edge ID: ${newEdge.id}) to JanusGraph.`,
+                `Synchronized relationship "${sourceName}" -> "${targetName}" (${relationship.type.join(',')}) (Edge ID: ${newEdge.id}) to JanusGraph.`,
               );
             } else {
               this.log(
@@ -540,7 +540,7 @@ export default class KnowledgeGraphWeaver {
           } else {
             // Use variables in log message
             this.log(
-              `Skipping relationship synchronization due to missing mapped vertex IDs: "${sourceName}" (ID: ${sourceVertexId}) -> "${targetName}" (ID: ${targetVertexId}) (${relationship.type.join(",")}).`,
+              `Skipping relationship synchronization due to missing mapped vertex IDs: "${sourceName}" (ID: ${sourceVertexId}) -> "${targetName}" (ID: ${targetVertexId}) (${relationship.type.join(',')}).`,
             );
           }
         } catch (error) {
@@ -552,15 +552,15 @@ export default class KnowledgeGraphWeaver {
         }
       }
 
-      this.log("Finished synchronization to JanusGraph.");
+      this.log('Finished synchronization to JanusGraph.');
 
       // Clear processed entities and relationships from MongoDB
-      this.log("Clearing processed entities and relationships from MongoDB.");
+      this.log('Clearing processed entities and relationships from MongoDB.');
       await entitiesCollection.deleteMany({});
       await relationshipsCollection.deleteMany({});
-      this.log("Successfully cleared processed entities and relationships.");
+      this.log('Successfully cleared processed entities and relationships.');
     } catch (error) {
-      this.log("Error during synchronization to JanusGraph:", error);
+      this.log('Error during synchronization to JanusGraph:', error);
       throw error;
     }
   };
@@ -570,8 +570,8 @@ export default class KnowledgeGraphWeaver {
    * @param chunks data chunks to be embedded
    */
   chunk_embedding = async (chunks: ReferenceChunk[]) => {
-    this.log("Starting chunk embedding process.");
-    this.log("Number of chunks to embed:", chunks.length);
+    this.log('Starting chunk embedding process.');
+    this.log('Number of chunks to embed:', chunks.length);
 
     const milvusDocuments: MilvusDocument[] = chunks.map((chunk) => ({
       oid: chunk.id, // Use chunk id as oid
@@ -586,9 +586,9 @@ export default class KnowledgeGraphWeaver {
         batchSize: this.config.milvusBatchSize,
         maxLength: this.config.milvusMaxLength,
       });
-      this.log("Finished chunk embedding process and inserted into Milvus.");
+      this.log('Finished chunk embedding process and inserted into Milvus.');
     } catch (error) {
-      this.log("Error during chunk embedding and insertion:", error);
+      this.log('Error during chunk embedding and insertion:', error);
       throw error; // Re-throw the error to be handled by the caller
     }
   };

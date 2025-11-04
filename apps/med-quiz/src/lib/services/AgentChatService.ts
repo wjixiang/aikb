@@ -1,7 +1,7 @@
-import { Agent, agent_config } from "../agents/Agent";
-import { AgentService } from "./agentService";
-import { chatBackendService } from "./ChatBackendService";
-import { language } from "@/kgrag/type";
+import { Agent, agent_config } from '../agents/Agent';
+import { AgentService } from './agentService';
+import { chatBackendService } from './ChatBackendService';
+import { language } from '@/kgrag/type';
 
 export class AgentChatService {
   private static instances = new Map<string, AgentChatService>();
@@ -31,7 +31,7 @@ export class AgentChatService {
   async processUserQuery(
     query: string,
     options: {
-      mode: "simple" | "agent";
+      mode: 'simple' | 'agent';
       selectedSource?: string;
       analysisLLMId?: string;
       workerLLMId?: string;
@@ -40,7 +40,7 @@ export class AgentChatService {
     },
   ): Promise<void> {
     try {
-      console.log("AgentChatService processing query:", {
+      console.log('AgentChatService processing query:', {
         query,
         options,
         sessionId: this.sessionId,
@@ -52,7 +52,7 @@ export class AgentChatService {
       // Send initial status
       await chatBackendService.sendStatus(
         this.sessionId,
-        "正在分析您的问题...",
+        '正在分析您的问题...',
       );
 
       // Prepare request
@@ -61,20 +61,20 @@ export class AgentChatService {
         messages: [
           {
             content: query,
-            sender: "user" as const,
+            sender: 'user' as const,
             timestamp: new Date(),
             isVisible: true,
-            messageType: "content" as const,
+            messageType: 'content' as const,
           },
         ],
-        analysisLLMId: options.analysisLLMId || "",
-        workerLLMId: options.workerLLMId || "",
-        selectedSource: options.selectedSource || "vault",
+        analysisLLMId: options.analysisLLMId || '',
+        workerLLMId: options.workerLLMId || '',
+        selectedSource: options.selectedSource || 'vault',
         rag_config: {
           useHyDE: options.useHyDE || false,
           useHybrid: options.useHybrid || false,
           topK: 10,
-          language: "zh" as language,
+          language: 'zh' as language,
         },
       };
 
@@ -88,35 +88,35 @@ export class AgentChatService {
         const stepData = step as any;
 
         switch (step.type) {
-          case "step":
+          case 'step':
             await chatBackendService.sendStatus(this.sessionId, step.content);
             break;
 
-          case "update":
+          case 'update':
             await chatBackendService.pushMessage(this.sessionId, {
-              type: "ai",
+              type: 'ai',
               content: step.content,
             });
             break;
 
-          case "done":
+          case 'done':
             await chatBackendService.completeConversation(
               this.sessionId,
               step.content,
             );
             break;
 
-          case "error":
+          case 'error':
             await chatBackendService.pushMessage(this.sessionId, {
-              type: "system",
+              type: 'system',
               content: `错误: ${step.content}`,
             });
             break;
 
-          case "result":
-            if (stepData.task === "Execute_RAG" && stepData.data?.documents) {
+          case 'result':
+            if (stepData.task === 'Execute_RAG' && stepData.data?.documents) {
               await chatBackendService.pushMessage(this.sessionId, {
-                type: "ai",
+                type: 'ai',
                 content: step.content,
                 data: { references: stepData.data.documents },
               });
@@ -125,10 +125,10 @@ export class AgentChatService {
         }
       }
     } catch (error) {
-      console.error("Error processing with agent:", error);
+      console.error('Error processing with agent:', error);
       await chatBackendService.pushMessage(this.sessionId, {
-        type: "system",
-        content: `处理失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        type: 'system',
+        content: `处理失败: ${error instanceof Error ? error.message : '未知错误'}`,
       });
     }
   }

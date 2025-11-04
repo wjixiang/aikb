@@ -1,7 +1,7 @@
-import { quiz } from "@/types/quizData.types";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { AgentStep } from "./agents/agent.types";
+import { quiz } from '@/types/quizData.types';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { AgentStep } from './agents/agent.types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,77 +12,77 @@ export function formQuizContent(
   withAnswer: boolean = false,
   withAnalysis: boolean = false,
 ) {
-  let content = "";
-  let answerContent = "";
+  let content = '';
+  let answerContent = '';
 
   switch (quiz.type) {
-    case "A3":
-      content = "【共用题干题】\n\n";
-      content += quiz.mainQuestion ?? "";
+    case 'A3':
+      content = '【共用题干题】\n\n';
+      content += quiz.mainQuestion ?? '';
       if (quiz.subQuizs) {
         content += quiz.subQuizs
           .map((q, i) => {
-            answerContent += `\n${i + 1}. ${q.answer ?? ""}`;
+            answerContent += `\n${i + 1}. ${q.answer ?? ''}`;
             return (
-              `\n\n${i + 1}. ${q.question ?? ""}\n` +
+              `\n\n${i + 1}. ${q.question ?? ''}\n` +
               (q.options
                 ?.map(
                   (opt, j) =>
-                    `${String.fromCharCode(65 + j)}. ${opt.text ?? ""}`,
+                    `${String.fromCharCode(65 + j)}. ${opt.text ?? ''}`,
                 )
-                .join("\n") ?? "")
+                .join('\n') ?? '')
             );
           })
-          .join("\n");
+          .join('\n');
       }
       break;
 
-    case "B":
-      content = "【共用选项题】\n\n";
+    case 'B':
+      content = '【共用选项题】\n\n';
       content +=
         quiz.questions
           ?.map((q, i) => {
-            answerContent += `\n${q.questionId + 1}. ${q.answer ?? ""}`;
+            answerContent += `\n${q.questionId + 1}. ${q.answer ?? ''}`;
             return `${i + 1}.` + q.questionText;
           })
-          .join("\n\n") ?? "";
+          .join('\n\n') ?? '';
       if (quiz.options) {
         content +=
-          "\n\n" +
+          '\n\n' +
           quiz.options
-            .map((opt) => `${opt.oid ?? ""}. ${opt.text ?? ""}`)
-            .join("\n\n");
+            .map((opt) => `${opt.oid ?? ''}. ${opt.text ?? ''}`)
+            .join('\n\n');
       }
       break;
 
     default:
       console.log(quiz);
-      content = quiz.type === "X" ? "【多选题】\n\n" : "【单选题】\n\n";
-      content += quiz.question ?? "";
+      content = quiz.type === 'X' ? '【多选题】\n\n' : '【单选题】\n\n';
+      content += quiz.question ?? '';
       answerContent =
-        typeof quiz.answer === "string" ? quiz.answer : quiz.answer.join("");
+        typeof quiz.answer === 'string' ? quiz.answer : quiz.answer.join('');
       if (quiz.options) {
         content +=
-          "\n\n" +
+          '\n\n' +
           quiz.options
             .map(
               (opt, index) =>
-                `${String.fromCharCode(65 + index)}. ${opt.text ?? ""}`,
+                `${String.fromCharCode(65 + index)}. ${opt.text ?? ''}`,
             )
-            .join("\n\n");
+            .join('\n\n');
       }
   }
 
   if (withAnswer) {
-    content += "\n\n## 正确选项：" + answerContent;
+    content += '\n\n## 正确选项：' + answerContent;
   }
 
-  if (withAnalysis && "analysis" in quiz && quiz.analysis) {
+  if (withAnalysis && 'analysis' in quiz && quiz.analysis) {
     content +=
-      "\n\n## 解析：\n" +
-      (quiz.analysis.point ?? "") +
-      "\n\n" +
-      (quiz.analysis.discuss ?? "");
+      '\n\n## 解析：\n' +
+      (quiz.analysis.point ?? '') +
+      '\n\n' +
+      (quiz.analysis.discuss ?? '');
   }
 
   return content;
@@ -107,23 +107,23 @@ export async function* _handleStream<T>(
   stream: AsyncIterable<T>,
   processor: (item: T) => string,
 ): AsyncGenerator<AgentStep> {
-  let preContent = "";
+  let preContent = '';
   for await (const item of stream) {
     let currentContent = processor(item);
     yield {
-      type: "stream",
+      type: 'stream',
       content: currentContent.startsWith(preContent)
         ? currentContent.substring(preContent.length)
-        : "",
-      task: "",
+        : '',
+      task: '',
     };
     preContent = currentContent;
   }
   yield {
-    type: "stream",
-    content: "",
+    type: 'stream',
+    content: '',
     isFinal: true,
-    task: "",
+    task: '',
   };
 }
 

@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
 
 export async function POST(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse request body
     const { text, title, isPublic = false, sentences } = await request.json();
 
-    if (!text || typeof text !== "string" || text.trim().length === 0) {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
       return NextResponse.json(
-        { error: "Text content is required" },
+        { error: 'Text content is required' },
         { status: 400 },
       );
     }
@@ -36,32 +36,32 @@ export async function POST(request: NextRequest) {
     const translationDoc = {
       userId: new ObjectId(session.user.id),
       text: text.trim(),
-      title: title?.trim() || "Untitled Translation Practice",
+      title: title?.trim() || 'Untitled Translation Practice',
       sentences: finalSentences,
       isPublic: Boolean(isPublic),
       createdAt: new Date(),
       updatedAt: new Date(),
-      status: "active",
+      status: 'active',
     };
 
     // Insert into database
     const result = await db
-      .collection("translationPractice")
+      .collection('translationPractice')
       .insertOne(translationDoc);
 
     // Create indexes if they don't exist
     try {
       await db
-        .collection("translationPractice")
+        .collection('translationPractice')
         .createIndex({ userId: 1, createdAt: -1 });
       await db
-        .collection("translationPractice")
+        .collection('translationPractice')
         .createIndex({ userId: 1, status: 1 });
       await db
-        .collection("translationPractice")
+        .collection('translationPractice')
         .createIndex({ isPublic: 1, createdAt: -1 });
     } catch (indexError) {
-      console.warn("Index creation failed (may already exist):", indexError);
+      console.warn('Index creation failed (may already exist):', indexError);
     }
 
     return NextResponse.json({
@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
       sentenceCount: translationDoc.sentences.length,
     });
   } catch (error) {
-    console.error("Error uploading translation practice:", error);
+    console.error('Error uploading translation practice:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }
@@ -85,17 +85,17 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const scope = searchParams.get("scope") || "private"; // 'private', 'public', or 'all'
+    const scope = searchParams.get('scope') || 'private'; // 'private', 'public', or 'all'
 
     // Connect to database
     const { db } = await connectToDatabase();
 
-    let query: any = { status: "active" };
+    let query: any = { status: 'active' };
 
-    if (scope === "public") {
+    if (scope === 'public') {
       // Get all public documents
       query.isPublic = true;
-    } else if (scope === "all" && session?.user?.id) {
+    } else if (scope === 'all' && session?.user?.id) {
       // Get user's documents plus public documents
       query.$or = [
         { userId: new ObjectId(session.user.id) },
@@ -111,10 +111,10 @@ export async function GET(request: NextRequest) {
 
     // Get documents based on query
     const documents = await db
-      .collection("translationPractice")
+      .collection('translationPractice')
       .find(query)
       .sort({ createdAt: -1 })
-      .limit(scope === "public" ? 100 : 50)
+      .limit(scope === 'public' ? 100 : 50)
       .toArray();
 
     // Convert ObjectId to string for JSON serialization
@@ -136,9 +136,9 @@ export async function GET(request: NextRequest) {
       scope: scope,
     });
   } catch (error) {
-    console.error("Error fetching translation practice documents:", error);
+    console.error('Error fetching translation practice documents:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }
@@ -149,7 +149,7 @@ export async function PUT(request: NextRequest) {
     // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse request body
@@ -157,7 +157,7 @@ export async function PUT(request: NextRequest) {
 
     if (!documentId) {
       return NextResponse.json(
-        { error: "Document ID is required" },
+        { error: 'Document ID is required' },
         { status: 400 },
       );
     }
@@ -166,7 +166,7 @@ export async function PUT(request: NextRequest) {
     const { db } = await connectToDatabase();
 
     // Update document privacy setting
-    const result = await db.collection("translationPractice").updateOne(
+    const result = await db.collection('translationPractice').updateOne(
       {
         _id: new ObjectId(documentId),
         userId: new ObjectId(session.user.id),
@@ -181,19 +181,19 @@ export async function PUT(request: NextRequest) {
 
     if (result.matchedCount === 0) {
       return NextResponse.json(
-        { error: "Document not found or access denied" },
+        { error: 'Document not found or access denied' },
         { status: 404 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: "Privacy setting updated successfully",
+      message: 'Privacy setting updated successfully',
     });
   } catch (error) {
-    console.error("Error updating privacy setting:", error);
+    console.error('Error updating privacy setting:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

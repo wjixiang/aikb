@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { clientPromise, connectToDatabase } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
+import { NextRequest, NextResponse } from 'next/server';
+import { clientPromise, connectToDatabase } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ [key: string]: string | string[] }> },
 ) {
   const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   try {
@@ -21,7 +21,7 @@ export async function POST(
     const req = await request.json();
 
     const { db } = await connectToDatabase();
-    await db.collection("practicerecords").insertOne({
+    await db.collection('practicerecords').insertOne({
       userid: userid,
       quizid: new ObjectId(req.quizid),
       timestamp: new Date(),
@@ -30,13 +30,13 @@ export async function POST(
     });
 
     return NextResponse.json(
-      { message: "Record added successfully" },
+      { message: 'Record added successfully' },
       { headers: corsHeaders },
     );
   } catch (error) {
-    console.error("Error adding record:", error);
+    console.error('Error adding record:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500, headers: corsHeaders },
     );
   }

@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const QuestionTitle = styled.h2`
   font-size: 1.2rem;
@@ -39,18 +39,18 @@ export const Result = styled.div<ResultProps>`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: ${(props) => (props.$isCorrect ? "#2E7D32" : "#C62828")};
+  color: ${(props) => (props.$isCorrect ? '#2E7D32' : '#C62828')};
   background-color: ${(props) =>
-    props.$isCorrect ? "rgba(46, 125, 50, 0.15)" : "rgba(198, 40, 40, 0.15)"};
+    props.$isCorrect ? 'rgba(46, 125, 50, 0.15)' : 'rgba(198, 40, 40, 0.15)'};
   border-left: 4px solid
-    ${(props) => (props.$isCorrect ? "#2E7D32" : "#C62828")};
+    ${(props) => (props.$isCorrect ? '#2E7D32' : '#C62828')};
   animation: fadeIn 0.3s ease;
 
   &::before {
     content: ${(props) => (props.$isCorrect ? '"✓"' : '"✗"')};
     font-size: 1.2em;
     font-weight: 900;
-    color: ${(props) => (props.$isCorrect ? "#2E7D32" : "#C62828")};
+    color: ${(props) => (props.$isCorrect ? '#2E7D32' : '#C62828')};
   }
 
   @keyframes fadeIn {

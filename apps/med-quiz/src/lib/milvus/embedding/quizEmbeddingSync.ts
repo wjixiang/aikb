@@ -1,9 +1,9 @@
-import { MongoClient } from "mongodb";
-import { Embeddings } from "@langchain/core/embeddings";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import MilvusQuizCollectionManager from "./MilvusQuizCollectionManager";
-import dotenv from "dotenv";
-import { connectToDatabase } from "@/lib/db/mongodb";
+import { MongoClient } from 'mongodb';
+import { Embeddings } from '@langchain/core/embeddings';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import MilvusQuizCollectionManager from './MilvusQuizCollectionManager';
+import dotenv from 'dotenv';
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 dotenv.config();
 
@@ -28,7 +28,7 @@ export class QuizEmbeddingSync {
 
     const chunkSize = options.chunkSize || 6000;
     this.textSplitter = RecursiveCharacterTextSplitter.fromLanguage(
-      "markdown",
+      'markdown',
       {
         chunkSize,
         chunkOverlap: Math.floor(chunkSize * 0.1), // 10% 重叠
@@ -41,7 +41,7 @@ export class QuizEmbeddingSync {
    */
   private async prepareDocumentEmbedding(document: any) {
     // 使用 discuss 字段或其他合适的内容字段进行嵌入
-    const contentToEmbed = document.analysis?.discuss || document.content || "";
+    const contentToEmbed = document.analysis?.discuss || document.content || '';
 
     // 文本分块
     const chunks = await this.textSplitter.createDocuments([contentToEmbed]);
@@ -55,9 +55,9 @@ export class QuizEmbeddingSync {
       oid: document._id.toString(),
       content: contentToEmbed,
       cls: document.class,
-      mode: document.mode || "A1",
+      mode: document.mode || 'A1',
       unit: document.unit || null,
-      source: document.source || "",
+      source: document.source || '',
       extractedYear: document.extractedYear || null,
       tags: document.tags || [],
       embedding: embeddings[0], // 使用第一个嵌入向量
@@ -71,8 +71,8 @@ export class QuizEmbeddingSync {
     const {
       batchSize = 50,
       filterQuery = {
-        class: { $in: ["内科学"] },
-        "analysis.discuss": { $ne: "" },
+        class: { $in: ['内科学'] },
+        'analysis.discuss': { $ne: '' },
       },
     } = options;
 
@@ -80,7 +80,7 @@ export class QuizEmbeddingSync {
       // 连接 MongoDB
 
       const { db } = await connectToDatabase();
-      const collection = db.collection("quiz");
+      const collection = db.collection('quiz');
 
       // 确保 Milvus 集合存在
       await this.milvusManager.createCollection();
@@ -115,10 +115,10 @@ export class QuizEmbeddingSync {
         console.log(`已处理 ${processedCount}/${totalDocuments} 个文档`);
       }
 
-      console.log("文档同步完成");
+      console.log('文档同步完成');
       return processedCount;
     } catch (error) {
-      console.error("同步过程中发生错误:", error);
+      console.error('同步过程中发生错误:', error);
       throw error;
     } finally {
       //   await this.mongoClient.close();

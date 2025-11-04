@@ -1,11 +1,11 @@
-import { Agent, agent_config } from "../agents/Agent";
-import { surrealDBClient } from "@/kgrag/database/surrrealdbClient";
-import KnowledgeGraphRetriever from "@/kgrag/core/KnowledgeGraphRetriever";
-import ChunkStorage from "@/kgrag/database/chunkStorage";
-import { embedding } from "@/kgrag/lib/embedding";
-import { ChatReq } from "../agents/agent.types";
-import { Reference } from "../agents/agent.types";
-import { AgentStep } from "../agents/agent.types";
+import { Agent, agent_config } from '../agents/Agent';
+import { surrealDBClient } from '@/kgrag/database/surrrealdbClient';
+import KnowledgeGraphRetriever from '@/kgrag/core/KnowledgeGraphRetriever';
+import ChunkStorage from '@/kgrag/database/chunkStorage';
+import { embedding } from '@/kgrag/lib/embedding';
+import { ChatReq } from '../agents/agent.types';
+import { Reference } from '../agents/agent.types';
+import { AgentStep } from '../agents/agent.types';
 
 export class AgentService {
   private static instances = new Map<string, AgentService>();
@@ -37,9 +37,9 @@ export class AgentService {
     for await (const message of this.agent.start(query)) {
       yield {
         type: message.type,
-        task: message.task ?? "unknown", // Provide default if undefined
+        task: message.task ?? 'unknown', // Provide default if undefined
         content: message.content,
-        isFinal: message.type === "done",
+        isFinal: message.type === 'done',
         data: message.data,
         status: message.status,
       };
@@ -55,7 +55,7 @@ export class AgentService {
       yield step;
 
       // Track documents and quizzes for final message
-      if (step.type === "result" && step.task === "Execute_RAG") {
+      if (step.type === 'result' && step.task === 'Execute_RAG') {
         documents = step.data?.documents || documents;
       }
       // if (step.type === 'result' && step.task === 'Fetch_Quizzes') {
@@ -63,9 +63,9 @@ export class AgentService {
       // }
 
       // Send final message with all accumulated data
-      if (step.type === "result") {
+      if (step.type === 'result') {
         yield {
-          type: "done",
+          type: 'done',
           content: step.content,
           references: documents,
           quizzes: quizzes.length ? quizzes : undefined,

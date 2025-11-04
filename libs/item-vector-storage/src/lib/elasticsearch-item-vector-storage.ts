@@ -83,7 +83,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
               },
             },
           } as any);
-          this.logger.info(`Created chunks index for dimension ${dimension}: ${chunksIndexName}`);
+          this.logger.info(
+            `Created chunks index for dimension ${dimension}: ${chunksIndexName}`,
+          );
         }
       } else {
         // Initialize default chunks index (for backward compatibility)
@@ -124,7 +126,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
               },
             },
           } as any);
-          this.logger.info(`Created default chunks index: ${this.chunksIndexName}`);
+          this.logger.info(
+            `Created default chunks index: ${this.chunksIndexName}`,
+          );
         }
       }
 
@@ -177,7 +181,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
 
       // Check if there are any chunks for this group
       // Try the dimension-specific index first
-      const chunksIndexName = this.getChunksIndexNameForDimension(group.embeddingConfig.dimension);
+      const chunksIndexName = this.getChunksIndexNameForDimension(
+        group.embeddingConfig.dimension,
+      );
       let result;
 
       try {
@@ -330,7 +336,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         },
       };
 
-      const chunksIndexName = this.getChunksIndexNameForDimension(group.embeddingConfig.dimension);
+      const chunksIndexName = this.getChunksIndexNameForDimension(
+        group.embeddingConfig.dimension,
+      );
       await this.client.index({
         index: chunksIndexName,
         id: itemChunk.id,
@@ -338,7 +346,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         refresh: true, // Force refresh to ensure insertion is immediately visible
       } as any);
 
-      this.logger.info(`Inserted item chunk: ${itemChunk.id} to index ${chunksIndexName}`);
+      this.logger.info(
+        `Inserted item chunk: ${itemChunk.id} to index ${chunksIndexName}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Failed to insert item chunk ${itemChunk.id}:`, error);
@@ -362,7 +372,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         }
       }
 
-      const chunksIndexName = this.getChunksIndexNameForDimension(group.embeddingConfig.dimension);
+      const chunksIndexName = this.getChunksIndexNameForDimension(
+        group.embeddingConfig.dimension,
+      );
       const body = itemChunks.flatMap((chunk) => [
         { index: { _index: chunksIndexName, _id: chunk.id } },
         {
@@ -383,7 +395,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         refresh: true, // Force refresh to ensure insertion is immediately visible
       });
 
-      this.logger.info(`Batch inserted ${itemChunks.length} item chunks to index ${chunksIndexName}`);
+      this.logger.info(
+        `Batch inserted ${itemChunks.length} item chunks to index ${chunksIndexName}`,
+      );
       return true;
     } catch (error) {
       this.logger.error('Failed to batch insert item chunks:', error);
@@ -477,7 +491,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       }
 
       // Count and delete chunks from the dimension-specific index
-      const chunksIndexName = this.getChunksIndexNameForDimension(group.embeddingConfig.dimension);
+      const chunksIndexName = this.getChunksIndexNameForDimension(
+        group.embeddingConfig.dimension,
+      );
       let chunkCount = 0;
 
       try {
@@ -510,7 +526,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         }
       } catch (error) {
         // If the dimension-specific index doesn't exist, try the default index
-        this.logger.warn(`Dimension-specific index ${chunksIndexName} not found, trying default index`);
+        this.logger.warn(
+          `Dimension-specific index ${chunksIndexName} not found, trying default index`,
+        );
         try {
           const countResult = await this.client.count({
             index: this.chunksIndexName,
@@ -540,7 +558,10 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
             } as any);
           }
         } catch (defaultIndexError) {
-          this.logger.error(`Failed to delete chunks from default index:`, defaultIndexError);
+          this.logger.error(
+            `Failed to delete chunks from default index:`,
+            defaultIndexError,
+          );
         }
       }
 

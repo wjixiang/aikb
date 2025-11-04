@@ -1,14 +1,14 @@
-import { createLoggerWithPrefix } from "@/lib/console/logger";
-import { S3SyncService } from "./wiki/note_s3_syncing";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
-import { LinkIntegrationService } from "./services/linkIntegrationService";
+import { createLoggerWithPrefix } from '@/lib/console/logger';
+import { S3SyncService } from './wiki/note_s3_syncing';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
+import { LinkIntegrationService } from './services/linkIntegrationService';
 
 export interface note_s3_sync_config {
   s3Bucket: string;
   s3Prefix: string;
   mongoCollection: string;
-  syncDirection: "download-only" | "upload-only" | "bidirectional";
+  syncDirection: 'download-only' | 'upload-only' | 'bidirectional';
 }
 
 export interface TextDocument {
@@ -29,8 +29,8 @@ export interface SearchOptions {
   limit?: number;
   offset?: number;
   tags?: string[];
-  sortBy?: "lastModified" | "title" | "key";
-  sortOrder?: "asc" | "desc";
+  sortBy?: 'lastModified' | 'title' | 'key';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface SearchResult {
@@ -49,7 +49,7 @@ export interface KnowledgeBaseStats {
 export default class knowledgeBase {
   private syncService: S3SyncService;
   private linkService: LinkIntegrationService;
-  logger = createLoggerWithPrefix("knowledgeBase");
+  logger = createLoggerWithPrefix('knowledgeBase');
 
   constructor() {
     this.syncService = new S3SyncService();
@@ -68,17 +68,17 @@ export default class knowledgeBase {
    */
   async getDocument(
     key: string,
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<TextDocument | null> {
     try {
-      this.logger.info("获取文档", { key, collectionName });
+      this.logger.info('获取文档', { key, collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
       const document = await collection.findOne({ key });
 
       if (!document) {
-        this.logger.warn("文档未找到", { key, collectionName });
+        this.logger.warn('文档未找到', { key, collectionName });
         return null;
       }
 
@@ -86,12 +86,12 @@ export default class knowledgeBase {
         id: document._id.toString(),
         key: document.key,
         title: this.extractTitleFromKey(document.key),
-        content: document.content || "",
+        content: document.content || '',
         lastModified: document.lastModified || new Date(),
         metadata: document.metadata || {},
       };
     } catch (error) {
-      this.logger.error("获取文档失败", { error, key, collectionName });
+      this.logger.error('获取文档失败', { error, key, collectionName });
       throw error;
     }
   }
@@ -104,20 +104,20 @@ export default class knowledgeBase {
    */
   async searchDocuments(
     options: SearchOptions = {},
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<SearchResult> {
     try {
-      this.logger.info("搜索文档", { options, collectionName });
+      this.logger.info('搜索文档', { options, collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
       const {
-        query = "",
+        query = '',
         limit = 50,
         offset = 0,
         tags = [],
-        sortBy = "lastModified",
-        sortOrder = "desc",
+        sortBy = 'lastModified',
+        sortOrder = 'desc',
       } = options;
 
       // 构建查询条件
@@ -125,18 +125,18 @@ export default class knowledgeBase {
 
       if (query) {
         filter.$or = [
-          { key: { $regex: query, $options: "i" } },
-          { content: { $regex: query, $options: "i" } },
+          { key: { $regex: query, $options: 'i' } },
+          { content: { $regex: query, $options: 'i' } },
         ];
       }
 
       if (tags.length > 0) {
-        filter["metadata.tags"] = { $in: tags };
+        filter['metadata.tags'] = { $in: tags };
       }
 
       // 构建排序条件
       const sort: any = {};
-      sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+      sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
       // 获取总数
       const total = await collection.countDocuments(filter);
@@ -153,7 +153,7 @@ export default class knowledgeBase {
         id: doc._id.toString(),
         key: doc.key,
         title: this.extractTitleFromKey(doc.key),
-        content: doc.content || "",
+        content: doc.content || '',
         lastModified: doc.lastModified || new Date(),
         metadata: doc.metadata || {},
       }));
@@ -164,7 +164,7 @@ export default class knowledgeBase {
         hasMore: offset + limit < total,
       };
     } catch (error) {
-      this.logger.error("搜索文档失败", { error, options, collectionName });
+      this.logger.error('搜索文档失败', { error, options, collectionName });
       throw error;
     }
   }
@@ -175,10 +175,10 @@ export default class knowledgeBase {
    * @returns 文档列表
    */
   async listDocuments(
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<TextDocument[]> {
     try {
-      this.logger.info("获取文档列表", { collectionName });
+      this.logger.info('获取文档列表', { collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
@@ -191,12 +191,12 @@ export default class knowledgeBase {
         id: doc._id.toString(),
         key: doc.key,
         title: this.extractTitleFromKey(doc.key),
-        content: doc.content || "",
+        content: doc.content || '',
         lastModified: doc.lastModified || new Date(),
         metadata: doc.metadata || {},
       }));
     } catch (error) {
-      this.logger.error("获取文档列表失败", { error, collectionName });
+      this.logger.error('获取文档列表失败', { error, collectionName });
       throw error;
     }
   }
@@ -207,10 +207,10 @@ export default class knowledgeBase {
    * @returns 统计信息
    */
   async getStats(
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<KnowledgeBaseStats> {
     try {
-      this.logger.info("获取知识库统计信息", { collectionName });
+      this.logger.info('获取知识库统计信息', { collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
@@ -242,7 +242,7 @@ export default class knowledgeBase {
         tags,
       };
     } catch (error) {
-      this.logger.error("获取统计信息失败", { error, collectionName });
+      this.logger.error('获取统计信息失败', { error, collectionName });
       throw error;
     }
   }
@@ -255,17 +255,17 @@ export default class knowledgeBase {
    */
   async getDocumentById(
     id: string,
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<TextDocument | null> {
     try {
-      this.logger.info("根据ID获取文档", { id, collectionName });
+      this.logger.info('根据ID获取文档', { id, collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
       const document = await collection.findOne({ _id: new ObjectId(id) });
 
       if (!document) {
-        this.logger.warn("文档未找到", { id, collectionName });
+        this.logger.warn('文档未找到', { id, collectionName });
         return null;
       }
 
@@ -273,12 +273,12 @@ export default class knowledgeBase {
         id: document._id.toString(),
         key: document.key,
         title: this.extractTitleFromKey(document.key),
-        content: document.content || "",
+        content: document.content || '',
         lastModified: document.lastModified || new Date(),
         metadata: document.metadata || {},
       };
     } catch (error) {
-      this.logger.error("根据ID获取文档失败", { error, id, collectionName });
+      this.logger.error('根据ID获取文档失败', { error, id, collectionName });
       throw error;
     }
   }
@@ -290,8 +290,8 @@ export default class knowledgeBase {
    */
   private extractTitleFromKey(key: string): string {
     // 移除路径和扩展名
-    const filename = key.split("/").pop() || key;
-    return filename.replace(/\.(md|txt|markdown)$/i, "");
+    const filename = key.split('/').pop() || key;
+    return filename.replace(/\.(md|txt|markdown)$/i, '');
   }
 
   /**
@@ -302,7 +302,7 @@ export default class knowledgeBase {
    */
   async documentExists(
     key: string,
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<boolean> {
     try {
       const { db } = await connectToDatabase();
@@ -310,7 +310,7 @@ export default class knowledgeBase {
       const count = await collection.countDocuments({ key });
       return count > 0;
     } catch (error) {
-      this.logger.error("检查文档存在性失败", { error, key, collectionName });
+      this.logger.error('检查文档存在性失败', { error, key, collectionName });
       throw error;
     }
   }
@@ -323,10 +323,10 @@ export default class knowledgeBase {
    */
   async getRecentDocuments(
     limit: number = 10,
-    collectionName: string = "notes",
+    collectionName: string = 'notes',
   ): Promise<TextDocument[]> {
     try {
-      this.logger.info("获取最近文档", { limit, collectionName });
+      this.logger.info('获取最近文档', { limit, collectionName });
       const { db } = await connectToDatabase();
       const collection = db.collection(collectionName);
 
@@ -340,12 +340,12 @@ export default class knowledgeBase {
         id: doc._id.toString(),
         key: doc.key,
         title: this.extractTitleFromKey(doc.key),
-        content: doc.content || "",
+        content: doc.content || '',
         lastModified: doc.lastModified || new Date(),
         metadata: doc.metadata || {},
       }));
     } catch (error) {
-      this.logger.error("获取最近文档失败", { error, limit, collectionName });
+      this.logger.error('获取最近文档失败', { error, limit, collectionName });
       throw error;
     }
   }
@@ -361,10 +361,10 @@ export default class knowledgeBase {
       const { db } = await connectToDatabase();
 
       const documentId = (
-        await db.collection("knowledgeBase").findOne({ key: s3_key })
+        await db.collection('knowledgeBase').findOne({ key: s3_key })
       )?._id.toString();
       const { LinkIndexingService } = await import(
-        "./services/linkIndexingService"
+        './services/linkIndexingService'
       );
       const service = new LinkIndexingService();
       if (documentId) {
@@ -373,7 +373,7 @@ export default class knowledgeBase {
       }
       throw new Error(`cannot find ducument: ${s3_key}`);
     } catch (error) {
-      this.logger.error("获取前向链接失败", { error, s3_key });
+      this.logger.error('获取前向链接失败', { error, s3_key });
       throw error;
     }
   }
@@ -389,10 +389,10 @@ export default class knowledgeBase {
       const { db } = await connectToDatabase();
 
       const documentId = (
-        await db.collection("knowledgeBase").findOne({ key: s3_key })
+        await db.collection('knowledgeBase').findOne({ key: s3_key })
       )?._id.toString();
       const { LinkIndexingService } = await import(
-        "./services/linkIndexingService"
+        './services/linkIndexingService'
       );
       const service = new LinkIndexingService();
       if (documentId) {
@@ -401,7 +401,7 @@ export default class knowledgeBase {
       }
       throw new Error(`cannot find ducument: ${s3_key}`);
     } catch (error) {
-      this.logger.error("获取后向链接失败", { error, s3_key });
+      this.logger.error('获取后向链接失败', { error, s3_key });
       throw error;
     }
   }
@@ -413,14 +413,14 @@ export default class knowledgeBase {
    */
   async getLinkGraph(documentId: string): Promise<any> {
     try {
-      this.logger.info("获取文档链接图", { documentId });
+      this.logger.info('获取文档链接图', { documentId });
       const { LinkIndexingService } = await import(
-        "./services/linkIndexingService"
+        './services/linkIndexingService'
       );
       const service = new LinkIndexingService();
       return await service.getLinkGraph(documentId);
     } catch (error) {
-      this.logger.error("获取链接图失败", { error, documentId });
+      this.logger.error('获取链接图失败', { error, documentId });
       throw error;
     }
   }
@@ -432,14 +432,14 @@ export default class knowledgeBase {
    */
   async validateLinks(content: string): Promise<any> {
     try {
-      this.logger.info("验证文档链接");
+      this.logger.info('验证文档链接');
       const { LinkIndexingService } = await import(
-        "./services/linkIndexingService"
+        './services/linkIndexingService'
       );
       const service = new LinkIndexingService();
       return await service.validateLinks(content);
     } catch (error) {
-      this.logger.error("验证链接失败", { error });
+      this.logger.error('验证链接失败', { error });
       throw error;
     }
   }
@@ -450,16 +450,16 @@ export default class knowledgeBase {
    */
   async rebuildLinkIndex(): Promise<number> {
     try {
-      this.logger.info("开始重建链接索引");
+      this.logger.info('开始重建链接索引');
       const { LinkIndexingService } = await import(
-        "./services/linkIndexingService"
+        './services/linkIndexingService'
       );
       const service = new LinkIndexingService();
       const count = await service.rebuildIndex();
-      this.logger.info("链接索引重建完成", { processedCount: count });
+      this.logger.info('链接索引重建完成', { processedCount: count });
       return count;
     } catch (error) {
-      this.logger.error("重建链接索引失败", { error });
+      this.logger.error('重建链接索引失败', { error });
       throw error;
     }
   }
@@ -469,15 +469,15 @@ export default class knowledgeBase {
    */
   async initializeLinkIndexing(): Promise<void> {
     try {
-      this.logger.info("初始化链接索引系统");
+      this.logger.info('初始化链接索引系统');
       const { LinkIntegrationService } = await import(
-        "./services/linkIntegrationService"
+        './services/linkIntegrationService'
       );
       const service = new LinkIntegrationService();
       await service.initialize();
-      this.logger.info("链接索引系统初始化完成");
+      this.logger.info('链接索引系统初始化完成');
     } catch (error) {
-      this.logger.error("初始化链接索引系统失败", { error });
+      this.logger.error('初始化链接索引系统失败', { error });
       throw error;
     }
   }

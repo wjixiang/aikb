@@ -1,10 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { S3MongoLibraryStorage, LibraryItem, Library } from '@aikb/bibliography';
+import {
+  S3MongoLibraryStorage,
+  LibraryItem,
+  Library,
+} from '@aikb/bibliography';
 import {
   CreateLibraryItemDto,
   UpdateMetadataDto,
   UpdateProcessingStatusDto,
-  PdfDownloadUrlDto
+  PdfDownloadUrlDto,
 } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from './pdf_process.dto';
@@ -14,7 +18,7 @@ export class LibraryItemService {
   private library: Library;
 
   constructor(
-    @Inject("PDF_2_MARKDOWN_SERVICE") private rabbitClient: ClientProxy
+    @Inject('PDF_2_MARKDOWN_SERVICE') private rabbitClient: ClientProxy,
   ) {
     // Initialize the storage and library
     const storage = new S3MongoLibraryStorage();
@@ -26,7 +30,9 @@ export class LibraryItemService {
    * @param createLibraryItemDto The data to create the library item
    * @returns The created library item
    */
-  async createLibraryItem(createLibraryItemDto: CreateLibraryItemDto): Promise<LibraryItem> {
+  async createLibraryItem(
+    createLibraryItemDto: CreateLibraryItemDto,
+  ): Promise<LibraryItem> {
     // For now, we'll create a library item without PDF
     // In a full implementation, you might handle PDF upload separately
     const metadata = {
@@ -72,18 +78,18 @@ export class LibraryItemService {
   async searchLibraryItems(
     query?: string,
     tags?: string[],
-    collections?: string[]
+    collections?: string[],
   ): Promise<LibraryItem[]> {
     const filter: any = {};
-    
+
     if (query) {
       filter.query = query;
     }
-    
+
     if (tags && tags.length > 0) {
       filter.tags = tags;
     }
-    
+
     if (collections && collections.length > 0) {
       filter.collections = collections;
     }
@@ -106,7 +112,10 @@ export class LibraryItemService {
    * @param updateMetadataDto The metadata to update
    * @returns The updated library item
    */
-  async updateLibraryItemMetadata(id: string, updateMetadataDto: UpdateMetadataDto): Promise<LibraryItem> {
+  async updateLibraryItemMetadata(
+    id: string,
+    updateMetadataDto: UpdateMetadataDto,
+  ): Promise<LibraryItem> {
     const item = await this.library.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
@@ -121,7 +130,7 @@ export class LibraryItemService {
 
     // Update the metadata through the storage
     await this.library['storage'].updateMetadata(updatedMetadata);
-    
+
     // Return the updated item
     const updatedItem = await this.library.getItem(id);
     if (!updatedItem) {
@@ -136,7 +145,10 @@ export class LibraryItemService {
    * @param updateProcessingStatusDto The processing status update
    * @returns The updated library item
    */
-  async updatePdfProcessingStatus(id: string, updateProcessingStatusDto: UpdateProcessingStatusDto): Promise<LibraryItem> {
+  async updatePdfProcessingStatus(
+    id: string,
+    updateProcessingStatusDto: UpdateProcessingStatusDto,
+  ): Promise<LibraryItem> {
     const item = await this.library.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
@@ -152,12 +164,16 @@ export class LibraryItemService {
     };
 
     // Add timestamps based on status
-    if (updateProcessingStatusDto.status === 'analyzing' && !item.metadata.pdfProcessingStartedAt) {
+    if (
+      updateProcessingStatusDto.status === 'analyzing' &&
+      !item.metadata.pdfProcessingStartedAt
+    ) {
       updates.pdfProcessingStartedAt = new Date();
     } else if (updateProcessingStatusDto.status === 'completed') {
       updates.pdfProcessingCompletedAt = new Date();
     } else if (updateProcessingStatusDto.status === 'failed') {
-      updates.pdfProcessingRetryCount = (item.metadata.pdfProcessingRetryCount || 0) + 1;
+      updates.pdfProcessingRetryCount =
+        (item.metadata.pdfProcessingRetryCount || 0) + 1;
     }
 
     // Update the metadata
@@ -167,7 +183,7 @@ export class LibraryItemService {
     };
 
     await this.library['storage'].updateMetadata(updatedMetadata);
-    
+
     // Return the updated item
     const updatedItem = await this.library.getItem(id);
     if (!updatedItem) {
@@ -192,8 +208,10 @@ export class LibraryItemService {
     }
 
     // Get the download URL from storage
-    const downloadUrl = await this.library['storage'].getPdfDownloadUrl(item.metadata.s3Key);
-    
+    const downloadUrl = await this.library['storage'].getPdfDownloadUrl(
+      item.metadata.s3Key,
+    );
+
     // Set expiration to 1 hour from now
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
@@ -210,7 +228,7 @@ export class LibraryItemService {
       // Send message to the configured queue
       // The pattern name should match to routing key expected by consumers
       console.log('Emitting message to RabbitMQ...');
-      this.rabbitClient.emit("request-pdf-2-markdown-conversion", req);
+      this.rabbitClient.emit('request-pdf-2-markdown-conversion', req);
       console.log('Message emitted successfully');
     } catch (error) {
       console.error('Error sending message to RabbitMQ:', error);
@@ -218,7 +236,7 @@ export class LibraryItemService {
     }
 
     return {
-        message: "pdf2md request published"
-    }
+      message: 'pdf2md request published',
+    };
   }
 }

@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { EventEmitter } from "events";
+import { NextRequest } from 'next/server';
+import { EventEmitter } from 'events';
 
 // Global event emitter for managing chat sessions
 const chatEmitter = new EventEmitter();
@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
     const { sessionId, message } = await req.json();
 
     if (!sessionId) {
-      return new Response(JSON.stringify({ error: "sessionId is required" }), {
+      return new Response(JSON.stringify({ error: 'sessionId is required' }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     // Add user message to history
     const userMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      sender: "user",
+      sender: 'user',
       content: message,
       timestamp: new Date().toISOString(),
     };
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         // Send initial connection message
         const initMessage = {
-          type: "connected",
+          type: 'connected',
           sessionId,
           timestamp: new Date().toISOString(),
         };
@@ -92,8 +92,8 @@ export async function POST(req: NextRequest) {
         setTimeout(() => {
           // Simulate backend processing
           const processingMessage = {
-            type: "processing",
-            content: "正在处理您的消息...",
+            type: 'processing',
+            content: '正在处理您的消息...',
             sessionId,
           };
           chatEmitter.emit(`session:${sessionId}`, processingMessage);
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           // Simulate agent response
           setTimeout(() => {
             const aiMessage = {
-              sender: "ai",
+              sender: 'ai',
               content: `收到您的消息: "${message}"，正在为您生成回复...`,
               sessionId,
             };
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
             // Signal completion
             setTimeout(() => {
               const doneMessage = {
-                type: "done",
+                type: 'done',
                 sessionId,
               };
               chatEmitter.emit(`session:${sessionId}`, doneMessage);
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         }, 500);
 
         // Cleanup on close
-        req.signal.addEventListener("abort", () => {
+        req.signal.addEventListener('abort', () => {
           chatEmitter.removeListener(`session:${sessionId}`, onBackendMessage);
         });
       },
@@ -132,21 +132,21 @@ export async function POST(req: NextRequest) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (error) {
-    console.error("Error in chat stream:", error);
+    console.error('Error in chat stream:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       },
     );
   }
@@ -158,14 +158,14 @@ export async function PUT(req: NextRequest) {
     const { sessionId, type, content, data } = await req.json();
 
     if (!sessionId) {
-      return new Response(JSON.stringify({ error: "sessionId is required" }), {
+      return new Response(JSON.stringify({ error: 'sessionId is required' }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     const message = {
-      sender: type || "ai",
+      sender: type || 'ai',
       content,
       data,
       sessionId,
@@ -175,7 +175,7 @@ export async function PUT(req: NextRequest) {
     chatEmitter.emit(`session:${sessionId}`, message);
 
     // Update session messages if it's an AI message
-    if (type === "ai") {
+    if (type === 'ai') {
       const session = activeSessions.get(sessionId);
       if (session) {
         session.messages.push({
@@ -186,17 +186,17 @@ export async function PUT(req: NextRequest) {
     }
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error("Error pushing message:", error);
+    console.error('Error pushing message:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       },
     );
   }
@@ -204,12 +204,12 @@ export async function PUT(req: NextRequest) {
 
 // EventSource endpoint for streaming
 export async function GET(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("sessionId");
+  const sessionId = req.nextUrl.searchParams.get('sessionId');
 
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: "sessionId is required" }), {
+    return new Response(JSON.stringify({ error: 'sessionId is required' }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -227,7 +227,7 @@ export async function GET(req: NextRequest) {
     start(controller) {
       // Send initial connection message
       const initMessage = {
-        type: "connected",
+        type: 'connected',
         sessionId,
         timestamp: new Date().toISOString(),
       };
@@ -249,7 +249,7 @@ export async function GET(req: NextRequest) {
       chatEmitter.on(`session:${sessionId}`, onMessage);
 
       // Handle client disconnect
-      req.signal.addEventListener("abort", () => {
+      req.signal.addEventListener('abort', () => {
         chatEmitter.removeListener(`session:${sessionId}`, onMessage);
         controller.close();
       });
@@ -258,7 +258,7 @@ export async function GET(req: NextRequest) {
       const keepAlive = setInterval(() => {
         try {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: "ping" })}\n\n`),
+            encoder.encode(`data: ${JSON.stringify({ type: 'ping' })}\n\n`),
           );
         } catch (error) {
           // Controller is closed, clean up
@@ -273,7 +273,7 @@ export async function GET(req: NextRequest) {
       };
 
       // Handle stream end
-      req.signal.addEventListener("abort", cleanup);
+      req.signal.addEventListener('abort', cleanup);
 
       // Also cleanup when controller is closed
       const originalClose = controller.close.bind(controller);
@@ -286,24 +286,24 @@ export async function GET(req: NextRequest) {
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
 // Delete session
 export async function DELETE(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("sessionId");
+  const sessionId = req.nextUrl.searchParams.get('sessionId');
 
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: "sessionId is required" }), {
+    return new Response(JSON.stringify({ error: 'sessionId is required' }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -315,7 +315,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   return new Response(JSON.stringify({ success: true }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -324,9 +324,9 @@ export async function OPTIONS() {
   return new Response(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }

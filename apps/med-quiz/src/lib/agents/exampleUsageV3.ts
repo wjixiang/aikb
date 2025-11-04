@@ -1,6 +1,6 @@
-import { ExampleAgent, runExample } from "./exampleAgent";
-import { AgentMessage } from "./agent.types";
-import * as dotenv from "dotenv";
+import { ExampleAgent, runExample } from './exampleAgent';
+import { AgentMessage } from './agent.types';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -8,12 +8,12 @@ dotenv.config();
  * Example usage of the enhanced AgentV3 with self-iteration and delegation
  */
 async function runV3Example() {
-  console.log("Starting AgentV3 example...");
+  console.log('Starting AgentV3 example...');
 
   // Example task
   const task = {
-    taskName: "ResearchTask",
-    taskDescription: "Research and analyze the latest trends in AI",
+    taskName: 'ResearchTask',
+    taskDescription: 'Research and analyze the latest trends in AI',
   };
 
   console.log(`Task: ${task.taskName}\nDescription: ${task.taskDescription}\n`);
@@ -25,32 +25,32 @@ async function runV3Example() {
     // Run the agent and process the results
     for await (const message of agent.execute()) {
       console.log(
-        `[${message.type}] ${message.task || "general"}: ${message.content}`,
+        `[${message.type}] ${message.task || 'general'}: ${message.content}`,
       );
 
       // Handle different message types
       switch (message.type) {
-        case "step":
+        case 'step':
           console.log(`  → Step: ${message.content}`);
           break;
-        case "notice":
+        case 'notice':
           console.log(`  → Notice: ${message.content}`);
           break;
-        case "update":
+        case 'update':
           console.log(`  → Update: ${message.content}`);
           break;
-        case "done":
+        case 'done':
           console.log(`  → Done: ${message.content}`);
           break;
-        case "error":
+        case 'error':
           console.log(`  → Error: ${message.content}`);
           break;
       }
     }
 
-    console.log("\nAgentV3 execution completed.");
+    console.log('\nAgentV3 execution completed.');
   } catch (error) {
-    console.error("Error running AgentV3:", error);
+    console.error('Error running AgentV3:', error);
   }
 }
 

@@ -1,26 +1,26 @@
-import { RecordId, Surreal } from "surrealdb";
-import winston from "winston";
-import { semanticSearchResult } from "../database/chunkStorage";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
-import { surrealDBClient } from "../database/surrrealdbClient";
+import { RecordId, Surreal } from 'surrealdb';
+import winston from 'winston';
+import { semanticSearchResult } from '../database/chunkStorage';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
+import { surrealDBClient } from '../database/surrrealdbClient';
 import {
   EntityRecord,
   language,
   RelationRecord,
   RetrievedEntityRecord,
   RetrievedProperty,
-} from "./type";
-import { embedding } from "../lib/embedding";
+} from './type';
+import { embedding } from '../lib/embedding';
 
-import { b } from "../../baml_client/async_client";
+import { b } from '../../baml_client/async_client';
 
 // Types for hybrid retrieval
-type QueryType = "entity" | "property" | "chunk" | "mixed";
+type QueryType = 'entity' | 'property' | 'chunk' | 'mixed';
 export type RetrievalResult = {
   // Export RetrievalResult
   content: string;
   score: number;
-  type: "entity" | "property" | "chunk";
+  type: 'entity' | 'property' | 'chunk';
   source: string;
 };
 
@@ -65,7 +65,7 @@ export default class KnowledgeGraphRetriever {
   };
 
   constructor(config: KnowledgeGraphRetrieverConfig) {
-    this.logger = createLoggerWithPrefix("KnowledgeGraphRetriever");
+    this.logger = createLoggerWithPrefix('KnowledgeGraphRetriever');
     this.config = {
       ...config,
       hybridRetrieval: {
@@ -87,7 +87,7 @@ export default class KnowledgeGraphRetriever {
 
     if (queryEmbedding === null) {
       this.logger.error(
-        "Failed to generate embedding for query. Cannot perform vector search.",
+        'Failed to generate embedding for query. Cannot perform vector search.',
       );
       return []; // Return empty array if embedding generation failed
     }
@@ -133,7 +133,7 @@ export default class KnowledgeGraphRetriever {
       }
       return [];
     } catch (error) {
-      this.logger.error("Error during chunk query:", error);
+      this.logger.error('Error during chunk query:', error);
       throw error;
     }
   }
@@ -147,7 +147,7 @@ export default class KnowledgeGraphRetriever {
 
     if (queryEmbedding === null) {
       this.logger.error(
-        "Failed to generate embedding for query. Cannot perform vector search.",
+        'Failed to generate embedding for query. Cannot perform vector search.',
       );
       return []; // Return empty array if embedding generation failed
     }
@@ -184,7 +184,7 @@ export default class KnowledgeGraphRetriever {
       }
       return [];
     } catch (error) {
-      this.logger.error("Error during chunk query:", error);
+      this.logger.error('Error during chunk query:', error);
       throw error;
     }
   }
@@ -231,7 +231,7 @@ export default class KnowledgeGraphRetriever {
           });
         }
       } catch (error) {
-        this.logger.error("Error during keyword search:", error);
+        this.logger.error('Error during keyword search:', error);
       }
     }
 
@@ -272,12 +272,12 @@ export default class KnowledgeGraphRetriever {
             );
           }
         } catch (error) {
-          this.logger.error("Error during semantic search:", error);
+          this.logger.error('Error during semantic search:', error);
           // Continue with keyword search even if semantic search fails
         }
       } else {
         this.logger.error(
-          "Failed to generate embedding for query. Cannot perform semantic search.",
+          'Failed to generate embedding for query. Cannot perform semantic search.',
         );
       }
 
@@ -351,10 +351,10 @@ export default class KnowledgeGraphRetriever {
       pattern.test(query),
     );
 
-    if (isEntityQuery && isPropertyQuery) return "mixed";
-    if (isEntityQuery) return "entity";
-    if (isPropertyQuery) return "property";
-    return "chunk";
+    if (isEntityQuery && isPropertyQuery) return 'mixed';
+    if (isEntityQuery) return 'entity';
+    if (isPropertyQuery) return 'property';
+    return 'chunk';
   }
 
   async hybridRetrieve(query: string, top_k: number, HyDE: boolean = false) {

@@ -1,5 +1,5 @@
-import { d, Surreal } from "surrealdb";
-import { RecordId } from "surrealdb";
+import { d, Surreal } from 'surrealdb';
+import { RecordId } from 'surrealdb';
 
 type Any = any; // Using 'any' for simplicity, can be refined later
 
@@ -34,8 +34,8 @@ export default class GraphStorage implements BaseGraphStorage {
 
   constructor(
     db: Surreal,
-    nodeTableName: string = "nodes",
-    quizTableName: string = "quiz",
+    nodeTableName: string = 'nodes',
+    quizTableName: string = 'quiz',
   ) {
     this.db = db;
     this.nodeTableName = nodeTableName;

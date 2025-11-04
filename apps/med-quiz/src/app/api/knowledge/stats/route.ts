@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
-import knowledgeBase from "@/kgrag/knowledgeBase";
-import { connectToDatabase } from "@/lib/db/mongodb";
+import { NextResponse } from 'next/server';
+import knowledgeBase from '@/kgrag/knowledgeBase';
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const collection =
-    searchParams.get("collection") ||
+    searchParams.get('collection') ||
     process.env.KB_MONGO_COLLECTION_NAME ||
-    "notes";
+    'notes';
 
   try {
     // 优先使用MongoDB S3同步的集合
@@ -52,9 +52,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json(stats, { status: 200 });
   } catch (error) {
-    console.error("Error getting knowledge base stats:", error);
+    console.error('Error getting knowledge base stats:', error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: 'Internal server error' },
       { status: 500 },
     );
   }
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { collection = process.env.KB_MONGO_COLLECTION_NAME || "notes" } =
+    const { collection = process.env.KB_MONGO_COLLECTION_NAME || 'notes' } =
       body;
 
     // 优先使用MongoDB S3同步的集合
@@ -108,9 +108,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(stats, { status: 200 });
   } catch (error) {
-    console.error("Error getting knowledge base stats:", error);
+    console.error('Error getting knowledge base stats:', error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: 'Internal server error' },
       { status: 500 },
     );
   }

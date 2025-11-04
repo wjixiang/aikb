@@ -1,9 +1,9 @@
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { QuizHistoryItem } from "@/types/quizSet.types";
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { QuizHistoryItem } from '@/types/quizSet.types';
 
 export interface NotificationState {
   message: string;
-  type: "success" | "error";
+  type: 'success' | 'error';
 }
 
 export interface QuizAIState {

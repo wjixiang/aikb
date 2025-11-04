@@ -1,7 +1,7 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextRequest, NextResponse } from "next/server";
-import { isQuizType } from "./isQUizType";
-import { ObjectId } from "mongodb";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { isQuizType } from './isQUizType';
+import { ObjectId } from 'mongodb';
 
 /**
  * @swagger
@@ -101,18 +101,18 @@ export async function POST(request: NextRequest) {
    */
 
   try {
-    if (request.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+    if (request.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const contentType = request.headers.get("content-type");
-    if (!contentType?.includes("application/json")) {
-      return new Response(JSON.stringify({ error: "Invalid content type" }), {
+    const contentType = request.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return new Response(JSON.stringify({ error: 'Invalid content type' }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -120,42 +120,42 @@ export async function POST(request: NextRequest) {
     try {
       quizData = await request.json();
     } catch (e) {
-      return new Response(JSON.stringify({ error: "Invalid JSON format" }), {
+      return new Response(JSON.stringify({ error: 'Invalid JSON format' }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     if (!isQuizType(quizData)) {
       return new Response(
-        JSON.stringify({ error: "Invalid quiz data format" }),
+        JSON.stringify({ error: 'Invalid quiz data format' }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
     }
 
     const { db } = await connectToDatabase();
-    const collection = db.collection("quiz");
+    const collection = db.collection('quiz');
 
     // Check for duplicate content based on quiz type
     let duplicateQuery = {};
     if (
-      quizData.type === "A1" ||
-      quizData.type === "A2" ||
-      quizData.type === "X"
+      quizData.type === 'A1' ||
+      quizData.type === 'A2' ||
+      quizData.type === 'X'
     ) {
       duplicateQuery = {
         question: quizData.question,
         options: { $eq: quizData.options },
       };
-    } else if (quizData.type === "A3") {
+    } else if (quizData.type === 'A3') {
       duplicateQuery = {
         mainQuestion: quizData.mainQuestion,
         subQuizs: { $eq: quizData.subQuizs },
       };
-    } else if (quizData.type === "B") {
+    } else if (quizData.type === 'B') {
       duplicateQuery = {
         questions: { $eq: quizData.questions },
         options: { $eq: quizData.options },
@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
     const existingByContent = await collection.findOne(duplicateQuery);
     if (existingByContent) {
       return NextResponse.json({
-        state: "Failed",
-        error: "Duplicate quiz content",
+        state: 'Failed',
+        error: 'Duplicate quiz content',
       });
     } else {
       const saveResult = await collection.insertOne({
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(error);
     return NextResponse.json({
-      state: "Failed",
+      state: 'Failed',
       error: error,
     });
   }

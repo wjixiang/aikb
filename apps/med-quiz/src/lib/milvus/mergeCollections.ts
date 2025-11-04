@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
-import { embeddings } from "../langchain/provider";
-import milvusCollectionOperator from "./milvusCollectionOperator";
+import { embeddings } from '../langchain/provider';
+import milvusCollectionOperator from './milvusCollectionOperator';
 
 export async function mergeCollection(): Promise<void> {
   // Parse command line arguments
@@ -11,18 +11,18 @@ export async function mergeCollection(): Promise<void> {
   // }
 
   // const [targetCollection, ...sourceCollections] = args;
-  const targetCollection = "notebook";
+  const targetCollection = 'notebook';
   const sourceCollections = [
-    "pathology",
-    "surgery",
-    "neurology",
-    "infectious",
-    "internal",
-    "physiology",
+    'pathology',
+    'surgery',
+    'neurology',
+    'infectious',
+    'internal',
+    'physiology',
   ];
 
   console.log(
-    `Merging collections: ${sourceCollections.join(", ")} into ${targetCollection}`,
+    `Merging collections: ${sourceCollections.join(', ')} into ${targetCollection}`,
   );
 
   try {
@@ -32,9 +32,9 @@ export async function mergeCollection(): Promise<void> {
     // Perform the merge
     await operator.mergeCollections(sourceCollections, targetCollection);
 
-    console.log("Merge completed successfully");
+    console.log('Merge completed successfully');
   } catch (error) {
-    console.error("Error merging collections:", error);
+    console.error('Error merging collections:', error);
     process.exit(1);
   }
 }

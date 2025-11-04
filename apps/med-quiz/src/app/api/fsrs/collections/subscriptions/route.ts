@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
 import {
   AnkiCollectionPreset,
   CardState,
   UserSubscription,
-} from "@/types/anki.types";
-import { ObjectId } from "mongodb";
-import { refreshAllCollection } from "@/lib/fsrs/refreshCollection";
+} from '@/types/anki.types';
+import { ObjectId } from 'mongodb';
+import { refreshAllCollection } from '@/lib/fsrs/refreshCollection';
 
 // 获取用户所有订阅
 export async function GET() {
@@ -16,14 +16,14 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     //刷新用户的所有牌组集合状态
     await refreshAllCollection(session.user?.email as string);
     const { db } = await connectToDatabase();
 
     const subscriptions = await db
-      .collection<UserSubscription>("userSubscriptions")
+      .collection<UserSubscription>('userSubscriptions')
       .find({ userId: session.user?.email as string })
       .toArray();
 
@@ -31,8 +31,8 @@ export async function GET() {
 
     return NextResponse.json(subscriptions);
   } catch (error) {
-    console.error("Error in GET /api/collections/subscriptions:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in GET /api/collections/subscriptions:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
@@ -45,7 +45,7 @@ export async function PATCH(
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -53,7 +53,7 @@ export async function PATCH(
 
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: "Invalid subscription ID" },
+        { error: 'Invalid subscription ID' },
         { status: 400 },
       );
     }
@@ -61,20 +61,20 @@ export async function PATCH(
     const { db } = await connectToDatabase();
 
     // 检查订阅是否存在且属于当前用户
-    const existingSub = await db.collection("userSubscriptions").findOne({
+    const existingSub = await db.collection('userSubscriptions').findOne({
       _id: new ObjectId(id),
       userId: session.user?.email,
     });
 
     if (!existingSub) {
       return NextResponse.json(
-        { error: "Subscription not found" },
+        { error: 'Subscription not found' },
         { status: 404 },
       );
     }
 
     // 只允许更新fsrsParams字段
-    const updateResult = await db.collection("userSubscriptions").updateOne(
+    const updateResult = await db.collection('userSubscriptions').updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -88,15 +88,15 @@ export async function PATCH(
 
     if (updateResult.modifiedCount === 0) {
       return NextResponse.json(
-        { error: "No changes applied" },
+        { error: 'No changes applied' },
         { status: 400 },
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in PATCH /api/collections/subscriptions/[id]:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in PATCH /api/collections/subscriptions/[id]:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
@@ -109,14 +109,14 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: "Invalid subscription ID" },
+        { error: 'Invalid subscription ID' },
         { status: 400 },
       );
     }
@@ -124,14 +124,14 @@ export async function DELETE(
     const { db } = await connectToDatabase();
 
     // 删除订阅
-    const deleteResult = await db.collection("userSubscriptions").deleteOne({
+    const deleteResult = await db.collection('userSubscriptions').deleteOne({
       _id: new ObjectId(id),
       userId: session.user?.email,
     });
 
     if (deleteResult.deletedCount === 0) {
       return NextResponse.json(
-        { error: "Subscription not found" },
+        { error: 'Subscription not found' },
         { status: 404 },
       );
     }
@@ -139,10 +139,10 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(
-      "Error in DELETE /api/collections/subscriptions/[id]:",
+      'Error in DELETE /api/collections/subscriptions/[id]:',
       error,
     );
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
@@ -152,14 +152,14 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const data: UserSubscription = await request.json();
 
     if (!data.collectionId) {
       return NextResponse.json(
-        { error: "Collection ID is required" },
+        { error: 'Collection ID is required' },
         { status: 400 },
       );
     }
@@ -168,22 +168,22 @@ export async function POST(request: Request) {
 
     // 检查牌组是否存在
     const collection = await db
-      .collection<AnkiCollectionPreset>("presetCollections")
+      .collection<AnkiCollectionPreset>('presetCollections')
       .findOne({
         _id: new ObjectId(data.collectionId),
       });
 
     if (!collection) {
-      console.log("Collection not found");
+      console.log('Collection not found');
       return NextResponse.json(
-        { error: "Collection not found" },
+        { error: 'Collection not found' },
         { status: 404 },
       );
     }
 
     // 检查是否已订阅
     const existingSubscription = await db
-      .collection<UserSubscription>("userSubscriptions")
+      .collection<UserSubscription>('userSubscriptions')
       .findOne({
         userId: session.user?.email as string,
         collectionId: data.collectionId,
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
 
     if (existingSubscription) {
       return NextResponse.json(
-        { error: "Already subscribed" },
+        { error: 'Already subscribed' },
         { status: 409 },
       );
     }
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
     };
 
     const result = await db
-      .collection("userSubscriptions")
+      .collection('userSubscriptions')
       .insertOne(subscription as any);
 
     // 为每张卡片初始化状态
@@ -250,14 +250,14 @@ export async function POST(request: Request) {
       }),
     );
 
-    await db.collection("cardStates").insertMany(cardStates);
+    await db.collection('cardStates').insertMany(cardStates);
 
     return NextResponse.json({
       success: true,
       subscriptionId: result.insertedId,
     });
   } catch (error) {
-    console.error("Error in POST /api/collections/subscriptions:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in POST /api/collections/subscriptions:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

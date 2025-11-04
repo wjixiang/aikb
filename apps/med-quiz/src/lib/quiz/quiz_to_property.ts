@@ -1,11 +1,11 @@
-import { embedding } from "@/kgrag/lib/embedding";
-import { surrealDBClient } from "../../kgrag/database/surrrealdbClient";
-import { formQuizContent } from "../utils";
-import { RecordId } from "surrealdb";
-import type { DocumentToRerank } from "@/types/baml";
-import { b } from "../../baml_client/async_client";
-import { Db } from "mongodb";
-import { quiz } from "@/types/quizData.types";
+import { embedding } from '@/kgrag/lib/embedding';
+import { surrealDBClient } from '../../kgrag/database/surrrealdbClient';
+import { formQuizContent } from '../utils';
+import { RecordId } from 'surrealdb';
+import type { DocumentToRerank } from '@/types/baml';
+import { b } from '../../baml_client/async_client';
+import { Db } from 'mongodb';
+import { quiz } from '@/types/quizData.types';
 
 export default class quiz_to_property {
   async fetchQuizData(recordId: RecordId): Promise<any> {
@@ -24,7 +24,7 @@ export default class quiz_to_property {
 
   async processQuizzes() {
     const db = await surrealDBClient.getDb();
-    const quizzes = (await db.query<[][]>("SELECT * FROM quiz"))[0];
+    const quizzes = (await db.query<[][]>('SELECT * FROM quiz'))[0];
     quizzes.map(async (quiz: { id: RecordId }) => {
       try {
         const recordId = quiz.id as RecordId;
@@ -39,13 +39,13 @@ export default class quiz_to_property {
   }
 
   async findRelevantDocuments(parsedQuizData: string): Promise<any[]> {
-    console.log("Finding relevant documents for:", parsedQuizData);
+    console.log('Finding relevant documents for:', parsedQuizData);
 
     const query = parsedQuizData;
     const top_k = 10; // Retrieve more documents initially for reranking
 
     if (!query) {
-      console.log("No question text found in parsedQuizData.");
+      console.log('No question text found in parsedQuizData.');
       return [];
     }
 
@@ -54,7 +54,7 @@ export default class quiz_to_property {
       const initialDocuments = await this.property_retriever(query, top_k);
 
       if (!initialDocuments || initialDocuments.length === 0) {
-        console.log("No initial documents retrieved.");
+        console.log('No initial documents retrieved.');
         return [];
       }
 
@@ -62,7 +62,7 @@ export default class quiz_to_property {
       // Keep track of the original index
       const documentsToRerank: DocumentToRerank[] = initialDocuments.map(
         (doc: any) => ({
-          content: doc.property_content || "", // Assuming property_content is the main content
+          content: doc.property_content || '', // Assuming property_content is the main content
           metadata: JSON.stringify({
             // Include other relevant fields in metadata
             id: doc.id,
@@ -74,13 +74,13 @@ export default class quiz_to_property {
       );
 
       // Step 3: Call the BAML reranker function
-      console.log("Calling BAML reranker...");
+      console.log('Calling BAML reranker...');
       // The reranker now returns a list of relevant document indices (as strings)
       const relevantDocumentIndices = await b.RerankDocuments(
         query,
         documentsToRerank,
       );
-      console.log("BAML reranker returned indices:", relevantDocumentIndices);
+      console.log('BAML reranker returned indices:', relevantDocumentIndices);
 
       // Step 4: Select and reorder the original documents based on the reranked indices
       const rerankedDocuments = relevantDocumentIndices
@@ -99,7 +99,7 @@ export default class quiz_to_property {
 
       return rerankedDocuments;
     } catch (error) {
-      console.error("Error in findRelevantDocuments:", error);
+      console.error('Error in findRelevantDocuments:', error);
       throw error;
     }
   }
@@ -140,7 +140,7 @@ export default class quiz_to_property {
 
     if (queryEmbedding === null) {
       console.log(
-        "Failed to generate embedding for query. Cannot perform vector search.",
+        'Failed to generate embedding for query. Cannot perform vector search.',
       );
       return []; // Return empty array if embedding generation failed
     }
@@ -161,7 +161,7 @@ export default class quiz_to_property {
       const result = await db.query(surrealQL, {
         queryEmbedding: queryEmbedding,
       });
-      console.log("query raw result:", JSON.stringify(result, null, 2));
+      console.log('query raw result:', JSON.stringify(result, null, 2));
       if (
         result &&
         Array.isArray(result) &&
@@ -173,7 +173,7 @@ export default class quiz_to_property {
       }
       return [];
     } catch (error) {
-      console.log("Error during chunk query:", error);
+      console.log('Error during chunk query:', error);
       throw error;
     }
   }
@@ -184,7 +184,7 @@ export default class quiz_to_property {
   ) {
     const db = await surrealDBClient.getDb();
     for (const chunk of property) {
-      await db.insertRelation("quiz_to_property", {
+      await db.insertRelation('quiz_to_property', {
         in: quiz_id,
         out: chunk.id,
         score: chunk.score,

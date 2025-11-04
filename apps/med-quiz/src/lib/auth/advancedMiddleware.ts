@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { NextRequestWithAuth } from "next-auth/middleware";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { NextRequestWithAuth } from 'next-auth/middleware';
 
-type Role = "admin" | "editor" | "user";
+type Role = 'admin' | 'editor' | 'user';
 
 // API 中间件 - 检查角色权限
 export function apiWithRoles(roles: Role[]) {
@@ -11,12 +11,12 @@ export function apiWithRoles(roles: Role[]) {
     const token = await getToken({ req });
 
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userRole = token.role as Role;
     if (!roles.includes(userRole)) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     return NextResponse.next();
@@ -29,19 +29,26 @@ export function apiWithPermission(permission: string) {
     const token = await getToken({ req });
 
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 权限检查 - 基于角色映射
     const userRole = token.role as Role;
     const rolePermissions: Record<string, string[]> = {
-      'user': ['read:own', 'write:own'],
-      'editor': ['read:own', 'write:own', 'read:all', 'manage:content'],
-      'admin': ['read:own', 'write:own', 'read:all', 'manage:content', 'manage:users', 'manage:system']
+      user: ['read:own', 'write:own'],
+      editor: ['read:own', 'write:own', 'read:all', 'manage:content'],
+      admin: [
+        'read:own',
+        'write:own',
+        'read:all',
+        'manage:content',
+        'manage:users',
+        'manage:system',
+      ],
     };
 
     if (!rolePermissions[userRole]?.includes(permission)) {
-      return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     }
 
     return NextResponse.next();
@@ -51,13 +58,13 @@ export function apiWithPermission(permission: string) {
 // Next.js 13+ 应用路由器中间件
 export function authMiddleware(req: NextRequestWithAuth) {
   const token = req.nextauth.token;
-  
+
   // 保护管理员路由
   if (req.nextUrl.pathname.startsWith('/admin')) {
     if (!token) {
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
-    
+
     if (token.role !== 'admin') {
       return NextResponse.redirect(new URL('/auth/unauthorized', req.url));
     }
@@ -68,7 +75,7 @@ export function authMiddleware(req: NextRequestWithAuth) {
     if (!token) {
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
-    
+
     if (token.role !== 'editor' && token.role !== 'admin') {
       return NextResponse.redirect(new URL('/auth/unauthorized', req.url));
     }
@@ -82,28 +89,30 @@ export function protectRoute(requiredRole: Role | Role[] = 'user') {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: any[]) {
       const [request] = args;
       const token = await getToken({ req: request });
-      
+
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const userRole = token.role as Role;
-      const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-      
+      const requiredRoles = Array.isArray(requiredRole)
+        ? requiredRole
+        : [requiredRole];
+
       if (!requiredRoles.includes(userRole)) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
-      
+
       return originalMethod.apply(this, args);
     };
-    
+
     return descriptor;
   };
 }
@@ -113,32 +122,42 @@ export function protectWithPermission(permission: string) {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: any[]) {
       const [request] = args;
       const token = await getToken({ req: request });
-      
+
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const userRole = token.role as Role;
       const rolePermissions: Record<string, string[]> = {
-        'user': ['read:own', 'write:own'],
-        'editor': ['read:own', 'write:own', 'read:all', 'manage:content'],
-        'admin': ['read:own', 'write:own', 'read:all', 'manage:content', 'manage:users', 'manage:system']
+        user: ['read:own', 'write:own'],
+        editor: ['read:own', 'write:own', 'read:all', 'manage:content'],
+        admin: [
+          'read:own',
+          'write:own',
+          'read:all',
+          'manage:content',
+          'manage:users',
+          'manage:system',
+        ],
       };
-      
+
       if (!rolePermissions[userRole]?.includes(permission)) {
-        return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Permission denied' },
+          { status: 403 },
+        );
       }
-      
+
       return originalMethod.apply(this, args);
     };
-    
+
     return descriptor;
   };
 }

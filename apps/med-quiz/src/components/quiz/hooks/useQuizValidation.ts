@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from "react";
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import { toast } from "sonner";
+import { useState, useCallback, useEffect } from 'react';
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import { toast } from 'sonner';
 
 interface ValidationError {
   quizId: string;
-  type: "invalid_answer" | "missing_data" | "sync_error";
+  type: 'invalid_answer' | 'missing_data' | 'sync_error';
   message: string;
   recoverable: boolean;
 }
@@ -39,24 +39,24 @@ export const useQuizValidation = ({
       }
 
       switch (quiz.type) {
-        case "A1":
-        case "A2":
-          if (typeof answer !== "string") {
+        case 'A1':
+        case 'A2':
+          if (typeof answer !== 'string') {
             errors.push({
               quizId: quiz._id,
-              type: "invalid_answer",
-              message: "答案格式错误：应为字符串",
+              type: 'invalid_answer',
+              message: '答案格式错误：应为字符串',
               recoverable: true,
             });
           }
           break;
 
-        case "X":
+        case 'X':
           if (!Array.isArray(answer)) {
             errors.push({
               quizId: quiz._id,
-              type: "invalid_answer",
-              message: "答案格式错误：应为数组",
+              type: 'invalid_answer',
+              message: '答案格式错误：应为数组',
               recoverable: true,
             });
           } else {
@@ -67,24 +67,24 @@ export const useQuizValidation = ({
             if (invalidOptions.length > 0) {
               errors.push({
                 quizId: quiz._id,
-                type: "invalid_answer",
-                message: `无效选项: ${invalidOptions.join(", ")}`,
+                type: 'invalid_answer',
+                message: `无效选项: ${invalidOptions.join(', ')}`,
                 recoverable: true,
               });
             }
           }
           break;
 
-        case "A3":
+        case 'A3':
           if (
-            typeof answer !== "object" ||
+            typeof answer !== 'object' ||
             answer === null ||
             Array.isArray(answer)
           ) {
             errors.push({
               quizId: quiz._id,
-              type: "invalid_answer",
-              message: "答案格式错误：应为对象",
+              type: 'invalid_answer',
+              message: '答案格式错误：应为对象',
               recoverable: true,
             });
           } else {
@@ -99,7 +99,7 @@ export const useQuizValidation = ({
               ) {
                 errors.push({
                   quizId: quiz._id,
-                  type: "invalid_answer",
+                  type: 'invalid_answer',
                   message: `子题 ${subQuiz.subQuizId} 答案无效`,
                   recoverable: true,
                 });
@@ -108,16 +108,16 @@ export const useQuizValidation = ({
           }
           break;
 
-        case "B":
+        case 'B':
           if (
-            typeof answer !== "object" ||
+            typeof answer !== 'object' ||
             answer === null ||
             Array.isArray(answer)
           ) {
             errors.push({
               quizId: quiz._id,
-              type: "invalid_answer",
-              message: "答案格式错误：应为对象",
+              type: 'invalid_answer',
+              message: '答案格式错误：应为对象',
               recoverable: true,
             });
           } else {
@@ -130,7 +130,7 @@ export const useQuizValidation = ({
               if (qAnswer && !options.some((opt) => opt.oid === qAnswer)) {
                 errors.push({
                   quizId: quiz._id,
-                  type: "invalid_answer",
+                  type: 'invalid_answer',
                   message: `问题 ${question.questionId} 答案无效`,
                   recoverable: true,
                 });
@@ -152,8 +152,8 @@ export const useQuizValidation = ({
         return [
           {
             quizId,
-            type: "missing_data",
-            message: "试题不存在",
+            type: 'missing_data',
+            message: '试题不存在',
             recoverable: false,
           },
         ];
@@ -188,7 +188,7 @@ export const useQuizValidation = ({
 
   const recoverFromError = useCallback((quizId: string) => {
     setErrors((prev) => prev.filter((error) => error.quizId !== quizId));
-    toast.success("已清除错误状态");
+    toast.success('已清除错误状态');
   }, []);
 
   const clearErrors = useCallback(() => {

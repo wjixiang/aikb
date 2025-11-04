@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsObject, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsArray,
+  IsObject,
+  IsEnum,
+} from 'class-validator';
 import { PdfProcessingStatus } from '@aikb/bibliography';
 
 export class UpdateMetadataDto {

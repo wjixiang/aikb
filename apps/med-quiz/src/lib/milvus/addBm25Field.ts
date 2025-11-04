@@ -1,13 +1,13 @@
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import { embeddings } from "@/lib/langchain/provider";
-import milvusCollectionOperator from "@/lib/milvus/milvusCollectionOperator";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { embeddings } from '@/lib/langchain/provider';
+import milvusCollectionOperator from '@/lib/milvus/milvusCollectionOperator';
 import {
   DataType,
   FieldType,
   IndexState,
   FunctionType,
-} from "@zilliz/milvus2-sdk-node";
+} from '@zilliz/milvus2-sdk-node';
 
 async function addBm25Field(collectionName: string) {
   const operator = new milvusCollectionOperator(collectionName);
@@ -47,7 +47,7 @@ async function addBm25Field(collectionName: string) {
 
       // Enable analyzer for text field
       if (field.dataType === DataType.VarChar) {
-        newField["enable_analyzer"] = true;
+        newField['enable_analyzer'] = true;
       }
 
       return newField;
@@ -55,8 +55,8 @@ async function addBm25Field(collectionName: string) {
 
     // Add BM25 field with proper type definition
     fields.push({
-      name: "bm25_vector",
-      description: "BM25 vector field",
+      name: 'bm25_vector',
+      description: 'BM25 vector field',
       data_type: DataType.SparseFloatVector,
       enable_analyzer: true,
     });
@@ -64,11 +64,11 @@ async function addBm25Field(collectionName: string) {
     // Define BM25 function
     const functions = [
       {
-        name: "text_bm25_emb",
-        description: "BM25 function",
+        name: 'text_bm25_emb',
+        description: 'BM25 function',
         type: FunctionType.BM25,
-        input_field_names: ["content"],
-        output_field_names: ["bm25_vector"],
+        input_field_names: ['content'],
+        output_field_names: ['bm25_vector'],
         params: {},
       },
     ];
@@ -111,26 +111,26 @@ async function addBm25Field(collectionName: string) {
           `Index does not exist for field: ${fieldName}. Creating index...`,
         );
 
-        let indexType = "";
-        let metricType = "";
+        let indexType = '';
+        let metricType = '';
         let params = {};
 
         if (
           field.data_type === DataType[DataType.FloatVector] ||
           field.data_type === DataType[DataType.BinaryVector]
         ) {
-          indexType = "HNSW";
-          metricType = "COSINE";
-          params = { M: "8", efConstruction: "64" };
+          indexType = 'HNSW';
+          metricType = 'COSINE';
+          params = { M: '8', efConstruction: '64' };
         } else if (field.data_type === DataType[DataType.SparseFloatVector]) {
-          indexType = "SPARSE_INVERTED_INDEX";
-          metricType = "BM25";
+          indexType = 'SPARSE_INVERTED_INDEX';
+          metricType = 'BM25';
           params = {
-            inverted_index_algo: "DAAT_WAND",
-            drop_ratio_build: "0.2",
+            inverted_index_algo: 'DAAT_WAND',
+            drop_ratio_build: '0.2',
           };
         } else {
-          indexType = "INVERTED";
+          indexType = 'INVERTED';
         }
 
         console.log(
@@ -152,7 +152,7 @@ async function addBm25Field(collectionName: string) {
         // Wait for index to be built with timeout
         const startTime = Date.now();
         const timeoutMs = 120000; // 120 seconds timeout for sparse index
-        let indexState: string = "";
+        let indexState: string = '';
 
         while (true) {
           const stateRes = await operator.milvusClient.getIndexState({
@@ -161,12 +161,12 @@ async function addBm25Field(collectionName: string) {
           });
           indexState = String(stateRes.state);
 
-          if (indexState === "Finished") {
+          if (indexState === 'Finished') {
             console.log(`Index built successfully for field: ${fieldName}`);
             break;
           }
 
-          if (indexState === "Failed") {
+          if (indexState === 'Failed') {
             try {
               const stateRes = await operator.milvusClient.describeIndex({
                 collection_name: newCollectionName,
@@ -174,7 +174,7 @@ async function addBm25Field(collectionName: string) {
               });
               const failReason =
                 stateRes.index_descriptions[0]?.index_state_fail_reason ||
-                "Unknown";
+                'Unknown';
               console.error(`Index build failed details:`, stateRes);
               throw new Error(
                 `Index build failed for field: ${fieldName}. Reason: ${failReason}`,
@@ -216,7 +216,7 @@ async function addBm25Field(collectionName: string) {
       }
     }
 
-    console.log("All indexes are built.");
+    console.log('All indexes are built.');
 
     // 5. Load collection
     await operator.milvusClient.loadCollectionSync({
@@ -275,7 +275,7 @@ async function migrateData(
     console.log(`Found ${total} documents to migrate`);
 
     if (total === 0) {
-      console.log("No documents found to migrate");
+      console.log('No documents found to migrate');
       return;
     }
 
@@ -295,13 +295,13 @@ async function migrateData(
         try {
           // Explicitly list needed fields instead of '*'
           const neededFields = [
-            "oid",
-            "title",
-            "alias",
-            "content",
-            "tags",
-            "embedding",
-            "partition_key",
+            'oid',
+            'title',
+            'alias',
+            'content',
+            'tags',
+            'embedding',
+            'partition_key',
           ];
           const queryRes = await operator.milvusClient.query({
             collection_name: source,
@@ -320,18 +320,18 @@ async function migrateData(
             // Only include fields that exist in target collection, ensuring correct types
             // Omit bm25_vector as the function should generate it
             const newDoc: any = {
-              oid: String(doc.oid || ""), // Ensure string
-              title: String(doc.title || ""), // Ensure string
-              content: String(doc.content || ""), // Ensure string
+              oid: String(doc.oid || ''), // Ensure string
+              title: String(doc.title || ''), // Ensure string
+              content: String(doc.content || ''), // Ensure string
             };
 
             // Alias: Expects VarChar (string). Join if array, else use empty string.
             if (doc.alias && Array.isArray(doc.alias)) {
-              newDoc.alias = doc.alias.join(", ");
+              newDoc.alias = doc.alias.join(', ');
             } else if (doc.alias) {
               newDoc.alias = String(doc.alias);
             } else {
-              newDoc.alias = "";
+              newDoc.alias = '';
             }
 
             // Tags: Expects Array of VarChar (string[]). Ensure elements are strings.
@@ -348,7 +348,7 @@ async function migrateData(
             if (doc.embedding && Array.isArray(doc.embedding)) {
               // Filter out non-numeric values and ensure they are numbers
               newDoc.embedding = doc.embedding
-                .filter((val) => typeof val === "number" && !isNaN(val))
+                .filter((val) => typeof val === 'number' && !isNaN(val))
                 .map(Number);
             } else {
               // Handle case where embedding is missing or not an array - depends on schema nullability
@@ -381,7 +381,7 @@ async function migrateData(
       }
 
       if (!documents || documents.length === 0) {
-        console.log("No documents fetched in this batch, skipping insert.");
+        console.log('No documents fetched in this batch, skipping insert.');
         offset += batchSize; // Ensure loop progresses even if query returns empty
         continue;
       }
@@ -394,17 +394,17 @@ async function migrateData(
 
       // Log types and sample values of the first document before attempting insert
       const firstDoc = documents[0];
-      console.log("First document details before insert:");
+      console.log('First document details before insert:');
       for (const key in firstDoc) {
         const value = firstDoc[key];
         const type = typeof value;
         let sampleValue = value;
         if (Array.isArray(value)) {
           sampleValue = `Array[${value.length}]`;
-        } else if (type === "object" && value !== null) {
-          sampleValue = JSON.stringify(value).substring(0, 50) + "..."; // Show partial object
-        } else if (type === "string") {
-          sampleValue = `"${value.substring(0, 50)}${value.length > 50 ? "..." : ""}"`;
+        } else if (type === 'object' && value !== null) {
+          sampleValue = JSON.stringify(value).substring(0, 50) + '...'; // Show partial object
+        } else if (type === 'string') {
+          sampleValue = `"${value.substring(0, 50)}${value.length > 50 ? '...' : ''}"`;
         }
         console.log(`  - ${key}: type=${type}, value=${sampleValue}`);
       }
@@ -420,10 +420,10 @@ async function migrateData(
             timeout: 300,
           });
 
-          if (insertRes.status.error_code !== "Success") {
+          if (insertRes.status.error_code !== 'Success') {
             // Correctly log the failing document object
             console.error(
-              "Failing document data (first doc in batch):",
+              'Failing document data (first doc in batch):',
               JSON.stringify(firstDoc, null, 2),
             );
             throw new Error(`Batch insert failed: ${insertRes.status.reason}`);
@@ -437,7 +437,7 @@ async function migrateData(
           if (retryCount >= maxRetries) {
             // Correctly log the failing document object on final failure
             console.error(
-              "Max insert retries reached. Failing document data (first doc in batch):",
+              'Max insert retries reached. Failing document data (first doc in batch):',
               JSON.stringify(firstDoc, null, 2),
             );
             throw error; // Re-throw after logging
@@ -467,13 +467,13 @@ async function migrateData(
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 yargs(hideBin(process.argv))
   .command(
-    "add-bm25",
-    "Add BM25 field to a Milvus collection",
+    'add-bm25',
+    'Add BM25 field to a Milvus collection',
     (yargs) => {
-      return yargs.option("collection", {
-        alias: "c",
-        type: "string",
-        description: "Collection name to add BM25 field to",
+      return yargs.option('collection', {
+        alias: 'c',
+        type: 'string',
+        description: 'Collection name to add BM25 field to',
         demandOption: true,
       });
     },
@@ -481,6 +481,6 @@ yargs(hideBin(process.argv))
       await addBm25Field(argv.collection);
     },
   )
-  .demandCommand(1, "You need at least one command")
+  .demandCommand(1, 'You need at least one command')
   .strict()
   .help().argv;

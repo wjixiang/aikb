@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../../lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
-import { QuizTag, TagType } from "@/lib/quiz/quizTagger";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '../../../../../lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
+import { QuizTag, TagType } from '@/lib/quiz/quizTagger';
 
 /**
  * Retrieves all tags associated with a specific quiz for the authenticated user.
@@ -26,7 +26,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { db } = await connectToDatabase();
@@ -34,7 +34,7 @@ export async function GET(
     const userId = session.user.email;
 
     // Get tags from quiztags collection with userId filter
-    const tagDoc = await db.collection("quiztags").findOne({
+    const tagDoc = await db.collection('quiztags').findOne({
       quizId,
       userId,
     });
@@ -42,9 +42,9 @@ export async function GET(
 
     return NextResponse.json({ tags });
   } catch (error) {
-    console.error("Error fetching quiz tags:", error);
+    console.error('Error fetching quiz tags:', error);
     return NextResponse.json(
-      { error: "Failed to fetch quiz tags" },
+      { error: 'Failed to fetch quiz tags' },
       { status: 500 },
     );
   }
@@ -72,19 +72,19 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { db } = await connectToDatabase();
     const quizId = (await params).quizId;
     const userId = session.user.email;
-    const { tag, type = "private" as TagType } = await request.json();
+    const { tag, type = 'private' as TagType } = await request.json();
 
     // Check if tag already exists for this user
-    const existingTag = await db.collection("quiztags").findOne({
+    const existingTag = await db.collection('quiztags').findOne({
       quizId,
       userId,
-      "tags.value": tag,
+      'tags.value': tag,
     });
 
     if (existingTag) {
@@ -103,7 +103,7 @@ export async function POST(
     };
 
     await db
-      .collection("quiztags")
+      .collection('quiztags')
       .updateOne(
         { quizId, userId },
         { $push: { tags: newTag } },
@@ -112,9 +112,9 @@ export async function POST(
 
     return NextResponse.json({ tag: newTag });
   } catch (error) {
-    console.error("Error adding quiz tag:", error);
+    console.error('Error adding quiz tag:', error);
     return NextResponse.json(
-      { error: "Failed to add quiz tag" },
+      { error: 'Failed to add quiz tag' },
       { status: 500 },
     );
   }
@@ -143,7 +143,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { db } = await connectToDatabase();
@@ -152,20 +152,25 @@ export async function DELETE(
     const { tag } = await request.json();
 
     // Remove the specific tag from the user's tags array
-    const result = await db.collection("quiztags").updateOne(
-      { quizId, userId },
-      { $pull: { tags: { value: tag } } }
-    );
+    const result = await db
+      .collection('quiztags')
+      .updateOne({ quizId, userId }, { $pull: { tags: { value: tag } } });
 
     if (result.modifiedCount === 0) {
-      return NextResponse.json({ error: "Tag not found or not owned by user" }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Tag not found or not owned by user' },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json({ success: true, message: "Tag removed successfully" });
+    return NextResponse.json({
+      success: true,
+      message: 'Tag removed successfully',
+    });
   } catch (error) {
-    console.error("Error removing quiz tag:", error);
+    console.error('Error removing quiz tag:', error);
     return NextResponse.json(
-      { error: "Failed to remove quiz tag" },
+      { error: 'Failed to remove quiz tag' },
       { status: 500 },
     );
   }

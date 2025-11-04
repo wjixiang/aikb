@@ -1,12 +1,12 @@
-import milvusCollectionOperator from "@/lib/milvus/milvusCollectionOperator";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { note } from "@/types/noteData.types";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import Progress from "progress";
-import dotenv from "dotenv";
-import { embeddings } from "@/lib/langchain/provider";
-import { writeFileSync } from "fs";
-import { MilvusDocument } from "../milvusCollectionOperator";
+import milvusCollectionOperator from '@/lib/milvus/milvusCollectionOperator';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import { note } from '@/types/noteData.types';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import Progress from 'progress';
+import dotenv from 'dotenv';
+import { embeddings } from '@/lib/langchain/provider';
+import { writeFileSync } from 'fs';
+import { MilvusDocument } from '../milvusCollectionOperator';
 
 dotenv.config();
 
@@ -22,7 +22,7 @@ export default class noteEmbedding extends milvusCollectionOperator {
 
     if (chunkSize) this.CHUNK_SIZE = chunkSize;
     this.textSplitter = RecursiveCharacterTextSplitter.fromLanguage(
-      "markdown",
+      'markdown',
       {
         chunkSize: this.CHUNK_SIZE,
       },
@@ -34,10 +34,10 @@ export default class noteEmbedding extends milvusCollectionOperator {
    */
   async embedAllNotes() {
     const { db } = await connectToDatabase();
-    const mongoNoteCollection = db.collection<note>("note");
+    const mongoNoteCollection = db.collection<note>('note');
     const documents = await mongoNoteCollection
       .find({
-        "metaData.tags": { $nin: ["excalidraw"] },
+        'metaData.tags': { $nin: ['excalidraw'] },
       })
       .toArray();
 
@@ -48,7 +48,7 @@ export default class noteEmbedding extends milvusCollectionOperator {
     // 确保集合存在
     await this.ensureCollectionExists();
 
-    const bar = new Progress(":embedding :percent", {
+    const bar = new Progress(':embedding :percent', {
       total: documents.length,
       width: 40,
     });
@@ -82,7 +82,7 @@ export default class noteEmbedding extends milvusCollectionOperator {
     const milvusDocuments: MilvusDocument[] = embeddedNotes.map((note) => ({
       oid: note.oid,
       title: note.title, // 使用oid作为主键
-      content: note.content || "", // 需要从原始数据获取内容
+      content: note.content || '', // 需要从原始数据获取内容
       tags: note.tags || [],
       alias: note.alias,
       embedding: note.embedding,
@@ -137,8 +137,8 @@ export default class noteEmbedding extends milvusCollectionOperator {
         return res;
       });
     } catch (error) {
-      console.error("嵌入异常:", error);
-      writeFileSync("error_chunks.json", JSON.stringify(allChunks));
+      console.error('嵌入异常:', error);
+      writeFileSync('error_chunks.json', JSON.stringify(allChunks));
       throw error;
     }
   }

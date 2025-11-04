@@ -1,12 +1,12 @@
-import fs from "fs";
-import path from "path";
-import pLimit from "p-limit";
-import { surrealDBClient } from "@/kgrag/database/surrrealdbClient";
-import { embedding } from "@/kgrag/lib/embedding";
-import ChunkStorage from "@/kgrag/database/chunkStorage";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import fs from 'fs';
+import path from 'path';
+import pLimit from 'p-limit';
+import { surrealDBClient } from '@/kgrag/database/surrrealdbClient';
+import { embedding } from '@/kgrag/lib/embedding';
+import ChunkStorage from '@/kgrag/database/chunkStorage';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
-const logger = createLoggerWithPrefix("MarkdownToDB");
+const logger = createLoggerWithPrefix('MarkdownToDB');
 
 interface MarkdownFile {
   filePath: string;
@@ -26,18 +26,18 @@ async function readMarkdownFiles(dirPath: string): Promise<MarkdownFile[]> {
 
       if (entry.isDirectory()) {
         await walkDirectory(fullPath);
-      } else if (entry.isFile() && entry.name.endsWith(".md")) {
-        let content = await fs.promises.readFile(fullPath, "utf-8");
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        let content = await fs.promises.readFile(fullPath, 'utf-8');
         // Remove YAML frontmatter if exists
-        if (content.startsWith("---")) {
-          const endOfYaml = content.indexOf("---", 3);
+        if (content.startsWith('---')) {
+          const endOfYaml = content.indexOf('---', 3);
           if (endOfYaml !== -1) {
             content = content.slice(endOfYaml + 3).trim();
           }
         }
         files.push({
           filePath: path.basename(fullPath),
-          content: `# ${path.basename(fullPath, ".md")}\n\n${content}`,
+          content: `# ${path.basename(fullPath, '.md')}\n\n${content}`,
         });
       }
     }
@@ -83,7 +83,7 @@ async function storeMarkdownToDB(
             embedding: fileEmbedding as number[],
             content: file.content,
             filePath: file.filePath,
-            title: path.basename(file.filePath, ".md"),
+            title: path.basename(file.filePath, '.md'),
           });
 
           logger.info(`Successfully stored: ${file.filePath}`);
@@ -103,7 +103,7 @@ async function main() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
     console.error(
-      "Usage: tsx storeMarkdownToSurrealDB.ts <directory_path> <table_name>",
+      'Usage: tsx storeMarkdownToSurrealDB.ts <directory_path> <table_name>',
     );
     process.exit(1);
   }
@@ -120,7 +120,7 @@ async function main() {
     const markdownFiles = await readMarkdownFiles(dirPath);
 
     if (markdownFiles.length === 0) {
-      logger.warn("No markdown files found in the specified directory");
+      logger.warn('No markdown files found in the specified directory');
       return;
     }
 
@@ -128,14 +128,14 @@ async function main() {
       `Found ${markdownFiles.length} markdown files, storing to table: ${tableName}`,
     );
     await storeMarkdownToDB(tableName, markdownFiles);
-    logger.info("All files processed successfully");
+    logger.info('All files processed successfully');
   } catch (error) {
-    logger.error("Error in main process:", error);
+    logger.error('Error in main process:', error);
     process.exit(1);
   }
 }
 
 main().catch((err) => {
-  logger.error("Unhandled error:", err);
+  logger.error('Unhandled error:', err);
   process.exit(1);
 });

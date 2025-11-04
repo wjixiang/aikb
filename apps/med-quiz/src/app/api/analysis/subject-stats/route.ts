@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { quiz } from "@/types/quizData.types";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { quiz } from '@/types/quizData.types';
 
-const isDebug = process.env.NODE_ENV !== "production";
+const isDebug = process.env.NODE_ENV !== 'production';
 
 export async function GET() {
   try {
@@ -21,45 +21,45 @@ export async function GET() {
     // if (isDebug) console.log('Practice record sample:', recordSample);
 
     // 转换ObjectId格式
-    const { ObjectId } = require("mongodb");
+    const { ObjectId } = require('mongodb');
 
     // 获取所有题目按学科分类的总数
     const totalBySubject = await db
-      .collection<quiz>("quiz")
+      .collection<quiz>('quiz')
       .aggregate([
-        { $match: { class: { $exists: true, $ne: "" } } },
-        { $group: { _id: "$class", total: { $sum: 1 } } },
+        { $match: { class: { $exists: true, $ne: '' } } },
+        { $group: { _id: '$class', total: { $sum: 1 } } },
       ])
       .toArray();
 
-    if (isDebug) console.log("Total by subject:", totalBySubject);
+    if (isDebug) console.log('Total by subject:', totalBySubject);
 
     // 获取已练习题目按学科分类的数量（唯一记录）
     const practicedBySubject = await db
-      .collection("practicerecords")
+      .collection('practicerecords')
       .aggregate([
         { $sort: { timestamp: -1 } },
         {
           $group: {
-            _id: { userid: "$userid", quizid: "$quizid" },
-            latestRecord: { $first: "$$ROOT" },
+            _id: { userid: '$userid', quizid: '$quizid' },
+            latestRecord: { $first: '$$ROOT' },
           },
         },
-        { $replaceRoot: { newRoot: "$latestRecord" } },
+        { $replaceRoot: { newRoot: '$latestRecord' } },
         {
           $lookup: {
-            from: "quiz",
-            let: { quizIdStr: "$quizid" },
+            from: 'quiz',
+            let: { quizIdStr: '$quizid' },
             pipeline: [
               {
                 $match: {
                   $expr: {
                     $eq: [
-                      "$_id",
+                      '$_id',
                       {
                         $convert: {
-                          input: "$$quizIdStr",
-                          to: "objectId",
+                          input: '$$quizIdStr',
+                          to: 'objectId',
                           onError: null,
                           onNull: null,
                         },
@@ -69,16 +69,16 @@ export async function GET() {
                 },
               },
             ],
-            as: "quizData",
+            as: 'quizData',
           },
         },
-        { $unwind: "$quizData" },
-        { $match: { "quizData.class": { $exists: true, $ne: "" } } },
-        { $group: { _id: "$quizData.class", practiced: { $sum: 1 } } },
+        { $unwind: '$quizData' },
+        { $match: { 'quizData.class': { $exists: true, $ne: '' } } },
+        { $group: { _id: '$quizData.class', practiced: { $sum: 1 } } },
       ])
       .toArray();
 
-    if (isDebug) console.log("Practiced by subject:", practicedBySubject);
+    if (isDebug) console.log('Practiced by subject:', practicedBySubject);
 
     // 合并数据，只包含有练习记录的科目
     const result = totalBySubject
@@ -98,12 +98,12 @@ export async function GET() {
       })
       .filter((item) => item.practiced > 0); // 仅返回有练习记录的科目
 
-    if (isDebug) console.log("Final result:", result);
+    if (isDebug) console.log('Final result:', result);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching subject stats:", error);
+    console.error('Error fetching subject stats:', error);
     return NextResponse.json(
-      { error: "Failed to fetch subject stats" },
+      { error: 'Failed to fetch subject stats' },
       { status: 500 },
     );
   }

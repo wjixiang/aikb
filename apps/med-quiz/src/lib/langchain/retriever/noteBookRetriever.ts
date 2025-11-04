@@ -1,21 +1,21 @@
-import { extractNoteTitles, getNoteFileFromTitle } from "../utils";
-import { BaseCallbackConfig } from "@langchain/core/callbacks/manager";
-import { Document } from "@langchain/core/documents";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { BaseRetriever } from "@langchain/core/retrievers";
+import { extractNoteTitles, getNoteFileFromTitle } from '../utils';
+import { BaseCallbackConfig } from '@langchain/core/callbacks/manager';
+import { Document } from '@langchain/core/documents';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { BaseRetriever } from '@langchain/core/retrievers';
 import milvusCollectionOperator, {
   MilvusDocument,
-} from "@/lib/milvus/milvusCollectionOperator";
-import { getChatModel, getEmbeddings } from "../provider";
+} from '@/lib/milvus/milvusCollectionOperator';
+import { getChatModel, getEmbeddings } from '../provider';
 
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 export interface retrieveTextBookSource {
   title: string;
   chunkId: string;
   score: number;
-  scoreSource?: "vector" | "bm25" | "hybrid";
+  scoreSource?: 'vector' | 'bm25' | 'hybrid';
   combinedScore?: number;
 }
 
@@ -37,7 +37,7 @@ export interface NotebookRetrieverOptions {
 }
 
 export class NotebookRetriever extends BaseRetriever {
-  public lc_namespace = ["baseline_retriever"];
+  public lc_namespace = ['baseline_retriever'];
 
   private queryRewritePrompt: ChatPromptTemplate;
   notebookCollectionName: string;
@@ -73,7 +73,7 @@ export class NotebookRetriever extends BaseRetriever {
         metadata: {
           ...doc.metadata,
           combinedScore: score,
-          scoreSource: "vector",
+          scoreSource: 'vector',
         },
       });
     });
@@ -85,14 +85,14 @@ export class NotebookRetriever extends BaseRetriever {
 
       if (existing) {
         existing.metadata.combinedScore! += score;
-        existing.metadata.scoreSource = "hybrid";
+        existing.metadata.scoreSource = 'hybrid';
       } else {
         combined.set(doc.metadata.chunkId, {
           ...doc,
           metadata: {
             ...doc.metadata,
             combinedScore: score,
-            scoreSource: "bm25",
+            scoreSource: 'bm25',
           },
         });
       }
@@ -118,7 +118,7 @@ export class NotebookRetriever extends BaseRetriever {
     try {
       rewrittenQuery = await this.rewriteQuery(query);
     } catch (error) {
-      console.log("Query rewrite error");
+      console.log('Query rewrite error');
       throw error;
     }
 
@@ -156,22 +156,22 @@ export class NotebookRetriever extends BaseRetriever {
       const promptResult = await this.queryRewritePrompt.format({
         question: query,
       });
-      const chatModel = getChatModel()("gpt-4o-mini");
+      const chatModel = getChatModel()('gpt-4o-mini');
       const rewrittenQueryObject = await chatModel.invoke(promptResult);
 
       // 直接返回内容
-      if (rewrittenQueryObject && "content" in rewrittenQueryObject) {
+      if (rewrittenQueryObject && 'content' in rewrittenQueryObject) {
         return rewrittenQueryObject.content as string;
       }
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("意外的重写查询格式。回退到原始查询。");
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('意外的重写查询格式。回退到原始查询。');
       }
       return query;
     } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.error("重写查询出错:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('重写查询出错:', error);
       } else {
-        console.error("重写查询出错");
+        console.error('重写查询出错');
       }
       return query;
     }
@@ -234,7 +234,7 @@ export class NotebookRetriever extends BaseRetriever {
         title: `BM25 Doc ${i}`,
         chunkId: `bm25-${i}`,
         score: Math.random(),
-        scoreSource: "bm25",
+        scoreSource: 'bm25',
       },
     }));
   }
@@ -252,12 +252,12 @@ export class NotebookRetriever extends BaseRetriever {
 
       const searchResults = await milvusInstance.searchSimilarDocuments(query, {
         limit: this.options.maxK,
-        outputFields: ["oid", "title", "content"],
+        outputFields: ['oid', 'title', 'content'],
         partitionNames: this.options.partitionNames,
         expr: this.options.expr,
       });
 
-      if (process.env.NODE_ENV !== "production") {
+      if (process.env.NODE_ENV !== 'production') {
         console.log(`Milvus搜索返回 ${searchResults.documents.length} 个结果`);
       }
 
@@ -266,13 +266,13 @@ export class NotebookRetriever extends BaseRetriever {
         (doc: MilvusDocument, index: number) => {
           // console.log("mdoc",doc )
           return new Document<retrieveTextBookSource>({
-            pageContent: doc.content || "",
+            pageContent: doc.content || '',
             metadata: {
               score: searchResults.distances[index],
               // source: "vector_search",
               // includeInContext: true,
               chunkId: doc.oid,
-              title: doc.partition_key || "Untitle",
+              title: doc.partition_key || 'Untitle',
             },
           });
         },
@@ -282,20 +282,20 @@ export class NotebookRetriever extends BaseRetriever {
 
       return documents;
     } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.error("Milvus搜索出错:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Milvus搜索出错:', error);
       } else {
-        console.error("Milvus搜索出错");
+        console.error('Milvus搜索出错');
       }
       return [];
     }
   }
 
   private async convertQueryToVector(query: string): Promise<number[]> {
-    const embeddingsAPI = getEmbeddings()("text-embedding-3-large");
+    const embeddingsAPI = getEmbeddings()('text-embedding-3-large');
     const vector = await embeddingsAPI.Embeddings.embedQuery(query);
     if (vector.length === 0) {
-      throw new Error("查询嵌入返回空向量");
+      throw new Error('查询嵌入返回空向量');
     }
     return vector;
   }
@@ -307,7 +307,7 @@ export class NotebookRetriever extends BaseRetriever {
 
     const current = new Date(start);
     while (current <= end) {
-      dateRange.push(current.toLocaleDateString("en-CA"));
+      dateRange.push(current.toLocaleDateString('en-CA'));
       current.setDate(current.getDate() + 1);
     }
 
@@ -323,7 +323,7 @@ export class NotebookRetriever extends BaseRetriever {
     // 过滤向量搜索获取的块，保留分数高于阈值的块
     const filteredChunks = retrievedChunks.filter((chunk) => {
       const score = chunk.metadata.score;
-      if (typeof score !== "number" || isNaN(score)) {
+      if (typeof score !== 'number' || isNaN(score)) {
         return true; // 保留分数为NaN的块
       }
       return score >= threshold;
@@ -346,9 +346,9 @@ export class NotebookRetriever extends BaseRetriever {
     // 按分数排序（从高到低）
     return combinedChunks.sort((a, b) => {
       const scoreA =
-        typeof a.metadata.score === "number" ? a.metadata.score : 0;
+        typeof a.metadata.score === 'number' ? a.metadata.score : 0;
       const scoreB =
-        typeof b.metadata.score === "number" ? b.metadata.score : 0;
+        typeof b.metadata.score === 'number' ? b.metadata.score : 0;
       return scoreB - scoreA;
     });
   }

@@ -1,15 +1,15 @@
-import AgentV2 from "./AgentV2";
-import { toolRegistry } from "./toolRegistry";
+import AgentV2 from './AgentV2';
+import { toolRegistry } from './toolRegistry';
 
 /**
  * Test the enhanced AgentV2 with tool calling
  */
 async function testAgent() {
-  console.log("Testing enhanced agent...");
+  console.log('Testing enhanced agent...');
 
   // Check available tools
   console.log(
-    "Available tools:",
+    'Available tools:',
     toolRegistry.listTools().map((t) => t.name),
   );
 
@@ -28,19 +28,19 @@ async function testAgent() {
       messageCount++;
       console.log(`\n[${messageCount}] Message:`);
       console.log(`  Type: ${message.type}`);
-      console.log(`  Task: ${message.task || "N/A"}`);
+      console.log(`  Task: ${message.task || 'N/A'}`);
       console.log(`  Content: ${message.content}`);
 
       // Limit output for readability
       if (messageCount > 10) {
-        console.log("... (output limited)");
+        console.log('... (output limited)');
         break;
       }
     }
 
-    console.log("\nTest completed.");
+    console.log('\nTest completed.');
   } catch (error) {
-    console.error("Error testing agent:", error);
+    console.error('Error testing agent:', error);
   }
 }
 

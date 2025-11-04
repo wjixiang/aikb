@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
-import { toast } from "sonner";
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import { PracticeRecordData } from "@/lib/quiz/QuizStorage";
-import { shuffleArray } from "@/lib/utils";
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import { PracticeRecordData } from '@/lib/quiz/QuizStorage';
+import { shuffleArray } from '@/lib/utils';
 
 interface UseQuizLogicProps {
   quiz: QuizWithUserAnswer;
@@ -65,7 +65,7 @@ export const useQuizLogic = ({
 }: UseQuizLogicProps): UseQuizLogicReturn => {
   const [submitted, setSubmitted] = useState(false);
   const [selected, setSelected] = useState<any>(
-    quiz.type === "X" ? [] : quiz.type === "A3" || quiz.type === "B" ? {} : "",
+    quiz.type === 'X' ? [] : quiz.type === 'A3' || quiz.type === 'B' ? {} : '',
   );
   const [isCorrect, setIsCorrect] = useState(false);
   const [subQuestionCorrectness, setSubQuestionCorrectness] = useState<
@@ -91,7 +91,7 @@ export const useQuizLogic = ({
   >({});
 
   const { data: session, status } = useSession();
-  const isAuthenticated = status === "authenticated";
+  const isAuthenticated = status === 'authenticated';
 
   // Generate storage key for persisting user selections
   const getStorageKey = useCallback(() => {
@@ -105,7 +105,7 @@ export const useQuizLogic = ({
   const fetchQuizTags = useCallback(async () => {
     try {
       const response = await fetch(`/api/quiz/${quiz._id}/tags`);
-      if (!response.ok) throw new Error("Failed to fetch quiz tags");
+      if (!response.ok) throw new Error('Failed to fetch quiz tags');
       const data = await response.json();
       const tags = Array.isArray(data)
         ? data
@@ -116,7 +116,7 @@ export const useQuizLogic = ({
             : [];
       setQuizTags(tags);
     } catch (error) {
-      console.error("Error fetching quiz tags:", error);
+      console.error('Error fetching quiz tags:', error);
       setQuizTags([]);
     }
   }, [quiz._id]);
@@ -176,18 +176,18 @@ export const useQuizLogic = ({
       let correct = false;
       const subQuestionCorrectnessMap: Record<number, boolean> = {};
       switch (quiz.type) {
-        case "A1":
-        case "A2":
+        case 'A1':
+        case 'A2':
           correct = quiz.userAnswer === (quiz as any).answer;
           break;
-        case "X":
+        case 'X':
           if (Array.isArray(quiz.userAnswer)) {
             correct =
               JSON.stringify(quiz.userAnswer.sort()) ===
               JSON.stringify((quiz as any).answer.sort());
           }
           break;
-        case "A3":
+        case 'A3':
           correct = (quiz as any).subQuizs.every((sub: any) => {
             const isSubCorrect =
               (quiz.userAnswer as Record<number, string>)[sub.subQuizId] ===
@@ -196,7 +196,7 @@ export const useQuizLogic = ({
             return isSubCorrect;
           });
           break;
-        case "B":
+        case 'B':
           correct = (quiz as any).questions.every((q: any) => {
             const isSubCorrect =
               (quiz.userAnswer as Record<number, string>)[q.questionId] ===
@@ -219,25 +219,25 @@ export const useQuizLogic = ({
         }
       } catch (error) {
         console.warn(
-          "Failed to restore quiz selection from sessionStorage:",
+          'Failed to restore quiz selection from sessionStorage:',
           error,
         );
         setSelected(
-          quiz.type === "X"
+          quiz.type === 'X'
             ? []
-            : quiz.type === "A3" || quiz.type === "B"
+            : quiz.type === 'A3' || quiz.type === 'B'
               ? {}
-              : "",
+              : '',
         );
       }
     } else {
       setSubmitted(false);
       setSelected(
-        quiz.type === "X"
+        quiz.type === 'X'
           ? []
-          : quiz.type === "A3" || quiz.type === "B"
+          : quiz.type === 'A3' || quiz.type === 'B'
             ? {}
-            : "",
+            : '',
       );
       setPracticeHistory(null);
     }
@@ -266,17 +266,17 @@ export const useQuizLogic = ({
 
     // Generate shuffled options for each question type
     if (
-      (quiz.type === "A1" || quiz.type === "A2" || quiz.type === "X") &&
-      "options" in quiz
+      (quiz.type === 'A1' || quiz.type === 'A2' || quiz.type === 'X') &&
+      'options' in quiz
     ) {
       const id = quiz._id;
       newShuffledOptionsMap[id] = shuffleArray(quiz.options);
-    } else if (quiz.type === "A3" && "subQuizs" in quiz) {
+    } else if (quiz.type === 'A3' && 'subQuizs' in quiz) {
       quiz.subQuizs.forEach((subQuiz: any) => {
         const id = `${quiz._id}-${subQuiz.subQuizId}`;
         newShuffledOptionsMap[id] = shuffleArray(subQuiz.options);
       });
-    } else if (quiz.type === "B" && "options" in quiz && "questions" in quiz) {
+    } else if (quiz.type === 'B' && 'options' in quiz && 'questions' in quiz) {
       // For B type, options are shared across all questions
       const id = quiz._id;
       newShuffledOptionsMap[id] = shuffleArray(quiz.options);
@@ -297,10 +297,10 @@ export const useQuizLogic = ({
       if (submitted) return;
 
       let newSelected;
-      if (quiz.type === "A1" || quiz.type === "A2") {
+      if (quiz.type === 'A1' || quiz.type === 'A2') {
         newSelected = oid;
         setSelected(oid);
-      } else if (quiz.type === "X") {
+      } else if (quiz.type === 'X') {
         if (Array.isArray(selected)) {
           if (selected.includes(oid)) {
             newSelected = selected.filter((item: string) => item !== oid);
@@ -310,7 +310,7 @@ export const useQuizLogic = ({
             setSelected(newSelected);
           }
         }
-      } else if (quiz.type === "A3" || quiz.type === "B") {
+      } else if (quiz.type === 'A3' || quiz.type === 'B') {
         newSelected = { ...selected, [questionKey as number]: oid };
         setSelected(newSelected);
       }
@@ -326,7 +326,7 @@ export const useQuizLogic = ({
           sessionStorage.setItem(storageKey, JSON.stringify(dataToSave));
         } catch (error) {
           console.warn(
-            "Failed to save quiz selection to sessionStorage:",
+            'Failed to save quiz selection to sessionStorage:',
             error,
           );
         }
@@ -334,11 +334,11 @@ export const useQuizLogic = ({
 
       if (isDoubleClick) {
         const isOptionSelected =
-          quiz.type === "A1" || quiz.type === "A2"
+          quiz.type === 'A1' || quiz.type === 'A2'
             ? newSelected === oid
-            : quiz.type === "X"
+            : quiz.type === 'X'
               ? Array.isArray(newSelected) && newSelected.includes(oid)
-              : quiz.type === "A3" || quiz.type === "B"
+              : quiz.type === 'A3' || quiz.type === 'B'
                 ? newSelected[questionKey as number] === oid
                 : false;
 
@@ -355,16 +355,16 @@ export const useQuizLogic = ({
   // Check if user has made any selection
   const hasSelection = (): boolean => {
     switch (quiz.type) {
-      case "A1":
-      case "A2":
-        return selected !== "";
-      case "X":
+      case 'A1':
+      case 'A2':
+        return selected !== '';
+      case 'X':
         return Array.isArray(selected) && selected.length > 0;
-      case "A3":
+      case 'A3':
         return quiz.subQuizs.every(
           (sub: any) => selected[sub.subQuizId] !== undefined,
         );
-      case "B":
+      case 'B':
         return quiz.questions.every(
           (q: any) => selected[q.questionId] !== undefined,
         );
@@ -377,13 +377,13 @@ export const useQuizLogic = ({
   const getIncompleteSubQuestions = (): string[] => {
     const incomplete: string[] = [];
 
-    if (quiz.type === "A3") {
+    if (quiz.type === 'A3') {
       quiz.subQuizs.forEach((sub: any) => {
         if (selected[sub.subQuizId] === undefined) {
           incomplete.push(sub.question || `子题 ${sub.subQuizId}`);
         }
       });
-    } else if (quiz.type === "B") {
+    } else if (quiz.type === 'B') {
       quiz.questions.forEach((q: any, index: number) => {
         if (selected[q.questionId] === undefined) {
           incomplete.push(q.questionText || `问题 ${index + 1}`);
@@ -400,25 +400,25 @@ export const useQuizLogic = ({
     let isOverallCorrect = false;
 
     switch (quiz.type) {
-      case "A1":
-      case "A2":
+      case 'A1':
+      case 'A2':
         isOverallCorrect = selectedAnswer === quiz.answer;
         break;
-      case "X":
+      case 'X':
         if (Array.isArray(selectedAnswer)) {
           isOverallCorrect =
             JSON.stringify(selectedAnswer.sort()) ===
             JSON.stringify(quiz.answer.sort());
         }
         break;
-      case "A3":
+      case 'A3':
         isOverallCorrect = quiz.subQuizs.every((sub: any) => {
           const isSubCorrect = selectedAnswer[sub.subQuizId] === sub.answer;
           subQuestionCorrectnessMap[sub.subQuizId] = isSubCorrect;
           return isSubCorrect;
         });
         break;
-      case "B":
+      case 'B':
         isOverallCorrect = quiz.questions.every((q: any) => {
           const isSubCorrect = selectedAnswer[q.questionId] === q.answer;
           subQuestionCorrectnessMap[q.questionId] = isSubCorrect;
@@ -430,7 +430,7 @@ export const useQuizLogic = ({
     }
 
     // Update sub-question correctness state for A3/B types
-    if (quiz.type === "A3" || quiz.type === "B") {
+    if (quiz.type === 'A3' || quiz.type === 'B') {
       setSubQuestionCorrectness(subQuestionCorrectnessMap);
     }
 
@@ -448,12 +448,12 @@ export const useQuizLogic = ({
     }
 
     if (!isAuthenticated) {
-      toast.error("需要登录", {
-        description: "请先登录后再提交答案",
+      toast.error('需要登录', {
+        description: '请先登录后再提交答案',
         action: {
-          label: "去登录",
+          label: '去登录',
           onClick: () => {
-            window.location.href = "/auth/signin";
+            window.location.href = '/auth/signin';
           },
         },
         duration: 5000,
@@ -464,17 +464,17 @@ export const useQuizLogic = ({
     if (!hasSelection()) {
       const incomplete = getIncompleteSubQuestions();
 
-      if (quiz.type === "A3" || quiz.type === "B") {
+      if (quiz.type === 'A3' || quiz.type === 'B') {
         if (incomplete.length > 0) {
-          toast.error("请完成所有子题", {
+          toast.error('请完成所有子题', {
             description: `还有 ${incomplete.length} 个子题未完成`,
             duration: 3000,
           });
           return;
         }
       } else {
-        toast.error("请先选择答案", {
-          description: "您还没有选择任何选项",
+        toast.error('请先选择答案', {
+          description: '您还没有选择任何选项',
           duration: 2000,
         });
         return;
@@ -502,7 +502,7 @@ export const useQuizLogic = ({
     }
 
     // Dispatch custom event for practice record browser refresh
-    const quizSubmitEvent = new CustomEvent("quizSubmitted", {
+    const quizSubmitEvent = new CustomEvent('quizSubmitted', {
       detail: { quizId: quiz._id, timestamp: new Date() },
     });
     window.dispatchEvent(quizSubmitEvent);
@@ -525,12 +525,12 @@ export const useQuizLogic = ({
     }
 
     if (!isAuthenticated) {
-      toast.error("需要登录", {
-        description: "请先登录后再提交答案",
+      toast.error('需要登录', {
+        description: '请先登录后再提交答案',
         action: {
-          label: "去登录",
+          label: '去登录',
           onClick: () => {
-            window.location.href = "/auth/signin";
+            window.location.href = '/auth/signin';
           },
         },
         duration: 5000,
@@ -541,17 +541,17 @@ export const useQuizLogic = ({
     if (!hasSelection()) {
       const incomplete = getIncompleteSubQuestions();
 
-      if (quiz.type === "A3" || quiz.type === "B") {
+      if (quiz.type === 'A3' || quiz.type === 'B') {
         if (incomplete.length > 0) {
-          toast.error("请完成所有子题", {
+          toast.error('请完成所有子题', {
             description: `还有 ${incomplete.length} 个子题未完成`,
             duration: 3000,
           });
           return;
         }
       } else {
-        toast.error("请先选择答案", {
-          description: "您还没有选择任何选项",
+        toast.error('请先选择答案', {
+          description: '您还没有选择任何选项',
           duration: 2000,
         });
         return;
@@ -562,9 +562,9 @@ export const useQuizLogic = ({
     setIsCorrect(false);
 
     // For A3/B types, also reset sub-question correctness
-    if (quiz.type === "A3" || quiz.type === "B") {
+    if (quiz.type === 'A3' || quiz.type === 'B') {
       const subQuestionIds =
-        quiz.type === "A3"
+        quiz.type === 'A3'
           ? (quiz as any).subQuizs.map((sub: any) => sub.subQuizId)
           : (quiz as any).questions.map((q: any) => q.questionId);
       const resetCorrectness: Record<number, boolean> = {};
@@ -591,7 +591,7 @@ export const useQuizLogic = ({
     }
 
     // Dispatch custom event for practice record browser refresh
-    const quizSubmitEvent = new CustomEvent("quizSubmitted", {
+    const quizSubmitEvent = new CustomEvent('quizSubmitted', {
       detail: { quizId: quiz._id, timestamp: new Date() },
     });
     window.dispatchEvent(quizSubmitEvent);
@@ -617,43 +617,42 @@ export const useQuizLogic = ({
         timestamp: new Date(),
       };
 
-      const response = await fetch("/api/quiz/practice-history", {
-        method: "POST",
+      const response = await fetch('/api/quiz/practice-history', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(practice_record),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit answer");
+        throw new Error('Failed to submit answer');
       }
 
       if (isCorrect) {
-        toast.success("回答正确", {
+        toast.success('回答正确', {
           style: {
-            backgroundColor: "#4caf50",
-            color: "white",
+            backgroundColor: '#4caf50',
+            color: 'white',
           },
           duration: 1000,
         });
       } else {
-        toast.warning("回答错误", {
+        toast.warning('回答错误', {
           style: {
-            backgroundColor: "#af4c4c",
-            color: "white",
+            backgroundColor: '#af4c4c',
+            color: 'white',
           },
           duration: 1000,
         });
       }
     } catch (error) {
-      console.error("Error submitting answer:", error);
-      toast.error("提交失败", {
-        description: "无法保存您的答案，请稍后再试",
+      console.error('Error submitting answer:', error);
+      toast.error('提交失败', {
+        description: '无法保存您的答案，请稍后再试',
       });
     }
   };
-
 
   // Fetch practice history
   const fetchPracticeHistory = async (quizId: string, userId: string) => {
@@ -670,7 +669,7 @@ export const useQuizLogic = ({
       setPracticeHistory(data);
     } catch (error: any) {
       setErrorPracticeHistory(error.message);
-      console.error("Failed to fetch practice history:", error);
+      console.error('Failed to fetch practice history:', error);
     } finally {
       setLoadingPracticeHistory(false);
     }
@@ -698,23 +697,23 @@ export const useQuizLogic = ({
         requestBody.source = quiz.source;
       }
 
-      const response = await fetch("/api/quiz/similar-quizzes", {
-        method: "POST",
+      const response = await fetch('/api/quiz/similar-quizzes', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to find similar quizzes");
+        throw new Error(errorData.error || 'Failed to find similar quizzes');
       }
 
       const similarQuizzes = await response.json();
       toast.success(`找到 ${similarQuizzes.length} 个相似试题`);
     } catch (error: any) {
-      console.error("Error finding similar quizzes:", error);
+      console.error('Error finding similar quizzes:', error);
       toast.error(`查找相似试题失败: ${error.message}`);
     } finally {
       setIsFindingSimilar(false);

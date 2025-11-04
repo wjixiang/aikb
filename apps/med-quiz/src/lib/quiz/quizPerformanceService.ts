@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient, ObjectId } from 'mongodb';
 // Define an interface matching the MongoDB schema for type safety
 export interface PracticeRecord {
   // Export the interface
@@ -8,19 +8,19 @@ export interface PracticeRecord {
   selectrecord?: string[]; // Assuming this is optional based on schema
   correct: boolean;
 }
-import { createLoggerWithPrefix } from "@/lib/console/logger"; // Import the logger factory
+import { createLoggerWithPrefix } from '@/lib/console/logger'; // Import the logger factory
 
-const logger = createLoggerWithPrefix("QuizPerformanceService"); // Create a logger instance
+const logger = createLoggerWithPrefix('QuizPerformanceService'); // Create a logger instance
 
 export const uri = process.env.MONGODB_URI; // Export uri
 export const dbName = process.env.QUIZ_DB; // Export dbName
 
 if (!uri) {
-  throw new Error("MONGODB_URI is not defined in environment variables.");
+  throw new Error('MONGODB_URI is not defined in environment variables.');
 }
 
 if (!dbName) {
-  throw new Error("QUIZ_DB is not defined in environment variables.");
+  throw new Error('QUIZ_DB is not defined in environment variables.');
 }
 
 let client: MongoClient;
@@ -30,13 +30,13 @@ let clientPromise: Promise<MongoClient>;
 export async function getClient(): Promise<MongoClient> {
   // Export getClient
   if (!client) {
-    logger.info("Creating new MongoDB client and connecting..."); // Log client creation
+    logger.info('Creating new MongoDB client and connecting...'); // Log client creation
     client = new MongoClient(uri!);
     clientPromise = client.connect();
     await clientPromise; // Wait for connection
-    logger.info("MongoDB client connected."); // Log successful connection
+    logger.info('MongoDB client connected.'); // Log successful connection
   } else {
-    logger.info("Using existing MongoDB client."); // Log using existing client
+    logger.info('Using existing MongoDB client.'); // Log using existing client
   }
   return clientPromise;
 }
@@ -55,7 +55,7 @@ export async function getQuizPerformanceMetrics(
   try {
     const client = await getClient();
     const db = client.db(dbName);
-    const collection = db.collection<PracticeRecord>("practicerecords");
+    const collection = db.collection<PracticeRecord>('practicerecords');
 
     logger.info(
       `Executing MongoDB aggregation for user email: ${userEmail}...`,
@@ -67,10 +67,10 @@ export async function getQuizPerformanceMetrics(
         { $match: { userid: userEmail } },
         {
           $group: {
-            _id: "$quizid", // Group by quizid
+            _id: '$quizid', // Group by quizid
             attempts: { $sum: 1 },
-            correct: { $sum: { $cond: [{ $eq: ["$correct", true] }, 1, 0] } }, // Use 'correct' field
-            avgTime: { $avg: "$timestamp" }, // Assuming responseTime is derived from timestamps, this might need adjustment
+            correct: { $sum: { $cond: [{ $eq: ['$correct', true] }, 1, 0] } }, // Use 'correct' field
+            avgTime: { $avg: '$timestamp' }, // Assuming responseTime is derived from timestamps, this might need adjustment
           },
         },
       ])
@@ -83,7 +83,7 @@ export async function getQuizPerformanceMetrics(
 
     return performanceMetrics;
   } catch (error: any) {
-    logger.error("Error in getQuizPerformanceMetrics:", error); // Log the error
+    logger.error('Error in getQuizPerformanceMetrics:', error); // Log the error
     throw error;
   }
 }

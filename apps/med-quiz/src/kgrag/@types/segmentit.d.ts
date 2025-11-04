@@ -1,4 +1,4 @@
-declare module "segmentit" {
+declare module 'segmentit' {
   class Segmentit {
     constructor();
     doSegment(

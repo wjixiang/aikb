@@ -1,11 +1,11 @@
-import { NotebookRetriever, retrieveTextBookSource } from "./noteBookRetriever";
-import { Document } from "@langchain/core/documents";
+import { NotebookRetriever, retrieveTextBookSource } from './noteBookRetriever';
+import { Document } from '@langchain/core/documents';
 
-describe("NotebookRetriever", () => {
+describe('NotebookRetriever', () => {
   const mockOptions = {
     minSimilarityScore: 0.5,
     maxK: 10,
-    salientTerms: ["test"],
+    salientTerms: ['test'],
     vectorWeight: 0.7,
     bm25Weight: 0.3,
     hybridSearch: true,
@@ -15,35 +15,35 @@ describe("NotebookRetriever", () => {
 
   const mockVectorResults: Document<retrieveTextBookSource>[] = [
     new Document({
-      pageContent: "vector result 1",
+      pageContent: 'vector result 1',
       metadata: {
-        title: "Doc 1",
-        chunkId: "v1",
+        title: 'Doc 1',
+        chunkId: 'v1',
         score: 0.9,
-        scoreSource: "vector" as const,
+        scoreSource: 'vector' as const,
       },
     }),
   ];
 
   const mockBM25Results: Document<retrieveTextBookSource>[] = [
     new Document({
-      pageContent: "bm25 result 1",
+      pageContent: 'bm25 result 1',
       metadata: {
-        title: "Doc 1",
-        chunkId: "v1",
+        title: 'Doc 1',
+        chunkId: 'v1',
         score: 0.85,
-        scoreSource: "bm25" as const,
+        scoreSource: 'bm25' as const,
       },
     }),
   ];
 
-  describe("hybrid search", () => {
-    it("should enable/disable hybrid search based on config", async () => {
-      const hybridRetriever = new NotebookRetriever("test", {
+  describe('hybrid search', () => {
+    it('should enable/disable hybrid search based on config', async () => {
+      const hybridRetriever = new NotebookRetriever('test', {
         ...mockOptions,
         hybridSearch: true,
       });
-      const vectorOnlyRetriever = new NotebookRetriever("test", {
+      const vectorOnlyRetriever = new NotebookRetriever('test', {
         ...mockOptions,
         hybridSearch: false,
       });
@@ -53,48 +53,48 @@ describe("NotebookRetriever", () => {
     });
   });
 
-  describe("BM25 integration", () => {
-    it("should call BM25 when enabled", async () => {
-      const retriever = new NotebookRetriever("test", mockOptions);
+  describe('BM25 integration', () => {
+    it('should call BM25 when enabled', async () => {
+      const retriever = new NotebookRetriever('test', mockOptions);
       jest
-        .spyOn(retriever, "getBM25Results")
+        .spyOn(retriever, 'getBM25Results')
         .mockResolvedValue(mockBM25Results);
       jest
-        .spyOn(retriever, "getRetrievedChunks")
+        .spyOn(retriever, 'getRetrievedChunks')
         .mockResolvedValue(mockVectorResults);
 
-      await retriever.getRelevantDocuments("test query");
+      await retriever.getRelevantDocuments('test query');
 
       expect(retriever.getBM25Results).toHaveBeenCalled();
     });
 
-    it("should skip BM25 when disabled", async () => {
-      const retriever = new NotebookRetriever("test", {
+    it('should skip BM25 when disabled', async () => {
+      const retriever = new NotebookRetriever('test', {
         ...mockOptions,
         useBM25: false,
       });
-      jest.spyOn(retriever, "getBM25Results");
+      jest.spyOn(retriever, 'getBM25Results');
       jest
-        .spyOn(retriever, "getRetrievedChunks")
+        .spyOn(retriever, 'getRetrievedChunks')
         .mockResolvedValue(mockVectorResults);
 
-      await retriever.getRelevantDocuments("test query");
+      await retriever.getRelevantDocuments('test query');
 
       expect(retriever.getBM25Results).not.toHaveBeenCalled();
     });
   });
 
-  describe("result format", () => {
-    it("should standardize result format with score metadata", async () => {
-      const retriever = new NotebookRetriever("test", mockOptions);
+  describe('result format', () => {
+    it('should standardize result format with score metadata', async () => {
+      const retriever = new NotebookRetriever('test', mockOptions);
       jest
-        .spyOn(retriever, "getBM25Results")
+        .spyOn(retriever, 'getBM25Results')
         .mockResolvedValue(mockBM25Results);
       jest
-        .spyOn(retriever, "getRetrievedChunks")
+        .spyOn(retriever, 'getRetrievedChunks')
         .mockResolvedValue(mockVectorResults);
 
-      const results = await retriever.getRelevantDocuments("test query");
+      const results = await retriever.getRelevantDocuments('test query');
 
       expect(results[0].metadata).toMatchObject({
         title: expect.any(String),

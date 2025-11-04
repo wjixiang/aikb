@@ -1,10 +1,10 @@
-import { ChainType } from "./chainFactory";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChainType } from './chainFactory';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 
-import { atom, useAtom } from "jotai";
-import { ModelCapability } from "./constants";
-import { settingsStore, settingsAtom } from "../setting/model";
+import { atom, useAtom } from 'jotai';
+import { ModelCapability } from './constants';
+import { settingsStore, settingsAtom } from '../setting/model';
 
 const userModelKeyAtom = atom<string | null>(null);
 const modelKeyAtom = atom(

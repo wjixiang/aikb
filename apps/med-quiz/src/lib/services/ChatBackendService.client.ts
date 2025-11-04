@@ -3,11 +3,11 @@
  * This service only makes HTTP API calls and doesn't import any server-side dependencies
  */
 
-import { getApiUrl } from "@/lib/config/environment";
+import { getApiUrl } from '@/lib/config/environment';
 
 export interface ChatMessage {
   id: string;
-  type: "user" | "ai" | "system" | "status";
+  type: 'user' | 'ai' | 'system' | 'status';
   content: string;
   data?: any;
   timestamp: string;
@@ -16,7 +16,7 @@ export interface ChatMessage {
 export interface ChatSession {
   sessionId: string;
   messages: ChatMessage[];
-  status: "active" | "completed" | "error";
+  status: 'active' | 'completed' | 'error';
   createdAt: string;
   lastActivity: string;
 }
@@ -43,16 +43,16 @@ export class ChatBackendServiceClient {
     const response = await fetch(
       `${this.baseUrl}/api/chat/backend/create-session`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ sessionId }),
       },
     );
 
     if (!response.ok) {
-      throw new Error("Failed to create session");
+      throw new Error('Failed to create session');
     }
 
     const data = await response.json();
@@ -64,14 +64,14 @@ export class ChatBackendServiceClient {
    */
   async pushMessage(
     sessionId: string,
-    message: Omit<ChatMessage, "id" | "timestamp">,
+    message: Omit<ChatMessage, 'id' | 'timestamp'>,
   ): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/api/chat/backend/push-message`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId,
@@ -83,7 +83,7 @@ export class ChatBackendServiceClient {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to push message");
+      throw new Error('Failed to push message');
     }
   }
 
@@ -95,7 +95,7 @@ export class ChatBackendServiceClient {
     initialPrompt: string,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "ai",
+      type: 'ai',
       content: initialPrompt,
     });
   }
@@ -109,7 +109,7 @@ export class ChatBackendServiceClient {
     data?: any,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "ai",
+      type: 'ai',
       content: message,
       data,
     });
@@ -124,7 +124,7 @@ export class ChatBackendServiceClient {
     data?: any,
   ): Promise<void> {
     await this.pushMessage(sessionId, {
-      type: "status",
+      type: 'status',
       content: status,
       data,
     });
@@ -139,16 +139,16 @@ export class ChatBackendServiceClient {
   ): Promise<void> {
     if (finalMessage) {
       await this.pushMessage(sessionId, {
-        type: "ai",
+        type: 'ai',
         content: finalMessage,
       });
     }
 
     // Send completion signal
     await fetch(`${this.baseUrl}/api/chat/backend/complete-conversation`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         sessionId,
@@ -168,9 +168,9 @@ export class ChatBackendServiceClient {
     const response = await fetch(
       `${this.baseUrl}/api/chat/backend/process-with-agent`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId,
@@ -181,7 +181,7 @@ export class ChatBackendServiceClient {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to process with agent");
+      throw new Error('Failed to process with agent');
     }
   }
 
@@ -194,7 +194,7 @@ export class ChatBackendServiceClient {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to get history");
+      throw new Error('Failed to get history');
     }
 
     const data = await response.json();
@@ -208,16 +208,16 @@ export class ChatBackendServiceClient {
     const response = await fetch(
       `${this.baseUrl}/api/chat/backend/clear-session`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ sessionId }),
       },
     );
 
     if (!response.ok) {
-      throw new Error("Failed to clear session");
+      throw new Error('Failed to clear session');
     }
   }
 
@@ -230,7 +230,7 @@ export class ChatBackendServiceClient {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to get active sessions");
+      throw new Error('Failed to get active sessions');
     }
 
     const data = await response.json();

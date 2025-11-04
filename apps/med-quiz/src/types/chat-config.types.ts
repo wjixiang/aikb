@@ -7,12 +7,12 @@ export interface ChatConfig {
   useHyDE: boolean;
   useHybrid: boolean;
   topK: number;
-  language: "zh" | "en";
+  language: 'zh' | 'en';
 }
 
 export const defaultChatConfig: ChatConfig = {
   useHyDE: false,
   useHybrid: false,
   topK: 10,
-  language: "zh",
+  language: 'zh',
 };

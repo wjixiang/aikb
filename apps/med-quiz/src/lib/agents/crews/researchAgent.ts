@@ -2,14 +2,14 @@ import AgentV3, {
   AgentTask,
   AgentProfile,
   TaskCompletionResult,
-} from "../AgentV3";
-import { AgentMessage } from "../agent.types";
+} from '../AgentV3';
+import { AgentMessage } from '../agent.types';
 
 // Research agent that specializes in gathering information
 export class ResearchAgent extends AgentV3 {
   agentProfile: AgentProfile = {
-    agentName: "ResearchAgent",
-    functionDescription: "Specializes in gathering and researching information",
+    agentName: 'ResearchAgent',
+    functionDescription: 'Specializes in gathering and researching information',
     followAgents: [], // Could link to analysis agent
   };
 
@@ -20,14 +20,14 @@ export class ResearchAgent extends AgentV3 {
 
   async *start(): AsyncGenerator<AgentMessage> {
     yield {
-      type: "step",
+      type: 'step',
       content: `Research agent starting work on: ${this.task.taskName}`,
       task: this.task.taskName,
     };
 
     yield {
-      type: "update",
-      content: "Searching databases and sources...",
+      type: 'update',
+      content: 'Searching databases and sources...',
       task: this.task.taskName,
     };
 
@@ -35,14 +35,14 @@ export class ResearchAgent extends AgentV3 {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     yield {
-      type: "update",
-      content: "Found relevant sources and data",
+      type: 'update',
+      content: 'Found relevant sources and data',
       task: this.task.taskName,
     };
 
     yield {
-      type: "update",
-      content: "Research phase complete",
+      type: 'update',
+      content: 'Research phase complete',
       task: this.task.taskName,
     };
   }
@@ -52,20 +52,20 @@ export class ResearchAgent extends AgentV3 {
     if (this.currentIteration < this.maxIterations) {
       return {
         isComplete: false,
-        nextAction: "continue",
+        nextAction: 'continue',
         feedback: `Research iteration ${this.currentIteration} complete, continuing research`,
       };
     } else {
       // After research is done, delegate to analysis agent
       return {
         isComplete: false,
-        nextAction: "delegate",
+        nextAction: 'delegate',
         delegateTo: {
-          agentName: "AnalysisAgent",
-          functionDescription: "Analyzes data and generates insights",
+          agentName: 'AnalysisAgent',
+          functionDescription: 'Analyzes data and generates insights',
           followAgents: [],
         },
-        feedback: "Research complete, delegating to analysis agent",
+        feedback: 'Research complete, delegating to analysis agent',
       };
     }
   }
@@ -73,9 +73,9 @@ export class ResearchAgent extends AgentV3 {
   protected async createDelegateAgent(
     profile: AgentProfile,
   ): Promise<AgentV3 | null> {
-    if (profile.agentName === "AnalysisAgent") {
+    if (profile.agentName === 'AnalysisAgent') {
       // In a real implementation, we would import and create the AnalysisAgent
-      console.log("Creating AnalysisAgent for delegation");
+      console.log('Creating AnalysisAgent for delegation');
       return null; // Placeholder
     }
     return null;

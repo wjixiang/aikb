@@ -41,7 +41,7 @@ describe('User Tags API', () => {
 
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401 },
       );
     });
 
@@ -120,7 +120,7 @@ describe('User Tags API', () => {
 
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Failed to fetch user tags' },
-        { status: 500 }
+        { status: 500 },
       );
     });
   });
@@ -136,7 +136,7 @@ describe('User Tags API', () => {
 
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401 },
       );
     });
 
@@ -156,7 +156,9 @@ describe('User Tags API', () => {
       });
       const response = await POST(request);
 
-      expect(response).toEqual([{ value: 'anatomy', type: 'subject', count: 5 }]);
+      expect(response).toEqual([
+        { value: 'anatomy', type: 'subject', count: 5 },
+      ]);
     });
   });
 });

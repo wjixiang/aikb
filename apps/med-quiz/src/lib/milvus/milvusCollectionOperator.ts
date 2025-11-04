@@ -1,18 +1,18 @@
-import { embedding } from "@/kgrag/lib/embedding";
+import { embedding } from '@/kgrag/lib/embedding';
 import {
   MilvusClient,
   SearchReq,
   SearchSimpleReq,
   FunctionType,
-} from "@zilliz/milvus2-sdk-node";
-import { DataType } from "@zilliz/milvus2-sdk-node";
+} from '@zilliz/milvus2-sdk-node';
+import { DataType } from '@zilliz/milvus2-sdk-node';
 
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 
 dotenv.config();
 
 if (!process.env.MILVUS_URI) {
-  throw new Error("env empty: MILVUS_URI");
+  throw new Error('env empty: MILVUS_URI');
 }
 
 // 修改后的文档数据接口
@@ -92,16 +92,16 @@ export default class milvusCollectionOperator {
     this.milvusCollectionName = milvusCollectionName;
 
     // Debug mode output
-    if (process.env.NODE_ENV === "development" || process.env.DEBUG_MILVUS) {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG_MILVUS) {
       console.debug(
-        "[MilvusCollectionOperator] Initializing with connection info:",
+        '[MilvusCollectionOperator] Initializing with connection info:',
         {
           collection: milvusCollectionName,
           uri: process.env.MILVUS_URI,
-          timeout: process.env.MILVUS_CLIENT_TIMEOUT || "30000",
-          username: process.env.MILVUS_USERNAME ? "*****" : "not set",
-          password: process.env.MILVUS_PASSWORD ? "*****" : "not set",
-          token: process.env.TOKEN ? "*****" : "not set",
+          timeout: process.env.MILVUS_CLIENT_TIMEOUT || '30000',
+          username: process.env.MILVUS_USERNAME ? '*****' : 'not set',
+          password: process.env.MILVUS_PASSWORD ? '*****' : 'not set',
+          token: process.env.TOKEN ? '*****' : 'not set',
         },
       );
     }
@@ -115,81 +115,81 @@ export default class milvusCollectionOperator {
       collection_name: this.milvusCollectionName,
       fields: [
         {
-          name: "oid",
+          name: 'oid',
           data_type: DataType.VarChar,
           is_primary_key: true,
           type_params: {
-            max_length: "100",
+            max_length: '100',
           },
         },
         {
-          name: "title",
+          name: 'title',
           data_type: DataType.VarChar,
           is_primary_key: false,
           type_params: {
-            max_length: "100",
+            max_length: '100',
           },
         },
         {
-          name: "alias",
+          name: 'alias',
           data_type: DataType.Array,
           element_type: DataType.VarChar,
           max_capacity: 100,
           max_length: 100,
         },
         {
-          name: "content",
+          name: 'content',
           data_type: DataType.VarChar,
-          description: "text content of embedding",
+          description: 'text content of embedding',
           enable_analyzer: true,
           enable_match: true,
           type_params: {
-            max_length: "10000",
+            max_length: '10000',
           },
         },
         {
-          name: "embedding",
+          name: 'embedding',
           data_type: DataType.FloatVector,
-          description: "",
+          description: '',
           type_params: {
             dim: String(await this.checkEmbeddingDimension()),
           },
         },
         {
-          name: "sparse_embedding",
+          name: 'sparse_embedding',
           data_type: DataType.SparseFloatVector,
-          description: "BM25 sparse embeddings for full-text search",
+          description: 'BM25 sparse embeddings for full-text search',
         },
         {
-          name: "partition_key",
+          name: 'partition_key',
           data_type: DataType.VarChar,
           is_partition_key: true,
           type_params: {
-            max_length: "100",
+            max_length: '100',
           },
         },
         {
-          name: "pdf_uri",
+          name: 'pdf_uri',
           data_type: DataType.Array,
         },
       ],
       functions: [
         {
-          name: "text_bm25_emb",
-          description: "bm25 function",
+          name: 'text_bm25_emb',
+          description: 'bm25 function',
           type: FunctionType.BM25,
-          input_field_names: ["content"],
-          output_field_names: ["sparse_embedding"],
+          input_field_names: ['content'],
+          output_field_names: ['sparse_embedding'],
           params: {},
         },
       ],
       index_params: [
         {
-          field_name: "sparse_embedding",
-          metric_type: "BM25",
-          index_type: "AUTOINDEX",
+          field_name: 'sparse_embedding',
+          metric_type: 'BM25',
+          index_type: 'AUTOINDEX',
           params: {
-            inverted_index_algo: "DAAT_MAXSCORE",
+            inverted_index_algo: 'DAAT_MAXSCORE',
             bm25_k1: 1.2,
             bm25_b: 0.75,
           },
@@ -198,7 +198,7 @@ export default class milvusCollectionOperator {
     });
 
     console.log(
-      "--- Create collection ---",
+      '--- Create collection ---',
       createRes,
       this.milvusCollectionName,
     );
@@ -210,12 +210,12 @@ export default class milvusCollectionOperator {
    * @returns 当前embedding实例的嵌入长度
    */
   async checkEmbeddingDimension() {
-    const query = "请介绍一下 LangChain";
+    const query = '请介绍一下 LangChain';
     const vector = await embedding(query);
     if (vector === null) {
-      throw new Error("Failed to generate embedding for dimension check.");
+      throw new Error('Failed to generate embedding for dimension check.');
     }
-    console.log("生成的向量长度：", vector.length);
+    console.log('生成的向量长度：', vector.length);
     return vector.length;
   }
 
@@ -238,7 +238,7 @@ export default class milvusCollectionOperator {
 
       // 如果集合存在，直接返回 true
       if (
-        hasCollectionRes.status.error_code === "Success" &&
+        hasCollectionRes.status.error_code === 'Success' &&
         hasCollectionRes.value === true
       ) {
         console.log(
@@ -254,7 +254,7 @@ export default class milvusCollectionOperator {
       const createRes = await this.createCollection();
 
       // 检查创建是否成功
-      if (createRes.error_code === "Success") {
+      if (createRes.error_code === 'Success') {
         console.log(
           `Successfully created collection '${this.milvusCollectionName}'.`,
         );
@@ -282,58 +282,58 @@ export default class milvusCollectionOperator {
     // 定义需要索引的字段及其配置
     const indexConfigs = [
       {
-        field: "oid",
-        indexType: "INVERTED",
+        field: 'oid',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "title",
-        indexType: "INVERTED",
+        field: 'title',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "alias",
-        indexType: "INVERTED",
+        field: 'alias',
+        indexType: 'INVERTED',
         params: {
           extra_params: [
             {
-              key: "element_type",
+              key: 'element_type',
               value: DataType.VarChar,
             },
           ],
         },
       },
       {
-        field: "content",
-        indexType: "INVERTED",
+        field: 'content',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "tags",
-        indexType: "INVERTED",
+        field: 'tags',
+        indexType: 'INVERTED',
         params: {
           extra_params: [
             {
-              key: "element_type",
+              key: 'element_type',
               value: DataType.VarChar,
             },
           ],
         },
       },
       {
-        field: "embedding",
-        indexType: "HNSW",
+        field: 'embedding',
+        indexType: 'HNSW',
         params: {
-          metric_type: "COSINE",
+          metric_type: 'COSINE',
           params: {
-            M: "8",
-            efConstruction: "64",
+            M: '8',
+            efConstruction: '64',
           },
         },
       },
       {
-        field: "partition_key",
-        indexType: "INVERTED",
+        field: 'partition_key',
+        indexType: 'INVERTED',
         params: {},
       },
     ];
@@ -360,7 +360,7 @@ export default class milvusCollectionOperator {
         }),
       );
     } catch (error) {
-      console.error("索引验证失败:", error);
+      console.error('索引验证失败:', error);
       throw error;
     }
   }
@@ -385,7 +385,7 @@ export default class milvusCollectionOperator {
 
         const res = await this.milvusClient.createIndex(indexParams);
 
-        if (res.error_code === "Success") {
+        if (res.error_code === 'Success') {
           console.log(
             `成功创建 ${config.indexType} 索引于字段 ${config.field}`,
           );
@@ -440,7 +440,7 @@ export default class milvusCollectionOperator {
       const {
         batchSize = 100,
         onProgress,
-        maxLength = parseInt(process.env.MILVUS_MAX_CHUNK_LENGTH || "5000"),
+        maxLength = parseInt(process.env.MILVUS_MAX_CHUNK_LENGTH || '5000'),
       } = options;
 
       // 确保集合存在
@@ -466,7 +466,7 @@ export default class milvusCollectionOperator {
           ...doc,
           alias: doc.alias ?? [],
           tags: doc.tags ?? [],
-          partition_key: doc.partition_key ?? "",
+          partition_key: doc.partition_key ?? '',
         }))
         .filter((doc) => doc.content.length > 0);
 
@@ -480,8 +480,8 @@ export default class milvusCollectionOperator {
       );
 
       if (newDocuments.length === 0) {
-        console.log("All documents already exist in the collection");
-        return { status: { error_code: "Success" } };
+        console.log('All documents already exist in the collection');
+        return { status: { error_code: 'Success' } };
       }
 
       console.log(
@@ -514,7 +514,7 @@ export default class milvusCollectionOperator {
           data: processedBatch,
         });
 
-        if (insertResult.status.error_code !== "Success") {
+        if (insertResult.status.error_code !== 'Success') {
           throw new Error(
             `Batch insert failed: ${JSON.stringify(insertResult)}\n\n content length: ${processedBatch.map((e) => e.content.length)} \n\ncurrent insert doucments: ${JSON.stringify(processedBatch.map((e) => e.title))}`,
           );
@@ -534,7 +534,7 @@ export default class milvusCollectionOperator {
       console.log(
         `Successfully inserted all ${newDocuments.length} new documents`,
       );
-      return { status: { error_code: "Success" } };
+      return { status: { error_code: 'Success' } };
     } catch (error) {
       console.error(
         `Error in batch document insertion: \n---error---\n${error}\n`,
@@ -558,7 +558,7 @@ export default class milvusCollectionOperator {
 
       return rowCount;
     } catch (error) {
-      console.error("获取记录数量失败:", error);
+      console.error('获取记录数量失败:', error);
       throw error;
     }
   }
@@ -582,7 +582,7 @@ export default class milvusCollectionOperator {
 
       for (let i = 0; i < oids.length; i += batchSize) {
         const batch = oids.slice(i, i + batchSize);
-        const filter = batch.map((oid) => `oid == "${oid}"`).join(" || ");
+        const filter = batch.map((oid) => `oid == "${oid}"`).join(' || ');
 
         let retries = 3;
         while (retries > 0) {
@@ -590,11 +590,11 @@ export default class milvusCollectionOperator {
             const queryResult = await this.milvusClient.query({
               collection_name: this.milvusCollectionName,
               filter,
-              output_fields: ["oid"],
+              output_fields: ['oid'],
               timeout: 30000, // 30 second timeout
             });
 
-            if (queryResult.status.error_code !== "Success") {
+            if (queryResult.status.error_code !== 'Success') {
               throw new Error(`Query failed: ${queryResult.status.reason}`);
             }
 
@@ -633,10 +633,10 @@ export default class milvusCollectionOperator {
       const queryResult = await this.milvusClient.query({
         collection_name: this.milvusCollectionName,
         filter: `oid == "${oid}"`,
-        output_fields: ["title", "alias", "content", "tags"],
+        output_fields: ['title', 'alias', 'content', 'tags'],
       });
 
-      if (queryResult.status.error_code !== "Success") {
+      if (queryResult.status.error_code !== 'Success') {
         throw new Error(`Query failed: ${queryResult.status.reason}`);
       }
 
@@ -663,10 +663,10 @@ export default class milvusCollectionOperator {
       const queryResult = await this.milvusClient.query({
         collection_name: this.milvusCollectionName,
         filter: `title == "${title}"`,
-        output_fields: ["title", "alias", "content", "tags"],
+        output_fields: ['title', 'alias', 'content', 'tags'],
       });
 
-      if (queryResult.status.error_code !== "Success") {
+      if (queryResult.status.error_code !== 'Success') {
         throw new Error(`Query failed: ${queryResult.status.reason}`);
       }
 
@@ -686,7 +686,7 @@ export default class milvusCollectionOperator {
       collection_name: this.milvusCollectionName,
     });
 
-    if (loadStatus.state !== "LoadStateLoaded") {
+    if (loadStatus.state !== 'LoadStateLoaded') {
       await this.milvusClient.loadCollectionSync({
         collection_name: this.milvusCollectionName,
         timeout: 30, // 30秒超时
@@ -708,7 +708,7 @@ export default class milvusCollectionOperator {
       const {
         limit = 10,
         offset = 0,
-        outputFields = ["title", "alias", "content", "tags", "oid"],
+        outputFields = ['title', 'alias', 'content', 'tags', 'oid'],
       } = options;
 
       const queryResult = await this.milvusClient.query({
@@ -719,7 +719,7 @@ export default class milvusCollectionOperator {
         offset,
       });
 
-      if (queryResult.status.error_code !== "Success") {
+      if (queryResult.status.error_code !== 'Success') {
         throw new Error(`Query failed: ${queryResult.status.reason}`);
       }
 
@@ -744,28 +744,28 @@ export default class milvusCollectionOperator {
       const { limit = 5, partitionNames, expr } = options;
 
       const outputFields = [
-        "title",
-        "alias",
-        "content",
-        "tags",
-        "partition_key",
-        "oid",
+        'title',
+        'alias',
+        'content',
+        'tags',
+        'partition_key',
+        'oid',
       ];
 
       // 生成查询文本的向量嵌入
       const queryEmbedding = await embedding(query);
       if (queryEmbedding === null) {
-        throw new Error("Failed to generate embedding for search query.");
+        throw new Error('Failed to generate embedding for search query.');
       }
 
       const searchquery: SearchSimpleReq = {
         collection_name: this.milvusCollectionName,
         data: [queryEmbedding], // data should be number[][]
-        anns_field: "embedding",
+        anns_field: 'embedding',
         limit: limit,
         output_fields: outputFields,
         params: {
-          metric_type: "COSINE",
+          metric_type: 'COSINE',
           // params: { ef: 64 } // HNSW 索引的搜索参数
         },
       };
@@ -784,7 +784,7 @@ export default class milvusCollectionOperator {
       const searchResult = await this.milvusClient.search(searchquery);
       // console.log(searchResult)
 
-      if (searchResult.status.error_code !== "Success") {
+      if (searchResult.status.error_code !== 'Success') {
         throw new Error(`Search failed: ${searchResult.status.reason}`);
       }
 
@@ -960,14 +960,14 @@ export default class milvusCollectionOperator {
             try {
               queryResult = await sourceOperator.milvusClient.query({
                 collection_name: sourceName,
-                output_fields: ["*"],
+                output_fields: ['*'],
                 limit: queryBatchSize,
                 offset: offset,
                 expr: 'oid != ""',
                 timeout: 30000, // 30 second timeout
               });
 
-              if (queryResult.status.error_code !== "Success") {
+              if (queryResult.status.error_code !== 'Success') {
                 throw new Error(
                   `Query failed for collection ${sourceName}: ${queryResult.status.reason}`,
                 );
@@ -1029,7 +1029,7 @@ export default class milvusCollectionOperator {
                     timeout: 60000, // 60 second timeout
                   });
 
-                  if (insertResult.status.error_code !== "Success") {
+                  if (insertResult.status.error_code !== 'Success') {
                     throw new Error(
                       `Insert failed: ${insertResult.status.reason}`,
                     );
@@ -1049,7 +1049,7 @@ export default class milvusCollectionOperator {
 
               if (
                 !insertResult ||
-                insertResult.status.error_code !== "Success"
+                insertResult.status.error_code !== 'Success'
               ) {
                 console.error(
                   `Failed to insert batch ${i} after retries: ${lastInsertError}`,

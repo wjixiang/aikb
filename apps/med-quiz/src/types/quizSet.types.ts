@@ -1,5 +1,5 @@
-import { answerType, quiz } from "./quizData.types";
-import { ObjectId } from "mongodb";
+import { answerType, quiz } from './quizData.types';
+import { ObjectId } from 'mongodb';
 
 export interface QuizSetDocument {
   _id?: ObjectId;

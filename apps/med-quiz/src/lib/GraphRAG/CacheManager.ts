@@ -1,8 +1,8 @@
-import { MongoClient, Db, Collection } from "mongodb";
-import { connectToDatabase } from "../db/mongodb";
-import { Redis } from "ioredis"; // Import Redis
+import { MongoClient, Db, Collection } from 'mongodb';
+import { connectToDatabase } from '../db/mongodb';
+import { Redis } from 'ioredis'; // Import Redis
 
-export type cacheType = "llmMessage" | "query" | "keywords";
+export type cacheType = 'llmMessage' | 'query' | 'keywords';
 
 export default class CacheManager {
   private db!: Db;
@@ -19,9 +19,9 @@ export default class CacheManager {
     try {
       const { db } = await connectToDatabase();
       this.db = db;
-      console.log("CacheManager connected to MongoDB");
+      console.log('CacheManager connected to MongoDB');
     } catch (error) {
-      console.error("Failed to connect to MongoDB for CacheManager:", error);
+      console.error('Failed to connect to MongoDB for CacheManager:', error);
       throw error;
     }
   }
@@ -29,17 +29,17 @@ export default class CacheManager {
   private initializeRedis(redisUri: string): void {
     try {
       this.redisClient = new Redis(redisUri);
-      this.redisClient.on("connect", () =>
-        console.log("CacheManager connected to Redis"),
+      this.redisClient.on('connect', () =>
+        console.log('CacheManager connected to Redis'),
       );
-      this.redisClient.on("error", (err) => {
-        console.error("Redis error in CacheManager:", err);
+      this.redisClient.on('error', (err) => {
+        console.error('Redis error in CacheManager:', err);
         // Optionally, you could set this.redisClient to undefined here
         // to stop attempting Redis operations until a reconnect
       });
     } catch (error) {
       console.error(
-        "Failed to initialize Redis client for CacheManager:",
+        'Failed to initialize Redis client for CacheManager:',
         error,
       );
       // Continue without Redis
@@ -54,7 +54,7 @@ export default class CacheManager {
   private getCollection(type: cacheType): Collection {
     if (!this.db) {
       throw new Error(
-        "Database not initialized. Call initializeDatabase first.",
+        'Database not initialized. Call initializeDatabase first.',
       );
     }
     return this.db.collection(this.getCollectionName(type));
@@ -77,10 +77,10 @@ export default class CacheManager {
     const stringifiedValue = JSON.stringify(value);
 
     // Attempt to set in Redis first
-    if (this.redisClient && this.redisClient.status === "ready") {
+    if (this.redisClient && this.redisClient.status === 'ready') {
       try {
         // Set with a TTL, e.g., 24 hours (86400 seconds)
-        await this.redisClient.set(redisKey, stringifiedValue, "EX", 86400);
+        await this.redisClient.set(redisKey, stringifiedValue, 'EX', 86400);
       } catch (error) {
         console.error(
           `Failed to set data in Redis for key ${redisKey}:`,
@@ -115,7 +115,7 @@ export default class CacheManager {
     const redisKey = this.getRedisKey(type, key);
 
     // Attempt to get from Redis first
-    if (this.redisClient && this.redisClient.status === "ready") {
+    if (this.redisClient && this.redisClient.status === 'ready') {
       try {
         const cachedValue = await this.redisClient.get(redisKey);
         if (cachedValue !== null) {
@@ -147,7 +147,7 @@ export default class CacheManager {
     const redisKey = this.getRedisKey(type, key);
 
     // Attempt to delete from Redis
-    if (this.redisClient && this.redisClient.status === "ready") {
+    if (this.redisClient && this.redisClient.status === 'ready') {
       try {
         await this.redisClient.del(redisKey);
       } catch (error) {
@@ -172,7 +172,7 @@ export default class CacheManager {
     await this.initializeDatabase(); // Ensure DB is initialized
 
     // Attempt to flush Redis keys for this type
-    if (this.redisClient && this.redisClient.status === "ready") {
+    if (this.redisClient && this.redisClient.status === 'ready') {
       try {
         // Note: FLUSHALL or FLUSHDB is generally not recommended in production
         // A safer approach would be to find keys by pattern and delete them in batches.

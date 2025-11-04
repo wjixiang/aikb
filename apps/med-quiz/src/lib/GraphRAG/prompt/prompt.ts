@@ -1,10 +1,10 @@
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from '@langchain/core/prompts';
 
 export const EMPTY_INDEX_ERROR_MESSAGE =
   "Copilot index does not exist. Please index your vault first!\n\n1. Set a working embedding model in QA settings. If it's not a local model, don't forget to set the API key. \n\n2. Click 'Refresh Index for Vault' and wait for indexing to complete. If you encounter the rate limiting error, please turn your request per second down in QA setting.";
 
-export const AI_SENDER = "ai";
-export const USER_SENDER = "user";
+export const AI_SENDER = 'ai';
+export const USER_SENDER = 'user';
 export const DEFAULT_SYSTEM_PROMPT = `You are clinic education Copilot, a helpful assistant that integrates AI to note-taking.
   1. Never mention that you do not have access to something. Always rely on the user provided context.
   2. Always answer to the best of your knowledge. If you are unsure about something, say so and ask the user to provide more context.
@@ -24,79 +24,79 @@ export const PLUS_MODE_DEFAULT_SOURCE_CHUNKS = 15;
 export const MAX_CHARS_FOR_LOCAL_SEARCH_CONTEXT = 448000;
 
 export enum ABORT_REASON {
-  USER_STOPPED = "user-stopped",
-  NEW_CHAT = "new-chat",
+  USER_STOPPED = 'user-stopped',
+  NEW_CHAT = 'new-chat',
 }
 
 export const entity_types = [
-  "disease",
-  "pathogenesis",
-  "radiology_examination",
-  "laboratory_examination",
-  "indicator",
-  "pathology_change",
-  "medicine",
-  "surgery",
-  "pathogen",
-  "pathophysiology",
-  "treatment",
-  "diagnosis",
-  "prognosis",
-  "prevention",
-  "risk_factor",
-  "complication",
-  "body_sign",
-  "symptom",
-  "differential_diagnosis",
-  "epidemiology",
-  "etiology",
-  "anatomy",
-  "physiology",
-  "chemical",
-  "biological_process",
-  "gene",
-  "hormone",
-  "cell",
-  "tissue",
-  "organ",
-  "system",
-  "body_part",
-  "biomarker",
-  "gene",
-  "protein",
-  "metabolite",
-  "pathway",
-  "cell_line",
-  "animal_model",
-  "clinical_trial",
-  "drug_class",
-  "drug_interaction",
-  "adverse_event",
-  "clinical_significance",
+  'disease',
+  'pathogenesis',
+  'radiology_examination',
+  'laboratory_examination',
+  'indicator',
+  'pathology_change',
+  'medicine',
+  'surgery',
+  'pathogen',
+  'pathophysiology',
+  'treatment',
+  'diagnosis',
+  'prognosis',
+  'prevention',
+  'risk_factor',
+  'complication',
+  'body_sign',
+  'symptom',
+  'differential_diagnosis',
+  'epidemiology',
+  'etiology',
+  'anatomy',
+  'physiology',
+  'chemical',
+  'biological_process',
+  'gene',
+  'hormone',
+  'cell',
+  'tissue',
+  'organ',
+  'system',
+  'body_part',
+  'biomarker',
+  'gene',
+  'protein',
+  'metabolite',
+  'pathway',
+  'cell_line',
+  'animal_model',
+  'clinical_trial',
+  'drug_class',
+  'drug_interaction',
+  'adverse_event',
+  'clinical_significance',
 ];
 export const relation_types = [
-  "causes",
-  "treats",
-  "diagnoses",
-  "prevents",
-  "has_symptom",
-  "has_sign",
-  "has_risk_factor",
-  "has_complication",
-  "has_pathogenesis",
-  "has_pathophysiology",
-  "has_prognosis",
-  "has_epidemiology",
-  "has_etiology",
-  "has_anatomy",
-  "has_physiology",
-  "has_biochemistry",
-  "has_molecular_biology",
-  "has_genetics",
-  "has_immunology",
-  "has_microbiology",
-  "has_pharmacology",
-  "has_toxicology",
+  'causes',
+  'treats',
+  'diagnoses',
+  'prevents',
+  'has_symptom',
+  'has_sign',
+  'has_risk_factor',
+  'has_complication',
+  'has_pathogenesis',
+  'has_pathophysiology',
+  'has_prognosis',
+  'has_epidemiology',
+  'has_etiology',
+  'has_anatomy',
+  'has_physiology',
+  'has_biochemistry',
+  'has_molecular_biology',
+  'has_genetics',
+  'has_immunology',
+  'has_microbiology',
+  'has_pharmacology',
+  'has_toxicology',
 ];
 
 // Original string template for reference:
@@ -182,13 +182,13 @@ export const ENTITY_EXTRACTION_PROMPT: Record<string, PromptTemplate> = {
   ######################
   Output:`,
     inputVariables: [
-      "language",
-      "entity_types",
-      "tuple_delimiter",
-      "record_delimiter",
-      "completion_delimiter",
-      "examples",
-      "input_text",
+      'language',
+      'entity_types',
+      'tuple_delimiter',
+      'record_delimiter',
+      'completion_delimiter',
+      'examples',
+      'input_text',
     ],
   }),
 };
@@ -223,9 +223,9 @@ export const ENTITY_EXTRACTION_EXAMPLE: Record<string, PromptTemplate> = {
   ("content_keywords"{tuple_delimiter}"慢性阻塞性肺疾病, COPD, 气流受限, 呼吸困难, 支气管炎, 肺气肿"){completion_delimiter}
   #############################`,
     inputVariables: [
-      "tuple_delimiter",
-      "completion_delimiter",
-      "record_delimiter",
+      'tuple_delimiter',
+      'completion_delimiter',
+      'record_delimiter',
     ],
   }),
   EXTRACT_CLINICAL_PRESENTATION: new PromptTemplate({
@@ -266,9 +266,9 @@ export const ENTITY_EXTRACTION_EXAMPLE: Record<string, PromptTemplate> = {
   ("content_keywords"{tuple_delimiter}"左心衰竭, 呼吸困难, 咳嗽, 咳痰, 咯血, 心脏体征"){completion_delimiter}
   #############################`,
     inputVariables: [
-      "tuple_delimiter",
-      "completion_delimiter",
-      "record_delimiter",
+      'tuple_delimiter',
+      'completion_delimiter',
+      'record_delimiter',
     ],
   }),
   EXTRACT_PATHOPHYSIOLOGY: new PromptTemplate({
@@ -305,9 +305,9 @@ export const ENTITY_EXTRACTION_EXAMPLE: Record<string, PromptTemplate> = {
   ("relationship"{tuple_delimiter}"低血糖"{tuple_delimiter}"葡萄糖 - 6- 磷酸酶"{tuple_delimiter}"低血糖是肝细胞功能不全时的表现，其机制包括肝细胞大量死亡、糖原合成障碍及糖异生能力下降。"{tuple_delimiter}"病理机制, 病理生理"{tuple_delimiter}9){record_delimiter}
   ("relationship"{tuple_delimiter}"低血糖"{tuple_delimiter}"胰岛素"{tuple_delimiter}"低血糖是肝细胞功能不全时的表现，其机制包括肝细胞大量死亡、糖原合成障碍及糖异生能力下降。"{tuple_delimiter}"病理机制, 病理生理"{tuple_delimiter}9){record_delimiter}`,
     inputVariables: [
-      "tuple_delimiter",
-      "completion_delimiter",
-      "record_delimiter",
+      'tuple_delimiter',
+      'completion_delimiter',
+      'record_delimiter',
     ],
   }),
 };
@@ -339,9 +339,9 @@ export const ENTITY_EXTRACTION_EXAMPLE_2: Record<string, PromptTemplate> = {
   ("content_keywords"{tuple_delimiter}"左心衰竭, 呼吸困难"){completion_delimiter}
   #############################`,
     inputVariables: [
-      "tuple_delimiter",
-      "completion_delimiter",
-      "record_delimiter",
+      'tuple_delimiter',
+      'completion_delimiter',
+      'record_delimiter',
     ],
   }),
   EXTRACT_PATHOPHYSIOLOGY: new PromptTemplate({
@@ -378,9 +378,9 @@ export const ENTITY_EXTRACTION_EXAMPLE_2: Record<string, PromptTemplate> = {
   ("relationship"{tuple_delimiter}"低血糖"{tuple_delimiter}"葡萄糖 - 6- 磷酸酶"{tuple_delimiter}"低血糖是肝细胞功能不全时的表现，其机制包括肝细胞大量死亡、糖原合成障碍及糖异生能力下降。"{tuple_delimiter}"病理机制, 病理生理"{tuple_delimiter}9){record_delimiter}
   ("relationship"{tuple_delimiter}"低血糖"{tuple_delimiter}"胰岛素"{tuple_delimiter}"低血糖是肝细胞功能不全时的表现，其机制包括肝细胞大量死亡、糖原合成障碍及糖异生能力下降。"{tuple_delimiter}"病理机制, 病理生理"{tuple_delimiter}9){record_delimiter}`,
     inputVariables: [
-      "tuple_delimiter",
-      "completion_delimiter",
-      "record_delimiter",
+      'tuple_delimiter',
+      'completion_delimiter',
+      'record_delimiter',
     ],
   }),
 };
@@ -420,13 +420,13 @@ export const CONTINUE_ENTITY_EXTRACTION: Record<string, PromptTemplate> = {
     ######################
     Output:`,
     inputVariables: [
-      "language",
-      "entity_types",
-      "tuple_delimiter",
-      "record_delimiter",
-      "completion_delimiter",
-      "isolated_entities",
-      "input_text",
+      'language',
+      'entity_types',
+      'tuple_delimiter',
+      'record_delimiter',
+      'completion_delimiter',
+      'isolated_entities',
+      'input_text',
     ],
   }),
 };

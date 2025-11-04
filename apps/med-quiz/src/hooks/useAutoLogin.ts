@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useEffect, useRef } from "react";
+import { useSession } from 'next-auth/react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Custom hook for automatic session restoration
@@ -13,7 +13,7 @@ export function useAutoLogin() {
 
   useEffect(() => {
     // Skip if already logged in or if we've already attempted auto-login
-    if (status === "authenticated" || hasAttemptedLogin.current) {
+    if (status === 'authenticated' || hasAttemptedLogin.current) {
       return;
     }
 
@@ -23,32 +23,32 @@ export function useAutoLogin() {
     // Check if user was previously logged in (using localStorage)
     // Use try-catch to handle cases where localStorage might not be available (SSR)
     try {
-      const wasLoggedIn = localStorage.getItem("wasLoggedIn");
+      const wasLoggedIn = localStorage.getItem('wasLoggedIn');
 
-      if (wasLoggedIn === "true") {
+      if (wasLoggedIn === 'true') {
         // Attempt to restore the session by checking the current session
         // The SessionProvider will handle the actual session restoration
-        console.log("Attempting auto-login...");
+        console.log('Attempting auto-login...');
 
         // The session check happens automatically through NextAuth
         // We just need to wait for the status to resolve
       }
     } catch (error) {
-      console.warn("Could not access localStorage for auto-login:", error);
+      console.warn('Could not access localStorage for auto-login:', error);
     }
   }, [status]);
 
   useEffect(() => {
     // Track login state changes
     try {
-      if (status === "authenticated" && session) {
-        localStorage.setItem("wasLoggedIn", "true");
-      } else if (status === "unauthenticated") {
+      if (status === 'authenticated' && session) {
+        localStorage.setItem('wasLoggedIn', 'true');
+      } else if (status === 'unauthenticated') {
         // Clear the flag when user is definitely logged out
-        localStorage.removeItem("wasLoggedIn");
+        localStorage.removeItem('wasLoggedIn');
       }
     } catch (error) {
-      console.warn("Could not update login state in localStorage:", error);
+      console.warn('Could not update login state in localStorage:', error);
     }
   }, [session, status]);
 

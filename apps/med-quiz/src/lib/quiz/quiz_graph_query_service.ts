@@ -1,12 +1,12 @@
-import { RecordId, Surreal } from "surrealdb"; // Import Surreal and RecordId from surrealdb
-import { ChunkDocument } from "@/kgrag/database/chunkStorage"; // Assuming ChunkDocument type is still needed
-import { b } from "@/baml_client";
-import { formQuizContent } from "@/lib/utils"; // Import formQuizContent
-import { quiz } from "@/types/quizData.types"; // Import quiz
-import KnowledgeGraphRetriever from "@/kgrag/core/KnowledgeGraphRetriever"; // Import KnowledgeGraphRetriever
-import { semanticSearchResult } from "../../kgrag/database/chunkStorage"; // Import semanticSearchResult
+import { RecordId, Surreal } from 'surrealdb'; // Import Surreal and RecordId from surrealdb
+import { ChunkDocument } from '@/kgrag/database/chunkStorage'; // Assuming ChunkDocument type is still needed
+import { b } from '@/baml_client';
+import { formQuizContent } from '@/lib/utils'; // Import formQuizContent
+import { quiz } from '@/types/quizData.types'; // Import quiz
+import KnowledgeGraphRetriever from '@/kgrag/core/KnowledgeGraphRetriever'; // Import KnowledgeGraphRetriever
+import { semanticSearchResult } from '../../kgrag/database/chunkStorage'; // Import semanticSearchResult
 
-import { language } from "@/kgrag/type"; // Import language type
+import { language } from '@/kgrag/type'; // Import language type
 
 export interface SimilarQuizResult {
   quizId: RecordId;
@@ -37,7 +37,7 @@ export class QuizQueryService {
       // Use a direct SurrealDB query to find nodes connected via 'has_chunk' edge
       // SELECT out FROM $quizId->has_chunk
       const connectedNodesResult = await this.db.query(
-        "SELECT * FROM $quizId->has_chunk FETCH chunks_test",
+        'SELECT * FROM $quizId->has_chunk FETCH chunks_test',
         { quizId },
       );
       console.log(
@@ -117,7 +117,7 @@ export class QuizQueryService {
 
       for (const chunk of chunks) {
         const result = await this.db.query(
-          "SELECT in, out, data FROM $chunkId<-has_chunk WHERE in != $quizId FETCH in",
+          'SELECT in, out, data FROM $chunkId<-has_chunk WHERE in != $quizId FETCH in',
           { chunkId: chunk.id, quizId },
         );
 
@@ -201,7 +201,7 @@ export class QuizQueryService {
       // 2. Get related chunks
       const chunks = await this.getRelatedChunksForQuiz(quizId);
       if (chunks.length === 0) {
-        throw new Error("No related chunks found for quiz");
+        throw new Error('No related chunks found for quiz');
       }
 
       // 3. Get similar quizzes
@@ -242,13 +242,13 @@ export class QuizQueryService {
         // If the BAML function were designed to return multiple variants, this logic would need adjustment.
         variants.push({
           variantText:
-            llmResponse.question || "Generated variant text placeholder",
+            llmResponse.question || 'Generated variant text placeholder',
           sourceChunks: chunks, // Using all related chunks for now
           similarQuizzes: similarQuizzes, // Using all filtered similar quizzes for now
         });
       } else {
         console.warn(
-          "LLM response for variants was null or undefined:",
+          'LLM response for variants was null or undefined:',
           llmResponse,
         );
         // Handle null/undefined response if necessary
@@ -276,8 +276,8 @@ export class QuizQueryService {
     try {
       // 1. Generate an LLM answer using the baseline RAG workflow
       // This step internally performs RAG to get chunks for answer generation
-      const llmAnswer = await b.HyDE_rewrite(userQuery, "中文");
-      console.log("LLM Generated Answer:", llmAnswer);
+      const llmAnswer = await b.HyDE_rewrite(userQuery, '中文');
+      console.log('LLM Generated Answer:', llmAnswer);
 
       // 2. Perform RAG again to get relevant chunks specifically for finding quizzes
       // We use the original user query here. If HyDE was used in rag_workflow,
@@ -289,7 +289,7 @@ export class QuizQueryService {
         );
 
       if (!relevantChunksResult || relevantChunksResult.length === 0) {
-        console.log("No relevant chunks found for the query.");
+        console.log('No relevant chunks found for the query.');
         return [];
       }
 
@@ -311,7 +311,7 @@ export class QuizQueryService {
       );
 
       console.log(
-        "rerankedRelevantChunksResult:",
+        'rerankedRelevantChunksResult:',
         rerankedRelevantChunksResult,
       );
 
@@ -321,7 +321,7 @@ export class QuizQueryService {
       );
       console.log(relevantChunkIds);
       if (relevantChunkIds.length === 0) {
-        console.log("No relevant chunk IDs extracted from RAG result.");
+        console.log('No relevant chunk IDs extracted from RAG result.');
         return [];
       }
 
@@ -330,7 +330,7 @@ export class QuizQueryService {
       // Use a single query to find quizzes connected to any of the relevant chunks
       // SELECT in FROM has_chunk WHERE out IN $relevantChunkIds
       const connectedQuizzesResult = await this.db.query(
-        "SELECT in FROM quiz_to_chunk WHERE out IN $relevantChunkIds",
+        'SELECT in FROM quiz_to_chunk WHERE out IN $relevantChunkIds',
         { relevantChunkIds },
       );
       // console.log(connectedQuizzesResult)
@@ -349,7 +349,7 @@ export class QuizQueryService {
       }
 
       if (quizIds.size === 0) {
-        console.log("No quizzes found connected to the relevant chunks.");
+        console.log('No quizzes found connected to the relevant chunks.');
         return [];
       }
 

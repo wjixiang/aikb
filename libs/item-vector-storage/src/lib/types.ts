@@ -89,7 +89,7 @@ export interface ChunkingEmbeddingGroupInfo {
 export interface IItemVectorStorage {
   getStatus: (groupId: string) => Promise<ItemVectorStorageStatus>;
   semanticSearch: (
-    query: ItemChunkSemanticSearchQuery
+    query: ItemChunkSemanticSearchQuery,
   ) => Promise<Omit<ItemChunk, 'embedding'>>;
   insertItemChunk: (
     group: ChunkingEmbeddingGroupInfo,

@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { note } from "@/types/noteData.types";
-import { ObjectId } from "mongodb";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { note } from '@/types/noteData.types';
+import { ObjectId } from 'mongodb';
 
 export async function POST(req: Request) {
   try {
@@ -12,21 +12,21 @@ export async function POST(req: Request) {
     }
 
     const { db } = await connectToDatabase();
-    const collection = db.collection<note>("note");
+    const collection = db.collection<note>('note');
 
     // 查询所有匹配的文档
     const matchingNotes = await collection
       .find({
         $or: [
           { fileName: { $in: links } },
-          { "metaData.title": { $in: links } },
+          { 'metaData.title': { $in: links } },
         ],
       })
       .project({
         _id: 1,
         oid: 1,
         fileName: 1,
-        "metaData.title": 1,
+        'metaData.title': 1,
       })
       .toArray();
 
@@ -47,9 +47,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ links: linkMap }, { status: 200 });
   } catch (error) {
-    console.error("解析链接错误:", error);
+    console.error('解析链接错误:', error);
     return NextResponse.json(
-      { message: "解析链接失败", error: String(error) },
+      { message: '解析链接失败', error: String(error) },
       { status: 500 },
     );
   }
@@ -57,19 +57,19 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const oid = searchParams.get("oid");
-  const title = searchParams.get("title");
+  const oid = searchParams.get('oid');
+  const title = searchParams.get('title');
 
   if (!oid && !title) {
     return NextResponse.json(
-      { message: "Missing oid or title parameter" },
+      { message: 'Missing oid or title parameter' },
       { status: 400 },
     );
   }
 
   try {
     const { db } = await connectToDatabase();
-    const collection = db.collection<note>("note");
+    const collection = db.collection<note>('note');
 
     let document;
 
@@ -84,20 +84,20 @@ export async function GET(req: Request) {
           document = await collection.findOne({ _id: new ObjectId(oid) });
         }
       } catch (err) {
-        console.error("Error querying by oid:", err);
+        console.error('Error querying by oid:', err);
       }
     }
 
     // 如果通过oid没找到，尝试使用title查询
     if (!document && title) {
       document = await collection.findOne({
-        $or: [{ fileName: title }, { "metaData.title": title }],
+        $or: [{ fileName: title }, { 'metaData.title': title }],
       });
     }
 
     if (!document) {
       return NextResponse.json(
-        { message: "No document found" },
+        { message: 'No document found' },
         { status: 404 },
       );
     }
@@ -110,9 +110,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ note: responseDoc }, { status: 200 });
   } catch (error) {
-    console.error("Error querying document:", error);
+    console.error('Error querying document:', error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: 'Internal server error' },
       { status: 500 },
     );
   }

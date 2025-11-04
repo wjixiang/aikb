@@ -1,10 +1,10 @@
-import { createLoggerWithPrefix } from "../console/logger";
-import { quiz } from "@/types/quizData.types";
-import pLimit from "p-limit";
-import QuizStorage from "./QuizStorage";
-import { embedding } from "@/kgrag/lib/embedding";
-import { quizSelector } from "@/types/quizSelector.types";
-import { MilvusClient } from "@zilliz/milvus2-sdk-node";
+import { createLoggerWithPrefix } from '../console/logger';
+import { quiz } from '@/types/quizData.types';
+import pLimit from 'p-limit';
+import QuizStorage from './QuizStorage';
+import { embedding } from '@/kgrag/lib/embedding';
+import { quizSelector } from '@/types/quizSelector.types';
+import { MilvusClient } from '@zilliz/milvus2-sdk-node';
 
 export interface QuizMilvusStorageConfig {
   semantic_search_threshold: number;
@@ -22,7 +22,7 @@ interface QuizMilvusRecord {
 }
 
 export default class QuizMilvusStorage extends QuizStorage {
-  logger = createLoggerWithPrefix("QuizMilvusStorage");
+  logger = createLoggerWithPrefix('QuizMilvusStorage');
   config: QuizMilvusStorageConfig;
   milvusClient!: MilvusClient;
   collectionName: string;
@@ -31,7 +31,7 @@ export default class QuizMilvusStorage extends QuizStorage {
   constructor(config: QuizMilvusStorageConfig) {
     super();
     this.config = config;
-    this.collectionName = config.milvusCollectionName || "quiz";
+    this.collectionName = config.milvusCollectionName || 'quiz';
     // The constructor cannot be async, so we call an async initialization method
     // and rely on subsequent method calls to await its completion.
     // This is a common pattern for services that need async setup.
@@ -41,14 +41,14 @@ export default class QuizMilvusStorage extends QuizStorage {
   private async ensureInitialized() {
     if (!this.initialized) {
       if (!process.env.MILVUS_URI) {
-        throw new Error("MILVUS_URI environment variable is required");
+        throw new Error('MILVUS_URI environment variable is required');
       }
 
       this.milvusClient = new MilvusClient({
         address: process.env.MILVUS_URI,
         username: process.env.MILVUS_USERNAME,
         password: process.env.MILVUS_PASSWORD,
-        ssl: process.env.MILVUS_URI.startsWith("https"),
+        ssl: process.env.MILVUS_URI.startsWith('https'),
       });
 
       // Ensure collection exists
@@ -64,49 +64,49 @@ export default class QuizMilvusStorage extends QuizStorage {
           collection_name: this.collectionName,
           fields: [
             {
-              name: "oid",
-              data_type: "VarChar",
+              name: 'oid',
+              data_type: 'VarChar',
               is_primary_key: true,
               max_length: 100,
             },
             {
-              name: "content",
-              data_type: "VarChar",
+              name: 'content',
+              data_type: 'VarChar',
               max_length: 10000,
             },
             {
-              name: "cls",
-              data_type: "VarChar",
+              name: 'cls',
+              data_type: 'VarChar',
               max_length: 100,
             },
             {
-              name: "mode",
-              data_type: "VarChar",
+              name: 'mode',
+              data_type: 'VarChar',
               max_length: 10,
             },
             {
-              name: "source",
-              data_type: "VarChar",
+              name: 'source',
+              data_type: 'VarChar',
               max_length: 500,
             },
             {
-              name: "embedding",
-              data_type: "FloatVector",
+              name: 'embedding',
+              data_type: 'FloatVector',
               dim: 1024, // Adjust based on your embedding dimension
             },
             {
-              name: "createdAt",
-              data_type: "Int64",
+              name: 'createdAt',
+              data_type: 'Int64',
             },
           ],
         });
 
         await this.milvusClient.createIndex({
           collection_name: this.collectionName,
-          field_name: "embedding",
-          index_name: "embedding_index",
-          index_type: "IVF_FLAT",
-          metric_type: "COSINE",
+          field_name: 'embedding',
+          index_name: 'embedding_index',
+          index_type: 'IVF_FLAT',
+          metric_type: 'COSINE',
           params: { nlist: 1024 },
         });
         this.logger.info(
@@ -121,7 +121,7 @@ export default class QuizMilvusStorage extends QuizStorage {
         collection_name: this.collectionName,
       });
 
-      if (loadState.state !== "LoadStateLoaded") {
+      if (loadState.state !== 'LoadStateLoaded') {
         this.logger.info(
           `Collection ${this.collectionName} not loaded. Loading...`,
         );
@@ -140,7 +140,7 @@ export default class QuizMilvusStorage extends QuizStorage {
     await this.ensureInitialized(); // Ensure Milvus client is initialized and collection exists
     const embedResult = await embedding(content);
     if (!embedResult || !Array.isArray(embedResult)) {
-      throw new Error("Failed to generate embedding");
+      throw new Error('Failed to generate embedding');
     }
     // Ensure we always return a 1D array
     return embedResult.flat();
@@ -163,7 +163,7 @@ export default class QuizMilvusStorage extends QuizStorage {
               oid: quiz._id.toString(),
               content: QuizStorage.formQuizContent(quiz, true, true),
               cls: quiz.class,
-              mode: "A1", // Default mode
+              mode: 'A1', // Default mode
               source: quiz.source,
               embedding: embedResult,
               createdAt: Date.now(),
@@ -184,7 +184,7 @@ export default class QuizMilvusStorage extends QuizStorage {
       ),
     );
 
-    this.logger.info("Finished importing quizzes to Milvus");
+    this.logger.info('Finished importing quizzes to Milvus');
   }
 
   async batch_embed_quiz(quizzes: quiz[]): Promise<void> {
@@ -252,7 +252,7 @@ export default class QuizMilvusStorage extends QuizStorage {
               const exists = await this.milvusClient.query({
                 collection_name: this.collectionName,
                 expr: `oid == "${quiz._id.toString()}"`,
-                output_fields: ["oid"],
+                output_fields: ['oid'],
                 limit: 1,
               });
 
@@ -268,7 +268,7 @@ export default class QuizMilvusStorage extends QuizStorage {
                       oid: quiz._id.toString(),
                       content: QuizStorage.formQuizContent(quiz, true, true),
                       cls: quiz.class,
-                      mode: "A1", // Default mode
+                      mode: 'A1', // Default mode
                       source: quiz.source,
                       embedding: embedResult,
                       createdAt: Date.now(),
@@ -278,16 +278,16 @@ export default class QuizMilvusStorage extends QuizStorage {
 
                 this.logger.debug(JSON.stringify(milvus_res, null, 2));
                 this.logger.debug(`Synced quiz ${quiz._id} to Milvus`);
-                return "synced";
+                return 'synced';
               } else {
                 this.logger.debug(
                   `Quiz ${quiz._id} already exists in Milvus, skipping`,
                 );
-                return "skipped";
+                return 'skipped';
               }
             } catch (error) {
               this.logger.error(`Error syncing quiz ${quiz._id}: ${error}`);
-              return "failed";
+              return 'failed';
             }
           }),
         ),
@@ -295,7 +295,7 @@ export default class QuizMilvusStorage extends QuizStorage {
 
       quizzesProcessed += batch.length;
       newQuizzesSynced += results.filter(
-        (result) => result === "synced",
+        (result) => result === 'synced',
       ).length;
     }
 
@@ -316,20 +316,20 @@ export default class QuizMilvusStorage extends QuizStorage {
         QuizStorage.formQuizContent(quiz, true, true),
       );
 
-      let expr = "";
+      let expr = '';
       if (quizClass) expr += `cls == "${quizClass}"`;
       if (quizSource) {
-        if (expr) expr += " && ";
+        if (expr) expr += ' && ';
         expr += `source == "${quizSource}"`;
       }
       await this.ensureInitialized(); // Ensure Milvus client is initialized
       const searchResults = await this.milvusClient.search({
         collection_name: this.collectionName,
         data: [queryEmbedding],
-        output_fields: ["oid", "cls", "mode", "source"],
+        output_fields: ['oid', 'cls', 'mode', 'source'],
         limit: top_k,
         expr,
-        metric_type: "COSINE",
+        metric_type: 'COSINE',
         params: { nprobe: 10 },
       });
 
@@ -341,7 +341,7 @@ export default class QuizMilvusStorage extends QuizStorage {
 
       return quizes;
     } catch (error) {
-      this.logger.error("Error during quiz query:", error);
+      this.logger.error('Error during quiz query:', error);
       throw error;
     }
   }

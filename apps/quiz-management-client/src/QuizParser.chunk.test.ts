@@ -41,7 +41,7 @@ D. 3`;
   test('should return original parser when chunkNum is 1', async () => {
     const parser = new QuizParser(sampleQuestions, sampleAnswers);
     const chunks = await parser.chunkInput(1);
-    
+
     expect(chunks).toHaveLength(1);
     expect(chunks[0]).toBe(parser);
   });
@@ -49,13 +49,15 @@ D. 3`;
   test('should split input into specified number of chunks', async () => {
     // Mock the b.SplitPage function to avoid actual API calls
     const { b } = await import('../baml_client/async_client');
-    const mockSplitPage = vi.fn()
-      .mockResolvedValue([{ start: 1, end: 15 }, { start: 16, end: 30 }]);
+    const mockSplitPage = vi.fn().mockResolvedValue([
+      { start: 1, end: 15 },
+      { start: 16, end: 30 },
+    ]);
     b.SplitPage = mockSplitPage;
-    
+
     const parser = new QuizParser(sampleQuestions, sampleAnswers);
     const chunks = await parser.chunkInput(2);
-    
+
     expect(chunks).toHaveLength(2);
     expect(chunks[0]).toBeInstanceOf(QuizParser);
     expect(chunks[1]).toBeInstanceOf(QuizParser);
@@ -63,14 +65,16 @@ D. 3`;
 
   test('should handle error gracefully', async () => {
     const parser = new QuizParser(sampleQuestions, sampleAnswers);
-    
+
     // Import the b module to mock it
     const { b } = await import('../baml_client/async_client');
-    
+
     // Mock the b.SplitPage to throw an error
     const mockSplitPage = vi.fn().mockRejectedValue(new Error('Test error'));
     b.SplitPage = mockSplitPage;
-    
-    await expect(parser.chunkInput(2)).rejects.toThrow('Chunking failed: Test error');
+
+    await expect(parser.chunkInput(2)).rejects.toThrow(
+      'Chunking failed: Test error',
+    );
   });
 });

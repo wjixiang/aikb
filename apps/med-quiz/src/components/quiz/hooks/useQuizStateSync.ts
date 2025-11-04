@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import { toast } from "sonner";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import { toast } from 'sonner';
 
 interface UseQuizStateSyncProps {
   quiz: QuizWithUserAnswer;
@@ -27,7 +27,7 @@ export const useQuizStateSync = ({
   maxRetries = 3,
 }: UseQuizStateSyncProps): UseQuizStateSyncReturn => {
   const [localAnswer, setLocalAnswer] = useState<answerType>(
-    quiz.userAnswer || "",
+    quiz.userAnswer || '',
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export const useQuizStateSync = ({
       clearTimeout(debounceRef.current);
     }
 
-    setLocalAnswer(quiz.userAnswer || "");
+    setLocalAnswer(quiz.userAnswer || '');
     setSaveError(null);
     setRetryCount(0);
     setLastSaved(quiz.userAnswer ? new Date() : null);
@@ -84,7 +84,7 @@ export const useQuizStateSync = ({
       } catch (error) {
         if (isMountedRef.current) {
           const errorMessage =
-            error instanceof Error ? error.message : "保存失败";
+            error instanceof Error ? error.message : '保存失败';
           setSaveError(errorMessage);
           setIsSaving(false);
 
@@ -144,10 +144,10 @@ export const useQuizStateSync = ({
   // Show toast notifications for save states
   useEffect(() => {
     if (saveError && retryCount >= maxRetries) {
-      toast.error("同步失败", {
-        description: "无法保存答案，请检查网络连接",
+      toast.error('同步失败', {
+        description: '无法保存答案，请检查网络连接',
         action: {
-          label: "重试",
+          label: '重试',
           onClick: retrySave,
         },
         duration: 5000,

@@ -4,11 +4,11 @@ import {
   IndexType,
   MetricType,
   SearchSimpleReq,
-} from "@zilliz/milvus2-sdk-node";
-import { Embeddings } from "@langchain/core/embeddings";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import dotenv from "dotenv";
-import { ObjectId } from "mongodb";
+} from '@zilliz/milvus2-sdk-node';
+import { Embeddings } from '@langchain/core/embeddings';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import dotenv from 'dotenv';
+import { ObjectId } from 'mongodb';
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ export interface MongoQuizDocument {
   _id: ObjectId | string;
   content?: string;
   class?: string;
-  mode?: "A1" | "A2" | "A3" | "X" | "B";
+  mode?: 'A1' | 'A2' | 'A3' | 'X' | 'B';
   unit?: string | null;
   source?: string;
   extractedYear?: number | null;
@@ -33,7 +33,7 @@ export interface QuizMilvusDocument {
   oid: string;
   content: string;
   cls: string;
-  mode: "A1" | "A2" | "A3" | "X" | "B";
+  mode: 'A1' | 'A2' | 'A3' | 'X' | 'B';
   unit: string | null;
   source: string;
   extractedYear: number | null;
@@ -91,7 +91,7 @@ export default class QuizEmbeddingManager {
 
     // 初始化Milvus客户端
     if (!process.env.MILVUS_URI) {
-      throw new Error("env empty: MILVUS_URI");
+      throw new Error('env empty: MILVUS_URI');
     }
 
     this.milvusClient = new MilvusClient({
@@ -100,7 +100,7 @@ export default class QuizEmbeddingManager {
       username: process.env.MILVUS_USERNAME as string,
       password: process.env.MILVUS_PASSWORD as string,
       token: process.env.TOKEN as string,
-      ssl: (process.env.MILVUS_URI as string).startsWith("https"),
+      ssl: (process.env.MILVUS_URI as string).startsWith('https'),
     });
 
     if (this.debug) {
@@ -113,7 +113,7 @@ export default class QuizEmbeddingManager {
 
     // 初始化文本分割器
     this.textSplitter = RecursiveCharacterTextSplitter.fromLanguage(
-      "markdown",
+      'markdown',
       {
         chunkSize: this.CHUNK_SIZE,
         chunkOverlap: Math.floor(this.CHUNK_SIZE * 0.1), // 10% 重叠
@@ -126,12 +126,12 @@ export default class QuizEmbeddingManager {
    */
   async checkEmbeddingDimension(): Promise<number> {
     try {
-      const query = "获取嵌入向量维度的测试文本";
+      const query = '获取嵌入向量维度的测试文本';
       const vector = await this.embeddings.embedQuery(query);
-      console.log("生成的向量长度：", vector.length);
+      console.log('生成的向量长度：', vector.length);
       return vector.length;
     } catch (error) {
-      console.warn("获取嵌入维度失败，使用默认值 1536", error);
+      console.warn('获取嵌入维度失败，使用默认值 1536', error);
       return 1536;
     }
   }
@@ -145,81 +145,81 @@ export default class QuizEmbeddingManager {
         collection_name: this.milvusCollectionName,
         fields: [
           {
-            name: "oid",
+            name: 'oid',
             data_type: DataType.VarChar,
             is_primary_key: true,
             type_params: {
-              max_length: "100",
+              max_length: '100',
             },
-            description: "唯一标识符",
+            description: '唯一标识符',
           },
           {
-            name: "content",
+            name: 'content',
             data_type: DataType.VarChar,
-            description: "试题内容或解析",
+            description: '试题内容或解析',
             type_params: {
-              max_length: "10000",
+              max_length: '10000',
             },
           },
           {
-            name: "cls",
+            name: 'cls',
             data_type: DataType.VarChar,
-            description: "科目分类",
+            description: '科目分类',
             type_params: {
-              max_length: "100",
+              max_length: '100',
             },
           },
           {
-            name: "mode",
+            name: 'mode',
             data_type: DataType.VarChar,
-            description: "题目类型",
+            description: '题目类型',
             type_params: {
-              max_length: "10",
+              max_length: '10',
             },
           },
           {
-            name: "unit",
+            name: 'unit',
             data_type: DataType.VarChar,
-            description: "单元",
+            description: '单元',
             type_params: {
-              max_length: "100",
+              max_length: '100',
             },
           },
           {
-            name: "source",
+            name: 'source',
             data_type: DataType.VarChar,
-            description: "来源",
+            description: '来源',
             type_params: {
-              max_length: "500",
+              max_length: '500',
             },
           },
           {
-            name: "extractedYear",
+            name: 'extractedYear',
             data_type: DataType.Int64,
-            description: "提取年份",
+            description: '提取年份',
           },
           {
-            name: "tags",
+            name: 'tags',
             data_type: DataType.Array,
             element_type: DataType.VarChar,
             max_capacity: 50,
             max_length: 100,
-            description: "标签数组",
+            description: '标签数组',
           },
           {
-            name: "createdAt",
+            name: 'createdAt',
             data_type: DataType.Int64,
-            description: "创建时间戳",
+            description: '创建时间戳',
           },
           {
-            name: "updatedAt",
+            name: 'updatedAt',
             data_type: DataType.Int64,
-            description: "更新时间戳",
+            description: '更新时间戳',
           },
           {
-            name: "embedding",
+            name: 'embedding',
             data_type: DataType.FloatVector,
-            description: "嵌入向量",
+            description: '嵌入向量',
             type_params: {
               dim: String(await this.checkEmbeddingDimension()),
             },
@@ -230,7 +230,7 @@ export default class QuizEmbeddingManager {
       console.log(`成功创建集合 ${this.milvusCollectionName}`, createRes);
       return createRes;
     } catch (error) {
-      console.error("创建集合失败:", error);
+      console.error('创建集合失败:', error);
       throw error;
     }
   }
@@ -257,7 +257,7 @@ export default class QuizEmbeddingManager {
       const createRes = await this.createCollection();
 
       // 检查创建是否成功
-      if (createRes.error_code === "Success") {
+      if (createRes.error_code === 'Success') {
         console.log(`成功创建集合 '${this.milvusCollectionName}'`);
 
         // 创建索引
@@ -282,14 +282,14 @@ export default class QuizEmbeddingManager {
    */
   private async ensureCollectionLoaded(): Promise<void> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const loadStatus = await this.milvusClient.getLoadState({
           collection_name: this.milvusCollectionName,
         });
 
-        if (loadStatus.state === "LoadStateLoaded") {
+        if (loadStatus.state === 'LoadStateLoaded') {
           if (this.debug) {
             console.log(`集合 ${this.milvusCollectionName} 已在内存中`);
           }
@@ -297,30 +297,36 @@ export default class QuizEmbeddingManager {
         }
 
         if (this.debug) {
-          console.log(`集合 ${this.milvusCollectionName} 状态: ${loadStatus.state}, 尝试加载 (第 ${attempt} 次)`);
+          console.log(
+            `集合 ${this.milvusCollectionName} 状态: ${loadStatus.state}, 尝试加载 (第 ${attempt} 次)`,
+          );
         }
 
         await this.milvusClient.loadCollectionSync({
           collection_name: this.milvusCollectionName,
           timeout: this.loadTimeout * 1000, // Convert to milliseconds
         });
-        
-        console.log(`集合 ${this.milvusCollectionName} 已加载 (尝试 ${attempt}/${this.maxRetries})`);
+
+        console.log(
+          `集合 ${this.milvusCollectionName} 已加载 (尝试 ${attempt}/${this.maxRetries})`,
+        );
         return;
       } catch (error) {
         lastError = error as Error;
         console.warn(`加载集合失败 (第 ${attempt} 次尝试): ${error}`);
-        
+
         if (attempt < this.maxRetries) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
           console.log(`等待 ${delay}ms 后重试...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
-    
+
     console.error(`加载集合失败，已重试 ${this.maxRetries} 次`);
-    throw lastError || new Error("Unknown error occurred while loading collection");
+    throw (
+      lastError || new Error('Unknown error occurred while loading collection')
+    );
   }
 
   /**
@@ -330,35 +336,35 @@ export default class QuizEmbeddingManager {
     // 定义需要索引的字段及其配置
     const indexConfigs: IndexConfig[] = [
       {
-        field: "oid",
-        indexType: "INVERTED",
+        field: 'oid',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "cls",
-        indexType: "INVERTED",
+        field: 'cls',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "content",
-        indexType: "INVERTED",
+        field: 'content',
+        indexType: 'INVERTED',
         params: {},
       },
       {
-        field: "tags",
-        indexType: "INVERTED",
+        field: 'tags',
+        indexType: 'INVERTED',
         params: {
           extra_params: [
             {
-              key: "element_type",
+              key: 'element_type',
               value: DataType.VarChar,
             },
           ],
         },
       },
       {
-        field: "embedding",
-        indexType: "HNSW",
+        field: 'embedding',
+        indexType: 'HNSW',
         params: {
           metric_type: MetricType.COSINE,
           // 修改：直接传递对象而不是字符串化的JSON
@@ -396,7 +402,7 @@ export default class QuizEmbeddingManager {
         }
       }
     } catch (error) {
-      console.error("索引验证失败:", error);
+      console.error('索引验证失败:', error);
       throw error;
     }
   }
@@ -413,7 +419,7 @@ export default class QuizEmbeddingManager {
         // 根据字段类型构建不同的索引创建参数
         let indexParams;
 
-        if (config.field === "embedding") {
+        if (config.field === 'embedding') {
           // 向量字段的索引参数
           indexParams = {
             collection_name: this.milvusCollectionName,
@@ -438,7 +444,7 @@ export default class QuizEmbeddingManager {
         console.log(`创建索引参数:`, JSON.stringify(indexParams, null, 2));
         const res = await this.milvusClient.createIndex(indexParams);
 
-        if (res.error_code === "Success") {
+        if (res.error_code === 'Success') {
           console.log(
             `成功创建 ${config.indexType} 索引于字段 ${config.field}`,
           );
@@ -467,13 +473,13 @@ export default class QuizEmbeddingManager {
    */
   async prepareChunks(document: MongoQuizDocument, metadata: any = {}) {
     // 确保有内容可分块
-    const content = document.analysis?.discuss || document.content || "";
+    const content = document.analysis?.discuss || document.content || '';
     if (!content) {
-      throw new Error("文档没有可嵌入的内容");
+      throw new Error('文档没有可嵌入的内容');
     }
 
     return this.textSplitter.createDocuments([content], [], {
-      chunkHeader: `\n\nQUIZ: ${document.content || ""}\n\nMETADATA:${JSON.stringify(metadata)}\n\nANALYSIS:\n`,
+      chunkHeader: `\n\nQUIZ: ${document.content || ''}\n\nMETADATA:${JSON.stringify(metadata)}\n\nANALYSIS:\n`,
       appendChunkOverlapHeader: true,
     });
   }
@@ -485,12 +491,12 @@ export default class QuizEmbeddingManager {
     documents: MongoQuizDocument[],
   ): Promise<QuizMilvusDocument[]> {
     const docToEmbed: QuizMilvusDocument[] = documents.map((doc) => ({
-      oid: typeof doc._id === "object" ? doc._id.toString() : doc._id,
-      content: doc.analysis?.discuss || doc.content || "",
-      cls: doc.class || "",
-      mode: doc.mode || "A1",
+      oid: typeof doc._id === 'object' ? doc._id.toString() : doc._id,
+      content: doc.analysis?.discuss || doc.content || '',
+      cls: doc.class || '',
+      mode: doc.mode || 'A1',
       unit: doc.unit || null,
-      source: doc.source || "",
+      source: doc.source || '',
       extractedYear: doc.extractedYear || null,
       tags: doc.tags || [],
     }));
@@ -510,7 +516,7 @@ export default class QuizEmbeddingManager {
         updatedAt: currentTime,
       }));
     } catch (error) {
-      console.error("嵌入生成失败:", error);
+      console.error('嵌入生成失败:', error);
       throw error;
     }
   }
@@ -518,7 +524,10 @@ export default class QuizEmbeddingManager {
   /**
    * 插入文档到Milvus
    */
-  async insertDocuments(documents: QuizMilvusDocument[], requireLoaded: boolean = false): Promise<any> {
+  async insertDocuments(
+    documents: QuizMilvusDocument[],
+    requireLoaded: boolean = false,
+  ): Promise<any> {
     try {
       // 确保集合存在
       const collectionExists = await this.ensureCollectionExists();
@@ -566,12 +575,12 @@ export default class QuizEmbeddingManager {
       const result = await this.milvusClient.query({
         collection_name: this.milvusCollectionName,
         filter: `oid == "${oid}"`,
-        output_fields: ["oid"],
+        output_fields: ['oid'],
       });
 
       return result.data.length > 0;
     } catch (error) {
-      console.error("检查文档存在性失败:", error);
+      console.error('检查文档存在性失败:', error);
       return false;
     }
   }
@@ -596,7 +605,7 @@ export default class QuizEmbeddingManager {
       });
       return stats.data;
     } catch (error) {
-      console.error("获取记录数量失败:", error);
+      console.error('获取记录数量失败:', error);
       throw error;
     }
   }
@@ -612,14 +621,14 @@ export default class QuizEmbeddingManager {
       const {
         limit = 5,
         outputFields = [
-          "oid",
-          "content",
-          "cls",
-          "mode",
-          "unit",
-          "source",
-          "extractedYear",
-          "tags",
+          'oid',
+          'content',
+          'cls',
+          'mode',
+          'unit',
+          'source',
+          'extractedYear',
+          'tags',
         ],
         filter,
       } = options;
@@ -647,7 +656,7 @@ export default class QuizEmbeddingManager {
       const searchQuery: SearchSimpleReq = {
         collection_name: this.milvusCollectionName,
         data: [queryEmbedding],
-        anns_field: "embedding",
+        anns_field: 'embedding',
         limit: limit,
         output_fields: outputFields,
         params: {
@@ -699,7 +708,7 @@ export default class QuizEmbeddingManager {
 
       return { documents, distances };
     } catch (error) {
-      console.error("相似度搜索失败:", error);
+      console.error('相似度搜索失败:', error);
       if (this.debug) {
         console.error(`[DEBUG] Error details:`, error);
       }
@@ -725,14 +734,14 @@ export default class QuizEmbeddingManager {
         limit = 100,
         offset = 0,
         outputFields = [
-          "oid",
-          "content",
-          "cls",
-          "mode",
-          "unit",
-          "source",
-          "extractedYear",
-          "tags",
+          'oid',
+          'content',
+          'cls',
+          'mode',
+          'unit',
+          'source',
+          'extractedYear',
+          'tags',
         ],
       } = options;
 
@@ -758,11 +767,11 @@ export default class QuizEmbeddingManager {
       return queryResult.results.map((item) => {
         const doc: QuizMilvusDocument = {
           oid: item.oid,
-          content: item.content || "",
-          cls: item.cls || "",
-          mode: item.mode || "A1",
+          content: item.content || '',
+          cls: item.cls || '',
+          mode: item.mode || 'A1',
           unit: item.unit || null,
-          source: item.source || "",
+          source: item.source || '',
           extractedYear: item.extractedYear || null,
         };
 
@@ -771,7 +780,7 @@ export default class QuizEmbeddingManager {
         return doc;
       });
     } catch (error) {
-      console.error("过滤搜索失败:", error);
+      console.error('过滤搜索失败:', error);
       throw error;
     }
   }
@@ -783,12 +792,12 @@ export default class QuizEmbeddingManager {
     db: any,
     batchSize: number = 50,
     filter: any = {
-      class: { $in: ["内科学"] },
-      "analysis.discuss": { $ne: "" },
+      class: { $in: ['内科学'] },
+      'analysis.discuss': { $ne: '' },
     },
   ) {
     try {
-      const mongoCollection = db.collection("quiz");
+      const mongoCollection = db.collection('quiz');
       const documents = (await mongoCollection
         .find(filter)
         .toArray()) as MongoQuizDocument[];
@@ -808,7 +817,7 @@ export default class QuizEmbeddingManager {
 
         for (const doc of chunk) {
           const docId =
-            typeof doc._id === "object" ? doc._id.toString() : doc._id;
+            typeof doc._id === 'object' ? doc._id.toString() : doc._id;
           if (!(await this.checkDocumentExists(docId))) {
             docsToEmbed.push(doc);
           }
@@ -826,7 +835,7 @@ export default class QuizEmbeddingManager {
       console.log(`同步完成，共嵌入 ${processedCount} 个新文档到 Milvus`);
       return processedCount;
     } catch (error) {
-      console.error("嵌入全部题目失败:", error);
+      console.error('嵌入全部题目失败:', error);
       throw error;
     }
   }

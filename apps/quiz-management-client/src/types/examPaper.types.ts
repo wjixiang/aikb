@@ -1,4 +1,4 @@
-import { quiz } from "./quizData.types";
+import { quiz } from './quizData.types';
 
 export type QuizWithoutId = Omit<quiz, '_id'>;
 
@@ -66,8 +66,14 @@ export interface IExamPaperStorage {
  */
 export interface IExamPaperService {
   loadExamPaper(id: string): Promise<ExamPaper | null>;
-  createExamPaper(data: Omit<ExamPaper, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExamPaper>;
-  processExamPaper(id: string, config?: Partial<ExamPaperConfig>, chunkNum?: number): Promise<ExamPaperProcessResult>;
+  createExamPaper(
+    data: Omit<ExamPaper, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ExamPaper>;
+  processExamPaper(
+    id: string,
+    config?: Partial<ExamPaperConfig>,
+    chunkNum?: number,
+  ): Promise<ExamPaperProcessResult>;
   listExamPapers(): Promise<ExamPaper[]>;
   updateExamPaper(id: string, updates: Partial<ExamPaper>): Promise<ExamPaper>;
   deleteExamPaper(id: string): Promise<boolean>;

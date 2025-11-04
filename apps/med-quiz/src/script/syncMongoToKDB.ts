@@ -1,33 +1,33 @@
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import KDBManager, { SyncStatus } from "@/lib/db/KDBManager";
-import { connectToDatabase } from "@/lib/db/mongodb"; // Assuming this utility exists and works
-import { note } from "@/types/noteData.types";
-import { Collection, Document } from "mongodb"; // Import MongoDB types
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import KDBManager, { SyncStatus } from '@/lib/db/KDBManager';
+import { connectToDatabase } from '@/lib/db/mongodb'; // Assuming this utility exists and works
+import { note } from '@/types/noteData.types';
+import { Collection, Document } from 'mongodb'; // Import MongoDB types
 
 async function main() {
   const argv = await yargs(hideBin(process.argv))
-    .option("collection", {
-      alias: "c",
-      type: "string",
-      description: "Name of the MongoDB collection to sync",
+    .option('collection', {
+      alias: 'c',
+      type: 'string',
+      description: 'Name of the MongoDB collection to sync',
       demandOption: true, // Make the collection name mandatory
     })
-    .option("batchSize", {
-      alias: "b",
-      type: "number",
-      description: "Batch size for KDBManager processing",
+    .option('batchSize', {
+      alias: 'b',
+      type: 'number',
+      description: 'Batch size for KDBManager processing',
       default: 1,
     })
-    .option("target", {
-      alias: "t",
-      type: "string",
-      description: "Target database(s) to sync to: milvus, neo4j, or both",
-      choices: ["milvus", "neo4j", "both"],
-      default: "both",
+    .option('target', {
+      alias: 't',
+      type: 'string',
+      description: 'Target database(s) to sync to: milvus, neo4j, or both',
+      choices: ['milvus', 'neo4j', 'both'],
+      default: 'both',
     })
     .help()
-    .alias("help", "h").argv;
+    .alias('help', 'h').argv;
 
   const collectionName = argv.collection;
   const batchSize = argv.batchSize;
@@ -38,11 +38,11 @@ async function main() {
   let dbConnection;
   try {
     // 1. Connect to MongoDB
-    console.log("Connecting to MongoDB...");
+    console.log('Connecting to MongoDB...');
     dbConnection = await connectToDatabase();
     const db = dbConnection.db;
     const mongoCollection: Collection<Document> = db.collection(collectionName);
-    console.log("Connected to MongoDB.");
+    console.log('Connected to MongoDB.');
 
     // 2. Fetch all documents from the specified collection
     console.log(`Fetching documents from collection '${collectionName}'...`);
@@ -52,7 +52,7 @@ async function main() {
     console.log(`Fetched ${documents.length} documents.`);
 
     if (documents.length === 0) {
-      console.log("No documents found in the collection. Exiting.");
+      console.log('No documents found in the collection. Exiting.');
       return;
     }
 
@@ -65,7 +65,7 @@ async function main() {
       .map((doc) => {
         // Basic transformation/validation example:
         // Ensure oid exists, content is an array, etc.
-        if (!doc.oid || typeof doc.oid !== "string") {
+        if (!doc.oid || typeof doc.oid !== 'string') {
           console.warn(`Document missing or invalid oid, skipping: ${doc._id}`);
           return null; // Filter out invalid docs later
         }
@@ -75,7 +75,7 @@ async function main() {
           metaData: doc.metaData || {},
           content: Array.isArray(doc.content)
             ? doc.content
-            : [{ timeStamp: new Date(), fileContent: doc.content || "" }], // Ensure content is array
+            : [{ timeStamp: new Date(), fileContent: doc.content || '' }], // Ensure content is array
           // Map other fields if necessary
         } as note;
       })
@@ -83,7 +83,7 @@ async function main() {
       .filter((note) => {
         // Exclude documents with "excalidraw" in metadata.tags
         const tags = note.metaData?.tags;
-        if (Array.isArray(tags) && tags.includes("excalidraw")) {
+        if (Array.isArray(tags) && tags.includes('excalidraw')) {
           console.log(`Skipping Excalidraw document: ${note.oid}`);
           return false;
         }
@@ -91,7 +91,7 @@ async function main() {
       });
 
     if (notesToSync.length === 0) {
-      console.log("No valid notes found after filtering. Exiting.");
+      console.log('No valid notes found after filtering. Exiting.');
       return;
     }
     console.log(`Prepared ${notesToSync.length} notes for synchronization.`);
@@ -107,7 +107,7 @@ async function main() {
 
     // Create a modified bulkAddNote function based on target
     const bulkAddNoteWithTarget = async (notes: note[]) => {
-      if (target === "both") {
+      if (target === 'both') {
         return kdbManager.bulkAddNote(notes, {
           batchSize: batchSize,
           onProgress: ({ completed, total }) => {
@@ -118,7 +118,7 @@ async function main() {
             }
           },
         });
-      } else if (target === "milvus") {
+      } else if (target === 'milvus') {
         // Only sync to Milvus
         const { db } = await connectToDatabase();
         const mongodbNoteCollection = db.collection<note>(
@@ -148,7 +148,7 @@ async function main() {
         const milvusDocs = notes.map((note) => ({
           oid: note.oid,
           title: note.fileName,
-          content: note.content[0]?.fileContent || "",
+          content: note.content[0]?.fileContent || '',
           partition_key: null,
         }));
 
@@ -168,10 +168,10 @@ async function main() {
 
         return notes.map((note) => ({
           status: SyncStatus.FULL_SYNC,
-          message: "Synced to MongoDB and Milvus only",
+          message: 'Synced to MongoDB and Milvus only',
           recordIds: { oid: note.oid },
         }));
-      } else if (target === "neo4j") {
+      } else if (target === 'neo4j') {
         // Only sync to Neo4j
         const { db } = await connectToDatabase();
         const mongodbNoteCollection = db.collection<note>(
@@ -201,14 +201,14 @@ async function main() {
         const neo4jNodes = notes.map((note) => ({
           oid: note.oid,
           fileName: note.fileName,
-          content: note.content[0]?.fileContent || "",
+          content: note.content[0]?.fileContent || '',
           metaData: note.metaData || {},
         }));
-        await kdbManager.neo4jManager.bulkCreateNodes("Note", neo4jNodes);
+        await kdbManager.neo4jManager.bulkCreateNodes('Note', neo4jNodes);
 
         return notes.map((note) => ({
           status: SyncStatus.FULL_SYNC,
-          message: "Synced to MongoDB and Neo4j only",
+          message: 'Synced to MongoDB and Neo4j only',
           recordIds: { oid: note.oid },
         }));
       }
@@ -218,7 +218,7 @@ async function main() {
     const results = await bulkAddNoteWithTarget(notesToSync);
 
     // 6. Log results
-    console.log("Synchronization complete.");
+    console.log('Synchronization complete.');
     const successCount = results.filter(
       (r) =>
         r.status === SyncStatus.FULL_SYNC ||
@@ -235,22 +235,22 @@ async function main() {
     console.log(`Failed Syncs: ${failedCount}`);
 
     if (failedCount > 0) {
-      console.log("\nFailed Notes (OIDs):");
+      console.log('\nFailed Notes (OIDs):');
       results
         .filter((r) => r.status === SyncStatus.SYNC_FAILED)
         .forEach((r) =>
           console.log(`- OID: ${r.recordIds?.oid}, Reason: ${r.message}`),
         );
     }
-    console.log("--------------------\n");
+    console.log('--------------------\n');
   } catch (error) {
-    console.error("An error occurred during the sync process:", error);
+    console.error('An error occurred during the sync process:', error);
     process.exit(1); // Exit with error code
   } finally {
     // Close MongoDB connection if it was established
     // Assuming connectToDatabase doesn't return the client directly to close
     // Add client closing logic if your connectToDatabase utility provides it
-    console.log("Sync script finished.");
+    console.log('Sync script finished.');
   }
 }
 

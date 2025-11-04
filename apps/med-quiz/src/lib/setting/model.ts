@@ -1,7 +1,7 @@
-import { CustomModel } from "../langchain/aiParams";
-import { atom, createStore, useAtomValue } from "jotai";
+import { CustomModel } from '../langchain/aiParams';
+import { atom, createStore, useAtomValue } from 'jotai';
 
-import { type ChainType } from "../langchain/chainFactory";
+import { type ChainType } from '../langchain/chainFactory';
 import {
   BUILTIN_CHAT_MODELS,
   BUILTIN_EMBEDDING_MODELS,
@@ -9,7 +9,7 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_SYSTEM_PROMPT,
   EmbeddingModelProviders,
-} from "../langchain/constants";
+} from '../langchain/constants';
 
 export interface CopilotSettings {
   plusLicenseKey: string;
@@ -157,7 +157,7 @@ export function sanitizeSettings(settings: CopilotSettings): CopilotSettings {
         return {
           ...m,
           provider:
-            m.provider === "azure_openai"
+            m.provider === 'azure_openai'
               ? EmbeddingModelProviders.AZURE_OPENAI
               : m.provider,
         };

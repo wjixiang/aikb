@@ -1,13 +1,13 @@
-import winston from "winston";
-import { Db, ObjectId, WithId, Filter } from "mongodb";
-import { createLoggerWithPrefix } from "../console/logger";
-import { quizSelector } from "@/types/quizSelector.types";
-import pLimit from "p-limit";
-import { connectToDatabase } from "../db/mongodb";
-import { oid, quiz, SurrealQuizRecord } from "@/types/quizData.types";
-import { surrealDBClient } from "@/kgrag/database/surrrealdbClient";
-import { r, RecordId } from "surrealdb";
-import { formQuizContent } from "../utils";
+import winston from 'winston';
+import { Db, ObjectId, WithId, Filter } from 'mongodb';
+import { createLoggerWithPrefix } from '../console/logger';
+import { quizSelector } from '@/types/quizSelector.types';
+import pLimit from 'p-limit';
+import { connectToDatabase } from '../db/mongodb';
+import { oid, quiz, SurrealQuizRecord } from '@/types/quizData.types';
+import { surrealDBClient } from '@/kgrag/database/surrrealdbClient';
+import { r, RecordId } from 'surrealdb';
+import { formQuizContent } from '../utils';
 
 /**
  * @interface PracticeRecord
@@ -69,7 +69,7 @@ export interface PracticeRecordData {
   /**
    * The answer record
    */
-  selectrecord: oid[] | "";
+  selectrecord: oid[] | '';
   subject: string;
   tags?: string[];
 }
@@ -94,20 +94,20 @@ export default class QuizStorage {
    * @description Initializes the QuizStorage class and sets up the logger.
    */
   constructor() {
-    this.logger = createLoggerWithPrefix("QuizStorage");
+    this.logger = createLoggerWithPrefix('QuizStorage');
   }
 
   /**
    * Pushes a new practice record to the database
    * @param record Practice record data to insert
    */
-  async pushRecord(record: Omit<PracticeRecord, "_id"> & { tags?: string[] }) {
+  async pushRecord(record: Omit<PracticeRecord, '_id'> & { tags?: string[] }) {
     try {
       const { db } = await connectToDatabase();
       const result = await db
         .collection<
-          Omit<PracticeRecordData, "_id" | "subject">
-        >("practicerecords")
+          Omit<PracticeRecordData, '_id' | 'subject'>
+        >('practicerecords')
         .insertOne({
           userid: record.userid, // userId is now a string
           quizid: new ObjectId(record.quizid), // Convert quizId string to ObjectId
@@ -128,7 +128,7 @@ export default class QuizStorage {
 
       return result.insertedId;
     } catch (error) {
-      this.logger.error("Failed to insert practice record:", error);
+      this.logger.error('Failed to insert practice record:', error);
       throw error;
     }
   }
@@ -148,7 +148,7 @@ export default class QuizStorage {
     try {
       const { db } = await connectToDatabase();
       const records = await db
-        .collection<PracticeRecordData>("practicerecords")
+        .collection<PracticeRecordData>('practicerecords')
         .find({
           userid: userId,
           timestamp: { $gte: startDate, $lte: endDate },
@@ -157,10 +157,10 @@ export default class QuizStorage {
         .toArray();
       return records.map((record) => ({
         ...record,
-        quizid: record.quizid ? record.quizid.toString() : "",
+        quizid: record.quizid ? record.quizid.toString() : '',
       })) as PracticeRecord[];
     } catch (error) {
-      this.logger.error("Failed to fetch practice records:", error);
+      this.logger.error('Failed to fetch practice records:', error);
       throw error;
     }
   }
@@ -178,7 +178,7 @@ export default class QuizStorage {
     try {
       const { db } = await connectToDatabase();
       return (await db
-        .collection("practicerecords")
+        .collection('practicerecords')
         .find({
           userid: userId,
           quizid: new ObjectId(quizId),
@@ -206,7 +206,7 @@ export default class QuizStorage {
       const { db } = await connectToDatabase();
       const quizClassMap: Record<string, string> = {};
       const quizzes = await db
-        .collection("quiz")
+        .collection('quiz')
         .find(
           {
             _id: { $in: quizIds },
@@ -216,12 +216,12 @@ export default class QuizStorage {
         .toArray();
 
       quizzes.forEach((quiz) => {
-        quizClassMap[quiz._id.toString()] = quiz.class || "未分类";
+        quizClassMap[quiz._id.toString()] = quiz.class || '未分类';
       });
 
       return quizClassMap;
     } catch (error) {
-      this.logger.error("Failed to create quiz subject map:", error);
+      this.logger.error('Failed to create quiz subject map:', error);
       throw error;
     }
   }
@@ -258,19 +258,19 @@ export default class QuizStorage {
   ): Promise<{ quiz: quiz; score: number }[]> {
     // Set default weights if not provided - 降低错误率权重，增加其他因素权重
     const weights = selector.scoringWeights || {
-      errorRate: 0.4,      // 降低错误率权重
+      errorRate: 0.4, // 降低错误率权重
       consecutiveWrong: 0.3, // 增加连续错误权重
-      recency: 0.3,        // 增加时间因素权重
+      recency: 0.3, // 增加时间因素权重
     };
 
     // Validate weights sum to 1
     const sum = weights.errorRate + weights.consecutiveWrong + weights.recency;
     if (Math.abs(sum - 1) > 0.001) {
-      throw new Error("Scoring weights must sum to 1");
+      throw new Error('Scoring weights must sum to 1');
     }
     try {
       const { db } = await connectToDatabase();
-      this.logger.debug("Starting getWrongQuizzes", {
+      this.logger.debug('Starting getWrongQuizzes', {
         userId,
         selector: JSON.stringify(selector),
       });
@@ -283,7 +283,7 @@ export default class QuizStorage {
         ...(selector.mode && selector.mode.length > 0
           ? {
               type: {
-                $in: selector.mode as ("A1" | "A2" | "A3" | "B" | "X")[],
+                $in: selector.mode as ('A1' | 'A2' | 'A3' | 'B' | 'X')[],
               },
             }
           : {}),
@@ -300,16 +300,19 @@ export default class QuizStorage {
 
       // Note: Tag filtering will be applied later after scoring to ensure we have enough quizzes
       // to meet the requested quizNum. We'll collect tag filter info here but apply it later.
-      let tagFilterInfo: { tags: (string | { value: string; type?: "private" | "public" })[], filterMode: "AND" | "OR" } | null = null;
+      let tagFilterInfo: {
+        tags: (string | { value: string; type?: 'private' | 'public' })[];
+        filterMode: 'AND' | 'OR';
+      } | null = null;
       if (selector.tags && selector.tags.length > 0) {
         tagFilterInfo = {
           tags: selector.tags,
-          filterMode: selector.tagFilterMode || "AND"
+          filterMode: selector.tagFilterMode || 'AND',
         };
       }
-      this.logger.debug("Quiz pre-filter query:", quizQuery);
+      this.logger.debug('Quiz pre-filter query:', quizQuery);
       const matchingQuizzes = await db
-        .collection<quiz>("quiz")
+        .collection<quiz>('quiz')
         .find(quizQuery, { projection: { _id: 1 } })
         .toArray();
       const matchingQuizIds = matchingQuizzes.map((q) => q._id.toString());
@@ -322,7 +325,7 @@ export default class QuizStorage {
 
       if (matchingQuizIds.length === 0) {
         this.logger.debug(
-          "No matching quizzes found after pre-filter, returning empty array.",
+          'No matching quizzes found after pre-filter, returning empty array.',
         );
         return [];
       }
@@ -331,19 +334,23 @@ export default class QuizStorage {
       let tagFilteredQuizIds: ObjectId[] = [];
       if (tagFilterInfo) {
         // Import the function dynamically to avoid circular dependencies
-        const { getQuizIdsByTags } = await import("./getQuizIdsByTags");
+        const { getQuizIdsByTags } = await import('./getQuizIdsByTags');
         tagFilteredQuizIds = await getQuizIdsByTags(
           tagFilterInfo.tags,
           userId,
-          tagFilterInfo.filterMode
+          tagFilterInfo.filterMode,
         );
-        
+
         if (tagFilteredQuizIds.length === 0) {
-          this.logger.debug("No quizzes found with the specified tags for getWrongQuizzes");
+          this.logger.debug(
+            'No quizzes found with the specified tags for getWrongQuizzes',
+          );
           return [];
         }
-        
-        this.logger.debug(`Found ${tagFilteredQuizIds.length} quizzes matching tag criteria`);
+
+        this.logger.debug(
+          `Found ${tagFilteredQuizIds.length} quizzes matching tag criteria`,
+        );
       }
 
       // Simplified aggregation pipeline
@@ -361,19 +368,21 @@ export default class QuizStorage {
               : {}),
             quizid: {
               $in: tagFilterInfo
-                ? tagFilteredQuizIds.filter(id => matchingQuizIds.includes(id.toString()))
-                : matchingQuizIds.map((id) => new ObjectId(id))
+                ? tagFilteredQuizIds.filter((id) =>
+                    matchingQuizIds.includes(id.toString()),
+                  )
+                : matchingQuizIds.map((id) => new ObjectId(id)),
             },
           },
         },
         {
           $group: {
-            _id: "$quizid",
+            _id: '$quizid',
             totalAttempts: { $sum: 1 },
-            wrongAttempts: { $sum: { $cond: ["$correct", 0, 1] } },
-            lastAttemptTimestamp: { $max: "$timestamp" },
+            wrongAttempts: { $sum: { $cond: ['$correct', 0, 1] } },
+            lastAttemptTimestamp: { $max: '$timestamp' },
             attempts: {
-              $push: { correct: "$correct", timestamp: "$timestamp" },
+              $push: { correct: '$correct', timestamp: '$timestamp' },
             },
           },
         },
@@ -394,7 +403,7 @@ export default class QuizStorage {
       ];
 
       const aggregatedQuizStats = (await db
-        .collection("practicerecords")
+        .collection('practicerecords')
         .aggregate(pipeline)
         .toArray()) as {
         _id: ObjectId; // This is the quizid
@@ -454,7 +463,7 @@ export default class QuizStorage {
           for (const attempt of sortedAttempts) {
             const daysAgo =
               (now - attempt.timestamp.getTime()) / (1000 * 60 * 60 * 24);
-            
+
             if (attempt.correct) {
               // 正确回答：使用正向衰减（越近权重越小，避免重复抽取）
               const weight = Math.exp(-0.3 * daysAgo); // 较快的衰减速度
@@ -474,14 +483,19 @@ export default class QuizStorage {
           const daysSinceLastAttempt =
             (now - new Date(item.lastAttemptTimestamp).getTime()) /
             (1000 * 60 * 60 * 24);
-          
+
           // 计算最早和最晚练习时间，用于动态半衰期
-          const firstAttemptTimestamp = sortedAttempts[0]?.timestamp.getTime() || now;
-          const practiceDurationDays = (now - firstAttemptTimestamp) / (1000 * 60 * 60 * 24);
-          
+          const firstAttemptTimestamp =
+            sortedAttempts[0]?.timestamp.getTime() || now;
+          const practiceDurationDays =
+            (now - firstAttemptTimestamp) / (1000 * 60 * 60 * 24);
+
           // 动态半衰期：练习时间越长，半衰期越长（避免频繁重复）
-          const dynamicHalfLife = Math.max(7, Math.min(30, practiceDurationDays / 2));
-          
+          const dynamicHalfLife = Math.max(
+            7,
+            Math.min(30, practiceDurationDays / 2),
+          );
+
           const recentPracticePenalty = Math.min(
             1.5, // 提高最大惩罚值
             1.2 * Math.exp(-daysSinceLastAttempt / dynamicHalfLife), // 动态半衰期
@@ -501,17 +515,22 @@ export default class QuizStorage {
 
           // 成功练习奖励：近期正确回答显著降低优先级
           const recentCorrectAttempts = sortedAttempts
-            .filter(attempt => attempt.correct)
+            .filter((attempt) => attempt.correct)
             .slice(-3); // 考虑最近3次正确回答
-          
+
           let successReward = 0;
           if (recentCorrectAttempts.length > 0) {
-            const mostRecentCorrect = recentCorrectAttempts[recentCorrectAttempts.length - 1];
+            const mostRecentCorrect =
+              recentCorrectAttempts[recentCorrectAttempts.length - 1];
             const daysSinceLastCorrect =
-              (now - mostRecentCorrect.timestamp.getTime()) / (1000 * 60 * 60 * 24);
-            
+              (now - mostRecentCorrect.timestamp.getTime()) /
+              (1000 * 60 * 60 * 24);
+
             // 成功奖励：越近的正确回答，奖励越大（降低优先级）
-            successReward = Math.min(0.5, 0.4 * Math.exp(-daysSinceLastCorrect / 2));
+            successReward = Math.min(
+              0.5,
+              0.4 * Math.exp(-daysSinceLastCorrect / 2),
+            );
           }
 
           // 优化综合评分公式：确保各因素合理平衡
@@ -519,12 +538,13 @@ export default class QuizStorage {
           const baseScore =
             dynamicErrorRate * weights.errorRate +
             maxConsecutiveWrong * weights.consecutiveWrong;
-          
+
           // 时间因素调整：遗忘因子和近期惩罚/成功奖励的平衡
-          const timeAdjustedScore = baseScore *
+          const timeAdjustedScore =
+            baseScore *
             (forgettingFactor * weights.recency) *
             (1 - Math.min(1, recentPracticePenalty + successReward));
-          
+
           // 最终分数确保非负
           const score = Math.max(0, timeAdjustedScore);
 
@@ -562,14 +582,14 @@ export default class QuizStorage {
           ? filteredQuizzes.slice(0, selector.quizNum)
           : filteredQuizzes;
 
-      this.logger.debug("Returning wrong quizzes", {
+      this.logger.debug('Returning wrong quizzes', {
         count: result.length,
         requested: selector.quizNum,
         sampleIds: result.slice(0, 5).map((q) => q.quiz._id),
       });
       return result;
     } catch (error) {
-      this.logger.error("Failed to get wrong quizzes:", error);
+      this.logger.error('Failed to get wrong quizzes:', error);
       throw error;
     }
   }
@@ -594,7 +614,7 @@ export default class QuizStorage {
         tags,
         tagFilterMode,
         excludeTags,
-        excludeTagFilterMode
+        excludeTagFilterMode,
       } = selector;
       if (quizNum > 350) {
         throw new Error(
@@ -608,7 +628,7 @@ export default class QuizStorage {
       const query: Filter<quiz> = {
         ...(cls && cls.length > 0 ? { class: { $in: cls } } : {}),
         ...(mode && mode.length > 0
-          ? { type: { $in: mode as ("A1" | "A2" | "A3" | "B" | "X")[] } }
+          ? { type: { $in: mode as ('A1' | 'A2' | 'A3' | 'B' | 'X')[] } }
           : {}),
         ...(unit && unit.length > 0 ? { unit: { $in: unit } } : {}),
         ...(source && source.length > 0 ? { source: { $in: source } } : {}),
@@ -623,14 +643,18 @@ export default class QuizStorage {
       let tagFilteredQuizIds: ObjectId[] = [];
       if (tags && tags.length > 0 && email) {
         // Import the function at the top of the file
-        const { getQuizIdsByTags } = await import("./getQuizIdsByTags");
-        tagFilteredQuizIds = await getQuizIdsByTags(tags, email, tagFilterMode || "AND");
-        
+        const { getQuizIdsByTags } = await import('./getQuizIdsByTags');
+        tagFilteredQuizIds = await getQuizIdsByTags(
+          tags,
+          email,
+          tagFilterMode || 'AND',
+        );
+
         if (tagFilteredQuizIds.length === 0) {
-          this.logger.debug("No quizzes found with the specified tags");
+          this.logger.debug('No quizzes found with the specified tags');
           return [];
         }
-        
+
         // Add tag filter to the query
         query._id = { $in: tagFilteredQuizIds as any };
       }
@@ -639,18 +663,31 @@ export default class QuizStorage {
       let excludeTagFilteredQuizIds: ObjectId[] = [];
       if (excludeTags && excludeTags.length > 0 && email) {
         // Import the function at the top of the file
-        const { getQuizIdsToExcludeByTags } = await import("./getQuizIdsByTags");
-        excludeTagFilteredQuizIds = await getQuizIdsToExcludeByTags(excludeTags, email, excludeTagFilterMode || "AND");
-        
+        const { getQuizIdsToExcludeByTags } = await import(
+          './getQuizIdsByTags'
+        );
+        excludeTagFilteredQuizIds = await getQuizIdsToExcludeByTags(
+          excludeTags,
+          email,
+          excludeTagFilterMode || 'AND',
+        );
+
         if (excludeTagFilteredQuizIds.length > 0) {
           // Add exclude tag filter to the query - exclude these quiz IDs
-          if (query._id && typeof query._id === 'object' && '$in' in query._id) {
+          if (
+            query._id &&
+            typeof query._id === 'object' &&
+            '$in' in query._id
+          ) {
             // If there's already an _id filter (from include tags), combine with $nin
             const includedIds = (query._id as any).$in;
             if (Array.isArray(includedIds)) {
               // Filter out excluded IDs from the included IDs
-              const filteredIds = includedIds.filter((id: any) =>
-                !excludeTagFilteredQuizIds.some(excludeId => excludeId.equals(id))
+              const filteredIds = includedIds.filter(
+                (id: any) =>
+                  !excludeTagFilteredQuizIds.some((excludeId) =>
+                    excludeId.equals(id),
+                  ),
               );
               query._id = { $in: filteredIds };
             }
@@ -668,7 +705,7 @@ export default class QuizStorage {
       // Handle review review mode
 
       switch (reviewMode) {
-        case "unpracticed":
+        case 'unpracticed':
           if (!email) {
             this.logger.warn(
               "Email is required for 'unpracticed' review mode.",
@@ -677,73 +714,97 @@ export default class QuizStorage {
             break;
           }
           const practicedQuizIds = await db
-            .collection<PracticeRecordData>("practicerecords")
-            .distinct("quizid", { userid: email });
+            .collection<PracticeRecordData>('practicerecords')
+            .distinct('quizid', { userid: email });
 
           // Add filter to exclude practiced quizzes, converting ObjectId to string
           // If we already have tag filters, we need to combine them
-          if (query._id && typeof query._id === 'object' && "$in" in query._id) {
+          if (
+            query._id &&
+            typeof query._id === 'object' &&
+            '$in' in query._id
+          ) {
             // Combine with existing tag filters
-            const currentIds = (query._id.$in as any[]).map(id => id instanceof ObjectId ? id : new ObjectId(id));
+            const currentIds = (query._id.$in as any[]).map((id) =>
+              id instanceof ObjectId ? id : new ObjectId(id),
+            );
             query._id = {
-              $in: currentIds.filter(id =>
-                !(practicedQuizIds as ObjectId[]).some(practicedId => practicedId.equals(id))
-              ) as any
+              $in: currentIds.filter(
+                (id) =>
+                  !(practicedQuizIds as ObjectId[]).some((practicedId) =>
+                    practicedId.equals(id),
+                  ),
+              ) as any,
             };
           } else {
             query._id = { $nin: practicedQuizIds as any };
           }
-          
+
           quizes = await db
-            .collection<quiz>("quiz")
+            .collection<quiz>('quiz')
             .aggregate<quiz>([{ $match: query }, ...pipeline])
             .limit(quizNum)
             .toArray();
           break;
-        case "review":
+        case 'review':
           if (email) {
             // For review mode, we need to handle tag filtering differently
             // since getWrongQuizzes doesn't directly support tags
             let filteredWrongQuizzes;
-            
+
             if (tags && tags.length > 0) {
               // If tags are provided, we need to filter by tags
               if (tagFilteredQuizIds.length === 0) {
                 // No quizzes match the tags, return empty array
-                this.logger.debug("No quizzes found with the specified tags for review mode");
+                this.logger.debug(
+                  'No quizzes found with the specified tags for review mode',
+                );
                 quizes = [];
                 break;
               }
-              
+
               // First get wrong quizzes without tag filtering
               filteredWrongQuizzes = await this.getWrongQuizzes(email, {
                 ...selector,
                 // Temporarily remove tags to avoid conflict
                 tags: undefined,
-                tagFilterMode: undefined
+                tagFilterMode: undefined,
               });
-              
+
               // Then filter by tags
-              filteredWrongQuizzes = filteredWrongQuizzes
-                .filter(item => tagFilteredQuizIds.some(id => id.equals(new ObjectId(item.quiz._id))));
+              filteredWrongQuizzes = filteredWrongQuizzes.filter((item) =>
+                tagFilteredQuizIds.some((id) =>
+                  id.equals(new ObjectId(item.quiz._id)),
+                ),
+              );
             } else {
               // No tags provided, get wrong quizzes normally
-              filteredWrongQuizzes = await this.getWrongQuizzes(email, selector);
-            }
-            
-            // Handle exclude tags if provided
-            if (excludeTags && excludeTags.length > 0 && excludeTagFilteredQuizIds.length > 0) {
-              filteredWrongQuizzes = filteredWrongQuizzes.filter(item =>
-                !excludeTagFilteredQuizIds.some(id => id.equals(new ObjectId(item.quiz._id)))
+              filteredWrongQuizzes = await this.getWrongQuizzes(
+                email,
+                selector,
               );
             }
-            
-            quizes = filteredWrongQuizzes.map(item => item.quiz);
+
+            // Handle exclude tags if provided
+            if (
+              excludeTags &&
+              excludeTags.length > 0 &&
+              excludeTagFilteredQuizIds.length > 0
+            ) {
+              filteredWrongQuizzes = filteredWrongQuizzes.filter(
+                (item) =>
+                  !excludeTagFilteredQuizIds.some((id) =>
+                    id.equals(new ObjectId(item.quiz._id)),
+                  ),
+              );
+            }
+
+            quizes = filteredWrongQuizzes.map((item) => item.quiz);
             break;
           }
         default:
           quizes = await db
-            .collection<quiz>("quiz")
+            .collection<quiz>('quiz')
             .aggregate<quiz>([{ $match: query }, ...pipeline])
             .limit(quizNum)
             .toArray();
@@ -754,7 +815,7 @@ export default class QuizStorage {
 
       return quizes;
     } catch (error) {
-      this.logger.error("Quiz fetch error:", error);
+      this.logger.error('Quiz fetch error:', error);
       throw error;
     }
   }
@@ -794,7 +855,7 @@ export default class QuizStorage {
       const query: Filter<quiz> = {
         ...(cls && cls.length > 0 ? { class: { $in: cls } } : {}),
         ...(mode && mode.length > 0
-          ? { type: { $in: mode as ("A1" | "A2" | "A3" | "B" | "X")[] } }
+          ? { type: { $in: mode as ('A1' | 'A2' | 'A3' | 'B' | 'X')[] } }
           : {}),
         ...(unit && unit.length > 0 ? { unit: { $in: unit } } : {}),
         ...(source && source.length > 0 ? { source: { $in: source } } : {}),
@@ -810,13 +871,13 @@ export default class QuizStorage {
         pipeline.push({ $sample: { size: quizNum } });
       }
       cursor = db
-        .collection<quiz>("quiz")
+        .collection<quiz>('quiz')
         .aggregate<quiz & { __v: any }>([{ $match: query }, ...pipeline])
         .limit(quizNum);
 
       return cursor;
     } catch (error) {
-      this.logger.error("Quiz fetch error:", error);
+      this.logger.error('Quiz fetch error:', error);
       throw error;
     }
   }
@@ -831,22 +892,21 @@ export default class QuizStorage {
     try {
       const { db } = await connectToDatabase();
       if (this.isDev) {
-        this.logger.debug("Fetching quizzes by OIDs:", oids);
+        this.logger.debug('Fetching quizzes by OIDs:', oids);
       }
 
       const objectIds = oids.map((id) => new ObjectId(id));
       const quizes = (await db
-        .collection("quiz")
+        .collection('quiz')
         .find({ _id: { $in: objectIds } })
         .toArray()) as unknown as quiz[];
 
       return quizes;
     } catch (error) {
-      this.logger.error("Failed to fetch quizzes by OIDs:", error);
+      this.logger.error('Failed to fetch quizzes by OIDs:', error);
       throw error;
     }
   }
-
 
   /**
    * Parse quiz into plain text
@@ -858,8 +918,6 @@ export default class QuizStorage {
     withAnswer?: boolean,
     withAnalysis?: boolean,
   ) => string = formQuizContent;
-
-
 
   async get_related_cards(mongoId: string): Promise<{
     cards: {
@@ -942,7 +1000,7 @@ export default class QuizStorage {
       const query: Filter<quiz> = {
         ...(cls && cls.length > 0 ? { class: { $in: cls } } : {}),
         ...(mode && mode.length > 0
-          ? { type: { $in: mode as ("A1" | "A2" | "A3" | "B" | "X")[] } }
+          ? { type: { $in: mode as ('A1' | 'A2' | 'A3' | 'B' | 'X')[] } }
           : {}),
         ...(unit && unit.length > 0 ? { unit: { $in: unit } } : {}),
         ...(source && source.length > 0 ? { source: { $in: source } } : {}),
@@ -951,10 +1009,10 @@ export default class QuizStorage {
           : {}),
         // Add filter for quizzes without AI analysis or with empty AI analysis
         $or: [
-          { "analysis.ai_analysis": { $exists: false } },
-          { "analysis.ai_analysis": { $eq: null } },
-          { "analysis.ai_analysis": { $eq: "" } },
-          { "analysis.ai_analysis": { $regex: /^\s*$/ } },
+          { 'analysis.ai_analysis': { $exists: false } },
+          { 'analysis.ai_analysis': { $eq: null } },
+          { 'analysis.ai_analysis': { $eq: '' } },
+          { 'analysis.ai_analysis': { $regex: /^\s*$/ } },
         ],
       };
 
@@ -965,14 +1023,14 @@ export default class QuizStorage {
       }
 
       quizes = await db
-        .collection<quiz>("quiz")
+        .collection<quiz>('quiz')
         .aggregate<quiz>([{ $match: query }, ...pipeline])
         .limit(quizNum)
         .toArray();
 
       return quizes;
     } catch (error) {
-      this.logger.error("Quiz fetch error:", error);
+      this.logger.error('Quiz fetch error:', error);
       throw error;
     }
   }

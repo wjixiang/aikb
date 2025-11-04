@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { answerType, QuizWithUserAnswer } from "@/types/quizData.types";
-import { QuizHistoryItem } from "@/types/quizSet.types";
-import { NotificationState } from "./types";
-import { sortQuizzesByType } from "./utils";
-import { formQuizContent } from "@/lib/utils";
+import { useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { answerType, QuizWithUserAnswer } from '@/types/quizData.types';
+import { QuizHistoryItem } from '@/types/quizSet.types';
+import { NotificationState } from './types';
+import { sortQuizzesByType } from './utils';
+import { formQuizContent } from '@/lib/utils';
 
 export const useQuizAI = () => {
   const { data: session } = useSession();
@@ -20,8 +20,8 @@ export const useQuizAI = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [notification, setNotification] = useState<NotificationState>({
-    message: "",
-    type: "success",
+    message: '',
+    type: 'success',
   });
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,7 +38,7 @@ export const useQuizAI = () => {
   const prevQuizzesRef = useRef<QuizWithUserAnswer[]>([]);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showNotification = (message: string, type: "success" | "error") => {
+  const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
     setNotificationVisible(true);
     setTimeout(() => setNotificationVisible(false), 3000);
@@ -53,44 +53,44 @@ export const useQuizAI = () => {
     customTitle?: string,
   ) => {
     if (!session?.user?.email) {
-      showNotification("请先登录", "error");
+      showNotification('请先登录', 'error');
       return;
     }
 
     if (!quizzesToSubmit || quizzesToSubmit.length === 0) {
-      showNotification("请先添加试题", "error");
+      showNotification('请先添加试题', 'error');
       return;
     }
 
     try {
       setIsLoading(true);
-      const response = await fetch("/api/quiz/create", {
-        method: "POST",
+      const response = await fetch('/api/quiz/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: customTitle || `试卷-${new Date().toLocaleString("zh-CN")}`,
+          title: customTitle || `试卷-${new Date().toLocaleString('zh-CN')}`,
           quizIds: quizzesToSubmit.map((quiz) => quiz._id),
         }),
       });
 
       if (!response.ok) {
         const errorResult = await response.json();
-        throw new Error(errorResult.error || "保存失败");
+        throw new Error(errorResult.error || '保存失败');
       }
 
       const result = await response.json();
       setCurrentQuizSetId(result.id);
       setQuizStateUpdateTrigger((prev) => prev + 1);
-      showNotification("试卷创建成功", "success");
+      showNotification('试卷创建成功', 'success');
       // Reload history after successful creation
       await loadHistory();
     } catch (error) {
       console.error(error);
       showNotification(
-        error instanceof Error ? error.message : "保存试卷时出错",
-        "error",
+        error instanceof Error ? error.message : '保存试卷时出错',
+        'error',
       );
     } finally {
       setIsLoading(false);
@@ -101,7 +101,7 @@ export const useQuizAI = () => {
     // Removed full quiz set synchronization
     // Only individual quiz answers are now synchronized
     console.log(
-      "Full quiz set synchronization disabled - only individual answers are synced",
+      'Full quiz set synchronization disabled - only individual answers are synced',
     );
   };
 
@@ -113,7 +113,7 @@ export const useQuizAI = () => {
   ) => {
     if (!session?.user?.email) {
       if (!silent) {
-        showNotification("请先登录", "error");
+        showNotification('请先登录', 'error');
       }
       return;
     }
@@ -126,27 +126,27 @@ export const useQuizAI = () => {
     if (!effectiveQuizSetId) {
       if (quizzesToUse.length === 0) {
         if (!silent) {
-          showNotification("请先添加试题", "error");
+          showNotification('请先添加试题', 'error');
         }
         return;
       }
 
       try {
         // Create a minimal quiz set with current quizzes
-        const response = await fetch("/api/quiz/create", {
-          method: "POST",
+        const response = await fetch('/api/quiz/create', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            title: `练习-${new Date().toLocaleString("zh-CN")}`,
+            title: `练习-${new Date().toLocaleString('zh-CN')}`,
             quizIds: quizzesToUse.map((quiz) => quiz._id),
           }),
         });
 
         if (!response.ok) {
           const errorResult = await response.json();
-          throw new Error(errorResult.error || "创建练习记录失败");
+          throw new Error(errorResult.error || '创建练习记录失败');
         }
 
         const result = await response.json();
@@ -154,16 +154,16 @@ export const useQuizAI = () => {
         setCurrentQuizSetId(effectiveQuizSetId);
 
         if (!silent) {
-          showNotification("练习记录已创建", "success");
+          showNotification('练习记录已创建', 'success');
         }
       } catch (error) {
-        console.error("创建练习记录时出错:", error);
+        console.error('创建练习记录时出错:', error);
         if (!silent) {
           showNotification(
             error instanceof Error
               ? error.message
-              : "创建练习记录时发生未知错误",
-            "error",
+              : '创建练习记录时发生未知错误',
+            'error',
           );
         }
         return;
@@ -171,17 +171,17 @@ export const useQuizAI = () => {
     }
 
     try {
-      const response = await fetch("/api/quiz/answer", {
-        method: "POST",
+      const response = await fetch('/api/quiz/answer', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ quizId, answer, quizSetId: effectiveQuizSetId }),
       });
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "保存答案失败");
+        throw new Error(result.error || '保存答案失败');
       }
 
       setQuizzes((prevQuizzes) =>
@@ -194,14 +194,14 @@ export const useQuizAI = () => {
       setQuizStateUpdateTrigger((prev) => prev + 1);
 
       if (!silent) {
-        showNotification("答案保存成功", "success");
+        showNotification('答案保存成功', 'success');
       }
     } catch (error) {
-      console.error("保存答案时出错:", error);
+      console.error('保存答案时出错:', error);
       if (!silent) {
         showNotification(
-          error instanceof Error ? error.message : "保存答案时发生未知错误",
-          "error",
+          error instanceof Error ? error.message : '保存答案时发生未知错误',
+          'error',
         );
       }
     }
@@ -209,22 +209,22 @@ export const useQuizAI = () => {
 
   const loadHistory = async () => {
     if (!session?.user?.email) {
-      showNotification("请先登录", "error");
+      showNotification('请先登录', 'error');
       return;
     }
 
-    setLoadingOperation("history");
+    setLoadingOperation('history');
     setIsLoadingHistory(true);
     try {
-      const response = await fetch("/api/quiz/page_history");
+      const response = await fetch('/api/quiz/page_history');
       if (!response.ok) {
-        throw new Error("加载历史试卷失败");
+        throw new Error('加载历史试卷失败');
       }
       const result = await response.json();
       setHistory(result.data);
     } catch (error) {
       console.error(error);
-      showNotification("加载历史试卷时出错", "error");
+      showNotification('加载历史试卷时出错', 'error');
     } finally {
       setLoadingOperation(null);
       setIsLoadingHistory(false);
@@ -232,14 +232,14 @@ export const useQuizAI = () => {
   };
 
   const handleRestoreQuizSet = async (quizSetId: string) => {
-    setLoadingOperation("restore");
+    setLoadingOperation('restore');
     setIsRestoring(true);
-    console.log("恢复试卷");
+    console.log('恢复试卷');
     try {
       const response = await fetch(`/api/quiz/create/${quizSetId}`);
       if (!response.ok) {
         const errorResult = await response.json();
-        throw new Error(errorResult.error || "恢复试卷失败");
+        throw new Error(errorResult.error || '恢复试卷失败');
       }
       const result = await response.json();
       setCurrentQuizSetId(quizSetId);
@@ -253,15 +253,15 @@ export const useQuizAI = () => {
       );
       setQuizStateUpdateTrigger((prev) => prev + 1);
 
-      showNotification("试卷恢复成功", "success");
+      showNotification('试卷恢复成功', 'success');
 
       // Close the history drawer after successful restoration
       // This will be handled in the parent component
     } catch (error) {
       console.error(error);
       showNotification(
-        error instanceof Error ? error.message : "恢复试卷时出错",
-        "error",
+        error instanceof Error ? error.message : '恢复试卷时出错',
+        'error',
       );
     } finally {
       setLoadingOperation(null);
@@ -296,12 +296,12 @@ export const useQuizAI = () => {
 
   const sendCurrentQuizToChat = (withAnswer?: boolean): string | null => {
     if (selectedQuizIndex === null || !quizzes[selectedQuizIndex]) {
-      showNotification("请先选择试题", "error");
+      showNotification('请先选择试题', 'error');
       return null;
     }
     const quiz = quizzes[selectedQuizIndex];
 
-    let quizContent = "";
+    let quizContent = '';
     if (withAnswer) {
       quizContent +=
         `\n\n>[!note] 题目解析\n` +
@@ -312,7 +312,7 @@ export const useQuizAI = () => {
     }
     quizContent = formQuizContent(quiz, withAnswer);
 
-    showNotification("试题已发送到聊天面板", "success");
+    showNotification('试题已发送到聊天面板', 'success');
 
     return quizContent;
   };
@@ -329,7 +329,7 @@ export const useQuizAI = () => {
   const resetQuizzes = () => {
     setQuizzes([]);
     setCurrentQuizSetId(null);
-    showNotification("已重置所有题目", "success");
+    showNotification('已重置所有题目', 'success');
   };
 
   return {

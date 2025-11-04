@@ -1,5 +1,5 @@
-import { connectToDatabase } from "../lib/db/mongodb";
-import { Collection } from "mongodb";
+import { connectToDatabase } from '../lib/db/mongodb';
+import { Collection } from 'mongodb';
 
 async function convertTimestamps(collectionName: string) {
   try {
@@ -14,7 +14,7 @@ async function convertTimestamps(collectionName: string) {
     let convertedCount = 0;
 
     for await (const doc of cursor) {
-      if (doc.timestamp && typeof doc.timestamp === "string") {
+      if (doc.timestamp && typeof doc.timestamp === 'string') {
         try {
           const date = new Date(doc.timestamp);
           if (!isNaN(date.getTime())) {
@@ -44,7 +44,7 @@ async function convertTimestamps(collectionName: string) {
     );
     client.close();
   } catch (error) {
-    console.error("Error during timestamp conversion:", error);
+    console.error('Error during timestamp conversion:', error);
     process.exit(1);
   }
 }
@@ -52,7 +52,7 @@ async function convertTimestamps(collectionName: string) {
 const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error(
-    "Usage: ts-node src/script/convertTimestamp.ts <collectionName>",
+    'Usage: ts-node src/script/convertTimestamp.ts <collectionName>',
   );
   process.exit(1);
 }

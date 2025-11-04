@@ -1,5 +1,3 @@
 export class Pdf2MArkdownDto {
-    constructor(
-        public itemId: string,
-    ) {}
+  constructor(public itemId: string) {}
 }

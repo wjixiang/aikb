@@ -1,10 +1,10 @@
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { DocumentTab } from "@/components/wiki/workspace/types";
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { DocumentTab } from '@/components/wiki/workspace/types';
 
 // 标签页类型枚举
 export enum TabType {
-  QUIZ = "quiz",
-  DOCUMENT = "document"
+  QUIZ = 'quiz',
+  DOCUMENT = 'document',
 }
 
 // 统一的标签页接口
@@ -13,10 +13,10 @@ export interface UnifiedTab {
   title: string;
   type: TabType;
   isActive: boolean;
-  
+
   // 试卷标签页特有属性
   quizzes?: QuizWithUserAnswer[];
-  
+
   // 文档标签页特有属性
   path?: string;
   content?: string;
@@ -27,7 +27,12 @@ export interface UnifiedTab {
 // 标签页内容组件的属性
 export interface TabContentProps {
   tab: UnifiedTab;
-  onAnswerChange?: (quizId: string, answer: any, silent?: boolean, quizzesForQuizSet?: QuizWithUserAnswer[]) => Promise<void>;
+  onAnswerChange?: (
+    quizId: string,
+    answer: any,
+    silent?: boolean,
+    quizzesForQuizSet?: QuizWithUserAnswer[],
+  ) => Promise<void>;
   onContentChange?: (content: string) => void;
   onTitleChange?: (title: string) => void;
   onReset?: () => void;
@@ -38,7 +43,7 @@ export interface TabContentProps {
   quizStateUpdateTrigger?: number;
   quizPageRef?: React.RefObject<any>;
   onOpenDocument?: (path: string) => void;
-  showNotification?: (message: string, type: "success" | "error") => void;
+  showNotification?: (message: string, type: 'success' | 'error') => void;
   currentQuizSetId?: string;
 }
 
@@ -50,13 +55,16 @@ export interface UnifiedTabsProps {
     silent?: boolean,
     quizzesForQuizSet?: QuizWithUserAnswer[],
   ) => Promise<void>;
-  showNotification?: (message: string, type: "success" | "error") => void;
+  showNotification?: (message: string, type: 'success' | 'error') => void;
   currentQuizSetId?: string;
   loadingOperation?: string | null;
   setSelectedQuizIndex?: (index: number | null) => void;
   isTestMode?: boolean;
   quizStateUpdateTrigger?: number;
-  handleSubmit?: (quizzes: QuizWithUserAnswer[], title?: string) => Promise<void>;
+  handleSubmit?: (
+    quizzes: QuizWithUserAnswer[],
+    title?: string,
+  ) => Promise<void>;
   onOpenDocument?: (path: string) => void;
 }
 
@@ -64,10 +72,18 @@ export interface UnifiedTabsProps {
 export interface UnifiedTabsRef {
   addQuizToPage: (quizzesToAdd: QuizWithUserAnswer[]) => void;
   addTab: (type?: TabType) => void;
-  createTabWithQuizzes: (quizzes: QuizWithUserAnswer[], title?: string, createNewSet?: boolean) => void;
+  createTabWithQuizzes: (
+    quizzes: QuizWithUserAnswer[],
+    title?: string,
+    createNewSet?: boolean,
+  ) => void;
   createTabWithDocument: (path: string, title?: string) => void;
   getCurrentTabQuizzes: () => QuizWithUserAnswer[];
   getCurrentTabId: () => string | null;
   getCurrentQuiz: () => QuizWithUserAnswer | null;
-  getCurrentDocument: () => { path: string; content: string; title: string } | null;
+  getCurrentDocument: () => {
+    path: string;
+    content: string;
+    title: string;
+  } | null;
 }

@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
-import knowledgeBase from "@/kgrag/knowledgeBase";
-import { connectToDatabase } from "@/lib/db/mongodb";
+import { NextResponse } from 'next/server';
+import knowledgeBase from '@/kgrag/knowledgeBase';
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const limit = parseInt(searchParams.get("limit") || "100");
-  const offset = parseInt(searchParams.get("offset") || "0");
+  const limit = parseInt(searchParams.get('limit') || '100');
+  const offset = parseInt(searchParams.get('offset') || '0');
   const collection =
-    searchParams.get("collection") ||
+    searchParams.get('collection') ||
     process.env.KB_MONGO_COLLECTION_NAME ||
-    "notes";
-  const file = searchParams.get("file");
+    'notes';
+  const file = searchParams.get('file');
 
   try {
     // 优先使用MongoDB S3同步的集合
@@ -22,8 +22,8 @@ export async function GET(req: Request) {
       let query = {};
       if (file) {
         // 使用MongoDB原生正则匹配文件路径
-        const escapedFile = file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        query = { key: { $regex: escapedFile, $options: "i" } };
+        const escapedFile = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query = { key: { $regex: escapedFile, $options: 'i' } };
       }
 
       const documents = await mongoCollection
@@ -39,10 +39,10 @@ export async function GET(req: Request) {
         path: doc.key,
         title:
           doc.key
-            .split("/")
+            .split('/')
             .pop()
-            ?.replace(/\.(md|txt|markdown)$/i, "") || doc.key,
-        type: "document" as const,
+            ?.replace(/\.(md|txt|markdown)$/i, '') || doc.key,
+        type: 'document' as const,
         lastModified: doc.lastModified || new Date(),
       }));
 
@@ -62,14 +62,14 @@ export async function GET(req: Request) {
     // 如果提供了file参数，在结果中过滤
     let filteredDocuments = documents;
     if (file) {
-      const regex = new RegExp(file, "i");
+      const regex = new RegExp(file, 'i');
       filteredDocuments = documents.filter((doc) => regex.test(doc.key));
     }
 
     const results = filteredDocuments.map((doc) => ({
       path: doc.key,
       title: doc.title,
-      type: "document" as const,
+      type: 'document' as const,
       lastModified: doc.lastModified,
     }));
 
@@ -82,9 +82,9 @@ export async function GET(req: Request) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error listing documents:", error);
+    console.error('Error listing documents:', error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: 'Internal server error' },
       { status: 500 },
     );
   }
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     const {
       limit = 100,
       offset = 0,
-      collection = process.env.KB_MONGO_COLLECTION_NAME || "notes",
+      collection = process.env.KB_MONGO_COLLECTION_NAME || 'notes',
       file,
     } = body;
 
@@ -109,8 +109,8 @@ export async function POST(req: Request) {
       let query = {};
       if (file) {
         // 使用MongoDB原生正则匹配文件路径
-        const escapedFile = file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        query = { key: { $regex: escapedFile, $options: "i" } };
+        const escapedFile = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query = { key: { $regex: escapedFile, $options: 'i' } };
       }
 
       const documents = await mongoCollection
@@ -126,10 +126,10 @@ export async function POST(req: Request) {
         path: doc.key,
         title:
           doc.key
-            .split("/")
+            .split('/')
             .pop()
-            ?.replace(/\.(md|txt|markdown)$/i, "") || doc.key,
-        type: "document" as const,
+            ?.replace(/\.(md|txt|markdown)$/i, '') || doc.key,
+        type: 'document' as const,
         lastModified: doc.lastModified || new Date(),
       }));
 
@@ -149,14 +149,14 @@ export async function POST(req: Request) {
     // 如果提供了file参数，在结果中过滤
     let filteredDocuments = documents;
     if (file) {
-      const regex = new RegExp(file, "i");
+      const regex = new RegExp(file, 'i');
       filteredDocuments = documents.filter((doc) => regex.test(doc.key));
     }
 
     const results = filteredDocuments.map((doc) => ({
       path: doc.key,
       title: doc.title,
-      type: "document" as const,
+      type: 'document' as const,
       lastModified: doc.lastModified,
     }));
 
@@ -169,9 +169,9 @@ export async function POST(req: Request) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error listing documents:", error);
+    console.error('Error listing documents:', error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: 'Internal server error' },
       { status: 500 },
     );
   }

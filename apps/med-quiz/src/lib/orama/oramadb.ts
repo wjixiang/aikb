@@ -1,10 +1,10 @@
-import { MongoClient, ObjectId } from "mongodb";
-import { create, insert } from "@orama/orama";
+import { MongoClient, ObjectId } from 'mongodb';
+import { create, insert } from '@orama/orama';
 
-import { promises as fs } from "fs";
+import { promises as fs } from 'fs';
 
-import { embeddings } from "../langchain/provider";
-import { Embeddings } from "@langchain/core/embeddings";
+import { embeddings } from '../langchain/provider';
+import { Embeddings } from '@langchain/core/embeddings';
 
 // 定义 index 中存储的文档结构
 interface DocumentType {
@@ -21,9 +21,9 @@ class OramaSyncService {
   private oramaIndex: any;
   // 保存 schema，后续加载索引时需要使用同样的 schema
   private schema: Record<string, any> = {
-    id: "string",
-    content: "string",
-    embedding: "number[]",
+    id: 'string',
+    content: 'string',
+    embedding: 'number[]',
   };
 
   /**
@@ -46,9 +46,9 @@ class OramaSyncService {
   async initOrama(): Promise<void> {
     this.oramaIndex = create({
       schema: {
-        id: "string",
-        content: "string",
-        embedding: "number[]",
+        id: 'string',
+        content: 'string',
+        embedding: 'number[]',
       },
     });
   }
@@ -88,9 +88,9 @@ class OramaSyncService {
         // 调用 insert 方法将文档插入到 Orama 索引中
         await insert(this.oramaIndex, oramaDoc);
       }
-      console.log("所有文档已成功同步到 Orama 数据库。");
+      console.log('所有文档已成功同步到 Orama 数据库。');
     } catch (error) {
-      console.error("同步文档时出错：", error);
+      console.error('同步文档时出错：', error);
     } finally {
       await this.mongoClient.close();
     }
@@ -122,10 +122,10 @@ class OramaSyncService {
     try {
       // 假设 oramaIndex 提供 dump 方法来导出索引状态
       const indexDump = await this.oramaIndex.dump();
-      await fs.writeFile(filePath, JSON.stringify(indexDump), "utf-8");
+      await fs.writeFile(filePath, JSON.stringify(indexDump), 'utf-8');
       console.log(`Orama 索引已保存到 ${filePath}`);
     } catch (error) {
-      console.error("保存 Orama 索引时出错：", error);
+      console.error('保存 Orama 索引时出错：', error);
     }
   }
 
@@ -135,13 +135,13 @@ class OramaSyncService {
    */
   async loadIndex(filePath: string): Promise<void> {
     try {
-      const fileContent = await fs.readFile(filePath, "utf-8");
+      const fileContent = await fs.readFile(filePath, 'utf-8');
       const indexDump = JSON.parse(fileContent);
       // 假设 orama 提供 create 方法能接收导出的索引状态进行加载
       this.oramaIndex = create({ schema: this.schema, data: indexDump } as any);
       console.log(`Orama 索引已从 ${filePath} 加载。`);
     } catch (error) {
-      console.error("加载 Orama 索引时出错：", error);
+      console.error('加载 Orama 索引时出错：', error);
     }
   }
 }

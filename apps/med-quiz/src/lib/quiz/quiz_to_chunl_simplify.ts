@@ -1,12 +1,12 @@
-import { embedding } from "@/kgrag/lib/embedding";
-import { surrealDBClient } from "../../kgrag/database/surrrealdbClient";
-import { formQuizContent } from "../utils";
-import { RecordId } from "surrealdb";
-import type { DocumentToRerank } from "@/types/baml";
-import { b } from "../../baml_client/async_client";
-import KnowledgeGraphRetriever from "@/kgrag/core/KnowledgeGraphRetriever";
-import { KnowledgeGraphRetriever_Config } from "@/setting";
-import pLimit from "p-limit";
+import { embedding } from '@/kgrag/lib/embedding';
+import { surrealDBClient } from '../../kgrag/database/surrrealdbClient';
+import { formQuizContent } from '../utils';
+import { RecordId } from 'surrealdb';
+import type { DocumentToRerank } from '@/types/baml';
+import { b } from '../../baml_client/async_client';
+import KnowledgeGraphRetriever from '@/kgrag/core/KnowledgeGraphRetriever';
+import { KnowledgeGraphRetriever_Config } from '@/setting';
+import pLimit from 'p-limit';
 
 export default class quiz_to_chunk {
   async fetchQuizData(recordId: RecordId): Promise<any> {
@@ -26,7 +26,7 @@ export default class quiz_to_chunk {
   async processQuizzes() {
     const db = await surrealDBClient.getDb();
     const quizzes = (
-      await db.query<{ id: RecordId }[][]>("SELECT * FROM quiz")
+      await db.query<{ id: RecordId }[][]>('SELECT * FROM quiz')
     )[0];
     const limit = pLimit(50); // Limit concurrency to 5
 
@@ -62,13 +62,13 @@ export default class quiz_to_chunk {
   }
 
   async findRelevantDocuments(parsedQuizData: string): Promise<any[]> {
-    console.log("Finding relevant documents for:", parsedQuizData);
+    console.log('Finding relevant documents for:', parsedQuizData);
 
     const query = parsedQuizData;
     const top_k = 10; // Retrieve more documents initially for reranking
 
     if (!query) {
-      console.log("No question text found in parsedQuizData.");
+      console.log('No question text found in parsedQuizData.');
       return [];
     }
 
@@ -80,7 +80,7 @@ export default class quiz_to_chunk {
       const initialDocuments = await retriever.chunks_retriver(query, top_k);
 
       if (!initialDocuments || initialDocuments.length === 0) {
-        console.log("No initial documents retrieved.");
+        console.log('No initial documents retrieved.');
         return [];
       }
 
@@ -88,7 +88,7 @@ export default class quiz_to_chunk {
       // Keep track of the original index
       const documentsToRerank: DocumentToRerank[] = initialDocuments.map(
         (doc) => ({
-          content: doc.document.content || "", // Assuming property_content is the main content
+          content: doc.document.content || '', // Assuming property_content is the main content
           metadata: JSON.stringify({
             // Include other relevant fields in metadata
             id: doc.document.id,
@@ -98,13 +98,13 @@ export default class quiz_to_chunk {
       );
 
       // Step 3: Call the BAML reranker function
-      console.log("Calling BAML reranker...");
+      console.log('Calling BAML reranker...');
       // The reranker now returns a list of relevant document indices (as strings)
       const relevantDocumentIndices = await b.RerankDocuments(
         query,
         documentsToRerank,
       );
-      console.log("BAML reranker returned indices:", relevantDocumentIndices);
+      console.log('BAML reranker returned indices:', relevantDocumentIndices);
 
       // Step 4: Select and reorder the original documents based on the reranked indices
       const rerankedDocuments = relevantDocumentIndices
@@ -123,7 +123,7 @@ export default class quiz_to_chunk {
 
       return rerankedDocuments;
     } catch (error) {
-      console.error("Error in findRelevantDocuments:", error);
+      console.error('Error in findRelevantDocuments:', error);
       throw error;
     }
   }
@@ -138,7 +138,7 @@ export default class quiz_to_chunk {
       const parsedQuizData = formQuizContent(quizData);
       const relevantDocuments =
         await this.findRelevantDocuments(parsedQuizData);
-      console.log("relevantDocuments", relevantDocuments);
+      console.log('relevantDocuments', relevantDocuments);
       await this.create_relation(
         recordId,
         relevantDocuments.map((doc) => ({
@@ -165,7 +165,7 @@ export default class quiz_to_chunk {
 
     if (queryEmbedding === null) {
       console.log(
-        "Failed to generate embedding for query. Cannot perform vector search.",
+        'Failed to generate embedding for query. Cannot perform vector search.',
       );
       return []; // Return empty array if embedding generation failed
     }
@@ -186,7 +186,7 @@ export default class quiz_to_chunk {
       const result = await db.query(surrealQL, {
         queryEmbedding: queryEmbedding,
       });
-      console.log("query raw result:", JSON.stringify(result, null, 2));
+      console.log('query raw result:', JSON.stringify(result, null, 2));
       if (
         result &&
         Array.isArray(result) &&
@@ -198,7 +198,7 @@ export default class quiz_to_chunk {
       }
       return [];
     } catch (error) {
-      console.log("Error during chunk query:", error);
+      console.log('Error during chunk query:', error);
       throw error;
     }
   }
@@ -209,14 +209,14 @@ export default class quiz_to_chunk {
   ) {
     const db = await surrealDBClient.getDb();
     for (const chunk of property) {
-      if (!chunk.id || chunk.id.toString() === "NONE") {
+      if (!chunk.id || chunk.id.toString() === 'NONE') {
         console.warn(
           `Skipping relation creation for quiz ${quiz_id} due to invalid chunk ID: ${chunk.id}`,
         );
         continue; // Skip this chunk if id is invalid
       }
       try {
-        await db.insertRelation("quiz_to_chunk", {
+        await db.insertRelation('quiz_to_chunk', {
           in: quiz_id,
           out: chunk.id,
           score: chunk.score,

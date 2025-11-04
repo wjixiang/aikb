@@ -1,4 +1,4 @@
-import { AgentMessage } from "./agent.types";
+import { AgentMessage } from './agent.types';
 
 export interface AgentTask {
   taskName: string;
@@ -14,7 +14,7 @@ export interface AgentProfile {
 export interface TaskCompletionResult {
   isComplete: boolean;
   qualityScore?: number;
-  nextAction: "continue" | "delegate" | "finish";
+  nextAction: 'continue' | 'delegate' | 'finish';
   delegateTo?: AgentProfile;
   feedback?: string;
 }
@@ -73,7 +73,7 @@ export default abstract class AgentV3 {
 
       // Yield a message indicating the start of this iteration
       yield {
-        type: "step",
+        type: 'step',
         content: `Starting iteration ${this.currentIteration} for task: ${this.task.taskName}`,
         task: this.task.taskName,
       };
@@ -88,25 +88,25 @@ export default abstract class AgentV3 {
 
       // Yield evaluation result
       yield {
-        type: "update",
-        content: `Task evaluation: ${completionResult.feedback || "No feedback"}`,
+        type: 'update',
+        content: `Task evaluation: ${completionResult.feedback || 'No feedback'}`,
         task: this.task.taskName,
       };
 
       // Make decision based on evaluation
       switch (completionResult.nextAction) {
-        case "continue":
+        case 'continue':
           yield {
-            type: "notice",
-            content: "Continuing with next iteration...",
+            type: 'notice',
+            content: 'Continuing with next iteration...',
             task: this.task.taskName,
           };
           continue;
 
-        case "delegate":
+        case 'delegate':
           if (completionResult.delegateTo) {
             yield {
-              type: "notice",
+              type: 'notice',
               content: `Delegating to agent: ${completionResult.delegateTo.agentName}`,
               task: this.task.taskName,
             };
@@ -122,16 +122,16 @@ export default abstract class AgentV3 {
             }
           }
           yield {
-            type: "done",
-            content: "Task completed with delegation",
+            type: 'done',
+            content: 'Task completed with delegation',
             task: this.task.taskName,
           };
           return;
 
-        case "finish":
+        case 'finish':
           yield {
-            type: "done",
-            content: "Task completed successfully",
+            type: 'done',
+            content: 'Task completed successfully',
             task: this.task.taskName,
           };
           return;
@@ -140,8 +140,8 @@ export default abstract class AgentV3 {
 
     // Max iterations reached
     yield {
-      type: "error",
-      content: "Maximum iterations reached without completion",
+      type: 'error',
+      content: 'Maximum iterations reached without completion',
       task: this.task.taskName,
     };
   }

@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
-import QuizStorage from "@/lib/quiz/QuizStorage";
+import { NextResponse } from 'next/server';
+import QuizStorage from '@/lib/quiz/QuizStorage';
 import type {
   PracticeRecord,
   PracticeRecordData,
-} from "@/lib/quiz/QuizStorage";
-import { authOptions } from "@/lib/auth/authOptions"; // Import authOptions
-import { getServerSession } from "next-auth";
+} from '@/lib/quiz/QuizStorage';
+import { authOptions } from '@/lib/auth/authOptions'; // Import authOptions
+import { getServerSession } from 'next-auth';
 
 /**
  * Retrieves practice history records for the authenticated user within a specified date range.
@@ -28,18 +28,18 @@ import { getServerSession } from "next-auth";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions); // Corrected usage
   if (!session || !session.user || !session.user.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const userId = session.user.email;
-  const startDateParam = searchParams.get("startDate");
-  const endDateParam = searchParams.get("endDate");
-  const filter = searchParams.get("filter"); // Declared here
+  const startDateParam = searchParams.get('startDate');
+  const endDateParam = searchParams.get('endDate');
+  const filter = searchParams.get('filter'); // Declared here
 
   if (!startDateParam || !endDateParam) {
     return NextResponse.json(
-      { error: "Missing startDate or endDate parameters" },
+      { error: 'Missing startDate or endDate parameters' },
       { status: 400 },
     );
   }
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   const endDate = new Date(endDateParam);
 
   if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
   }
 
   try {
@@ -59,9 +59,9 @@ export async function GET(request: Request) {
       endDate,
     );
 
-    if (filter === "correct") {
+    if (filter === 'correct') {
       practiceRecords = practiceRecords.filter((record) => record.correct);
-    } else if (filter === "wrong") {
+    } else if (filter === 'wrong') {
       practiceRecords = practiceRecords.filter((record) => !record.correct);
     }
 
@@ -84,9 +84,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(recordsWithQuizData);
   } catch (error) {
-    console.error("Failed to fetch practice records from API:", error);
+    console.error('Failed to fetch practice records from API:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }

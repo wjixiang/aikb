@@ -1,8 +1,8 @@
-import { Collection, Db, MongoClient } from "mongodb";
-import { connectToDatabase } from "../db/mongodb";
-import { note } from "@/types/noteData.types";
-import * as dotenv from "dotenv";
-import { embeddings } from "../langchain/provider";
+import { Collection, Db, MongoClient } from 'mongodb';
+import { connectToDatabase } from '../db/mongodb';
+import { note } from '@/types/noteData.types';
+import * as dotenv from 'dotenv';
+import { embeddings } from '../langchain/provider';
 dotenv.config();
 
 export default class mongodbEmbedding {
@@ -15,7 +15,7 @@ export default class mongodbEmbedding {
     // 注意：initMongodbEmbedding 是异步方法，
     // 这里调用后请确保后续操作在连接成功后执行
     this.initMongodbEmbedding().catch((err) =>
-      console.error("初始化 MongoDB 嵌入模块失败：", err),
+      console.error('初始化 MongoDB 嵌入模块失败：', err),
     );
   }
 
@@ -25,7 +25,7 @@ export default class mongodbEmbedding {
   private async initMongodbEmbedding() {
     const { db, client } = await connectToDatabase();
     if (!process.env.MONGODB_NOTE_COLLECTION) {
-      throw new Error("process.env.MONGODB_NOTE_COLLECTION empty");
+      throw new Error('process.env.MONGODB_NOTE_COLLECTION empty');
     }
     this.noteCollection = db.collection<note>(
       process.env.MONGODB_NOTE_COLLECTION,
@@ -55,7 +55,7 @@ export default class mongodbEmbedding {
       if (!doc) continue;
 
       // 将文档中的所有 content.fileContent 拼接为一个字符串
-      const contentText = doc.content.map((c) => c.fileContent).join("");
+      const contentText = doc.content.map((c) => c.fileContent).join('');
 
       // 调用 embedding 函数生成向量
       let vector;
@@ -90,7 +90,7 @@ export default class mongodbEmbedding {
           await this.noteCollection.bulkWrite(bulkOps);
           console.log(`处理了一批 ${bulkOps.length} 条记录。`);
         } catch (err) {
-          console.error("bulkWrite 处理错误：", err);
+          console.error('bulkWrite 处理错误：', err);
         }
         bulkOps = [];
       }
@@ -102,7 +102,7 @@ export default class mongodbEmbedding {
         await this.noteCollection.bulkWrite(bulkOps);
         console.log(`处理了最后一批 ${bulkOps.length} 条记录。`);
       } catch (err) {
-        console.error("最后一批 bulkWrite 处理错误：", err);
+        console.error('最后一批 bulkWrite 处理错误：', err);
       }
     }
 

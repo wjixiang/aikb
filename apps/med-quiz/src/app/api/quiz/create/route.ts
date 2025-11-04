@@ -1,8 +1,12 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { QuizSetDocument, CreateQuizSetRequest, APIResponse } from "@/types/quizSet.types";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import {
+  QuizSetDocument,
+  CreateQuizSetRequest,
+  APIResponse,
+} from '@/types/quizSet.types';
 
 /**
  * Creates a new quiz set with the specified title and quiz IDs.
@@ -23,14 +27,14 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { title, quizIds } = await request.json();
 
     if (!title || !quizIds || !Array.isArray(quizIds)) {
       return NextResponse.json(
-        { error: "Invalid request data" },
+        { error: 'Invalid request data' },
         { status: 400 },
       );
     }
@@ -44,16 +48,16 @@ export async function POST(request: Request) {
       creator: session.user.email,
     };
 
-    const insertResult = await db.collection("quizSets").insertOne(quizSetData);
+    const insertResult = await db.collection('quizSets').insertOne(quizSetData);
 
     return NextResponse.json<APIResponse>({
       success: true,
       id: insertResult.insertedId.toString(),
     });
   } catch (error) {
-    console.error("Error saving quiz set:", error);
+    console.error('Error saving quiz set:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

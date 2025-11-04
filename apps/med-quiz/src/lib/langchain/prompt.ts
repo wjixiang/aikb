@@ -1,8 +1,8 @@
 export const EMPTY_INDEX_ERROR_MESSAGE =
   "Copilot index does not exist. Please index your vault first!\n\n1. Set a working embedding model in QA settings. If it's not a local model, don't forget to set the API key. \n\n2. Click 'Refresh Index for Vault' and wait for indexing to complete. If you encounter the rate limiting error, please turn your request per second down in QA setting.";
 
-export const AI_SENDER = "ai";
-export const USER_SENDER = "user";
+export const AI_SENDER = 'ai';
+export const USER_SENDER = 'user';
 export const DEFAULT_SYSTEM_PROMPT = `You are clinic education Copilot, a helpful assistant that integrates AI to note-taking.
   1. Never mention that you do not have access to something. Always rely on the user provided context.
   2. Always answer to the best of your knowledge. If you are unsure about something, say so and ask the user to provide more context.
@@ -22,6 +22,6 @@ export const PLUS_MODE_DEFAULT_SOURCE_CHUNKS = 15;
 export const MAX_CHARS_FOR_LOCAL_SEARCH_CONTEXT = 448000;
 
 export enum ABORT_REASON {
-  USER_STOPPED = "user-stopped",
-  NEW_CHAT = "new-chat",
+  USER_STOPPED = 'user-stopped',
+  NEW_CHAT = 'new-chat',
 }

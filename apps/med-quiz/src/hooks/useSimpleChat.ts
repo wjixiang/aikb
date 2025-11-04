@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface ChatMessage {
   id: string;
-  type: "user" | "ai" | "system" | "status";
+  type: 'user' | 'ai' | 'system' | 'status';
   content: string;
   data?: any;
   timestamp: string;
@@ -23,7 +23,7 @@ export const useSimpleChat = (): UseSimpleChat => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
+  const [sessionId, setSessionId] = useState<string>('');
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -64,10 +64,10 @@ export const useSimpleChat = (): UseSimpleChat => {
       try {
         abortControllerRef.current = new AbortController();
 
-        const response = await fetch("/api/chat/stream", {
-          method: "POST",
+        const response = await fetch('/api/chat/stream', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             sessionId,
@@ -77,7 +77,7 @@ export const useSimpleChat = (): UseSimpleChat => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to send message");
+          throw new Error('Failed to send message');
         }
 
         // Create EventSource for streaming response
@@ -95,13 +95,13 @@ export const useSimpleChat = (): UseSimpleChat => {
             const data = JSON.parse(event.data);
 
             switch (data.type) {
-              case "connected":
+              case 'connected':
                 setIsConnected(true);
                 break;
-              case "user":
-              case "ai":
-              case "system":
-              case "status":
+              case 'user':
+              case 'ai':
+              case 'system':
+              case 'status':
                 setMessages((prev) => [
                   ...prev,
                   {
@@ -115,17 +115,17 @@ export const useSimpleChat = (): UseSimpleChat => {
                   },
                 ]);
                 break;
-              case "done":
+              case 'done':
                 setIsLoading(false);
                 eventSource.close();
                 setIsConnected(false);
                 break;
-              case "error":
+              case 'error':
                 setMessages((prev) => [
                   ...prev,
                   {
                     id: `msg_${Date.now()}`,
-                    type: "system",
+                    type: 'system',
                     content: `错误: ${data.content}`,
                     timestamp: new Date().toISOString(),
                   },
@@ -136,24 +136,24 @@ export const useSimpleChat = (): UseSimpleChat => {
                 break;
             }
           } catch (error) {
-            console.error("Error parsing SSE message:", error);
+            console.error('Error parsing SSE message:', error);
           }
         };
 
         eventSource.onerror = () => {
-          console.error("EventSource error");
+          console.error('EventSource error');
           setIsLoading(false);
           setIsConnected(false);
           eventSource.close();
         };
       } catch (error) {
-        console.error("Error sending message:", error);
+        console.error('Error sending message:', error);
         setMessages((prev) => [
           ...prev,
           {
             id: `msg_${Date.now()}`,
-            type: "system",
-            content: `发送失败: ${error instanceof Error ? error.message : "未知错误"}`,
+            type: 'system',
+            content: `发送失败: ${error instanceof Error ? error.message : '未知错误'}`,
             timestamp: new Date().toISOString(),
           },
         ]);
@@ -168,7 +168,7 @@ export const useSimpleChat = (): UseSimpleChat => {
     if (sessionId) {
       // Clear session on backend
       fetch(`/api/chat/stream?sessionId=${sessionId}`, {
-        method: "DELETE",
+        method: 'DELETE',
       }).catch(console.error);
     }
   }, [sessionId]);

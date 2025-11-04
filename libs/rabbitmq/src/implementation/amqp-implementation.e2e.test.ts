@@ -1,13 +1,27 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import { RabbitMQMessageService } from './amqp-implementation';
-import { 
-  BaseRabbitMQMessage, 
-  PdfConversionRequestMessage, 
+import {
+  BaseRabbitMQMessage,
+  PdfConversionRequestMessage,
   RabbitMQMessageOptions,
   RABBITMQ_QUEUES,
-  RABBITMQ_ROUTING_KEYS
+  RABBITMQ_ROUTING_KEYS,
 } from '../message.types';
-import { ConnectionStatus, HealthCheckResult, QueueInfo, ConsumerOptions } from '../message-service.interface';
+import {
+  ConnectionStatus,
+  HealthCheckResult,
+  QueueInfo,
+  ConsumerOptions,
+} from '../message-service.interface';
 import { getRabbitMQConfig } from '../rabbitmq.config';
 
 // Mock logger to avoid noise in tests
@@ -46,7 +60,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Use environment variables for configuration
     testConfig = {
       hostname: process.env.RABBITMQ_HOSTNAME || 'rabbitmq',
@@ -140,9 +154,12 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       const testTimestamp = Date.now();
       const testQueueName = `test-pdf-conversion-request-${testTimestamp}`;
       const testRoutingKey = `test.pdf.conversion.request.${testTimestamp}`;
-      
+
       // Publish message
-      const publishResult = await rabbitMQService.publishMessage(testRoutingKey, testMessage);
+      const publishResult = await rabbitMQService.publishMessage(
+        testRoutingKey,
+        testMessage,
+      );
       expect(publishResult).toBe(true);
 
       // Setup consumer
@@ -153,16 +170,18 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
           resolve(message);
         };
 
-        rabbitMQService.consumeMessages(
-          testQueueName,
-          onMessage
-        );
+        rabbitMQService.consumeMessages(testQueueName, onMessage);
       });
 
       // Wait for message to be received (with timeout)
       const result = await Promise.race([
         messagePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Message not received within timeout')), 5000))
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Message not received within timeout')),
+            5000,
+          ),
+        ),
       ]);
 
       expect(result).toBeDefined();
@@ -187,7 +206,11 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
         headers: { 'custom-header': 'custom-value' },
       };
 
-      const result = await rabbitMQService.publishMessage('test.routing.key', testMessage, options);
+      const result = await rabbitMQService.publishMessage(
+        'test.routing.key',
+        testMessage,
+        options,
+      );
       expect(result).toBe(true);
     });
 
@@ -201,7 +224,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       };
 
       await expect(
-        rabbitMQService.publishMessage('test.routing.key', testMessage)
+        rabbitMQService.publishMessage('test.routing.key', testMessage),
       ).rejects.toThrow('RabbitMQ service is not connected');
     });
 
@@ -211,7 +234,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       const onMessage = vi.fn();
 
       await expect(
-        rabbitMQService.consumeMessages('test-queue', onMessage)
+        rabbitMQService.consumeMessages('test-queue', onMessage),
       ).rejects.toThrow('RabbitMQ service is not connected');
     });
   });
@@ -230,7 +253,11 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
         priority: 10,
       };
 
-      const consumerTag = await rabbitMQService.consumeMessages('test-queue', onMessage, options);
+      const consumerTag = await rabbitMQService.consumeMessages(
+        'test-queue',
+        onMessage,
+        options,
+      );
       expect(consumerTag).toBe(options.consumerTag);
 
       // Cleanup
@@ -239,7 +266,10 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
     it('should handle stop consuming properly', async () => {
       const onMessage = vi.fn();
-      const consumerTag = await rabbitMQService.consumeMessages('test-queue', onMessage);
+      const consumerTag = await rabbitMQService.consumeMessages(
+        'test-queue',
+        onMessage,
+      );
 
       await rabbitMQService.stopConsuming(consumerTag);
       // Should not throw error
@@ -259,7 +289,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
     it('should get queue information', async () => {
       const testQueueName2 = `test-queue-info-${Date.now()}`;
-      
+
       // First create a test queue to get info about
       await rabbitMQService.publishMessage(`test.routing.${Date.now()}`, {
         messageId: `test-msg-${Date.now()}`,
@@ -268,7 +298,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       });
 
       const queueInfo = await rabbitMQService.getQueueInfo(testQueueName2);
-      
+
       if (queueInfo) {
         expect(queueInfo).toHaveProperty('messageCount');
         expect(queueInfo).toHaveProperty('consumerCount');
@@ -278,16 +308,17 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
     });
 
     it('should handle queue info when queue does not exist', async () => {
-      const queueInfo = await rabbitMQService.getQueueInfo('non-existent-queue');
+      const queueInfo =
+        await rabbitMQService.getQueueInfo('non-existent-queue');
       expect(queueInfo).toBeNull();
     });
 
     it('should purge queue', async () => {
       const testQueueName3 = `test-queue-purge-${Date.now()}`;
-      
+
       // First create a test queue by consuming from it (which creates the queue)
       await rabbitMQService.consumeMessages(testQueueName3, async () => {});
-      
+
       // Publish a message to the queue
       await rabbitMQService.publishMessage(`test.routing.${Date.now()}`, {
         messageId: `test-msg-${Date.now()}`,
@@ -303,20 +334,20 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       await rabbitMQService.close();
 
       await expect(
-        rabbitMQService.getQueueInfo(`test-queue-disconnected-${Date.now()}`)
+        rabbitMQService.getQueueInfo(`test-queue-disconnected-${Date.now()}`),
       ).rejects.toThrow('RabbitMQ service is not connected');
 
       await expect(
-        rabbitMQService.purgeQueue(`test-queue-disconnected-${Date.now()}`)
+        rabbitMQService.purgeQueue(`test-queue-disconnected-${Date.now()}`),
       ).rejects.toThrow('RabbitMQ service is not connected');
     });
 
     it('should handle topology setup when not connected', async () => {
       await rabbitMQService.close();
 
-      await expect(
-        rabbitMQService.setupTopology()
-      ).rejects.toThrow('RabbitMQ service is not connected');
+      await expect(rabbitMQService.setupTopology()).rejects.toThrow(
+        'RabbitMQ service is not connected',
+      );
     });
   });
 
@@ -353,7 +384,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       }));
 
       const publishPromises = messages.map((message, index) =>
-        rabbitMQService.publishMessage(`test.routing.${index}`, message)
+        rabbitMQService.publishMessage(`test.routing.${index}`, message),
       );
 
       const results = await Promise.all(publishPromises);
@@ -365,7 +396,10 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
     it('should handle multiple concurrent consumers', async () => {
       const consumerCount = 3;
       const consumerPromises = Array.from({ length: consumerCount }, (_, i) =>
-        rabbitMQService.consumeMessages(`test-queue-${i}-${Date.now()}`, vi.fn())
+        rabbitMQService.consumeMessages(
+          `test-queue-${i}-${Date.now()}`,
+          vi.fn(),
+        ),
       );
 
       const consumerTags = await Promise.all(consumerPromises);
@@ -392,7 +426,10 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
         rabbitMQService.consumeMessages('test-queue-1', vi.fn()),
         rabbitMQService.getQueueInfo(RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST),
         rabbitMQService.healthCheck(),
-        rabbitMQService.publishMessage('test.routing.2', { ...testMessage, messageId: `msg-2-${Date.now()}` }),
+        rabbitMQService.publishMessage('test.routing.2', {
+          ...testMessage,
+          messageId: `msg-2-${Date.now()}`,
+        }),
       ];
 
       await expect(Promise.all(operations)).resolves.not.toThrow();
@@ -408,7 +445,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       // 1. Publish PDF conversion request
       const testWorkflowQueueName = `test-workflow-${Date.now()}`;
       const testWorkflowRoutingKey = `test.workflow.routing.${Date.now()}`;
-      
+
       const conversionRequest: PdfConversionRequestMessage = {
         messageId: `pdf-conv-${Date.now()}`,
         timestamp: Date.now(),
@@ -426,7 +463,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
       const published = await rabbitMQService.publishMessage(
         testWorkflowRoutingKey,
-        conversionRequest
+        conversionRequest,
       );
       expect(published).toBe(true);
 
@@ -440,13 +477,18 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
         rabbitMQService.consumeMessages(
           RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
-          requestConsumer
+          requestConsumer,
         );
       });
 
       const result = await Promise.race([
         requestPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Request not received within timeout')), 5000))
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Request not received within timeout')),
+            5000,
+          ),
+        ),
       ]);
 
       expect(result).toBeDefined();
@@ -466,7 +508,7 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
 
       const progressPublished = await rabbitMQService.publishMessage(
         `test.workflow.progress.${Date.now()}`,
-        progressMessage
+        progressMessage,
       );
       expect(progressPublished).toBe(true);
     }, 15000);
@@ -484,13 +526,13 @@ describe('RabbitMQMessageService - End-to-End Integration Tests', () => {
       const startTime = Date.now();
       const publishResults = await Promise.all(
         messages.map((message, index) =>
-          rabbitMQService.publishMessage(`bulk.routing.${index}`, message)
-        )
+          rabbitMQService.publishMessage(`bulk.routing.${index}`, message),
+        ),
       );
       const publishTime = Date.now() - startTime;
 
       expect(publishResults).toHaveLength(messageCount);
-      expect(publishResults.every(result => result === true)).toBe(true);
+      expect(publishResults.every((result) => result === true)).toBe(true);
       expect(publishTime).toBeLessThan(10000); // Should complete within 10 seconds
     }, 15000);
   });

@@ -1,31 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 import QuizStorage, {
   PracticeRecord,
   PracticeRecordData,
-} from "@/lib/quiz/QuizStorage";
+} from '@/lib/quiz/QuizStorage';
 
-const logger = createLoggerWithPrefix("PracticeAnalysisRoute");
+const logger = createLoggerWithPrefix('PracticeAnalysisRoute');
 
 export async function GET(request: NextRequest) {
-  logger.info("GET request received");
+  logger.info('GET request received');
   try {
     // 获取当前用户会话
-    logger.debug("Fetching user session");
+    logger.debug('Fetching user session');
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      logger.warning("Unauthorized access attempt");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warning('Unauthorized access attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.email;
     if (!userId) {
-      logger.warning("User ID not found in session");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warning('User ID not found in session');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     logger.debug(`User ID: ${userId}`);
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     // logger.debug('Latest practice record:', latestRecord);
 
     // 从练习记录中提取所有题目ID
-    logger.debug("Extracting quiz IDs from practice records");
+    logger.debug('Extracting quiz IDs from practice records');
     const quizIds = practiceRecords
       .filter((record) => record.quizid)
       .map((record) => {
@@ -68,21 +68,21 @@ export async function GET(request: NextRequest) {
     logger.debug(`Extracted ${quizIds.length} unique quiz IDs`);
 
     // 从单一quiz集合中查询题目
-    logger.debug("Fetching quizzes based on extracted IDs");
+    logger.debug('Fetching quizzes based on extracted IDs');
     const quizClassMap: Record<string, string> =
       await quizStorage.createQuizSubjectMap(quizIds as ObjectId[]);
-    logger.debug("Quiz ID to subject mapping created");
+    logger.debug('Quiz ID to subject mapping created');
     // logger.debug(`${JSON.stringify(quizClassMap)}`)
 
     // 为每条记录找到对应的科目
-    logger.debug("Assigning subjects to practice records");
+    logger.debug('Assigning subjects to practice records');
     practiceRecords.forEach((record) => {
-      record.subject = quizClassMap[record.quizid] || "未分类";
+      record.subject = quizClassMap[record.quizid] || '未分类';
     });
-    logger.debug("Subjects assigned to practice records");
+    logger.debug('Subjects assigned to practice records');
 
     // 按日期和科目分组计算统计数据
-    logger.debug("Grouping and calculating statistics by date and subject");
+    logger.debug('Grouping and calculating statistics by date and subject');
     // 正确定义类型
     interface DayStats {
       date: string;
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     practiceRecords.forEach((record) => {
       const date = new Date(record.timestamp);
-      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
       if (!dateSubjectMap[dateString]) {
         dateSubjectMap[dateString] = {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 更新科目数据
-      const subject = record.subject || "未分类"; // Ensure subject is not undefined
+      const subject = record.subject || '未分类'; // Ensure subject is not undefined
       if (!dateSubjectMap[dateString].subjectData[subject]) {
         dateSubjectMap[dateString].subjectData[subject] = {
           count: 0,
@@ -138,12 +138,12 @@ export async function GET(request: NextRequest) {
     // logger.debug('Practice stats sorted by date');
     // logger.debug('Final practice stats:', practiceStats);
 
-    logger.info("Successfully fetched practice stats");
+    logger.info('Successfully fetched practice stats');
     return NextResponse.json(practiceStats);
   } catch (error) {
-    logger.error("Error fetching practice stats:", error);
+    logger.error('Error fetching practice stats:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }

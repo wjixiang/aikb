@@ -1,6 +1,6 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
-import { NextRequest, NextResponse } from "next/server";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     } = await request.json();
     const { db } = await connectToDatabase();
     const quizes = await db
-      .collection("quiz")
+      .collection('quiz')
       .find({
         _id: { $in: data.ids.map((e) => ObjectId.createFromHexString(e)) },
       })
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(quizes);
   } catch (error) {
     return new NextResponse(
-      JSON.stringify({ error: "Failed to fetch quizzes" }),
+      JSON.stringify({ error: 'Failed to fetch quizzes' }),
       {
         status: 500,
       },

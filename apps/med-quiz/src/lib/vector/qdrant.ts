@@ -1,12 +1,12 @@
-import dotenv from "dotenv";
-import { Collection, MongoClient, ObjectId } from "mongodb";
-import { QdrantClient } from "@qdrant/js-client-rest";
-import { v5 as uuidv5 } from "uuid";
-import { EmbeddedNote, note } from "@/types/noteData.types";
-import { embeddings, getEmbeddings } from "../langchain/provider";
-import { QdrantVectorStore } from "@langchain/qdrant";
-import { connectToDatabase } from "../db/mongodb";
-import { OpenAIEmbeddings } from "@langchain/openai";
+import dotenv from 'dotenv';
+import { Collection, MongoClient, ObjectId } from 'mongodb';
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { v5 as uuidv5 } from 'uuid';
+import { EmbeddedNote, note } from '@/types/noteData.types';
+import { embeddings, getEmbeddings } from '../langchain/provider';
+import { QdrantVectorStore } from '@langchain/qdrant';
+import { connectToDatabase } from '../db/mongodb';
+import { OpenAIEmbeddings } from '@langchain/openai';
 dotenv.config();
 
 interface DocumentData {
@@ -15,13 +15,13 @@ interface DocumentData {
 }
 
 export default class Qdrant {
-  MONGODB_URI: string = process.env.MONGODB_URI || "mongodb://localhost:27017";
+  MONGODB_URI: string = process.env.MONGODB_URI || 'mongodb://localhost:27017';
   NOTE_COLECTION_NAME: string;
-  DB_NAME: string = process.env.QUIZ_DB || "QuizBank";
-  COLLECTION_NAME: string = process.env.COLLECTION_NAME || "a2";
-  QDRANT_URL: string = process.env.QDRANT_URL || "http://localhost:6333";
+  DB_NAME: string = process.env.QUIZ_DB || 'QuizBank';
+  COLLECTION_NAME: string = process.env.COLLECTION_NAME || 'a2';
+  QDRANT_URL: string = process.env.QDRANT_URL || 'http://localhost:6333';
   // UUID namespace（确保这是一个合法的 UUID）
-  UUID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+  UUID_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
   qdrantClient = new QdrantClient({ url: this.QDRANT_URL });
 
   mongoNoteCollection!: Collection<note>;
@@ -33,14 +33,14 @@ export default class Qdrant {
 
   async initDB() {
     const { db, client } = await connectToDatabase();
-    this.mongoNoteCollection = db.collection<note>("note");
+    this.mongoNoteCollection = db.collection<note>('note');
   }
 
   embedInstance = new OpenAIEmbeddings({
-    model: "text-embedding-3-large",
-    openAIApiKey: "sk-QcY6be4838a6e61d6f01028396cfbb5ed2459b8b34crCNNQ",
+    model: 'text-embedding-3-large',
+    openAIApiKey: 'sk-QcY6be4838a6e61d6f01028396cfbb5ed2459b8b34crCNNQ',
     configuration: {
-      baseURL: "https://api.gptsapi.net/v1",
+      baseURL: 'https://api.gptsapi.net/v1',
     },
   });
 
@@ -100,7 +100,7 @@ export default class Qdrant {
     );
 
     if (validEmbeddedNotes.length === 0) {
-      console.log("没有有效的嵌入笔记需要处理");
+      console.log('没有有效的嵌入笔记需要处理');
       return;
     }
 
@@ -121,7 +121,7 @@ export default class Qdrant {
         batch.map(async (note) => {
           try {
             const existingRecords = await this.searchRecordsByMetadata(
-              "oid",
+              'oid',
               note.oid,
               this.NOTE_COLECTION_NAME,
               1,
@@ -144,7 +144,7 @@ export default class Qdrant {
     }
 
     if (allNewPoints.length === 0) {
-      console.log("没有新的嵌入点需要上传至 Qdrant");
+      console.log('没有新的嵌入点需要上传至 Qdrant');
       return;
     }
 
@@ -175,7 +175,7 @@ export default class Qdrant {
         );
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("上传超时")), 30000),
+          setTimeout(() => reject(new Error('上传超时')), 30000),
         );
 
         await Promise.race([upsertPromise, timeoutPromise]);
@@ -230,9 +230,9 @@ export default class Qdrant {
           failedBatches.length >= 3 &&
           failedBatches
             .slice(-3)
-            .every((b) => (b.reason as any).includes("验证失败"))
+            .every((b) => (b.reason as any).includes('验证失败'))
         ) {
-          console.error("连续3次验证失败，中断上传过程");
+          console.error('连续3次验证失败，中断上传过程');
           break;
         }
       }
@@ -267,7 +267,7 @@ export default class Qdrant {
         `最终验证成功: 所有 ${retrievedPoints.length} 个样本点的向量都有效`,
       );
     } catch (error) {
-      console.error("最终验证失败:", error);
+      console.error('最终验证失败:', error);
       throw new Error(`上传过程完成但最终验证失败: ${error}`);
     }
 
@@ -314,7 +314,7 @@ export default class Qdrant {
     });
 
     const { client, db } = await connectToDatabase();
-    const noteCollection = db.collection<note>("note");
+    const noteCollection = db.collection<note>('note');
 
     // const results = await vectorStore.similaritySearchWithScore(query, limit);
     const documents = await Promise.all(
@@ -334,10 +334,10 @@ export default class Qdrant {
           return doc;
         }
         return {
-          pageContent: "",
+          pageContent: '',
           metadata: {
             score: 0,
-            id: "",
+            id: '',
           },
         };
       }),
@@ -367,7 +367,7 @@ export default class Qdrant {
     // 从 Qdrant 中现有集合里加载向量存储
 
     const { client, db } = await connectToDatabase();
-    const noteCollection = db.collection<note>("note");
+    const noteCollection = db.collection<note>('note');
 
     // 传入向量进行相似性检索
     const results = await this.qdrantClient.query(this.NOTE_COLECTION_NAME, {
@@ -397,10 +397,10 @@ export default class Qdrant {
           };
         }
         return {
-          pageContent: "",
+          pageContent: '',
           metadata: {
             score: 0,
-            id: "",
+            id: '',
           },
         };
       }),
@@ -410,10 +410,10 @@ export default class Qdrant {
 
   async ensureCollectionExists(
     collectionName: string,
-    distance: string = "Cosine",
+    distance: string = 'Cosine',
   ) {
     // 从环境变量获取 Qdrant 地址或使用默认值
-    const qdrantUrl = process.env.QDRANT_URL || "http://localhost:6333";
+    const qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
     const client = new QdrantClient({ url: qdrantUrl });
 
     try {
@@ -436,7 +436,7 @@ export default class Qdrant {
       const createResponse = await client.createCollection(collectionName, {
         vectors: {
           size: await this.checkEmbeddingDimension(),
-          distance: "Cosine",
+          distance: 'Cosine',
           quantization_config: null,
         },
         optimizers_config: {
@@ -448,7 +448,7 @@ export default class Qdrant {
       });
       console.log(`集合 ${collectionName} 创建成功：`, createResponse);
     } catch (error) {
-      console.error("检查或创建集合时发生错误：", error);
+      console.error('检查或创建集合时发生错误：', error);
     }
   }
 
@@ -457,10 +457,10 @@ export default class Qdrant {
    * @returns 当前embedding实例的嵌入长度
    */
   async checkEmbeddingDimension() {
-    const query = "请介绍一下 LangChain";
+    const query = '请介绍一下 LangChain';
     const vector = await this.embedInstance.embedQuery(query);
 
-    console.log("生成的向量长度：", vector.length);
+    console.log('生成的向量长度：', vector.length);
     return vector.length;
   }
 
@@ -498,9 +498,9 @@ export default class Qdrant {
   async listCollections() {
     try {
       const response = await this.qdrantClient.getCollections();
-      console.log("Collections in Qdrant:", response);
+      console.log('Collections in Qdrant:', response);
     } catch (error) {
-      console.error("Error fetching collections:", error);
+      console.error('Error fetching collections:', error);
     }
   }
 
@@ -585,14 +585,14 @@ export default class Qdrant {
     order_value?: number | Record<string, unknown> | null | undefined;
   } | null> {
     // 初始化 Qdrant 客户端，请根据实际情况配置 URL
-    const client = new QdrantClient({ url: "http://localhost:6333" });
+    const client = new QdrantClient({ url: 'http://localhost:6333' });
 
     // 假设这个方法能获取对应集合的点的数量
     const totalPoints: number = (await this.getCollectionCount(
       this.NOTE_COLECTION_NAME,
     )) as number;
     if (totalPoints === 0) {
-      throw new Error("集合中没有点");
+      throw new Error('集合中没有点');
     }
 
     // 生成随机索引
@@ -699,7 +699,7 @@ export default class Qdrant {
       if (totalPoints === 0) {
         return {
           success: true,
-          message: "集合为空，没有向量可检查",
+          message: '集合为空，没有向量可检查',
           totalPoints: 0,
           sampledPoints: 0,
           emptyVectors: [],
@@ -716,7 +716,7 @@ export default class Qdrant {
       const isSampling = pointsToCheck < totalPoints;
 
       console.log(
-        `将检查 ${pointsToCheck} 个向量${isSampling ? " (抽样)" : ""}`,
+        `将检查 ${pointsToCheck} 个向量${isSampling ? ' (抽样)' : ''}`,
       );
 
       // 存储空向量信息
@@ -788,7 +788,7 @@ export default class Qdrant {
             hasNaN ||
             isNearZero
           ) {
-            console.log("empty vector");
+            console.log('empty vector');
             emptyVectors.push({
               id: point.id,
               isNull,
@@ -828,7 +828,7 @@ export default class Qdrant {
         hasEmptyVectors: emptyVectors.length > 0,
       };
     } catch (error) {
-      console.error("检测空向量时出错:", error);
+      console.error('检测空向量时出错:', error);
       return {
         success: false,
         message: `检测失败: ${error}`,
@@ -844,10 +844,10 @@ export default class Qdrant {
    */
   async fixEmptyVectors(
     emptyVectorIds: (string | number)[],
-    regenerateStrategy: "delete" | "regenerate" = "regenerate",
+    regenerateStrategy: 'delete' | 'regenerate' = 'regenerate',
   ) {
     if (emptyVectorIds.length === 0) {
-      return { success: true, message: "没有需要修复的向量", fixed: 0 };
+      return { success: true, message: '没有需要修复的向量', fixed: 0 };
     }
 
     console.log(
@@ -858,7 +858,7 @@ export default class Qdrant {
     let failedCount = 0;
 
     try {
-      if (regenerateStrategy === "delete") {
+      if (regenerateStrategy === 'delete') {
         // 删除空向量
         for (let i = 0; i < emptyVectorIds.length; i += 100) {
           const batch = emptyVectorIds.slice(i, i + 100);
@@ -879,7 +879,7 @@ export default class Qdrant {
       } else {
         // 重新生成向量
         const { client, db } = await connectToDatabase();
-        const noteCollection = db.collection<note>("note");
+        const noteCollection = db.collection<note>('note');
 
         for (const id of emptyVectorIds) {
           try {
@@ -967,7 +967,7 @@ export default class Qdrant {
         };
       }
     } catch (error) {
-      console.error("修复空向量时出错:", error);
+      console.error('修复空向量时出错:', error);
       return {
         success: false,
         message: `修复失败: ${error}`,
@@ -987,7 +987,7 @@ export default class Qdrant {
   async detectAndFixEmptyVectors(
     sampleSize: number = 0,
     autoFix: boolean = false,
-    fixStrategy: "delete" | "regenerate" = "regenerate",
+    fixStrategy: 'delete' | 'regenerate' = 'regenerate',
   ) {
     // 1. 检测空向量
     const detectionResult = await this.detectEmptyVectors(sampleSize);
@@ -1009,7 +1009,7 @@ export default class Qdrant {
         success: true,
         message: detectionResult.hasEmptyVectors
           ? `发现 ${detectionResult.emptyVectorsCount} 个空向量，但未执行修复`
-          : "没有发现空向量",
+          : '没有发现空向量',
         detection: detectionResult,
         fix: null,
       };

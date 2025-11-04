@@ -1,17 +1,17 @@
-import { NextResponse } from "next/server";
-import OSS from "ali-oss";
+import { NextResponse } from 'next/server';
+import OSS from 'ali-oss';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const imagePath = searchParams.get("path");
+  const imagePath = searchParams.get('path');
 
-  console.log("=== DEBUG: Image API Called ===");
-  console.log("Raw image path:", imagePath);
+  console.log('=== DEBUG: Image API Called ===');
+  console.log('Raw image path:', imagePath);
 
   if (!imagePath) {
-    console.log("Missing path parameter");
+    console.log('Missing path parameter');
     return NextResponse.json(
-      { error: "Image path is required" },
+      { error: 'Image path is required' },
       { status: 400 },
     );
   }
@@ -27,16 +27,16 @@ export async function GET(req: Request) {
     });
 
     // Clean the path and ensure proper format
-    let cleanPath = imagePath.replace(/^\/+/, "");
-    console.log("Cleaned path:", cleanPath);
+    let cleanPath = imagePath.replace(/^\/+/, '');
+    console.log('Cleaned path:', cleanPath);
 
     // Handle spaces and special characters in filenames
     cleanPath = decodeURIComponent(cleanPath);
-    console.log("Decoded path:", cleanPath);
+    console.log('Decoded path:', cleanPath);
 
     // Special handling for pasted images
-    if (cleanPath.includes("Pasted image")) {
-      console.log("Detected pasted image format:", cleanPath);
+    if (cleanPath.includes('Pasted image')) {
+      console.log('Detected pasted image format:', cleanPath);
 
       // Try exact path first
       const exactPaths = [
@@ -53,30 +53,30 @@ export async function GET(req: Request) {
         const url = await client.asyncSignatureUrl(`images/${cleanPath}`, {
           expires: 3600,
         });
-        console.log("Found image at:", `${url}`);
+        console.log('Found image at:', `${url}`);
         return NextResponse.json({ url });
       } catch (err) {
-        console.log("Path not found:", `images/${cleanPath}`, err);
+        console.log('Path not found:', `images/${cleanPath}`, err);
       }
     }
 
     // Check if it's a valid image extension
     const imageExtensions = [
-      ".png",
-      ".jpg",
-      ".jpeg",
-      ".gif",
-      ".svg",
-      ".webp",
-      ".bmp",
-      ".tiff",
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.svg',
+      '.webp',
+      '.bmp',
+      '.tiff',
     ];
     const hasValidExtension = imageExtensions.some((ext) =>
       cleanPath.toLowerCase().endsWith(ext),
     );
 
     if (!hasValidExtension) {
-      console.log("Invalid image format:", cleanPath);
+      console.log('Invalid image format:', cleanPath);
 
       // Try to find the file with common extensions
       for (const ext of imageExtensions) {
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
           const testUrl = await client.asyncSignatureUrl(testPath, {
             expires: 3600,
           });
-          console.log("Found image with added extension:", testPath);
+          console.log('Found image with added extension:', testPath);
           return NextResponse.json({ url: testUrl });
         } catch {
           // Continue to next extension
@@ -93,29 +93,29 @@ export async function GET(req: Request) {
       }
 
       return NextResponse.json(
-        { error: "Invalid image format" },
+        { error: 'Invalid image format' },
         { status: 400 },
       );
     }
 
     // Add /images/ prefix if not already present
-    if (!cleanPath.startsWith("images/")) {
+    if (!cleanPath.startsWith('images/')) {
       cleanPath = `images/${cleanPath}`;
     }
-    console.log("Final clean path:", cleanPath);
+    console.log('Final clean path:', cleanPath);
 
     // Generate presigned URL using ali-oss
     const url = await client.asyncSignatureUrl(cleanPath, {
       expires: 3600, // URL expires in 1 hour
     });
 
-    console.log("Generated URL:", url);
+    console.log('Generated URL:', url);
     return NextResponse.json({ url });
   } catch (error) {
-    console.error("Error getting image URL:", error);
+    console.error('Error getting image URL:', error);
     return NextResponse.json(
       {
-        error: "Failed to get image URL",
+        error: 'Failed to get image URL',
         details: error instanceof Error ? error.message : String(error),
         path: imagePath,
       },
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
 
     if (!imagePath) {
       return NextResponse.json(
-        { error: "Image path is required" },
+        { error: 'Image path is required' },
         { status: 400 },
       );
     }
@@ -144,18 +144,18 @@ export async function POST(req: Request) {
       secure: true,
     });
 
-    let cleanPath = imagePath.replace(/^\/+/, "");
+    let cleanPath = imagePath.replace(/^\/+/, '');
 
     // Check if it's a valid image extension
     const imageExtensions = [
-      ".png",
-      ".jpg",
-      ".jpeg",
-      ".gif",
-      ".svg",
-      ".webp",
-      ".bmp",
-      ".tiff",
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.svg',
+      '.webp',
+      '.bmp',
+      '.tiff',
     ];
     const hasValidExtension = imageExtensions.some((ext) =>
       cleanPath.toLowerCase().endsWith(ext),
@@ -163,13 +163,13 @@ export async function POST(req: Request) {
 
     if (!hasValidExtension) {
       return NextResponse.json(
-        { error: "Invalid image format" },
+        { error: 'Invalid image format' },
         { status: 400 },
       );
     }
 
     // Add /images/ prefix if not already present
-    if (!cleanPath.startsWith("images/")) {
+    if (!cleanPath.startsWith('images/')) {
       cleanPath = `images/${cleanPath}`;
     }
 
@@ -177,16 +177,16 @@ export async function POST(req: Request) {
     const url = await client.asyncSignatureUrl(cleanPath, {
       expires: 3600, // URL expires in 1 hour
       response: {
-        "content-type": "image/*",
+        'content-type': 'image/*',
       },
     });
-    console.log("url: ", url);
+    console.log('url: ', url);
 
     return NextResponse.json({ url });
   } catch (error) {
-    console.error("Error getting image URL:", error);
+    console.error('Error getting image URL:', error);
     return NextResponse.json(
-      { error: "Failed to get image URL" },
+      { error: 'Failed to get image URL' },
       { status: 500 },
     );
   }

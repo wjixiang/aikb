@@ -1,11 +1,11 @@
-import { MongoClient, ObjectId } from "mongodb";
-import { clientPromise } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
+import { MongoClient, ObjectId } from 'mongodb';
+import { clientPromise } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
 
 export interface ChatMessage {
   id: string;
-  type: "user" | "ai" | "system" | "status";
+  type: 'user' | 'ai' | 'system' | 'status';
   content: string;
   data?: any;
   timestamp: Date;
@@ -18,7 +18,7 @@ export interface ChatSession {
   userId: string;
   title: string;
   messages: ChatMessage[];
-  status: "active" | "completed" | "archived";
+  status: 'active' | 'completed' | 'archived';
   createdAt: Date;
   updatedAt: Date;
   lastActivity: Date;
@@ -39,7 +39,7 @@ export class ChatHistoryService {
   private async getCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.QUIZ_DB);
-    return db.collection<ChatSession>("chat_sessions");
+    return db.collection<ChatSession>('chat_sessions');
   }
 
   /**
@@ -48,7 +48,7 @@ export class ChatHistoryService {
   private async getCurrentUserId(): Promise<string> {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      throw new Error("User not authenticated");
+      throw new Error('User not authenticated');
     }
     return session.user.id;
   }
@@ -63,12 +63,12 @@ export class ChatHistoryService {
 
       const collection = await this.getCollection();
 
-      const newSession: Omit<ChatSession, "_id"> = {
+      const newSession: Omit<ChatSession, '_id'> = {
         sessionId,
         userId,
-        title: title || "新对话",
+        title: title || '新对话',
         messages: [],
-        status: "active",
+        status: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
         lastActivity: new Date(),
@@ -78,11 +78,11 @@ export class ChatHistoryService {
 
       return sessionId;
     } catch (error) {
-      console.error("Error creating session in ChatHistoryService:", error);
+      console.error('Error creating session in ChatHistoryService:', error);
       if (error instanceof Error) {
         throw new Error(`Failed to create session: ${error.message}`);
       } else {
-        throw new Error("Failed to create session: Unknown error");
+        throw new Error('Failed to create session: Unknown error');
       }
     }
   }
@@ -118,7 +118,7 @@ export class ChatHistoryService {
    */
   async addMessage(
     sessionId: string,
-    message: Omit<ChatMessage, "id" | "sessionId" | "timestamp">,
+    message: Omit<ChatMessage, 'id' | 'sessionId' | 'timestamp'>,
   ): Promise<void> {
     const userId = await this.getCurrentUserId();
     const collection = await this.getCollection();
@@ -142,7 +142,7 @@ export class ChatHistoryService {
     );
 
     if (result.matchedCount === 0) {
-      throw new Error("Session not found or access denied");
+      throw new Error('Session not found or access denied');
     }
   }
 
@@ -179,7 +179,7 @@ export class ChatHistoryService {
     );
 
     if (result.matchedCount === 0) {
-      throw new Error("Session not found or access denied");
+      throw new Error('Session not found or access denied');
     }
   }
 
@@ -202,7 +202,7 @@ export class ChatHistoryService {
     );
 
     if (result.matchedCount === 0) {
-      throw new Error("Session not found or access denied");
+      throw new Error('Session not found or access denied');
     }
   }
 
@@ -210,22 +210,22 @@ export class ChatHistoryService {
    * Delete a session
    */
   async deleteSession(sessionId: string): Promise<void> {
-    console.log("ChatHistoryService: Deleting session", sessionId);
+    console.log('ChatHistoryService: Deleting session', sessionId);
     const userId = await this.getCurrentUserId();
-    console.log("ChatHistoryService: User ID", userId);
+    console.log('ChatHistoryService: User ID', userId);
     const collection = await this.getCollection();
 
     const result = await collection.deleteOne({ sessionId, userId });
-    console.log("ChatHistoryService: Delete result", result);
+    console.log('ChatHistoryService: Delete result', result);
 
     if (result.deletedCount === 0) {
       console.error(
-        "ChatHistoryService: Session not found or access denied",
+        'ChatHistoryService: Session not found or access denied',
         sessionId,
       );
-      throw new Error("Session not found or access denied");
+      throw new Error('Session not found or access denied');
     }
-    console.log("ChatHistoryService: Session deleted successfully", sessionId);
+    console.log('ChatHistoryService: Session deleted successfully', sessionId);
   }
 
   /**
@@ -239,14 +239,14 @@ export class ChatHistoryService {
       { sessionId, userId },
       {
         $set: {
-          status: "archived",
+          status: 'archived',
           updatedAt: new Date(),
         },
       },
     );
 
     if (result.matchedCount === 0) {
-      throw new Error("Session not found or access denied");
+      throw new Error('Session not found or access denied');
     }
   }
 
@@ -258,7 +258,7 @@ export class ChatHistoryService {
     const collection = await this.getCollection();
 
     const sessions = await collection
-      .find({ userId, status: { $ne: "archived" } })
+      .find({ userId, status: { $ne: 'archived' } })
       .sort({ lastActivity: -1 })
       .limit(limit)
       .toArray();

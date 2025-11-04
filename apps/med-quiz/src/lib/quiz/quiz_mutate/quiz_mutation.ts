@@ -1,11 +1,11 @@
-import { quiz } from "@/types/quizData.types";
-import QuizStorage from "@/lib/quiz/QuizStorage";
-import rag_workflow from "@/kgrag/lib/llm_workflow/rag_workflow";
-import KnowledgeGraphRetriever from "@/kgrag/core/KnowledgeGraphRetriever";
-import { b } from "@/baml_client/async_client";
-import { MutatedQuiz, Option as BamlOption } from "@/types/baml.types";
-import { language } from "@/kgrag/core/type"; // Import language type
-import { KnowledgeGraphRetriever_Config } from "@/setting";
+import { quiz } from '@/types/quizData.types';
+import QuizStorage from '@/lib/quiz/QuizStorage';
+import rag_workflow from '@/kgrag/lib/llm_workflow/rag_workflow';
+import KnowledgeGraphRetriever from '@/kgrag/core/KnowledgeGraphRetriever';
+import { b } from '@/baml_client/async_client';
+import { MutatedQuiz, Option as BamlOption } from '@/types/baml.types';
+import { language } from '@/kgrag/core/type'; // Import language type
+import { KnowledgeGraphRetriever_Config } from '@/setting';
 
 export default class QuizMutate {
   private quizStorage: QuizStorage;
@@ -29,7 +29,7 @@ export default class QuizMutate {
         useHyDE: false,
         useHybrid: false,
         topK: 5,
-        language: "zh",
+        language: 'zh',
       },
     );
 
@@ -49,8 +49,8 @@ export default class QuizMutate {
     const convertedQuiz: quiz = {
       _id: originalQuiz._id, // Keep original ID or generate a new one if it's a truly new quiz
       type:
-        originalQuiz.type === "A3" || originalQuiz.type === "B"
-          ? "A1"
+        originalQuiz.type === 'A3' || originalQuiz.type === 'B'
+          ? 'A1'
           : originalQuiz.type, // Default to A1 if original was A3/B, otherwise keep original type
       class: originalQuiz.class,
       unit: originalQuiz.unit,

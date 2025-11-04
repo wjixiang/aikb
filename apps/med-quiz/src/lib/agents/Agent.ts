@@ -1,13 +1,13 @@
-import { ChatMessage } from "./agent.types";
-import type { Task } from "@/types/baml";
-import { QuizQueryService } from "../quiz/quiz_graph_query_service";
-import ChunkStorage, { EmbeddingFunc } from "@/kgrag/database/chunkStorage";
-import { embedding } from "@/kgrag/lib/embedding";
-import { ExecuteRAGNode } from "./ExecuteRAGNode"; // Import concrete node implementations
-import { FetchQuizzesNode } from "./FetchQuizzesNode";
+import { ChatMessage } from './agent.types';
+import type { Task } from '@/types/baml';
+import { QuizQueryService } from '../quiz/quiz_graph_query_service';
+import ChunkStorage, { EmbeddingFunc } from '@/kgrag/database/chunkStorage';
+import { embedding } from '@/kgrag/lib/embedding';
+import { ExecuteRAGNode } from './ExecuteRAGNode'; // Import concrete node implementations
+import { FetchQuizzesNode } from './FetchQuizzesNode';
 
-import { AgentMessage, AgentNode } from "./agent.types";
-import { rag_config } from "@/kgrag/lib/llm_workflow/rag_workflow";
+import { AgentMessage, AgentNode } from './agent.types';
+import { rag_config } from '@/kgrag/lib/llm_workflow/rag_workflow';
 
 /**
  * Represents the initial tasks that the Agent can execute.
@@ -15,10 +15,10 @@ import { rag_config } from "@/kgrag/lib/llm_workflow/rag_workflow";
  */
 const inital_tasks: Task[] = [
   {
-    task_name: "Execute_RAG",
+    task_name: 'Execute_RAG',
     task_description:
-      "This task will execute RAG searching function and get relivant documents. This is helpful to anwser various question about medical knowledge.",
-    task_example_user_query: ["高血压的治疗", "流脑的病理变化"],
+      'This task will execute RAG searching function and get relivant documents. This is helpful to anwser various question about medical knowledge.',
+    task_example_user_query: ['高血压的治疗', '流脑的病理变化'],
   },
   // {
   //     task_name: "Fetch_Quizzes",
@@ -80,17 +80,17 @@ export class Agent {
     try {
       // const {selected_task, response} = await b.PlanNextStep(query, inital_tasks)
 
-      const selected_task = "Execute_RAG";
-      const response = "";
+      const selected_task = 'Execute_RAG';
+      const response = '';
       // Yield the planned step
       yield {
-        type: "step",
+        type: 'step',
         content: `Planned next step: ${selected_task}`,
         task: selected_task,
       };
 
       yield {
-        type: "notice",
+        type: 'notice',
         content: response,
         task: selected_task,
       };
@@ -109,16 +109,16 @@ export class Agent {
       } else {
         console.warn(`No node found for task: ${selected_task}`);
         yield {
-          type: "error",
+          type: 'error',
           content: `No node found for task: ${selected_task}`,
           task: selected_task,
         };
       }
     } catch (error) {
-      console.error("Failed to plan next step:", error);
+      console.error('Failed to plan next step:', error);
       yield {
-        type: "error",
-        content: error instanceof Error ? error.message : "Unknown error",
+        type: 'error',
+        content: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

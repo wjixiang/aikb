@@ -1,4 +1,10 @@
-import { IsString, IsArray, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { Author } from '@aikb/bibliography';
 
 export class CreateLibraryItemDto {

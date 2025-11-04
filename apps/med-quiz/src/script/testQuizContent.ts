@@ -1,11 +1,11 @@
-import QuizStorage from "../lib/quiz/QuizStorage";
-import { quizSelector } from "@/types/quizSelector.types";
+import QuizStorage from '../lib/quiz/QuizStorage';
+import { quizSelector } from '@/types/quizSelector.types';
 
 async function main() {
   const storage = new QuizStorage();
 
   // Define quiz types we want to test
-  const quizTypes = ["A1", "A2", "A3", "B", "X"] as const;
+  const quizTypes = ['A1', 'A2', 'A3', 'B', 'X'] as const;
 
   for (const type of quizTypes) {
     try {

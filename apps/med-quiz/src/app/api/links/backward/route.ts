@@ -2,19 +2,19 @@
  * API endpoint for retrieving backward links
  */
 
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import knowledgeBase from "@/kgrag/knowledgeBase";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import knowledgeBase from '@/kgrag/knowledgeBase';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const documentId =
-      searchParams.get("documentId") || searchParams.get("path");
+      searchParams.get('documentId') || searchParams.get('path');
 
     if (!documentId) {
       return NextResponse.json(
-        { error: "documentId or path parameter is required" },
+        { error: 'documentId or path parameter is required' },
         { status: 400 },
       );
     }
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       sourceId: link.sourceId,
       targetId: link.targetId,
       sourceTitle:
-        link.sourceTitle || link.sourceId.split("/").pop() || "Untitled",
+        link.sourceTitle || link.sourceId.split('/').pop() || 'Untitled',
       linkType: link.linkType,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,
@@ -42,11 +42,11 @@ export async function GET(request: Request) {
       count: formattedLinks.length,
     });
   } catch (error) {
-    console.error("Error retrieving backward links:", error);
+    console.error('Error retrieving backward links:', error);
     return NextResponse.json(
       {
-        error: "Failed to retrieve backward links",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to retrieve backward links',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     );

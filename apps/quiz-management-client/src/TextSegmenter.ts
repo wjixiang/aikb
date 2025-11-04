@@ -1,8 +1,7 @@
-
 export class TextSegmenter {
   text: string;
-  segments!: {text: string, start: number, end: number}[];
-  regexp = /([。？！\n]|^[A-Z]\)|\d+\.)/g
+  segments!: { text: string; start: number; end: number }[];
+  regexp = /([。？！\n]|^[A-Z]\)|\d+\.)/g;
 
   constructor(text: string) {
     this.text = text;
@@ -14,7 +13,7 @@ export class TextSegmenter {
    * @param delimiters Regex pattern for split points (e.g. /([。？！\n]\s*)/g)
    */
   segment(delimiters: RegExp = /([。？！\n]|^[A-Z]\)|\d+\.)/g): this {
-    const segments: {text: string, start: number, end: number}[] = [];
+    const segments: { text: string; start: number; end: number }[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
@@ -24,7 +23,7 @@ export class TextSegmenter {
       segments.push({
         text: this.text.substring(start, end),
         start,
-        end
+        end,
       });
       lastIndex = end;
     }
@@ -34,7 +33,7 @@ export class TextSegmenter {
       segments.push({
         text: this.text.substring(lastIndex),
         start: lastIndex,
-        end: this.text.length
+        end: this.text.length,
       });
     }
 
@@ -45,7 +44,7 @@ export class TextSegmenter {
   /**
    * Get all segments with their positions
    */
-  getSegments(): {text: string, start: number, end: number}[] {
+  getSegments(): { text: string; start: number; end: number }[] {
     return this.segments;
   }
 
@@ -55,7 +54,10 @@ export class TextSegmenter {
    * @param end End position (exclusive)
    */
   getTextByRange(start: number, end: number): string {
-    return this.segments.slice(start-1 >=0 ? start-1 : 0,end).map(e=>e.text).join(" ")
+    return this.segments
+      .slice(start - 1 >= 0 ? start - 1 : 0, end)
+      .map((e) => e.text)
+      .join(' ');
   }
 
   /**
@@ -70,11 +72,13 @@ export class TextSegmenter {
    * Render segments with numbered markers for LLM processing
    */
   renderForLLM(): string {
-    return this.segments.map((seg, i) => {
-      const index = i + 1; // Start numbering from 1
-      const marker = `[${index}]`.padEnd(6); // Fixed width for alignment
-      return `${marker}${seg.text.trim()}`;
-    }).join('\n');
+    return this.segments
+      .map((seg, i) => {
+        const index = i + 1; // Start numbering from 1
+        const marker = `[${index}]`.padEnd(6); // Fixed width for alignment
+        return `${marker}${seg.text.trim()}`;
+      })
+      .join('\n');
   }
 
   /**

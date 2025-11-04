@@ -1,4 +1,4 @@
-import { Card, FSRS, Rating, Grade, fsrs } from "ts-fsrs";
+import { Card, FSRS, Rating, Grade, fsrs } from 'ts-fsrs';
 
 /**
  * 根据参数获取FSRS实例

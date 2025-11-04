@@ -1,16 +1,16 @@
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import Progress from "progress";
-import fs from "fs";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import Progress from 'progress';
+import fs from 'fs';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
-import dotenv from "dotenv";
-import { embedding } from "@/kgrag/lib/embedding";
-import { Document } from "@langchain/core/documents";
-import { EmbeddedTextChunk } from "../types/textData.types";
+import dotenv from 'dotenv';
+import { embedding } from '@/kgrag/lib/embedding';
+import { Document } from '@langchain/core/documents';
+import { EmbeddedTextChunk } from '../types/textData.types';
 import milvusCollectionOperator, {
   MilvusDocument,
-} from "@/lib/milvus/milvusCollectionOperator";
+} from '@/lib/milvus/milvusCollectionOperator';
 dotenv.config();
 
 export interface PDF_Chunk {
@@ -52,17 +52,17 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
     if (chunkSize) this.CHUNK_SIZE = chunkSize;
     if (chunkOverlap) this.CHUNK_OVERLAP = chunkOverlap;
     this.EMBEDDING_BATCH_SIZE = parseInt(
-      process.env.EMBEDDING_BATCH_SIZE || "100",
+      process.env.EMBEDDING_BATCH_SIZE || '100',
     );
     this.MILVUS_SAVE_BATCH_SIZE = parseInt(
-      process.env.MILVUS_SAVE_BATCH_SIZE || "100",
+      process.env.MILVUS_SAVE_BATCH_SIZE || '100',
     );
     this.bm25Function = {
-      name: "text_bm25_emb",
-      description: "bm25 function",
-      type: "BM25",
-      input_field_names: ["text_content"],
-      output_field_names: ["bm25_vector"],
+      name: 'text_bm25_emb',
+      description: 'bm25 function',
+      type: 'BM25',
+      input_field_names: ['text_content'],
+      output_field_names: ['bm25_vector'],
       params: {},
     };
 
@@ -82,7 +82,7 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
       const fileSizeInMB = stats.size / (1024 * 1024);
       console.log(`文件大小: ${fileSizeInMB.toFixed(2)} MB`);
 
-      return fs.readFileSync(filePath, "utf-8");
+      return fs.readFileSync(filePath, 'utf-8');
     } catch (error) {
       console.error(`读取文件失败: ${error}`);
       throw error;
@@ -207,12 +207,12 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
 
     // 创建进度条 - 包含批次信息和百分比
     const bar = new Progress(
-      "嵌入处理中 [:bar] :current/:total 块 (:percent) 批次:batch/:batches 速率::rate chunk/s 剩余::etas",
+      '嵌入处理中 [:bar] :current/:total 块 (:percent) 批次:batch/:batches 速率::rate chunk/s 剩余::etas',
       {
         total: chunks.length,
         width: 30,
-        complete: "=",
-        incomplete: " ",
+        complete: '=',
+        incomplete: ' ',
       },
     );
 
@@ -308,12 +308,12 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
 
     // 增强的进度条
     const bar = new Progress(
-      "保存到Milvus [:bar] :current/:total 批次 (:percent) 速率::rate 批/s 剩余时间::etas",
+      '保存到Milvus [:bar] :current/:total 批次 (:percent) 速率::rate 批/s 剩余时间::etas',
       {
         total: batches.length,
         width: 30,
-        complete: "█",
-        incomplete: "░",
+        complete: '█',
+        incomplete: '░',
       },
     );
 
@@ -332,7 +332,7 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
         bm25_vector: [], // Will be populated by BM25 function
         // metadata: JSON.stringify(chunk.metadata),
         // fileId: chunk.fileId,
-        tags: [chunk.fileId, "text_chunk"], // 使用fileId作为标签，便于按文件查询
+        tags: [chunk.fileId, 'text_chunk'], // 使用fileId作为标签，便于按文件查询
         partition_key: chunk.metadata.partition, // 添加分区键字段
       }));
 
@@ -401,19 +401,19 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
       // 读取目录中的所有文件
       const files = fs
         .readdirSync(directoryPath)
-        .filter((file) => file.endsWith(".txt"))
+        .filter((file) => file.endsWith('.txt'))
         .map((file) => path.join(directoryPath, file));
 
       console.log(`找到 ${files.length} 个文本文件`);
 
       // 创建进度条
       const bar = new Progress(
-        "处理文件 [:bar] :current/:total (:percent) :file",
+        '处理文件 [:bar] :current/:total (:percent) :file',
         {
           total: files.length,
           width: 30,
-          complete: "=",
-          incomplete: " ",
+          complete: '=',
+          incomplete: ' ',
         },
       );
 
@@ -425,8 +425,8 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
         try {
           // 使用文件名作为partition
           await this.processTextFile(filePath, {
-            partition: fileName.replace(".txt", ""),
-            source: "notebook",
+            partition: fileName.replace('.txt', ''),
+            source: 'notebook',
           });
         } catch (error) {
           console.error(`处理文件 ${fileName} 失败:`, error);
@@ -451,7 +451,7 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
     useBM25: boolean = false,
   ) {
     console.log(
-      `执行${useBM25 ? "BM25" : "语义"}搜索: "${query.substring(0, 50)}${query.length > 50 ? "..." : ""}"`,
+      `执行${useBM25 ? 'BM25' : '语义'}搜索: "${query.substring(0, 50)}${query.length > 50 ? '...' : ''}"`,
     );
     console.log(`集合: ${this.collectionName}, 结果限制: ${limit}`);
 
@@ -463,19 +463,19 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
       const searchReq = {
         collection_name: this.collectionName,
         data: [query],
-        anns_field: "bm25_vector",
+        anns_field: 'bm25_vector',
         limit: limit,
         params: {
-          metric_type: "BM25",
+          metric_type: 'BM25',
           drop_ratio_search: 0.2,
         },
         output_fields: [
-          "oid",
-          "title",
-          "content",
-          "metadata",
-          "fileId",
-          "tags",
+          'oid',
+          'title',
+          'content',
+          'metadata',
+          'fileId',
+          'tags',
         ],
       };
       const searchRes = await this.milvusClient.search(searchReq);
@@ -494,7 +494,7 @@ export default class TextFileEmbedding extends milvusCollectionOperator {
       // Dense vector search
       results = await this.searchSimilarDocuments(query, {
         limit: limit,
-        outputFields: ["oid", "title", "content", "metadata", "fileId", "tags"],
+        outputFields: ['oid', 'title', 'content', 'metadata', 'fileId', 'tags'],
       });
     }
 

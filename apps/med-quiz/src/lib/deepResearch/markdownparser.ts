@@ -10,13 +10,13 @@ export class MarkdownParser {
   public parse(markdown: string): MarkdownDocument {
     try {
       // 导入 marked 库
-      const marked = require("marked");
+      const marked = require('marked');
 
       // 移除每行开头的多余空格（修复缩进问题）
       const normalizedMarkdown = markdown
-        .split("\n")
+        .split('\n')
         .map((line) => line.trimStart())
-        .join("\n");
+        .join('\n');
 
       // 配置 marked 选项
       marked.setOptions({
@@ -30,15 +30,15 @@ export class MarkdownParser {
 
       // 调试输出
       console.log(
-        "Parsed tokens:",
+        'Parsed tokens:',
         JSON.stringify(tokens.slice(0, 2), null, 2),
       );
 
       // 将 tokens 转换为结构化文档
       return this.tokensToDocument(tokens);
     } catch (error) {
-      console.error("Error parsing markdown:", error);
-      return { title: "", sections: [] };
+      console.error('Error parsing markdown:', error);
+      return { title: '', sections: [] };
     }
   }
 
@@ -49,7 +49,7 @@ export class MarkdownParser {
    */
   private tokensToDocument(tokens: any[]): MarkdownDocument {
     const document: MarkdownDocument = {
-      title: "",
+      title: '',
       sections: [],
     };
 
@@ -59,7 +59,7 @@ export class MarkdownParser {
 
     // 查找文档标题（第一个 h1）
     const titleToken = tokens.find(
-      (t) => t.type === "heading" && t.depth === 1,
+      (t) => t.type === 'heading' && t.depth === 1,
     );
     if (titleToken) {
       document.title = titleToken.text;
@@ -72,7 +72,7 @@ export class MarkdownParser {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
 
-      if (token.type === "heading") {
+      if (token.type === 'heading') {
         if (token.depth === 1) {
           // 跳过文档标题，已经处理过了
           if (document.title === token.text) {
@@ -107,9 +107,9 @@ export class MarkdownParser {
           currentSection.content.push(content);
 
           // 如果处理了多个 token（如列表或表格），更新索引
-          if (content.type === "list" && token.items) {
+          if (content.type === 'list' && token.items) {
             // 列表已经在 tokenToContent 中完全处理
-          } else if (content.type === "table" && token.header) {
+          } else if (content.type === 'table' && token.header) {
             // 表格已经在 tokenToContent 中完全处理
           }
         }
@@ -140,44 +140,44 @@ export class MarkdownParser {
     index: number,
   ): Content | null {
     switch (token.type) {
-      case "paragraph":
+      case 'paragraph':
         return {
-          type: "text",
+          type: 'text',
           text: token.text,
         };
 
-      case "list":
+      case 'list':
         const items = token.items.map((item: any) => ({
           text: item.text,
         }));
 
         return {
-          type: "list",
+          type: 'list',
           items,
         };
 
-      case "code":
+      case 'code':
         return {
-          type: "code",
-          language: token.lang || "",
+          type: 'code',
+          language: token.lang || '',
           code: token.text,
         };
 
-      case "hr":
+      case 'hr':
         return {
-          type: "hr",
+          type: 'hr',
         };
 
-      case "table":
+      case 'table':
         return {
-          type: "table",
+          type: 'table',
           header: token.header,
           rows: token.rows,
         };
 
-      case "blockquote":
+      case 'blockquote':
         return {
-          type: "text",
+          type: 'text',
           text: token.text,
         };
 
@@ -192,7 +192,7 @@ export class MarkdownParser {
    * @returns Markdown 文本
    */
   public toMarkdown(document: MarkdownDocument): string {
-    let markdown = "";
+    let markdown = '';
 
     // 添加标题
     if (document.title) {
@@ -214,10 +214,10 @@ export class MarkdownParser {
    * @returns Markdown 文本
    */
   private sectionToMarkdown(section: Section, baseLevel: number): string {
-    let markdown = "";
+    let markdown = '';
 
     // 添加标题
-    const level = "#".repeat(baseLevel);
+    const level = '#'.repeat(baseLevel);
     markdown += `${level} ${section.title}\n\n`;
 
     // 添加内容
@@ -240,44 +240,44 @@ export class MarkdownParser {
    */
   private contentToMarkdown(content: Content): string {
     switch (content.type) {
-      case "text":
+      case 'text':
         return `${content.text}\n\n`;
 
-      case "heading":
-        const level = "#".repeat(content.level);
+      case 'heading':
+        const level = '#'.repeat(content.level);
         return `${level} ${content.text}\n\n`;
 
-      case "list":
-        let listText = "";
+      case 'list':
+        let listText = '';
         for (const item of content.items) {
           listText += `- ${item.text}\n`;
         }
         return `${listText}\n`;
 
-      case "code":
+      case 'code':
         return `\`\`\`${content.language}\n${content.code}\n\`\`\`\n\n`;
 
-      case "hr":
+      case 'hr':
         return `---\n\n`;
 
-      case "table":
-        let tableText = "";
+      case 'table':
+        let tableText = '';
 
         // 表头
-        tableText += `| ${content.header.join(" | ")} |\n`;
+        tableText += `| ${content.header.join(' | ')} |\n`;
 
         // 分隔线
-        tableText += `| ${content.header.map(() => "---").join(" | ")} |\n`;
+        tableText += `| ${content.header.map(() => '---').join(' | ')} |\n`;
 
         // 行
         for (const row of content.rows) {
-          tableText += `| ${row.join(" | ")} |\n`;
+          tableText += `| ${row.join(' | ')} |\n`;
         }
 
         return `${tableText}\n`;
 
       default:
-        return "";
+        return '';
     }
   }
 }
@@ -304,18 +304,18 @@ export type Content =
   | TableContent;
 
 export interface TextContent {
-  type: "text";
+  type: 'text';
   text: string;
 }
 
 export interface HeadingContent {
-  type: "heading";
+  type: 'heading';
   text: string;
   level: number;
 }
 
 export interface ListContent {
-  type: "list";
+  type: 'list';
   items: ListItem[];
 }
 
@@ -324,17 +324,17 @@ export interface ListItem {
 }
 
 export interface CodeBlock {
-  type: "code";
+  type: 'code';
   language: string;
   code: string;
 }
 
 export interface HorizontalRuleContent {
-  type: "hr";
+  type: 'hr';
 }
 
 export interface TableContent {
-  type: "table";
+  type: 'table';
   header: string[];
   rows: string[][];
 }

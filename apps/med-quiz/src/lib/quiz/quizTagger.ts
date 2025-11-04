@@ -1,4 +1,4 @@
-export type TagType = "private" | "public";
+export type TagType = 'private' | 'public';
 
 export interface QuizTag {
   value: string;
@@ -9,7 +9,7 @@ export interface QuizTag {
 }
 
 export interface PrivateTagData {
-  type: "private_tag";
+  type: 'private_tag';
   content: string;
 
   /**

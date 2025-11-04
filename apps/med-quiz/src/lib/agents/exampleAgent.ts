@@ -2,16 +2,16 @@ import AgentV3, {
   AgentTask,
   AgentProfile,
   TaskCompletionResult,
-} from "./AgentV3";
-import { AgentMessage } from "./agent.types";
+} from './AgentV3';
+import { AgentMessage } from './agent.types';
 
 // Example concrete implementation of AgentV3
 export class ExampleAgent extends AgentV3 {
   // Implementation of the required abstract property
   agentProfile: AgentProfile = {
-    agentName: "ExampleAgent",
+    agentName: 'ExampleAgent',
     functionDescription:
-      "An example agent that demonstrates the AgentV3 framework",
+      'An example agent that demonstrates the AgentV3 framework',
     followAgents: [],
   };
 
@@ -24,15 +24,15 @@ export class ExampleAgent extends AgentV3 {
   // Implementation of the required abstract method
   async *start(): AsyncGenerator<AgentMessage> {
     yield {
-      type: "step",
+      type: 'step',
       content: `Executing task: ${this.task.taskName}`,
       task: this.task.taskName,
     };
 
     // Simulate some work being done
     yield {
-      type: "update",
-      content: "Processing task data...",
+      type: 'update',
+      content: 'Processing task data...',
       task: this.task.taskName,
     };
 
@@ -40,8 +40,8 @@ export class ExampleAgent extends AgentV3 {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     yield {
-      type: "update",
-      content: "Task processing complete",
+      type: 'update',
+      content: 'Task processing complete',
       task: this.task.taskName,
     };
   }
@@ -55,14 +55,14 @@ export class ExampleAgent extends AgentV3 {
     if (this.currentIteration < 2) {
       return {
         isComplete: false,
-        nextAction: "continue",
+        nextAction: 'continue',
         feedback: `Task not yet complete, continuing iteration ${this.currentIteration}`,
       };
     } else if (this.currentIteration === 2) {
       // On the second iteration, we'll decide to delegate
       return {
         isComplete: false,
-        nextAction: "delegate",
+        nextAction: 'delegate',
         delegateTo: this.selectFollowUpAgent() || undefined,
         feedback: `Task requires specialized handling, delegating to follow-up agent`,
       };
@@ -70,7 +70,7 @@ export class ExampleAgent extends AgentV3 {
       // On the final iteration, we'll finish
       return {
         isComplete: true,
-        nextAction: "finish",
+        nextAction: 'finish',
         feedback: `Task completed successfully after ${this.currentIteration} iterations`,
       };
     }
@@ -89,12 +89,12 @@ export class ExampleAgent extends AgentV3 {
 
 // Example usage
 export async function runExample() {
-  console.log("Starting AgentV3 example...");
+  console.log('Starting AgentV3 example...');
 
   // Create a task
   const task: AgentTask = {
-    taskName: "DataAnalysis",
-    taskDescription: "Analyze user data and generate insights",
+    taskName: 'DataAnalysis',
+    taskDescription: 'Analyze user data and generate insights',
   };
 
   // Create an agent
@@ -105,7 +105,7 @@ export async function runExample() {
     console.log(`[${message.type}] ${message.task}: ${message.content}`);
   }
 
-  console.log("Agent execution completed.");
+  console.log('Agent execution completed.');
 }
 
 // Run the example if this file is executed directly

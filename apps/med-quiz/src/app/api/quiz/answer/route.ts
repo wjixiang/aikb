@@ -1,9 +1,9 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
-import { UpdateQuizAnswerRequest, APIResponse } from "@/types/quizSet.types";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
+import { UpdateQuizAnswerRequest, APIResponse } from '@/types/quizSet.types';
 
 /**
  * Updates the answer for a specific quiz within a quiz set.
@@ -25,15 +25,16 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { quizId, answer, quizSetId }: UpdateQuizAnswerRequest = await request.json();
-    const isDev = process.env.NODE_ENV === "development";
+    const { quizId, answer, quizSetId }: UpdateQuizAnswerRequest =
+      await request.json();
+    const isDev = process.env.NODE_ENV === 'development';
 
     if (!quizId || !quizSetId) {
       return NextResponse.json(
-        { error: "Quiz ID and Quiz set ID are required" },
+        { error: 'Quiz ID and Quiz set ID are required' },
         { status: 400 },
       );
     }
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     const { db } = await connectToDatabase();
 
     if (isDev) {
-      console.log("Updating answer for quiz:", {
+      console.log('Updating answer for quiz:', {
         quizId,
         quizSetId,
         answer,
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     // Update the answer in quizSets using $elemMatch to handle both string and ObjectId formats
-    const result = await db.collection("quizSets").updateOne(
+    const result = await db.collection('quizSets').updateOne(
       {
         _id: new ObjectId(quizSetId),
         quizzes: {
@@ -59,12 +60,12 @@ export async function POST(request: Request) {
         },
       },
       {
-        $set: { "quizzes.$[elem].answer": answer },
+        $set: { 'quizzes.$[elem].answer': answer },
       },
       {
         arrayFilters: [
           {
-            "elem.quizId": { $in: [quizId, new ObjectId(quizId)] },
+            'elem.quizId': { $in: [quizId, new ObjectId(quizId)] },
           },
         ],
       },
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
 
     if (result.modifiedCount === 0) {
       if (isDev) {
-        console.log("Update failed - no documents matched:", {
+        console.log('Update failed - no documents matched:', {
           quizId,
           quizSetId,
         });
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: `Quiz ${quizId} not found in your quiz sets or answer already matches`,
-          code: "QUIZ_NOT_FOUND",
+          code: 'QUIZ_NOT_FOUND',
         },
         { status: 404 },
       );
@@ -88,15 +89,15 @@ export async function POST(request: Request) {
 
     return NextResponse.json<APIResponse>({
       success: true,
-      message: "Answer updated successfully",
+      message: 'Answer updated successfully',
     });
   } catch (error) {
     console.error(
-      "Error updating answer:",
+      'Error updating answer:',
       error instanceof Error ? error.message : String(error),
     );
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

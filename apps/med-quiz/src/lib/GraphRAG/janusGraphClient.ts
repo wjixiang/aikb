@@ -1,4 +1,4 @@
-import { driver } from "gremlin";
+import { driver } from 'gremlin';
 
 /**
  * Represents a knowledge graph structure with nodes and edges
@@ -81,7 +81,7 @@ export class JanusGraphClient {
    */
   constructor(config: JanusGraphConfig) {
     this.config = {
-      traversalSource: "g",
+      traversalSource: 'g',
       ...config,
     };
 
@@ -115,7 +115,7 @@ export class JanusGraphClient {
     try {
       await this.client.close();
     } catch (error) {
-      console.error("Error disconnecting from JanusGraph:", error);
+      console.error('Error disconnecting from JanusGraph:', error);
     }
   }
 
@@ -174,7 +174,7 @@ export class JanusGraphClient {
     // Format the properties to extract single values from arrays
     const formattedProps: Record<string, any> = {};
     for (const [key, value] of vertexResult[0]) {
-      if (key === "referenceId") {
+      if (key === 'referenceId') {
         formattedProps[key] = JSON.parse(value[0]);
       } else {
         formattedProps[key] = value.length === 1 ? value[0] : value;
@@ -249,7 +249,7 @@ export class JanusGraphClient {
   private buildProperties(properties: Record<string, any>): string {
     return Object.entries(properties)
       .map(([key, value]) => `.property('${key}', ${JSON.stringify(value)})`)
-      .join("");
+      .join('');
   }
 
   /**
@@ -264,7 +264,7 @@ export class JanusGraphClient {
 
     const formattedProps: Record<string, any> = {};
     for (const [key, value] of results[0]) {
-      if (key === "referenceId") {
+      if (key === 'referenceId') {
         formattedProps[key] = JSON.parse(value[0]);
       } else {
         formattedProps[key] = value.length === 1 ? value[0] : value;
@@ -423,7 +423,7 @@ export class JanusGraphClient {
 
     const edgeProps: Record<string, string> = {};
     for (const [key, value] of results[0]) {
-      edgeProps[key] = value.length === 1 ? value[0] : value.join(",");
+      edgeProps[key] = value.length === 1 ? value[0] : value.join(',');
     }
     return edgeProps;
   }
@@ -465,7 +465,7 @@ export class JanusGraphClient {
     if (exists) {
       await this.updateVertex(node_id, node_data);
     } else {
-      await this.createVertex("node", { ...node_data, id: node_id });
+      await this.createVertex('node', { ...node_data, id: node_id });
     }
   }
 
@@ -491,7 +491,7 @@ export class JanusGraphClient {
         `g.V('${source_node_id}').outE().where(__.inV().hasId('${target_node_id}')).drop()`,
       );
     }
-    await this.createEdge(source_node_id, target_node_id, "edge", edge_data);
+    await this.createEdge(source_node_id, target_node_id, 'edge', edge_data);
   }
 
   /**
@@ -515,7 +515,7 @@ export class JanusGraphClient {
    * @note Changes persist on next index_done_callback
    */
   async remove_nodes(nodes: string[]): Promise<void> {
-    const query = `g.V(${nodes.map((id) => `'${id}'`).join(",")}).drop()`;
+    const query = `g.V(${nodes.map((id) => `'${id}'`).join(',')}).drop()`;
     await this.execute(query);
   }
 
@@ -563,7 +563,7 @@ export class JanusGraphClient {
     max_nodes: number = 1000,
   ): Promise<KnowledgeGraph> {
     // Implementation would depend on KnowledgeGraph type definition
-    throw new Error("Not implemented");
+    throw new Error('Not implemented');
   }
 
   async findRelatedEdges(name: string): Promise<
@@ -603,8 +603,8 @@ export class JanusGraphClient {
         created_at: number;
         [key: string]: any;
       } = {
-        src_tgt: ["", ""],
-        description: "",
+        src_tgt: ['', ''],
+        description: '',
         keywords: [],
         weight: 0,
         rank: 0,
@@ -613,27 +613,27 @@ export class JanusGraphClient {
 
       // Format edge properties
       for (const [key, value] of edgeProps) {
-        if (key === "referenceId") {
+        if (key === 'referenceId') {
           formatted[key] = JSON.parse(value[0]);
-        } else if (key === "description") {
-          formatted.description = value[0] || "";
-        } else if (key === "keywords") {
+        } else if (key === 'description') {
+          formatted.description = value[0] || '';
+        } else if (key === 'keywords') {
           formatted.keywords = Array.isArray(value) ? value : [];
-        } else if (key === "weight") {
+        } else if (key === 'weight') {
           formatted.weight = Number(value[0]) || 0;
-        } else if (key === "rank") {
+        } else if (key === 'rank') {
           formatted.rank = Number(value[0]) || 0;
-        } else if (key === "created_at") {
+        } else if (key === 'created_at') {
           formatted.created_at = Number(value[0]) || Date.now();
-        } else if (key === "inV") {
+        } else if (key === 'inV') {
           formatted.src_tgt[1] = value[0];
-        } else if (key === "outV") {
+        } else if (key === 'outV') {
           formatted.src_tgt[0] = value[0];
-        } else if (key !== "id" && key !== "label") {
+        } else if (key !== 'id' && key !== 'label') {
           formatted[key] = value.length === 1 ? value[0] : value;
         }
       }
-      console.log("Formatted edge:", formatted);
+      console.log('Formatted edge:', formatted);
       return formatted;
     });
   }

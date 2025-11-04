@@ -8,7 +8,11 @@ import {
   ConsumerOptions,
   MessageConsumer,
 } from '../message-service.interface';
-import { BaseRabbitMQMessage, RabbitMQMessageOptions, RabbitMQConfig } from '../messages/message.types';
+import {
+  BaseRabbitMQMessage,
+  RabbitMQMessageOptions,
+  RabbitMQConfig,
+} from '../messages/message.types';
 import {
   getRabbitMQConfig,
   rabbitMQQueueConfigs,
@@ -28,7 +32,10 @@ export class RabbitMQMessageService implements IMessageService {
   private channel: Channel | null = null;
   private config: RabbitMQConfig;
   private connectionStatus: ConnectionStatus = 'disconnected';
-  private consumers = new Map<string, { queueName: string; onMessage: MessageConsumer; options?: ConsumerOptions }>();
+  private consumers = new Map<
+    string,
+    { queueName: string; onMessage: MessageConsumer; options?: ConsumerOptions }
+  >();
 
   constructor(config: RabbitMQConfig) {
     this.config = config;
@@ -52,7 +59,7 @@ export class RabbitMQMessageService implements IMessageService {
       };
 
       this.connection = await connect(connectionOptions);
-      
+
       this.channel = await this.connection.createChannel();
 
       // Add error handlers to prevent unhandled errors
@@ -214,7 +221,9 @@ export class RabbitMQMessageService implements IMessageService {
         throw new Error('RabbitMQ service is not connected');
       }
 
-      const consumerTag = options?.consumerTag || `consumer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const consumerTag =
+        options?.consumerTag ||
+        `consumer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       // Ensure queue exists with proper arguments before consuming
       const queueConfig = rabbitMQQueueConfigs[queueName];
@@ -245,16 +254,27 @@ export class RabbitMQMessageService implements IMessageService {
         // If no mapping exists, use the queue name as routing key
         // This handles test queues with dynamic names
         routingKey = queueName;
-        logger.debug(`No routing key mapping found for ${queueName}, using queue name as routing key`);
+        logger.debug(
+          `No routing key mapping found for ${queueName}, using queue name as routing key`,
+        );
       }
 
       // Bind queue to exchange with routing key
       try {
-        await this.channel!.bindQueue(queueName, 'pdf-conversion-exchange', routingKey);
-        logger.debug(`Bound queue ${queueName} to exchange with routing key: ${routingKey}`);
+        await this.channel!.bindQueue(
+          queueName,
+          'pdf-conversion-exchange',
+          routingKey,
+        );
+        logger.debug(
+          `Bound queue ${queueName} to exchange with routing key: ${routingKey}`,
+        );
       } catch (error) {
         // Queue might already be bound, which is fine
-        logger.debug(`Queue ${queueName} might already be bound to exchange:`, error);
+        logger.debug(
+          `Queue ${queueName} might already be bound to exchange:`,
+          error,
+        );
       }
 
       // For test queues, we also need to bind them to the specific routing key pattern
@@ -263,12 +283,21 @@ export class RabbitMQMessageService implements IMessageService {
         // Extract the timestamp from the queue name
         const timestamp = queueName.replace('test-pdf-conversion-request-', '');
         const testRoutingKey = `test.pdf.conversion.request.${timestamp}`;
-        
+
         try {
-          await this.channel!.bindQueue(queueName, 'pdf-conversion-exchange', testRoutingKey);
-          logger.debug(`Bound test queue ${queueName} to exchange with test routing key: ${testRoutingKey}`);
+          await this.channel!.bindQueue(
+            queueName,
+            'pdf-conversion-exchange',
+            testRoutingKey,
+          );
+          logger.debug(
+            `Bound test queue ${queueName} to exchange with test routing key: ${testRoutingKey}`,
+          );
         } catch (error) {
-          logger.debug(`Test queue ${queueName} might already be bound to test routing key:`, error);
+          logger.debug(
+            `Test queue ${queueName} might already be bound to test routing key:`,
+            error,
+          );
         }
       }
 
@@ -279,7 +308,7 @@ export class RabbitMQMessageService implements IMessageService {
             logger.warn('Received null message, skipping');
             return;
           }
-          
+
           try {
             const messageContent = msg.content.toString();
             const message = JSON.parse(messageContent);
@@ -353,16 +382,19 @@ export class RabbitMQMessageService implements IMessageService {
       };
     } catch (error: any) {
       // If the error is about not being connected, re-throw it
-      if (error instanceof Error && error.message.includes('RabbitMQ service is not connected')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('RabbitMQ service is not connected')
+      ) {
         throw error;
       }
-      
+
       // If queue doesn't exist, return null
       if (error && error.code === 404) {
         logger.debug(`Queue ${queueName} does not exist`);
         return null;
       }
-      
+
       logger.error('Failed to get queue info:', error);
       return null;
     }
@@ -385,7 +417,7 @@ export class RabbitMQMessageService implements IMessageService {
         logger.debug(`Queue ${queueName} does not exist, nothing to purge`);
         return;
       }
-      
+
       logger.error('Failed to purge queue:', error);
       throw error;
     }

@@ -60,7 +60,10 @@ export class PdfAnalyzerService {
 
       // Download PDF from S3 (only once for analysis)
       logger.info(`Downloading PDF from S3 for item: ${request.itemId}`);
-      const pdfBuffer = await this.downloadPdfFromS3(request.itemId, request.s3Key);
+      const pdfBuffer = await this.downloadPdfFromS3(
+        request.itemId,
+        request.s3Key,
+      );
 
       // Analyze PDF to get page count and metadata
       logger.info(
@@ -187,7 +190,10 @@ export class PdfAnalyzerService {
         };
       }
 
-      await this.apiClient.updateLibraryItemMetadata(request.itemId, updatedMetadata);
+      await this.apiClient.updateLibraryItemMetadata(
+        request.itemId,
+        updatedMetadata,
+      );
 
       // Publish analysis completed message with PDF metadata and S3 info
       const processingTime = Date.now() - startTime;
@@ -267,7 +273,10 @@ export class PdfAnalyzerService {
   /**
    * Download PDF from S3 using s3Key
    */
-  private async downloadPdfFromS3(itemId: string, s3Key: string): Promise<Buffer> {
+  private async downloadPdfFromS3(
+    itemId: string,
+    s3Key: string,
+  ): Promise<Buffer> {
     try {
       logger.info(`Attempting to download PDF from S3 using s3Key: ${s3Key}`);
 

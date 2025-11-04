@@ -2,15 +2,15 @@ import {
   computeArgsHash,
   getConversationTurns,
   encodeStringByTiktoken,
-} from "./graphrag_utils";
-import CacheManager, { cacheType } from "./CacheManager";
+} from './graphrag_utils';
+import CacheManager, { cacheType } from './CacheManager';
 import {
   keywords_extraction,
   keywords_extraction_examples,
-} from "./prompt/graph_retrieve_prompt";
-import milvusCollectionOperator from "../milvus/milvusCollectionOperator";
-import { getChatModel } from "../langchain/provider";
-import { JanusGraphClient } from "./janusGraphClient";
+} from './prompt/graph_retrieve_prompt';
+import milvusCollectionOperator from '../milvus/milvusCollectionOperator';
+import { getChatModel } from '../langchain/provider';
+import { JanusGraphClient } from './janusGraphClient';
 // Removed incorrect import for CacheData
 
 export interface KnowGraphRetrieverConfig {
@@ -88,7 +88,7 @@ export default class KnowGraphRetriever {
 
     // 1. Check if keywords are already provided in query_param
     if (query_param.high_level_keywords || query_param.low_level_keywords) {
-      this.log("Keywords provided in query_param, returning directly.");
+      this.log('Keywords provided in query_param, returning directly.');
       this.log(`High-level keywords: ${query_param.high_level_keywords}`);
       this.log(`Low-level keywords: ${query_param.low_level_keywords}`);
       return [
@@ -98,7 +98,7 @@ export default class KnowGraphRetriever {
     }
 
     // 2. Handle cache if needed - add cache type for keywords
-    const cacheType: cacheType = "keywords"; // Define cache type
+    const cacheType: cacheType = 'keywords'; // Define cache type
     this.log(`Cache type: ${cacheType}`);
     const args_hash = computeArgsHash(cacheType, query_param.mode, query); // Corrected computeArgsHash call
     this.log(`Cache hash: ${args_hash}`);
@@ -128,19 +128,19 @@ export default class KnowGraphRetriever {
     const exampleNumber = this.config.exampleNumber;
     this.log(`Number of examples to use: ${exampleNumber}`);
     let examples = keywords_extraction_examples.join(
-      "\n#############################\n",
+      '\n#############################\n',
     );
     if (exampleNumber && exampleNumber < keywords_extraction_examples.length) {
       examples = keywords_extraction_examples
         .slice(0, exampleNumber)
-        .join("\n#############################\n");
+        .join('\n#############################\n');
     }
     this.log(`Examples used:\n${examples}`);
-    const language = this.config.language || "English"; // Assuming default language is English
+    const language = this.config.language || 'English'; // Assuming default language is English
     this.log(`Language set for extraction: ${language}`);
 
     // 4. Process conversation history
-    let historyContext = "";
+    let historyContext = '';
     if (query_param.conversation_history) {
       historyContext = getConversationTurns(
         query_param.conversation_history,
@@ -148,7 +148,7 @@ export default class KnowGraphRetriever {
       );
       this.log(`Conversation history context:\n${historyContext}`);
     } else {
-      this.log("No conversation history provided.");
+      this.log('No conversation history provided.');
     }
 
     // 5. Build the keyword-extraction prompt
@@ -165,36 +165,36 @@ export default class KnowGraphRetriever {
 
     // 6. Call the LLM for keyword extraction
     this.log(
-      `Calling LLM for keyword extraction with model: ${this.config.chat_modal_name || "glm-4-flash"}`,
+      `Calling LLM for keyword extraction with model: ${this.config.chat_modal_name || 'glm-4-flash'}`,
     );
     // Assuming getChatModel returns a model instance with an invoke method
-    const model = getChatModel()(this.config.chat_modal_name || "glm-4-flash"); // Use getChatModel, assuming a default model name
+    const model = getChatModel()(this.config.chat_modal_name || 'glm-4-flash'); // Use getChatModel, assuming a default model name
     const result = await model.invoke(kwPrompt); // Call invoke on the model instance
     this.log(`LLM raw result: ${JSON.stringify(result)}`);
 
     // 7. Parse out JSON from the LLM response
-    this.log("Parsing JSON from LLM response.");
+    this.log('Parsing JSON from LLM response.');
     // Note: The 's' flag for regex requires targeting 'es2018' or later in tsconfig.json
-    let resultString = "";
-    if (typeof result.content === "string") {
+    let resultString = '';
+    if (typeof result.content === 'string') {
       resultString = result.content;
     } else if (Array.isArray(result.content)) {
       // If content is an array, concatenate text parts.
       // This might need refinement based on the actual structure of MessageContentComplex[]
       resultString = result.content
         .map((part) => {
-          if (part.type === "text") {
+          if (part.type === 'text') {
             return part.text;
           }
-          return ""; // Ignore other types like images
+          return ''; // Ignore other types like images
         })
-        .join("");
+        .join('');
     }
     this.log(`LLM response content string: ${resultString}`);
 
     const match = resultString.match(/\{.*\}/s);
     if (!match) {
-      this.log("No JSON-like structure found in the LLM respond.");
+      this.log('No JSON-like structure found in the LLM respond.');
       return [[], []];
     }
     this.log(`Matched JSON string: ${match[0]}`);
@@ -228,12 +228,12 @@ export default class KnowGraphRetriever {
         args_hash,
         cacheData,
       );
-      this.log("Keywords cached successfully.");
+      this.log('Keywords cached successfully.');
     } else {
-      this.log("No keywords extracted, skipping cache.");
+      this.log('No keywords extracted, skipping cache.');
     }
 
-    this.log("Finished extract_keywords_only.");
+    this.log('Finished extract_keywords_only.');
     return [hlKeywords, llKeywords];
   }
 
@@ -243,7 +243,7 @@ export default class KnowGraphRetriever {
     query_param: QueryParam,
   ): Promise<any[]> {
     if (!this.graphClient) {
-      this.log("JanusGraphClient not initialized, skipping text unit search");
+      this.log('JanusGraphClient not initialized, skipping text unit search');
       return [];
     }
 
@@ -262,7 +262,7 @@ export default class KnowGraphRetriever {
     query_param: QueryParam,
   ): Promise<any[]> {
     if (!this.graphClient) {
-      this.log("JanusGraphClient not initialized, skipping edge search");
+      this.log('JanusGraphClient not initialized, skipping edge search');
       return [];
     }
 
@@ -293,7 +293,7 @@ export default class KnowGraphRetriever {
       {
         limit: query_param.top_k,
         expr: query_param.ids
-          ? `oid in [${query_param.ids.map((id) => `"${id}"`).join(",")}]`
+          ? `oid in [${query_param.ids.map((id) => `"${id}"`).join(',')}]`
           : undefined,
       },
     );
@@ -303,8 +303,8 @@ export default class KnowGraphRetriever {
     }));
 
     if (!results || results.length === 0) {
-      this.log("No entities found for the query.");
-      return ["", "", ""];
+      this.log('No entities found for the query.');
+      return ['', '', ''];
     }
 
     // get entity information
@@ -340,8 +340,8 @@ export default class KnowGraphRetriever {
       .filter((n: any) => n !== null);
 
     if (node_datas.length === 0) {
-      this.log("All retrieved nodes were missing data.");
-      return ["", "", ""];
+      this.log('All retrieved nodes were missing data.');
+      return ['', '', ''];
     }
 
     // get entity text chunk and relations
@@ -371,31 +371,31 @@ export default class KnowGraphRetriever {
     // build prompt context strings
     const entities_section_list: (string | number)[][] = [
       [
-        "id",
-        "entity",
-        "type",
-        "description",
-        "rank",
-        "created_at",
-        "referenceId",
+        'id',
+        'entity',
+        'type',
+        'description',
+        'rank',
+        'created_at',
+        'referenceId',
       ],
     ];
     for (let i = 0; i < truncated_node_datas.length; i++) {
       const n = truncated_node_datas[i];
-      const createdAt = n.created_at ?? "UNKNOWN";
+      const createdAt = n.created_at ?? 'UNKNOWN';
       let formattedCreatedAt = createdAt;
-      if (typeof createdAt === "number") {
+      if (typeof createdAt === 'number') {
         // Assuming a function to format timestamp exists or using built-in Date
         formattedCreatedAt = new Date(createdAt * 1000).toISOString(); // Example formatting
       }
 
-      const referenceId = n.referenceId ?? "unknown_source";
+      const referenceId = n.referenceId ?? 'unknown_source';
 
       entities_section_list.push([
         i,
         n.entity_name,
-        n.entity_type ?? "UNKNOWN",
-        n.description ?? "UNKNOWN",
+        n.entity_type ?? 'UNKNOWN',
+        n.description ?? 'UNKNOWN',
         n.rank,
         formattedCreatedAt,
         referenceId,
@@ -404,33 +404,33 @@ export default class KnowGraphRetriever {
     // Assuming list_of_list_to_csv is available
     // const entities_context = list_of_list_to_csv(entities_section_list);
     const entities_context = entities_section_list
-      .map((row) => row.join(","))
-      .join("\n"); // Placeholder for CSV conversion
+      .map((row) => row.join(','))
+      .join('\n'); // Placeholder for CSV conversion
 
     const relations_section_list: (string | number)[][] = [
       [
-        "id",
-        "source",
-        "target",
-        "description",
-        "keywords",
-        "weight",
-        "rank",
-        "created_at",
-        "referenceId",
+        'id',
+        'source',
+        'target',
+        'description',
+        'keywords',
+        'weight',
+        'rank',
+        'created_at',
+        'referenceId',
       ],
     ];
 
     for (let i = 0; i < use_relations.length; i++) {
       const e = use_relations[i]; // Assuming e is an object with a 'created_at' property
-      const createdAt = e.created_at ?? "UNKNOWN";
+      const createdAt = e.created_at ?? 'UNKNOWN';
       let formattedCreatedAt = createdAt;
-      if (typeof createdAt === "number") {
+      if (typeof createdAt === 'number') {
         // Assuming a function to format timestamp exists or using built-in Date
         formattedCreatedAt = new Date(createdAt * 1000).toISOString(); // Example formatting
       }
 
-      const filePath = e.referenceId ?? "unknown_source";
+      const filePath = e.referenceId ?? 'unknown_source';
 
       relations_section_list.push([
         i,
@@ -447,27 +447,27 @@ export default class KnowGraphRetriever {
     // Assuming list_of_list_to_csv is available
     // const relations_context = list_of_list_to_csv(relations_section_list);
     const relations_context = relations_section_list
-      .map((row) => row.join(","))
-      .join("\n"); // Placeholder for CSV conversion
+      .map((row) => row.join(','))
+      .join('\n'); // Placeholder for CSV conversion
 
     const text_units_section_list: (string | number)[][] = [
-      ["id", "content", "referenceId"],
+      ['id', 'content', 'referenceId'],
     ];
     for (let i = 0; i < use_text_units.length; i++) {
       const t = use_text_units[i];
       text_units_section_list.push([
         i,
         t.content,
-        t.referenceId ?? "unknown_source",
+        t.referenceId ?? 'unknown_source',
       ]);
     }
     // Assuming list_of_list_to_csv is available
     // const text_units_context = list_of_list_to_csv(text_units_section_list);
     const text_units_context = text_units_section_list
-      .map((row) => row.join(","))
-      .join("\n"); // Placeholder for CSV conversion
+      .map((row) => row.join(','))
+      .join('\n'); // Placeholder for CSV conversion
 
-    this.log("Finished get_node_data.");
+    this.log('Finished get_node_data.');
     return [entities_context, relations_context, text_units_context];
   }
 }

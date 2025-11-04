@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { quizSelector } from "@/types/quizSelector.types";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { quizSelector } from '@/types/quizSelector.types';
 
 function corsHeaders(origin: string | null) {
   return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
@@ -23,12 +23,12 @@ const getUnitsBySubject = async (selector: quizSelector) => {
   try {
     const { db } = await connectToDatabase();
     // console.log(selector)
-    const results = await db.collection("quiz").distinct("unit", {
+    const results = await db.collection('quiz').distinct('unit', {
       class: { $in: selector.cls },
     });
     return results;
   } catch (error) {
-    console.error("Error fetching units:", error);
+    console.error('Error fetching units:', error);
     throw error;
   }
 };
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
       headers: headers,
     });
   } catch (error) {
-    console.error("Unit fetch error:", error);
+    console.error('Unit fetch error:', error);
     return new NextResponse(
-      JSON.stringify({ error: "Failed to fetch units", req: request }),
+      JSON.stringify({ error: 'Failed to fetch units', req: request }),
       {
         status: 500,
         headers: headers,

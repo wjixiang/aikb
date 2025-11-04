@@ -26,9 +26,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
   private logger: any = createLoggerWithPrefix('S3ElasticSearchLibraryStorage');
 
-  constructor(
-    elasticsearchUrl: string = 'http://elasticsearch:9200',
-  ) {
+  constructor(elasticsearchUrl: string = 'http://elasticsearch:9200') {
     this.client = new Client({
       node: elasticsearchUrl,
       auth: {
@@ -36,12 +34,9 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       },
     });
 
-
     // Don't initialize indexes in constructor to avoid blocking
     // Initialize lazily when first operation is called
   }
-
-  
 
   /**
    * Initialize the indexes with proper mappings
@@ -157,8 +152,6 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
         } as any);
         this.logger.info(`Created citations index: ${this.citationsIndexName}`);
       }
-
-
     } catch (error: any) {
       if (
         (error as any)?.meta?.body?.error?.type ===
@@ -698,7 +691,4 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       throw error;
     }
   }
-
-  
-
 }

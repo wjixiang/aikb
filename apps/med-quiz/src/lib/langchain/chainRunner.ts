@@ -1,16 +1,16 @@
-import { Document } from "./chainFactory";
-import ChainManager from "./chainManager";
-import { ChatMessage } from "../agents/agent.types";
+import { Document } from './chainFactory';
+import ChainManager from './chainManager';
+import { ChatMessage } from '../agents/agent.types';
 import {
   ABORT_REASON,
   AI_SENDER,
   DEFAULT_SYSTEM_PROMPT,
   EMPTY_INDEX_ERROR_MESSAGE,
-} from "./prompt";
-import { extractChatHistory } from "./utils";
-import { NotebookRetriever } from "./retriever/noteBookRetriever";
-import { NoteRetriever } from "./hybridRetriever";
-import { getChatModel } from "./provider";
+} from './prompt';
+import { extractChatHistory } from './utils';
+import { NotebookRetriever } from './retriever/noteBookRetriever';
+import { NoteRetriever } from './hybridRetriever';
+import { getChatModel } from './provider';
 
 export interface RetrieveAIResponse {
   content: string;
@@ -84,10 +84,10 @@ export abstract class BaseChainRunner implements ChainRunner {
         isVisible: true,
         timestamp: new Date(),
         // sources: sources?.map(),
-        messageType: "content",
+        messageType: 'content',
       });
     }
-    updateCurrentAiMessage("");
+    updateCurrentAiMessage('');
 
     const response: RetrieveAIResponse = {
       content: fullAIResponse,
@@ -110,13 +110,13 @@ export class VaultQAChainRunner extends BaseChainRunner {
     },
   ): Promise<RetrieveAIResponse> {
     const { debug = false } = options;
-    let fullAIResponse = "";
+    let fullAIResponse = '';
 
     try {
       const memory = this.chainManager.memoryManager.getMemory();
       const memoryVariables = await memory.loadMemoryVariables({});
       const chatHistory = extractChatHistory(memoryVariables);
-      console.log("ready to retrieve information");
+      console.log('ready to retrieve information');
       const qaStream = await ChainManager.getRetrievalChain().stream({
         question: userMessage.content,
         chat_history: chatHistory,
@@ -128,7 +128,7 @@ export class VaultQAChainRunner extends BaseChainRunner {
         fullAIResponse += chunk.content;
         updateCurrentAiMessage(fullAIResponse);
       }
-      console.log("fullAIResponse", fullAIResponse);
+      console.log('fullAIResponse', fullAIResponse);
       fullAIResponse = this.addSourcestoResponse(fullAIResponse);
     } catch (error) {
       console.log(error, debug, addMessage, updateCurrentAiMessage);
@@ -171,7 +171,7 @@ export class NotebookChainRunner extends BaseChainRunner {
     },
     notebookName: string,
   ): Promise<RetrieveAIResponse> {
-    let fullAIResponse = "";
+    let fullAIResponse = '';
 
     if (options?.updateLoading) {
       options.updateLoading(true);
@@ -191,7 +191,7 @@ export class NotebookChainRunner extends BaseChainRunner {
       });
 
       if (options?.debug) {
-        console.log("开始从笔记中检索相关内容...");
+        console.log('开始从笔记中检索相关内容...');
       }
 
       // 获取相关文档
@@ -210,7 +210,7 @@ export class NotebookChainRunner extends BaseChainRunner {
       // 如果没有找到相关文档
       if (documents.length === 0) {
         fullAIResponse =
-          "没有找到与您问题相关的笔记内容。请尝试重新表述您的问题，或查询其他主题。";
+          '没有找到与您问题相关的笔记内容。请尝试重新表述您的问题，或查询其他主题。';
         updateCurrentAiMessage(fullAIResponse);
       } else {
         // 构建上下文
@@ -224,10 +224,10 @@ export class NotebookChainRunner extends BaseChainRunner {
         );
 
         // 调用LLM进行总结
-        const chatModel = getChatModel()("deepseek-v3");
+        const chatModel = getChatModel()('deepseek-v3');
 
         if (options?.debug) {
-          console.log("准备使用LLM总结检索到的内容...");
+          console.log('准备使用LLM总结检索到的内容...');
         }
 
         // 流式处理LLM响应
@@ -245,12 +245,12 @@ export class NotebookChainRunner extends BaseChainRunner {
         }
 
         if (options?.debug) {
-          console.log("LLM总结完成，响应长度:", fullAIResponse.length);
+          console.log('LLM总结完成，响应长度:', fullAIResponse.length);
         }
       }
     } catch (error) {
-      console.error("NotebookChainRunner处理过程中出错:", error);
-      fullAIResponse = "处理您的请求时出现错误。请稍后重试。";
+      console.error('NotebookChainRunner处理过程中出错:', error);
+      fullAIResponse = '处理您的请求时出现错误。请稍后重试。';
       updateCurrentAiMessage(fullAIResponse);
     } finally {
       if (options?.updateLoading) {
@@ -290,11 +290,11 @@ export class NotebookChainRunner extends BaseChainRunner {
 
       // 添加到上下文
       contextParts.push(
-        `[文档 ${index + 1}] ${fileName ? `来源: ${fileName}` : ""}\n${content}`,
+        `[文档 ${index + 1}] ${fileName ? `来源: ${fileName}` : ''}\n${content}`,
       );
     });
 
-    return contextParts.join("\n\n");
+    return contextParts.join('\n\n');
   }
 
   // 构建提示
@@ -327,7 +327,7 @@ export class NotebookChainRunner extends BaseChainRunner {
     abortController: AbortController,
     updateCurrentAiMessage: (message: string) => void,
   ): Promise<string> {
-    let fullResponse = "";
+    let fullResponse = '';
     const delay = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -336,16 +336,16 @@ export class NotebookChainRunner extends BaseChainRunner {
 
       const content = doc.pageContent;
 
-      const segments = content.split(". ");
+      const segments = content.split('. ');
       for (const segment of segments) {
         if (abortController.signal.aborted) break;
 
-        fullResponse += segment + ". ";
+        fullResponse += segment + '. ';
         updateCurrentAiMessage(fullResponse);
         await delay(100);
       }
 
-      fullResponse += "\n\n";
+      fullResponse += '\n\n';
       updateCurrentAiMessage(fullResponse);
     }
 

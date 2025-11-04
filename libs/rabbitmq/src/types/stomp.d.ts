@@ -40,23 +40,38 @@ export interface StompMessage {
 
 export class Client {
   constructor(config: StompConfig);
-  
+
   brokerURL: string;
   connectHeaders: StompHeaders;
   reconnectDelay: number;
   heartbeatIncoming: number;
   heartbeatOutgoing: number;
-  
+
   onConnect: (frame: StompFrame) => void;
   onStompError: (frame: StompFrame) => void;
   onDisconnect: () => void;
-  
+
   activate(): void;
   deactivate(): void;
-  publish(params: { destination: string; body: string; headers?: StompHeaders }): void;
-  subscribe(destination: string, callback: (message: StompMessage) => void, headers?: StompHeaders): StompSubscription;
+  publish(params: {
+    destination: string;
+    body: string;
+    headers?: StompHeaders;
+  }): void;
+  subscribe(
+    destination: string,
+    callback: (message: StompMessage) => void,
+    headers?: StompHeaders,
+  ): StompSubscription;
 }
 
 declare module '@stomp/stompjs' {
-  export { Client, StompSubscription, StompFrame, StompMessage, StompHeaders, StompConfig };
+  export {
+    Client,
+    StompSubscription,
+    StompFrame,
+    StompMessage,
+    StompHeaders,
+    StompConfig,
+  };
 }

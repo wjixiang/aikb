@@ -2,35 +2,35 @@
  * API endpoint for retrieving complete link graph
  */
 
-import { NextResponse } from "next/server";
-import { LinkIndexingService } from "@/kgrag/services/linkIndexingService";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
+import { NextResponse } from 'next/server';
+import { LinkIndexingService } from '@/kgrag/services/linkIndexingService';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
 
 const linkService = new LinkIndexingService();
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const documentId = searchParams.get("documentId");
-    const depth = parseInt(searchParams.get("depth") || "1", 10);
+    const documentId = searchParams.get('documentId');
+    const depth = parseInt(searchParams.get('depth') || '1', 10);
 
     if (!documentId) {
       return NextResponse.json(
-        { error: "documentId parameter is required" },
+        { error: 'documentId parameter is required' },
         { status: 400 },
       );
     }
 
     if (depth < 1 || depth > 3) {
       return NextResponse.json(
-        { error: "depth must be between 1 and 3" },
+        { error: 'depth must be between 1 and 3' },
         { status: 400 },
       );
     }
 
     const { db } = await connectToDatabase();
-    const documentsCollection = db.collection("knowledgeBase");
+    const documentsCollection = db.collection('knowledgeBase');
 
     // Get the main document
     const mainDoc = await documentsCollection.findOne({
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     });
     if (!mainDoc) {
       return NextResponse.json(
-        { error: "Document not found" },
+        { error: 'Document not found' },
         { status: 404 },
       );
     }
@@ -59,18 +59,18 @@ export async function GET(request: Request) {
         title:
           mainDoc.title ||
           mainDoc.key
-            .split("/")
+            .split('/')
             .pop()
-            ?.replace(/\.(md|txt|markdown)$/i, ""),
+            ?.replace(/\.(md|txt|markdown)$/i, ''),
         lastModified: mainDoc.lastModified || new Date(),
       },
       links: linkGraph,
       extended: extendedGraph,
     });
   } catch (error) {
-    console.error("Error retrieving link graph:", error);
+    console.error('Error retrieving link graph:', error);
     return NextResponse.json(
-      { error: "Failed to retrieve link graph" },
+      { error: 'Failed to retrieve link graph' },
       { status: 500 },
     );
   }

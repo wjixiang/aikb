@@ -2,12 +2,12 @@
  * Integration service for adding link indexing to knowledge base
  */
 
-import { LinkIndexingService } from "./linkIndexingService";
-import { LinkSchemaManager } from "../database/linkSchema";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { LinkIndexingService } from './linkIndexingService';
+import { LinkSchemaManager } from '../database/linkSchema';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
 export class LinkIntegrationService {
-  private logger = createLoggerWithPrefix("LinkIntegrationService");
+  private logger = createLoggerWithPrefix('LinkIntegrationService');
   private linkService = new LinkIndexingService();
 
   /**
@@ -15,14 +15,14 @@ export class LinkIntegrationService {
    */
   async initialize(): Promise<void> {
     try {
-      this.logger.info("Initializing link indexing system");
+      this.logger.info('Initializing link indexing system');
 
       // Initialize database schema
       await LinkSchemaManager.initializeCollection();
 
-      this.logger.info("Link indexing system initialized successfully");
+      this.logger.info('Link indexing system initialized successfully');
     } catch (error) {
-      this.logger.error("Failed to initialize link indexing system", { error });
+      this.logger.error('Failed to initialize link indexing system', { error });
       throw error;
     }
   }
@@ -39,13 +39,13 @@ export class LinkIntegrationService {
     title: string,
   ): Promise<void> {
     try {
-      this.logger.debug("Indexing document links", { documentId, title });
+      this.logger.debug('Indexing document links', { documentId, title });
 
       await this.linkService.indexDocument(documentId, content, title);
 
-      this.logger.debug("Document links indexed successfully", { documentId });
+      this.logger.debug('Document links indexed successfully', { documentId });
     } catch (error) {
-      this.logger.error("Failed to index document links", {
+      this.logger.error('Failed to index document links', {
         error,
         documentId,
       });
@@ -65,7 +65,7 @@ export class LinkIntegrationService {
     }>,
   ): Promise<void> {
     try {
-      this.logger.info("Starting batch link indexing", {
+      this.logger.info('Starting batch link indexing', {
         count: documents.length,
       });
 
@@ -73,11 +73,11 @@ export class LinkIntegrationService {
         await this.indexDocumentLinks(doc.id, doc.content, doc.title);
       }
 
-      this.logger.info("Batch link indexing completed", {
+      this.logger.info('Batch link indexing completed', {
         count: documents.length,
       });
     } catch (error) {
-      this.logger.error("Failed to batch index documents", { error });
+      this.logger.error('Failed to batch index documents', { error });
       throw error;
     }
   }
@@ -88,14 +88,14 @@ export class LinkIntegrationService {
    */
   async rebuildIndex(): Promise<number> {
     try {
-      this.logger.info("Starting full link index rebuild");
+      this.logger.info('Starting full link index rebuild');
 
       const processedCount = await this.linkService.rebuildIndex();
 
-      this.logger.info("Full link index rebuild completed", { processedCount });
+      this.logger.info('Full link index rebuild completed', { processedCount });
       return processedCount;
     } catch (error) {
-      this.logger.error("Failed to rebuild link index", { error });
+      this.logger.error('Failed to rebuild link index', { error });
       throw error;
     }
   }
@@ -106,11 +106,11 @@ export class LinkIntegrationService {
    */
   async validateAllLinks() {
     try {
-      this.logger.info("Starting link validation");
+      this.logger.info('Starting link validation');
 
-      const { connectToDatabase } = await import("@/lib/db/mongodb");
+      const { connectToDatabase } = await import('@/lib/db/mongodb');
       const { db } = await connectToDatabase();
-      const documentsCollection = db.collection("knowledgeBase");
+      const documentsCollection = db.collection('knowledgeBase');
 
       const documents = await documentsCollection.find({}).toArray();
       const results = [];
@@ -126,12 +126,12 @@ export class LinkIntegrationService {
         }
       }
 
-      this.logger.info("Link validation completed", {
+      this.logger.info('Link validation completed', {
         documents: results.length,
       });
       return results;
     } catch (error) {
-      this.logger.error("Failed to validate all links", { error });
+      this.logger.error('Failed to validate all links', { error });
       throw error;
     }
   }
@@ -142,18 +142,18 @@ export class LinkIntegrationService {
    */
   async getStatus() {
     try {
-      const { connectToDatabase } = await import("@/lib/db/mongodb");
+      const { connectToDatabase } = await import('@/lib/db/mongodb');
       const { db } = await connectToDatabase();
 
-      const documentsCollection = db.collection("knowledgeBase");
-      const linksCollection = db.collection("links");
+      const documentsCollection = db.collection('knowledgeBase');
+      const linksCollection = db.collection('links');
 
       const [totalDocuments, indexedDocuments, totalLinks] = await Promise.all([
         documentsCollection.countDocuments(),
         documentsCollection.countDocuments({
-          "metadata.lastLinkUpdate": { $exists: true },
+          'metadata.lastLinkUpdate': { $exists: true },
         }),
-        linksCollection.countDocuments({ linkType: "forward" }),
+        linksCollection.countDocuments({ linkType: 'forward' }),
       ]);
 
       return {
@@ -165,7 +165,7 @@ export class LinkIntegrationService {
         systemReady: true,
       };
     } catch (error) {
-      this.logger.error("Failed to get link indexing status", { error });
+      this.logger.error('Failed to get link indexing status', { error });
       throw error;
     }
   }

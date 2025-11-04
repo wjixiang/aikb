@@ -1,7 +1,5 @@
 import { config } from 'dotenv';
-import {
-  PdfAnalyzerService,
-} from './pdf-analysis.service';
+import { PdfAnalyzerService } from './pdf-analysis.service';
 import { BibliographyApiClient } from './bibliography-api.client';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
@@ -75,13 +73,12 @@ class PdfAnalysisWorker {
 async function main(): Promise<void> {
   try {
     // Initialize API client for bibliography service
-    const bibliographyServiceUrl = process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
+    const bibliographyServiceUrl =
+      process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
     const apiClient = new BibliographyApiClient(bibliographyServiceUrl);
 
     const worker = new PdfAnalysisWorker(apiClient);
     await worker.start();
-
-   
   } catch (error) {
     logger.error('Failed to start PDF analysis worker:', error);
     process.exit(1);

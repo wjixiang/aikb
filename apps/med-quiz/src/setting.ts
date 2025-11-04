@@ -1,4 +1,4 @@
-import { KnowledgeGraphRetrieverConfig } from "./kgrag/core/KnowledgeGraphRetriever";
+import { KnowledgeGraphRetrieverConfig } from './kgrag/core/KnowledgeGraphRetriever';
 
 // export const KnowledgeGraphWeaver_config:KnowledgeGraphWeaverConfig = {
 //     chunkTableName: 'test_chunks',
@@ -16,9 +16,9 @@ import { KnowledgeGraphRetrieverConfig } from "./kgrag/core/KnowledgeGraphRetrie
 // };
 
 export const KnowledgeGraphRetriever_Config: KnowledgeGraphRetrieverConfig = {
-  chunkTableName: "test_chunks",
-  property_table_name: "property",
-  entity_table_name: "nodes",
+  chunkTableName: 'test_chunks',
+  property_table_name: 'property',
+  entity_table_name: 'nodes',
   semantic_search_threshold: 0.33,
-  language: "zh",
+  language: 'zh',
 };

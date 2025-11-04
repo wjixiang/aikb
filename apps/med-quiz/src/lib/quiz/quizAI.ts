@@ -1,12 +1,12 @@
-import { quiz } from "@/types/quizData.types";
-import ChainManager from "../langchain/chainManager";
-import pLimit from "p-limit";
-import { ObjectId } from "mongodb";
-import cliProgress from "cli-progress";
-import { QuizAnalysisChain } from "../langchain/chains/quizAnalysis.chain";
-import { Document } from "@langchain/core/documents";
-import { connectToDatabase } from "../db/mongodb";
-import { ChatMessage } from "@/lib/agents/agent.types";
+import { quiz } from '@/types/quizData.types';
+import ChainManager from '../langchain/chainManager';
+import pLimit from 'p-limit';
+import { ObjectId } from 'mongodb';
+import cliProgress from 'cli-progress';
+import { QuizAnalysisChain } from '../langchain/chains/quizAnalysis.chain';
+import { Document } from '@langchain/core/documents';
+import { connectToDatabase } from '../db/mongodb';
+import { ChatMessage } from '@/lib/agents/agent.types';
 
 // 可配置的并发数
 const CONCURRENCY = 100; // 调整为适合你系统的并发数
@@ -15,7 +15,7 @@ const RETRY_ATTEMPTS = 3; // 失败重试次数
 const RETRY_DELAY = 2000; // 重试延迟(ms)
 
 /**
- * 
+ *
  */
 export class quizAI extends ChainManager {
   private progressBar: any;
@@ -36,8 +36,8 @@ export class quizAI extends ChainManager {
    */
   async getQuizes() {
     const { db, client } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
-    const quizes = quizCollection.find({ class: "内科学" }).batchSize(1000);
+    const quizCollection = db.collection<quiz>('quiz');
+    const quizes = quizCollection.find({ class: '内科学' }).batchSize(1000);
     return quizes;
   }
 
@@ -46,11 +46,11 @@ export class quizAI extends ChainManager {
    * 将跳过link不为空的document
    */
   async batchAnnotate(classFilter?: string, sourceFilter?: string) {
-    console.log("开始批量注释处理...");
+    console.log('开始批量注释处理...');
 
     // 建立数据库连接并获取集合对象
     const { db } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
+    const quizCollection = db.collection<quiz>('quiz');
 
     // 构建查询条件
     // 构建查询条件，不再检查 analysis.link
@@ -64,21 +64,21 @@ export class quizAI extends ChainManager {
     console.log(`找到 ${total} 个需要处理的文档`);
 
     if (total === 0) {
-      console.log("没有需要处理的文档，任务结束");
+      console.log('没有需要处理的文档，任务结束');
       return;
     }
 
     // 创建进度条
     this.progressBar = new cliProgress.SingleBar({
       format:
-        "处理进度 |{bar}| {percentage}% | {value}/{total} | 速度: {speed} 题/分钟 | ETA: {eta_formatted} | 错误: {errors}",
-      barCompleteChar: "\u2588",
-      barIncompleteChar: "\u2591",
+        '处理进度 |{bar}| {percentage}% | {value}/{total} | 速度: {speed} 题/分钟 | ETA: {eta_formatted} | 错误: {errors}',
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
       hideCursor: true,
     });
 
     this.progressBar.start(total, 0, {
-      speed: "N/A",
+      speed: 'N/A',
       errors: 0,
     });
 
@@ -196,17 +196,17 @@ export class quizAI extends ChainManager {
       });
 
       const sources = documents.map((doc: Document<Record<string, any>>) => ({
-        filename: doc.metadata?.fileName || "",
-        oid: doc.metadata?.oid || "",
+        filename: doc.metadata?.fileName || '',
+        oid: doc.metadata?.oid || '',
       }));
 
       // 只在调试模式下打印详细信息
-      if (process.env.DEBUG === "true") {
-        let questionText = "";
-        if (quiz.type === "A3") {
+      if (process.env.DEBUG === 'true') {
+        let questionText = '';
+        if (quiz.type === 'A3') {
           questionText = quiz.mainQuestion;
-        } else if (quiz.type === "B") {
-          questionText = quiz.questions.map((q) => q.questionText).join("\n");
+        } else if (quiz.type === 'B') {
+          questionText = quiz.questions.map((q) => q.questionText).join('\n');
         } else {
           questionText = quiz.question;
         }
@@ -215,7 +215,7 @@ export class quizAI extends ChainManager {
       }
 
       const source = documents.map(
-        (doc: Document<Record<string, any>>) => doc.metadata?.oid || "",
+        (doc: Document<Record<string, any>>) => doc.metadata?.oid || '',
       );
 
       return {
@@ -224,35 +224,35 @@ export class quizAI extends ChainManager {
         source: source,
       };
     } catch (error) {
-      console.error("Error analyzing quiz:", error);
+      console.error('Error analyzing quiz:', error);
       throw error;
     }
   }
 
   formMessage(quiz: quiz) {
-    const quizTypeStr = quiz.type === "X" ? "多选题" : "单选题";
+    const quizTypeStr = quiz.type === 'X' ? '多选题' : '单选题';
 
-    let questionText = "";
-    let optionsText = "";
-    let answerText = "";
+    let questionText = '';
+    let optionsText = '';
+    let answerText = '';
 
-    if (quiz.type === "A3") {
+    if (quiz.type === 'A3') {
       questionText =
         quiz.mainQuestion +
-        "\n" +
-        quiz.subQuizs.map((sq) => `${sq.subQuizId}. ${sq.question}`).join("\n");
+        '\n' +
+        quiz.subQuizs.map((sq) => `${sq.subQuizId}. ${sq.question}`).join('\n');
       optionsText = JSON.stringify(quiz.subQuizs[0].options.map((e) => e.text));
       answerText = quiz.subQuizs
         .map((sq) => `${sq.subQuizId}. ${sq.answer}`)
-        .join("\n");
-    } else if (quiz.type === "B") {
+        .join('\n');
+    } else if (quiz.type === 'B') {
       questionText = quiz.questions
         .map((q) => `${q.questionId}. ${q.questionText}`)
-        .join("\n");
+        .join('\n');
       optionsText = JSON.stringify(quiz.options.map((e) => e.text));
       answerText = quiz.questions
         .map((q) => `${q.questionId}. ${q.answer}`)
-        .join("\n");
+        .join('\n');
     } else {
       questionText = quiz.question;
       optionsText = JSON.stringify(quiz.options.map((e) => e.text));
@@ -266,8 +266,8 @@ export class quizAI extends ChainManager {
             # 答案\n
             ${answerText}
             # 参考解析
-            ${quiz.analysis.discuss || "无"}\n
-            ${quiz.analysis.point || "无"}`;
+            ${quiz.analysis.discuss || '无'}\n
+            ${quiz.analysis.point || '无'}`;
   }
 
   /**
@@ -283,14 +283,14 @@ export class quizAI extends ChainManager {
   ) {
     try {
       const { db } = await connectToDatabase();
-      const quizCollection = db.collection<quiz>("quiz");
+      const quizCollection = db.collection<quiz>('quiz');
 
       // 直接更新数据库
       await quizCollection.updateOne(
         { _id: new ObjectId(id) as unknown as string },
         {
           $set: {
-            "analysis.ai_analysis": ai_analysis,
+            'analysis.ai_analysis': ai_analysis,
           },
         },
       );
@@ -305,9 +305,11 @@ export class quizAI extends ChainManager {
    */
   async processSpecificQuiz(quizId: string) {
     const { db } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
+    const quizCollection = db.collection<quiz>('quiz');
 
-    const quiz = await quizCollection.findOne({ _id: new ObjectId(quizId) as any });
+    const quiz = await quizCollection.findOne({
+      _id: new ObjectId(quizId) as any,
+    });
 
     if (!quiz) {
       console.error(`未找到ID为 ${quizId} 的题目`);
@@ -326,13 +328,13 @@ export class quizAI extends ChainManager {
     console.log(`开始处理 ${quizIds.length} 个指定题目...`);
 
     const { db } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
+    const quizCollection = db.collection<quiz>('quiz');
 
     // 创建进度条
     const progressBar = new cliProgress.SingleBar({
-      format: "处理进度 |{bar}| {percentage}% | {value}/{total}",
-      barCompleteChar: "\u2588",
-      barIncompleteChar: "\u2591",
+      format: '处理进度 |{bar}| {percentage}% | {value}/{total}',
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
     });
 
     progressBar.start(quizIds.length, 0);
@@ -345,7 +347,9 @@ export class quizAI extends ChainManager {
       quizIds.map((id) =>
         this.limit(async () => {
           try {
-            const quiz = await quizCollection.findOne({ _id: new ObjectId(id) as any });
+            const quiz = await quizCollection.findOne({
+              _id: new ObjectId(id) as any,
+            });
 
             if (!quiz) {
               throw new Error(`未找到ID为 ${id} 的题目`);
@@ -367,12 +371,9 @@ export class quizAI extends ChainManager {
     console.log(`处理完成。成功: ${processed}, 失败: ${errors}`);
   }
 
-
   /**
    * Generate quizzes based on input content
    * @param content refering content for LLM to generate quiz
    */
-  async generate_quiz(content:string) {
-    
-  }
+  async generate_quiz(content: string) {}
 }

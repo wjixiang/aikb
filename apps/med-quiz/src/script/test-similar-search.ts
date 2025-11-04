@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
-import yargs from "yargs/yargs";
-import { hideBin } from "yargs/helpers";
-import axios, { AxiosError } from "axios";
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import axios, { AxiosError } from 'axios';
 
-const API_BASE = "http://localhost:3000/api/obcors/quiz/similar-search-by-desc";
+const API_BASE = 'http://localhost:3000/api/obcors/quiz/similar-search-by-desc';
 
 async function searchSimilarQuizzes(
   filter: string,
@@ -28,7 +28,7 @@ async function searchSimilarQuizzes(
       if (response.data?.length) {
         console.log(`[TEST] First result:`, {
           id: response.data[0]._id,
-          content: response.data[0].content?.substring(0, 100) + "...",
+          content: response.data[0].content?.substring(0, 100) + '...',
         });
       }
     }
@@ -40,20 +40,20 @@ async function searchSimilarQuizzes(
 
     if (axios.isAxiosError(error)) {
       const err = error as AxiosError;
-      console.error("[TEST] API Error Details:");
-      console.error("Status:", err.response?.status);
-      console.error("Data:", err.response?.data);
-      console.error("URL:", err.config?.url);
+      console.error('[TEST] API Error Details:');
+      console.error('Status:', err.response?.status);
+      console.error('Data:', err.response?.data);
+      console.error('URL:', err.config?.url);
       if (verbose && err.response?.data) {
         console.error(
-          "Full error:",
+          'Full error:',
           JSON.stringify(err.response.data, null, 2),
         );
       }
     } else if (error instanceof Error) {
-      console.error("[TEST] Error:", error.message);
+      console.error('[TEST] Error:', error.message);
       if (verbose) {
-        console.error("Stack:", error.stack);
+        console.error('Stack:', error.stack);
       }
     }
     process.exit(1);
@@ -61,26 +61,26 @@ async function searchSimilarQuizzes(
 }
 
 yargs(hideBin(process.argv))
-  .scriptName("test-similar-search")
-  .usage("$0 <cmd> [args]")
+  .scriptName('test-similar-search')
+  .usage('$0 <cmd> [args]')
   .command(
-    "search",
-    "Search for similar quizzes by description",
+    'search',
+    'Search for similar quizzes by description',
     (yargs) => {
       return yargs
-        .option("filter", {
+        .option('filter', {
           describe: 'MongoDB filter query (e.g. "subject:anatomy")',
-          type: "string",
-          default: "",
+          type: 'string',
+          default: '',
         })
-        .option("search", {
-          describe: "Text to find similar quizzes for",
-          type: "string",
+        .option('search', {
+          describe: 'Text to find similar quizzes for',
+          type: 'string',
           demandOption: true,
         })
-        .option("verbose", {
-          describe: "Enable verbose logging",
-          type: "boolean",
+        .option('verbose', {
+          describe: 'Enable verbose logging',
+          type: 'boolean',
           default: false,
         });
     },
@@ -94,11 +94,11 @@ yargs(hideBin(process.argv))
     },
   )
   .command(
-    "test",
-    "Run a quick test search (anatomy questions about heart)",
+    'test',
+    'Run a quick test search (anatomy questions about heart)',
     () => {},
     async () => {
-      console.log("Running test search...");
+      console.log('Running test search...');
       const results = await searchSimilarQuizzes(
         'cls like \"内科学\"',
         `| 情况                  | 选药                               | 禁用药         |
@@ -115,6 +115,6 @@ yargs(hideBin(process.argv))
       console.log(JSON.stringify(results, null, 2));
     },
   )
-  .demandCommand(1, "You need at least one command")
+  .demandCommand(1, 'You need at least one command')
   .help()
   .parse();

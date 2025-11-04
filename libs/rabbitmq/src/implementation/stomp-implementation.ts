@@ -7,9 +7,19 @@ import {
   ConsumerOptions,
   MessageConsumer,
 } from '../message-service.interface';
-import { BaseRabbitMQMessage, RabbitMQMessageOptions } from '../messages/message.types';
+import {
+  BaseRabbitMQMessage,
+  RabbitMQMessageOptions,
+} from '../messages/message.types';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
-import { Client, StompSubscription, StompFrame, StompMessage, StompHeaders, StompConnectionConfig } from '../types/stomp';
+import {
+  Client,
+  StompSubscription,
+  StompFrame,
+  StompMessage,
+  StompHeaders,
+  StompConnectionConfig,
+} from '../types/stomp';
 import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLoggerWithPrefix('StompMessageService');
@@ -44,7 +54,9 @@ export class StompMessageService implements IMessageService {
 
       // Create STOMP client
       const client = new Client({
-        brokerURL: this.config.brokerURL || `ws://${this.config.hostname}:${this.config.port || 15674}/ws`,
+        brokerURL:
+          this.config.brokerURL ||
+          `ws://${this.config.hostname}:${this.config.port || 15674}/ws`,
         connectHeaders: {
           login: this.config.username || 'guest',
           passcode: this.config.passcode || 'guest',
@@ -104,7 +116,7 @@ export class StompMessageService implements IMessageService {
   private async waitForConnection(timeout = 10000): Promise<void> {
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
-      
+
       const checkConnection = () => {
         if (this.connectionStatus === 'connected') {
           resolve();
@@ -114,7 +126,7 @@ export class StompMessageService implements IMessageService {
           setTimeout(checkConnection, 100);
         }
       };
-      
+
       checkConnection();
     });
   }
@@ -125,8 +137,10 @@ export class StompMessageService implements IMessageService {
   private handleReconnection(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      logger.info(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      
+      logger.info(
+        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`,
+      );
+
       setTimeout(() => {
         if (this.client && this.connectionStatus === 'disconnected') {
           this.connectionStatus = 'reconnecting';
@@ -225,7 +239,7 @@ export class StompMessageService implements IMessageService {
       const headers: StompHeaders = {
         'content-type': 'application/json',
         'message-id': message.messageId,
-        'timestamp': message.timestamp.toString(),
+        timestamp: message.timestamp.toString(),
         'event-type': message.eventType,
         ...options?.headers,
       };
@@ -248,7 +262,7 @@ export class StompMessageService implements IMessageService {
 
       // In STOMP, we publish to a destination (exchange/routing key)
       const destination = `/exchange/pdf-conversion-exchange/${routingKey}`;
-      
+
       if (this.client) {
         this.client.publish({
           destination,
@@ -281,10 +295,10 @@ export class StompMessageService implements IMessageService {
       logger.debug(`Starting to consume messages from ${queueName}`);
 
       const consumerTag = options?.consumerTag || `stomp-consumer-${uuidv4()}`;
-      
+
       // In STOMP, we subscribe to a queue destination
       const destination = `/queue/${queueName}`;
-      
+
       if (!this.client) {
         throw new Error('STOMP client is not initialized');
       }
@@ -308,7 +322,9 @@ export class StompMessageService implements IMessageService {
               body: messageBody,
               ack: () => {
                 // STOMP uses ack mode, but we don't need explicit ack for auto-ack
-                logger.debug(`Message acknowledged: ${parsedMessage.messageId}`);
+                logger.debug(
+                  `Message acknowledged: ${parsedMessage.messageId}`,
+                );
               },
               nack: () => {
                 logger.debug(`Message nacked: ${parsedMessage.messageId}`);
@@ -321,11 +337,13 @@ export class StompMessageService implements IMessageService {
           }
         },
         {
-          'ack': options?.noAck ? 'auto' : 'client',
-          'id': consumerTag,
-          'exclusive': options?.exclusive ? 'true' : 'false',
-          ...(options?.priority !== undefined && { 'priority': options.priority.toString() }),
-        }
+          ack: options?.noAck ? 'auto' : 'client',
+          id: consumerTag,
+          exclusive: options?.exclusive ? 'true' : 'false',
+          ...(options?.priority !== undefined && {
+            priority: options.priority.toString(),
+          }),
+        },
       );
 
       this.subscriptions.set(consumerTag, subscription);
@@ -380,7 +398,7 @@ export class StompMessageService implements IMessageService {
       // We can use the management API or return default values
       // For now, we'll return a basic implementation
       // In a real implementation, you might use RabbitMQ's HTTP management API
-      
+
       // This is a simplified implementation
       // You could extend this to use RabbitMQ's management API
       return {
@@ -408,8 +426,10 @@ export class StompMessageService implements IMessageService {
       // This would typically be done through the management API
       // For now, we'll log the operation
       // In a real implementation, you might use RabbitMQ's HTTP management API
-      
-      logger.info(`Queue purge requested for: ${queueName} (implementation needed)`);
+
+      logger.info(
+        `Queue purge requested for: ${queueName} (implementation needed)`,
+      );
     } catch (error) {
       logger.error('Failed to purge queue:', error);
       throw error;
@@ -430,12 +450,12 @@ export class StompMessageService implements IMessageService {
       // STOMP doesn't have explicit topology setup like AMQP
       // Exchanges and queues are typically created on-demand
       // However, we can send messages to ensure destinations exist
-      
+
       // In a real implementation, you might:
       // 1. Use RabbitMQ's management API to declare exchanges and queues
       // 2. Send setup messages to create destinations
       // 3. Configure bindings through management API
-      
+
       logger.info('STOMP topology setup completed');
     } catch (error) {
       logger.error('Failed to setup STOMP topology:', error);

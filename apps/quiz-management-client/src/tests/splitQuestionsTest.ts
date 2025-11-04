@@ -1,7 +1,6 @@
-import * as dotenv from "dotenv";
-dotenv.config()
+import * as dotenv from 'dotenv';
+dotenv.config();
 import { QuizParser } from '../QuizParser';
-
 
 const sampleQuestions = `
 1. What is the capital of France?
@@ -26,7 +25,7 @@ const sampleQuestions = `
 async function testSplitQuestions() {
   const parser = new QuizParser(sampleQuestions, '');
   const questions = await parser.splitQuestions();
-  
+
   console.log('Split Questions:');
   questions.forEach((q, i) => {
     console.log(`\nQuestion ${i + 1}:`);

@@ -1,23 +1,23 @@
-import { RunnableSequence } from "@langchain/core/runnables";
-import ChainFactory from "./chainFactory";
-import { getChatModel } from "./provider";
-import { Document } from "@langchain/core/documents";
-import { ChatMessage } from "../agents/agent.types";
+import { RunnableSequence } from '@langchain/core/runnables';
+import ChainFactory from './chainFactory';
+import { getChatModel } from './provider';
+import { Document } from '@langchain/core/documents';
+import { ChatMessage } from '../agents/agent.types';
 import {
   NotebookChainRunner,
   RetrieveAIResponse,
   VaultQAChainRunner,
-} from "./chainRunner";
-import { DEFAULT_SYSTEM_PROMPT } from "./prompt";
-import MemoryManager from "./memoryManager";
-import { NoteRetriever } from "./hybridRetriever";
+} from './chainRunner';
+import { DEFAULT_SYSTEM_PROMPT } from './prompt';
+import MemoryManager from './memoryManager';
+import { NoteRetriever } from './hybridRetriever';
 
 export default class ChainManager {
   maxK = 10;
   private static retrievalChain: RunnableSequence =
     ChainFactory.createConversationalRetrievalChain(
       {
-        llm: getChatModel()("deepseek-r1"),
+        llm: getChatModel()('deepseek-r1'),
         retriever: new NoteRetriever({
           minSimilarityScore: 0.01,
           maxK: 10,
@@ -53,8 +53,8 @@ export default class ChainManager {
   ): Promise<RetrieveAIResponse> => {
     const ChainRunner = new NotebookChainRunner(this);
     switch (referenceSource) {
-      case "notebook":
-        console.log("start notebook runChain");
+      case 'notebook':
+        console.log('start notebook runChain');
         // await this.initMemory()
         return await ChainRunner.run(
           userMessage,
@@ -62,10 +62,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "notebook",
+          'notebook',
         );
-      case "physiology":
-        console.log("start notebook runChain");
+      case 'physiology':
+        console.log('start notebook runChain');
         // await this.initMemory()
         return await ChainRunner.run(
           userMessage,
@@ -73,10 +73,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "physiology",
+          'physiology',
         );
-      case "pathology":
-        console.log("start notebook runChain");
+      case 'pathology':
+        console.log('start notebook runChain');
         // await this.initMemory()
         return await ChainRunner.run(
           userMessage,
@@ -84,10 +84,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "pathology",
+          'pathology',
         );
-      case "surgery":
-        console.log("start notebook runChain");
+      case 'surgery':
+        console.log('start notebook runChain');
         // await this.initMemory()
         return await ChainRunner.run(
           userMessage,
@@ -95,10 +95,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "surgery",
+          'surgery',
         );
-      case "internal":
-        console.log("start notebook runChain");
+      case 'internal':
+        console.log('start notebook runChain');
         // await this.initMemory()
         return await ChainRunner.run(
           userMessage,
@@ -106,10 +106,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "internal",
+          'internal',
         );
-      case "infectious":
-        console.log("start notebook runChain");
+      case 'infectious':
+        console.log('start notebook runChain');
         // await this.initMemory()
         const infectiousChainRunner = new NotebookChainRunner(this);
         return await infectiousChainRunner.run(
@@ -118,10 +118,10 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "infectious",
+          'infectious',
         );
-      case "neurology":
-        console.log("start notebook runChain");
+      case 'neurology':
+        console.log('start notebook runChain');
         // await this.initMemory()
         const notebookChainRunner = new NotebookChainRunner(this);
         return await notebookChainRunner.run(
@@ -130,11 +130,11 @@ export default class ChainManager {
           updateCurrentAiMessage,
           addMessage,
           options,
-          "neurology",
+          'neurology',
         );
-      case "vault":
+      case 'vault':
       default:
-        console.log("start runChain");
+        console.log('start runChain');
         // await this.initMemory()
         const chainRunner = new VaultQAChainRunner(this);
         return await chainRunner.run(

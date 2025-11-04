@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Delete, Put, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Put,
+  Body,
+  Param,
+  Query,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { LibraryItemService } from './library-item.service';
 import {
   CreateLibraryItemDto,
   UpdateMetadataDto,
   UpdateProcessingStatusDto,
-  PdfDownloadUrlDto
+  PdfDownloadUrlDto,
 } from 'library-shared';
 import { LibraryItem } from '@aikb/bibliography';
 
@@ -12,15 +23,27 @@ import { LibraryItem } from '@aikb/bibliography';
 export class LibraryItemController {
   constructor(private readonly libraryItemService: LibraryItemService) {}
 
+   @Get('test-rabbit')
+  async testRabbit(){
+    console.log('[DEBUG] testRabbit endpoint called');
+    this.libraryItemService.producePdf2MarkdownRequest({
+      itemId: "test"
+    })
+  }
+
   /**
    * Create a new library item
    * @param createLibraryItemDto The data to create the library item
    * @returns The created library item
    */
   @Post()
-  async create(@Body() createLibraryItemDto: CreateLibraryItemDto): Promise<LibraryItem> {
+  async create(
+    @Body() createLibraryItemDto: CreateLibraryItemDto,
+  ): Promise<LibraryItem> {
     try {
-      return await this.libraryItemService.createLibraryItem(createLibraryItemDto);
+      return await this.libraryItemService.createLibraryItem(
+        createLibraryItemDto,
+      );
     } catch (error) {
       throw new HttpException(
         `Failed to create library item: ${error.message}`,
@@ -67,10 +90,18 @@ export class LibraryItemController {
     @Query('collections') collections?: string,
   ): Promise<LibraryItem[]> {
     try {
-      const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : undefined;
-      const collectionsArray = collections ? collections.split(',').map(collection => collection.trim()) : undefined;
-      
-      return await this.libraryItemService.searchLibraryItems(query, tagsArray, collectionsArray);
+      const tagsArray = tags
+        ? tags.split(',').map((tag) => tag.trim())
+        : undefined;
+      const collectionsArray = collections
+        ? collections.split(',').map((collection) => collection.trim())
+        : undefined;
+
+      return await this.libraryItemService.searchLibraryItems(
+        query,
+        tagsArray,
+        collectionsArray,
+      );
     } catch (error) {
       throw new HttpException(
         `Failed to search library items: ${error.message}`,
@@ -85,7 +116,9 @@ export class LibraryItemController {
    * @returns Success message
    */
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<{ message: string; success: boolean }> {
+  async remove(
+    @Param('id') id: string,
+  ): Promise<{ message: string; success: boolean }> {
     try {
       const deleted = await this.libraryItemService.deleteLibraryItem(id);
       if (!deleted) {
@@ -112,10 +145,13 @@ export class LibraryItemController {
   @Put(':id/metadata')
   async updateMetadata(
     @Param('id') id: string,
-    @Body() updateMetadataDto: UpdateMetadataDto
+    @Body() updateMetadataDto: UpdateMetadataDto,
   ): Promise<LibraryItem> {
     try {
-      return await this.libraryItemService.updateLibraryItemMetadata(id, updateMetadataDto);
+      return await this.libraryItemService.updateLibraryItemMetadata(
+        id,
+        updateMetadataDto,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -136,10 +172,13 @@ export class LibraryItemController {
   @Put(':id/processing-status')
   async updateProcessingStatus(
     @Param('id') id: string,
-    @Body() updateProcessingStatusDto: UpdateProcessingStatusDto
+    @Body() updateProcessingStatusDto: UpdateProcessingStatusDto,
   ): Promise<LibraryItem> {
     try {
-      return await this.libraryItemService.updatePdfProcessingStatus(id, updateProcessingStatusDto);
+      return await this.libraryItemService.updatePdfProcessingStatus(
+        id,
+        updateProcessingStatusDto,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

@@ -1,10 +1,15 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
-import { quiz, answerType } from "@/types/quizData.types";
-import { QuizSetDocument, QuizSetData, APIResponse, QuizSetItem } from "@/types/quizSet.types";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
+import { quiz, answerType } from '@/types/quizData.types';
+import {
+  QuizSetDocument,
+  QuizSetData,
+  APIResponse,
+  QuizSetItem,
+} from '@/types/quizSet.types';
 
 /**
  * Retrieves a specific quiz set with all its quizzes and answers for the authenticated user.
@@ -29,7 +34,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { db } = await connectToDatabase();
@@ -37,19 +42,19 @@ export async function GET(
 
     if (!ObjectId.isValid(quizSetId)) {
       return NextResponse.json(
-        { error: "Invalid quiz set ID" },
+        { error: 'Invalid quiz set ID' },
         { status: 400 },
       );
     }
 
-    const quizSet = await db.collection("quizSets").findOne({
+    const quizSet = await db.collection('quizSets').findOne({
       _id: new ObjectId(quizSetId),
       creator: session.user.email,
     });
 
     if (!quizSet) {
       return NextResponse.json(
-        { error: "Quiz set not found" },
+        { error: 'Quiz set not found' },
         { status: 404 },
       );
     }
@@ -61,7 +66,7 @@ export async function GET(
 
     if (validQuizIds.length !== quizSet.quizzes.length) {
       console.warn(
-        "Some quiz IDs are invalid:",
+        'Some quiz IDs are invalid:',
         quizSet.quizzes
           .filter((q: QuizSetItem) => !ObjectId.isValid(q.quizId))
           .map((q: QuizSetItem) => q.quizId),
@@ -70,7 +75,7 @@ export async function GET(
 
     // Get quizzes with valid IDs only
     const foundQuizzes = await db
-      .collection("quiz")
+      .collection('quiz')
       .find({
         _id: { $in: validQuizIds },
       })
@@ -126,9 +131,9 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Error fetching quiz set:", error);
+    console.error('Error fetching quiz set:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

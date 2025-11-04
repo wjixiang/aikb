@@ -1,6 +1,6 @@
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import relationExtractor from "../../relationExtractor";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import relationExtractor from '../../relationExtractor';
 
 interface Entity {
   name: string;
@@ -14,23 +14,23 @@ interface Arguments {
 }
 
 const argv = yargs(hideBin(process.argv))
-  .option("passage", {
-    alias: "p",
-    describe: "The passage to extract relations from",
-    type: "string",
+  .option('passage', {
+    alias: 'p',
+    describe: 'The passage to extract relations from',
+    type: 'string',
     demandOption: true,
   })
-  .option("entities", {
-    alias: "e",
-    describe: "The entities in the passage (JSON string)",
-    type: "string",
+  .option('entities', {
+    alias: 'e',
+    describe: 'The entities in the passage (JSON string)',
+    type: 'string',
     demandOption: true,
   })
-  .option("chatModalName", {
-    alias: "m",
-    describe: "The chat model name",
-    type: "string",
-    default: "gpt-3.5-turbo",
+  .option('chatModalName', {
+    alias: 'm',
+    describe: 'The chat model name',
+    type: 'string',
+    default: 'gpt-3.5-turbo',
   })
   .parseSync();
 
@@ -43,15 +43,15 @@ async function main() {
       : JSON.parse(entities);
     if (!Array.isArray(parsedEntities)) {
       throw new Error(
-        "Entities must be a JSON array of {name: string, category: string}",
+        'Entities must be a JSON array of {name: string, category: string}',
       );
     }
     for (const entity of parsedEntities) {
       if (
-        typeof entity.name !== "string" ||
-        typeof entity.category !== "string"
+        typeof entity.name !== 'string' ||
+        typeof entity.category !== 'string'
       ) {
-        throw new Error("Each entity must have name and category as strings");
+        throw new Error('Each entity must have name and category as strings');
       }
     }
 
@@ -61,9 +61,9 @@ async function main() {
       parsedEntities,
     );
 
-    console.log("Extracted Relations:", JSON.stringify(relations, null, 2));
+    console.log('Extracted Relations:', JSON.stringify(relations, null, 2));
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
   }
 }
 

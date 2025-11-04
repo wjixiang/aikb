@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 export interface EmbeddingResponse {
   data: {
@@ -30,7 +30,7 @@ export class Embeddings {
   constructor(config: { apiKey: string; baseURL: string; model?: string }) {
     this.apiKey = config.apiKey;
     this.baseURL = config.baseURL;
-    this.model = config.model || "text-embedding-3-large";
+    this.model = config.model || 'text-embedding-3-large';
   }
 
   /**
@@ -49,7 +49,7 @@ export class Embeddings {
         { model, input },
         {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${this.apiKey}`,
           },
         },

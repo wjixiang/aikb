@@ -1,17 +1,17 @@
-import { connectToDatabase } from "../db/mongodb";
-import pLimit from "p-limit";
-import { A1, quiz, QuizWithUserAnswer } from "../../types/quizData.types";
-import Logger from "../console/logger";
-import { b } from "../../baml_client";
-import type { KnowledgePoints, RetrievedDocument } from "@/types/baml";
+import { connectToDatabase } from '../db/mongodb';
+import pLimit from 'p-limit';
+import { A1, quiz, QuizWithUserAnswer } from '../../types/quizData.types';
+import Logger from '../console/logger';
+import { b } from '../../baml_client';
+import type { KnowledgePoints, RetrievedDocument } from '@/types/baml';
 
-import { surrealDBClient } from "../../kgrag/database/surrrealdbClient";
-import GraphStorage from "../../kgrag/database/graphStorage";
-import type { Entity } from "@/types/baml";
-import KnowledgeGraphRetriever from "../../kgrag/core/KnowledgeGraphRetriever";
-import { ChunkDocument } from "../../kgrag/database/chunkStorage";
-import { formQuizContent } from "../utils";
-import { RecordId } from "surrealdb";
+import { surrealDBClient } from '../../kgrag/database/surrrealdbClient';
+import GraphStorage from '../../kgrag/database/graphStorage';
+import type { Entity } from '@/types/baml';
+import KnowledgeGraphRetriever from '../../kgrag/core/KnowledgeGraphRetriever';
+import { ChunkDocument } from '../../kgrag/database/chunkStorage';
+import { formQuizContent } from '../utils';
+import { RecordId } from 'surrealdb';
 
 interface QuizToChunkResult {
   quizId: string;
@@ -41,7 +41,7 @@ export class QuizConnector {
     className: string,
     source: string,
   ) {
-    this.logger = new Logger("quiz_to_chunk");
+    this.logger = new Logger('quiz_to_chunk');
     this.knowledgeGraphRetriever = knowledgeGraphRetriever;
     this.className = className;
     this.source = source;
@@ -58,7 +58,7 @@ export class QuizConnector {
       // await this.importQuizzesToSurrealDB(quizzes); // Import quizzes before processing
 
       const db = await surrealDBClient.getDb();
-      const quizzes = (await db.query<quiz[][]>("SELECT * FROM quiz"))[0];
+      const quizzes = (await db.query<quiz[][]>('SELECT * FROM quiz'))[0];
       const results = await this.processQuizzes(quizzes);
       return results;
     } catch (error) {
@@ -74,7 +74,7 @@ export class QuizConnector {
    * @returns A promise that resolves when connections are set up.
    */
   private async setupConnections(): Promise<void> {
-    this.logger.info("Setting up database connections");
+    this.logger.info('Setting up database connections');
     await surrealDBClient.connect();
     const surrealDb = await surrealDBClient.getDb();
     // Update constructor call to use default table names
@@ -87,7 +87,7 @@ export class QuizConnector {
    */
   private async cleanupConnections(): Promise<void> {
     try {
-      this.logger.info("Closing SurrealDB connection");
+      this.logger.info('Closing SurrealDB connection');
       await surrealDBClient.close();
     } catch (error) {
       this.logger.error(`Error closing SurrealDB connection: ${error}`);
@@ -103,7 +103,7 @@ export class QuizConnector {
       `Fetching quizzes for class: ${this.className}, source: ${this.source}`,
     );
     const { db } = await connectToDatabase();
-    const quizCollection = db.collection<quiz>("quiz");
+    const quizCollection = db.collection<quiz>('quiz');
     const quizzes = await quizCollection
       .find({ class: this.className, source: this.source })
       .toArray();
@@ -118,7 +118,7 @@ export class QuizConnector {
    */
   private async importQuizzesToSurrealDB(quizzes: quiz[]): Promise<void> {
     if (!this.graphStorage) {
-      throw new Error("Graph storage not initialized");
+      throw new Error('Graph storage not initialized');
     }
     this.logger.info(`Importing ${quizzes.length} quizzes to SurrealDB`);
     for (const quiz of quizzes) {
@@ -133,7 +133,7 @@ export class QuizConnector {
         );
       }
     }
-    this.logger.info("Finished importing quizzes to SurrealDB");
+    this.logger.info('Finished importing quizzes to SurrealDB');
   }
 
   /**
@@ -202,7 +202,7 @@ export async function quiz_to_chunk(
 
 class QuizToChunkAgent {
   referenceDocument: {
-    document: Omit<ChunkDocument, "embedding">;
+    document: Omit<ChunkDocument, 'embedding'>;
     score: number;
   }[] = [];
 
@@ -259,8 +259,8 @@ class QuizToChunkAgent {
       );
       const additionalRagResults = await this.performRAG(
         documentEvaluation.missed_knowledge_point
-          .map((e) => e.knowledgePoint + ":" + e.description)
-          .join("\n"),
+          .map((e) => e.knowledgePoint + ':' + e.description)
+          .join('\n'),
       );
       this.referenceDocument.push(...additionalRagResults); // Append new results
 
@@ -304,7 +304,7 @@ class QuizToChunkAgent {
    */
   private async generateOrGetExplanation(quiz: quiz): Promise<string> {
     let explanation = quiz.analysis?.discuss || quiz.analysis?.point;
-    if (!explanation || explanation === "") {
+    if (!explanation || explanation === '') {
       this.logger.info(`Generating explanation for quiz ${quiz._id}`);
       explanation = await this.generateExplanation(quiz);
     }
@@ -319,14 +319,14 @@ class QuizToChunkAgent {
   private async generateExplanation(quiz: quiz): Promise<string> {
     try {
       const options =
-        "options" in quiz
+        'options' in quiz
           ? quiz.options.map((opt) => ({ oid: opt.oid, text: opt.text }))
           : [];
 
       const answer = this.getQuizAnswer(quiz);
 
       const explanationResult = await b.GenerateExplanation(
-        quiz.type === "A3" ? quiz.mainQuestion : (quiz as A1).question,
+        quiz.type === 'A3' ? quiz.mainQuestion : (quiz as A1).question,
         answer,
         options.map((e) => e.text),
       );
@@ -334,7 +334,7 @@ class QuizToChunkAgent {
       return explanationResult.explanation;
     } catch (error) {
       this.logger.error(`Error generating explanation: ${error}`);
-      return "Explanation generation failed.";
+      return 'Explanation generation failed.';
     }
   }
 
@@ -344,18 +344,18 @@ class QuizToChunkAgent {
    * @returns The answer string.
    */
   private getQuizAnswer(quiz: quiz): string {
-    if ("answer" in quiz) {
-      return Array.isArray(quiz.answer) ? quiz.answer.join(", ") : quiz.answer;
-    } else if ("questions" in quiz) {
+    if ('answer' in quiz) {
+      return Array.isArray(quiz.answer) ? quiz.answer.join(', ') : quiz.answer;
+    } else if ('questions' in quiz) {
       return quiz.questions
         .map((q) => `${q.questionId}: ${q.answer}`)
-        .join("; ");
-    } else if ("subQuizs" in quiz) {
+        .join('; ');
+    } else if ('subQuizs' in quiz) {
       return quiz.subQuizs
         .map((sq) => `${sq.subQuizId}: ${sq.answer}`)
-        .join("; ");
+        .join('; ');
     }
-    return "";
+    return '';
   }
 
   /**
@@ -371,31 +371,31 @@ class QuizToChunkAgent {
     this.logger.info(`Extracting knowledge points for quiz ${quiz._id}`);
 
     const textToExtract =
-      `Question: ${quiz.type === "A3" ? quiz.mainQuestion : "question" in quiz ? quiz.question : ""}\n` +
+      `Question: ${quiz.type === 'A3' ? quiz.mainQuestion : 'question' in quiz ? quiz.question : ''}\n` +
       `Answer: ${this.getQuizAnswer(quiz)}\n` +
       `Explanation: ${explanation}`;
 
     try {
       const medicalEntityTypes = [
-        "disease",
-        "symptom",
-        "body_part",
-        "organ",
-        "tissue",
-        "cell",
-        "pathology_change",
-        "medicine",
-        "treatment",
-        "surgery",
-        "population",
-        "examination",
-        "diagnosis",
-        "etiology",
-        "risk_factor",
-        "prognosis",
-        "complication",
-        "differential_diagnosis",
-        "prevention",
+        'disease',
+        'symptom',
+        'body_part',
+        'organ',
+        'tissue',
+        'cell',
+        'pathology_change',
+        'medicine',
+        'treatment',
+        'surgery',
+        'population',
+        'examination',
+        'diagnosis',
+        'etiology',
+        'risk_factor',
+        'prognosis',
+        'complication',
+        'differential_diagnosis',
+        'prevention',
       ];
 
       return await b.SummarizeKnowledgePoint(textToExtract, explanation);
@@ -412,12 +412,12 @@ class QuizToChunkAgent {
    */
   private async performRAG(explanation: string): Promise<
     {
-      document: Omit<ChunkDocument, "embedding">;
+      document: Omit<ChunkDocument, 'embedding'>;
       score: number;
     }[]
   > {
     const relatedChunks: {
-      document: Omit<ChunkDocument, "embedding">;
+      document: Omit<ChunkDocument, 'embedding'>;
       score: number;
     }[] = [];
 
@@ -436,7 +436,7 @@ class QuizToChunkAgent {
     explanation: string,
   ) {
     if (!this.graphStorage) {
-      throw new Error("Graph storage not initialized");
+      throw new Error('Graph storage not initialized');
     }
 
     try {
@@ -446,7 +446,7 @@ class QuizToChunkAgent {
         console.log(
           `Processing chunk: ${chunk.document.id}, score: ${chunk.score}`,
         );
-        await db.insertRelation("quiz_to_chunk", {
+        await db.insertRelation('quiz_to_chunk', {
           in: quiz.id,
           out: chunk.document.id,
           score: chunk.score,
@@ -457,7 +457,7 @@ class QuizToChunkAgent {
       }
     } catch (error) {
       this.logger.error(`Error building graph: ${error}`);
-      return "Relationship summary generation failed.";
+      return 'Relationship summary generation failed.';
     }
   }
 
@@ -471,19 +471,19 @@ class QuizToChunkAgent {
   private async summarizeRelationships(
     quiz: quiz,
     knowledgePoints: Entity[],
-    relatedChunks: Omit<ChunkDocument, "embedding">[],
+    relatedChunks: Omit<ChunkDocument, 'embedding'>[],
   ): Promise<string> {
     try {
       let quizText: string;
-      if (quiz.type === "A1") {
+      if (quiz.type === 'A1') {
         quizText = `Quiz: ${quiz.question}\nOptions:\n${
-          quiz.options?.map((opt) => `${opt.oid}: ${opt.text}`).join("\n") ||
-          "None"
+          quiz.options?.map((opt) => `${opt.oid}: ${opt.text}`).join('\n') ||
+          'None'
         }\nAnswer: ${quiz.answer}`;
-      } else if (quiz.type === "A3") {
+      } else if (quiz.type === 'A3') {
         quizText = `Main Question: ${quiz.mainQuestion}\nSub-questions:\n${
-          quiz.subQuizs?.map((q, i) => `${i + 1}. ${q.question}`).join("\n") ||
-          "None"
+          quiz.subQuizs?.map((q, i) => `${i + 1}. ${q.question}`).join('\n') ||
+          'None'
         }`;
       } else {
         quizText = JSON.stringify(quiz);
@@ -498,7 +498,7 @@ class QuizToChunkAgent {
       return summaryResult.summary;
     } catch (error) {
       this.logger.error(`Error summarizing relationships: ${error}`);
-      return "Relationship summary generation failed.";
+      return 'Relationship summary generation failed.';
     }
   }
 

@@ -1,28 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { chatHistoryService } from "@/lib/services/ChatHistoryService";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { chatHistoryService } from '@/lib/services/ChatHistoryService';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
 
-const logger = createLoggerWithPrefix("DELETE_SESSION_ROUTE");
+const logger = createLoggerWithPrefix('DELETE_SESSION_ROUTE');
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
-  logger.info("DELETE request received for session deletion");
-  console.log("DELETE request received for session deletion");
+  logger.info('DELETE request received for session deletion');
+  console.log('DELETE request received for session deletion');
 
   try {
     const session = await getServerSession(authOptions);
-    logger.debug("Session retrieved from getServerSession");
-    console.log("Session retrieved from getServerSession", session?.user?.id);
+    logger.debug('Session retrieved from getServerSession');
+    console.log('Session retrieved from getServerSession', session?.user?.id);
 
     if (!session?.user?.id) {
-      logger.warn("Authentication failed: No user session found");
-      console.log("Authentication failed: No user session found");
+      logger.warn('Authentication failed: No user session found');
+      console.log('Authentication failed: No user session found');
       return NextResponse.json(
-        { error: "Authentication required" },
+        { error: 'Authentication required' },
         { status: 401 },
       );
     }
@@ -32,10 +32,10 @@ export async function DELETE(
     console.log(`Session ID extracted from params: ${sessionId}`);
 
     if (!sessionId) {
-      logger.warn("Session ID validation failed: No session ID provided");
-      console.log("Session ID validation failed: No session ID provided");
+      logger.warn('Session ID validation failed: No session ID provided');
+      console.log('Session ID validation failed: No session ID provided');
       return NextResponse.json(
-        { error: "Session ID required" },
+        { error: 'Session ID required' },
         { status: 400 },
       );
     }
@@ -51,7 +51,7 @@ export async function DELETE(
       logger.error(`Error deleting session with ID ${sessionId}:`, error);
       console.error(`Error deleting session with ID ${sessionId}:`, error);
       // Provide more specific error messages
-      if (error.message === "Session not found or access denied") {
+      if (error.message === 'Session not found or access denied') {
         logger.warn(
           `Session not found or access denied for session ID: ${sessionId}`,
         );
@@ -59,7 +59,7 @@ export async function DELETE(
           `Session not found or access denied for session ID: ${sessionId}`,
         );
         return NextResponse.json(
-          { error: "Session not found or access denied" },
+          { error: 'Session not found or access denied' },
           { status: 404 },
         );
       }
@@ -75,8 +75,8 @@ export async function DELETE(
       throw error; // Re-throw for general error handling
     }
   } catch (error: any) {
-    logger.error("Error in DELETE session route handler:", error);
-    console.error("Error in DELETE session route handler:", error);
+    logger.error('Error in DELETE session route handler:', error);
+    console.error('Error in DELETE session route handler:', error);
 
     // Return more specific error messages
     if (error.message) {
@@ -86,13 +86,13 @@ export async function DELETE(
     }
 
     logger.error(
-      "Returning generic error response for session deletion failure",
+      'Returning generic error response for session deletion failure',
     );
     console.error(
-      "Returning generic error response for session deletion failure",
+      'Returning generic error response for session deletion failure',
     );
     return NextResponse.json(
-      { error: "Failed to delete session" },
+      { error: 'Failed to delete session' },
       { status: 500 },
     );
   }

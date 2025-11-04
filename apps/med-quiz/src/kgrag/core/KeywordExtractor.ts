@@ -1,41 +1,41 @@
-import Segmentit from "segmentit";
+import Segmentit from 'segmentit';
 const segmenter = new Segmentit();
 
 // Define a default list of English stopwords
 const defaultStopwords = [
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "but",
-  "by",
-  "for",
-  "if",
-  "in",
-  "into",
-  "is",
-  "it",
-  "no",
-  "not",
-  "of",
-  "on",
-  "or",
-  "such",
-  "that",
-  "the",
-  "their",
-  "then",
-  "there",
-  "these",
-  "they",
-  "this",
-  "to",
-  "was",
-  "will",
-  "with",
+  'a',
+  'an',
+  'and',
+  'are',
+  'as',
+  'at',
+  'be',
+  'but',
+  'by',
+  'for',
+  'if',
+  'in',
+  'into',
+  'is',
+  'it',
+  'no',
+  'not',
+  'of',
+  'on',
+  'or',
+  'such',
+  'that',
+  'the',
+  'their',
+  'then',
+  'there',
+  'these',
+  'they',
+  'this',
+  'to',
+  'was',
+  'will',
+  'with',
 ];
 
 // Simple word tokenizer
@@ -48,19 +48,19 @@ function simpleWordTokenizer(text: string): string[] {
 function simplePorterStemmer(word: string): string {
   word = word.toLowerCase();
   // Remove 's'
-  if (word.endsWith("s")) {
+  if (word.endsWith('s')) {
     word = word.slice(0, -1);
   }
   // Remove 'es'
-  if (word.endsWith("es")) {
+  if (word.endsWith('es')) {
     word = word.slice(0, -2);
   }
   // Remove 'ed'
-  if (word.endsWith("ed")) {
+  if (word.endsWith('ed')) {
     word = word.slice(0, -2);
   }
   // Remove 'ing'
-  if (word.endsWith("ing")) {
+  if (word.endsWith('ing')) {
     word = word.slice(0, -3);
   }
   return word;

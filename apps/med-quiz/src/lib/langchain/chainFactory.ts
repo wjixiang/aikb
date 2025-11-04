@@ -1,13 +1,13 @@
-import { BaseLanguageModel } from "@langchain/core/language_models/base";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
-import { BaseRetriever } from "@langchain/core/retrievers";
+import { BaseLanguageModel } from '@langchain/core/language_models/base';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { ChatPromptTemplate, PromptTemplate } from '@langchain/core/prompts';
+import { BaseRetriever } from '@langchain/core/retrievers';
 import {
   RunnablePassthrough,
   RunnableSequence,
-} from "@langchain/core/runnables";
-import { BaseChatMemory } from "langchain/memory";
-import { formatDocumentsAsString } from "langchain/util/document";
+} from '@langchain/core/runnables';
+import { BaseChatMemory } from 'langchain/memory';
+import { formatDocumentsAsString } from 'langchain/util/document';
 
 export interface LLMChainInput {
   llm: BaseLanguageModel;
@@ -53,9 +53,9 @@ type ConversationalRetrievalQAChainInput = {
 
 // Add new chain types here
 export enum ChainType {
-  LLM_CHAIN = "llm_chain",
-  VAULT_QA_CHAIN = "vault_qa",
-  COPILOT_PLUS_CHAIN = "copilot_plus",
+  LLM_CHAIN = 'llm_chain',
+  VAULT_QA_CHAIN = 'vault_qa',
+  COPILOT_PLUS_CHAIN = 'copilot_plus',
 }
 
 class ChainFactory {
@@ -84,7 +84,7 @@ class ChainFactory {
       model,
     ]);
     ChainFactory.instances.set(ChainType.LLM_CHAIN, instance);
-    console.log("New LLM chain created.");
+    console.log('New LLM chain created.');
     return instance;
   }
 
@@ -164,19 +164,19 @@ Question: {question}
         (dialogueTurn) =>
           `Human: ${dialogueTurn[0]}\nAssistant: ${dialogueTurn[1]}`,
       );
-      return formattedDialogueTurns.join("\n");
+      return formattedDialogueTurns.join('\n');
     };
 
     const standaloneQuestionChain = RunnableSequence.from([
       {
         question: (input: ConversationalRetrievalQAChainInput) => {
-          if (debug) console.log("Input Question: ", input.question);
+          if (debug) console.log('Input Question: ', input.question);
           return input.question;
         },
         chat_history: (input: ConversationalRetrievalQAChainInput) => {
           const formattedChatHistory = formatChatHistory(input.chat_history);
           if (debug)
-            console.log("Formatted Chat History: ", formattedChatHistory);
+            console.log('Formatted Chat History: ', formattedChatHistory);
           return formattedChatHistory;
         },
       },
@@ -184,7 +184,7 @@ Question: {question}
       llm,
       new StringOutputParser(),
       (output) => {
-        if (debug) console.log("Standalone Question: ", output);
+        if (debug) console.log('Standalone Question: ', output);
         return output;
       },
     ]);

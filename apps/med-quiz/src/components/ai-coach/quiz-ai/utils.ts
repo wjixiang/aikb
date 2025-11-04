@@ -1,4 +1,4 @@
-import { answerType, QuizWithUserAnswer } from "@/types/quizData.types";
+import { answerType, QuizWithUserAnswer } from '@/types/quizData.types';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 export const sortQuizzesByType = (

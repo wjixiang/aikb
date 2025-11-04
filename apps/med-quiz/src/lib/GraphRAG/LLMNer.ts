@@ -3,16 +3,16 @@
  * @module LLMNer
  */
 
-import { JanusGraphClient, JanusGraphConfig } from "./janusGraphClient";
-import { getChatModel } from "../langchain/provider";
+import { JanusGraphClient, JanusGraphConfig } from './janusGraphClient';
+import { getChatModel } from '../langchain/provider';
 import {
   ENTITY_EXTRACTION_PROMPT,
   ENTITY_EXTRACTION_EXAMPLE,
   CONTINUE_ENTITY_EXTRACTION,
-} from "./prompt/prompt";
-import { ChatOpenAI } from "@langchain/openai";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { ReferenceChunk } from "./KnowledgeGraphWeaver";
+} from './prompt/prompt';
+import { ChatOpenAI } from '@langchain/openai';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ReferenceChunk } from './KnowledgeGraphWeaver';
 
 /**
  * Represents an extracted entity with its metadata
@@ -107,10 +107,10 @@ export default class LLMNer {
     if (isolated_entities.length > 0) {
       if (this.config.debug) {
         console.log(
-          "######## LLMNer.extract_entities: Isolated entities found, attempting re-extraction ########",
+          '######## LLMNer.extract_entities: Isolated entities found, attempting re-extraction ########',
         );
         console.log(
-          "Isolated Entities:",
+          'Isolated Entities:',
           isolated_entities.map((e) => e.name),
         );
       }
@@ -118,12 +118,12 @@ export default class LLMNer {
       // Construct prompt for re-extraction
       const isolated_entity_names = isolated_entities
         .map((e) => e.name)
-        .join(", ");
+        .join(', ');
       const continue_prompt = await CONTINUE_ENTITY_EXTRACTION[
-        "DEFAULT"
+        'DEFAULT'
       ].format({
         language: this.config.language,
-        entity_types: entity_types.join(", "),
+        entity_types: entity_types.join(', '),
         tuple_delimiter: this.config.tuple_delimiter,
         record_delimiter: this.config.record_delimiter,
         completion_delimiter: this.config.completion_delimiter,
@@ -167,25 +167,25 @@ export default class LLMNer {
 
       if (this.config.debug) {
         console.log(
-          "######## LLMNer.extract_entities: Re-extraction result ########\n",
+          '######## LLMNer.extract_entities: Re-extraction result ########\n',
           continue_result,
         );
         console.log(
-          "######## LLMNer.extract_entities: Merged structured result ########",
+          '######## LLMNer.extract_entities: Merged structured result ########',
         );
         console.log(
-          "Entities:",
+          'Entities:',
           JSON.stringify(structured_result.entities, null, 2),
         );
         console.log(
-          "Relationships:",
+          'Relationships:',
           JSON.stringify(structured_result.relationships, null, 2),
         );
       }
     } else {
       if (this.config.debug) {
         console.log(
-          "######## LLMNer.extract_entities: No isolated entities found. Skipping re-extraction. ########",
+          '######## LLMNer.extract_entities: No isolated entities found. Skipping re-extraction. ########',
         );
       }
     }
@@ -195,11 +195,11 @@ export default class LLMNer {
 
     if (this.config.debug) {
       console.log(
-        "######## LLMNer.extract_entities: prompt ########\n",
+        '######## LLMNer.extract_entities: prompt ########\n',
         prompt,
       );
       console.log(
-        "######## LLMNer.extract_entities: result ########\n",
+        '######## LLMNer.extract_entities: result ########\n',
         result,
       );
     }
@@ -227,20 +227,20 @@ export default class LLMNer {
         });
       }),
     );
-    return examples.join("\n\n");
+    return examples.join('\n\n');
   };
 
   joint_prompt = async (entity_types: string[], input_text: string) => {
     // Combine example templates
     const combinedExamples = await this.combineExamples([
-      "EXTRACT_DEFINITION",
-      "EXTRACT_CLINICAL_PRESENTATION",
-      "EXTRACT_PATHOPHYSIOLOGY",
+      'EXTRACT_DEFINITION',
+      'EXTRACT_CLINICAL_PRESENTATION',
+      'EXTRACT_PATHOPHYSIOLOGY',
     ]);
 
-    const prompt = await ENTITY_EXTRACTION_PROMPT["DEFAULT"].format({
+    const prompt = await ENTITY_EXTRACTION_PROMPT['DEFAULT'].format({
       language: this.config.language,
-      entity_types: entity_types.join(", "),
+      entity_types: entity_types.join(', '),
       tuple_delimiter: this.config.tuple_delimiter,
       record_delimiter: this.config.record_delimiter,
       completion_delimiter: this.config.completion_delimiter,
@@ -252,10 +252,10 @@ export default class LLMNer {
     // Using approximation: ~2 tokens per Chinese character
     const tokenCount = Math.ceil(prompt.length * 2);
     if (this.config.debug) {
-      console.log("LLMNer.joint_prompt: entity_types", entity_types);
-      console.log("LLMNer.joint_prompt: input_text", input_text);
-      console.log("LLMNer.joint_prompt: prompt", prompt);
-      console.log("LLMNer.joint_prompt: tokenCount", tokenCount);
+      console.log('LLMNer.joint_prompt: entity_types', entity_types);
+      console.log('LLMNer.joint_prompt: input_text', input_text);
+      console.log('LLMNer.joint_prompt: prompt', prompt);
+      console.log('LLMNer.joint_prompt: tokenCount', tokenCount);
     }
     return {
       prompt,
@@ -280,7 +280,7 @@ export default class LLMNer {
 
     // Escape delimiters for regex usage if they are special characters
     const escapeRegex = (s: string) =>
-      s.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const escapedTupleDelimiter = escapeRegex(tuple_delimiter);
 
     // 1. Extract and parse keywords
@@ -313,16 +313,16 @@ export default class LLMNer {
       // keywordMatch[1] now directly contains the keyword string
       const keywordString = keywordMatch[1].trim();
       keywords = keywordString
-        .split(",")
+        .split(',')
         .map((k) => k.trim())
         .filter((k) => k); // Split, trim, and remove empty strings
       // Remove the entire matched pattern from the content
       remaining_content = llm_output_content
-        .replace(keywordMatch[0], "")
+        .replace(keywordMatch[0], '')
         .trim();
     } else if (this.config.debug) {
       console.warn(
-        "LLMNer.structurize: Keyword line not found or pattern mismatch.",
+        'LLMNer.structurize: Keyword line not found or pattern mismatch.',
       );
     }
 
@@ -335,10 +335,10 @@ export default class LLMNer {
       if (!cleanedRecord) return; // Skip empty records resulting from split
 
       // Check if record looks like a tuple (starts with '(' ends with ')')
-      if (!cleanedRecord.startsWith("(") || !cleanedRecord.endsWith(")")) {
+      if (!cleanedRecord.startsWith('(') || !cleanedRecord.endsWith(')')) {
         if (this.config.debug)
           console.warn(
-            "LLMNer.structurize: Skipping malformed record (no parentheses):",
+            'LLMNer.structurize: Skipping malformed record (no parentheses):',
             cleanedRecord,
           );
         return;
@@ -355,7 +355,7 @@ export default class LLMNer {
 
       // Clean each part (remove surrounding quotes and trim)
       const cleanedParts = parts.map((part) =>
-        part.replace(/^"|"$/g, "").trim(),
+        part.replace(/^"|"$/g, '').trim(),
       );
 
       if (cleanedParts.length < 1) return; // Skip if split results in no parts
@@ -363,7 +363,7 @@ export default class LLMNer {
       const recordType = cleanedParts[0];
 
       try {
-        if (recordType === "entity") {
+        if (recordType === 'entity') {
           if (cleanedParts.length === 4) {
             // "entity", name, type, description
             entities.push({
@@ -376,15 +376,15 @@ export default class LLMNer {
             });
           } else if (this.config.debug) {
             console.warn(
-              "LLMNer.structurize: Malformed entity record:",
+              'LLMNer.structurize: Malformed entity record:',
               cleanedRecord,
-              "Expected 4 parts, got:",
+              'Expected 4 parts, got:',
               cleanedParts.length,
-              "Parts:",
+              'Parts:',
               cleanedParts,
             );
           }
-        } else if (recordType === "relationship") {
+        } else if (recordType === 'relationship') {
           if (cleanedParts.length === 6) {
             // "relationship", entity1, entity2, description, type, confidence
             const confidence = parseFloat(cleanedParts[5]);
@@ -394,32 +394,32 @@ export default class LLMNer {
               entity1: cleanedParts[1],
               entity2: cleanedParts[2],
               description: cleanedParts[3],
-              type: cleanedParts[4].split(",").map((e) => e.trim()),
+              type: cleanedParts[4].split(',').map((e) => e.trim()),
               confidence: isNaN(confidence) ? 0 : confidence, // Parse confidence as float, default 0 if NaN
             });
           } else if (this.config.debug) {
             console.warn(
-              "LLMNer.structurize: Malformed relationship record:",
+              'LLMNer.structurize: Malformed relationship record:',
               cleanedRecord,
-              "Expected 6 parts, got:",
+              'Expected 6 parts, got:',
               cleanedParts.length,
-              "Parts:",
+              'Parts:',
               cleanedParts,
             );
           }
         } else if (this.config.debug) {
           // This might catch parts of the keyword line if regex failed
           console.warn(
-            "LLMNer.structurize: Unknown record type:",
+            'LLMNer.structurize: Unknown record type:',
             recordType,
-            "Record:",
+            'Record:',
             cleanedRecord,
           );
         }
       } catch (error) {
         if (this.config.debug)
           console.error(
-            "LLMNer.structurize: Error processing record:",
+            'LLMNer.structurize: Error processing record:',
             cleanedRecord,
             error,
           );
@@ -427,10 +427,10 @@ export default class LLMNer {
     });
 
     if (this.config.debug) {
-      console.log("######## LLMNer.structurize: Processed Data ########");
-      console.log("Entities:", JSON.stringify(entities, null, 2));
-      console.log("Relationships:", JSON.stringify(relationships, null, 2));
-      console.log("Keywords:", keywords);
+      console.log('######## LLMNer.structurize: Processed Data ########');
+      console.log('Entities:', JSON.stringify(entities, null, 2));
+      console.log('Relationships:', JSON.stringify(relationships, null, 2));
+      console.log('Keywords:', keywords);
     }
 
     return {
@@ -447,14 +447,14 @@ export default class LLMNer {
   LLMMessageCacher = async (ai_message: any) => {
     try {
       const { db, client } = await connectToDatabase();
-      const message_save_collection = db.collection("LLMMessages");
+      const message_save_collection = db.collection('LLMMessages');
       await message_save_collection.insertOne({
         ...ai_message,
         timestamp: new Date(),
       });
-      console.log("[LLMNER] Message saved to MongoDB");
+      console.log('[LLMNER] Message saved to MongoDB');
     } catch (e) {
-      console.error("[LLMNER] Error saving message to MongoDB", e);
+      console.error('[LLMNER] Error saving message to MongoDB', e);
     } finally {
     }
   };
@@ -470,8 +470,8 @@ export default class LLMNer {
   }) => {
     try {
       const { db, client } = await connectToDatabase();
-      const entities_collection = db.collection("Entities");
-      const relationships_collection = db.collection("Relationships");
+      const entities_collection = db.collection('Entities');
+      const relationships_collection = db.collection('Relationships');
 
       if (result.entities.length > 0) {
         await entities_collection.insertMany(
@@ -484,7 +484,7 @@ export default class LLMNer {
           `[LLMNER] ${result.entities.length} entities saved to MongoDB`,
         );
       } else {
-        console.log("[LLMNER] No entities to save.");
+        console.log('[LLMNER] No entities to save.');
       }
 
       if (result.relationships.length > 0) {
@@ -498,10 +498,10 @@ export default class LLMNer {
           `[LLMNER] ${result.relationships.length} relationships saved to MongoDB`,
         );
       } else {
-        console.log("[LLMNER] No relationships to save.");
+        console.log('[LLMNER] No relationships to save.');
       }
     } catch (e) {
-      console.error("[LLMNER] Error saving results to MongoDB", e);
+      console.error('[LLMNER] Error saving results to MongoDB', e);
     } finally {
       // Consider closing the client here if it's not managed elsewhere
       // client.close();

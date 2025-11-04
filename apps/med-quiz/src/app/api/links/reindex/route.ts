@@ -2,9 +2,9 @@
  * API endpoint for rebuilding the entire link index
  */
 
-import { NextResponse } from "next/server";
-import { LinkIndexingService } from "@/kgrag/services/linkIndexingService";
-import { LinkSchemaManager } from "@/kgrag/database/linkSchema";
+import { NextResponse } from 'next/server';
+import { LinkIndexingService } from '@/kgrag/services/linkIndexingService';
+import { LinkSchemaManager } from '@/kgrag/database/linkSchema';
 
 const linkService = new LinkIndexingService();
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     if (!force) {
       return NextResponse.json(
-        { error: "Use force: true to confirm reindexing" },
+        { error: 'Use force: true to confirm reindexing' },
         { status: 400 },
       );
     }
@@ -28,12 +28,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       processedCount,
-      message: "Link index rebuilt successfully",
+      message: 'Link index rebuilt successfully',
     });
   } catch (error) {
-    console.error("Error rebuilding link index:", error);
+    console.error('Error rebuilding link index:', error);
     return NextResponse.json(
-      { error: "Failed to rebuild link index" },
+      { error: 'Failed to rebuild link index' },
       { status: 500 },
     );
   }
@@ -46,12 +46,12 @@ export async function GET() {
 
     return NextResponse.json({
       ready: true,
-      message: "Link indexing system is ready",
+      message: 'Link indexing system is ready',
     });
   } catch (error) {
-    console.error("Error initializing link system:", error);
+    console.error('Error initializing link system:', error);
     return NextResponse.json(
-      { error: "Failed to initialize link system" },
+      { error: 'Failed to initialize link system' },
       { status: 500 },
     );
   }

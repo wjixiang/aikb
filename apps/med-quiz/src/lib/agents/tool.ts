@@ -1,4 +1,4 @@
-import * as get_forecast from "./tools/get_weather_tool";
+import * as get_forecast from './tools/get_weather_tool';
 
 // Define a type for tool handlers
 type ToolHandler = (args: any) => Promise<any>;

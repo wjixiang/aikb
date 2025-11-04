@@ -1,7 +1,7 @@
-import { AgentNode, AgentState, AgentStep, ChatMessage } from "./agent.types";
-import rag_workflow from "@/kgrag/lib/llm_workflow/rag_workflow";
-import { rag_config } from "@/kgrag/lib/llm_workflow/rag_workflow";
-import { LlmStreamCall } from "@boundaryml/baml/native";
+import { AgentNode, AgentState, AgentStep, ChatMessage } from './agent.types';
+import rag_workflow from '@/kgrag/lib/llm_workflow/rag_workflow';
+import { rag_config } from '@/kgrag/lib/llm_workflow/rag_workflow';
+import { LlmStreamCall } from '@boundaryml/baml/native';
 
 /**
  * 1. retrieve documents about query
@@ -9,7 +9,7 @@ import { LlmStreamCall } from "@boundaryml/baml/native";
  * 4. judging whether to re-fetch document
  */
 export class ExecuteRAGNode {
-  taskName = "Execute_RAG";
+  taskName = 'Execute_RAG';
 
   constructor() {}
 
@@ -24,9 +24,9 @@ export class ExecuteRAGNode {
         query,
         rag_config,
       );
-      let preChunk = "";
+      let preChunk = '';
       let llmResponse: string[] = [];
-      let cotContent = "";
+      let cotContent = '';
 
       for await (const chunk of stream) {
         if (chunk.choices.length > 0) {
@@ -36,7 +36,7 @@ export class ExecuteRAGNode {
             cotContent += reasoningChunk;
 
             yield {
-              type: "cot",
+              type: 'cot',
               content: reasoningChunk,
               task: this.taskName,
             };
@@ -48,20 +48,20 @@ export class ExecuteRAGNode {
             llmResponse.push(contentChunk);
 
             yield {
-              type: "update",
+              type: 'update',
               content: contentChunk,
               task: this.taskName,
             };
 
             // Yield speech data for main content
             yield {
-              type: "speech",
-              content: "",
+              type: 'speech',
+              content: '',
               task: this.taskName,
               speechData: {
                 text: contentChunk,
                 isComplete: false,
-                language: rag_config.language || "zh",
+                language: rag_config.language || 'zh',
               },
             };
           }
@@ -71,27 +71,27 @@ export class ExecuteRAGNode {
 
       // Final speech data with completion flag
       yield {
-        type: "speech",
-        content: "",
+        type: 'speech',
+        content: '',
         task: this.taskName,
         speechData: {
-          text: "",
+          text: '',
           isComplete: true,
-          language: rag_config.language || "zh",
+          language: rag_config.language || 'zh',
         },
       };
 
       yield {
-        type: "result",
-        content: "RAG execution completed",
+        type: 'result',
+        content: 'RAG execution completed',
         task: this.taskName,
         data: { documents: bamlDocuments },
       };
     } catch (error) {
-      console.error("Error in ExecuteRAGNode:", error);
+      console.error('Error in ExecuteRAGNode:', error);
       yield {
-        type: "error",
-        content: error instanceof Error ? error.message : "Unknown error",
+        type: 'error',
+        content: error instanceof Error ? error.message : 'Unknown error',
         task: this.taskName,
       };
     }

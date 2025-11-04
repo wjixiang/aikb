@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
 
 /**
  * 获取指定 collectionId 的所有待复习的卡片
@@ -16,7 +16,7 @@ export async function GET(
     const param = await params;
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // const { searchParams } = new URL(request.url);
@@ -24,7 +24,7 @@ export async function GET(
 
     if (!collectionId) {
       return NextResponse.json(
-        { error: "Collection ID is required" },
+        { error: 'Collection ID is required' },
         { status: 400 },
       );
     }
@@ -34,10 +34,10 @@ export async function GET(
     // 获取属于指定 collectionId 的所有到期的卡片
     const now = new Date();
     const dueCards = await db
-      .collection("cardStates")
+      .collection('cardStates')
       .find({
         userId: session.user?.email,
-        "state.due": { $lte: now },
+        'state.due': { $lte: now },
       })
       .toArray();
 
@@ -50,10 +50,10 @@ export async function GET(
 
     // 找到所有包含这些卡片的预设牌组
     const collections = await db
-      .collection("presetCollections")
+      .collection('presetCollections')
       .find({
         _id: new ObjectId(collectionId), // 仅匹配指定的 collectionId
-        "cards.oid": { $in: cardOids },
+        'cards.oid': { $in: cardOids },
       })
       .toArray();
 
@@ -84,15 +84,15 @@ export async function GET(
         _id: card._id,
         cardOid: card.cardOid,
         state: card.state,
-        title: cardDetails[card.cardOid]?.title || "Unknown Card",
+        title: cardDetails[card.cardOid]?.title || 'Unknown Card',
         collectionName:
-          cardDetails[card.cardOid]?.collectionName || "Unknown Collection",
+          cardDetails[card.cardOid]?.collectionName || 'Unknown Collection',
         collectionId: cardDetails[card.cardOid]?.collectionId,
       }));
 
     return NextResponse.json(enrichedCards);
   } catch (error) {
-    console.error("Error in GET /api/fsrs/review/due:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in GET /api/fsrs/review/due:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

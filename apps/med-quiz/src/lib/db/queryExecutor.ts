@@ -1,7 +1,7 @@
 // types/queryExecutor.ts
-import { Model, FilterQuery, PipelineStage } from "mongoose";
-import quizModal from "./quizModal";
-import { quizTypeID } from "@/types/quizData.types";
+import { Model, FilterQuery, PipelineStage } from 'mongoose';
+import quizModal from './quizModal';
+import { quizTypeID } from '@/types/quizData.types';
 
 interface QueryResult {
   filter: FilterQuery<any>;
@@ -53,17 +53,17 @@ export class QueryExecutor {
     }
 
     // 4. 分页
-    if (typeof query.options.skip === "number") {
+    if (typeof query.options.skip === 'number') {
       pipeline.push({ $skip: query.options.skip });
     }
-    if (typeof query.options.limit === "number") {
+    if (typeof query.options.limit === 'number') {
       pipeline.push({ $limit: query.options.limit });
     }
 
     // 5. 字段投影
     if (query.options.select) {
       const projection: ProjectionType = {};
-      query.options.select.split(" ").forEach((field) => {
+      query.options.select.split(' ').forEach((field) => {
         projection[field] = 1;
       });
       pipeline.push({ $project: projection });
@@ -77,7 +77,7 @@ export class QueryExecutor {
     try {
       return await model.aggregate(pipeline);
     } catch (error) {
-      console.error("Aggregate execution error:", error);
+      console.error('Aggregate execution error:', error);
       throw error;
     }
   }
@@ -136,7 +136,7 @@ export class QueryExecutor {
         return allResults;
       }
     } catch (error) {
-      console.error("Random query execution error:", error);
+      console.error('Random query execution error:', error);
       throw error;
     }
   }
@@ -145,7 +145,7 @@ export class QueryExecutor {
   async count(query: QueryResult, type?: quizTypeID) {
     const countPipeline: PipelineStage[] = [
       { $match: query.filter },
-      { $count: "total" },
+      { $count: 'total' },
     ];
 
     try {
@@ -165,7 +165,7 @@ export class QueryExecutor {
         0,
       );
     } catch (error) {
-      console.error("Count execution error:", error);
+      console.error('Count execution error:', error);
       throw error;
     }
   }

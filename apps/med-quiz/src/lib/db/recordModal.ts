@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const PracticeRecordSchema = new mongoose.Schema({
   userid: { type: String, required: true },
@@ -10,4 +10,4 @@ const PracticeRecordSchema = new mongoose.Schema({
 
 export const PracticeRecordModal =
   mongoose.models.PracticeRecord ||
-  mongoose.model("PracticeRecord", PracticeRecordSchema);
+  mongoose.model('PracticeRecord', PracticeRecordSchema);

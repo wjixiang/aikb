@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
-import { BaiduOCR } from "@/lib/ocr/baidu";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { getChatModel } from "@/lib/langchain/provider";
+import { NextResponse } from 'next/server';
+import { BaiduOCR } from '@/lib/ocr/baidu';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { getChatModel } from '@/lib/langchain/provider';
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const imageFiles = formData.getAll("images") as File[];
+    const imageFiles = formData.getAll('images') as File[];
 
     if (!imageFiles || imageFiles.length === 0) {
       return NextResponse.json(
-        { error: "No image files provided" },
+        { error: 'No image files provided' },
         { status: 400 },
       );
     }
@@ -24,10 +24,10 @@ export async function POST(request: Request) {
     );
 
     // Combine results with newlines between them
-    let combinedText = results.join("\n\n");
+    let combinedText = results.join('\n\n');
 
     // Step 1: Clean OCR text with LLM
-    const llm = getChatModel()("gpt-4o-mini", 0);
+    const llm = getChatModel()('gpt-4o-mini', 0);
 
     const cleanPrompt = PromptTemplate.fromTemplate(`
       请清理以下OCR识别文本：
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const cleanChain = cleanPrompt.pipe(llm);
     const cleanResponse = await cleanChain.invoke({ text: combinedText });
     const cleanedText =
-      typeof cleanResponse.content === "string"
+      typeof cleanResponse.content === 'string'
         ? cleanResponse.content
         : JSON.stringify(cleanResponse.content);
 
@@ -165,14 +165,14 @@ export async function POST(request: Request) {
     const extractChain = extractPrompt.pipe(llm);
     const extractResponse = await extractChain.invoke({ text: cleanedText });
     const extractedData =
-      typeof extractResponse.content === "string"
+      typeof extractResponse.content === 'string'
         ? extractResponse.content
         : JSON.stringify(extractResponse.content);
 
     // Clean JSON string by removing markdown code blocks
     const cleanJsonString = extractedData
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
       .trim();
 
     let structuredData;
@@ -180,8 +180,8 @@ export async function POST(request: Request) {
       structuredData = JSON.parse(cleanJsonString);
       console.log(structuredData);
     } catch (e) {
-      console.error("Failed to parse extracted data:", e);
-      structuredData = { error: "Failed to parse extracted data" };
+      console.error('Failed to parse extracted data:', e);
+      structuredData = { error: 'Failed to parse extracted data' };
     }
 
     // Step 3: Format structured data into readable document
@@ -226,42 +226,42 @@ export async function POST(request: Request) {
 
     const formatChain = formatPrompt.pipe(llm);
     const formatResponse = await formatChain.invoke({
-      姓名: structuredData?.姓名 || "",
-      性别: structuredData?.性别 || "",
-      年龄: structuredData?.年龄 || "",
-      出生地: structuredData?.出生地 || "",
-      职业: structuredData?.职业 || "",
-      入院时间: structuredData?.入院时间 || "",
-      民族: structuredData?.民族 || "",
-      婚姻状况: structuredData?.婚姻状况 || "",
-      记录时间: structuredData?.记录时间 || "",
-      主诉: structuredData?.主诉 || "",
+      姓名: structuredData?.姓名 || '',
+      性别: structuredData?.性别 || '',
+      年龄: structuredData?.年龄 || '',
+      出生地: structuredData?.出生地 || '',
+      职业: structuredData?.职业 || '',
+      入院时间: structuredData?.入院时间 || '',
+      民族: structuredData?.民族 || '',
+      婚姻状况: structuredData?.婚姻状况 || '',
+      记录时间: structuredData?.记录时间 || '',
+      主诉: structuredData?.主诉 || '',
       现病史: structuredData?.现病史
         ? JSON.stringify(structuredData.现病史)
-        : "",
+        : '',
       既往史: structuredData?.既往史
         ? JSON.stringify(structuredData.既往史)
-        : "",
+        : '',
       系统回顾: structuredData?.系统回顾
         ? JSON.stringify(structuredData.系统回顾)
-        : "",
+        : '',
       个人史: structuredData?.个人史
         ? JSON.stringify(structuredData.个人史)
-        : "",
+        : '',
       月经婚育史: structuredData?.月经婚育史
         ? JSON.stringify(structuredData.月经婚育史)
-        : "",
+        : '',
       家族史: structuredData?.家族史
         ? JSON.stringify(structuredData.家族史)
-        : "",
-      "JSON.stringify(structuredData, null, 2)": JSON.stringify(
+        : '',
+      'JSON.stringify(structuredData, null, 2)': JSON.stringify(
         structuredData,
         null,
         2,
       ),
     });
     const formattedDocument =
-      typeof formatResponse.content === "string"
+      typeof formatResponse.content === 'string'
         ? formatResponse.content
         : JSON.stringify(formatResponse.content);
 
@@ -272,9 +272,9 @@ export async function POST(request: Request) {
       formattedDocument,
     });
   } catch (error) {
-    console.error("OCR processing error:", error);
+    console.error('OCR processing error:', error);
     return NextResponse.json(
-      { error: "Failed to process image" },
+      { error: 'Failed to process image' },
       { status: 500 },
     );
   }

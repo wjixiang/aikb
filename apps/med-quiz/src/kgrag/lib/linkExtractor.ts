@@ -45,7 +45,7 @@ export class LinkExtractor {
         alias,
         position,
         raw: match[0],
-        context: `${context.before}[[${title}${alias ? "|" + alias : ""}]]${context.after}`,
+        context: `${context.before}[[${title}${alias ? '|' + alias : ''}]]${context.after}`,
       });
     }
 
@@ -84,7 +84,7 @@ export class LinkExtractor {
    * @returns True if valid, false otherwise
    */
   static validateTitle(title: string): boolean {
-    return title.length > 0 && title.length <= 200 && !title.includes("\n");
+    return title.length > 0 && title.length <= 200 && !title.includes('\n');
   }
 
   /**
@@ -93,7 +93,7 @@ export class LinkExtractor {
    * @returns Normalized title
    */
   static normalizeTitle(title: string): string {
-    return title.trim().toLowerCase().replace(/\s+/g, " ");
+    return title.trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
   /**

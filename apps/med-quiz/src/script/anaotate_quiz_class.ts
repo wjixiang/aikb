@@ -1,18 +1,18 @@
-import { b } from "@/baml_client/async_client";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import QuizStorage from "@/lib/quiz/QuizStorage";
-import { quiz } from "@/types/quizData.types";
-import pLimit from "p-limit";
+import { b } from '@/baml_client/async_client';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import QuizStorage from '@/lib/quiz/QuizStorage';
+import { quiz } from '@/types/quizData.types';
+import pLimit from 'p-limit';
 
 async function annotate_quiz_class() {
   const storage = new QuizStorage();
   const { db } = await connectToDatabase();
-  const cursor = db.collection<quiz>("quiz").find({
+  const cursor = db.collection<quiz>('quiz').find({
     $or: [
       { class: { $exists: false } },
       {
         class: {
-          $type: "string",
+          $type: 'string',
           $regex: /^.{0,0}$/,
         },
       },
@@ -32,7 +32,7 @@ async function annotate_quiz_class() {
             QuizStorage.formQuizContent(element, true),
           );
           await db
-            .collection<quiz>("quiz")
+            .collection<quiz>('quiz')
             .updateOne({ _id: element._id }, { $set: { class: theClass } });
           console.log(`Updated quiz ${element._id} with class: ${theClass}`);
         } catch (error) {

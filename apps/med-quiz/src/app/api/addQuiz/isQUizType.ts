@@ -1,4 +1,4 @@
-import { quiz, quizTypeID, oid, analysis } from "@/types/quizData.types";
+import { quiz, quizTypeID, oid, analysis } from '@/types/quizData.types';
 
 /**
  * 验证对象是否为有效的 quiz 格式
@@ -9,8 +9,8 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
   const errors: string[] = [];
 
   // 基础验证：检查是否为对象且包含必要的通用字段
-  if (!obj || typeof obj !== "object") {
-    errors.push("输入不是有效的对象");
+  if (!obj || typeof obj !== 'object') {
+    errors.push('输入不是有效的对象');
     return { valid: false, errors };
   }
 
@@ -23,12 +23,12 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
     errors.push(`题目类型 "${obj.type}" 无效，必须是 A1, A2, A3, B 或 X`);
   }
 
-  if (typeof obj.class !== "string") {
-    errors.push("class 必须是字符串类型");
+  if (typeof obj.class !== 'string') {
+    errors.push('class 必须是字符串类型');
   }
 
-  if (typeof obj.unit !== "string") {
-    errors.push("unit 必须是字符串类型");
+  if (typeof obj.unit !== 'string') {
+    errors.push('unit 必须是字符串类型');
   }
 
   const tagsValidation = validateTags(obj.tags);
@@ -41,8 +41,8 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
     errors.push(...analysisValidation.errors.map((err) => `analysis: ${err}`));
   }
 
-  if (typeof obj.source !== "string") {
-    errors.push("source 必须是字符串类型");
+  if (typeof obj.source !== 'string') {
+    errors.push('source 必须是字符串类型');
   }
 
   // 根据题目类型进行特定验证
@@ -50,17 +50,17 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
     let typeSpecificValidation;
 
     switch (obj.type) {
-      case "A1":
-      case "A2":
+      case 'A1':
+      case 'A2':
         typeSpecificValidation = validateA1A2(obj);
         break;
-      case "A3":
+      case 'A3':
         typeSpecificValidation = validateA3(obj);
         break;
-      case "X":
+      case 'X':
         typeSpecificValidation = validateX(obj);
         break;
-      case "B":
+      case 'B':
         typeSpecificValidation = validateB(obj);
         break;
     }
@@ -76,7 +76,7 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
 
   // 输出详细错误信息到控制台
   if (errors.length > 0) {
-    console.error("题目验证失败，详细错误：");
+    console.error('题目验证失败，详细错误：');
     errors.forEach((error, index) => {
       console.error(`${index + 1}. ${error}`);
     });
@@ -91,7 +91,7 @@ export function validateQuiz(obj: any): { valid: boolean; errors?: string[] } {
  * 验证是否为有效的题目类型ID
  */
 function isValidQuizTypeID(type: any): type is quizTypeID {
-  return ["A1", "A2", "A3", "B", "X"].includes(type);
+  return ['A1', 'A2', 'A3', 'B', 'X'].includes(type);
 }
 
 /**
@@ -101,12 +101,12 @@ function validateTags(tags: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!Array.isArray(tags)) {
-    errors.push("标签必须是数组");
+    errors.push('标签必须是数组');
     return { valid: false, errors };
   }
 
   tags.forEach((tag, index) => {
-    if (typeof tag !== "string") {
+    if (typeof tag !== 'string') {
       errors.push(`标签 #${index + 1} 必须是字符串类型`);
     }
   });
@@ -120,24 +120,24 @@ function validateTags(tags: any): { valid: boolean; errors: string[] } {
 function validateAnalysis(analysis: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (!analysis || typeof analysis !== "object") {
-    errors.push("分析必须是对象类型");
+  if (!analysis || typeof analysis !== 'object') {
+    errors.push('分析必须是对象类型');
     return { valid: false, errors };
   }
 
-  if (analysis.point !== null && typeof analysis.point !== "string") {
-    errors.push("point 必须是字符串类型或 null");
+  if (analysis.point !== null && typeof analysis.point !== 'string') {
+    errors.push('point 必须是字符串类型或 null');
   }
 
-  if (analysis.discuss !== null && typeof analysis.discuss !== "string") {
-    errors.push("discuss 必须是字符串类型或 null");
+  if (analysis.discuss !== null && typeof analysis.discuss !== 'string') {
+    errors.push('discuss 必须是字符串类型或 null');
   }
 
   if (!Array.isArray(analysis.link)) {
-    errors.push("link 必须是数组");
+    errors.push('link 必须是数组');
   } else {
     analysis.link.forEach((link: any, index: number) => {
-      if (typeof link !== "string") {
+      if (typeof link !== 'string') {
         errors.push(`link #${index + 1} 必须是字符串类型`);
       }
     });
@@ -153,12 +153,12 @@ function validateOptions(options: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!Array.isArray(options)) {
-    errors.push("选项必须是数组");
+    errors.push('选项必须是数组');
     return { valid: false, errors };
   }
 
   options.forEach((option, index) => {
-    if (typeof option !== "object" || option === null) {
+    if (typeof option !== 'object' || option === null) {
       errors.push(`选项 #${index + 1} 必须是对象类型`);
       return;
     }
@@ -169,7 +169,7 @@ function validateOptions(options: any): { valid: boolean; errors: string[] } {
       );
     }
 
-    if (typeof option.text !== "string") {
+    if (typeof option.text !== 'string') {
       errors.push(`选项 #${index + 1} 的 text 必须是字符串类型`);
     }
   });
@@ -181,7 +181,7 @@ function validateOptions(options: any): { valid: boolean; errors: string[] } {
  * 验证选项ID是否有效
  */
 function isValidOid(oid: any): oid is oid {
-  return ["A", "B", "C", "D", "E"].includes(oid);
+  return ['A', 'B', 'C', 'D', 'E'].includes(oid);
 }
 
 /**
@@ -190,8 +190,8 @@ function isValidOid(oid: any): oid is oid {
 function validateA1A2(obj: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (typeof obj.question !== "string") {
-    errors.push("question 必须是字符串类型");
+  if (typeof obj.question !== 'string') {
+    errors.push('question 必须是字符串类型');
   }
 
   const optionsValidation = validateOptions(obj.options);
@@ -212,12 +212,12 @@ function validateA1A2(obj: any): { valid: boolean; errors: string[] } {
 function validateA3(obj: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (typeof obj.mainQuestion !== "string") {
-    errors.push("mainQuestion 必须是字符串类型");
+  if (typeof obj.mainQuestion !== 'string') {
+    errors.push('mainQuestion 必须是字符串类型');
   }
 
   if (!Array.isArray(obj.subQuizs)) {
-    errors.push("subQuizs 必须是数组");
+    errors.push('subQuizs 必须是数组');
     return { valid: false, errors };
   }
 
@@ -231,16 +231,16 @@ function validateA3(obj: any): { valid: boolean; errors: string[] } {
       } | null,
       index: number,
     ) => {
-      if (typeof subQuiz !== "object" || subQuiz === null) {
+      if (typeof subQuiz !== 'object' || subQuiz === null) {
         errors.push(`子题目 #${index + 1} 必须是对象类型`);
         return;
       }
 
-      if (typeof subQuiz.subQuizId !== "number") {
+      if (typeof subQuiz.subQuizId !== 'number') {
         errors.push(`子题目 #${index + 1} 的 subQuizId 必须是数字类型`);
       }
 
-      if (typeof subQuiz.question !== "string") {
+      if (typeof subQuiz.question !== 'string') {
         errors.push(`子题目 #${index + 1} 的 question 必须是字符串类型`);
       }
 
@@ -270,8 +270,8 @@ function validateA3(obj: any): { valid: boolean; errors: string[] } {
 function validateX(obj: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (typeof obj.question !== "string") {
-    errors.push("question 必须是字符串类型");
+  if (typeof obj.question !== 'string') {
+    errors.push('question 必须是字符串类型');
   }
 
   const optionsValidation = validateOptions(obj.options);
@@ -280,7 +280,7 @@ function validateX(obj: any): { valid: boolean; errors: string[] } {
   }
 
   if (!Array.isArray(obj.answer)) {
-    errors.push("answer 必须是数组");
+    errors.push('answer 必须是数组');
     return { valid: false, errors };
   }
 
@@ -300,7 +300,7 @@ function validateB(obj: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!Array.isArray(obj.questions)) {
-    errors.push("questions 必须是数组");
+    errors.push('questions 必须是数组');
     return { valid: false, errors };
   }
 
@@ -309,16 +309,16 @@ function validateB(obj: any): { valid: boolean; errors: string[] } {
       question: { questionId: any; questionText: any; answer: any } | null,
       index: number,
     ) => {
-      if (typeof question !== "object" || question === null) {
+      if (typeof question !== 'object' || question === null) {
         errors.push(`问题 #${index + 1} 必须是对象类型`);
         return;
       }
 
-      if (typeof question.questionId !== "number") {
+      if (typeof question.questionId !== 'number') {
         errors.push(`问题 #${index + 1} 的 questionId 必须是数字类型`);
       }
 
-      if (typeof question.questionText !== "string") {
+      if (typeof question.questionText !== 'string') {
         errors.push(`问题 #${index + 1} 的 questionText 必须是字符串类型`);
       }
 

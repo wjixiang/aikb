@@ -5,20 +5,20 @@
  * It implements a single tool that echoes back the input message.
  */
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+} from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Create an MCP server with capabilities for tools (to echo messages).
  */
 const server = new Server(
   {
-    name: "echo-server",
-    version: "0.1.0",
+    name: 'echo-server',
+    version: '0.1.0',
   },
   {
     capabilities: {
@@ -35,17 +35,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "echo",
-        description: "Echoes back the input message",
+        name: 'echo',
+        description: 'Echoes back the input message',
         inputSchema: {
-          type: "object",
+          type: 'object',
           properties: {
             message: {
-              type: "string",
-              description: "The message to echo back",
+              type: 'string',
+              description: 'The message to echo back',
             },
           },
-          required: ["message"],
+          required: ['message'],
         },
       },
     ],
@@ -58,14 +58,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
-    case "echo": {
-      const message = String(request.params.arguments?.message || "");
+    case 'echo': {
+      const message = String(request.params.arguments?.message || '');
 
       if (!message) {
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: "You didn't provide a message to echo!",
             },
           ],
@@ -75,7 +75,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: message,
           },
         ],
@@ -83,7 +83,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     default:
-      throw new Error("Unknown tool");
+      throw new Error('Unknown tool');
   }
 });
 
@@ -94,10 +94,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Echo MCP server running on stdio");
+  console.error('Echo MCP server running on stdio');
 }
 
 main().catch((error) => {
-  console.error("Server error:", error);
+  console.error('Server error:', error);
   process.exit(1);
 });

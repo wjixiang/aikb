@@ -1,4 +1,4 @@
-import axios from "axios"; // Assuming axios for HTTP requests
+import axios from 'axios'; // Assuming axios for HTTP requests
 
 interface NormalizedTerm {
   cui: string;
@@ -7,8 +7,8 @@ interface NormalizedTerm {
 
 export default class UMLSAgent {
   private apiKey: string;
-  private baseUrl = "https://uts-ws.nlm.nih.gov/rest";
-  private version = "current"; // Or a specific UMLS version
+  private baseUrl = 'https://uts-ws.nlm.nih.gov/rest';
+  private version = 'current'; // Or a specific UMLS version
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
@@ -30,7 +30,7 @@ export default class UMLSAgent {
           params: {
             string: term,
             apiKey: this.apiKey,
-            searchType: "exact", // Use exact search for normalization
+            searchType: 'exact', // Use exact search for normalization
             // Add other parameters for disambiguation if needed, e.g., sabs for specific sources
           },
         },
@@ -94,7 +94,7 @@ export default class UMLSAgent {
     let response = `Acknowledged your query about "${query}".`;
 
     if (normalizedTerms.length > 0) {
-      response += ` I found the following normalized terms: ${normalizedTerms.map((t) => `${t.preferredName} (${t.cui})`).join(", ")}.`;
+      response += ` I found the following normalized terms: ${normalizedTerms.map((t) => `${t.preferredName} (${t.cui})`).join(', ')}.`;
       // In a real implementation, you would use the CUIs to fetch related information from UMLS.
     } else {
       response += ` I couldn't normalize any medical terms in your query.`;
@@ -107,7 +107,7 @@ export default class UMLSAgent {
   private extractTermsFromQuery(query: string): string[] {
     // This is a very basic placeholder. A real implementation would use NLP techniques.
     // For demonstration, let's just split by spaces and filter short words.
-    return query.split(" ").filter((word) => word.length > 2);
+    return query.split(' ').filter((word) => word.length > 2);
   }
 
   // 4. Cache management (basic placeholder)
@@ -123,7 +123,7 @@ export default class UMLSAgent {
 
   // 5. Error handling system (basic placeholder)
   private handleError(error: any): void {
-    console.error("UMLS API Error:", error);
+    console.error('UMLS API Error:', error);
     // More sophisticated error handling would be needed
   }
 }

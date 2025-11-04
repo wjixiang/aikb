@@ -1,8 +1,8 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { QuizHistoryItem, APIResponse } from "@/types/quizSet.types";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { QuizHistoryItem, APIResponse } from '@/types/quizSet.types';
 
 /**
  * Retrieves a paginated history of all quiz sets created by the authenticated user.
@@ -21,20 +21,20 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { db } = await connectToDatabase();
 
     const quizSets = await db
-      .collection("quizSets")
+      .collection('quizSets')
       .find({ creator: session.user.email })
       .sort({ createdAt: -1 })
       .project({
         _id: 1,
         title: 1,
         createdAt: 1,
-        "quizzes.quiz._id": 1,
+        'quizzes.quiz._id': 1,
       })
       .toArray();
 
@@ -50,9 +50,9 @@ export async function GET(request: Request) {
       data: formattedQuizSets,
     });
   } catch (error) {
-    console.error("Error fetching quiz history:", error);
+    console.error('Error fetching quiz history:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

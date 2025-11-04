@@ -1,18 +1,18 @@
-import { extractNoteTitles, getNoteFileFromTitle } from "./utils";
-import { BaseCallbackConfig } from "@langchain/core/callbacks/manager";
-import { Document } from "@langchain/core/documents";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { BaseRetriever } from "@langchain/core/retrievers";
-import { connectToDatabase } from "../db/mongodb";
-import { note } from "@/types/noteData.types";
-import { embeddings, getChatModel, getEmbeddings } from "./provider";
+import { extractNoteTitles, getNoteFileFromTitle } from './utils';
+import { BaseCallbackConfig } from '@langchain/core/callbacks/manager';
+import { Document } from '@langchain/core/documents';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { BaseRetriever } from '@langchain/core/retrievers';
+import { connectToDatabase } from '../db/mongodb';
+import { note } from '@/types/noteData.types';
+import { embeddings, getChatModel, getEmbeddings } from './provider';
 
-import * as dotenv from "dotenv";
-import milvusCollectionOperator from "../milvus/milvusCollectionOperator";
+import * as dotenv from 'dotenv';
+import milvusCollectionOperator from '../milvus/milvusCollectionOperator';
 dotenv.config();
 
 if (!process.env.NOTE_COLLECTION_NAME) {
-  throw new Error("GPTSAPI_KEY 环境变量未提供！");
+  throw new Error('GPTSAPI_KEY 环境变量未提供！');
 }
 
 export interface HybridRetrieverOptions {
@@ -33,7 +33,7 @@ export interface HybridRetrieverOptions {
 }
 
 export class NoteRetriever extends BaseRetriever {
-  public lc_namespace = ["hybrid_retriever"];
+  public lc_namespace = ['hybrid_retriever'];
 
   private queryRewritePrompt: ChatPromptTemplate;
 
@@ -97,7 +97,7 @@ export class NoteRetriever extends BaseRetriever {
         metadata: {
           ...doc.metadata,
           combinedScore: score,
-          scoreSource: "vector",
+          scoreSource: 'vector',
         },
       });
     });
@@ -109,14 +109,14 @@ export class NoteRetriever extends BaseRetriever {
 
       if (existing) {
         existing.metadata.combinedScore += score;
-        existing.metadata.scoreSource = "hybrid";
+        existing.metadata.scoreSource = 'hybrid';
       } else {
         combined.set(doc.metadata.chunkId, {
           ...doc,
           metadata: {
             ...doc.metadata,
             combinedScore: score,
-            scoreSource: "bm25",
+            scoreSource: 'bm25',
           },
         });
       }
@@ -142,7 +142,7 @@ export class NoteRetriever extends BaseRetriever {
     try {
       rewrittenQuery = await this.rewriteQuery(query);
     } catch (error) {
-      console.log("API请求异常");
+      console.log('API请求异常');
       throw error;
     }
 
@@ -173,19 +173,19 @@ export class NoteRetriever extends BaseRetriever {
       const promptResult = await this.queryRewritePrompt.format({
         question: query,
       });
-      const chatModel = getChatModel()("gpt-4o-mini");
+      const chatModel = getChatModel()('gpt-4o-mini');
       const rewrittenQueryObject = await chatModel.invoke(promptResult);
 
       // Directly return the content assuming it's structured as expected
-      if (rewrittenQueryObject && "content" in rewrittenQueryObject) {
+      if (rewrittenQueryObject && 'content' in rewrittenQueryObject) {
         return rewrittenQueryObject.content as string;
       }
       console.warn(
-        "Unexpected rewrittenQuery format. Falling back to original query.",
+        'Unexpected rewrittenQuery format. Falling back to original query.',
       );
       return query;
     } catch (error) {
-      console.error("Error in rewriteQuery:", error);
+      console.error('Error in rewriteQuery:', error);
       // If there's an error, return the original query
       return query;
     }
@@ -240,14 +240,14 @@ export class NoteRetriever extends BaseRetriever {
     // }
 
     try {
-      console.log("env", process.env.NOTE_COLLECTION_NAME);
+      console.log('env', process.env.NOTE_COLLECTION_NAME);
       const Instance = new milvusCollectionOperator(
-        process.env.NOTE_COLLECTION_NAME ?? "note",
+        process.env.NOTE_COLLECTION_NAME ?? 'note',
       );
       const Results = await Instance.searchSimilarDocuments(query, {
         limit: limit || this.options.maxK,
         expr: filterIds
-          ? `chunkId in [${filterIds.map((id) => `"${id}"`).join(",")}]`
+          ? `chunkId in [${filterIds.map((id) => `"${id}"`).join(',')}]`
           : undefined,
       });
       // console.log("qdrantResults",qdrantResults)
@@ -279,7 +279,7 @@ export class NoteRetriever extends BaseRetriever {
       });
       return documents;
     } catch (error) {
-      console.error("Error in queryNote:", error);
+      console.error('Error in queryNote:', error);
       return [];
     }
   }
@@ -295,10 +295,10 @@ export class NoteRetriever extends BaseRetriever {
   }
 
   private async convertQueryToVector(query: string): Promise<number[]> {
-    const embeddingsAPI = getEmbeddings()("text-embedding-3-large");
+    const embeddingsAPI = getEmbeddings()('text-embedding-3-large');
     const vector = await embeddingsAPI.Embeddings.embedQuery(query);
     if (vector.length === 0) {
-      throw new Error("Query embedding returned an empty vector");
+      throw new Error('Query embedding returned an empty vector');
     }
     return vector;
   }
@@ -310,7 +310,7 @@ export class NoteRetriever extends BaseRetriever {
 
     const current = new Date(start);
     while (current <= end) {
-      dateRange.push(current.toLocaleDateString("en-CA"));
+      dateRange.push(current.toLocaleDateString('en-CA'));
       current.setDate(current.getDate() + 1);
     }
 
@@ -325,7 +325,7 @@ export class NoteRetriever extends BaseRetriever {
     // Only filter out scores that are numbers and below threshold
     const filteredOramaChunks = oramaChunks.filter((chunk) => {
       const score = chunk.metadata.score;
-      if (typeof score !== "number" || isNaN(score)) {
+      if (typeof score !== 'number' || isNaN(score)) {
         return true; // Keep chunks with NaN scores for now until we find out why
       }
       return score >= threshold;

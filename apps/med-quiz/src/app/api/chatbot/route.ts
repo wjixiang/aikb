@@ -1,12 +1,12 @@
-"use server";
+'use server';
 
-require("dotenv").config(); // Explicitly load environment variables
+require('dotenv').config(); // Explicitly load environment variables
 
-import { NextRequest } from "next/server";
-import { ChatReq } from "@/lib/agents/agent.types";
-import { AgentService } from "@/lib/services/agentService";
-import { Agent } from "@/lib/agents/Agent";
-import { language } from "@/kgrag/type";
+import { NextRequest } from 'next/server';
+import { ChatReq } from '@/lib/agents/agent.types';
+import { AgentService } from '@/lib/services/agentService';
+import { Agent } from '@/lib/agents/Agent';
+import { language } from '@/kgrag/type';
 
 // Remove edge runtime since we need Node.js APIs
 // export const runtime = 'edge';
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         for await (const step of transformedStream) {
-          const chunk = JSON.stringify(step) + "\n";
+          const chunk = JSON.stringify(step) + '\n';
           controller.enqueue(encoder.encode(chunk));
         }
         controller.close();
@@ -39,21 +39,21 @@ export async function POST(req: NextRequest) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {
-    console.error("Error in chatbot API:", error);
+    console.error('Error in chatbot API:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       },
     );

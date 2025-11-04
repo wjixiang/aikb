@@ -1,6 +1,6 @@
-import { MongoClient, Db, Collection } from "mongodb";
-import { quiz, A1, A2, A3, B, X } from "@/types/quizData.types";
-import { isDuplicateQuiz } from "./isDuplicateQuiz";
+import { MongoClient, Db, Collection } from 'mongodb';
+import { quiz, A1, A2, A3, B, X } from '@/types/quizData.types';
+import { isDuplicateQuiz } from './isDuplicateQuiz';
 
 /**
  * 将题目保存到对应的集合中
@@ -41,7 +41,7 @@ export async function saveQuizToCollection(
       id: result.insertedId.toString(),
     };
   } catch (error) {
-    console.error("Error saving quiz:", error);
+    console.error('Error saving quiz:', error);
     return {
       success: false,
       message: `保存${quiz.type}类型题目时发生错误: ${error instanceof Error ? error.message : String(error)}`,
@@ -56,16 +56,16 @@ export async function saveQuizToCollection(
  */
 function getCollectionNameByType(type: string): string {
   switch (type) {
-    case "A1":
-      return "a1";
-    case "A2":
-      return "a2";
-    case "A3":
-      return "a3";
-    case "B":
-      return "bx";
-    case "X":
-      return "xes";
+    case 'A1':
+      return 'a1';
+    case 'A2':
+      return 'a2';
+    case 'A3':
+      return 'a3';
+    case 'B':
+      return 'bx';
+    case 'X':
+      return 'xes';
     default:
       throw new Error(`未知的题目类型: ${type}`);
   }
@@ -83,11 +83,11 @@ export async function isDuplicateQuizInAllCollections(
 ): Promise<boolean> {
   // 获取所有集合
   const collections = [
-    db.collection("a1"),
-    db.collection("a2"),
-    db.collection("a3"),
-    db.collection("bx"),
-    db.collection("xes"),
+    db.collection('a1'),
+    db.collection('a2'),
+    db.collection('a3'),
+    db.collection('bx'),
+    db.collection('xes'),
   ];
 
   // 检查每个集合

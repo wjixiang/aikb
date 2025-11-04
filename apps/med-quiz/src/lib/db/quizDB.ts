@@ -1,4 +1,4 @@
-import { connectToDatabase } from "./mongodb";
+import { connectToDatabase } from './mongodb';
 
 export default class quizDB {
   /**
@@ -7,12 +7,12 @@ export default class quizDB {
    * @returns 处理后的字符串，连续多个空格被替换为单个空格
    */
   normalizeSpaces(input: string): string {
-    if (!input || typeof input !== "string") {
+    if (!input || typeof input !== 'string') {
       return input;
     }
 
     // 使用正则表达式将连续的两个或更多空格替换为单个空格
-    return input.replace(/\s{2,}/g, " ");
+    return input.replace(/\s{2,}/g, ' ');
   }
 
   /**
@@ -27,8 +27,8 @@ export default class quizDB {
 
     // 查找所有具有该字段的文档
     const cursor = db
-      .collection("quiz")
-      .find({ [fieldName]: { $type: "string" } });
+      .collection('quiz')
+      .find({ [fieldName]: { $type: 'string' } });
 
     // 遍历每个文档并更新
     for await (const doc of cursor) {
@@ -38,7 +38,7 @@ export default class quizDB {
       // 只有当字段值有变化时才更新
       if (field !== normalized) {
         const result = await db
-          .collection("quiz")
+          .collection('quiz')
           .updateOne({ _id: doc._id }, { $set: { [fieldName]: normalized } });
 
         updatedCount += result.modifiedCount;

@@ -1,16 +1,16 @@
-import winston from "winston";
-import DailyRotateFile from "winston-daily-rotate-file";
-import { NextRequest } from "next/server";
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import { NextRequest } from 'next/server';
 
 // 日志级别定义
 export enum LogLevel {
-  ERROR = "error",
-  WARN = "warn",
-  INFO = "info",
-  HTTP = "http",
-  VERBOSE = "verbose",
-  DEBUG = "debug",
-  SILLY = "silly"
+  ERROR = 'error',
+  WARN = 'warn',
+  INFO = 'info',
+  HTTP = 'http',
+  VERBOSE = 'verbose',
+  DEBUG = 'debug',
+  SILLY = 'silly',
 }
 
 // 日志上下文接口
@@ -32,20 +32,23 @@ export class EnhancedLogger {
   private logger: winston.Logger;
   private prefix: string;
 
-  constructor(prefix: string, options?: {
-    level?: string;
-    enableConsole?: boolean;
-    enableFile?: boolean;
-    enableRemote?: boolean;
-    logDir?: string;
-  }) {
+  constructor(
+    prefix: string,
+    options?: {
+      level?: string;
+      enableConsole?: boolean;
+      enableFile?: boolean;
+      enableRemote?: boolean;
+      logDir?: string;
+    },
+  ) {
     this.prefix = prefix;
     const {
-      level = process.env.LOG_LEVEL || "info",
-      enableConsole = process.env.NODE_ENV !== "production",
+      level = process.env.LOG_LEVEL || 'info',
+      enableConsole = process.env.NODE_ENV !== 'production',
       enableFile = true,
-      enableRemote = process.env.NODE_ENV === "production",
-      logDir = process.env.LOG_DIR || "./logs"
+      enableRemote = process.env.NODE_ENV === 'production',
+      logDir = process.env.LOG_DIR || './logs',
     } = options || {};
 
     // 创建传输器数组
@@ -57,13 +60,15 @@ export class EnhancedLogger {
         new winston.transports.Console({
           format: winston.format.combine(
             winston.format.colorize(),
-            winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.printf(({ timestamp, level, message, ...meta }) => {
-              const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : "";
+              const metaStr = Object.keys(meta).length
+                ? JSON.stringify(meta, null, 2)
+                : '';
               return `[${timestamp}] [${prefix}:${level}] ${message} ${metaStr}`;
-            })
-          )
-        })
+            }),
+          ),
+        }),
       );
     }
 
@@ -73,47 +78,47 @@ export class EnhancedLogger {
       transports.push(
         new DailyRotateFile({
           filename: `${logDir}/error-${prefix}-%DATE%.log`,
-          datePattern: "YYYY-MM-DD",
-          level: "error",
+          datePattern: 'YYYY-MM-DD',
+          level: 'error',
           format: winston.format.combine(
             winston.format.timestamp(),
-            winston.format.json()
+            winston.format.json(),
           ),
-          maxSize: "20m",
-          maxFiles: "14d",
-          zippedArchive: true
-        })
+          maxSize: '20m',
+          maxFiles: '14d',
+          zippedArchive: true,
+        }),
       );
 
       // 组合日志文件
       transports.push(
         new DailyRotateFile({
           filename: `${logDir}/combined-${prefix}-%DATE%.log`,
-          datePattern: "YYYY-MM-DD",
+          datePattern: 'YYYY-MM-DD',
           format: winston.format.combine(
             winston.format.timestamp(),
-            winston.format.json()
+            winston.format.json(),
           ),
-          maxSize: "20m",
-          maxFiles: "14d",
-          zippedArchive: true
-        })
+          maxSize: '20m',
+          maxFiles: '14d',
+          zippedArchive: true,
+        }),
       );
 
       // 访问日志文件（HTTP请求）
       transports.push(
         new DailyRotateFile({
           filename: `${logDir}/access-%DATE%.log`,
-          datePattern: "YYYY-MM-DD",
-          level: "http",
+          datePattern: 'YYYY-MM-DD',
+          level: 'http',
           format: winston.format.combine(
             winston.format.timestamp(),
-            winston.format.json()
+            winston.format.json(),
           ),
-          maxSize: "20m",
-          maxFiles: "7d",
-          zippedArchive: true
-        })
+          maxSize: '20m',
+          maxFiles: '7d',
+          zippedArchive: true,
+        }),
       );
     }
 
@@ -124,11 +129,11 @@ export class EnhancedLogger {
       transports.push(
         new winston.transports.Http({
           host: process.env.LOG_REMOTE_HOST,
-          port: parseInt(process.env.LOG_REMOTE_PORT || "80"),
-          path: process.env.LOG_REMOTE_PATH || "/logs",
-          level: "warn",
-          format: winston.format.json()
-        })
+          port: parseInt(process.env.LOG_REMOTE_PORT || '80'),
+          path: process.env.LOG_REMOTE_PATH || '/logs',
+          level: 'warn',
+          format: winston.format.json(),
+        }),
       );
     }
 
@@ -137,26 +142,31 @@ export class EnhancedLogger {
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
-        winston.format.json()
+        winston.format.json(),
       ),
       defaultMeta: { service: prefix },
-      transports
+      transports,
     });
   }
 
   // 基础日志方法
-  private log(level: LogLevel, message: string, context?: LogContext, error?: Error): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+    error?: Error,
+  ): void {
     const logData: any = {
       message,
       timestamp: new Date().toISOString(),
-      ...context
+      ...context,
     };
 
     if (error) {
       logData.error = {
         name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       };
     }
 
@@ -189,26 +199,38 @@ export class EnhancedLogger {
     const context: LogContext = {
       method: request.method,
       url: request.url,
-      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
-      userAgent: request.headers.get("user-agent") || "unknown",
-      responseTime
+      ip:
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      responseTime,
     };
 
     this.http(`${request.method} ${request.url}`, context);
   }
 
   // 记录API响应
-  logResponse(request: NextRequest, statusCode: number, responseTime: number, context?: LogContext): void {
+  logResponse(
+    request: NextRequest,
+    statusCode: number,
+    responseTime: number,
+    context?: LogContext,
+  ): void {
     const logContext: LogContext = {
       method: request.method,
       url: request.url,
       statusCode,
       responseTime,
-      ...context
+      ...context,
     };
 
     const level = statusCode >= 400 ? LogLevel.WARN : LogLevel.HTTP;
-    this.log(level, `${request.method} ${request.url} - ${statusCode}`, logContext);
+    this.log(
+      level,
+      `${request.method} ${request.url} - ${statusCode}`,
+      logContext,
+    );
   }
 
   // 记录用户操作
@@ -217,36 +239,80 @@ export class EnhancedLogger {
   }
 
   // 记录性能指标
-  logPerformance(operation: string, duration: number, context?: LogContext): void {
-    this.info(`Performance: ${operation} took ${duration}ms`, { operation, duration, ...context });
+  logPerformance(
+    operation: string,
+    duration: number,
+    context?: LogContext,
+  ): void {
+    this.info(`Performance: ${operation} took ${duration}ms`, {
+      operation,
+      duration,
+      ...context,
+    });
   }
 
   // 记录安全事件
-  logSecurityEvent(event: string, severity: "low" | "medium" | "high" | "critical", context?: LogContext): void {
-    const level = severity === "critical" || severity === "high" ? LogLevel.ERROR : LogLevel.WARN;
-    this.log(level, `Security event: ${event}`, { event, severity, ...context });
+  logSecurityEvent(
+    event: string,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    context?: LogContext,
+  ): void {
+    const level =
+      severity === 'critical' || severity === 'high'
+        ? LogLevel.ERROR
+        : LogLevel.WARN;
+    this.log(level, `Security event: ${event}`, {
+      event,
+      severity,
+      ...context,
+    });
   }
 
   // 记录数据库操作
-  logDatabase(operation: string, collection: string, duration?: number, context?: LogContext): void {
-    this.debug(`DB operation: ${operation} on ${collection}`, { operation, collection, duration, ...context });
+  logDatabase(
+    operation: string,
+    collection: string,
+    duration?: number,
+    context?: LogContext,
+  ): void {
+    this.debug(`DB operation: ${operation} on ${collection}`, {
+      operation,
+      collection,
+      duration,
+      ...context,
+    });
   }
 
   // 记录外部API调用
-  logExternalApi(api: string, method: string, statusCode: number, duration: number, context?: LogContext): void {
+  logExternalApi(
+    api: string,
+    method: string,
+    statusCode: number,
+    duration: number,
+    context?: LogContext,
+  ): void {
     const level = statusCode >= 400 ? LogLevel.WARN : LogLevel.DEBUG;
-    this.log(level, `External API: ${method} ${api} - ${statusCode}`, { api, method, statusCode, duration, ...context });
+    this.log(level, `External API: ${method} ${api} - ${statusCode}`, {
+      api,
+      method,
+      statusCode,
+      duration,
+      ...context,
+    });
   }
 }
 
 // 创建带有前缀的日志记录器工厂函数
-export const createEnhancedLogger = (prefix: string, options?: {
-  level?: string;
-  enableConsole?: boolean;
-  enableFile?: boolean;
-  enableRemote?: boolean;
-  logDir?: string;
-}): EnhancedLogger => {
+export const createEnhancedLogger = (
+  prefix: string,
+  options?: {
+    level?: string;
+    enableConsole?: boolean;
+    enableFile?: boolean;
+    enableRemote?: boolean;
+    logDir?: string;
+  },
+): EnhancedLogger => {
   return new EnhancedLogger(prefix, options);
 };
 

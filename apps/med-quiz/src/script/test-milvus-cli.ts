@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-require("ts-node/register");
-const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
-const { MilvusClient } = require("@zilliz/milvus2-sdk-node");
-const dotenv = require("dotenv");
+require('ts-node/register');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
+const { MilvusClient } = require('@zilliz/milvus2-sdk-node');
+const dotenv = require('dotenv');
 
 dotenv.config();
 
 // Verify required environment variables
 if (!process.env.MILVUS_URI) {
-  console.error("MILVUS_URI environment variable is required");
+  console.error('MILVUS_URI environment variable is required');
   process.exit(1);
 }
 
 // Initialize Milvus client with same config as milvusCollectionOperator
 const milvusClient = new MilvusClient({
-  address: "127.0.0.1:19530", // Force IPv4 gRPC connection
+  address: '127.0.0.1:19530', // Force IPv4 gRPC connection
   timeout: 30000,
   username: process.env.MILVUS_USERNAME,
   password: process.env.MILVUS_PASSWORD,
@@ -24,19 +24,19 @@ const milvusClient = new MilvusClient({
 });
 
 // Test collection name
-const TEST_COLLECTION = "test_collection_cli";
+const TEST_COLLECTION = 'test_collection_cli';
 
 async function testConnection() {
   try {
     const res = await milvusClient.hasCollection({
-      collection_name: "non_existent_collection",
+      collection_name: 'non_existent_collection',
     });
-    console.log("✓ Successfully connected to Milvus server");
+    console.log('✓ Successfully connected to Milvus server');
     return true;
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("✗ Failed to connect to Milvus server:", err.message);
-    console.error("Milvus Configuration:", {
+    console.error('✗ Failed to connect to Milvus server:', err.message);
+    console.error('Milvus Configuration:', {
       address: process.env.MILVUS_URI,
       username: process.env.MILVUS_USERNAME,
       // password: process.env.MILVUS_PASSWORD, // Omit password for security
@@ -53,24 +53,24 @@ async function testCollectionOperations() {
       collection_name: TEST_COLLECTION,
       fields: [
         {
-          name: "id",
-          data_type: "Int64",
+          name: 'id',
+          data_type: 'Int64',
           is_primary_key: true,
         },
         {
-          name: "vector",
-          data_type: "FloatVector",
+          name: 'vector',
+          data_type: 'FloatVector',
           type_params: {
-            dim: "128",
+            dim: '128',
           },
         },
       ],
     });
 
-    if (createRes.error_code !== "Success") {
+    if (createRes.error_code !== 'Success') {
       throw new Error(`Create collection failed: ${createRes.reason}`);
     }
-    console.log("✓ Successfully created test collection");
+    console.log('✓ Successfully created test collection');
 
     // Check collection exists
     const hasRes = await milvusClient.hasCollection({
@@ -78,25 +78,25 @@ async function testCollectionOperations() {
     });
 
     if (!hasRes.value) {
-      throw new Error("Collection existence check failed");
+      throw new Error('Collection existence check failed');
     }
-    console.log("✓ Collection existence verified");
+    console.log('✓ Collection existence verified');
 
     // Drop collection
     const dropRes = await milvusClient.dropCollection({
       collection_name: TEST_COLLECTION,
     });
 
-    if (dropRes.error_code !== "Success") {
+    if (dropRes.error_code !== 'Success') {
       throw new Error(`Drop collection failed: ${dropRes.reason}`);
     }
-    console.log("✓ Successfully dropped test collection");
+    console.log('✓ Successfully dropped test collection');
 
     return true;
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("✗ Collection operations test failed:", err.message);
-    console.error("Milvus Configuration:", {
+    console.error('✗ Collection operations test failed:', err.message);
+    console.error('Milvus Configuration:', {
       address: process.env.MILVUS_URI,
       username: process.env.MILVUS_USERNAME,
       // password: process.env.MILVUS_PASSWORD, // Omit password for security
@@ -110,7 +110,7 @@ async function testCollectionOperations() {
       });
     } catch (cleanupError: unknown) {
       const cleanupErr = cleanupError as Error;
-      console.warn("Cleanup failed:", cleanupErr.message);
+      console.warn('Cleanup failed:', cleanupErr.message);
     }
 
     return false;
@@ -124,22 +124,22 @@ async function testDocumentOperations() {
       collection_name: TEST_COLLECTION,
       fields: [
         {
-          name: "id",
-          data_type: "Int64",
+          name: 'id',
+          data_type: 'Int64',
           is_primary_key: true,
         },
         {
-          name: "vector",
-          data_type: "FloatVector",
+          name: 'vector',
+          data_type: 'FloatVector',
           type_params: {
-            dim: "128",
+            dim: '128',
           },
         },
         {
-          name: "content",
-          data_type: "VarChar",
+          name: 'content',
+          data_type: 'VarChar',
           type_params: {
-            max_length: "256",
+            max_length: '256',
           },
         },
       ],
@@ -152,30 +152,30 @@ async function testDocumentOperations() {
         {
           id: 1,
           vector: Array(128).fill(0.5),
-          content: "test document",
+          content: 'test document',
         },
       ],
     });
 
-    if (insertRes.status.error_code !== "Success") {
+    if (insertRes.status.error_code !== 'Success') {
       throw new Error(`Insert failed: ${insertRes.status.reason}`);
     }
-    console.log("✓ Successfully inserted test document");
+    console.log('✓ Successfully inserted test document');
 
     // Query document
     const queryRes = await milvusClient.query({
       collection_name: TEST_COLLECTION,
-      filter: "id == 1",
-      output_fields: ["content"],
+      filter: 'id == 1',
+      output_fields: ['content'],
     });
 
     if (
-      queryRes.status.error_code !== "Success" ||
+      queryRes.status.error_code !== 'Success' ||
       queryRes.data.length === 0
     ) {
-      throw new Error("Query failed or no results returned");
+      throw new Error('Query failed or no results returned');
     }
-    console.log("✓ Successfully queried test document:", queryRes.data[0]);
+    console.log('✓ Successfully queried test document:', queryRes.data[0]);
 
     // Clean up
     await milvusClient.dropCollection({
@@ -185,8 +185,8 @@ async function testDocumentOperations() {
     return true;
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("✗ Document operations test failed:", err.message);
-    console.error("Milvus Configuration:", {
+    console.error('✗ Document operations test failed:', err.message);
+    console.error('Milvus Configuration:', {
       address: process.env.MILVUS_URI,
       username: process.env.MILVUS_USERNAME,
       // password: process.env.MILVUS_PASSWORD, // Omit password for security
@@ -200,7 +200,7 @@ async function testDocumentOperations() {
       });
     } catch (cleanupError: unknown) {
       const cleanupErr = cleanupError as Error;
-      console.warn("Cleanup failed:", cleanupErr.message);
+      console.warn('Cleanup failed:', cleanupErr.message);
     }
 
     return false;
@@ -209,19 +209,19 @@ async function testDocumentOperations() {
 
 // CLI commands
 yargs(hideBin(process.argv))
-  .command("connection", "Test Milvus server connection", {}, async () => {
+  .command('connection', 'Test Milvus server connection', {}, async () => {
     const success = await testConnection();
     process.exit(success ? 0 : 1);
   })
-  .command("collection", "Test collection operations", {}, async () => {
+  .command('collection', 'Test collection operations', {}, async () => {
     const success = await testCollectionOperations();
     process.exit(success ? 0 : 1);
   })
-  .command("document", "Test document operations", {}, async () => {
+  .command('document', 'Test document operations', {}, async () => {
     const success = await testDocumentOperations();
     process.exit(success ? 0 : 1);
   })
-  .command("full", "Run all tests", {}, async () => {
+  .command('full', 'Run all tests', {}, async () => {
     const tests = [
       testConnection,
       testCollectionOperations,
@@ -238,7 +238,7 @@ yargs(hideBin(process.argv))
       }
     }
 
-    console.log(allPassed ? "\n✓ All tests passed" : "\n✗ Some tests failed");
+    console.log(allPassed ? '\n✓ All tests passed' : '\n✗ Some tests failed');
     process.exit(allPassed ? 0 : 1);
   })
   .demandCommand()

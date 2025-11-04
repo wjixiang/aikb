@@ -1,28 +1,28 @@
-import { createEnhancedLogger } from "@/lib/console/enhanced-logger";
+import { createEnhancedLogger } from '@/lib/console/enhanced-logger';
 
 // 前端错误日志记录器
-const frontendLogger = createEnhancedLogger("FRONTEND", {
-  level: process.env.NODE_ENV === "production" ? "warn" : "debug",
+const frontendLogger = createEnhancedLogger('FRONTEND', {
+  level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
   enableConsole: true,
   enableFile: false, // 前端不写文件
-  enableRemote: process.env.NODE_ENV === "production"
+  enableRemote: process.env.NODE_ENV === 'production',
 });
 
 // 错误类型枚举
 export enum ErrorType {
-  JAVASCRIPT = "javascript",
-  NETWORK = "network",
-  PROMISE = "promise",
-  RESOURCE = "resource",
-  CUSTOM = "custom"
+  JAVASCRIPT = 'javascript',
+  NETWORK = 'network',
+  PROMISE = 'promise',
+  RESOURCE = 'resource',
+  CUSTOM = 'custom',
 }
 
 // 错误严重程度
 export enum ErrorSeverity {
-  LOW = "low",
-  MEDIUM = "medium",
-  HIGH = "high",
-  CRITICAL = "critical"
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
 }
 
 // 错误上下文接口
@@ -69,41 +69,41 @@ export class ErrorCollector {
   // 设置事件监听器
   private setupEventListeners(): void {
     // JavaScript错误
-    window.addEventListener("error", (event) => {
+    window.addEventListener('error', (event) => {
       this.handleError({
         type: ErrorType.JAVASCRIPT,
         severity: ErrorSeverity.HIGH,
         message: event.message,
         stack: event.error?.stack,
         context: this.getBaseContext(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
 
     // Promise拒绝错误
-    window.addEventListener("unhandledrejection", (event) => {
+    window.addEventListener('unhandledrejection', (event) => {
       this.handleError({
         type: ErrorType.PROMISE,
         severity: ErrorSeverity.MEDIUM,
-        message: event.reason?.message || "Unhandled promise rejection",
+        message: event.reason?.message || 'Unhandled promise rejection',
         stack: event.reason?.stack,
         context: this.getBaseContext(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
 
     // 网络状态变化
-    window.addEventListener("online", () => {
+    window.addEventListener('online', () => {
       this.isOnline = true;
       this.flushPendingErrors();
     });
 
-    window.addEventListener("offline", () => {
+    window.addEventListener('offline', () => {
       this.isOnline = false;
     });
 
     // 页面卸载前发送错误
-    window.addEventListener("beforeunload", () => {
+    window.addEventListener('beforeunload', () => {
       this.flushPendingErrors();
     });
   }
@@ -115,22 +115,22 @@ export class ErrorCollector {
       userAgent: navigator.userAgent,
       timestamp: Date.now(),
       page: this.getCurrentPage(),
-      sessionId: this.getSessionId()
+      sessionId: this.getSessionId(),
     };
   }
 
   // 获取当前页面名称
   private getCurrentPage(): string {
     const path = window.location.pathname;
-    return path.split("/").pop() || "index";
+    return path.split('/').pop() || 'index';
   }
 
   // 获取会话ID
   private getSessionId(): string {
-    let sessionId = sessionStorage.getItem("errorSessionId");
+    let sessionId = sessionStorage.getItem('errorSessionId');
     if (!sessionId) {
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem("errorSessionId", sessionId);
+      sessionStorage.setItem('errorSessionId', sessionId);
     }
     return sessionId;
   }
@@ -146,12 +146,16 @@ export class ErrorCollector {
     }
 
     // 记录到控制台（开发环境）
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Frontend Error:", error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Frontend Error:', error);
     }
 
     // 记录到日志系统
-    frontendLogger.error(error.message, error.context, new Error(error.message));
+    frontendLogger.error(
+      error.message,
+      error.context,
+      new Error(error.message),
+    );
 
     // 如果在线，立即发送；否则等待网络恢复
     if (this.isOnline) {
@@ -162,15 +166,15 @@ export class ErrorCollector {
   // 发送错误到服务器
   private async sendError(error: FrontendError): Promise<void> {
     try {
-      await fetch("/api/errors/log", {
-        method: "POST",
+      await fetch('/api/errors/log', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(error)
+        body: JSON.stringify(error),
       });
     } catch (err) {
-      console.error("Failed to send error to server:", err);
+      console.error('Failed to send error to server:', err);
     }
   }
 
@@ -190,14 +194,14 @@ export class ErrorCollector {
   public logCustomError(
     message: string,
     severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-    context: Partial<ErrorContext> = {}
+    context: Partial<ErrorContext> = {},
   ): void {
     this.handleError({
       type: ErrorType.CUSTOM,
       severity,
       message,
       context: { ...this.getBaseContext(), ...context },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -207,7 +211,7 @@ export class ErrorCollector {
     method: string,
     status: number,
     message: string,
-    context: Partial<ErrorContext> = {}
+    context: Partial<ErrorContext> = {},
   ): void {
     this.handleError({
       type: ErrorType.NETWORK,
@@ -218,9 +222,9 @@ export class ErrorCollector {
         url,
         method,
         status,
-        ...context
+        ...context,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -229,7 +233,7 @@ export class ErrorCollector {
     resourceUrl: string,
     resourceType: string,
     message: string,
-    context: Partial<ErrorContext> = {}
+    context: Partial<ErrorContext> = {},
   ): void {
     this.handleError({
       type: ErrorType.RESOURCE,
@@ -239,9 +243,9 @@ export class ErrorCollector {
         ...this.getBaseContext(),
         resourceUrl,
         resourceType,
-        ...context
+        ...context,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -263,7 +267,7 @@ export const errorCollector = ErrorCollector.getInstance();
 export const logError = (
   message: string,
   severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-  context: Partial<ErrorContext> = {}
+  context: Partial<ErrorContext> = {},
 ): void => {
   errorCollector.logCustomError(message, severity, context);
 };
@@ -273,7 +277,7 @@ export const logNetworkError = (
   method: string,
   status: number,
   message: string,
-  context: Partial<ErrorContext> = {}
+  context: Partial<ErrorContext> = {},
 ): void => {
   errorCollector.logNetworkError(url, method, status, message, context);
 };
@@ -282,7 +286,7 @@ export const logResourceError = (
   resourceUrl: string,
   resourceType: string,
   message: string,
-  context: Partial<ErrorContext> = {}
+  context: Partial<ErrorContext> = {},
 ): void => {
   errorCollector.logResourceError(resourceUrl, resourceType, message, context);
 };
@@ -291,14 +295,14 @@ export const logResourceError = (
 export const logReactError = (
   error: Error,
   errorInfo: React.ErrorInfo,
-  context: Partial<ErrorContext> = {}
+  context: Partial<ErrorContext> = {},
 ): void => {
   errorCollector.logCustomError(
     `React Error: ${error.message}`,
     ErrorSeverity.HIGH,
     {
       componentStack: errorInfo.componentStack,
-      ...context
-    }
+      ...context,
+    },
   );
 };

@@ -1,19 +1,19 @@
-import { createLoggerWithPrefix } from "@/lib/console/logger";
-import axios, { AxiosError } from "axios";
+import { createLoggerWithPrefix } from '@/lib/console/logger';
+import axios, { AxiosError } from 'axios';
 // import { ONNXEmbedder } from './embedding/ONNXEmbedder';
 
-const logger = createLoggerWithPrefix("Embedding");
+const logger = createLoggerWithPrefix('Embedding');
 
 // Configuration
 const EMBEDDING_API_KEY = process.env.EMBEDDING_API_KEY;
 const EMBEDDING_API_BASE = process.env.EMBEDDING_API_BASE;
 const ALIBABA_API_KEY = process.env.ALIBABA_API_KEY;
-const MAX_RETRIES = parseInt(process.env.EMBEDDING_MAX_RETRIES || "100");
+const MAX_RETRIES = parseInt(process.env.EMBEDDING_MAX_RETRIES || '100');
 const RETRY_DELAY_BASE = parseInt(
-  process.env.EMBEDDING_RETRY_DELAY_BASE || "1000",
+  process.env.EMBEDDING_RETRY_DELAY_BASE || '1000',
 );
 const CONCURRENCY_LIMIT = parseInt(
-  process.env.EMBEDDING_CONCURRENCY_LIMIT || "5",
+  process.env.EMBEDDING_CONCURRENCY_LIMIT || '5',
 );
 
 // Embedding provider types
@@ -23,10 +23,10 @@ const CONCURRENCY_LIMIT = parseInt(
  * - 'alibaba':
  * - 'onnx': Local embedding
  */
-type EmbeddingProvider = "openai" | "alibaba" | "onnx";
+type EmbeddingProvider = 'openai' | 'alibaba' | 'onnx';
 
 // Current active provider (configurable)
-let activeProvider: EmbeddingProvider = "alibaba"; // Default to ONNX
+let activeProvider: EmbeddingProvider = 'alibaba'; // Default to ONNX
 // const onnxEmbedder = new ONNXEmbedder();
 
 // Initialize ONNX embedder
@@ -44,7 +44,7 @@ export function setEmbeddingProvider(provider: EmbeddingProvider): void {
 
 async function getOpenAIEmbedding(text: string): Promise<number[] | null> {
   if (!EMBEDDING_API_KEY || !EMBEDDING_API_BASE) {
-    logger.error("OpenAI API credentials not configured");
+    logger.error('OpenAI API credentials not configured');
     return null;
   }
 
@@ -55,12 +55,12 @@ async function getOpenAIEmbedding(text: string): Promise<number[] | null> {
       const response = await axios.post(
         `${EMBEDDING_API_BASE}embeddings`,
         {
-          model: "text-embedding-ada-002",
+          model: 'text-embedding-ada-002',
           input: text,
         },
         {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${EMBEDDING_API_KEY}`,
           },
           timeout: 10000, // 10 second timeout
@@ -84,7 +84,7 @@ async function getOpenAIEmbedding(text: string): Promise<number[] | null> {
           );
         }
       } else {
-        logger.error("Error fetching OpenAI embedding:", error);
+        logger.error('Error fetching OpenAI embedding:', error);
       }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -94,10 +94,10 @@ async function getOpenAIEmbedding(text: string): Promise<number[] | null> {
 
 async function getAlibabaEmbedding(
   text: string | string[],
-  model: string = "text-embedding-v3",
+  model: string = 'text-embedding-v3',
 ): Promise<number[] | null> {
   if (!ALIBABA_API_KEY) {
-    logger.error("Alibaba API key not configured");
+    logger.error('Alibaba API key not configured');
     return null;
   }
 
@@ -107,16 +107,16 @@ async function getAlibabaEmbedding(
     // Infinite retries
     try {
       const response = await axios.post(
-        "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings",
+        'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
         {
           model: model,
           input: text,
-          dimension: "1024",
-          encoding_format: "float",
+          dimension: '1024',
+          encoding_format: 'float',
         },
         {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${ALIBABA_API_KEY}`,
           },
           timeout: 10000, // 10 second timeout
@@ -141,11 +141,11 @@ async function getAlibabaEmbedding(
           let inputInfo: string;
           if (Array.isArray(text)) {
             inputInfo = `Array[${text.length}]`;
-          } else if (typeof text === "string") {
+          } else if (typeof text === 'string') {
             inputInfo =
               text.length > 100 ? `${text.substring(0, 100)}...` : text;
           } else {
-            inputInfo = "Unknown input type";
+            inputInfo = 'Unknown input type';
           }
 
           logger.error(`Bad request (400) - check input parameters`);
@@ -155,7 +155,7 @@ async function getAlibabaEmbedding(
           );
         }
       } else {
-        logger.error("Error fetching Alibaba embedding:", error);
+        logger.error('Error fetching Alibaba embedding:', error);
       }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -178,15 +178,15 @@ export async function embedding(
   provider: EmbeddingProvider = activeProvider,
 ): Promise<number[] | null> {
   switch (activeProvider) {
-    case "openai":
+    case 'openai':
       if (Array.isArray(text)) {
         logger.error(
-          "OpenAI embedding does not support array input in this implementation.",
+          'OpenAI embedding does not support array input in this implementation.',
         );
         return null;
       }
       return getOpenAIEmbedding(text);
-    case "alibaba":
+    case 'alibaba':
       return getAlibabaEmbedding(text);
     // case 'onnx':
     //   if (Array.isArray(text)) {
@@ -195,7 +195,7 @@ export async function embedding(
     //   }
     //   return getONNXEmbedding(text);
     default:
-      logger.error("Unknown embedding provider:", provider);
+      logger.error('Unknown embedding provider:', provider);
       return null;
   }
 }

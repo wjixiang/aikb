@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const optionSchema = new mongoose.Schema({
-  oid: { type: String, enum: ["A", "B", "C", "D", "E"], required: true },
+  oid: { type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true },
   text: { type: String, required: true },
   _id: false,
 });
@@ -13,31 +13,31 @@ const analysisSchema = new mongoose.Schema({
 });
 
 const A1Schema = new mongoose.Schema({
-  type: { type: String, enum: ["A1"], required: true },
+  type: { type: String, enum: ['A1'], required: true },
   class: { type: String },
   unit: { type: String },
   tags: { type: [String] },
   extractedYear: { type: Number },
   question: { type: String, required: true },
   options: [optionSchema],
-  answer: { type: String, enum: ["A", "B", "C", "D", "E"], required: true },
+  answer: { type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true },
   analysis: analysisSchema,
 });
 
 const A2Schema = new mongoose.Schema({
-  type: { type: String, enum: ["A2"], required: true },
+  type: { type: String, enum: ['A2'], required: true },
   class: { type: String },
   unit: { type: String },
   tags: { type: [String] },
   extractedYear: { type: Number },
   question: { type: String, required: true },
   options: [optionSchema],
-  answer: { type: String, enum: ["A", "B", "C", "D", "E"], required: true },
+  answer: { type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true },
   analysis: analysisSchema,
 });
 
 const A3Schema = new mongoose.Schema({
-  type: { type: String, enum: ["A3"], required: true },
+  type: { type: String, enum: ['A3'], required: true },
   class: { type: String },
   unit: { type: String },
   tags: { type: [String] },
@@ -48,26 +48,26 @@ const A3Schema = new mongoose.Schema({
       subQuizId: { type: Number, required: true },
       question: { type: String, required: true },
       options: [optionSchema],
-      answer: { type: String, enum: ["A", "B", "C", "D", "E"], required: true },
+      answer: { type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true },
     },
   ],
   analysis: analysisSchema,
 });
 
 const XSchema = new mongoose.Schema({
-  type: { type: String, enum: ["X"], required: true },
+  type: { type: String, enum: ['X'], required: true },
   class: { type: String },
   unit: { type: String },
   tags: { type: [String] },
   extractedYear: { type: Number },
   question: { type: String, required: true },
   options: [optionSchema],
-  answer: [{ type: String, enum: ["A", "B", "C", "D", "E"], required: true }],
+  answer: [{ type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true }],
   analysis: analysisSchema,
 });
 
 const BSchema = new mongoose.Schema({
-  type: { type: String, enum: ["B"], required: true },
+  type: { type: String, enum: ['B'], required: true },
   class: { type: String },
   unit: { type: String },
   tags: { type: [String] },
@@ -76,7 +76,7 @@ const BSchema = new mongoose.Schema({
     {
       questionId: { type: Number, required: true },
       questionText: { type: String, required: true },
-      answer: { type: String, enum: ["A", "B", "C", "D", "E"], required: true },
+      answer: { type: String, enum: ['A', 'B', 'C', 'D', 'E'], required: true },
     },
   ],
   options: [optionSchema],
@@ -84,11 +84,11 @@ const BSchema = new mongoose.Schema({
 });
 
 const quizModal = {
-  a1: mongoose.models.A1 || mongoose.model("A1", A1Schema),
-  a2: mongoose.models.A2 || mongoose.model("A2", A2Schema),
-  a3: mongoose.models.A3 || mongoose.model("A3", A3Schema),
-  b: mongoose.models.B || mongoose.model("B", BSchema),
-  x: mongoose.models.X || mongoose.model("X", XSchema),
+  a1: mongoose.models.A1 || mongoose.model('A1', A1Schema),
+  a2: mongoose.models.A2 || mongoose.model('A2', A2Schema),
+  a3: mongoose.models.A3 || mongoose.model('A3', A3Schema),
+  b: mongoose.models.B || mongoose.model('B', BSchema),
+  x: mongoose.models.X || mongoose.model('X', XSchema),
 };
 
 export default quizModal;

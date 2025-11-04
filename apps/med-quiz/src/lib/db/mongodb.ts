@@ -1,6 +1,6 @@
 // lib/mongodb.ts
-import { MongoClient, Db } from "mongodb";
-import * as dotenv from "dotenv";
+import { MongoClient, Db } from 'mongodb';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -26,21 +26,21 @@ export async function connectToDatabase(): Promise<{
   }
 
   // Get MongoDB URI from environment variables
-  let uri: string = process.env.MONGODB_URI || "";
+  let uri: string = process.env.MONGODB_URI || '';
   if (!uri) {
     // For test environment, provide a default URI
     if (process.env.NODE_ENV === 'test') {
-      console.warn("Using default MongoDB URI for test environment");
-      uri = "mongodb://localhost:27017/test";
+      console.warn('Using default MongoDB URI for test environment');
+      uri = 'mongodb://localhost:27017/test';
     } else {
       throw new Error(
-        "Please add your MongoDB URI to environment variables (MONGODB_URI for production)",
+        'Please add your MongoDB URI to environment variables (MONGODB_URI for production)',
       );
     }
   }
 
   // Database name can be from env or use default
-  const dbName = process.env.QUIZ_DB || "QuizBank";
+  const dbName = process.env.QUIZ_DB || 'QuizBank';
 
   // 连接到 MongoDB
   const client = new MongoClient(uri);

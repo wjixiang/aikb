@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { quizSelector } from "@/types/quizSelector.types";
-import QuizStorage from "@/lib/quiz/QuizStorage";
+import { NextRequest, NextResponse } from 'next/server';
+import { quizSelector } from '@/types/quizSelector.types';
+import QuizStorage from '@/lib/quiz/QuizStorage';
 
 function corsHeaders(origin: string | null) {
   return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
       headers: headers,
     });
   } catch (error) {
-    console.error("Quiz fetch error:", error);
+    console.error('Quiz fetch error:', error);
     return new NextResponse(
-      JSON.stringify({ error: "Failed to fetch quizzes" }),
+      JSON.stringify({ error: 'Failed to fetch quizzes' }),
       {
         status: 500,
         headers: headers,

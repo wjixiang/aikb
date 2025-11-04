@@ -1,6 +1,4 @@
-import {
-  deleteFromS3,
-} from '@aikb/s3-service';
+import { deleteFromS3 } from '@aikb/s3-service';
 import * as path from 'path';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 
@@ -96,7 +94,7 @@ export interface ILibrary {
 /**
  * Default implementation of Library
  */
-export  class Library implements ILibrary {
+export class Library implements ILibrary {
   protected storage: ILibraryStorage;
   protected pdfConvertor?: MinerUPdfConvertor;
 

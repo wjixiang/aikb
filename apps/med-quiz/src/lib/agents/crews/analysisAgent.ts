@@ -2,14 +2,14 @@ import AgentV3, {
   AgentTask,
   AgentProfile,
   TaskCompletionResult,
-} from "../AgentV3";
-import { AgentMessage } from "../agent.types";
+} from '../AgentV3';
+import { AgentMessage } from '../agent.types';
 
 // Analysis agent that specializes in analyzing data
 export class AnalysisAgent extends AgentV3 {
   agentProfile: AgentProfile = {
-    agentName: "AnalysisAgent",
-    functionDescription: "Analyzes data and generates insights",
+    agentName: 'AnalysisAgent',
+    functionDescription: 'Analyzes data and generates insights',
     followAgents: [], // Could link to reporting agent
   };
 
@@ -20,14 +20,14 @@ export class AnalysisAgent extends AgentV3 {
 
   async *start(): AsyncGenerator<AgentMessage> {
     yield {
-      type: "step",
+      type: 'step',
       content: `Analysis agent starting work on: ${this.task.taskName}`,
       task: this.task.taskName,
     };
 
     yield {
-      type: "update",
-      content: "Analyzing collected data...",
+      type: 'update',
+      content: 'Analyzing collected data...',
       task: this.task.taskName,
     };
 
@@ -35,14 +35,14 @@ export class AnalysisAgent extends AgentV3 {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     yield {
-      type: "update",
-      content: "Identified key patterns and insights",
+      type: 'update',
+      content: 'Identified key patterns and insights',
       task: this.task.taskName,
     };
 
     yield {
-      type: "update",
-      content: "Analysis phase complete",
+      type: 'update',
+      content: 'Analysis phase complete',
       task: this.task.taskName,
     };
   }
@@ -52,15 +52,15 @@ export class AnalysisAgent extends AgentV3 {
     if (this.currentIteration < this.maxIterations) {
       return {
         isComplete: false,
-        nextAction: "continue",
+        nextAction: 'continue',
         feedback: `Analysis iteration ${this.currentIteration} complete, continuing analysis`,
       };
     } else {
       // After analysis is done, finish the task
       return {
         isComplete: true,
-        nextAction: "finish",
-        feedback: "Analysis complete, task finished",
+        nextAction: 'finish',
+        feedback: 'Analysis complete, task finished',
       };
     }
   }

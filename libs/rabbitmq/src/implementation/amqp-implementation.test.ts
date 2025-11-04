@@ -1,13 +1,27 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import { RabbitMQMessageService } from './amqp-implementation';
 import {
   BaseRabbitMQMessage,
   PdfConversionRequestMessage,
   RabbitMQMessageOptions,
   RABBITMQ_QUEUES,
-  RABBITMQ_ROUTING_KEYS
+  RABBITMQ_ROUTING_KEYS,
 } from '../message.types';
-import { ConnectionStatus, HealthCheckResult, QueueInfo, ConsumerOptions } from '../message-service.interface';
+import {
+  ConnectionStatus,
+  HealthCheckResult,
+  QueueInfo,
+  ConsumerOptions,
+} from '../message-service.interface';
 import { getRabbitMQConfig } from '../rabbitmq.config';
 
 // Use vi.hoisted to properly handle the hoisting issue
@@ -79,7 +93,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     testConfig = {
       hostname: 'rabbitmq',
       port: 15672,
@@ -90,7 +104,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
     };
 
     rabbitMQService = new RabbitMQMessageService(testConfig);
-    
+
     // Setup default mock behaviors
     mockConnection.createChannel.mockResolvedValue(mockChannel);
     mockChannel.assertExchange.mockResolvedValue({});
@@ -160,7 +174,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
     it('should handle connection errors during close', async () => {
       await rabbitMQService.initialize();
-      
+
       const closeError = new Error('Close failed');
       mockChannel.close.mockRejectedValueOnce(closeError);
 
@@ -168,9 +182,13 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
     });
 
     it('should handle channel creation failure', async () => {
-      mockConnection.createChannel.mockRejectedValueOnce(new Error('Channel creation failed'));
+      mockConnection.createChannel.mockRejectedValueOnce(
+        new Error('Channel creation failed'),
+      );
 
-      await expect(rabbitMQService.initialize()).rejects.toThrow('Channel creation failed');
+      await expect(rabbitMQService.initialize()).rejects.toThrow(
+        'Channel creation failed',
+      );
       expect(rabbitMQService.isConnected()).toBe(false);
     });
   });
@@ -197,9 +215,12 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       };
 
       const routingKey = RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST;
-      
+
       // Publish message
-      const publishResult = await rabbitMQService.publishMessage(routingKey, testMessage);
+      const publishResult = await rabbitMQService.publishMessage(
+        routingKey,
+        testMessage,
+      );
       expect(publishResult).toBe(true);
       expect(mockChannel.publish).toHaveBeenCalledWith(
         'pdf-conversion-exchange',
@@ -207,7 +228,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         Buffer.from(JSON.stringify(testMessage)),
         expect.objectContaining({
           persistent: true,
-        })
+        }),
       );
 
       // Setup consumer
@@ -218,7 +239,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
       const consumerTag = await rabbitMQService.consumeMessages(
         RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
-        onMessage
+        onMessage,
       );
 
       expect(consumerTag).toMatch(/^consumer-/);
@@ -228,7 +249,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         expect.objectContaining({
           noAck: false,
           exclusive: false,
-        })
+        }),
       );
 
       // Simulate message reception
@@ -261,7 +282,11 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         headers: { 'custom-header': 'custom-value' },
       };
 
-      await rabbitMQService.publishMessage('test.routing.key', testMessage, options);
+      await rabbitMQService.publishMessage(
+        'test.routing.key',
+        testMessage,
+        options,
+      );
 
       expect(mockChannel.publish).toHaveBeenCalledWith(
         'pdf-conversion-exchange',
@@ -274,7 +299,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
           correlationId: 'corr-123',
           replyTo: 'reply-queue',
           headers: { 'custom-header': 'custom-value' },
-        })
+        }),
       );
     });
 
@@ -285,7 +310,9 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         eventType: 'TEST_EVENT',
       };
 
-      const onMessage = vi.fn().mockRejectedValue(new Error('Processing failed'));
+      const onMessage = vi
+        .fn()
+        .mockRejectedValue(new Error('Processing failed'));
 
       await rabbitMQService.consumeMessages('test-queue', onMessage);
 
@@ -298,12 +325,19 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       await consumeCallback(mockConsumeMessage);
 
       expect(onMessage).toHaveBeenCalled();
-      expect(mockChannel.nack).toHaveBeenCalledWith(mockConsumeMessage, false, false);
+      expect(mockChannel.nack).toHaveBeenCalledWith(
+        mockConsumeMessage,
+        false,
+        false,
+      );
     });
 
     it('should stop consuming messages properly', async () => {
       const onMessage = vi.fn();
-      const consumerTag = await rabbitMQService.consumeMessages('test-queue', onMessage);
+      const consumerTag = await rabbitMQService.consumeMessages(
+        'test-queue',
+        onMessage,
+      );
 
       await rabbitMQService.stopConsuming(consumerTag);
 
@@ -320,7 +354,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       };
 
       await expect(
-        rabbitMQService.publishMessage('test.routing.key', testMessage)
+        rabbitMQService.publishMessage('test.routing.key', testMessage),
       ).rejects.toThrow('RabbitMQ service is not connected');
     });
 
@@ -330,7 +364,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       const onMessage = vi.fn();
 
       await expect(
-        rabbitMQService.consumeMessages('test-queue', onMessage)
+        rabbitMQService.consumeMessages('test-queue', onMessage),
       ).rejects.toThrow('RabbitMQ service is not connected');
     });
   });
@@ -353,7 +387,11 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
       await consumeCallback(mockConsumeMessage);
 
-      expect(mockChannel.nack).toHaveBeenCalledWith(mockConsumeMessage, false, false);
+      expect(mockChannel.nack).toHaveBeenCalledWith(
+        mockConsumeMessage,
+        false,
+        false,
+      );
     });
 
     it('should handle consumer options correctly', async () => {
@@ -375,7 +413,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
           noAck: true,
           exclusive: true,
           priority: 10,
-        })
+        }),
       );
     });
 
@@ -388,7 +426,10 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         eventType: 'TEST_EVENT',
       };
 
-      const result = await rabbitMQService.publishMessage('test.routing.key', testMessage);
+      const result = await rabbitMQService.publishMessage(
+        'test.routing.key',
+        testMessage,
+      );
       expect(result).toBe(false);
     });
 
@@ -398,7 +439,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       const onMessage = vi.fn();
 
       await expect(
-        rabbitMQService.consumeMessages('test-queue', onMessage)
+        rabbitMQService.consumeMessages('test-queue', onMessage),
       ).rejects.toThrow('Consume failed');
     });
 
@@ -406,7 +447,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       mockChannel.cancel.mockRejectedValueOnce(new Error('Cancel failed'));
 
       await expect(
-        rabbitMQService.stopConsuming('test-consumer')
+        rabbitMQService.stopConsuming('test-consumer'),
       ).rejects.toThrow('Cancel failed');
     });
   });
@@ -435,9 +476,12 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
     });
 
     it('should handle queue info when queue does not exist', async () => {
-      mockChannel.checkQueue.mockRejectedValueOnce(new Error('Queue not found'));
+      mockChannel.checkQueue.mockRejectedValueOnce(
+        new Error('Queue not found'),
+      );
 
-      const queueInfo = await rabbitMQService.getQueueInfo('non-existent-queue');
+      const queueInfo =
+        await rabbitMQService.getQueueInfo('non-existent-queue');
       expect(queueInfo).toBeNull();
     });
 
@@ -450,21 +494,21 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
     it('should handle queue operations when not connected', async () => {
       await rabbitMQService.close();
 
-      await expect(
-        rabbitMQService.getQueueInfo('test-queue')
-      ).rejects.toThrow('RabbitMQ service is not connected');
+      await expect(rabbitMQService.getQueueInfo('test-queue')).rejects.toThrow(
+        'RabbitMQ service is not connected',
+      );
 
-      await expect(
-        rabbitMQService.purgeQueue('test-queue')
-      ).rejects.toThrow('RabbitMQ service is not connected');
+      await expect(rabbitMQService.purgeQueue('test-queue')).rejects.toThrow(
+        'RabbitMQ service is not connected',
+      );
     });
 
     it('should handle topology setup when not connected', async () => {
       await rabbitMQService.close();
 
-      await expect(
-        rabbitMQService.setupTopology()
-      ).rejects.toThrow('RabbitMQ service is not connected');
+      await expect(rabbitMQService.setupTopology()).rejects.toThrow(
+        'RabbitMQ service is not connected',
+      );
     });
   });
 
@@ -488,9 +532,10 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
     it('should handle health check errors gracefully', async () => {
       await rabbitMQService.initialize();
-      
+
       // Mock an error during health check
-      const originalIsConnected = rabbitMQService.isConnected.bind(rabbitMQService);
+      const originalIsConnected =
+        rabbitMQService.isConnected.bind(rabbitMQService);
       rabbitMQService.isConnected = vi.fn().mockImplementation(() => {
         throw new Error('Health check error');
       });
@@ -519,7 +564,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       }));
 
       const publishPromises = messages.map((message, index) =>
-        rabbitMQService.publishMessage(`test.routing.${index}`, message)
+        rabbitMQService.publishMessage(`test.routing.${index}`, message),
       );
 
       const results = await Promise.all(publishPromises);
@@ -531,7 +576,7 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
     it('should handle multiple concurrent consumers', async () => {
       const consumerPromises = Array.from({ length: 5 }, (_, i) =>
-        rabbitMQService.consumeMessages(`test-queue-${i}`, vi.fn())
+        rabbitMQService.consumeMessages(`test-queue-${i}`, vi.fn()),
       );
 
       const consumerTags = await Promise.all(consumerPromises);
@@ -554,7 +599,10 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
         rabbitMQService.consumeMessages('test-queue-1', vi.fn()),
         rabbitMQService.getQueueInfo('test-queue-1'),
         rabbitMQService.healthCheck(),
-        rabbitMQService.publishMessage('test.routing.2', { ...testMessage, messageId: 'msg-2' }),
+        rabbitMQService.publishMessage('test.routing.2', {
+          ...testMessage,
+          messageId: 'msg-2',
+        }),
       ];
 
       await expect(Promise.all(operations)).resolves.not.toThrow();
@@ -568,8 +616,8 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       ]);
 
       // Stop all consumers concurrently
-      const stopPromises = consumerTags.map(tag =>
-        rabbitMQService.stopConsuming(tag)
+      const stopPromises = consumerTags.map((tag) =>
+        rabbitMQService.stopConsuming(tag),
       );
 
       await expect(Promise.all(stopPromises)).resolves.not.toThrow();
@@ -599,19 +647,21 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
       const published = await rabbitMQService.publishMessage(
         RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_REQUEST,
-        conversionRequest
+        conversionRequest,
       );
       expect(published).toBe(true);
 
       // 2. Simulate worker consuming the request
       let receivedRequest: any = null;
-      const requestConsumer = vi.fn().mockImplementation(async (message: any) => {
-        receivedRequest = message;
-      });
+      const requestConsumer = vi
+        .fn()
+        .mockImplementation(async (message: any) => {
+          receivedRequest = message;
+        });
 
       const requestConsumerTag = await rabbitMQService.consumeMessages(
         RABBITMQ_QUEUES.PDF_CONVERSION_REQUEST,
-        requestConsumer
+        requestConsumer,
       );
 
       const consumeCallback = mockChannel.consume.mock.calls[0][1];
@@ -635,19 +685,21 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
 
       const progressPublished = await rabbitMQService.publishMessage(
         RABBITMQ_ROUTING_KEYS.PDF_CONVERSION_PROGRESS,
-        progressMessage
+        progressMessage,
       );
       expect(progressPublished).toBe(true);
 
       // 4. Simulate monitoring service consuming progress
       let receivedProgress: any = null;
-      const progressConsumer = vi.fn().mockImplementation(async (message: any) => {
-        receivedProgress = message;
-      });
+      const progressConsumer = vi
+        .fn()
+        .mockImplementation(async (message: any) => {
+          receivedProgress = message;
+        });
 
       const progressConsumerTag = await rabbitMQService.consumeMessages(
         RABBITMQ_QUEUES.PDF_CONVERSION_PROGRESS,
-        progressConsumer
+        progressConsumer,
       );
 
       const progressConsumeCallback = mockChannel.consume.mock.calls[1][1];
@@ -694,13 +746,13 @@ describe('RabbitMQMessageService - End-to-End Tests', () => {
       const startTime = Date.now();
       const publishResults = await Promise.all(
         messages.map((message, index) =>
-          rabbitMQService.publishMessage(`bulk.routing.${index}`, message)
-        )
+          rabbitMQService.publishMessage(`bulk.routing.${index}`, message),
+        ),
       );
       const publishTime = Date.now() - startTime;
 
       expect(publishResults).toHaveLength(messageCount);
-      expect(publishResults.every(result => result === true)).toBe(true);
+      expect(publishResults.every((result) => result === true)).toBe(true);
       expect(publishTime).toBeLessThan(5000); // Should complete within 5 seconds
 
       // Verify all messages were published

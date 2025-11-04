@@ -9,7 +9,7 @@ export interface LinkRelationship {
   sourceTitle: string; // Title of source document
   targetTitle: string; // Title of target document
   alias?: string; // Display text (from [[title|alias]])
-  linkType: "forward" | "backward";
+  linkType: 'forward' | 'backward';
   position: number; // Character position in source document
   context?: string; // Surrounding text context
   createdAt: Date;
@@ -56,8 +56,8 @@ export interface LinkQueryOptions {
   includeContent?: boolean;
   limit?: number;
   offset?: number;
-  sortBy?: "createdAt" | "updatedAt" | "title";
-  sortOrder?: "asc" | "desc";
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface LinkValidationResult {

@@ -1,6 +1,6 @@
-import axios from "axios";
+import axios from 'axios';
 
-type DocStatus = "pending" | "processing" | "processed" | "failed";
+type DocStatus = 'pending' | 'processing' | 'processed' | 'failed';
 
 interface DocStatusResponse {
   id: string;
@@ -20,13 +20,13 @@ interface DocsStatusesResponse {
 }
 
 interface InsertResponse {
-  status: "success" | "duplicated" | "partial_success" | "failure";
+  status: 'success' | 'duplicated' | 'partial_success' | 'failure';
   message: string;
 }
 
 export interface QueryRequest {
   query: string;
-  mode?: "local" | "global" | "hybrid" | "naive" | "mix" | "bypass";
+  mode?: 'local' | 'global' | 'hybrid' | 'naive' | 'mix' | 'bypass';
   only_need_context?: boolean | null;
   only_need_prompt?: boolean | null;
   response_type?: string | null;
@@ -132,14 +132,14 @@ interface HealthStatus {
 export class LightRAGManager {
   private baseUrl: string;
 
-  constructor(baseUrl: string = "") {
+  constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl;
   }
 
   // Documents APIs
   async insertFile(file: File): Promise<InsertResponse> {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
     const response = await axios.post(
       `${this.baseUrl}/documents/file`,
       formData,
@@ -149,7 +149,7 @@ export class LightRAGManager {
 
   async insertBatchFiles(files: File[]): Promise<InsertResponse> {
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    files.forEach((file) => formData.append('files', file));
     const response = await axios.post(
       `${this.baseUrl}/documents/file/batch`,
       formData,
@@ -159,7 +159,7 @@ export class LightRAGManager {
 
   async uploadToInputDir(file: File): Promise<InsertResponse> {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
     const response = await axios.post(
       `${this.baseUrl}/documents/upload`,
       formData,
@@ -180,9 +180,9 @@ export class LightRAGManager {
 
   async queryStream(queryRequest: QueryRequest): Promise<ReadableStream> {
     const response = await fetch(`${this.baseUrl}/query/stream`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(queryRequest),
     });
@@ -213,9 +213,9 @@ export class LightRAGManager {
 
   async generateText(request: OllamaGenerateRequest): Promise<ReadableStream> {
     const response = await fetch(`${this.baseUrl}/api/generate`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
     });
@@ -224,9 +224,9 @@ export class LightRAGManager {
 
   async chat(request: OllamaChatRequest): Promise<ReadableStream> {
     const response = await fetch(`${this.baseUrl}/api/chat`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
     });

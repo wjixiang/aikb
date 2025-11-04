@@ -1,5 +1,5 @@
-import { Surreal } from "surrealdb";
-import * as dotenv from "dotenv";
+import { Surreal } from 'surrealdb';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -9,14 +9,14 @@ class SurrealDBClient {
   private authRefreshInterval: number = 3600000; // 1 hour in ms
 
   async connect(
-    url: string = process.env.SURREALDB_URL || "http://127.0.0.1:8000/rpc",
+    url: string = process.env.SURREALDB_URL || 'http://127.0.0.1:8000/rpc',
   ): Promise<void> {
     try {
       this.db = new Surreal();
       await this.authenticate(url);
       // console.log('Connected to SurrealDB');
     } catch (error) {
-      console.error("Failed to connect to SurrealDB:", error);
+      console.error('Failed to connect to SurrealDB:', error);
       this.db = null;
       throw error;
     }
@@ -27,11 +27,11 @@ class SurrealDBClient {
 
     await this.db.connect(url, {
       auth: {
-        username: process.env.SURREALDB_USERNAME || "root",
-        password: process.env.SURREALDB_PASSWORD || "fl5ox03",
+        username: process.env.SURREALDB_USERNAME || 'root',
+        password: process.env.SURREALDB_PASSWORD || 'fl5ox03',
       },
-      namespace: process.env.SURREALDB_NAMESPACE || "test",
-      database: process.env.SURREALDB_DATABASE || "test",
+      namespace: process.env.SURREALDB_NAMESPACE || 'test',
+      database: process.env.SURREALDB_DATABASE || 'test',
     });
     this.lastAuthTime = Date.now();
   }
@@ -41,10 +41,10 @@ class SurrealDBClient {
 
     const now = Date.now();
     if (now - this.lastAuthTime > this.authRefreshInterval) {
-      console.log("Refreshing SurrealDB authentication token");
+      console.log('Refreshing SurrealDB authentication token');
       await this.db.invalidate();
       await this.authenticate(
-        process.env.SURREALDB_URL || "http://127.0.0.1:8000/rpc",
+        process.env.SURREALDB_URL || 'http://127.0.0.1:8000/rpc',
       );
     }
   }
@@ -52,7 +52,7 @@ class SurrealDBClient {
   async getDb(): Promise<Surreal> {
     await this.connect();
     if (!this.db) {
-      throw new Error("SurrealDB connection not established.");
+      throw new Error('SurrealDB connection not established.');
     }
     await this.checkAndRefreshAuth();
     return this.db as Surreal;
@@ -86,7 +86,7 @@ class SurrealDBClient {
   async close(): Promise<void> {
     if (this.db) {
       await this.db.close();
-      console.log("Disconnected from SurrealDB");
+      console.log('Disconnected from SurrealDB');
       this.db = null;
     }
   }

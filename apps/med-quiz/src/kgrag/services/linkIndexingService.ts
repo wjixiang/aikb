@@ -2,23 +2,23 @@
  * Link indexing service for bidirectional link management
  */
 
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { ObjectId } from "mongodb";
-import { LinkExtractor } from "../lib/linkExtractor";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ObjectId } from 'mongodb';
+import { LinkExtractor } from '../lib/linkExtractor';
 import {
   LinkRelationship,
   DocumentWithLinks,
   LinkValidationResult,
-} from "../types/linkTypes";
-import { createLoggerWithPrefix } from "@/lib/console/logger";
-import * as dotenv from "dotenv";
+} from '../types/linkTypes';
+import { createLoggerWithPrefix } from '@/lib/console/logger';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class LinkIndexingService {
-  private logger = createLoggerWithPrefix("LinkIndexingService");
-  private readonly LINKS_COLLECTION = "links";
+  private logger = createLoggerWithPrefix('LinkIndexingService');
+  private readonly LINKS_COLLECTION = 'links';
   private readonly DOCUMENTS_COLLECTION =
-    process.env.KB_MONGO_COLLECTION_NAME ?? "knowledgeBase";
+    process.env.KB_MONGO_COLLECTION_NAME ?? 'knowledgeBase';
 
   /**
    * Index all links in a document
@@ -142,7 +142,7 @@ export class LinkIndexingService {
         if (!targetDoc) {
           targetDoc = await documentsCollection.findOne({
             title: {
-              $regex: new RegExp(`^${this.escapeRegExp(searchTitle)}$`, "i"),
+              $regex: new RegExp(`^${this.escapeRegExp(searchTitle)}$`, 'i'),
             },
           });
         }
@@ -151,7 +151,7 @@ export class LinkIndexingService {
         if (!targetDoc) {
           const filenameMatch = await documentsCollection.findOne({
             key: {
-              $regex: new RegExp(`${this.escapeRegExp(searchTitle)}`, "i"),
+              $regex: new RegExp(`${this.escapeRegExp(searchTitle)}`, 'i'),
             },
           });
           if (filenameMatch) targetDoc = filenameMatch;
@@ -162,8 +162,8 @@ export class LinkIndexingService {
           const keyTitleMatch = await documentsCollection.findOne({
             $expr: {
               $regexMatch: {
-                input: { $arrayElemAt: [{ $split: ["$key", "/"] }, -1] },
-                regex: new RegExp(`^${this.escapeRegExp(searchTitle)}`, "i"),
+                input: { $arrayElemAt: [{ $split: ['$key', '/'] }, -1] },
+                regex: new RegExp(`^${this.escapeRegExp(searchTitle)}`, 'i'),
               },
             },
           });
@@ -172,18 +172,18 @@ export class LinkIndexingService {
 
         // Strategy 5: Remove extension and match
         if (!targetDoc) {
-          const cleanTitle = searchTitle.replace(/\.(md|txt|markdown)$/i, "");
+          const cleanTitle = searchTitle.replace(/\.(md|txt|markdown)$/i, '');
           targetDoc = await documentsCollection.findOne({
             $or: [
               { title: cleanTitle },
               {
                 title: {
-                  $regex: new RegExp(`^${this.escapeRegExp(cleanTitle)}$`, "i"),
+                  $regex: new RegExp(`^${this.escapeRegExp(cleanTitle)}$`, 'i'),
                 },
               },
               {
                 key: {
-                  $regex: new RegExp(`${this.escapeRegExp(cleanTitle)}`, "i"),
+                  $regex: new RegExp(`${this.escapeRegExp(cleanTitle)}`, 'i'),
                 },
               },
             ],
@@ -199,7 +199,7 @@ export class LinkIndexingService {
             {
               sourceId: documentId,
               targetId,
-              linkType: "forward",
+              linkType: 'forward',
             },
             {
               $set: {
@@ -259,7 +259,7 @@ export class LinkIndexingService {
           {
             sourceId: link.targetId,
             targetId: documentId,
-            linkType: "backward",
+            linkType: 'backward',
           },
           {
             $set: {
@@ -301,19 +301,19 @@ export class LinkIndexingService {
       // Get backward links count
       const linksCollection = db.collection(this.LINKS_COLLECTION);
       const backwardLinks = await linksCollection
-        .find({ targetId: documentId, linkType: "backward" })
+        .find({ targetId: documentId, linkType: 'backward' })
         .toArray();
 
       const result = await documentsCollection.updateOne(
         { _id: new ObjectId(documentId) },
         {
           $set: {
-            "metadata.forwardLinks": forwardLinks.map((link) => link.targetId),
-            "metadata.backwardLinks": backwardLinks.map(
+            'metadata.forwardLinks': forwardLinks.map((link) => link.targetId),
+            'metadata.backwardLinks': backwardLinks.map(
               (link) => link.sourceId,
             ),
-            "metadata.linkCount": forwardLinks.length + backwardLinks.length,
-            "metadata.lastLinkUpdate": new Date(),
+            'metadata.linkCount': forwardLinks.length + backwardLinks.length,
+            'metadata.lastLinkUpdate': new Date(),
           },
         },
       );
@@ -338,7 +338,7 @@ export class LinkIndexingService {
       const linksCollection = db.collection(this.LINKS_COLLECTION);
 
       const links = await linksCollection
-        .find({ sourceId: documentId, linkType: "forward" })
+        .find({ sourceId: documentId, linkType: 'forward' })
         .sort({ position: 1 })
         .toArray();
 
@@ -371,7 +371,7 @@ export class LinkIndexingService {
       const linksCollection = db.collection(this.LINKS_COLLECTION);
 
       const links = await linksCollection
-        .find({ targetId: documentId, linkType: "backward" })
+        .find({ targetId: documentId, linkType: 'backward' })
         .sort({ updatedAt: -1 })
         .toArray();
 
@@ -426,7 +426,7 @@ export class LinkIndexingService {
   async validateLinks(content: string): Promise<LinkValidationResult> {
     try {
       const links = LinkExtractor.extract(content);
-      const brokenLinks: LinkValidationResult["brokenLinks"] = [];
+      const brokenLinks: LinkValidationResult['brokenLinks'] = [];
       const errors: string[] = [];
       const warnings: string[] = [];
 
@@ -445,12 +445,12 @@ export class LinkIndexingService {
             { title: searchTitle },
             {
               title: {
-                $regex: new RegExp(`^${this.escapeRegExp(searchTitle)}$`, "i"),
+                $regex: new RegExp(`^${this.escapeRegExp(searchTitle)}$`, 'i'),
               },
             },
             {
               key: {
-                $regex: new RegExp(`${this.escapeRegExp(searchTitle)}`, "i"),
+                $regex: new RegExp(`${this.escapeRegExp(searchTitle)}`, 'i'),
               },
             },
           ],
@@ -483,7 +483,7 @@ export class LinkIndexingService {
    */
   async rebuildIndex(): Promise<number> {
     try {
-      this.logger.info("Starting full link index rebuild");
+      this.logger.info('Starting full link index rebuild');
 
       const { db } = await connectToDatabase();
       const documentsCollection = db.collection(this.DOCUMENTS_COLLECTION);
@@ -496,10 +496,10 @@ export class LinkIndexingService {
         {},
         {
           $unset: {
-            "metadata.forwardLinks": "",
-            "metadata.backwardLinks": "",
-            "metadata.linkCount": "",
-            "metadata.lastLinkUpdate": "",
+            'metadata.forwardLinks': '',
+            'metadata.backwardLinks': '',
+            'metadata.linkCount': '',
+            'metadata.lastLinkUpdate': '',
           },
         },
       );
@@ -533,14 +533,14 @@ export class LinkIndexingService {
    * Helper method to extract title from key
    */
   private extractTitleFromKey(key: string): string {
-    const filename = key.split("/").pop() || key;
-    return filename.replace(/\.(md|txt|markdown)$/i, "");
+    const filename = key.split('/').pop() || key;
+    return filename.replace(/\.(md|txt|markdown)$/i, '');
   }
 
   /**
    * Escape special characters for regex
    */
   private escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

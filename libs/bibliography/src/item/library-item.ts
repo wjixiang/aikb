@@ -18,7 +18,7 @@ export class LibraryItem {
   toJSON() {
     // Return only the metadata, excluding the storage property which contains circular references
     return {
-      metadata: this.metadata
+      metadata: this.metadata,
     };
   }
 
@@ -167,7 +167,6 @@ export class LibraryItem {
     }
   }
 
-  
   /**
    * Delete this item and all associated data
    */

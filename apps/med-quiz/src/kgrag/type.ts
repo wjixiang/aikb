@@ -1,4 +1,4 @@
-import { Embeddings } from "@langchain/core/embeddings";
+import { Embeddings } from '@langchain/core/embeddings';
 
 export interface embeddingInstance {
   Embeddings: Embeddings;
@@ -11,26 +11,26 @@ export type RecordId = {
 };
 
 export type language =
-  | "zh"
-  | "en"
-  | "ja"
-  | "ko"
-  | "es"
-  | "fr"
-  | "de"
-  | "it"
-  | "pt"
-  | "ru"
-  | "ar"
-  | "hi"
-  | "bn"
-  | "pa"
-  | "jv"
-  | "tr"
-  | "vi"
-  | "th"
-  | "pl"
-  | "uk"
-  | "ro"
-  | "nl"
-  | "el";
+  | 'zh'
+  | 'en'
+  | 'ja'
+  | 'ko'
+  | 'es'
+  | 'fr'
+  | 'de'
+  | 'it'
+  | 'pt'
+  | 'ru'
+  | 'ar'
+  | 'hi'
+  | 'bn'
+  | 'pa'
+  | 'jv'
+  | 'tr'
+  | 'vi'
+  | 'th'
+  | 'pl'
+  | 'uk'
+  | 'ro'
+  | 'nl'
+  | 'el';

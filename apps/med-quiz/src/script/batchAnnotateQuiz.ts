@@ -1,5 +1,5 @@
-import { quizAI } from "../lib/quiz/quizAI";
-import dotenv from "dotenv";
+import { quizAI } from '../lib/quiz/quizAI';
+import dotenv from 'dotenv';
 
 // Load environment variables - still might be useful if scripts rely on them
 dotenv.config();
@@ -24,14 +24,14 @@ interface ListAnnotateParams {
 export async function runBatchAnnotation(
   params: BatchAnnotateParams,
 ): Promise<{ success: boolean; message: string }> {
-  console.log("Executing batch annotation via function call...");
+  console.log('Executing batch annotation via function call...');
   try {
     const processor = new quizAI(params.concurrency); // Use provided concurrency or default
     // Note: quizAI logs progress internally. We might want to capture logs later.
     await processor.batchAnnotate(params.class, params.source);
-    console.log("Batch annotation function call completed.");
+    console.log('Batch annotation function call completed.');
     // Since batchAnnotate doesn't return detailed status, assume success if no error
-    return { success: true, message: "Batch annotation process completed." };
+    return { success: true, message: 'Batch annotation process completed.' };
   } catch (error: any) {
     const errorMessage = `Error during batch annotation: ${error.message || error}`;
     console.error(errorMessage);
@@ -49,7 +49,7 @@ export async function runSingleAnnotation(
     `Executing single annotation for quiz ID: ${params.quizId} via function call...`,
   );
   if (!params.quizId) {
-    return { success: false, message: "Missing quizId parameter." };
+    return { success: false, message: 'Missing quizId parameter.' };
   }
   try {
     const processor = new quizAI();
@@ -76,7 +76,7 @@ export async function runListAnnotation(
     `Executing list annotation for ${params.quizIds?.length || 0} quiz IDs via function call...`,
   );
   if (!params.quizIds || params.quizIds.length === 0) {
-    return { success: false, message: "Missing or empty quizIds parameter." };
+    return { success: false, message: 'Missing or empty quizIds parameter.' };
   }
   try {
     const processor = new quizAI();

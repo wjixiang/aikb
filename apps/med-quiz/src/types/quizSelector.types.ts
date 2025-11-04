@@ -1,4 +1,4 @@
-export type ReviewMode = "normal" | "unpracticed" | "review";
+export type ReviewMode = 'normal' | 'unpracticed' | 'review';
 
 export interface quizSelector {
   cls: string[];
@@ -18,10 +18,10 @@ export interface quizSelector {
     consecutiveWrong: number;
     recency: number;
   };
-  tags?: (string | { value: string; type?: "private" | "public" })[]; // 支持混合标签模式
-  tagFilterMode?: "AND" | "OR"; // 新增：标签筛选模式
-  excludeTags?: (string | { value: string; type?: "private" | "public" })[]; // 支持混合标签模式
-  excludeTagFilterMode?: "AND" | "OR"; // 新增：排除标签筛选模式
+  tags?: (string | { value: string; type?: 'private' | 'public' })[]; // 支持混合标签模式
+  tagFilterMode?: 'AND' | 'OR'; // 新增：标签筛选模式
+  excludeTags?: (string | { value: string; type?: 'private' | 'public' })[]; // 支持混合标签模式
+  excludeTagFilterMode?: 'AND' | 'OR'; // 新增：排除标签筛选模式
 }
 
 export interface TagPreset {
@@ -30,15 +30,15 @@ export interface TagPreset {
   description?: string;
   includeTags: string[];
   excludeTags: string[];
-  includeTagFilterMode: "AND" | "OR";
-  excludeTagFilterMode: "AND" | "OR";
+  includeTagFilterMode: 'AND' | 'OR';
+  excludeTagFilterMode: 'AND' | 'OR';
   userId: string;
   createdAt?: Date;
   updatedAt?: Date;
   isDefault?: boolean;
 }
 
-export type TagPresetOperation = "create" | "update" | "delete" | "load";
+export type TagPresetOperation = 'create' | 'update' | 'delete' | 'load';
 
 export interface PublicTag {
   _id?: any; // MongoDB ObjectId

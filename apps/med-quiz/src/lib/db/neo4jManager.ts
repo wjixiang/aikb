@@ -1,8 +1,8 @@
-import neo4j, { Record } from "neo4j-driver";
-import type { Driver } from "neo4j-driver";
-import { remark } from "remark";
-import { visit } from "unist-util-visit";
-import wikiLinkPlugin from "remark-wiki-link";
+import neo4j, { Record } from 'neo4j-driver';
+import type { Driver } from 'neo4j-driver';
+import { remark } from 'remark';
+import { visit } from 'unist-util-visit';
+import wikiLinkPlugin from 'remark-wiki-link';
 
 interface NoteNodeProperties {
   oid: string;
@@ -52,13 +52,13 @@ export class Neo4jManager {
     const session = this.driver.session();
     try {
       const result = await session.run(query, parameters);
-      console.log("Query results:");
+      console.log('Query results:');
       result.records.forEach((record: Record) => {
         console.log(record.toObject());
       });
       return result;
     } catch (error) {
-      console.error("Error executing query:", error);
+      console.error('Error executing query:', error);
       throw error;
     } finally {
       await session.close();
@@ -111,7 +111,7 @@ export class Neo4jManager {
 
         const linkPromises: Promise<void>[] = [];
 
-        visit(ast, "wikiLink", (node: any) => {
+        visit(ast, 'wikiLink', (node: any) => {
           const linkedFile = node.data.alias || node.value;
           console.log(`Found link from ${fileName} to ${linkedFile}`);
 
@@ -173,7 +173,7 @@ export class Neo4jManager {
     const session = this.driver.session();
     try {
       // Handle special cases for Note nodes
-      if (label === "Note") {
+      if (label === 'Note') {
         const { oid, fileName, content, metaData } =
           properties as NoteNodeProperties;
 
@@ -200,7 +200,7 @@ export class Neo4jManager {
            RETURN id(n) as id`,
           { oid, fileName, metaData },
         );
-        return result.records[0].get("id").toString();
+        return result.records[0].get('id').toString();
       }
 
       // Default case for other node types
@@ -208,7 +208,7 @@ export class Neo4jManager {
         `CREATE (n:${label} $props) RETURN id(n) as id`,
         { props: properties },
       );
-      return result.records[0].get("id").toString();
+      return result.records[0].get('id').toString();
     } catch (error) {
       console.error(`Error creating ${label} node:`, error);
       throw error;
@@ -291,18 +291,18 @@ export class Neo4jManager {
       const result = await session.run(
         `MATCH (n:${label} ${
           Object.keys(properties).length
-            ? "{" +
+            ? '{' +
               Object.keys(properties)
                 .map((k) => `${k}: $${k}`)
-                .join(", ") +
-              "}"
-            : ""
+                .join(', ') +
+              '}'
+            : ''
         }) RETURN n`,
         Object.keys(properties).length ? properties : {},
       );
       return result.records.map((r) => {
-        const node = r.get("n").properties;
-        if (node.metaData && typeof node.metaData === "string") {
+        const node = r.get('n').properties;
+        if (node.metaData && typeof node.metaData === 'string') {
           node.metaData = JSON.parse(node.metaData);
         }
         return node;
@@ -335,10 +335,10 @@ export class Neo4jManager {
         { id: parseInt(nodeId) },
       );
       return result.records.map((r) => ({
-        type: r.get("type"),
-        properties: r.get("props"),
-        startId: r.get("startId").toString(),
-        endId: r.get("endId").toString(),
+        type: r.get('type'),
+        properties: r.get('props'),
+        startId: r.get('startId').toString(),
+        endId: r.get('endId').toString(),
       }));
     } finally {
       await session.close();
@@ -363,12 +363,12 @@ export class Neo4jManager {
     const tx = session.beginTransaction();
     try {
       // Special handling for Note nodes
-      if (label === "Note") {
+      if (label === 'Note') {
         const noteNodes = nodes as NoteNodeProperties[];
         await this.processMarkdownFiles(
           noteNodes.map((n) => ({
             title: n.fileName || n.oid,
-            content: n.content || "",
+            content: n.content || '',
             oid: n.oid,
             metaData: n.metaData,
           })),
@@ -386,7 +386,7 @@ export class Neo4jManager {
         { nodes },
       );
 
-      const ids = result.records.map((r) => r.get("id").toString());
+      const ids = result.records.map((r) => r.get('id').toString());
       await tx.commit();
       return ids;
     } catch (error) {

@@ -1,25 +1,25 @@
-"/api/fsrs/collections/refresh";
+'/api/fsrs/collections/refresh';
 
-import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { getFsrsInstance } from "@/lib/fsrs/fsrs";
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { getFsrsInstance } from '@/lib/fsrs/fsrs';
 import {
   UserSubscription,
   AnkiCollectionPreset,
   CardState,
-} from "@/types/anki.types";
-import { ObjectId } from "mongodb";
-import { refreshCollection } from "@/lib/fsrs/refreshCollection";
+} from '@/types/anki.types';
+import { ObjectId } from 'mongodb';
+import { refreshCollection } from '@/lib/fsrs/refreshCollection';
 
 async function getTodayNewLearned(userId: string, collectionId: string) {
   const { db } = await connectToDatabase();
   const Cards = await db
-    .collection<CardState>("cardStates")
+    .collection<CardState>('cardStates')
     .find({
       userId: userId,
-      "state.due": { $lte: new Date() },
+      'state.due': { $lte: new Date() },
       collectionId: collectionId,
     })
     .toArray();
@@ -30,13 +30,13 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { collectionId } = await request.json();
     if (!collectionId) {
       return NextResponse.json(
-        { error: "Collection ID is required" },
+        { error: 'Collection ID is required' },
         { status: 400 },
       );
     }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // 检查订阅是否存在
     const subscription = await db
-      .collection<UserSubscription>("userSubscriptions")
+      .collection<UserSubscription>('userSubscriptions')
       .findOne({
         userId: session.user?.email as string,
         collectionId: collectionId,
@@ -53,21 +53,21 @@ export async function POST(request: Request) {
 
     if (!subscription) {
       return NextResponse.json(
-        { error: "Subscription not found" },
+        { error: 'Subscription not found' },
         { status: 404 },
       );
     }
 
     // 获取牌组信息
     const collection = await db
-      .collection<AnkiCollectionPreset>("presetCollections")
+      .collection<AnkiCollectionPreset>('presetCollections')
       .findOne({
         _id: new ObjectId(collectionId),
       });
 
     if (!collection) {
       return NextResponse.json(
-        { error: "Collection not found" },
+        { error: 'Collection not found' },
         { status: 404 },
       );
     }
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
     // 为每张卡片初始化或重置状态
     const cardStates = await db
-      .collection("cardStates")
+      .collection('cardStates')
       .find({
         userId: session.user?.email,
         cardOid: { $in: collection.cards.map((card: any) => card.oid) },
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
 
       console.log(newCardStates);
 
-      await db.collection("cardStates").insertMany(newCardStates);
+      await db.collection('cardStates').insertMany(newCardStates);
     }
 
     await refreshCollection(session.user?.email as string, collectionId);
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       // isNewDay: isNewDay
     });
   } catch (error) {
-    console.error("Error in POST /api/fsrs/collections/refresh:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('Error in POST /api/fsrs/collections/refresh:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -11,7 +11,7 @@ import { AppModule } from './app/app.module';
 console.log('>>> ROOT LOG <<<');
 
 async function bootstrap() {
-  const logger = createLoggerWithPrefix('bibliography-service')
+  const logger = createLoggerWithPrefix('bibliography-service');
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);

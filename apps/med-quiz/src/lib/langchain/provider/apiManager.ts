@@ -28,7 +28,7 @@ class ApiManager {
 
   async generateResponse(prompt: string): Promise<string> {
     const api = await this.getAvailableApi();
-    if (!api) throw new Error("No available API");
+    if (!api) throw new Error('No available API');
     return api.generateResponse(prompt);
   }
 }

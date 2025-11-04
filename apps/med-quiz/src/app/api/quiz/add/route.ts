@@ -1,9 +1,9 @@
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { NextResponse } from "next/server";
-import { quiz, answerType } from "@/types/quizData.types";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
-import { ObjectId } from "mongodb";
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { NextResponse } from 'next/server';
+import { quiz, answerType } from '@/types/quizData.types';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ObjectId } from 'mongodb';
 
 /**
  * Interface representing the structure of a quiz set document in the database
@@ -38,14 +38,14 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { quizSetId, quizzes } = await request.json();
 
     if (!quizSetId || !quizzes || !Array.isArray(quizzes)) {
       return NextResponse.json(
-        { error: "Invalid request data" },
+        { error: 'Invalid request data' },
         { status: 400 },
       );
     }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       answer: null,
     }));
     const result = await db
-      .collection("quizSets")
+      .collection('quizSets')
       .updateOne(
         { _id: quizSetObjectId },
         { $push: { quizzes: { $each: newQuizzes } as any } },
@@ -67,19 +67,19 @@ export async function POST(request: Request) {
 
     if (result.modifiedCount === 0) {
       return NextResponse.json(
-        { error: "Quiz set not found or no quizzes added" },
+        { error: 'Quiz set not found or no quizzes added' },
         { status: 404 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: "Quizzes added successfully",
+      message: 'Quizzes added successfully',
     });
   } catch (error) {
-    console.error("Error adding quizzes to quiz set:", error);
+    console.error('Error adding quizzes to quiz set:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }
