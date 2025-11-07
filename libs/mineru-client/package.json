@@ -1,48 +1,10 @@
 {
-  "name": "@aikb/mineru-client",
-  "version": "1.0.0",
-  "description": "Independent MinerU API client for document parsing and conversion",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "package": "pnpm run build && pnpm pack",
-    "prepublishOnly": "pnpm run build"
-  },
-  "keywords": [
-    "mineru",
-    "document-parsing",
-    "pdf",
-    "ocr",
-    "api-client",
-    "document-conversion"
-  ],
-  "author": "",
-  "license": "UNLICENSED",
+  "name": "mineru-client",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "dependencies": {
-    "axios": "^1.12.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.7",
-    "typescript": "^5.7.3",
-    "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "@aikb/s3-service": "workspace:*",
-    "dotenv": "^17.2.2"
-  },
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "require": "./src/index.ts"
-    }
+    "tslib": "^2.3.0"
   }
 }

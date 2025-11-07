@@ -6,8 +6,8 @@ import {
 } from '@aikb/bibliography';
 import {
   CreateLibraryItemDto,
+  CreateLibraryItemWithPdfDto,
   UpdateMetadataDto,
-  UpdateProcessingStatusDto,
   PdfDownloadUrlDto,
 } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
@@ -55,6 +55,38 @@ export class LibraryItemService {
     // In a real implementation, you would upload the PDF file first
     const pdfBuffer = Buffer.from('placeholder');
     const fileName = `${createLibraryItemDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+
+    return await this.library.storePdf(pdfBuffer, fileName, metadata);
+  }
+
+  /**
+   * Create a new library item with PDF buffer
+   * @param createLibraryItemWithPdfDto The data to create the library item with PDF buffer
+   * @returns The created library item
+   */
+  async createLibraryItemWithPdfBuffer(
+    createLibraryItemWithPdfDto: CreateLibraryItemWithPdfDto,
+  ): Promise<LibraryItem> {
+    const metadata = {
+      title: createLibraryItemWithPdfDto.title,
+      authors: createLibraryItemWithPdfDto.authors,
+      abstract: createLibraryItemWithPdfDto.abstract,
+      publicationYear: createLibraryItemWithPdfDto.publicationYear,
+      publisher: createLibraryItemWithPdfDto.publisher,
+      isbn: createLibraryItemWithPdfDto.isbn,
+      doi: createLibraryItemWithPdfDto.doi,
+      url: createLibraryItemWithPdfDto.url,
+      tags: createLibraryItemWithPdfDto.tags,
+      notes: createLibraryItemWithPdfDto.notes,
+      collections: createLibraryItemWithPdfDto.collections,
+      fileType: createLibraryItemWithPdfDto.fileType,
+      language: createLibraryItemWithPdfDto.language,
+    };
+
+    // Use the provided PDF buffer
+    const pdfBuffer = createLibraryItemWithPdfDto.pdfBuffer;
+    const fileName = createLibraryItemWithPdfDto.fileName ||
+      `${createLibraryItemWithPdfDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
     return await this.library.storePdf(pdfBuffer, fileName, metadata);
   }
@@ -139,58 +171,58 @@ export class LibraryItemService {
     return updatedItem;
   }
 
-  /**
-   * Update PDF processing status
-   * @param id The ID of the library item
-   * @param updateProcessingStatusDto The processing status update
-   * @returns The updated library item
-   */
-  async updatePdfProcessingStatus(
-    id: string,
-    updateProcessingStatusDto: UpdateProcessingStatusDto,
-  ): Promise<LibraryItem> {
-    const item = await this.library.getItem(id);
-    if (!item) {
-      throw new Error(`Library item with ID ${id} not found`);
-    }
+  // /**
+  //  * Update PDF processing status
+  //  * @param id The ID of the library item
+  //  * @param updateProcessingStatusDto The processing status update
+  //  * @returns The updated library item
+  //  */
+  // async updatePdfProcessingStatus(
+  //   id: string,
+  //   updateProcessingStatusDto: UpdateProcessingStatusDto,
+  // ): Promise<LibraryItem> {
+  //   const item = await this.library.getItem(id);
+  //   if (!item) {
+  //     throw new Error(`Library item with ID ${id} not found`);
+  //   }
 
-    // Prepare the updates
-    const updates: any = {
-      pdfProcessingStatus: updateProcessingStatusDto.status,
-      pdfProcessingMessage: updateProcessingStatusDto.message,
-      pdfProcessingProgress: updateProcessingStatusDto.progress,
-      pdfProcessingError: updateProcessingStatusDto.error,
-      dateModified: new Date(),
-    };
+  //   // Prepare the updates
+  //   const updates: any = {
+  //     pdfProcessingStatus: updateProcessingStatusDto.status,
+  //     pdfProcessingMessage: updateProcessingStatusDto.message,
+  //     pdfProcessingProgress: updateProcessingStatusDto.progress,
+  //     pdfProcessingError: updateProcessingStatusDto.error,
+  //     dateModified: new Date(),
+  //   };
 
-    // Add timestamps based on status
-    if (
-      updateProcessingStatusDto.status === 'analyzing' &&
-      !item.metadata.pdfProcessingStartedAt
-    ) {
-      updates.pdfProcessingStartedAt = new Date();
-    } else if (updateProcessingStatusDto.status === 'completed') {
-      updates.pdfProcessingCompletedAt = new Date();
-    } else if (updateProcessingStatusDto.status === 'failed') {
-      updates.pdfProcessingRetryCount =
-        (item.metadata.pdfProcessingRetryCount || 0) + 1;
-    }
+  //   // Add timestamps based on status
+  //   if (
+  //     updateProcessingStatusDto.status === 'analyzing' &&
+  //     !item.metadata.pdfProcessingStartedAt
+  //   ) {
+  //     updates.pdfProcessingStartedAt = new Date();
+  //   } else if (updateProcessingStatusDto.status === 'completed') {
+  //     updates.pdfProcessingCompletedAt = new Date();
+  //   } else if (updateProcessingStatusDto.status === 'failed') {
+  //     updates.pdfProcessingRetryCount =
+  //       (item.metadata.pdfProcessingRetryCount || 0) + 1;
+  //   }
 
-    // Update the metadata
-    const updatedMetadata = {
-      ...item.metadata,
-      ...updates,
-    };
+  //   // Update the metadata
+  //   const updatedMetadata = {
+  //     ...item.metadata,
+  //     ...updates,
+  //   };
 
-    await this.library['storage'].updateMetadata(updatedMetadata);
+  //   await this.library['storage'].updateMetadata(updatedMetadata);
 
-    // Return the updated item
-    const updatedItem = await this.library.getItem(id);
-    if (!updatedItem) {
-      throw new Error(`Failed to retrieve updated library item ${id}`);
-    }
-    return updatedItem;
-  }
+  //   // Return the updated item
+  //   const updatedItem = await this.library.getItem(id);
+  //   if (!updatedItem) {
+  //     throw new Error(`Failed to retrieve updated library item ${id}`);
+  //   }
+  //   return updatedItem;
+  // }
 
   /**
    * Get PDF download URL
@@ -238,5 +270,38 @@ export class LibraryItemService {
     return {
       message: 'pdf2md request published',
     };
+  }
+
+  /**
+   * Update library item markdown content
+   * @param id The ID of the library item
+   * @param markdownContent The markdown content to update
+   * @returns The updated library item
+   */
+  async updateLibraryItemMarkdown(
+    id: string,
+    markdownContent: string,
+  ): Promise<LibraryItem> {
+    const item = await this.library.getItem(id);
+    if (!item) {
+      throw new Error(`Library item with ID ${id} not found`);
+    }
+
+    // Update the markdown content
+    const updatedMetadata = {
+      ...item.metadata,
+      markdownContent,
+      dateModified: new Date(),
+    };
+
+    // Update the metadata through the storage
+    await this.library['storage'].updateMetadata(updatedMetadata);
+
+    // Return the updated item
+    const updatedItem = await this.library.getItem(id);
+    if (!updatedItem) {
+      throw new Error(`Failed to retrieve updated library item ${id}`);
+    }
+    return updatedItem;
   }
 }

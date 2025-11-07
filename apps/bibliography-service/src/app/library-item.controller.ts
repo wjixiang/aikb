@@ -13,27 +13,16 @@ import {
 import { LibraryItemService } from './library-item.service';
 import {
   CreateLibraryItemDto,
+  CreateLibraryItemWithPdfDto,
   UpdateMetadataDto,
-  UpdateProcessingStatusDto,
   PdfDownloadUrlDto,
+  UpdateMarkdownDto,
 } from 'library-shared';
 import { LibraryItem } from '@aikb/bibliography';
 
 @Controller('library-items')
 export class LibraryItemController {
   constructor(private readonly libraryItemService: LibraryItemService) {}
-
-  /**
-   * TEST API
-   */
-  @Get('test-rabbit')
-  async testRabbit() {
-    console.log('[DEBUG] testRabbit endpoint called');
-    this.libraryItemService.producePdf2MarkdownRequest({
-      itemId: 'test',
-      pageNum: null
-    });
-  }
 
   /**
    * Create a new library item
@@ -51,6 +40,27 @@ export class LibraryItemController {
     } catch (error) {
       throw new HttpException(
         `Failed to create library item: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Create a new library item with PDF buffer
+   * @param createLibraryItemWithPdfDto The data to create the library item with PDF buffer
+   * @returns The created library item
+   */
+  @Post('with-pdf')
+  async createWithPdf(
+    @Body() createLibraryItemWithPdfDto: CreateLibraryItemWithPdfDto,
+  ): Promise<LibraryItem> {
+    try {
+      return await this.libraryItemService.createLibraryItemWithPdfBuffer(
+        createLibraryItemWithPdfDto,
+      );
+    } catch (error) {
+      throw new HttpException(
+        `Failed to create library item with PDF: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -167,28 +177,56 @@ export class LibraryItemController {
     }
   }
 
+  // /**
+  //  * Update PDF processing status
+  //  * @param id The ID of the library item
+  //  * @param updateProcessingStatusDto The processing status update
+  //  * @returns The updated library item
+  //  */
+  // @Put(':id/processing-status')
+  // async updateProcessingStatus(
+  //   @Param('id') id: string,
+  //   @Body() updateProcessingStatusDto: UpdateProcessingStatusDto,
+  // ): Promise<LibraryItem> {
+  //   try {
+  //     return await this.libraryItemService.updatePdfProcessingStatus(
+  //       id,
+  //       updateProcessingStatusDto,
+  //     );
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new HttpException(
+  //       `Failed to update PDF processing status: ${error.message}`,
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
+
   /**
-   * Update PDF processing status
+   * Update markdown content for a library item
    * @param id The ID of the library item
-   * @param updateProcessingStatusDto The processing status update
+   * @param updateMarkdownDto The markdown content to update
    * @returns The updated library item
    */
-  @Put(':id/processing-status')
-  async updateProcessingStatus(
+  @Put(':id/markdown')
+  async updateMarkdown(
     @Param('id') id: string,
-    @Body() updateProcessingStatusDto: UpdateProcessingStatusDto,
-  ): Promise<LibraryItem> {
+    @Body() updateMarkdownDto: UpdateMarkdownDto,
+  ): Promise<LibraryItem> 
+  {
     try {
-      return await this.libraryItemService.updatePdfProcessingStatus(
+      return await this.libraryItemService.updateLibraryItemMarkdown(
         id,
-        updateProcessingStatusDto,
+        updateMarkdownDto.markdownContent,
       );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException(
-        `Failed to update PDF processing status: ${error.message}`,
+        `Failed to update library item markdown: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

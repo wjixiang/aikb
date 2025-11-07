@@ -1,0 +1,19 @@
+{
+  "name": "mineru-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mineru-client/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/mineru-client",
+        "main": "libs/mineru-client/src/index.ts",
+        "tsConfig": "libs/mineru-client/tsconfig.lib.json",
+        "assets": ["libs/mineru-client/*.md"]
+      }
+    }
+  }
+}

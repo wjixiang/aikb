@@ -1,23 +1,18 @@
 import {
-  IsOptional,
   IsString,
-  IsNumber,
   IsArray,
-  IsObject,
+  IsOptional,
+  IsNumber,
+  IsEnum,
 } from 'class-validator';
+import { Author } from '@aikb/bibliography';
 
-export class UpdateMetadataDto {
-  @IsOptional()
+export class CreateLibraryItemWithPdfDto {
   @IsString()
-  title?: string;
+  title!: string;
 
-  @IsOptional()
   @IsArray()
-  authors?: Array<{
-    firstName: string;
-    lastName: string;
-    middleName?: string;
-  }>;
+  authors!: Author[];
 
   @IsOptional()
   @IsString()
@@ -43,35 +38,26 @@ export class UpdateMetadataDto {
   @IsString()
   url?: string;
 
-  @IsOptional()
   @IsArray()
-  tags?: string[];
+  tags!: string[];
 
   @IsOptional()
   @IsString()
   notes?: string;
 
-  @IsOptional()
   @IsArray()
-  collections?: string[];
+  collections!: string[];
 
-  @IsOptional()
-  @IsNumber()
-  fileSize?: number;
-
-  @IsOptional()
-  @IsNumber()
-  pageCount?: number;
+  @IsEnum(['pdf', 'article', 'book', 'other'])
+  fileType!: 'pdf' | 'article' | 'book' | 'other';
 
   @IsOptional()
   @IsString()
   language?: string;
 
-  @IsOptional()
-  @IsString()
-  contentHash?: string;
+  pdfBuffer!: Buffer;
 
   @IsOptional()
   @IsString()
-  markdownContent?: string;
+  fileName?: string;
 }

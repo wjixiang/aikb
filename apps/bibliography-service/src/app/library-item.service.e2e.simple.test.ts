@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from './library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Pdf2MArkdownDto } from './pdf_process.dto';
+import { CreateLibraryItemWithPdfDto, Pdf2MArkdownDto } from 'library-shared';
 import * as amqp from 'amqplib';
 import { vi } from 'vitest';
+import {post} from 'axios'
+import { readFileSync } from 'fs';
 
 // Mock the bibliography library to avoid MongoDB dependency
 vi.mock('@aikb/bibliography', () => ({
@@ -172,4 +174,17 @@ describe('LibraryItemService - Simple E2E Test', () => {
       await channel.cancel(consumer2.consumerTag);
     }
   });
+
+  it.only('create item with pdf', async()=>{
+    const testData: CreateLibraryItemWithPdfDto = {
+      title: 'ACEI',
+      authors: [],
+      tags: [],
+      collections: [],
+      fileType: 'pdf',
+      pdfBuffer: readFileSync('/workspace/test/ACEI.pdf')
+    }
+    const respnose = await post(`${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`,testData)
+    console.log(respnose.data)
+  })
 });

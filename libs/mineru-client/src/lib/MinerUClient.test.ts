@@ -4,7 +4,7 @@ import {
   MinerUApiError,
   MinerUTimeoutError,
   MinerUDefaultConfig,
-} from '../MinerUClient';
+} from './mineru-client';
 
 // Mock axios
 const mockAxiosInstance = {

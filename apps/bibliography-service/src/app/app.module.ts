@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { LibraryItemController } from './library-item.controller';
 import { LibraryItemService } from './library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -23,7 +21,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
-  controllers: [AppController, LibraryItemController],
-  providers: [AppService, LibraryItemService],
+  controllers: [ LibraryItemController],
+  providers: [ LibraryItemService],
 })
 export class AppModule {}

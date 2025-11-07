@@ -145,13 +145,7 @@ export class Library implements ILibrary {
       tags: metadata.tags || [],
       collections: metadata.collections || [],
       authors: metadata.authors || [],
-      fileType: 'pdf',
-      // Initialize processing status fields - simplified version without RabbitMQ
-      pdfProcessingStatus: PdfProcessingStatus.PENDING,
-      pdfProcessingStartedAt: new Date(),
-      pdfProcessingRetryCount: 0,
-      pdfProcessingProgress: 0,
-      pdfProcessingMessage: 'Ready for processing',
+      fileType: 'pdf'
     };
 
     // Save metadata first to get the ID

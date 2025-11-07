@@ -19,7 +19,6 @@
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/embedding": ["./libs/embedding/src/index.ts"],
       "@aikb/log-management": ["./libs/log-management/src/index.ts"],
-      "@aikb/mineru-client": ["./libs/mineru-client/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
@@ -44,7 +43,8 @@
       "components/server": ["libs/components/src/server.ts"],
       "quiz-shared": ["libs/quiz-shared/src/index.ts"],
       "quiz-management-client": ["apps/quiz-management-client/src/index.ts"],
-      "pdf2md-lib": ["libs/pdf2md-lib/src/index.ts"]
+      "pdf2md-lib": ["libs/pdf2md-lib/src/index.ts"],
+      "mineru-client": ["libs/mineru-client/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
