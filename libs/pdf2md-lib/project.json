@@ -1,9 +1,0 @@
-{
-  "name": "pdf2md-lib",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/pdf2md-lib/src",
-  "projectType": "library",
-  "tags": [],
-  "// targets": "to see all targets run: nx show project pdf2md-lib --web",
-  "targets": {}
-}

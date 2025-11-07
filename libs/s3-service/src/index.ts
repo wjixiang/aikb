@@ -54,8 +54,7 @@ async function getDefaultS3Service(): Promise<S3Service> {
 }
 
 /**
- * Legacy function: Uploads a buffer to S3 and returns the public URL
- * @deprecated Use S3Service class instance instead
+ * Uploads a buffer to S3 and returns the public URL
  */
 export async function uploadToS3(
   buffer: Buffer,
@@ -73,7 +72,6 @@ export async function uploadToS3(
 
 /**
  * Legacy function: Generates a presigned URL for direct upload to S3
- * @deprecated Use S3Service class instance instead
  */
 export async function getSignedUploadUrl(
   s3Key: string,

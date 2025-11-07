@@ -1,12 +1,22 @@
-import {describe, it, expect, beforeEach} from 'vitest'
+import {describe, it, expect, beforeEach, vi} from 'vitest'
 import { AppService } from './app.service'
 import { Pdf2MArkdownDto } from 'library-shared'
+import { ClientProxy } from '@nestjs/microservices'
 
 describe(AppService, ()=>{
     let service: AppService
+    let mockClientProxy: ClientProxy
 
     beforeEach(() => {
-        service = new AppService()
+        // Create a mock ClientProxy
+        mockClientProxy = {
+            connect: vi.fn(),
+            close: vi.fn(),
+            send: vi.fn(),
+            emit: vi.fn(),
+        } as any
+
+        service = new AppService(mockClientProxy)
     })
 
     it.skip('(e2e) get pdf download url', async()=>{

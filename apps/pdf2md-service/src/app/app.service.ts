@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Pdf2MArkdownDto } from 'library-shared';
 import { get} from 'axios'
 import { PDFDocument } from 'pdf-lib'
+import { ClientProxy } from '@nestjs/microservices';
+import {uploadToS3} from '@aikb/s3-service'
+import {} from '@aikb/mineru-client'
 
 @Injectable()
 export class AppService {
+  constructor(@Inject('pdf_2_markdown_service') private rabbitClient: ClientProxy) {}
 
   async handlePdf2MdRequest(req: Pdf2MArkdownDto) {
     const pdfInfo:Pdf2MArkdownDto & {
@@ -40,6 +44,35 @@ export class AppService {
       // Split PDF into chunks
       const pdfChunks = await this.splitPdfIntoChunks(pdfInfo.pdfData, chunkSize);
       console.log(`PDF split into ${pdfChunks.length} chunks`);
+
+      // Upload each chunk to S3
+      const uploadPromises = pdfChunks.map(async (chunk, index) => {
+        const chunkFileName = `pdf_parts/${pdfInfo.itemId}@${pdfChunks.length}/${index + 1}.pdf`;
+        const chunkBuffer = Buffer.from(chunk);
+        
+        try {
+          const uploadResult = await uploadToS3(
+            chunkBuffer,
+            chunkFileName,
+            'application/pdf'
+          );
+          console.log(`Uploaded chunk ${index + 1}/${pdfChunks.length} to S3: ${uploadResult}`);
+          return {
+            chunkIndex: index,
+            startPage: index * chunkSize + 1,
+            endPage: Math.min((index + 1) * chunkSize, pdfInfo.pageNum!),
+            s3Url: uploadResult,
+            fileName: chunkFileName
+          };
+        } catch (error) {
+          console.error(`Failed to upload chunk ${index + 1}:`, error);
+          throw new Error(`Failed to upload chunk ${index + 1} to S3: ${error}`);
+        }
+      });
+
+      // Wait for all uploads to complete
+      const uploadedChunks = await Promise.all(uploadPromises);
+      console.log(`All ${uploadedChunks.length} chunks uploaded successfully`);
       
       // TODO: Process each chunk individually
       // For now, just return the chunking information
@@ -49,11 +82,12 @@ export class AppService {
         chunked: true,
         chunkCount: pdfChunks.length,
         chunkSize: chunkSize,
-        chunks: pdfChunks.map((chunk, index) => ({
+        chunks: uploadedChunks.map((chunk, index) => ({
           chunkIndex: index,
-          startPage: index * chunkSize + 1,
-          endPage: Math.min((index + 1) * chunkSize, pdfInfo.pageNum!),
-          data: chunk
+          startPage: chunk.startPage,
+          endPage: chunk.endPage,
+          s3Url: chunk.s3Url,
+          fileName: chunk.fileName
         }))
       };
     } else {
