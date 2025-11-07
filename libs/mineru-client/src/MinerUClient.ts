@@ -164,7 +164,7 @@ export const MinerUDefaultConfig: MinerUConfig = {
     language: 'ch',
     model_version: 'pipeline',
   },
-  token: process.env.MINERU_TOKEN as string,
+  token: process.env['MINERU_TOKEN'] as string,
 };
 
 // ==================== Main Client Class ====================

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from './library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Pdf2MArkdownDto } from './pdf_process.dto';
+import { Pdf2MArkdownDto } from 'library-shared';
 import * as amqp from 'amqplib';
 import { vi } from 'vitest';
 

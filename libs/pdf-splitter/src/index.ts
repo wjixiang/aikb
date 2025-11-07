@@ -1,1 +1,1 @@
-export { PdfSpliterWorker } from './pdfSpliter';
+export { PdfSpliter } from './pdfSpliter';

@@ -52,11 +52,9 @@ export async function POST(request: Request) {
       });
     } else if (action === 'delete') {
       // Delete all occurrences of the tag
-      const result = await db
-        .collection('quiztags')
-        .updateMany({ userId }, {
-          $pull: { tags: { value: oldTagName } },
-        } as any);
+      const result = await db.collection('quiztags').updateMany({ userId }, {
+        $pull: { tags: { value: oldTagName } },
+      } as any);
 
       return NextResponse.json({
         success: true,

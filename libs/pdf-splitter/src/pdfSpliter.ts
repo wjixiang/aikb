@@ -1,9 +1,9 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 
-const logger = createLoggerWithPrefix('PdfSpliterWorker');
+const logger = createLoggerWithPrefix('PdfSpliter');
 
-export class PdfSpliterWorker {
+export class PdfSpliter {
   async getPdfSize(
     existingPdfBytes: Buffer,
   ): Promise<{ height: number; width: number }> {

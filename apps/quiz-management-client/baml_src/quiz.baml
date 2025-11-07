@@ -318,6 +318,7 @@ function MatchQuestionsAnswersWithExplanation(input: SplitText) -> QuestionAnswe
       - 为双侧闭合区间，即包含两端的索引，包含区间两端所指向行数的文本
     - answer_range: 解释的 [起始索引, 结束索引]
       - 应当尽可能包括所有内容，包括试题的解析、知识点、讨论等
+      - 解析内容包括除题目以外所有的知识相关描述
     - answer: 该题的正确选项字母 (A/B/C/D/E)
       - 单选题："A", "B", 等 (一个字母)
       - 多选题："AB", "ACD", 等 (字母的任意组合)

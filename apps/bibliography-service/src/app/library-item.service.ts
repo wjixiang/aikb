@@ -11,7 +11,7 @@ import {
   PdfDownloadUrlDto,
 } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
-import { Pdf2MArkdownDto } from './pdf_process.dto';
+import { Pdf2MArkdownDto } from 'library-shared';
 
 @Injectable()
 export class LibraryItemService {
@@ -228,7 +228,7 @@ export class LibraryItemService {
       // Send message to the configured queue
       // The pattern name should match to routing key expected by consumers
       console.log('Emitting message to RabbitMQ...');
-      this.rabbitClient.emit('request-pdf-2-markdown-conversion', req);
+      this.rabbitClient.emit('pdf-2-markdown-conversion', req);
       console.log('Message emitted successfully');
     } catch (error) {
       console.error('Error sending message to RabbitMQ:', error);

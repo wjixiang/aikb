@@ -52,7 +52,9 @@
       "options": {
         "buildTarget": "bibliography-service:build",
         "runBuildTargetDependencies": false,
-        "watch": true
+        "watch": true,
+        "inspect": true,
+        "port": 9229
       }
     },
     "test": {

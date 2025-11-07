@@ -1,12 +1,12 @@
-import { PdfSpliterWorker } from '../pdfSpliter';
+import { PdfSpliter } from '../pdfSpliter';
 import { PDFDocument } from 'pdf-lib';
 
-describe('PdfSpliterWorker', () => {
-  let pdfSpliter: PdfSpliterWorker;
+describe('PdfSpliter', () => {
+  let pdfSpliter: PdfSpliter;
   let testPdfBytes: Uint8Array;
 
   beforeAll(async () => {
-    pdfSpliter = new PdfSpliterWorker();
+    pdfSpliter = new PdfSpliter();
 
     // Create a simple test PDF with 5 pages
     const pdfDoc = await PDFDocument.create();

@@ -9,11 +9,12 @@ import {
   Citation,
 } from '../library/index.js';
 import { connectToDatabase } from './mongodb.js';
-import {
-  uploadToS3,
-  uploadPdfFromPath,
-  getSignedUrlForDownload,
-} from '@aikb/s3-service';
+// Don't import s3-service at module level to avoid eager initialization
+// import {
+//   uploadToS3,
+//   uploadPdfFromPath,
+//   getSignedUrlForDownload,
+// } from '@aikb/s3-service';
 import { IdUtils } from 'utils';
 import path from 'path';
 import fs from 'fs';
@@ -67,6 +68,9 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+
+    // Lazy import s3-service to avoid eager initialization
+    const { uploadToS3 } = await import('@aikb/s3-service');
     const url = await uploadToS3(pdfData, s3Key, 'application/pdf');
 
     const pdfInfo: AbstractPdf = {
@@ -86,6 +90,9 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
   async uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf> {
     const fileName = path.basename(pdfPath);
     const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+
+    // Lazy import s3-service to avoid eager initialization
+    const { uploadPdfFromPath } = await import('@aikb/s3-service');
     const url = await uploadPdfFromPath(pdfPath, s3Key);
 
     const stats = fs.statSync(pdfPath);
@@ -114,6 +121,8 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
       throw new Error(`PDF with S3 key ${s3Key} not found`);
     }
 
+    // Lazy import s3-service to avoid eager initialization
+    const { getSignedUrlForDownload } = await import('@aikb/s3-service');
     const url = await getSignedUrlForDownload(
       process.env['PDF_OSS_BUCKET_NAME'] as string,
       s3Key,

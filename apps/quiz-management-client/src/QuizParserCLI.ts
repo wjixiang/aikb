@@ -15,6 +15,7 @@ interface QuizConfig {
   tags: string[];
   extractedYear: string;
   withExp: boolean;
+  class?: string;
 }
 
 interface ExamPaperConfig {
@@ -107,6 +108,10 @@ const argv = yargs(hideBin(process.argv))
     description: 'Include explanations in the quiz',
     default: false,
   })
+  .option('class', {
+    type: 'string',
+    description: 'Class/category for the quiz',
+  })
   .help('help')
   .alias('help', 'h')
   .example([
@@ -130,6 +135,7 @@ async function runTest() {
       : config.quiz.tags,
     extractedYear: argv.year || config.quiz.extractedYear,
     withExp: argv.withExp || config.quiz.withExp,
+    class: argv.class || config.quiz.class || undefined,
   };
 
   const examPaperConfig: ExamPaperConfig = {

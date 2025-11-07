@@ -50,7 +50,9 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "pdf2md-service:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "inspect": true,
+        "port": 9230
       },
       "configurations": {
         "development": {
@@ -59,6 +61,12 @@
         "production": {
           "buildTarget": "pdf2md-service:build:production"
         }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "vitestConfig": "vitest.config.mjs"
       }
     }
   }

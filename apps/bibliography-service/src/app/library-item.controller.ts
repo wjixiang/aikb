@@ -23,12 +23,16 @@ import { LibraryItem } from '@aikb/bibliography';
 export class LibraryItemController {
   constructor(private readonly libraryItemService: LibraryItemService) {}
 
-   @Get('test-rabbit')
-  async testRabbit(){
+  /**
+   * TEST API
+   */
+  @Get('test-rabbit')
+  async testRabbit() {
     console.log('[DEBUG] testRabbit endpoint called');
     this.libraryItemService.producePdf2MarkdownRequest({
-      itemId: "test"
-    })
+      itemId: 'test',
+      pageNum: null
+    });
   }
 
   /**

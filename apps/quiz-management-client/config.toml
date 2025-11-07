@@ -5,6 +5,7 @@ source = "小凯精选模拟题"
 tags = ["2026"]
 extractedYear = "2026"
 withExp =  true
+class = "外科学"
 
 [exam_paper]
 name = "2026yanda万人模考四"

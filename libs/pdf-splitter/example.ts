@@ -1,8 +1,8 @@
-import { PdfSpliterWorker } from './src/index';
+import { PdfSpliter } from './src/index';
 import { PDFDocument } from 'pdf-lib';
 
 async function example() {
-  const splitter = new PdfSpliterWorker();
+  const splitter = new PdfSpliter();
 
   // Create a simple test PDF with 5 pages
   const pdfDoc = await PDFDocument.create();

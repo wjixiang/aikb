@@ -14,7 +14,8 @@
           "buildDepsName": "build-deps",
           "watchDepsName": "watch-deps"
         }
-      }
+      },
+      "exclude": ["libs/pdf2md-lib/*"]
     },
     {
       "plugin": "@nx/vite/plugin",
@@ -62,6 +63,15 @@
       "plugin": "@nx/playwright/plugin",
       "options": {
         "targetName": "e2e"
+      }
+    },
+    {
+      "plugin": "@nx/js/typescript",
+      "include": ["libs/pdf2md-lib/*"],
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        }
       }
     }
   ],

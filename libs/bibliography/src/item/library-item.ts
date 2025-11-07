@@ -1,5 +1,4 @@
 import { createLoggerWithPrefix } from '@aikb/log-management';
-import { deleteFromS3 } from '@aikb/s3-service';
 import { v4 } from 'uuid';
 import { ILibraryStorage } from '../library/storage.js';
 import { ItemMetadata } from '../library/types.js';
@@ -200,6 +199,8 @@ export class LibraryItem {
       if (this.metadata.s3Key) {
         logger.info(`Deleting PDF file from S3: ${this.metadata.s3Key}`);
         try {
+          // Lazy import s3-service to avoid eager initialization
+          const { deleteFromS3 } = await import('@aikb/s3-service');
           await deleteFromS3(this.metadata.s3Key);
           logger.info(`Deleted PDF file from S3: ${this.metadata.s3Key}`);
         } catch (error) {

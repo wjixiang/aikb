@@ -18,7 +18,7 @@ import { UpdateMetadataDto, UpdateProcessingStatusDto } from 'library-shared';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { PdfSpliterWorker } from '@aikb/pdf-splitter';
+import { PdfSpliter } from '@aikb/pdf-splitter';
 import { uploadToS3, getPdfDownloadUrl, deleteFromS3 } from '@aikb/s3-service';
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
@@ -29,7 +29,7 @@ const logger = createLoggerWithPrefix('PdfAnalyzerService');
  */
 export class PdfAnalyzerService {
   private rabbitMQService = getRabbitMQService();
-  private pdfSpliter = new PdfSpliterWorker();
+  private pdfSpliter = new PdfSpliter();
   private isRunning = false;
   private partCompletedConsumerTag: string | null = null;
   private partFailedConsumerTag: string | null = null;

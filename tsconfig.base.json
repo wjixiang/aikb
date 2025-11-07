@@ -43,7 +43,8 @@
       "components": ["libs/components/src/index.ts"],
       "components/server": ["libs/components/src/server.ts"],
       "quiz-shared": ["libs/quiz-shared/src/index.ts"],
-      "quiz-management-client": ["apps/quiz-management-client/src/index.ts"]
+      "quiz-management-client": ["apps/quiz-management-client/src/index.ts"],
+      "pdf2md-lib": ["libs/pdf2md-lib/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

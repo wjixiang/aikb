@@ -19,9 +19,9 @@ pnpm add @aikb/pdf-splitter
 ## Usage
 
 ```typescript
-import { PdfSpliterWorker } from '@aikb/pdf-splitter';
+import { PdfSpliter } from '@aikb/pdf-splitter';
 
-const splitter = new PdfSpliterWorker();
+const splitter = new PdfSpliter();
 
 // Get PDF dimensions
 const dimensions = await splitter.getPdfSize(pdfBuffer);
@@ -36,7 +36,7 @@ const chunks = await splitter.splitPdfIntoChunks(pdfBuffer, 10);
 
 ## API
 
-### PdfSpliterWorker
+### PdfSpliter
 
 #### Methods
 

@@ -1,4 +1,3 @@
-import { deleteFromS3 } from '@aikb/s3-service';
 import * as path from 'path';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 
@@ -263,6 +262,8 @@ export class Library implements ILibrary {
     // Delete PDF file from S3 if it exists
     if (item.metadata.s3Key) {
       try {
+        // Lazy import s3-service to avoid eager initialization
+        const { deleteFromS3 } = await import('@aikb/s3-service');
         await deleteFromS3(item.metadata.s3Key);
       } catch (error) {
         logger.error(`Failed to delete PDF from S3 for item ${id}:`, error);
