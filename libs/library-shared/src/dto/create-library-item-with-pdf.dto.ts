@@ -48,9 +48,6 @@ export class CreateLibraryItemWithPdfDto {
   @IsArray()
   collections!: string[];
 
-  @IsEnum(['pdf', 'article', 'book', 'other'])
-  fileType!: 'pdf' | 'article' | 'book' | 'other';
-
   @IsOptional()
   @IsString()
   language?: string;

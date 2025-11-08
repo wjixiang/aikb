@@ -47,8 +47,8 @@ export class LibraryItemService {
       tags: createLibraryItemDto.tags,
       notes: createLibraryItemDto.notes,
       collections: createLibraryItemDto.collections,
-      fileType: createLibraryItemDto.fileType,
       language: createLibraryItemDto.language,
+      archives: createLibraryItemDto.archives || [],
     };
 
     // Create a placeholder PDF buffer for now
@@ -79,8 +79,8 @@ export class LibraryItemService {
       tags: createLibraryItemWithPdfDto.tags,
       notes: createLibraryItemWithPdfDto.notes,
       collections: createLibraryItemWithPdfDto.collections,
-      fileType: createLibraryItemWithPdfDto.fileType,
       language: createLibraryItemWithPdfDto.language,
+      archives: [], // Will be populated by the library.storePdf method
     };
 
     // Use the provided PDF buffer
@@ -235,13 +235,13 @@ export class LibraryItemService {
       throw new Error(`Library item with ID ${id} not found`);
     }
 
-    if (!item.metadata.s3Key) {
+    if (!item.metadata.archives || item.metadata.archives.length === 0) {
       throw new Error(`No PDF file associated with library item ${id}`);
     }
 
-    // Get the download URL from storage
+    // Get the download URL from storage (use the first archive)
     const downloadUrl = await this.library['storage'].getPdfDownloadUrl(
-      item.metadata.s3Key,
+      item.metadata.archives[0].s3Key,
     );
 
     // Set expiration to 1 hour from now

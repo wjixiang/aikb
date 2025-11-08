@@ -162,7 +162,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
     const { db } = await connectToDatabase();
     const metadata = await db
       .collection<ItemMetadata>(this.metadataCollection)
-      .findOne({ contentHash });
+      .findOne({ 'archives.fileHash': contentHash });
     return (metadata as ItemMetadata) || null;
   }
 
@@ -181,7 +181,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
         { title: { $regex: filter.query, $options: 'i' } },
         { abstract: { $regex: filter.query, $options: 'i' } },
         { notes: { $regex: filter.query, $options: 'i' } },
-        { contentHash: { $regex: filter.query, $options: 'i' } },
+        { 'archives.fileHash': { $regex: filter.query, $options: 'i' } },
       ];
     }
 
@@ -205,7 +205,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
     }
 
     if (filter.fileType && filter.fileType.length > 0) {
-      query.fileType = { $in: filter.fileType };
+      query['archives.fileType'] = { $in: filter.fileType };
     }
     const { db } = await connectToDatabase();
     const results = await db

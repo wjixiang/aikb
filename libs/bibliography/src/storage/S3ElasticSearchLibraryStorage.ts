@@ -291,7 +291,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
         body: {
           query: {
             term: {
-              contentHash: contentHash,
+              'archives.fileHash': contentHash,
             },
           },
         },
@@ -389,7 +389,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       query.bool = query.bool || { must: [] };
       query.bool.must.push({
         terms: {
-          fileType: filter.fileType,
+          'archives.fileType': filter.fileType,
         },
       });
     }

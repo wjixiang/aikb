@@ -56,22 +56,22 @@ export class UpdateMetadataDto {
   collections?: string[];
 
   @IsOptional()
-  @IsNumber()
-  fileSize?: number;
-
-  @IsOptional()
-  @IsNumber()
-  pageCount?: number;
-
-  @IsOptional()
   @IsString()
   language?: string;
 
   @IsOptional()
   @IsString()
-  contentHash?: string;
+  markdownContent?: string;
 
   @IsOptional()
-  @IsString()
-  markdownContent?: string;
+  @IsArray()
+  archives?: Array<{
+    fileType: 'pdf';
+    fileSize: number;
+    fileHash: string;
+    addDate: Date;
+    s3Key: string;
+    pageCount?: number;
+    wordCount?: number;
+  }>;
 }

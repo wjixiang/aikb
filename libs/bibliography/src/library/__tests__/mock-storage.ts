@@ -101,7 +101,8 @@ export class MockLibraryStorage implements ILibraryStorage {
   async getMetadataByHash(contentHash: string): Promise<ItemMetadata | null> {
     const metadataList = Array.from(this.metadataStore.values());
     for (const metadata of metadataList) {
-      if (metadata.contentHash === contentHash) {
+      // Check if any archive has this hash
+      if (metadata.archives.some(archive => archive.fileHash === contentHash)) {
         return metadata;
       }
     }
@@ -129,7 +130,7 @@ export class MockLibraryStorage implements ILibraryStorage {
         const notesMatch =
           metadata.notes?.toLowerCase().includes(query) || false;
         const hashMatch =
-          metadata.contentHash?.toLowerCase().includes(query) || false;
+          metadata.archives.some(archive => archive.fileHash.toLowerCase().includes(query)) || false;
 
         if (!titleMatch && !abstractMatch && !notesMatch && !hashMatch) {
           matches = false;
@@ -158,7 +159,10 @@ export class MockLibraryStorage implements ILibraryStorage {
       }
 
       if (filter.fileType && filter.fileType.length > 0) {
-        if (!filter.fileType.includes(metadata.fileType)) {
+        const hasFileType = metadata.archives.some(archive =>
+          filter.fileType.includes(archive.fileType)
+        );
+        if (!hasFileType) {
           matches = false;
         }
       }

@@ -20,7 +20,17 @@ export enum PdfProcessingStatus {
   CONVERTING = 'converting',
 }
 
-export type fileType = 'pdf' | 'article' | 'book' | 'other';
+export type FileType = 'pdf';
+
+export interface ItemArchive {
+  fileType: FileType;
+  fileSize: number;
+  fileHash: string;
+  addDate: Date;
+  s3Key: string;
+  pageCount?: number;
+  wordCount?: number;
+}
 
 export interface ItemMetadata {
   id?: string;
@@ -37,15 +47,10 @@ export interface ItemMetadata {
   collections: string[]; // Collection IDs this item belongs to
   dateAdded: Date;
   dateModified: Date
-  // archives: 
-  fileType: 'pdf' | 'article' | 'book' | 'other';
-  s3Key?: string;
-  fileSize?: number;
-  pageCount?: number;
   language?: string;
-  contentHash?: string; // Hash of the content for deduplication
   markdownContent?: string; // Converted markdown content from PDF
   markdownUpdatedDate?: Date; // When the markdown was last updated
+  archives: ItemArchive[]
 }
 
 export interface Collection {

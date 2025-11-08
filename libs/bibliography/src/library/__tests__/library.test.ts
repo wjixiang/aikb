@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import Library from '../library.js';
+import { Library } from '../library.js';
 import { MockLibraryStorage } from './mock-storage.js';
 import {
   ItemMetadata,
@@ -73,11 +73,9 @@ describe('Library', () => {
 
       expect(result).toBeInstanceOf(LibraryItem);
       expect(result.metadata.title).toBe('Test Document');
-      expect(result.metadata.fileType).toBe('pdf');
-      expect(result.metadata.contentHash).toBeDefined();
-      expect(result.metadata.pdfProcessingStatus).toBe(
-        PdfProcessingStatus.PENDING,
-      );
+      expect(result.metadata.archives).toHaveLength(1);
+      expect(result.metadata.archives[0].fileType).toBe('pdf');
+      expect(result.metadata.archives[0].fileHash).toBeDefined();
     });
 
     it('should return existing item if content hash matches', async () => {
@@ -120,22 +118,13 @@ describe('Library', () => {
       expect(result.metadata.tags).toEqual([]);
       expect(result.metadata.collections).toEqual([]);
       expect(result.metadata.authors).toEqual(metadata.authors);
-      expect(result.metadata.fileSize).toBe(pdfBuffer.length);
+      expect(result.metadata.archives[0].fileSize).toBe(pdfBuffer.length);
       expect(result.metadata.dateAdded).toBeInstanceOf(Date);
       expect(result.metadata.dateModified).toBeInstanceOf(Date);
     });
 
-    it('should handle PDF processing status initialization', async () => {
-      const result = await library.storePdf(pdfBuffer, fileName, metadata);
-
-      expect(result.metadata.pdfProcessingStatus).toBe(
-        PdfProcessingStatus.PENDING,
-      );
-      expect(result.metadata.pdfProcessingStartedAt).toBeInstanceOf(Date);
-      expect(result.metadata.pdfProcessingRetryCount).toBe(0);
-      expect(result.metadata.pdfProcessingProgress).toBe(0);
-      expect(result.metadata.pdfProcessingMessage).toBe('Ready for processing');
-    });
+    // PDF processing status fields have been removed from ItemMetadata
+    // This test is no longer relevant
   });
 
   describe('getItem', () => {
@@ -386,7 +375,7 @@ describe('Library', () => {
 
       await library.deleteItem(item.getItemId());
 
-      expect(mockDeleteFromS3).toHaveBeenCalledWith(item.metadata.s3Key);
+      expect(mockDeleteFromS3).toHaveBeenCalledWith(item.metadata.archives[0].s3Key);
     });
 
     it('should handle S3 deletion failure gracefully', async () => {
@@ -534,16 +523,16 @@ describe('Library', () => {
       const emptyBuffer = Buffer.alloc(0);
       const result = await library.storePdf(emptyBuffer, 'empty.pdf', {});
 
-      expect(result.metadata.fileSize).toBe(0);
-      expect(result.metadata.contentHash).toBeDefined();
+      expect(result.metadata.archives[0].fileSize).toBe(0);
+      expect(result.metadata.archives[0].fileHash).toBeDefined();
     });
 
     it('should handle large PDF buffer', async () => {
       const largeBuffer = Buffer.alloc(10 * 1024 * 1024); // 10MB
       const result = await library.storePdf(largeBuffer, 'large.pdf', {});
 
-      expect(result.metadata.fileSize).toBe(10 * 1024 * 1024);
-      expect(result.metadata.contentHash).toBeDefined();
+      expect(result.metadata.archives[0].fileSize).toBe(10 * 1024 * 1024);
+      expect(result.metadata.archives[0].fileHash).toBeDefined();
     });
   });
 });

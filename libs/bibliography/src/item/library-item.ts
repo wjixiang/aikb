@@ -35,27 +35,27 @@ export class LibraryItem {
    * Check if this item has an associated PDF file
    */
   hasPdf(): boolean {
-    return !!this.metadata.s3Key;
+    return this.metadata.archives.length > 0;
   }
 
   /**
    * Get the PDF file if available
    */
   async getPdf(): Promise<Buffer | null> {
-    if (!this.metadata.s3Key) {
+    if (this.metadata.archives.length === 0) {
       throw new Error('No PDF file associated with this item');
     }
-    return await this.storage.getPdf(this.metadata.s3Key);
+    return await this.storage.getPdf(this.metadata.archives[0].s3Key);
   }
 
   /**
    * Get the PDF download URL if available
    */
   async getPdfDownloadUrl(): Promise<string> {
-    if (!this.metadata.s3Key) {
+    if (this.metadata.archives.length === 0) {
       throw new Error('No PDF file associated with this item');
     }
-    return await this.storage.getPdfDownloadUrl(this.metadata.s3Key);
+    return await this.storage.getPdfDownloadUrl(this.metadata.archives[0].s3Key);
   }
 
   /**
@@ -195,17 +195,16 @@ export class LibraryItem {
       await this.storage.deleteMarkdown(this.metadata.id);
       logger.info(`Deleted markdown content for item: ${this.metadata.id}`);
 
-      // Step 4: Delete PDF file from S3 if it exists
-      if (this.metadata.s3Key) {
-        logger.info(`Deleting PDF file from S3: ${this.metadata.s3Key}`);
+      // Step 4: Delete PDF files from S3 if they exist
+      for (const archive of this.metadata.archives) {
         try {
-          // Lazy import s3-service to avoid eager initialization
+          logger.info(`Deleting PDF file from S3: ${archive.s3Key}`);
           const { deleteFromS3 } = await import('@aikb/s3-service');
-          await deleteFromS3(this.metadata.s3Key);
-          logger.info(`Deleted PDF file from S3: ${this.metadata.s3Key}`);
+          await deleteFromS3(archive.s3Key);
+          logger.info(`Deleted PDF file from S3: ${archive.s3Key}`);
         } catch (error) {
           logger.error(
-            `Failed to delete PDF file from S3: ${this.metadata.s3Key}`,
+            `Failed to delete PDF file from S3: ${archive.s3Key}`,
             error,
           );
           // Continue with other deletions even if S3 deletion fails

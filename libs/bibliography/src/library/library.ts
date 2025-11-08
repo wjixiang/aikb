@@ -137,15 +137,20 @@ export class Library implements ILibrary {
     const fullMetadata: ItemMetadata = {
       ...metadata,
       title: metadata.title || path.basename(fileName, '.pdf'),
-      s3Key: pdfInfo.s3Key,
-      fileSize: pdfBuffer.length,
-      contentHash,
       dateAdded: new Date(),
       dateModified: new Date(),
       tags: metadata.tags || [],
       collections: metadata.collections || [],
       authors: metadata.authors || [],
-      fileType: 'pdf'
+      archives: [
+        {
+          fileType: 'pdf',
+          fileSize: pdfBuffer.length,
+          fileHash: contentHash,
+          addDate: new Date(),
+          s3Key: pdfInfo.s3Key,
+        }
+      ]
     };
 
     // Save metadata first to get the ID
@@ -253,14 +258,14 @@ export class Library implements ILibrary {
       return false;
     }
 
-    // Delete PDF file from S3 if it exists
-    if (item.metadata.s3Key) {
+    // Delete PDF files from S3 if they exist
+    for (const archive of item.metadata.archives) {
       try {
         // Lazy import s3-service to avoid eager initialization
         const { deleteFromS3 } = await import('@aikb/s3-service');
-        await deleteFromS3(item.metadata.s3Key);
+        await deleteFromS3(archive.s3Key);
       } catch (error) {
-        logger.error(`Failed to delete PDF from S3 for item ${id}:`, error);
+        logger.error(`Failed to delete PDF from S3 for item ${id} (s3Key: ${archive.s3Key}):`, error);
         // Continue with metadata deletion even if S3 deletion fails
       }
     }

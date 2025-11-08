@@ -181,7 +181,6 @@ describe('LibraryItemService - Simple E2E Test', () => {
       authors: [],
       tags: [],
       collections: [],
-      fileType: 'pdf',
       pdfBuffer: readFileSync('/workspace/test/ACEI.pdf')
     }
     const respnose = await post(`${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`,testData)
