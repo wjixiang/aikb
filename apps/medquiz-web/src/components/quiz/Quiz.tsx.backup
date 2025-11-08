@@ -1,0 +1,1211 @@
+"use client"
+
+import { useImperativeHandle, useState, forwardRef, useEffect } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from '../ui/badge';
+import styled from 'styled-components';
+import * as React from 'react'
+import { Bot, CirclePlus, Check, X } from 'lucide-react';
+import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowRight } from 'react-icons/fa';
+import { Grid } from 'lucide-react';
+import { LinkBox } from './LinkBox';
+import { quiz as QuizType, answerType, QuizWithUserAnswer } from '../../types/quizData.types';
+import { PracticeRecordData, PracticeRecord } from '../../lib/quizAnalysis/QuizStorage';
+import { NextRouter, useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardTitle } from '../ui/card';
+import { ScrollArea } from '../ui/scroll-area';
+import TagInput from './TagInput'; // Import the new TagInput component
+import { quizSelector } from '../../types/quizSelector.types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import MarkdownRenderer from '../wiki/DocumentDisplay';
+import { Toggle } from '../ui/toggle'; // Import the Toggle component
+import { Slider } from '../ui/slider'; // Import the Slider component
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
+//////////////////////////  
+// Styled Components  
+//////////////////////////  
+
+// const Container = styled.div`  
+//   /* border: 1px solid #ddd;   */
+//   padding: 16px;  
+//   border-radius: 8px;  
+//   box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
+//   margin: 16px 0;  
+//   width: 100%;
+//   /* max-width: 800px; */
+// `;  
+
+const QuestionTitle = styled.h2`  
+  font-size: 1.2rem;   
+  margin-bottom: 12px;  
+`;  
+
+const MainQuestion = styled.h2`  
+  font-size: 1.2rem;  
+  margin-bottom: 12px;  
+`;  
+
+const SubQuestion = styled.h3`  
+  font-size: 1rem;  
+  margin: 8px 0;  
+`;  
+
+const OptionsList = styled.ul`  
+  list-style: none;  
+  padding: 0;  
+`;  
+
+
+interface OptionItemProps {
+  selected: boolean;
+  $submitted: boolean;
+  $correct: boolean|undefined;
+}
+
+
+const OptionItem = styled.li<OptionItemProps>`  
+  padding: 12px 16px;  
+  margin: 4px 0;  
+  border: 2px solid ${props => {
+    if (props.$submitted) {
+      return props.$correct ? '#4CAF50' : '#F44336';
+    }
+    return props.selected ? '#2196F3' : '#e0e0e0';
+  }};
+  background-color: ${props => {
+    if (props.$submitted) {
+      return props.$correct ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)';
+    }
+    return props.selected ? 'rgba(33, 150, 243, 0.1)' : 'transparent';
+  }};
+  border-radius: 8px;  
+  cursor: pointer;  
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    border-style: ${props => props.$submitted ? 'solid' : 'dashed'};
+    box-shadow: ${props => !props.$submitted ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'};
+  }
+
+  ${props => props.$submitted && props.$correct && `
+    animation: pulse 0.5s ease;
+  `}
+
+  ${props => props.$submitted && !props.$correct && props.selected && `
+    animation: shake 0.5s ease;
+  `}
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+`;  
+
+const SubmitButton = styled.button`  
+  padding: 8px 16px;   
+  border: none;  
+  border-radius: 4px solid #ccc;  
+  cursor: pointer;  
+`;  
+
+interface ResultProps {
+  $isCorrect: boolean;
+}
+
+const Result = styled.div<ResultProps>`
+  margin-top: 16px;  
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-weight: bold;  
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: ${props => (props.$isCorrect ? '#2E7D32' : '#C62828')};
+  background-color: ${props => (props.$isCorrect ? 'rgba(46, 125, 50, 0.15)' : 'rgba(198, 40, 40, 0.15)')};
+  border-left: 4px solid ${props => (props.$isCorrect ? '#2E7D32' : '#C62828')};
+  animation: fadeIn 0.3s ease;
+
+  &::before {
+    content: ${props => (props.$isCorrect ? '"✓"' : '"✗"')};
+    font-size: 1.2em;
+    font-weight: 900;
+    color: ${props => (props.$isCorrect ? '#2E7D32' : '#C62828')};
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;  
+
+const AnswerSection = styled.div`  
+  margin-top: 20px;  
+  padding: 15px;  
+  background-color: #f5f5f5;  
+  border-radius: 8px;  
+`;  
+
+const AnswerTitle = styled.h3`  
+  color: #333;  
+  margin-bottom: 10px;  
+`;  
+
+const AnalysisText = styled.p`  
+  color: #666;  
+  margin: 10px 0;  
+`;  
+
+const LinksList = styled.ul`  
+  list-style: none;  
+  padding: 0;  
+`;  
+
+const LinkItem = styled.li`  
+  margin: 5px 0;  
+  a {  
+    color: #1890ff;  
+    text-decoration: none;  
+    &:hover {  
+      text-decoration: underline;  
+    }  
+  }  
+`;  
+
+const TopBar = styled.div`  
+    display: flex;  
+    align-items: center;  
+    justify-content: space-between; // 在元素之间添加相等的间距  
+    padding: 3px 3px;  
+    /* position: sticky;   */
+    top: 0;  
+    /* z-index: 100;   */
+    width: 100%; // 确保容器占满父元素宽度  
+`  
+
+const InfoBar = styled.div`  
+    display: flex;  
+    align-items: center;  
+    /* justify-content: space-between; // 在元素之间添加相等的间距   */
+    padding: 3px 3px;  
+    /* color: #6b6b63; */
+    /* position: sticky;   */
+    top: 0;  
+    
+    /* z-index: 100;   */
+    width: 100%; // 确保容器占满父元素宽度  
+`  
+
+// const QuizInfoDisplay = styled.div`
+  
+// `
+
+const ToolButton = styled.div`  
+    cursor: pointer;  
+    display: flex;  
+    align-items: center;  
+    justify-content: center;  
+    width: 40px;  
+    height: 40px;  
+    border-radius: 50%;  
+    transition: background-color 0.3s ease;  
+
+    &:hover {  
+        background-color: rgba(0,0,0,0.1);  
+    }  
+`  
+
+const QuizTitle = styled.div`  
+    margin-left: 15px;  
+    font-size: 18px;  
+    font-weight: 600;  
+`  
+
+
+//////////////////////////  
+// QuizComponent  
+//////////////////////////  
+
+// 定义组件属性  
+interface QuizComponentProps {
+  quiz: QuizWithUserAnswer;
+  handleBackToGrid:()=>void;
+  // appendLink:()=>Promise<null|string>
+  currentQuizIndex: number;
+  thisQuizIndex: number;
+  back:()=>void;
+  forward: ()=>void;
+  onAnswerChange: (quizId: string, answer: answerType) => Promise<void>;
+  onSimilarQuizzesFound: (similarQuizzes: QuizWithUserAnswer[]) => void;
+  // apiReqest: {
+  //   POST: (requestURL:string, reqestData: object)=>Promise<string>;
+  //   GET: (url:string)=>Promise<string>
+  // };
+  // retriveFileName: (fileId: string)=>Promise<string|null>;
+}
+
+export interface QuizImperativeHandle {  
+    getCurrentState: () => {
+      submitted: boolean,  
+      isCorrect: boolean,  
+      selectedOptions: string
+    };
+}  
+
+const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(({ 
+  quiz, 
+  handleBackToGrid, 
+  currentQuizIndex, 
+  thisQuizIndex,
+  back, 
+  forward, 
+  onAnswerChange, 
+  onSimilarQuizzesFound }, ref) => {
+QuizComponent.displayName = 'QuizComponent';
+  // submitted：是否提交过答案  
+  // selected：记录选项的选中情况  
+  // 对于单选类型（A1、A2）：selected 为 string（oid）；  
+  // 对于多选题型（X）：selected 为 oid[] ；  
+  // 对于带子题的题型（A3、B）：selected 为一个对象，key 为子题ID  
+  const [submitted, setSubmitted] = useState(false);  
+  const [selected, setSelected] = useState<any>(  
+    quiz.type === 'X' ? [] : (quiz.type === 'A3' || quiz.type === 'B' ? {} : '')  
+  );  
+
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [relatedCards, setRelatedCards] = useState<any[] | null>(null);
+  const [loadingRelatedCards, setLoadingRelatedCards] = useState(false);
+  const [errorRelatedCards, setErrorRelatedCards] = useState<string | null>(null);
+  const [practiceHistory, setPracticeHistory] = useState<PracticeRecordData[] | null>(null);
+  const [loadingPracticeHistory, setLoadingPracticeHistory] = useState(false);
+  const [errorPracticeHistory, setErrorPracticeHistory] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [allAvailableTags, setAllAvailableTags] = useState<string[]>([]);
+  const [quizTags, setQuizTags] = useState<string[]>([]);
+  const [isFindingSimilar, setIsFindingSimilar] = useState(false);
+  const [useClassFilter, setUseClassFilter] = useState(false); // New state for class filter toggle
+  const [useSourceFilter, setUseSourceFilter] = useState(false); // New state for source filter toggle
+  const [topK, setTopK] = useState<number[]>([3]); // New state for top_k similar quizzes, now an array
+
+  const handleFindSimilar = async () => {
+    setIsFindingSimilar(true);
+    try {
+      const requestBody: { quizId: string; top_k: number; class?: string; source?: string } = {
+        quizId: quiz._id,
+        top_k: topK[0], // Use the first element of the array for top_k
+      };
+
+      if (useClassFilter) {
+        requestBody.class = quiz.class;
+      }
+      if (useSourceFilter) {
+        requestBody.source = quiz.source;
+      }
+
+      console.log('Frontend: Sending request to /api/quiz/similar-quizzes with body:', requestBody);
+      const response = await fetch(`/api/quiz/similar-quizzes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        console.error('Frontend: Received non-OK response from similar-quizzes API:', response);
+        let errorMessage = 'Failed to find similar quizzes';
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+            console.error('Frontend: Parsed error JSON:', errorData);
+          } catch (jsonError) {
+            console.error('Frontend: Error parsing error JSON:', jsonError);
+            errorMessage = `Failed to parse error response: ${jsonError}`;
+          }
+        } else {
+          try {
+            const errorText = await response.text();
+            errorMessage = `Server error: ${response.status} ${response.statusText} - ${errorText || 'No response body'}`;
+            console.error('Frontend: Received error text:', errorText);
+          } catch (textError) {
+            console.error('Frontend: Error reading error text:', textError);
+            errorMessage = `Server error: ${response.status} ${response.statusText} - Could not read response body`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const similarQuizzes = await response.json();
+      onSimilarQuizzesFound(similarQuizzes); // Pass similar quizzes to parent component
+      console.log('Frontend: Found similar quizzes:', similarQuizzes);
+      toast.success(`找到 ${similarQuizzes.length} 个相似试题`);
+    } catch (error: any) {
+      console.error('Frontend: Error finding similar quizzes in catch block:', error);
+      toast.error(`查找相似试题失败: ${error.message}`);
+    } finally {
+      setIsFindingSimilar(false);
+    }
+  };
+  
+  // 获取NextAuth会话
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
+
+  const fetchQuizTags = React.useCallback(async () => {
+    try {
+      const response = await fetch(`/api/quiz/${quiz._id}/tags`);
+      if (!response.ok) throw new Error('Failed to fetch quiz tags');
+      const data = await response.json();
+      // Handle both array response and object response with metadata
+      const tags = Array.isArray(data) ? data :
+                  data.tags ? data.tags.map((t: any) => t.value) :
+                  data.value ? [data.value] : [];
+      setQuizTags(tags);
+    } catch (error) {
+      console.error('Error fetching quiz tags:', error);
+      setQuizTags([]);
+    }
+  }, [quiz._id]);
+
+  // 组件挂载状态
+  React.useEffect(() => {
+    setIsMounted(true);
+    // Fetch all available tags
+    const fetchAllTags = async () => {
+      try {
+        const response = await fetch('/api/quiz/tags');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: string[] = await response.json();
+        setAllAvailableTags(data);
+      } catch (error) {
+        console.error("Failed to fetch all available tags:", error);
+      }
+    };
+    fetchAllTags();
+    fetchQuizTags(); // Call fetchQuizTags here
+    return () => setIsMounted(false);
+  }, [quiz._id, session?.user?.email, fetchQuizTags]); // Add fetchQuizTags to dependency array
+ 
+ 
+    React.useEffect(() => {
+     // console.log('Quiz mounted/updated:', {
+     //   id: quiz._id,
+     //   userAnswer: quiz.userAnswer,
+     //   type: quiz.type
+     // });
+     
+     // 如果有初始答案，使用它
+     if (quiz.userAnswer !== undefined && quiz.userAnswer !== null) {
+       console.log('Setting initial answer:', quiz.userAnswer);
+       setSelected(quiz.userAnswer);
+       setSubmitted(true);
+       // 检查答案是否正确
+       let correct = false;
+       switch (quiz.type) {
+         case 'A1':
+         case 'A2':
+           correct = quiz.userAnswer === quiz.answer;
+           break;
+         case 'X':
+           if (Array.isArray(quiz.userAnswer)) {
+             correct = JSON.stringify(quiz.userAnswer.sort()) === JSON.stringify(quiz.answer.sort());
+           }
+           break;
+         case 'A3':
+           correct = quiz.subQuizs.every(
+             (sub: any) => (quiz.userAnswer as Record<number, string>)[sub.subQuizId] === sub.answer
+           );
+           break;
+         case 'B':
+           correct = quiz.questions.every(
+             (q: any) => (quiz.userAnswer as Record<number, string>)[q.questionId] === q.answer
+           );
+           break;
+       }
+       setIsCorrect(correct);
+       if (isAuthenticated && session?.user?.email) {
+         fetchPracticeHistory(quiz._id, session.user.email);
+       }
+     } else {
+       setSubmitted(false);
+       setSelected(quiz.type === 'X' ? [] : (quiz.type === 'A3' || quiz.type === 'B' ? {} : ''));
+       setPracticeHistory(null); // Clear practice history when quiz is not submitted
+     }
+   }, [quiz, isAuthenticated, session?.user?.email]);
+ 
+   // 键盘事件处理
+   useEffect(() => {
+     const handleKeyDown = (event: KeyboardEvent) => {
+       // 处理选项选择快捷键 1-5 (仅适用于A1/A2/X题型)
+       if (event.key >= '1' && event.key <= '5') {
+         const optionIndex = parseInt(event.key) - 1;
+         
+         if (quiz.type === 'A1' || quiz.type === 'A2') {
+           const options = (quiz as any).options;
+           if (options && options[optionIndex]) {
+             handleOptionSelect(options[optionIndex].oid);
+           }
+         } else if (quiz.type === 'X') {
+           const question = (quiz as any).question;
+           if (question?.options && question.options[optionIndex]) {
+             const oid = question.options[optionIndex].oid;
+             // For X-type questions, use handleOptionSelect for consistent behavior
+             handleOptionSelect(oid);
+           }
+         }
+       }
+       // 处理回车键或空格键提交功能
+       else if ((event.key === 'Enter' || event.key === ' ') && currentQuizIndex === thisQuizIndex) {
+         handleSubmit();
+       }
+     };
+ 
+     window.addEventListener('keydown', handleKeyDown);
+ 
+     return () => {
+       window.removeEventListener('keydown', handleKeyDown);
+     };
+   }, [currentQuizIndex, quiz.type,selected]);
+ 
+   //////////////////////////
+   // 选项点击处理函数
+   //////////////////////////
+   const handleOptionSelect = (oid: string, questionKey?: number, isDoubleClick = false) => {
+     if (submitted) return;
+     let newSelected;
+     if (quiz.type === 'A1' || quiz.type === 'A2') {
+       newSelected = oid;
+       setSelected(oid);
+     } else if (quiz.type === 'X') {
+       if (Array.isArray(selected)) {
+         if (selected.includes(oid)) {
+           newSelected = selected.filter((item: string) => item !== oid);
+           setSelected(newSelected);
+         } else {
+           newSelected = [...selected, oid];
+           setSelected(newSelected);
+         }
+       }
+     } else if (quiz.type === 'A3' || quiz.type === 'B') {
+       newSelected = { ...selected, [questionKey as number]: oid };
+       setSelected(newSelected);
+     }
+ 
+     if (isDoubleClick) {
+       const isOptionSelected =
+         (quiz.type === 'A1' || quiz.type === 'A2') ? newSelected === oid :
+         (quiz.type === 'X') ? Array.isArray(newSelected) && newSelected.includes(oid) :
+         (quiz.type === 'A3' || quiz.type === 'B') ? newSelected[questionKey as number] === oid : false;
+ 
+       if (isOptionSelected) {
+         handleSubmit();
+       }
+     }
+   };
+
+  //////////////////////////
+  // 提交答案处理函数
+  //////////////////////////
+  const handleSubmit = () => {
+    // 检查用户是否已登录
+    if (!isAuthenticated) {
+      // 显示确认对话框，使用Sonner的toast.error
+      toast.error("需要登录", {
+        description: "请先登录后再提交答案",
+        action: {
+          label: "去登录",
+          onClick: () => {
+            window.location.href = '/auth/signin';
+          }
+        },
+        duration: 5000 // 显示5秒
+      });
+      return;
+    }
+
+    // 检查是否选择了任何选项
+    let hasSelection = false;
+    switch (quiz.type) {
+      case 'A1':
+      case 'A2':
+        hasSelection = selected !== '';
+        break;
+      case 'X':
+        hasSelection = Array.isArray(selected) && selected.length > 0;
+        break;
+      case 'A3':
+      case 'B':
+        hasSelection = Object.keys(selected).length > 0;
+        break;
+    }
+
+    if (!hasSelection) {
+      toast.error("请先选择答案", {
+        description: "您还没有选择任何选项",
+        duration: 2000
+      });
+      return;
+    }
+    
+    setSubmitted(true);
+
+    // 计算答案是否正确并保存到状态
+    let correct = false;
+    switch (quiz.type) {  
+      case 'A1':  
+      case 'A2':  
+        correct = selected === quiz.answer;  
+        break;  
+      case 'X':  
+        if (Array.isArray(selected)) {  
+          // 排序后比较数组内容  
+          correct =  
+            JSON.stringify(selected.sort()) ===  
+            JSON.stringify(quiz.answer.sort());  
+        }  
+        break;  
+      case 'A3':  
+        // 对于 A3，遍历每个子题  
+        correct = quiz.subQuizs.every(  
+          (sub: any) => selected[sub.subQuizId] === sub.answer  
+        );  
+        break;  
+      case 'B':  
+        correct = quiz.questions.every(  
+          (q: any) => selected[q.questionId] === q.answer  
+        );  
+        break;  
+      default:  
+        break;  
+    }
+    
+    setIsCorrect(correct);
+
+    pushRecord(correct);
+    onAnswerChange(quiz._id, selected);
+    fetchRelatedCards(quiz._id);
+    if (isAuthenticated && session?.user?.email) {
+      fetchPracticeHistory(quiz._id, session.user.email);
+    }
+  };
+
+  const handleDifficultSubmit = () => {
+    if (!isAuthenticated) {
+      toast.error("需要登录", {
+        description: "请先登录后再提交答案",
+        action: {
+          label: "去登录",
+          onClick: () => {
+            window.location.href = '/auth/signin';
+          }
+        },
+        duration: 5000
+      });
+      return;
+    }
+
+    setSubmitted(true);
+    setIsCorrect(false); // Always mark as incorrect for "difficult" submission
+
+    // For "difficult" submission, we don't care about the selected options
+    // We can pass a default empty value or the current 'selected' state, as it won't be used for correctness check
+    pushRecord(false); // Record as incorrect
+    onAnswerChange(quiz._id, selected); // Pass current selected state, or a default empty state if preferred
+    fetchRelatedCards(quiz._id);
+    if (isAuthenticated && session?.user?.email) {
+      fetchPracticeHistory(quiz._id, session.user.email);
+    }
+  };
+
+
+  // 对外暴露的试题状态  
+  const quizState = {  
+    submitted,  
+    isCorrect,  
+    selectedOptions: selected,  
+  };    
+
+    // 使用 useImperativeHandle 将 getCurrentState 方法暴露给父组件调用  
+    useImperativeHandle(ref, () => ({  
+      getCurrentState: () => quizState,  
+    }), [submitted, selected]);  
+          
+
+
+  const pushRecord = async(isCorrect: boolean) => {
+    // 再次检查用户是否已登录
+    if (!isAuthenticated) {
+      return;
+    }
+    
+    try {
+      // 从NextAuth会话中获取用户信息(改为在后端实现)
+      // const userId = session?.user?.id  || session?.user?.email; 使用email作为用户索引
+      // const userId =  session?.user?.email;
+      const practice_record:Omit<PracticeRecord,"_id" | "userid"> = {
+        quizid: quiz._id,
+        selectrecord: selected,
+        correct: isCorrect,
+        subject: quiz.class,
+        timestamp: new Date()
+      }
+      const response = await fetch(
+        `/api/quiz/practice-history`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(practice_record)
+        }
+      );
+      
+      if (!response.ok) {
+        let errorDetails = `Status: ${response.status}, StatusText: ${response.statusText}`;
+        try {
+          const errorBody = await response.json();
+          errorDetails += `, Body: ${JSON.stringify(errorBody, null, 2)}`;
+        } catch (e) {
+          try {
+            const errorBody = await response.text();
+            errorDetails += `, Body: ${errorBody}`;
+          } catch (e) {
+            errorDetails += `, Body: Could not parse response body.`;
+          }
+        }
+        throw new Error(`Failed to submit answer: ${errorDetails}`);
+      }
+      
+      // 显示成功提交的反馈，使用Sonner的toast
+      if (isCorrect) {
+        toast.success("回答正确", {
+          style: {
+            backgroundColor: '#4caf50',
+            color: 'white',
+          },
+          duration:1000
+        });
+      } else {
+        toast.warning("回答错误", {
+          style: {
+            backgroundColor: '#af4c4c',
+            color: 'white',
+          },
+          duration:1000
+        });
+      }
+      
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      toast.error("提交失败", {
+        description: "无法保存您的答案，请稍后再试"
+      });
+    }
+  };
+
+  const fetchRelatedCards = async (mongoId: string) => {
+    setLoadingRelatedCards(true);
+    setErrorRelatedCards(null);
+    try {
+      const response = await fetch(`/api/quiz/related-cards?mongoId=${mongoId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setRelatedCards(data.cards);
+    } catch (error: any) {
+      setErrorRelatedCards(error.message);
+      console.error("Failed to fetch related cards:", error);
+    } finally {
+      setLoadingRelatedCards(false);
+    }
+  };
+
+  const fetchPracticeHistory = async (quizId: string, userId: string) => {
+    setLoadingPracticeHistory(true);
+    setErrorPracticeHistory(null);
+    try {
+      const response = await fetch(`/api/quiz/practice-history?quizId=${quizId}&userId=${userId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setPracticeHistory(data);
+    } catch (error: any) {
+      setErrorPracticeHistory(error.message);
+      console.error("Failed to fetch practice history:", error);
+    } finally {
+      setLoadingPracticeHistory(false);
+    }
+  };
+
+  const renderAnswer = (quiz: QuizWithUserAnswer, submitted: boolean, isCorrect: boolean) => {
+    if (!submitted) return null;
+   
+    switch (quiz.type) {
+      case 'A1':
+      case 'A2':
+        return (
+          <div className="space-y-4">
+            <Card className="bg-background text-foreground p-4 space-y-4">
+              <CardTitle className="text-lg font-semibold">正确答案：{quiz.answer}</CardTitle>
+              
+              {quiz.analysis.point && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">要点</h4>
+                  <CardContent className="p-0 text-foreground">{quiz.analysis.point}</CardContent>
+                  <div className="border-b border-border/50"></div>
+                </div>
+              )}
+              
+              {quiz.analysis.discuss && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">解析</h4>
+                  <CardContent className="p-0 text-foreground">{quiz.analysis.discuss}</CardContent>
+                </div>
+              )}
+              
+            </Card>
+            {quiz.analysis.ai_analysis && (
+              <Card className="bg-background text-foreground p-4 space-y-4">
+                <CardTitle className="text-lg font-semibold">AI分析</CardTitle>
+                <div className="p-0 text-foreground">
+                  <MarkdownRenderer content={quiz.analysis.ai_analysis} />
+                </div>
+              </Card>
+            )}
+          </div>
+        );
+   
+      case 'X':
+      case 'A3':
+      case 'B':
+        return (
+          <div className="space-y-4">
+            <Card className="bg-background text-foreground p-4 space-y-4">
+              <CardTitle className="text-lg font-semibold">
+                正确答案：{quiz.type === 'X' ? quiz.answer.join('、') : ''}
+              </CardTitle>
+              
+              {quiz.analysis.point && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">要点</h4>
+                  <CardContent className="p-0 text-foreground">{quiz.analysis.point}</CardContent>
+                  <div className="border-b border-border/50"></div>
+                </div>
+              )}
+              
+              {quiz.analysis.discuss && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">解析</h4>
+                  <CardContent className="p-0 text-foreground">{quiz.analysis.discuss}</CardContent>
+                </div>
+              )}
+              
+              {quiz.analysis.link && quiz.analysis.link.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">相关链接</h4>
+                  <LinksList className="space-y-1">
+                    {quiz.analysis.link.map((link: string, index: number) => (
+                      <LinkItem key={index}>
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          参考资料 {index + 1}
+                        </a>
+                      </LinkItem>
+                    ))}
+                  </LinksList>
+                </div>
+              )}
+            </Card>
+            {quiz.analysis.ai_analysis && (
+              <Card className="bg-background text-foreground p-4 space-y-4">
+                <CardTitle className="text-lg font-semibold">AI分析</CardTitle>
+                <CardContent className="p-0 text-foreground">{quiz.analysis.ai_analysis}</CardContent>
+              </Card>
+            )}
+          </div>
+        );
+   
+      default:
+        return null;
+    }
+  };
+
+  const renderRelatedCards = (submitted: boolean, loadingRelatedCards: boolean, errorRelatedCards: string | null, relatedCards: any[] | null) => {
+    if (!submitted) return null;
+
+    return (
+      <Card className="mt-4 p-4">
+        <CardTitle className="text-lg font-semibold mb-2">相关卡片</CardTitle>
+        <CardContent>
+          {loadingRelatedCards && <p>加载相关卡片中...</p>}
+          {errorRelatedCards && <p className="text-red-500">加载失败: {errorRelatedCards}</p>}
+          {relatedCards && relatedCards.length === 0 && !loadingRelatedCards && (
+            <p>没有找到相关卡片。</p>
+          )}
+          {relatedCards && relatedCards.length > 0 && (
+            <Accordion type="single" collapsible className="w-full">
+              {relatedCards.map((card: any, index: number) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger>
+                    {card.content.split('\n')[0].substring(0, 100)}... {/* Display first line or part of content as trigger */}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <MarkdownRenderer content={card.content} />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderPracticeHistory = (submitted: boolean, practiceHistory: PracticeRecordData[] | null, loadingPracticeHistory: boolean, errorPracticeHistory: string | null, isCorrect: boolean) => {
+    if (!submitted || !practiceHistory) return null;
+
+    return (
+      <Card className="mt-4 p-4">
+        <CardTitle>
+          <Result $isCorrect={isCorrect}>
+            {isCorrect ? '回答正确' : '回答错误'}
+          </Result>
+        </CardTitle>
+        <CardContent className="p-0">
+          {loadingPracticeHistory && <p>加载练习记录中...</p>}
+          {errorPracticeHistory && <p className="text-red-500">加载失败: {errorPracticeHistory}</p>}
+          {practiceHistory.length === 0 && !loadingPracticeHistory && (
+            <p>没有找到练习记录。</p>
+          )}
+          {practiceHistory.length > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">提交时间</TableHead>
+                  <TableHead>你的答案</TableHead>
+                  <TableHead className="text-right">结果</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {practiceHistory.map((record, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {new Date(record.timestamp).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {Array.isArray(record.selectrecord)
+                        ? record.selectrecord.join(', ')
+                        : typeof record.selectrecord === 'object' && record.selectrecord !== null
+                          ? Object.entries(record.selectrecord)
+                              .map(([key, value]) => `${Number(key) + 1}: ${value}`)
+                              .join(', ')
+                          : record.selectrecord}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {record.correct ? (
+                        <span className="text-green-600">正确</span>
+                      ) : (
+                        <span className="text-red-600">错误</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+
+  //////////////////////////  
+  // 渲染不同类型试题代码  
+  //////////////////////////  
+  const renderQuizContent = () => {  
+    if (quiz.type === 'A1' || quiz.type === 'A2' || quiz.type === 'X') {  
+      return (  
+        <>  
+          <QuestionTitle>{quiz.question}</QuestionTitle>  
+          <OptionsList>  
+            {quiz.options.map((item: any) => {  
+              // 判断选中状态：单选与多选处理不同  
+              let isSelected =  
+                quiz.type === 'X'  
+                  ? Array.isArray(selected) && selected.includes(item.oid)  
+                  : selected === item.oid;  
+              return (  
+                <OptionItem
+                key={item.oid}
+                selected={isSelected}
+                $correct={(()=>{
+                  if(quiz.type==="X"){
+                    return quiz.answer.includes(item.oid) ? true : undefined
+                  }else{
+                    return quiz.answer === item.oid ? true : undefined
+                  }
+                })()}
+                $submitted={submitted}
+                onClick={() => handleOptionSelect(item.oid)}
+                onDoubleClick={() => handleOptionSelect(item.oid, undefined, true)}
+              >
+                {item.oid}. {item.text}
+                {submitted && isSelected && (
+                  <>
+                    {(()=>{
+                      if(quiz.type==="X") {
+                        return quiz.answer.includes(item.oid) ? 
+                          <Check size={16} className="ml-2 text-green-500" /> : 
+                          <X size={16} className="ml-2 text-red-500" />
+                      } else {
+                        return quiz.answer === item.oid ? 
+                          <Check size={16} className="ml-2 text-green-500" /> : 
+                          <X size={16} className="ml-2 text-red-500" />
+                      }
+                    })()}
+                  </>
+                )}
+              </OptionItem>  
+
+              );  
+            })}  
+          </OptionsList>  
+        </>  
+      );  
+    } 
+    else if (quiz.type === 'A3') {  
+      return (  
+        <>  
+          <MainQuestion>{quiz.mainQuestion}</MainQuestion>  
+          {quiz.subQuizs.map((sub: any) => (  
+            <div key={sub.subQuizId}>  
+              <SubQuestion>{sub.question}</SubQuestion>  
+              <OptionsList>  
+                {sub.options.map((item: any) => {  
+                  const isSelected = selected[sub.subQuizId] === item.oid;  
+                  return (  
+                    <OptionItem
+                      key={item.oid}
+                      selected={isSelected}
+                      onClick={() => handleOptionSelect(item.oid, sub.subQuizId)}
+                      onDoubleClick={() => handleOptionSelect(item.oid, sub.subQuizId, true)}
+                      $submitted={submitted}
+                      $correct={(()=>{
+                          return sub.answer === item.oid ? true : undefined
+                      })()}
+                    >
+                      {item.oid}. {item.text}
+                      {submitted && isSelected && (
+                        <>
+                          {sub.answer === item.oid ? 
+                            <Check size={16} className="ml-2 text-green-500" /> : 
+                            <X size={16} className="ml-2 text-red-500" />
+                          }
+                        </>
+                      )}
+                    </OptionItem>  
+                  );  
+                })}  
+              </OptionsList>  
+            </div>  
+          ))}  
+        </>  
+      );  
+    } 
+    else if (quiz.type === 'B') {  
+      return (  
+        <>  
+          {quiz.questions.map((q: any) => (  
+            <div key={q.questionId}>  
+              <SubQuestion>{q.questionText}</SubQuestion>  
+              <OptionsList>  
+                {quiz.options.map((item: any) => {  
+                  const isSelected = selected[q.questionId] === item.oid;  
+                  return (  
+                    <OptionItem
+                      key={item.oid}
+                      selected={isSelected}
+                      onClick={() => handleOptionSelect(item.oid, q.questionId)}
+                      onDoubleClick={() => handleOptionSelect(item.oid, q.questionId, true)}
+                      $submitted={submitted}
+                      $correct={(()=>{
+                          return q.answer === item.oid ? true : undefined
+                      })()}
+                    >
+                      {item.oid}. {item.text}
+                      {submitted && isSelected && (
+                        <>
+                          {q.answer === item.oid ?
+                            <Check size={16} className="ml-2 text-green-500" /> : 
+                            <X size={16} className="ml-2 text-red-500" />
+                          }
+                        </>
+                      )}
+                    </OptionItem>  
+                  );  
+                })}  
+              </OptionsList>  
+            </div>  
+          ))}  
+        </>  
+      );  
+    }  
+    return null;  
+  };  
+
+
+
+  const [links,setLinks] = useState<string[]>([])
+  const [isLinkLoading,setIsLinkLoading] = useState<boolean>(false)
+  const [connection, setConnection] = useState<{ linkId: string; linkName: string; }[]>([])
+
+  return (  
+    <Card className='w-full p-2 mb-10'>
+      <TopBar> 
+        <ToolButton onClick={back}>  
+            <FaArrowLeft/>
+        </ToolButton>   
+        <ToolButton onClick={handleBackToGrid}>  
+            <Grid />  
+        </ToolButton>  
+        <QuizTitle>  
+            Quiz {currentQuizIndex + 1}  
+        </QuizTitle>  
+           
+
+        <ToolButton onClick={forward}>  
+            <FaArrowRight/>
+        </ToolButton>  
+      </TopBar>  
+      <InfoBar className="flex items-center gap-2 flex-wrap">
+        <Badge variant="secondary">{quiz.type}型题</Badge>
+        <Badge variant="outline">{quiz.class}</Badge>
+        <Badge variant="outline">{quiz.source}</Badge>
+        {quizTags.map((tag, index) => (
+          <Badge
+            key={index}
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+          >
+            {tag}
+          </Badge>
+        ))}
+
+        
+        <TagInput
+          placeholder="Add tags..."
+          quizId={quiz._id}
+          onTagAdded={fetchQuizTags}
+        />
+      
+      </InfoBar>
+    {renderQuizContent()}
+    <TopBar>
+
+      {!submitted && (
+          <div className="flex w-full space-x-2">
+            <Button onClick={handleDifficultSubmit} className='flex-grow bg-red-500 hover:bg-red-600 text-white'>困难</Button>
+            <Button onClick={handleSubmit} className='flex-grow bg-green-500 hover:bg-green-600 text-white'>简单</Button>
+          </div>
+        )}
+        
+    </TopBar>
+    
+
+    {submitted && (  
+      <div className="space-y-6">
+        {/* <Result $isCorrect={isCorrect}>
+          {isCorrect ? '正确' : '错误'}
+          </Result> */}
+          {renderPracticeHistory(submitted, practiceHistory, loadingPracticeHistory, errorPracticeHistory, isCorrect)}
+        <div className="mt-4">
+          <LinkBox isloading={isLinkLoading} links={connection} />
+        </div>
+        <div className="mt-6 w-full">
+            {renderAnswer(quiz, submitted, isCorrect)}
+            {renderRelatedCards(submitted, loadingRelatedCards, errorRelatedCards, relatedCards)}
+            
+        </div>
+      </div>
+    )}
+
+    {submitted && (
+          <Card className="mt-4 pt-4 w-full"> {/* Use flex-wrap and gap for better layout */}
+            <CardTitle className='text-lg font-semibold mb-2 pl-4'>获取相似试题</CardTitle>
+            <CardContent className='gap-2 w-full'>
+                          <Toggle
+              pressed={useClassFilter}
+              onPressedChange={setUseClassFilter}
+              aria-label="Toggle class filter"
+              // className="flex-grow"
+            >
+              {useClassFilter ? '按科目筛选 (开)' : '按科目筛选 (关)'}
+            </Toggle>
+            <Toggle
+              pressed={useSourceFilter}
+              onPressedChange={setUseSourceFilter}
+              aria-label="Toggle source filter"
+              // className="flex-grow"
+            >
+              {useSourceFilter ? '按来源筛选 (开)' : '按来源筛选 (关)'}
+            </Toggle>
+            <div className="flex items-center space-x-2 flex-grow">
+              <span className="text-sm text-muted-foreground">题数: {topK[0]}</span>
+              <Slider
+                min={1}
+                max={10}
+                step={1}
+                value={topK}
+                onValueChange={setTopK}
+                className="w-[100px]"
+              />
+            </div>
+            <Button
+              onClick={handleFindSimilar}
+              className='flex-grow bg-blue-500 hover:bg-blue-600 text-white'
+              disabled={isFindingSimilar}
+            >
+              {isFindingSimilar ? '查找中...' : '查找相似试题'}
+            </Button>
+            </CardContent>
+          </Card>
+        )}
+  </Card>
+  );  
+})
+
+
+
+export default QuizComponent;

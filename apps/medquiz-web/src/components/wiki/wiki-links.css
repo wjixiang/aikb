@@ -1,0 +1,54 @@
+/* Wiki link styling for non-existent documents */
+.wiki-link-nonexistent {
+  color: hsl(var(--link-nonexistent)); /* Slightly muted gray-blue color */
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wiki-link-nonexistent:hover {
+  color: #6b7280;
+}
+
+/* Ensure non-existent links don't trigger hover effects */
+.wiki-link-nonexistent * {
+  pointer-events: none;
+}
+
+/* Embed styles for images */
+.embed-image {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.embed-image .embed-content {
+  padding: 0;
+}
+
+.embedded-image {
+  text-align: center;
+}
+
+.embed-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.embed-image .embed-error,
+.embed-image .embed-loading {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.embed-image .embed-error {
+  color: #ef4444;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}

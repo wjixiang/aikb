@@ -1,0 +1,125 @@
+import { useEffect, useRef, useState } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set the worker path - important for PDF.js to work
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+interface PDFViewerProps {
+  url: string;
+  width?: string | number;
+  height?: string | number;
+  className?: string;
+}
+
+export default function PDFViewer({
+  url,
+  width = "100%",
+  height = "600px",
+  className,
+}: PDFViewerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [scale, setScale] = useState<number>(1.0);
+
+  useEffect(() => {
+    const loadPDF = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const loadingTask = pdfjsLib.getDocument(url);
+        const pdf = await loadingTask.promise;
+        setNumPages(pdf.numPages);
+
+        const page = await pdf.getPage(currentPage);
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const context = canvas.getContext("2d");
+        if (!context) return;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+        await page.render(renderContext).promise;
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("PDF loading error:", err);
+        setError("Failed to load PDF");
+        setIsLoading(false);
+      }
+    };
+
+    loadPDF();
+  }, [url, currentPage, scale]);
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < numPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const zoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.25, 3.0));
+  };
+
+  const zoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.25, 0.5));
+  };
+
+  return (
+    <div
+      className={`flex flex-col items-center ${className}`}
+      style={{ width, height }}
+    >
+      {isLoading && <div className="text-center py-4">Loading PDF...</div>}
+      {error && <div className="text-center py-4 text-red-500">{error}</div>}
+
+      {!isLoading && !error && (
+        <>
+          <div className="flex items-center gap-4 mb-2">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage <= 1}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {numPages}
+            </span>
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage >= numPages}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+            <button onClick={zoomIn} className="px-3 py-1 bg-gray-200 rounded">
+              Zoom In
+            </button>
+            <button onClick={zoomOut} className="px-3 py-1 bg-gray-200 rounded">
+              Zoom Out
+            </button>
+          </div>
+          <canvas ref={canvasRef} className="border border-gray-300" />
+        </>
+      )}
+    </div>
+  );
+}

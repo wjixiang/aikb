@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "project": {
+    "name": "medquiz",
+    "client_output_dir": "src/baml_client"
+  },
+  "generators": [
+    {
+      "name": "typescript",
+      "output_dir": "src/baml_client"
+    }
+  ]
+}
