@@ -1,9 +1,191 @@
 {
   "name": "medquiz-web",
-  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/quiz-management-client/apps/medquiz-web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/medquiz-web/src",
   "projectType": "application",
   "tags": [],
   "// targets": "to see all targets run: nx show project medquiz-web --web",
-  "targets": {}
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "root": "apps/medquiz-web",
+        "outputPath": "dist/apps/medquiz-web"
+      },
+      "configurations": {
+        "development": {
+          "outputPath": "dist/apps/medquiz-web"
+        },
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/next:server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "medquiz-web:build",
+        "dev": true,
+        "port": 3000
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "medquiz-web:build:development",
+          "dev": true
+        },
+        "production": {
+          "buildTarget": "medquiz-web:build:production",
+          "dev": false
+        }
+      }
+    },
+    "export": {
+      "executor": "@nx/next:export",
+      "options": {
+        "buildTarget": "medquiz-web:build:production"
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/medquiz-web"
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": {
+            "reportsDirectory": "../../coverage/apps/medquiz-web"
+          }
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/medquiz-web/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "storybook": {
+      "executor": "@nx/storybook:storybook",
+      "options": {
+        "port": 6006,
+        "configDir": "apps/medquiz-web/.storybook",
+        "uiFramework": "@storybook/nextjs"
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@nx/storybook:build",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "configDir": "apps/medquiz-web/.storybook",
+        "outputDir": "dist/storybook/medquiz-web",
+        "uiFramework": "@storybook/nextjs"
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "baml-generate": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx baml-cli generate",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "test:similar-search": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx src/script/test-similar-search.ts test",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "doc": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx typedoc --entryPointStrategy Expand src",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "janusgraph": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx src/script/janusGraphCli.ts",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "rag-quiz-analysis": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx src/script/rag-quiz-analysis.ts",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "init:tag-presets": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx src/scripts/initDefaultTagPresets.ts",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:sync": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts sync",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:search": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts search",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:status": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts status",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:embed-single": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts embed-single",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:batch": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts batch-embed",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "embedding:cleanup": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx manage.ts cleanup",
+        "cwd": "apps/medquiz-web"
+      }
+    },
+    "knowledgebase:sync:download-only": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "npx tsx '/home/wjx/MedQuiz/src/script/s3-sync-cli.ts' sync",
+        "cwd": "apps/medquiz-web"
+      }
+    }
+  }
 }
