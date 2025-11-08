@@ -34,7 +34,7 @@
     "@aikb/chunking": "workspace:*",
     "@aikb/embedding": "workspace:*",
     "@aikb/log-management": "workspace:*",
-    "@aikb/mineru-client": "workspace:*",
+    "mineru-client": "workspace:*",
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "@aws-sdk/client-s3": "^3.901.0",

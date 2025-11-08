@@ -9,6 +9,8 @@ import {
   CreateLibraryItemWithPdfDto,
   UpdateMetadataDto,
   PdfDownloadUrlDto,
+  PdfUploadUrlDto,
+  PdfUploadUrlResponseDto,
 } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from 'library-shared';
@@ -252,6 +254,40 @@ export class LibraryItemService {
       downloadUrl,
       expiresAt,
     };
+  }
+
+  /**
+   * Get PDF upload URL
+   * @param pdfUploadUrlDto The request data for generating upload URL
+   * @returns The upload URL, S3 key, and expiration time
+   */
+  async getPdfUploadUrl(pdfUploadUrlDto: PdfUploadUrlDto): Promise<PdfUploadUrlResponseDto> {
+    try {
+      // Generate S3 key for the PDF file
+      const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${pdfUploadUrlDto.fileName}`;
+      
+      // Lazy import s3-service to avoid eager initialization
+      const { getSignedUploadUrl } = await import('@aikb/s3-service');
+      
+      // Generate presigned URL for upload
+      const uploadUrl = await getSignedUploadUrl(
+        s3Key,
+        'application/pdf',
+        pdfUploadUrlDto.expiresIn || 3600, // Default to 1 hour
+      );
+      
+      // Set expiration time
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + (pdfUploadUrlDto.expiresIn || 3600));
+      
+      return {
+        uploadUrl,
+        s3Key,
+        expiresAt: expiresAt.toISOString(),
+      };
+    } catch (error) {
+      throw new Error(`Failed to generate PDF upload URL: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async producePdf2MarkdownRequest(req: Pdf2MArkdownDto) {

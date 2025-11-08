@@ -17,6 +17,8 @@ import {
   UpdateMetadataDto,
   PdfDownloadUrlDto,
   UpdateMarkdownDto,
+  PdfUploadUrlDto,
+  PdfUploadUrlResponseDto,
 } from 'library-shared';
 import { LibraryItem } from '@aikb/bibliography';
 
@@ -247,6 +249,25 @@ export class LibraryItemController {
       }
       throw new HttpException(
         `Failed to get PDF download URL: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get PDF upload URL
+   * @param pdfUploadUrlDto The request data for generating upload URL
+   * @returns The upload URL, S3 key, and expiration time
+   */
+  @Post('upload-url')
+  async getUploadUrl(
+    @Body() pdfUploadUrlDto: PdfUploadUrlDto,
+  ): Promise<PdfUploadUrlResponseDto> {
+    try {
+      return await this.libraryItemService.getPdfUploadUrl(pdfUploadUrlDto);
+    } catch (error) {
+      throw new HttpException(
+        `Failed to get PDF upload URL: ${error instanceof Error ? error.message : String(error)}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

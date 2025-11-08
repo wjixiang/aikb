@@ -43,7 +43,7 @@
     "@aikb/log-management": "workspace:*",
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
-    "@aikb/mineru-client": "workspace:*",
+    "mineru-client": "workspace:*",
     "@aikb/embedding": "workspace:*",
     "@aikb/chunking": "workspace:*",
     "dotenv": "^17.2.2"

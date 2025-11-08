@@ -26,7 +26,7 @@
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/embedding": ["./libs/embedding/src/index.ts"],
       "@aikb/log-management": ["./libs/log-management/src/index.ts"],
-      "@aikb/mineru-client": ["./libs/mineru-client/src/index.ts"],
+      "mineru-client": ["./libs/mineru-client/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],

@@ -34,7 +34,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@aikb/mineru-client": "workspace:*",
+    "mineru-client": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "@aikb/log-management": "workspace:*",
     "dotenv": "^17.2.2"

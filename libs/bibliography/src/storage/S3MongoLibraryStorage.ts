@@ -1,5 +1,4 @@
 import { createLoggerWithPrefix } from '@aikb/log-management';
-import { ItemChunk } from '@aikb/item-vector-storage';
 import {
   AbstractPdf,
   ItemMetadata,

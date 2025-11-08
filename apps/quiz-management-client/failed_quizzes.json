@@ -80,5 +80,185 @@
     },
     "error": "Failed to add quiz",
     "timestamp": "2025-11-06T11:21:50.220Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "",
+      "options": [],
+      "answer": [
+        "A"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "解析：ACD",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-08T11:16:42.238Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "全身中毒症状严重的直肠肛管周围脓肿是",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A. 肛门周围脓肿"
+        },
+        {
+          "oid": "B",
+          "text": "B. 坐骨肛管间隙脓肿"
+        },
+        {
+          "oid": "C",
+          "text": "C. 骨盆直肠间隙脓肿"
+        },
+        {
+          "oid": "D",
+          "text": "D. 直肠壁内脓肿"
+        }
+      ],
+      "answer": [
+        "B",
+        "C"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "解析：BC坐骨肛管间隙脓肿和骨盆直肠间隙脓肿由于位置深、脓腔大，可产生严重的全身中毒症状。 肛门周围脓肿因位置浅表、脓腔不大，直肠壁内脓肿因脓腔小，而全身中毒症状较轻。",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-08T11:20:57.083Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "Glisson 纤维鞘内包裹的管道有？",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A. 门静脉"
+        },
+        {
+          "oid": "B",
+          "text": "B. 肝静脉"
+        },
+        {
+          "oid": "C",
+          "text": "C. 肝动脉"
+        },
+        {
+          "oid": "D",
+          "text": "D. 肝外胆管"
+        }
+      ],
+      "answer": [
+        "A",
+        "C"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "6. Glisson 纤维鞘内包裹的管道有 (DX)\n\nA. 门静脉  \nB. 肝静脉  \nC. 肝动脉  \nD. 肝外胆管\n\n解析：AC",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-08T11:29:20.952Z"
+  },
+  {
+    "quiz": {
+      "type": "X",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "以下哪项不是尿糖？",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A"
+        },
+        {
+          "oid": "B",
+          "text": "B"
+        },
+        {
+          "oid": "C",
+          "text": "C"
+        }
+      ],
+      "answer": "B",
+      "analysis": {
+        "point": null,
+        "discuss": "解析：AC\nB不是尿糖，而是血糖！",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-08T11:32:23.343Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "Courvoisier征阳性见于哪些疾病？",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A. 急性胆囊炎"
+        },
+        {
+          "oid": "B",
+          "text": "B. 胰头癌"
+        },
+        {
+          "oid": "C",
+          "text": "C. 上段胆管癌"
+        },
+        {
+          "oid": "D",
+          "text": "D. 壶腹周围癌"
+        }
+      ],
+      "answer": [
+        "B",
+        "D"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "解析：BD\n\nCourvosier征(无压痛、明显肿大的胆囊)\n\n①阳性见于：胰头癌,中、下段胆总管,壶腹周围癌(壶腹癌、胆总管下端癌和十二指肠癌)  \n②阴性见于:急性胆囊炎(胆囊有明显压痛),上段(肝门部)胆管癌(胆囊不大反而小),胆总管结石(胆囊因慢性炎症囊壁纤维化而皱缩,常不肿大)\n\nB站/公众号：小凯的医学之路",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-08T11:32:23.444Z"
   }
 ]

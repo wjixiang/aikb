@@ -17,7 +17,7 @@ importers:
       '@aikb/log-management':
         specifier: workspace:*
         version: link:libs/log-management
-      '@aikb/mineru-client':
+      'mineru-client':
         specifier: workspace:*
         version: link:libs/mineru-client
       '@aikb/pdf-converter':
@@ -559,7 +559,7 @@ importers:
       '@aikb/log-management':
         specifier: workspace:*
         version: link:../log-management
-      '@aikb/mineru-client':
+      'mineru-client':
         specifier: workspace:*
         version: link:../mineru-client
       '@aikb/s3-service':
@@ -640,7 +640,7 @@ importers:
       '@aikb/log-management':
         specifier: workspace:*
         version: link:../log-management
-      '@aikb/mineru-client':
+      'mineru-client':
         specifier: workspace:*
         version: link:../mineru-client
       '@aikb/pdf-converter':

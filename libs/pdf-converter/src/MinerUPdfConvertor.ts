@@ -3,7 +3,7 @@ import {
   SingleFileRequest,
   TaskResult,
   MinerUDefaultConfig,
-} from '@aikb/mineru-client';
+} from 'mineru-client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createReadStream } from 'fs';

@@ -3358,8 +3358,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/mineru-client": {
-        "name": "@aikb/mineru-client",
+      "mineru-client": {
+        "name": "mineru-client",
         "type": "lib",
         "data": {
           "root": "libs/mineru-client",
@@ -3491,7 +3491,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/mineru-client --includeDependentProjects -- pnpm exec nx build-deps @aikb/mineru-client"
+                "command": "pnpm exec nx watch --projects mineru-client --includeDependentProjects -- pnpm exec nx build-deps mineru-client"
               },
               "configurations": {},
               "parallelism": true
@@ -3643,7 +3643,7 @@
             },
             "description": "Independent MinerU API client for document parsing and conversion",
             "js": {
-              "packageName": "@aikb/mineru-client",
+              "packageName": "mineru-client",
               "packageVersion": "1.0.0",
               "packageExports": {
                 ".": {
@@ -3656,7 +3656,7 @@
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "@aikb/mineru-client",
+          "name": "mineru-client",
           "tags": [
             "npm:public",
             "npm:mineru",
@@ -7386,7 +7386,7 @@
         },
         {
           "source": "pdf-conversion-worker",
-          "target": "@aikb/mineru-client",
+          "target": "mineru-client",
           "type": "static"
         },
         {
@@ -7531,9 +7531,9 @@
           "type": "static"
         }
       ],
-      "@aikb/mineru-client": [
+      "mineru-client": [
         {
-          "source": "@aikb/mineru-client",
+          "source": "mineru-client",
           "target": "@aikb/s3-service",
           "type": "static"
         }
@@ -7541,7 +7541,7 @@
       "@aikb/pdf-converter": [
         {
           "source": "@aikb/pdf-converter",
-          "target": "@aikb/mineru-client",
+          "target": "mineru-client",
           "type": "static"
         },
         {
@@ -7633,7 +7633,7 @@
         },
         {
           "source": "@aikb/rabbitmq",
-          "target": "@aikb/mineru-client",
+          "target": "mineru-client",
           "type": "static"
         },
         {
@@ -7657,7 +7657,7 @@
         },
         {
           "source": "aikb",
-          "target": "@aikb/mineru-client",
+          "target": "mineru-client",
           "type": "static"
         },
         {

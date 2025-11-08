@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from './library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Pdf2MArkdownDto } from 'library-shared';
+import { CreateLibraryItemWithPdfDto, Pdf2MArkdownDto } from 'library-shared';
 import * as amqp from 'amqplib';
 import { vi } from 'vitest';
+import { post } from 'axios';
+import { readFileSync } from 'fs';
 
-// Mock the S3MongoLibraryStorage to avoid MongoDB dependency
+// Mock the bibliography library to avoid MongoDB dependency
 vi.mock('@aikb/bibliography', () => ({
   S3MongoLibraryStorage: vi.fn().mockImplementation(() => ({
     updateMetadata: vi.fn().mockResolvedValue({}),
@@ -40,7 +42,7 @@ describe('LibraryItemService - End to End', () => {
           'amqp://admin:admin123@rabbitmq:5672/my_vhost',
       );
       channel = await connection.createChannel();
-      // console.log(connection)
+
       // Declare unique test queues for isolation
       await channel.assertQueue(uniqueQueueName, { durable: true });
       await channel.assertQueue('request-pdf-2-markdown-conversion', {
@@ -109,6 +111,79 @@ describe('LibraryItemService - End to End', () => {
   });
 
   describe('producePdf2MarkdownRequest', () => {
+    it('should send message to RabbitMQ and receive it', async () => {
+      // Skip test if RabbitMQ connection is not available
+      if (!connection || !channel) {
+        console.log('Skipping test - RabbitMQ connection not available');
+        return;
+      }
+
+      // Clear any existing messages in the queues
+      await channel.purgeQueue(uniqueServiceQueueName);
+      await channel.purgeQueue(uniqueQueueName);
+
+      const testDto = new Pdf2MArkdownDto('test-item-id-simple');
+
+      // Set up a consumer to capture the message
+      let receivedMessage: any = null;
+      let messageReceived = false;
+
+      const consumer1 = await channel.consume(
+        uniqueServiceQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            messageReceived = true;
+            console.log(
+              'Message received in pdf_2_markdown_queue:',
+              parsedMessage,
+            );
+            channel.ack(msg);
+          }
+        },
+        { noAck: false },
+      );
+
+      const consumer2 = await channel.consume(
+        uniqueQueueName,
+        (msg) => {
+          if (msg && !messageReceived) {
+            const parsedMessage = JSON.parse(msg.content.toString());
+            receivedMessage = parsedMessage.data || parsedMessage;
+            messageReceived = true;
+            console.log(`Message received in ${uniqueQueueName}:`, parsedMessage);
+            channel.ack(msg);
+          }
+        },
+        { noAck: false },
+      );
+
+      // Call the method under test
+      const result = await service.producePdf2MarkdownRequest(testDto);
+
+      // Wait a bit for the message to be processed
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Verify the result
+      expect(result).toEqual({
+        message: 'pdf2md request published',
+      });
+
+      // Verify the message was received
+      expect(messageReceived).toBe(true);
+      expect(receivedMessage).toBeDefined();
+      expect(receivedMessage.itemId).toBe('test-item-id-simple');
+
+      // Clean up consumers
+      if (consumer1 && consumer1.consumerTag) {
+        await channel.cancel(consumer1.consumerTag);
+      }
+      if (consumer2 && consumer2.consumerTag) {
+        await channel.cancel(consumer2.consumerTag);
+      }
+    });
+
     it('should successfully send a message to RabbitMQ', async () => {
       // Skip test if RabbitMQ connection is not available
       if (!connection || !channel) {
@@ -349,6 +424,20 @@ describe('LibraryItemService - End to End', () => {
           await channel.cancel(consumer3.consumerTag);
         }
       }
+    });
+  });
+
+  describe('create item with pdf', () => {
+    it.only('should create library item with PDF', async () => {
+      const testData: CreateLibraryItemWithPdfDto = {
+        title: 'ACEI',
+        authors: [],
+        tags: [],
+        collections: [],
+        pdfBuffer: readFileSync('/workspace/test/ACEI.pdf')
+      };
+      const response = await post(`${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`, testData);
+      console.log(response.data);
     });
   });
 });
