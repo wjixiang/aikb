@@ -36,14 +36,16 @@ export default class notebook_s3_storage {
   logger = createLoggerWithPrefix('notebook_s3_storage');
 
   constructor(config: S3StorageConfig = {}) {
-    const region = 'oss-cn-beijing';
-    const bucketName = 'textbook-med';
-    const accessKeyId = '${AWS_ACCESS_KEY_ID}';
-    const secretAccessKey = '${AWS_SECRET_ACCESS_KEY}';
+    const region = process.env.AWS_REGION || 'oss-cn-beijing';
+    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'textbook-med';
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || '';
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || '';
 
     if (!region) throw new Error('AWS_REGION environment variable is required');
     if (!bucketName)
       throw new Error('AWS_S3_BUCKET_NAME environment variable is required');
+    if (!accessKeyId) throw new Error('AWS_ACCESS_KEY_ID environment variable is required');
+    if (!secretAccessKey) throw new Error('AWS_SECRET_ACCESS_KEY environment variable is required');
 
     this.client = new S3Client({
       region,
