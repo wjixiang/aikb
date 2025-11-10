@@ -37,11 +37,11 @@ export class AppService {
       s3Url: null,
     };
 
-    if (!req.pageNum) {
+    if (!req.pageCount) {
       // Download pdf and extract page number
       pdfInfo.s3Url = await this.getPdfDownloadUrl(pdfInfo.itemId);
       pdfInfo.pdfData = await this.downloadPdfData(pdfInfo.s3Url);
-      pdfInfo.pageNum = await this.calculatePageNum(pdfInfo.pdfData);
+      pdfInfo.pageCount = await this.calculatePageNum(pdfInfo.pdfData);
     }
 
     // Get chunking parameters from environment variables
@@ -52,13 +52,13 @@ export class AppService {
     const chunkSize = parseInt(process.env['PDF_CHUNK_SIZE'] || '10', 10);
 
     console.log(
-      `Page count: ${pdfInfo.pageNum}, Chunk threshold: ${chunkSizeThreshold}, Chunk size: ${chunkSize}`,
+      `Page count: ${pdfInfo.pageCount}, Chunk threshold: ${chunkSizeThreshold}, Chunk size: ${chunkSize}`,
     );
 
     // Check if chunking is needed
-    if (pdfInfo.pageNum && pdfInfo.pageNum > chunkSizeThreshold) {
+    if (pdfInfo.pageCount && pdfInfo.pageCount > chunkSizeThreshold) {
       console.log(
-        `Page count (${pdfInfo.pageNum}) exceeds threshold (${chunkSizeThreshold}), chunking PDF`,
+        `Page count (${pdfInfo.pageCount}) exceeds threshold (${chunkSizeThreshold}), chunking PDF`,
       );
 
       if (!pdfInfo.pdfData) {
@@ -89,7 +89,7 @@ export class AppService {
           return {
             chunkIndex: index,
             startPage: index * chunkSize + 1,
-            endPage: Math.min((index + 1) * chunkSize, pdfInfo.pageNum!),
+            endPage: Math.min((index + 1) * chunkSize, pdfInfo.pageCount!),
             s3Url: uploadResult,
             fileName: chunkFileName,
           };
@@ -117,7 +117,7 @@ export class AppService {
 
       return {
         itemId: pdfInfo.itemId,
-        pageNum: pdfInfo.pageNum,
+        pageNum: pdfInfo.pageCount,
         chunked: true,
         chunkCount: pdfChunks.length,
         chunkSize: chunkSize,
@@ -145,7 +145,7 @@ export class AppService {
 
       return {
         itemId: pdfInfo.itemId,
-        pageNum: pdfInfo.pageNum,
+        pageNum: pdfInfo.pageCount,
         chunked: false,
         markdownContent,
       };

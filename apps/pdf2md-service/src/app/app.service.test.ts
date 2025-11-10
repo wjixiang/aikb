@@ -30,7 +30,16 @@ describe(AppService, () => {
     process.env['PDF_CHUNK_SIZE_THRESHOLD'] = '20';
     process.env['PDF_CHUNK_SIZE'] = '10';
 
-    const req = new Pdf2MArkdownDto('test-item-id', 15); // 15 pages, below threshold
+    const req = new Pdf2MArkdownDto(
+      'test-item-id',
+      'pdf',
+      1024, // fileSize
+      'test-hash', // fileHash
+      new Date(), // addDate
+      'test-s3-key', // s3Key
+      15, // pageCount
+      1000, // wordCount
+    );
     const result = await service.handlePdf2MdRequest(req);
 
     expect(result.chunked).toBe(false);
@@ -43,7 +52,16 @@ describe(AppService, () => {
     process.env['PDF_CHUNK_SIZE_THRESHOLD'] = '20';
     process.env['PDF_CHUNK_SIZE'] = '10';
 
-    const req = new Pdf2MArkdownDto('test-item-id', 25); // 25 pages, above threshold
+    const req = new Pdf2MArkdownDto(
+      'test-item-id',
+      'pdf',
+      1024, // fileSize
+      'test-hash', // fileHash
+      new Date(), // addDate
+      'test-s3-key', // s3Key
+      25, // pageCount
+      1000, // wordCount
+    );
 
     // Mock the PDF data since we don't have actual PDF for testing
     const mockPdfData = Buffer.from('mock pdf data');
@@ -65,7 +83,16 @@ describe(AppService, () => {
     delete process.env['PDF_CHUNK_SIZE_THRESHOLD'];
     delete process.env['PDF_CHUNK_SIZE'];
 
-    const req = new Pdf2MArkdownDto('test-item-id', 15); // 15 pages, below default threshold of 20
+    const req = new Pdf2MArkdownDto(
+      'test-item-id',
+      'pdf',
+      1024, // fileSize
+      'test-hash', // fileHash
+      new Date(), // addDate
+      'test-s3-key', // s3Key
+      15, // pageCount
+      1000, // wordCount
+    );
     const result = await service.handlePdf2MdRequest(req);
 
     expect(result.chunked).toBe(false);

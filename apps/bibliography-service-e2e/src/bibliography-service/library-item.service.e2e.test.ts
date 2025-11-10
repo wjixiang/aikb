@@ -134,7 +134,16 @@ describe('LibraryItemService - End to End', () => {
       await channel.purgeQueue(uniqueServiceQueueName);
       await channel.purgeQueue(uniqueQueueName);
 
-      const testDto = new Pdf2MArkdownDto('test-item-id-simple', mockItemArchive);
+      const testDto = new Pdf2MArkdownDto(
+        'test-item-id-simple',
+        'pdf',
+        mockItemArchive.fileSize,
+        mockItemArchive.fileHash,
+        mockItemArchive.addDate,
+        mockItemArchive.s3Key,
+        mockItemArchive.pageCount,
+        mockItemArchive.wordCount,
+      );
 
       // Set up a consumer to capture the message
       let receivedMessage: any = null;
@@ -212,7 +221,16 @@ describe('LibraryItemService - End to End', () => {
       await channel.purgeQueue(uniqueQueueName);
 
       // Create test data
-      const testDto = new Pdf2MArkdownDto('test-item-id-123', mockItemArchive);
+      const testDto = new Pdf2MArkdownDto(
+        'test-item-id-123',
+        'pdf',
+        mockItemArchive.fileSize,
+        mockItemArchive.fileHash,
+        mockItemArchive.addDate,
+        mockItemArchive.s3Key,
+        mockItemArchive.pageCount,
+        mockItemArchive.wordCount,
+      );
 
       // Set up a consumer to capture the message
       let receivedMessage: any = null;
@@ -329,7 +347,16 @@ describe('LibraryItemService - End to End', () => {
         const invalidService =
           invalidModule.get<LibraryItemService>(LibraryItemService);
 
-        const testDto = new Pdf2MArkdownDto('test-item-id-456', mockItemArchive);
+        const testDto = new Pdf2MArkdownDto(
+          'test-item-id-456',
+          'pdf',
+          mockItemArchive.fileSize,
+          mockItemArchive.fileHash,
+          mockItemArchive.addDate,
+          mockItemArchive.s3Key,
+          mockItemArchive.pageCount,
+          mockItemArchive.wordCount,
+        );
 
         console.log(
           'Calling producePdf2MarkdownRequest with invalid connection...',
@@ -363,7 +390,16 @@ describe('LibraryItemService - End to End', () => {
       await channel.purgeQueue(uniqueServiceQueueName);
       await channel.purgeQueue(uniqueQueueName);
 
-      const testDto = new Pdf2MArkdownDto('debug-item-id-789', mockItemArchive);
+      const testDto = new Pdf2MArkdownDto(
+        'debug-item-id-789',
+        'pdf',
+        mockItemArchive.fileSize,
+        mockItemArchive.fileHash,
+        mockItemArchive.addDate,
+        mockItemArchive.s3Key,
+        mockItemArchive.pageCount,
+        mockItemArchive.wordCount,
+      );
 
       // Set up a consumer to capture the message
       let receivedMessage: any = null;
