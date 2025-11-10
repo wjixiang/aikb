@@ -5,13 +5,9 @@
   "implicitDependencies": ["bibliography-service"],
   "targets": {
     "e2e": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
-      "options": {
-        "jestConfig": "apps/bibliography-service-e2e/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "dependsOn": ["bibliography-service:build", "bibliography-service:serve"]
+      "dependsOn": ["bibliography-service:build","bibliography-service:serve"]
     }
   }
 }

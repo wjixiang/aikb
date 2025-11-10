@@ -10,7 +10,7 @@
   "dependencies": {
     "@nestjs/core": "^11.1.7",
     "@nestjs/microservices": "^11.1.7",
-    "@aikb/bibliography": "*",
+    "bibliography": "*",
     "@aikb/chunking": "*",
     "@aikb/embedding": "*",
     "@aikb/log-management": "*",

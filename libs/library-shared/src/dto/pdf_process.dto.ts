@@ -1,4 +1,4 @@
-import { ItemArchive } from '@aikb/bibliography';
+import { ItemArchive } from 'bibliography';
 
 export class Pdf2MArkdownDto {
   constructor(

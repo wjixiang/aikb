@@ -13,7 +13,7 @@
     "test:e2e": "vitest run --config vitest.config.ts --testNamePattern=e2e"
   },
   "dependencies": {
-    "@aikb/bibliography": "workspace:*",
+    "bibliography": "workspace:*",
     "@aikb/log-management": "workspace:*",
     "@aikb/rabbitmq": "workspace:*",
     "@nestjs/common": "^11.0.0",

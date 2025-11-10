@@ -12,7 +12,7 @@ vi.mock('@aikb/s3-service', () => ({
 }));
 
 // Mock the bibliography library
-vi.mock('@aikb/bibliography', () => ({
+vi.mock('bibliography', () => ({
   S3MongoLibraryStorage: vi.fn().mockImplementation(() => ({
     updateMetadata: vi.fn().mockResolvedValue({}),
     getPdfDownloadUrl: vi.fn().mockResolvedValue('http://example.com'),

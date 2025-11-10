@@ -21,7 +21,7 @@
     "resolveJsonModule": true,
     "baseUrl": "../../../",
     "paths": {
-      "@aikb/bibliography": ["./libs/bibliography/src"],
+      "bibliography": ["./libs/bibliography/src"],
       "library-shared": ["./libs/library-shared/src/index.ts"],
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/embedding": ["./libs/embedding/src/index.ts"],

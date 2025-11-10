@@ -15,7 +15,6 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@aikb/bibliography": ["./libs/bibliography/src"],
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/embedding": ["./libs/embedding/src/index.ts"],
       "@aikb/log-management": ["./libs/log-management/src/index.ts"],

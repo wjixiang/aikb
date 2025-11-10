@@ -22,7 +22,7 @@
   "dependencies": {
     "@aikb/rabbitmq": "workspace:*",
     "@aikb/log-management": "workspace:*",
-    "@aikb/bibliography": "workspace:*",
+    "bibliography": "workspace:*",
     "library-shared": "workspace:*",
     "@aikb/pdf-splitter": "workspace:*",
     "@aikb/s3-service": "workspace:*",

@@ -949,7 +949,7 @@ importers:
 
   libs/library-shared:
     dependencies:
-      '@aikb/bibliography':
+      'bibliography':
         specifier: workspace:*
         version: link:../bibliography
       class-validator:

@@ -4463,8 +4463,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/bibliography": {
-        "name": "@aikb/bibliography",
+      "bibliography": {
+        "name": "bibliography",
         "type": "lib",
         "data": {
           "root": "libs/bibliography",
@@ -4548,7 +4548,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/bibliography --includeDependentProjects -- pnpm exec nx build-deps @aikb/bibliography"
+                "command": "pnpm exec nx watch --projects bibliography --includeDependentProjects -- pnpm exec nx build-deps bibliography"
               },
               "configurations": {},
               "parallelism": true
@@ -4718,7 +4718,7 @@
             },
             "description": "Bibliography and library management system for academic documents",
             "js": {
-              "packageName": "@aikb/bibliography",
+              "packageName": "bibliography",
               "packageVersion": "0.0.1",
               "packageExports": {
                 ".": {
@@ -4741,7 +4741,7 @@
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "@aikb/bibliography",
+          "name": "bibliography",
           "tags": [
             "npm:public"
           ],
@@ -7824,12 +7824,12 @@
       "markdown-storage-worker": [
         {
           "source": "markdown-storage-worker",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "static"
         },
         {
           "source": "markdown-storage-worker",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "dynamic"
         },
         {
@@ -7913,7 +7913,7 @@
         },
         {
           "source": "pdf-analysis-worker",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "static"
         },
         {
@@ -7949,7 +7949,7 @@
       "bibliography-service": [
         {
           "source": "bibliography-service",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "static"
         },
         {
@@ -8016,7 +8016,7 @@
       "library-shared": [
         {
           "source": "library-shared",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "static"
         }
       ],
@@ -8055,44 +8055,44 @@
         }
       ],
       "mineru-client": [],
-      "@aikb/bibliography": [
+      "bibliography": [
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/chunking",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/embedding",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/log-management",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/pdf-converter",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/s3-service",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/s3-service",
           "type": "dynamic"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "utils",
           "type": "static"
         },
         {
-          "source": "@aikb/bibliography",
+          "source": "bibliography",
           "target": "@aikb/item-vector-storage",
           "type": "static"
         }
@@ -8172,7 +8172,7 @@
         },
         {
           "source": "aikb",
-          "target": "@aikb/bibliography",
+          "target": "bibliography",
           "type": "static"
         },
         {

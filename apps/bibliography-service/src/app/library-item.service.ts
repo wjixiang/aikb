@@ -3,7 +3,7 @@ import {
   S3MongoLibraryStorage,
   LibraryItem,
   Library,
-} from '@aikb/bibliography';
+} from 'bibliography';
 import {
   CreateLibraryItemDto,
   CreateLibraryItemWithPdfDto,

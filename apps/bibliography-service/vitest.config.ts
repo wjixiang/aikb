@@ -18,7 +18,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@aikb/bibliography': resolve(
+      'bibliography': resolve(
         __dirname,
         '../../libs/bibliography/src/index.ts',
       ),

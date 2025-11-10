@@ -21,7 +21,7 @@ import {
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
 } from 'library-shared';
-import { LibraryItem } from '@aikb/bibliography';
+import { LibraryItem } from 'bibliography';
 
 @Controller('library-items')
 export class LibraryItemController {

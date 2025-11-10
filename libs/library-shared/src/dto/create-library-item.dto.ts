@@ -5,7 +5,7 @@ import {
   IsNumber,
   IsEnum,
 } from 'class-validator';
-import { Author } from '@aikb/bibliography';
+import { Author } from 'bibliography';
 
 export class CreateLibraryItemDto {
   @IsString()

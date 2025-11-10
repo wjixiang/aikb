@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { LibraryItem } from '@aikb/bibliography';
+import { LibraryItem } from 'bibliography';
 import {
   UpdateMetadataDto,
   UpdateProcessingStatusDto,

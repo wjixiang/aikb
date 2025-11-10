@@ -3,10 +3,10 @@ import { LibraryItemService } from './library-item.service';
 import { AddItemArchiveDto } from 'library-shared';
 import { vi } from 'vitest';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Library, LibraryItem } from '@aikb/bibliography';
+import { Library, LibraryItem } from 'bibliography';
 
 // Mock the bibliography library
-vi.mock('@aikb/bibliography', () => ({
+vi.mock('bibliography', () => ({
   S3MongoLibraryStorage: vi.fn().mockImplementation(() => ({
     addArchiveToMetadata: vi.fn().mockResolvedValue(undefined),
     updateMetadata: vi.fn().mockResolvedValue({}),
