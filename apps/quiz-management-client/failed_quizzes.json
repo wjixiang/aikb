@@ -260,5 +260,48 @@
     },
     "error": "Failed to add quiz",
     "timestamp": "2025-11-08T11:32:23.444Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "胆道闭锁的常见临床表现包括",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A. 梗阻性黄疸"
+        },
+        {
+          "oid": "B",
+          "text": "B. 营养不良"
+        },
+        {
+          "oid": "C",
+          "text": "C. 发育不良"
+        },
+        {
+          "oid": "D",
+          "text": "D. 肝脾大"
+        }
+      ],
+      "answer": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "43. \n\n162.  胆道闭锁的常见临床表现包括\n\nA. 梗阻性黄疸\n\nB. 营养不良\n\nC. 发育不良\n\nD. 肝脾大\n\n解析：ABCD",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-10T02:58:51.426Z"
   }
 ]

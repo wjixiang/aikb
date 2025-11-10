@@ -7,6 +7,7 @@ import * as amqp from 'amqplib';
 import { vi } from 'vitest';
 import post from 'axios';
 import { readFileSync } from 'fs';
+import { S3Service } from '@aikb/s3-service';
 
 // Mock ItemArchive for testing
 const mockItemArchive: ItemArchive = {
@@ -110,7 +111,18 @@ describe('LibraryItemService - End to End', () => {
           },
         ]),
       ],
-      providers: [LibraryItemService],
+      providers: [
+        LibraryItemService,
+        {
+          provide: 'S3_SERVICE',
+          useValue: {
+            getSignedUploadUrl: vi.fn(),
+            getSignedDownloadUrl: vi.fn(),
+            uploadToS3: vi.fn(),
+            deleteFromS3: vi.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<LibraryItemService>(LibraryItemService);
@@ -340,7 +352,18 @@ describe('LibraryItemService - End to End', () => {
               },
             ]),
           ],
-          providers: [LibraryItemService],
+          providers: [
+            LibraryItemService,
+            {
+              provide: 'S3_SERVICE',
+              useValue: {
+                getSignedUploadUrl: vi.fn(),
+                getSignedDownloadUrl: vi.fn(),
+                uploadToS3: vi.fn(),
+                deleteFromS3: vi.fn(),
+              },
+            },
+          ],
         }).compile();
 
         console.log('Module created successfully, getting service...');

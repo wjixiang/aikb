@@ -3,12 +3,20 @@ import { LibraryItemService } from './library-item.service';
 import { PdfUploadUrlDto, PdfUploadUrlResponseDto } from 'library-shared';
 import { vi } from 'vitest';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { S3Service } from '@aikb/s3-service';
 
-// Mock the s3-service
+// Mock the S3Service class
 vi.mock('@aikb/s3-service', () => ({
-  getSignedUploadUrl: vi
-    .fn()
-    .mockResolvedValue('https://example.com/presigned-url'),
+  S3Service: vi.fn().mockImplementation(() => ({
+    getSignedUploadUrl: vi
+      .fn()
+      .mockResolvedValue('https://example.com/presigned-url'),
+  })),
+  createS3ServiceFromEnv: vi.fn().mockReturnValue({
+    getSignedUploadUrl: vi
+      .fn()
+      .mockResolvedValue('https://example.com/presigned-url'),
+  }),
 }));
 
 // Mock the bibliography library
@@ -50,7 +58,17 @@ describe('LibraryItemService - Upload URL', () => {
           },
         ]),
       ],
-      providers: [LibraryItemService],
+      providers: [
+        LibraryItemService,
+        {
+          provide: 'S3_SERVICE',
+          useValue: {
+            getSignedUploadUrl: vi
+              .fn()
+              .mockResolvedValue('https://example.com/presigned-url'),
+          },
+        },
+      ],
     })
       .overrideProvider('PDF_2_MARKDOWN_SERVICE')
       .useValue({

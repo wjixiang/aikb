@@ -7,9 +7,7 @@ import { uploadToS3 } from '@aikb/s3-service';
 import { MinerUClient, MinerUDefaultConfig } from 'mineru-client';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createReadStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { Writable } from 'stream';
+
 
 @Injectable()
 export class AppService {

@@ -4,6 +4,7 @@ import { AddItemArchiveDto } from 'library-shared';
 import { vi } from 'vitest';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Library, LibraryItem } from 'bibliography';
+import { S3Service } from '@aikb/s3-service';
 
 // Mock the bibliography library
 vi.mock('bibliography', () => ({
@@ -104,7 +105,18 @@ describe('LibraryItemService - Add Archive', () => {
           },
         ]),
       ],
-      providers: [LibraryItemService],
+      providers: [
+        LibraryItemService,
+        {
+          provide: 'S3_SERVICE',
+          useValue: {
+            getSignedUploadUrl: vi.fn(),
+            getSignedDownloadUrl: vi.fn(),
+            uploadToS3: vi.fn(),
+            deleteFromS3: vi.fn(),
+          },
+        },
+      ],
     })
       .overrideProvider('PDF_2_MARKDOWN_SERVICE')
       .useValue({
@@ -153,6 +165,7 @@ describe('LibraryItemService - Add Archive', () => {
           },
         ],
       },
+      addArchiveToMetadata: vi.fn().mockResolvedValue(true),
     } as any;
 
     it('should add an archive to an existing item', async () => {
@@ -250,8 +263,7 @@ describe('LibraryItemService - Add Archive', () => {
         addItemArchiveDto,
       );
 
-      expect(mockLibrary.storage.addArchiveToMetadata).toHaveBeenCalledWith(
-        'test-item-id',
+      expect(mockItem.addArchiveToMetadata).toHaveBeenCalledWith(
         expect.objectContaining({
           fileType: 'pdf',
           fileSize: 200000,

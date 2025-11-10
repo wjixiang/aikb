@@ -16,6 +16,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from '@aikb/log-management';
+import { S3Service } from '@aikb/s3-service';
 
 @Injectable()
 export class LibraryItemService {
@@ -24,6 +25,7 @@ export class LibraryItemService {
 
   constructor(
     @Inject('PDF_2_MARKDOWN_SERVICE') private rabbitClient: ClientProxy,
+    @Inject('S3_SERVICE') private s3Service: S3Service,
   ) {
     // Initialize the storage and library
     const storage = new S3MongoLibraryStorage();
@@ -219,15 +221,11 @@ export class LibraryItemService {
       // Generate S3 key for the PDF file
       const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${pdfUploadUrlDto.fileName}`;
 
-      // Lazy import s3-service to avoid eager initialization
-      const { getSignedUploadUrl } = await import('@aikb/s3-service');
-
-      // Generate presigned URL for upload
-      const uploadUrl = await getSignedUploadUrl(
-        s3Key,
-        'application/pdf',
-        pdfUploadUrlDto.expiresIn || 3600, // Default to 1 hour
-      );
+      // Generate presigned URL for upload using injected S3 service
+      const uploadUrl = await this.s3Service.getSignedUploadUrl(s3Key, {
+        contentType: 'application/pdf',
+        expiresIn: pdfUploadUrlDto.expiresIn || 3600, // Default to 1 hour
+      });
 
       // Set expiration time
       const expiresAt = new Date();

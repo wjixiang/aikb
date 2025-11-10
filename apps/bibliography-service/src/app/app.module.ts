@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { LibraryItemController } from './library-item.controller';
 import { LibraryItemService } from './library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { S3ServiceProvider } from './s3/s3.provider';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ]),
   ],
   controllers: [LibraryItemController],
-  providers: [LibraryItemService],
+  providers: [LibraryItemService, S3ServiceProvider],
 })
 export class AppModule {}
