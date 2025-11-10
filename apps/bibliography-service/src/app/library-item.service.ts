@@ -11,13 +11,16 @@ import {
   PdfDownloadUrlDto,
   PdfUploadUrlDto,
   PdfUploadUrlResponseDto,
+  AddItemArchiveDto,
 } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from 'library-shared';
+import { createLoggerWithPrefix } from '@aikb/log-management';
 
 @Injectable()
 export class LibraryItemService {
   private library: Library;
+  private logger = createLoggerWithPrefix('bibliography-service');
 
   constructor(
     @Inject('PDF_2_MARKDOWN_SERVICE') private rabbitClient: ClientProxy,
@@ -87,7 +90,8 @@ export class LibraryItemService {
 
     // Use the provided PDF buffer
     const pdfBuffer = createLibraryItemWithPdfDto.pdfBuffer;
-    const fileName = createLibraryItemWithPdfDto.fileName ||
+    const fileName =
+      createLibraryItemWithPdfDto.fileName ||
       `${createLibraryItemWithPdfDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
     return await this.library.storePdf(pdfBuffer, fileName, metadata);
@@ -173,59 +177,6 @@ export class LibraryItemService {
     return updatedItem;
   }
 
-  // /**
-  //  * Update PDF processing status
-  //  * @param id The ID of the library item
-  //  * @param updateProcessingStatusDto The processing status update
-  //  * @returns The updated library item
-  //  */
-  // async updatePdfProcessingStatus(
-  //   id: string,
-  //   updateProcessingStatusDto: UpdateProcessingStatusDto,
-  // ): Promise<LibraryItem> {
-  //   const item = await this.library.getItem(id);
-  //   if (!item) {
-  //     throw new Error(`Library item with ID ${id} not found`);
-  //   }
-
-  //   // Prepare the updates
-  //   const updates: any = {
-  //     pdfProcessingStatus: updateProcessingStatusDto.status,
-  //     pdfProcessingMessage: updateProcessingStatusDto.message,
-  //     pdfProcessingProgress: updateProcessingStatusDto.progress,
-  //     pdfProcessingError: updateProcessingStatusDto.error,
-  //     dateModified: new Date(),
-  //   };
-
-  //   // Add timestamps based on status
-  //   if (
-  //     updateProcessingStatusDto.status === 'analyzing' &&
-  //     !item.metadata.pdfProcessingStartedAt
-  //   ) {
-  //     updates.pdfProcessingStartedAt = new Date();
-  //   } else if (updateProcessingStatusDto.status === 'completed') {
-  //     updates.pdfProcessingCompletedAt = new Date();
-  //   } else if (updateProcessingStatusDto.status === 'failed') {
-  //     updates.pdfProcessingRetryCount =
-  //       (item.metadata.pdfProcessingRetryCount || 0) + 1;
-  //   }
-
-  //   // Update the metadata
-  //   const updatedMetadata = {
-  //     ...item.metadata,
-  //     ...updates,
-  //   };
-
-  //   await this.library['storage'].updateMetadata(updatedMetadata);
-
-  //   // Return the updated item
-  //   const updatedItem = await this.library.getItem(id);
-  //   if (!updatedItem) {
-  //     throw new Error(`Failed to retrieve updated library item ${id}`);
-  //   }
-  //   return updatedItem;
-  // }
-
   /**
    * Get PDF download URL
    * @param id The ID of the library item
@@ -261,45 +212,50 @@ export class LibraryItemService {
    * @param pdfUploadUrlDto The request data for generating upload URL
    * @returns The upload URL, S3 key, and expiration time
    */
-  async getPdfUploadUrl(pdfUploadUrlDto: PdfUploadUrlDto): Promise<PdfUploadUrlResponseDto> {
+  async getPdfUploadUrl(
+    pdfUploadUrlDto: PdfUploadUrlDto,
+  ): Promise<PdfUploadUrlResponseDto> {
     try {
       // Generate S3 key for the PDF file
       const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${pdfUploadUrlDto.fileName}`;
-      
+
       // Lazy import s3-service to avoid eager initialization
       const { getSignedUploadUrl } = await import('@aikb/s3-service');
-      
+
       // Generate presigned URL for upload
       const uploadUrl = await getSignedUploadUrl(
         s3Key,
         'application/pdf',
         pdfUploadUrlDto.expiresIn || 3600, // Default to 1 hour
       );
-      
+
       // Set expiration time
       const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + (pdfUploadUrlDto.expiresIn || 3600));
-      
+      expiresAt.setSeconds(
+        expiresAt.getSeconds() + (pdfUploadUrlDto.expiresIn || 3600),
+      );
+
       return {
         uploadUrl,
         s3Key,
         expiresAt: expiresAt.toISOString(),
       };
     } catch (error) {
-      throw new Error(`Failed to generate PDF upload URL: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to generate PDF upload URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   async producePdf2MarkdownRequest(req: Pdf2MArkdownDto) {
-    console.log('producePdf2MarkdownRequest called with:', req);
+    this.logger.debug('producePdf2MarkdownRequest called with:', req);
     try {
       // Send message to the configured queue
       // The pattern name should match to routing key expected by consumers
-      console.log('Emitting message to RabbitMQ...');
       this.rabbitClient.emit('pdf-2-markdown-conversion', req);
-      console.log('Message emitted successfully');
+      this.logger.debug('Message emitted to RabbitMQ successfully', req);
     } catch (error) {
-      console.error('Error sending message to RabbitMQ:', error);
+      this.logger.error('Error sending message to RabbitMQ:', error);
       throw error;
     }
 
@@ -332,6 +288,46 @@ export class LibraryItemService {
 
     // Update the metadata through the storage
     await this.library['storage'].updateMetadata(updatedMetadata);
+
+    // Return the updated item
+    const updatedItem = await this.library.getItem(id);
+    if (!updatedItem) {
+      throw new Error(`Failed to retrieve updated library item ${id}`);
+    }
+    return updatedItem;
+  }
+
+  /**
+   * Add an archive to a library item
+   * @param id The ID of the library item
+   * @param addItemArchiveDto The archive data to add
+   * @returns The updated library item
+   */
+  async addArchiveToItem(
+    id: string,
+    addItemArchiveDto: AddItemArchiveDto,
+  ): Promise<LibraryItem> {
+    this.logger.debug('addArchiveToItem called with id:', id);
+    this.logger.debug('library object:', this.library);
+    this.logger.debug('library.storage:', (this.library as any).storage);
+
+    const item = await this.library.getItem(id);
+    if (!item) {
+      throw new Error(`Library item with ID ${id} not found`);
+    }
+
+    // Create the new archive object with the current date
+    const newArchive = {
+      fileType: addItemArchiveDto.fileType,
+      fileSize: addItemArchiveDto.fileSize,
+      fileHash: addItemArchiveDto.fileHash,
+      addDate: new Date(),
+      s3Key: addItemArchiveDto.s3Key,
+      pageCount: addItemArchiveDto.pageCount,
+      wordCount: addItemArchiveDto.wordCount,
+    };
+
+    await item.addArchiveToMetadata(newArchive);
 
     // Return the updated item
     const updatedItem = await this.library.getItem(id);

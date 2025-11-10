@@ -6,6 +6,7 @@ import {
   SearchFilter,
   Collection,
   Citation,
+  ItemArchive,
 } from '../library/index.js';
 import { connectToDatabase } from './mongodb.js';
 // Don't import s3-service at module level to avoid eager initialization
@@ -170,6 +171,35 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
     await db
       .collection(this.metadataCollection)
       .updateOne({ id: metadata.id }, { $set: metadata });
+  }
+
+  async addArchiveToMetadata(id: string, archive: ItemArchive): Promise<void> {
+    const { db } = await connectToDatabase();
+
+    // Check if item exists
+    const item = await this.getMetadata(id);
+    if (!item) {
+      throw new Error(`Item with ID ${id} not found`);
+    }
+
+    // Check if archive with same hash already exists
+    const existingArchive = item.archives.find(
+      (a) => a.fileHash === archive.fileHash,
+    );
+    if (existingArchive) {
+      throw new Error(
+        `Archive with file hash ${archive.fileHash} already exists for item ${id}`,
+      );
+    }
+
+    // Add the new archive to the archives array
+    await db.collection(this.metadataCollection).updateOne(
+      { id },
+      {
+        $push: { archives: archive as any },
+        $set: { dateModified: new Date() },
+      },
+    );
   }
 
   async searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]> {

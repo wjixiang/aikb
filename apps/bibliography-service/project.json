@@ -69,6 +69,13 @@
         "vitestConfig": "apps/bibliography-service/vitest.config.ts",
         "testNamePattern": "e2e"
       }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["./**/*.ts"]
+      }
     }
   }
 }

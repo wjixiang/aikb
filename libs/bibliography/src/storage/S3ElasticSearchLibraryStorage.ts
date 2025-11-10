@@ -6,6 +6,7 @@ import {
   Collection,
   Citation,
   SearchFilter,
+  ItemArchive,
 } from '../library/types.js';
 import { IdUtils } from 'utils';
 import path from 'path';
@@ -323,6 +324,56 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
       },
       refresh: true, // Refresh index to make update immediately available
     } as any);
+  }
+
+  async addArchiveToMetadata(id: string, archive: ItemArchive): Promise<void> {
+    await this.checkInitialized();
+
+    try {
+      // Get the current metadata
+      const result = await this.client.get({
+        index: this.metadataIndexName,
+        id: id,
+      });
+
+      if (!result.found) {
+        throw new Error(`Item with ID ${id} not found`);
+      }
+
+      const metadata = result._source as ItemMetadata;
+
+      // Check if archive with same file hash already exists
+      if (
+        metadata.archives &&
+        metadata.archives.some((a) => a.fileHash === archive.fileHash)
+      ) {
+        throw new Error(
+          `Archive with file hash ${archive.fileHash} already exists for item ${id}`,
+        );
+      }
+
+      // Add the new archive
+      if (!metadata.archives) {
+        metadata.archives = [];
+      }
+      metadata.archives.push(archive);
+      metadata.dateModified = new Date();
+
+      // Update the metadata
+      await this.client.update({
+        index: this.metadataIndexName,
+        id: id,
+        body: {
+          doc: metadata,
+        },
+        refresh: true, // Refresh index to make update immediately available
+      } as any);
+    } catch (error) {
+      if ((error as any)?.meta?.statusCode === 404) {
+        throw new Error(`Item with ID ${id} not found`);
+      }
+      throw error;
+    }
   }
 
   async searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]> {

@@ -21,7 +21,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
-  controllers: [ LibraryItemController],
-  providers: [ LibraryItemService],
+  controllers: [LibraryItemController],
+  providers: [LibraryItemService],
 })
 export class AppModule {}

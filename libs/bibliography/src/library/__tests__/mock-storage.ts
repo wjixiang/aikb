@@ -1,6 +1,6 @@
 import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
 import { ILibraryStorage } from '../storage.js';
-import { ItemMetadata, Collection, Citation } from '../types.js';
+import { ItemMetadata, Collection, Citation, ItemArchive } from '../types.js';
 // import { IdUtils } from 'utils';
 // import { IdUtils } from 'utils';
 import { IdUtils } from 'utils';
@@ -102,11 +102,40 @@ export class MockLibraryStorage implements ILibraryStorage {
     const metadataList = Array.from(this.metadataStore.values());
     for (const metadata of metadataList) {
       // Check if any archive has this hash
-      if (metadata.archives.some(archive => archive.fileHash === contentHash)) {
+      if (
+        metadata.archives.some((archive) => archive.fileHash === contentHash)
+      ) {
         return metadata;
       }
     }
     return null;
+  }
+
+  async addArchiveToMetadata(id: string, archive: ItemArchive): Promise<void> {
+    const metadata = this.metadataStore.get(id);
+    if (!metadata) {
+      throw new Error(`Item with ID ${id} not found`);
+    }
+
+    // Check if archive with same file hash already exists
+    if (
+      metadata.archives &&
+      metadata.archives.some((a) => a.fileHash === archive.fileHash)
+    ) {
+      throw new Error(
+        `Archive with file hash ${archive.fileHash} already exists for item ${id}`,
+      );
+    }
+
+    // Add the new archive
+    if (!metadata.archives) {
+      metadata.archives = [];
+    }
+    metadata.archives.push(archive);
+    metadata.dateModified = new Date();
+
+    // Update the metadata
+    this.metadataStore.set(id, metadata);
   }
 
   async updateMetadata(metadata: ItemMetadata): Promise<void> {
@@ -130,7 +159,9 @@ export class MockLibraryStorage implements ILibraryStorage {
         const notesMatch =
           metadata.notes?.toLowerCase().includes(query) || false;
         const hashMatch =
-          metadata.archives.some(archive => archive.fileHash.toLowerCase().includes(query)) || false;
+          metadata.archives.some((archive) =>
+            archive.fileHash.toLowerCase().includes(query),
+          ) || false;
 
         if (!titleMatch && !abstractMatch && !notesMatch && !hashMatch) {
           matches = false;
@@ -159,8 +190,8 @@ export class MockLibraryStorage implements ILibraryStorage {
       }
 
       if (filter.fileType && filter.fileType.length > 0) {
-        const hasFileType = metadata.archives.some(archive =>
-          filter.fileType.includes(archive.fileType)
+        const hasFileType = metadata.archives.some((archive) =>
+          filter.fileType.includes(archive.fileType),
         );
         if (!hasFileType) {
           matches = false;

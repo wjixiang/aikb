@@ -46,11 +46,11 @@ export interface ItemMetadata {
   notes?: string;
   collections: string[]; // Collection IDs this item belongs to
   dateAdded: Date;
-  dateModified: Date
+  dateModified: Date;
   language?: string;
   markdownContent?: string; // Converted markdown content from PDF
   markdownUpdatedDate?: Date; // When the markdown was last updated
-  archives: ItemArchive[]
+  archives: ItemArchive[];
 }
 
 export interface Collection {

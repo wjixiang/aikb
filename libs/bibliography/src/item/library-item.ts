@@ -1,7 +1,7 @@
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import { v4 } from 'uuid';
 import { ILibraryStorage } from '../library/storage.js';
-import { ItemMetadata } from '../library/types.js';
+import { ItemArchive, ItemMetadata } from '../library/types.js';
 
 const logger = createLoggerWithPrefix('LibraryItem');
 
@@ -32,13 +32,6 @@ export class LibraryItem {
   }
 
   /**
-   * Check if this item has an associated PDF file
-   */
-  hasPdf(): boolean {
-    return this.metadata.archives.length > 0;
-  }
-
-  /**
    * Get the PDF file if available
    */
   async getPdf(): Promise<Buffer | null> {
@@ -55,7 +48,9 @@ export class LibraryItem {
     if (this.metadata.archives.length === 0) {
       throw new Error('No PDF file associated with this item');
     }
-    return await this.storage.getPdfDownloadUrl(this.metadata.archives[0].s3Key);
+    return await this.storage.getPdfDownloadUrl(
+      this.metadata.archives[0].s3Key,
+    );
   }
 
   /**
@@ -129,11 +124,6 @@ export class LibraryItem {
     logger.info(
       `[LibraryItem.extractMarkdown] Starting markdown extraction for item: ${this.metadata.id}`,
     );
-
-    // Check if this item has an associated PDF file
-    if (!this.hasPdf()) {
-      throw new Error('No PDF file associated with this item');
-    }
 
     try {
       logger.info(`[LibraryItem.extractMarkdown] Getting PDF download URL...`);
@@ -230,5 +220,41 @@ export class LibraryItem {
       logger.error(`Error in selfDelete for item ${this.metadata.id}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Add an archive to the metadata
+   */
+  async addArchiveToMetadata(newArchive: ItemArchive): Promise<boolean> {
+    try {
+      if (!this.metadata.id) {
+        throw new Error('Cannot add archive to item without ID');
+      }
+
+      // Add the archive to storage (this will update the metadata in storage)
+      await this.storage.addArchiveToMetadata(this.metadata.id, newArchive);
+
+      // Refresh the local metadata from storage to get the updated archives
+      const updatedMetadata = await this.storage.getMetadata(this.metadata.id);
+      if (updatedMetadata) {
+        this.metadata = updatedMetadata;
+      }
+
+      return true;
+    } catch (error) {
+      logger.error(
+        `Error adding archive to metadata for item ${this.metadata.id}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * List all archives associated with this item
+   */
+  listArchives(): ItemArchive[] {
+    // Return a copy of the archives array to prevent external modifications
+    return [...this.metadata.archives];
   }
 }

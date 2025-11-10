@@ -375,7 +375,9 @@ describe('Library', () => {
 
       await library.deleteItem(item.getItemId());
 
-      expect(mockDeleteFromS3).toHaveBeenCalledWith(item.metadata.archives[0].s3Key);
+      expect(mockDeleteFromS3).toHaveBeenCalledWith(
+        item.metadata.archives[0].s3Key,
+      );
     });
 
     it('should handle S3 deletion failure gracefully', async () => {

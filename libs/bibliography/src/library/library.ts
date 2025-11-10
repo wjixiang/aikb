@@ -13,6 +13,7 @@ import {
   Citation,
   SearchFilter,
   PdfProcessingStatus,
+  ItemArchive,
 } from './types.js';
 
 import { ILibraryStorage, AbstractPdf } from './storage.js';
@@ -95,7 +96,6 @@ export interface ILibrary {
  */
 export class Library implements ILibrary {
   protected storage: ILibraryStorage;
-  protected pdfConvertor?: MinerUPdfConvertor;
 
   constructor(storage: ILibraryStorage) {
     this.storage = storage;
@@ -107,6 +107,7 @@ export class Library implements ILibrary {
    * @param pdfBuffer The PDF file buffer
    * @param fileName The file name
    * @param metadata PDF metadata
+   * @deprecated seperate item creating and pdf data appending
    */
   async storePdf(
     pdfBuffer: Buffer,
@@ -149,8 +150,8 @@ export class Library implements ILibrary {
           fileHash: contentHash,
           addDate: new Date(),
           s3Key: pdfInfo.s3Key,
-        }
-      ]
+        },
+      ],
     };
 
     // Save metadata first to get the ID
@@ -265,7 +266,10 @@ export class Library implements ILibrary {
         const { deleteFromS3 } = await import('@aikb/s3-service');
         await deleteFromS3(archive.s3Key);
       } catch (error) {
-        logger.error(`Failed to delete PDF from S3 for item ${id} (s3Key: ${archive.s3Key}):`, error);
+        logger.error(
+          `Failed to delete PDF from S3 for item ${id} (s3Key: ${archive.s3Key}):`,
+          error,
+        );
         // Continue with metadata deletion even if S3 deletion fails
       }
     }

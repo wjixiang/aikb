@@ -4,7 +4,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CreateLibraryItemWithPdfDto, Pdf2MArkdownDto } from 'library-shared';
 import * as amqp from 'amqplib';
 import { vi } from 'vitest';
-import { post } from 'axios';
+import post from 'axios';
 import { readFileSync } from 'fs';
 
 // Mock the bibliography library to avoid MongoDB dependency
@@ -152,7 +152,10 @@ describe('LibraryItemService - End to End', () => {
             const parsedMessage = JSON.parse(msg.content.toString());
             receivedMessage = parsedMessage.data || parsedMessage;
             messageReceived = true;
-            console.log(`Message received in ${uniqueQueueName}:`, parsedMessage);
+            console.log(
+              `Message received in ${uniqueQueueName}:`,
+              parsedMessage,
+            );
             channel.ack(msg);
           }
         },
@@ -427,16 +430,19 @@ describe('LibraryItemService - End to End', () => {
     });
   });
 
-  describe('create item with pdf', () => {
-    it.only('should create library item with PDF', async () => {
+  describe.skip('create item with pdf', () => {
+    it('should create library item with PDF', async () => {
       const testData: CreateLibraryItemWithPdfDto = {
         title: 'ACEI',
         authors: [],
         tags: [],
         collections: [],
-        pdfBuffer: readFileSync('/workspace/test/ACEI.pdf')
+        pdfBuffer: readFileSync('/workspace/test/ACEI.pdf'),
       };
-      const response = await post(`${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`, testData);
+      const response = await post(
+        `${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`,
+        testData,
+      );
       console.log(response.data);
     });
   });

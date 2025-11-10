@@ -15,10 +15,7 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
-      "options": {
-        "configFile": "libs/bibliography/vitest.config.ts"
-      }
+      "executor": "@nx/vite:test"
     }
   }
 }

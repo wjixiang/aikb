@@ -44,8 +44,10 @@ export default class notebook_s3_storage {
     if (!region) throw new Error('AWS_REGION environment variable is required');
     if (!bucketName)
       throw new Error('AWS_S3_BUCKET_NAME environment variable is required');
-    if (!accessKeyId) throw new Error('AWS_ACCESS_KEY_ID environment variable is required');
-    if (!secretAccessKey) throw new Error('AWS_SECRET_ACCESS_KEY environment variable is required');
+    if (!accessKeyId)
+      throw new Error('AWS_ACCESS_KEY_ID environment variable is required');
+    if (!secretAccessKey)
+      throw new Error('AWS_SECRET_ACCESS_KEY environment variable is required');
 
     this.client = new S3Client({
       region,

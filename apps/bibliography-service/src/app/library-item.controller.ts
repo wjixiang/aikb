@@ -19,6 +19,7 @@ import {
   UpdateMarkdownDto,
   PdfUploadUrlDto,
   PdfUploadUrlResponseDto,
+  AddItemArchiveDto,
 } from 'library-shared';
 import { LibraryItem } from '@aikb/bibliography';
 
@@ -51,6 +52,7 @@ export class LibraryItemController {
    * Create a new library item with PDF buffer
    * @param createLibraryItemWithPdfDto The data to create the library item with PDF buffer
    * @returns The created library item
+   * @deprecated limited function: cannot transport pdf larger than 100kb due to JSON restriction
    */
   @Post('with-pdf')
   async createWithPdf(
@@ -216,8 +218,7 @@ export class LibraryItemController {
   async updateMarkdown(
     @Param('id') id: string,
     @Body() updateMarkdownDto: UpdateMarkdownDto,
-  ): Promise<LibraryItem> 
-  {
+  ): Promise<LibraryItem> {
     try {
       return await this.libraryItemService.updateLibraryItemMarkdown(
         id,
@@ -268,6 +269,33 @@ export class LibraryItemController {
     } catch (error) {
       throw new HttpException(
         `Failed to get PDF upload URL: ${error instanceof Error ? error.message : String(error)}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Add an archive to a library item
+   * @param id The ID of the library item
+   * @param addItemArchiveDto The archive data to add
+   * @returns The updated library item
+   */
+  @Post(':id/archives')
+  async addArchive(
+    @Param('id') id: string,
+    @Body() addItemArchiveDto: AddItemArchiveDto,
+  ): Promise<LibraryItem> {
+    try {
+      return await this.libraryItemService.addArchiveToItem(
+        id,
+        addItemArchiveDto,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Failed to add archive to library item: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

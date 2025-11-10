@@ -1,6 +1,8 @@
+import { ItemArchive } from '@aikb/bibliography';
+
 export class Pdf2MArkdownDto {
   constructor(
     public itemId: string,
-    public pageNum: number | null = null
+    public itemArchive: ItemArchive,
   ) {}
 }

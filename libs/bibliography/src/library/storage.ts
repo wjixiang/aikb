@@ -1,4 +1,10 @@
-import { ItemMetadata, Collection, Citation, SearchFilter } from './types.js';
+import {
+  ItemMetadata,
+  Collection,
+  Citation,
+  SearchFilter,
+  ItemArchive,
+} from './types.js';
 
 // Define AbstractPdf interface for PDF handling
 export interface AbstractPdf {
@@ -25,6 +31,7 @@ export interface ILibraryStorage {
   getMetadata(id: string): Promise<ItemMetadata | null>;
   getMetadataByHash(contentHash: string): Promise<ItemMetadata | null>;
   updateMetadata(metadata: ItemMetadata): Promise<void>;
+  addArchiveToMetadata(id: string, archive: ItemArchive): Promise<void>;
   searchMetadata(filter: SearchFilter): Promise<ItemMetadata[]>;
   deleteMetadata(id: string): Promise<boolean>;
 

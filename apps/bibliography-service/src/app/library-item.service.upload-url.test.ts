@@ -6,7 +6,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
 // Mock the s3-service
 vi.mock('@aikb/s3-service', () => ({
-  getSignedUploadUrl: vi.fn().mockResolvedValue('https://example.com/presigned-url'),
+  getSignedUploadUrl: vi
+    .fn()
+    .mockResolvedValue('https://example.com/presigned-url'),
 }));
 
 // Mock the bibliography library
@@ -84,7 +86,7 @@ describe('LibraryItemService - Upload URL', () => {
       expect(result.s3Key).toContain('library/pdfs/');
       expect(result.s3Key).toContain('test-file.pdf');
       expect(result.expiresAt).toBeDefined();
-      
+
       // Verify expiration is in the future
       const expirationDate = new Date(result.expiresAt);
       const now = new Date();
@@ -103,12 +105,14 @@ describe('LibraryItemService - Upload URL', () => {
       expect(result.s3Key).toContain('library/pdfs/');
       expect(result.s3Key).toContain('test-file.pdf');
       expect(result.expiresAt).toBeDefined();
-      
+
       // Verify expiration is approximately 1 hour from now
       const expirationDate = new Date(result.expiresAt);
       const now = new Date();
       const oneHourFromNow = new Date(now.getTime() + 3600000);
-      expect(Math.abs(expirationDate.getTime() - oneHourFromNow.getTime())).toBeLessThan(5000); // 5 seconds tolerance
+      expect(
+        Math.abs(expirationDate.getTime() - oneHourFromNow.getTime()),
+      ).toBeLessThan(5000); // 5 seconds tolerance
     });
 
     it('should generate unique S3 keys', async () => {
@@ -118,7 +122,7 @@ describe('LibraryItemService - Upload URL', () => {
 
       const result1 = await service.getPdfUploadUrl(pdfUploadUrlDto);
       // Add a small delay to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       const result2 = await service.getPdfUploadUrl(pdfUploadUrlDto);
 
       expect(result1.s3Key).not.toBe(result2.s3Key);
