@@ -64,7 +64,7 @@ export class LibraryItemService {
     const pdfBuffer = Buffer.from('placeholder');
     const fileName = `${createLibraryItemDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
-    return await this.library.storePdf(pdfBuffer, fileName, metadata);
+    return await this.library.storePdf(pdfBuffer, fileName, metadata, 1); // Default page count for placeholder
   }
 
   /**
@@ -97,7 +97,7 @@ export class LibraryItemService {
       createLibraryItemWithPdfDto.fileName ||
       `${createLibraryItemWithPdfDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
-    return await this.library.storePdf(pdfBuffer, fileName, metadata);
+    return await this.library.storePdf(pdfBuffer, fileName, metadata, createLibraryItemWithPdfDto.pageCount);
   }
 
   /**
@@ -316,13 +316,18 @@ export class LibraryItemService {
     }
 
     // Create the new archive object with the current date
+    // Ensure pageCount is provided for PDF files
+    if (addItemArchiveDto.fileType === 'pdf' && !addItemArchiveDto.pageCount) {
+      throw new Error('pageCount is required for PDF files');
+    }
+
     const newArchive: ItemArchive = {
       fileType: addItemArchiveDto.fileType,
       fileSize: addItemArchiveDto.fileSize,
       fileHash: addItemArchiveDto.fileHash,
       addDate: new Date(),
       s3Key: addItemArchiveDto.s3Key,
-      pageCount: addItemArchiveDto.pageCount,
+      pageCount: addItemArchiveDto.pageCount!,
       wordCount: addItemArchiveDto.wordCount,
     };
 

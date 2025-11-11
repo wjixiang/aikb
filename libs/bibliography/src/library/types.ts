@@ -28,7 +28,7 @@ export interface ItemArchive {
   fileHash: string;
   addDate: Date;
   s3Key: string;
-  pageCount?: number;
+  pageCount: number; // Required for PDF files
   wordCount?: number;
 }
 

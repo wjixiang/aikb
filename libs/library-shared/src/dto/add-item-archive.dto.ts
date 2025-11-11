@@ -13,9 +13,8 @@ export class AddItemArchiveDto {
   @IsString()
   s3Key!: string;
 
-  @IsOptional()
   @IsNumber()
-  pageCount?: number;
+  pageCount!: number; // Required for PDF files
 
   @IsOptional()
   @IsNumber()

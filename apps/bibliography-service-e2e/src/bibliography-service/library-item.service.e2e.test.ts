@@ -509,6 +509,7 @@ describe('LibraryItemService - End to End', () => {
         tags: [],
         collections: [],
         pdfBuffer: readFileSync('/workspace/test/ACEI.pdf'),
+        pageCount: 10, // Required for PDF files
       };
       const response = await post(
         `${process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT']}/library-items/with-pdf`,

@@ -113,6 +113,7 @@ export class Library implements ILibrary {
     pdfBuffer: Buffer,
     fileName: string,
     metadata: Partial<ItemMetadata>,
+    pageCount?: number,
   ): Promise<LibraryItem> {
     // Validate inputs
     if (!fileName) {
@@ -150,6 +151,7 @@ export class Library implements ILibrary {
           fileHash: contentHash,
           addDate: new Date(),
           s3Key: pdfInfo.s3Key,
+          pageCount: pageCount || 0, // Default to 0 if not provided, but should be provided for PDF files
         },
       ],
     };

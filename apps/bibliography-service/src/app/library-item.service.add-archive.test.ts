@@ -162,10 +162,12 @@ describe('LibraryItemService - Add Archive', () => {
             fileHash: 'existing-hash',
             addDate: new Date(),
             s3Key: 'library/pdfs/2024/existing-file.pdf',
+            pageCount: 15, // Required for PDF files
           },
         ],
       },
       addArchiveToMetadata: vi.fn().mockResolvedValue(true),
+      getMarkdown: vi.fn().mockResolvedValue(null), // Mock getMarkdown method
     } as any;
 
     it('should add an archive to an existing item', async () => {
@@ -228,6 +230,7 @@ describe('LibraryItemService - Add Archive', () => {
         fileSize: 200000,
         fileHash: 'new-hash',
         s3Key: 'library/pdfs/2024/new-file.pdf',
+        pageCount: 10,
       };
 
       // Mock getItem to return null (item not found)
@@ -247,6 +250,7 @@ describe('LibraryItemService - Add Archive', () => {
         fileSize: 200000,
         fileHash: 'new-hash',
         s3Key: 'library/pdfs/2024/new-file.pdf',
+        pageCount: 15,
       };
 
       // Mock getItem to return our test item and then the updated item
@@ -280,7 +284,8 @@ describe('LibraryItemService - Add Archive', () => {
         fileSize: 150000,
         fileHash: 'minimal-hash',
         s3Key: 'library/pdfs/2024/minimal-file.pdf',
-        // pageCount and wordCount are optional
+        pageCount: 25, // Required for PDF files
+        // wordCount is optional
       };
 
       // Mock getItem to return our test item

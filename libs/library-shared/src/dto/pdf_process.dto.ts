@@ -8,7 +8,7 @@ export class Pdf2MArkdownDto {
     public fileHash: string,
     public addDate: Date,
     public s3Key: string,
-    public pageCount?: number,
+    public pageCount: number, // Required for PDF files
     public wordCount?: number,
   ) {}
 }

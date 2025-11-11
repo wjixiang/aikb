@@ -57,4 +57,7 @@ export class CreateLibraryItemWithPdfDto {
   @IsOptional()
   @IsString()
   fileName?: string;
+
+  @IsNumber()
+  pageCount!: number; // Required for PDF files
 }
