@@ -3,6 +3,7 @@ import {
   S3MongoLibraryStorage,
   LibraryItem,
   Library,
+  ItemArchive,
 } from 'bibliography';
 import {
   CreateLibraryItemDto,
@@ -315,7 +316,7 @@ export class LibraryItemService {
     }
 
     // Create the new archive object with the current date
-    const newArchive = {
+    const newArchive: ItemArchive = {
       fileType: addItemArchiveDto.fileType,
       fileSize: addItemArchiveDto.fileSize,
       fileHash: addItemArchiveDto.fileHash,
@@ -332,6 +333,26 @@ export class LibraryItemService {
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
+
+    if(! await updatedItem.getMarkdown()) {
+      // Triger markdown extraction
+      switch(newArchive.fileType) {
+        case 'pdf':
+          await this.producePdf2MarkdownRequest({
+            itemId: updatedItem.getItemId(),
+            fileType: 'pdf',
+            fileSize: newArchive.fileSize,
+            fileHash: newArchive.fileHash,
+            addDate: newArchive.addDate,
+            s3Key: newArchive.s3Key,
+            pageCount: newArchive.pageCount
+          })
+        default:
+          this.logger.error(`none support file type for markdown extraction`, newArchive)
+      }
+    }
+    
+
     return updatedItem;
   }
 }

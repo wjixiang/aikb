@@ -6,13 +6,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { uploadToS3 } from '@aikb/s3-service';
 import { MinerUClient, MinerUDefaultConfig } from 'mineru-client';
 import * as fs from 'fs';
+import { createLoggerWithPrefix } from '@aikb/log-management'
 import * as path from 'path';
 
 
 @Injectable()
 export class AppService {
   private minerUClient: MinerUClient;
-
+  private logger = createLoggerWithPrefix('pdf2md-service-AppService')
   constructor(
     @Inject('pdf_2_markdown_service') private rabbitClient: ClientProxy,
   ) {
@@ -49,14 +50,14 @@ export class AppService {
     );
     const chunkSize = parseInt(process.env['PDF_CHUNK_SIZE'] || '10', 10);
 
-    console.log(
-      `Page count: ${pdfInfo.pageCount}, Chunk threshold: ${chunkSizeThreshold}, Chunk size: ${chunkSize}`,
+    this.logger.info(
+      `Processing PDF ${pdfInfo.itemId}: Page count: ${pdfInfo.pageCount}, Chunk threshold: ${chunkSizeThreshold}, Chunk size: ${chunkSize}`,
     );
 
     // Check if chunking is needed
     if (pdfInfo.pageCount && pdfInfo.pageCount > chunkSizeThreshold) {
-      console.log(
-        `Page count (${pdfInfo.pageCount}) exceeds threshold (${chunkSizeThreshold}), chunking PDF`,
+      this.logger.info(
+        `Page count (${pdfInfo.pageCount}) exceeds threshold (${chunkSizeThreshold}), chunking PDF ${pdfInfo.itemId}`,
       );
 
       if (!pdfInfo.pdfData) {
@@ -72,7 +73,7 @@ export class AppService {
         pdfInfo.pdfData,
         chunkSize,
       );
-      console.log(`PDF split into ${pdfChunks.length} chunks`);
+      this.logger.info(`PDF ${pdfInfo.itemId} split into ${pdfChunks.length} chunks`);
 
       // Upload each chunk to S3
       const uploadPromises = pdfChunks.map(async (chunk, index) => {
@@ -85,7 +86,7 @@ export class AppService {
             chunkFileName,
             'application/pdf',
           );
-          console.log(
+          this.logger.debug(
             `Uploaded chunk ${index + 1}/${pdfChunks.length} to S3: ${uploadResult}`,
           );
           return {
@@ -96,7 +97,7 @@ export class AppService {
             fileName: chunkFileName,
           };
         } catch (error) {
-          console.error(`Failed to upload chunk ${index + 1}:`, error);
+          this.logger.error(`Failed to upload chunk ${index + 1} for PDF ${pdfInfo.itemId}:`, error);
           throw new Error(
             `Failed to upload chunk ${index + 1} to S3: ${error}`,
           );
@@ -105,7 +106,7 @@ export class AppService {
 
       // Wait for all uploads to complete
       const uploadedChunks = await Promise.all(uploadPromises);
-      console.log(`All ${uploadedChunks.length} chunks uploaded successfully`);
+      this.logger.info(`All ${uploadedChunks.length} chunks uploaded successfully for PDF ${pdfInfo.itemId}`);
 
       // Process each chunk individually and merge results
       const chunkResults = await this.processPdfChunks(
@@ -134,7 +135,7 @@ export class AppService {
       };
     } else {
       // Process as single PDF if no chunking needed
-      console.log('Processing PDF as single document');
+      this.logger.info(`Processing PDF ${pdfInfo.itemId} as single document`);
 
       // Convert the entire PDF to markdown
       const markdownContent = await this.convertSinglePdfToMarkdown(
@@ -203,8 +204,8 @@ export class AppService {
     endPage: number,
   ): Promise<Uint8Array> {
     try {
-      console.log(
-        `Starting PDF split: startPage=${startPage}, endPage=${endPage}`,
+      this.logger.debug(
+        `Starting PDF split for PDF: startPage=${startPage}, endPage=${endPage}`,
       );
 
       // Convert Buffer to Uint8Array to ensure compatibility with pdf-lib
@@ -212,7 +213,7 @@ export class AppService {
       const pdfDoc = await PDFDocument.load(pdfBytes);
 
       const totalPages = pdfDoc.getPageCount();
-      console.log(`Total pages in PDF: ${totalPages}`);
+      this.logger.debug(`Total pages in PDF: ${totalPages}`);
 
       if (startPage < 0 || endPage >= totalPages || startPage > endPage) {
         throw new Error(
@@ -225,7 +226,7 @@ export class AppService {
 
       // Copy pages from the original document to the new one
       const pagesToCopy = endPage - startPage + 1;
-      console.log(
+      this.logger.debug(
         `Copying pages: startPage=${startPage}, endPage=${endPage}, count=${pagesToCopy}`,
       );
 
@@ -241,11 +242,11 @@ export class AppService {
 
       // Save the new PDF document as bytes
       const newPdfBytes = await newPdfDoc.save();
-      console.log(`Created new PDF with byte length: ${newPdfBytes.length}`);
+      this.logger.debug(`Created new PDF with byte length: ${newPdfBytes.length}`);
 
       return newPdfBytes;
     } catch (error) {
-      console.error(`Error splitting PDF: ${error}`);
+      this.logger.error(`Error splitting PDF: ${error}`);
       throw error;
     }
   }
@@ -255,14 +256,14 @@ export class AppService {
     chunkSize: number = 10,
   ): Promise<Uint8Array[]> {
     try {
-      console.log(`Starting PDF chunking with chunk size: ${chunkSize}`);
+      this.logger.info(`Starting PDF chunking with chunk size: ${chunkSize}`);
 
       // Convert Buffer to Uint8Array to ensure compatibility with pdf-lib
       const pdfBytes = new Uint8Array(existingPdfBytes);
       const pdfDoc = await PDFDocument.load(pdfBytes);
 
       const totalPages = pdfDoc.getPageCount();
-      console.log(`Total pages in PDF: ${totalPages}`);
+      this.logger.debug(`Total pages in PDF: ${totalPages}`);
 
       const chunks: Uint8Array[] = [];
       const numChunks = Math.ceil(totalPages / chunkSize);
@@ -271,7 +272,7 @@ export class AppService {
         const startPage = i * chunkSize;
         const endPage = Math.min(startPage + chunkSize - 1, totalPages - 1);
 
-        console.log(
+        this.logger.debug(
           `Creating chunk ${i + 1}/${numChunks}: pages ${startPage}-${endPage}`,
         );
 
@@ -283,10 +284,10 @@ export class AppService {
         chunks.push(chunkBytes);
       }
 
-      console.log(`Created ${chunks.length} PDF chunks`);
+      this.logger.info(`Created ${chunks.length} PDF chunks`);
       return chunks;
     } catch (error) {
-      console.error(`Error chunking PDF: ${error}`);
+      this.logger.error(`Error chunking PDF: ${error}`);
       throw error;
     }
   }
@@ -299,7 +300,7 @@ export class AppService {
     itemId: string,
   ): Promise<string> {
     try {
-      console.log(`Converting single PDF to Markdown for item: ${itemId}`);
+      this.logger.info(`Converting single PDF to Markdown for item: ${itemId}`);
 
       // Create a single file task with MinerU
       const taskId = await this.minerUClient.createSingleFileTask({
@@ -312,7 +313,7 @@ export class AppService {
         model_version: 'pipeline',
       });
 
-      console.log(`Created MinerU task: ${taskId} for item: ${itemId}`);
+      this.logger.info(`Created MinerU task: ${taskId} for item: ${itemId}`);
 
       // Wait for task completion
       const { result, downloadedFiles } =
@@ -343,10 +344,10 @@ export class AppService {
         throw new Error('No markdown content available from MinerU result');
       }
 
-      console.log(`Successfully converted PDF to Markdown for item: ${itemId}`);
+      this.logger.info(`Successfully converted PDF to Markdown for item: ${itemId}`);
       return markdownContent;
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to convert PDF to Markdown for item ${itemId}:`,
         error,
       );
@@ -363,11 +364,11 @@ export class AppService {
   ): Promise<Array<{ chunkIndex: number; markdownContent: string }>> {
     const results: Array<{ chunkIndex: number; markdownContent: string }> = [];
 
-    console.log(`Processing ${chunks.length} PDF chunks for item: ${itemId}`);
+    this.logger.info(`Processing ${chunks.length} PDF chunks for item: ${itemId}`);
 
     for (const chunk of chunks) {
       try {
-        console.log(
+        this.logger.info(
           `Processing chunk ${chunk.chunkIndex + 1}/${chunks.length} for item: ${itemId}`,
         );
 
@@ -381,11 +382,11 @@ export class AppService {
           markdownContent,
         });
 
-        console.log(
+        this.logger.info(
           `Completed processing chunk ${chunk.chunkIndex + 1}/${chunks.length} for item: ${itemId}`,
         );
       } catch (error) {
-        console.error(
+        this.logger.error(
           `Failed to process chunk ${chunk.chunkIndex} for item ${itemId}:`,
           error,
         );
@@ -449,7 +450,7 @@ export class AppService {
 
       throw new Error('No markdown file found in downloaded files');
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to extract markdown from downloaded files for item ${itemId}:`,
         error,
       );
@@ -465,7 +466,7 @@ export class AppService {
     itemId: string,
   ): Promise<string> {
     try {
-      console.log(`Downloading and extracting from zip: ${zipUrl}`);
+      this.logger.debug(`Downloading and extracting from zip: ${zipUrl}`);
 
       // For now, we'll use a simpler approach - just return a placeholder
       // In a real implementation, you would use a proper zip extraction library
@@ -475,7 +476,7 @@ export class AppService {
       const response = await get(zipUrl, { responseType: 'arraybuffer' });
       const zipBuffer = Buffer.from(response.data);
 
-      console.log(
+      this.logger.debug(
         `Downloaded zip file, size: ${zipBuffer.length} bytes for item: ${itemId}`,
       );
 
@@ -483,7 +484,7 @@ export class AppService {
       // In a real implementation, you would extract the actual markdown content
       return `# Extracted Content for ${itemId}\n\nThis is a placeholder for the extracted markdown content from the zip file.\n\nIn a real implementation, this would contain the actual markdown content extracted from the PDF.`;
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to download and extract from zip for item ${itemId}:`,
         error,
       );
@@ -505,7 +506,7 @@ export class AppService {
       let processedContent = content;
       const matches = [...content.matchAll(imageRegex)];
 
-      console.log(
+      this.logger.debug(
         `Found ${matches.length} images to process for item: ${itemId}`,
       );
 
@@ -536,18 +537,18 @@ export class AppService {
                 `![${altText}](${s3Url})`,
               );
 
-              console.log(`Uploaded image to S3: ${s3Url}`);
+              this.logger.debug(`Uploaded image to S3: ${s3Url}`);
             }
           }
         } catch (imageError) {
-          console.error(`Failed to process image ${imagePath}:`, imageError);
+          this.logger.error(`Failed to process image ${imagePath}:`, imageError);
           // Keep original image reference if upload fails
         }
       }
 
       return processedContent;
     } catch (error) {
-      console.error(`Failed to process images for item ${itemId}:`, error);
+      this.logger.error(`Failed to process images for item ${itemId}:`, error);
       return content; // Return original content if image processing fails
     }
   }
@@ -584,7 +585,7 @@ export class AppService {
         );
       }
 
-      console.log(`Updating bibliography service for item: ${itemId}`);
+      this.logger.info(`Updating bibliography service for item: ${itemId}`);
 
       const updateDto: UpdateMarkdownDto = {
         id: itemId,
@@ -602,11 +603,11 @@ export class AppService {
         },
       );
 
-      console.log(
+      this.logger.info(
         `Successfully updated bibliography service for item: ${itemId}`,
       );
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to update bibliography service for item ${itemId}:`,
         error,
       );
