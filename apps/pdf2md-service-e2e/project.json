@@ -5,12 +5,8 @@
   "implicitDependencies": ["pdf2md-service"],
   "targets": {
     "e2e": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
-      "options": {
-        "jestConfig": "apps/pdf2md-service-e2e/jest.config.ts",
-        "passWithNoTests": true
-      },
       "dependsOn": ["pdf2md-service:build", "pdf2md-service:serve"]
     }
   }

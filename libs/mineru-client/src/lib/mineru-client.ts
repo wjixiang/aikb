@@ -171,7 +171,7 @@ export const MinerUDefaultConfig: MinerUConfig = {
 
 export class MinerUClient {
   private client: AxiosInstance;
-  private config: Required<MinerUConfig>;
+  public config: Required<MinerUConfig>;
 
   constructor(config: MinerUConfig) {
     this.config = {
@@ -359,6 +359,14 @@ export class MinerUClient {
           `[MinerUClient] Single file task response received:`,
           JSON.stringify(data, null, 2),
         );
+
+        // Handle case where data is null or undefined
+        if (!data) {
+          console.error(
+            `[MinerUClient] No response data received from API`,
+          );
+          throw new MinerUApiError('NO_RESPONSE_DATA', 'No response data received from API');
+        }
 
         if (!data.task_id) {
           console.error(

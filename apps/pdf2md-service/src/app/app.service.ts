@@ -60,7 +60,11 @@ export class AppService {
       );
 
       if (!pdfInfo.pdfData) {
-        throw new Error('PDF data is required for chunking but not available');
+        // Download PDF data if not available
+        if (!pdfInfo.s3Url) {
+          pdfInfo.s3Url = await this.getPdfDownloadUrl(pdfInfo.itemId);
+        }
+        pdfInfo.pdfData = await this.downloadPdfData(pdfInfo.s3Url);
       }
 
       // Split PDF into chunks
@@ -315,7 +319,7 @@ export class AppService {
         await this.minerUClient.waitForTaskCompletion(taskId, {
           pollInterval: 5000,
           timeout: 300000, // 5 minutes
-          downloadDir: this.minerUClient['config'].downloadDir,
+          downloadDir: process.env['MINERU_DOWNLOAD_DIR'] || './mineru-downloads',
         });
 
       if (result.state !== 'done') {
