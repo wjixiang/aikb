@@ -15,7 +15,7 @@ import { connectToDatabase } from './mongodb.js';
 //   uploadPdfFromPath,
 //   getSignedUrlForDownload,
 // } from '@aikb/s3-service';
-import { IdUtils } from 'utils';
+import { IdUtils, S3Utils } from 'utils';
 import path from 'path';
 import fs from 'fs';
 
@@ -67,7 +67,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
   }
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
-    const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+    const s3Key = S3Utils.generatePdfS3Key(fileName);
 
     // Lazy import s3-service to avoid eager initialization
     const { uploadToS3 } = await import('@aikb/s3-service');
@@ -89,7 +89,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
 
   async uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf> {
     const fileName = path.basename(pdfPath);
-    const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+    const s3Key = S3Utils.generatePdfS3Key(fileName);
 
     // Lazy import s3-service to avoid eager initialization
     const { uploadPdfFromPath } = await import('@aikb/s3-service');

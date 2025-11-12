@@ -18,6 +18,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import { S3Service } from '@aikb/s3-service';
+import { S3Utils } from 'utils';
 
 @Injectable()
 export class LibraryItemService {
@@ -219,8 +220,8 @@ export class LibraryItemService {
     pdfUploadUrlDto: PdfUploadUrlDto,
   ): Promise<PdfUploadUrlResponseDto> {
     try {
-      // Generate S3 key for the PDF file
-      const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${pdfUploadUrlDto.fileName}`;
+      // Generate S3 key for the PDF file using unified utility
+      const s3Key = S3Utils.generatePdfS3Key(pdfUploadUrlDto.fileName);
 
       // Generate presigned URL for upload using injected S3 service
       const uploadUrl = await this.s3Service.getSignedUploadUrl(s3Key, {

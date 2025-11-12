@@ -8,7 +8,7 @@ import {
   SearchFilter,
   ItemArchive,
 } from '../library/types.js';
-import { IdUtils } from 'utils';
+import { IdUtils, S3Utils } from 'utils';
 import path from 'path';
 import fs from 'fs';
 // Don't import s3-service at module level to avoid eager initialization
@@ -187,7 +187,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   }
 
   async uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf> {
-    const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+    const s3Key = S3Utils.generatePdfS3Key(fileName);
 
     // Lazy import s3-service functions to avoid eager initialization
     const { uploadToS3 } = await import('@aikb/s3-service');
@@ -207,7 +207,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
   async uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf> {
     const fileName = path.basename(pdfPath);
-    const s3Key = `library/pdfs/${new Date().getFullYear()}/${Date.now()}-${fileName}`;
+    const s3Key = S3Utils.generatePdfS3Key(fileName);
 
     // Lazy import s3-service functions to avoid eager initialization
     const { uploadPdfFromPath } = await import('@aikb/s3-service');
