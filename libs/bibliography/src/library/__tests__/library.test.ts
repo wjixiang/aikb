@@ -127,6 +127,256 @@ describe('Library', () => {
     // This test is no longer relevant
   });
 
+  describe('createItem', () => {
+    const metadata: Partial<ItemMetadata> = {
+      title: 'Test Document',
+      authors: [{ firstName: 'John', lastName: 'Doe' }],
+      abstract: 'Test abstract',
+      publicationYear: 2023,
+      publisher: 'Test Publisher',
+      isbn: '978-0123456789',
+      doi: '10.1000/182',
+      url: 'https://example.com',
+      tags: ['test', 'document'],
+      notes: 'Test notes',
+      collections: ['collection1'],
+      language: 'en',
+    };
+
+    it('should create a new item without archives successfully', async () => {
+      const result = await library.createItem(metadata);
+
+      expect(result).toBeInstanceOf(LibraryItem);
+      expect(result.metadata.title).toBe('Test Document');
+      expect(result.metadata.authors).toEqual([{ firstName: 'John', lastName: 'Doe' }]);
+      expect(result.metadata.abstract).toBe('Test abstract');
+      expect(result.metadata.publicationYear).toBe(2023);
+      expect(result.metadata.publisher).toBe('Test Publisher');
+      expect(result.metadata.isbn).toBe('978-0123456789');
+      expect(result.metadata.doi).toBe('10.1000/182');
+      expect(result.metadata.url).toBe('https://example.com');
+      expect(result.metadata.tags).toEqual(['test', 'document']);
+      expect(result.metadata.notes).toBe('Test notes');
+      expect(result.metadata.collections).toEqual(['collection1']);
+      expect(result.metadata.language).toBe('en');
+      expect(result.metadata.archives).toEqual([]); // Should be empty
+      expect(result.metadata.dateAdded).toBeInstanceOf(Date);
+      expect(result.metadata.dateModified).toBeInstanceOf(Date);
+      expect(result.getItemId()).toBeDefined();
+    });
+
+    it('should use default values when optional metadata is not provided', async () => {
+      const minimalMetadata = {
+        title: 'Minimal Document',
+      };
+
+      const result = await library.createItem(minimalMetadata);
+
+      expect(result.metadata.title).toBe('Minimal Document');
+      expect(result.metadata.authors).toEqual([]);
+      expect(result.metadata.tags).toEqual([]);
+      expect(result.metadata.collections).toEqual([]);
+      expect(result.metadata.archives).toEqual([]);
+      expect(result.metadata.dateAdded).toBeInstanceOf(Date);
+      expect(result.metadata.dateModified).toBeInstanceOf(Date);
+    });
+
+    it('should use "Untitled" as default title when not provided', async () => {
+      const result = await library.createItem({});
+
+      expect(result.metadata.title).toBe('Untitled');
+    });
+
+    it('should handle empty metadata object', async () => {
+      const result = await library.createItem({});
+
+      expect(result.metadata.title).toBe('Untitled');
+      expect(result.metadata.authors).toEqual([]);
+      expect(result.metadata.tags).toEqual([]);
+      expect(result.metadata.collections).toEqual([]);
+      expect(result.metadata.archives).toEqual([]);
+      expect(result.metadata.dateAdded).toBeInstanceOf(Date);
+      expect(result.metadata.dateModified).toBeInstanceOf(Date);
+    });
+
+    it('should preserve provided metadata while adding defaults', async () => {
+      const partialMetadata = {
+        title: 'Partial Document',
+        authors: [{ firstName: 'Jane', lastName: 'Smith' }],
+        tags: ['partial'],
+      };
+
+      const result = await library.createItem(partialMetadata);
+
+      expect(result.metadata.title).toBe('Partial Document');
+      expect(result.metadata.authors).toEqual([{ firstName: 'Jane', lastName: 'Smith' }]);
+      expect(result.metadata.tags).toEqual(['partial']);
+      expect(result.metadata.collections).toEqual([]); // Default value
+      expect(result.metadata.archives).toEqual([]); // Default value
+      expect(result.metadata.dateAdded).toBeInstanceOf(Date); // Default value
+      expect(result.metadata.dateModified).toBeInstanceOf(Date); // Default value
+    });
+
+    it('should create item with special characters in metadata', async () => {
+      const specialMetadata = {
+        title: 'Test & Special <Characters> "Quotes"',
+        authors: [{ firstName: 'José', lastName: 'García' }],
+        abstract: 'Special chars: @#$%^&*()_+-=[]{}|;:,.<>?',
+        tags: ['special-chars', '测试'],
+      };
+
+      const result = await library.createItem(specialMetadata);
+
+      expect(result.metadata.title).toBe('Test & Special <Characters> "Quotes"');
+      expect(result.metadata.authors[0].firstName).toBe('José');
+      expect(result.metadata.authors[0].lastName).toBe('García');
+      expect(result.metadata.abstract).toBe('Special chars: @#$%^&*()_+-=[]{}|;:,.<>?');
+      expect(result.metadata.tags).toEqual(['special-chars', '测试']);
+    });
+
+    it('should handle very long title', async () => {
+      const longTitle = 'a'.repeat(1000);
+      const result = await library.createItem({ title: longTitle });
+
+      expect(result.metadata.title).toBe(longTitle);
+    });
+
+    it('should create item that can be retrieved by getItem', async () => {
+      const createdItem = await library.createItem(metadata);
+      const retrievedItem = await library.getItem(createdItem.getItemId());
+
+      expect(retrievedItem).not.toBeNull();
+      expect(retrievedItem?.getItemId()).toBe(createdItem.getItemId());
+      expect(retrievedItem?.metadata.title).toBe(metadata.title);
+      expect(retrievedItem?.metadata.archives).toEqual([]);
+    });
+
+    it('should create item that appears in search results', async () => {
+      await library.createItem(metadata);
+      const searchResults = await library.searchItems({ query: 'Test Document' });
+
+      expect(searchResults).toHaveLength(1);
+      expect(searchResults[0].metadata.title).toBe('Test Document');
+      expect(searchResults[0].metadata.archives).toEqual([]);
+    });
+
+    it('should handle storage errors gracefully', async () => {
+      // Mock storage to throw error
+      const errorStorage = new MockLibraryStorage();
+      vi.spyOn(errorStorage, 'saveMetadata').mockRejectedValue(
+        new Error('Storage error'),
+      );
+
+      const errorLibrary = new Library(errorStorage);
+
+      await expect(
+        errorLibrary.createItem({ title: 'Test' }),
+      ).rejects.toThrow('Storage error');
+    });
+  });
+
+  describe('addArchiveToItem', () => {
+    const pdfBuffer = Buffer.from('mock pdf content');
+    const fileName = 'test.pdf';
+
+    beforeEach(async () => {
+      // Create a test item first
+      await library.createItem({
+        title: 'Test Document',
+        authors: [{ firstName: 'John', lastName: 'Doe' }],
+      });
+    });
+
+    it('should add archive to existing item successfully', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      const result = await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
+
+      expect(result).toBeInstanceOf(LibraryItem);
+      expect(result.getItemId()).toBe(itemId);
+      expect(result.metadata.archives).toHaveLength(1);
+      expect(result.metadata.archives[0].fileType).toBe('pdf');
+      expect(result.metadata.archives[0].fileSize).toBe(pdfBuffer.length);
+      expect(result.metadata.archives[0].fileHash).toBeDefined();
+      expect(result.metadata.archives[0].addDate).toBeInstanceOf(Date);
+      expect(result.metadata.archives[0].s3Key).toBeDefined();
+      expect(result.metadata.archives[0].pageCount).toBe(10);
+    });
+
+    it('should throw error for non-existent item', async () => {
+      await expect(
+        library.addArchiveToItem('non-existent-id', pdfBuffer, fileName),
+      ).rejects.toThrow('Library item with ID non-existent-id not found');
+    });
+
+    it('should throw error if file name is not provided', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      await expect(
+        library.addArchiveToItem(itemId, pdfBuffer, ''),
+      ).rejects.toThrow('File name is required when providing a buffer');
+    });
+
+    it('should use default pageCount 0 when not provided', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      const result = await library.addArchiveToItem(itemId, pdfBuffer, fileName);
+
+      expect(result.metadata.archives[0].pageCount).toBe(0);
+    });
+
+    it('should not add duplicate archive with same content hash', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      // Add first archive
+      const firstResult = await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
+      expect(firstResult.metadata.archives).toHaveLength(1);
+
+      // Try to add same content again
+      const secondResult = await library.addArchiveToItem(itemId, pdfBuffer, 'different.pdf', 15);
+      expect(secondResult.metadata.archives).toHaveLength(1); // Should still be 1
+    });
+
+    it('should allow multiple different archives for same item', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      const pdfBuffer2 = Buffer.from('different pdf content');
+
+      // Add first archive
+      await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
+
+      // Add second archive with different content
+      const result = await library.addArchiveToItem(itemId, pdfBuffer2, 'test2.pdf', 20);
+
+      expect(result.metadata.archives).toHaveLength(2);
+      expect(result.metadata.archives[0].fileHash).not.toBe(result.metadata.archives[1].fileHash);
+    });
+
+    it('should handle storage errors gracefully', async () => {
+      const items = await library.searchItems({ query: 'Test Document' });
+      const itemId = items[0].getItemId();
+
+      // Mock storage to throw error
+      const errorStorage = new MockLibraryStorage();
+      vi.spyOn(errorStorage, 'uploadPdf').mockRejectedValue(
+        new Error('Upload error'),
+      );
+
+      const errorLibrary = new Library(errorStorage);
+      // Create item in error library
+      const createdItem = await errorLibrary.createItem({ title: 'Error Test' });
+
+      await expect(
+        errorLibrary.addArchiveToItem(createdItem.getItemId(), pdfBuffer, fileName),
+      ).rejects.toThrow('Upload error');
+    });
+  });
+
   describe('getItem', () => {
     it('should return null for non-existent item', async () => {
       const result = await library.getItem('non-existent-id');

@@ -1,210 +1,157 @@
-# Elasticsearch API Key Creation Script
+# PDF Upload Script
 
-This script helps you create API keys for Elasticsearch when security features are enabled.
+This script provides a complete workflow for uploading PDF files to the bibliography system. It handles:
+
+1. Getting a presigned S3 URL
+2. Uploading the PDF to S3
+3. Creating a library item
+4. Adding the uploaded PDF as an archive to the item
 
 ## Prerequisites
 
-1. **Elasticsearch Security Enabled**: API keys require Elasticsearch security features to be enabled. In your `docker-compose.yml`, set:
-   ```yaml
-   elasticsearch:
-     environment:
-       - xpack.security.enabled=true
-       - ELASTIC_PASSWORD=yourpassword
-   ```
+- Node.js and TypeScript installed
+- Access to the bibliography service API
+- Proper environment variables configured
 
-2. **Authentication**: You need either:
-   - Username and password (e.g., elastic user)
-   - An existing API key with `manage_api_key` privilege
+## Installation
+
+The script uses the following dependencies that should already be available in the monorepo:
+
+- `@aikb/s3-service` - For S3 operations
+- `utils` - For S3 utilities
+- `bibliography` - For hash utilities
+- `pdf-lib` - For PDF page count extraction
 
 ## Usage
 
 ### Basic Usage
 
 ```bash
-# Create API key with default name and no expiration
-npx tsx scripts/create-es-api-key.ts
-
-# Create API key with custom name
-npx tsx scripts/create-es-api-key.ts my-api-key
-
-# Create API key with name and expiration
-npx tsx scripts/create-es-api-key.ts my-api-key 7d
+npx tsx upload-pdf.ts <path-to-pdf-file>
 ```
 
-### With Authentication
+### With Metadata
 
 ```bash
-# Using username and password
-ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=yourpassword npx tsx scripts/create-es-api-key.ts
-
-# Using existing API key
-ELASTICSEARCH_API_KEY=existing_encoded_key npx tsx scripts/create-es-api-key.ts
+npx tsx upload-pdf.ts ./document.pdf \
+  --title "My Document" \
+  --author "John Doe" \
+  --year 2023 \
+  --tags "research,science" \
+  --abstract "This is a research paper about..."
 ```
 
-### Output Formats
+### All Available Options
 
 ```bash
-# Default table format
-npx tsx scripts/create-es-api-key.ts
+npx tsx upload-pdf.ts <pdf-path> [options]
 
-# JSON output
-npx tsx scripts/create-es-api-key.ts my-key 7d json
+Arguments:
+  pdf-path              Path to the PDF file to upload
 
-# Environment file format (saves to .env)
-npx tsx scripts/create-es-api-key.ts my-key 7d env
+Options:
+  --title <title>       Title of the document
+  --author <name>       Author name (can be used multiple times)
+  --abstract <text>     Abstract of the document
+  --year <year>         Publication year
+  --publisher <name>    Publisher name
+  --isbn <isbn>         ISBN number
+  --doi <doi>           DOI identifier
+  --url <url>           URL of the document
+  --tags <tags>         Comma-separated tags
+  --notes <notes>       Notes about the document
+  --collections <cols>  Comma-separated collections
+  --language <lang>     Language code (default: en)
 ```
-
-## Parameters
-
-1. **API Key Name** (optional): Custom name for the API key. If not provided, a random name will be generated.
-2. **Expiration** (optional): Expiration time for the API key. Supported formats:
-   - Time units: `1s`, `1m`, `1h`, `1d`, `1w`, `1M`, `1y`
-   - ISO date string: `2024-12-31T23:59:59Z`
-3. **Output Format** (optional): `table` (default), `json`, or `env`
 
 ## Environment Variables
 
-- `ELASTICSEARCH_URL`: Elasticsearch URL (default: `http://localhost:9200`)
-- `ELASTICSEARCH_USERNAME`: Username for authentication
-- `ELASTICSEARCH_PASSWORD`: Password for authentication
-- `ELASTICSEARCH_API_KEY`: Existing API key for authentication
+- `BIBLIOGRAPHY_SERVICE_URL` - URL of the bibliography service (default: http://localhost:3001)
 
 ## Examples
 
-### Create a 30-day API key and save to .env
+### Upload a simple PDF
 
 ```bash
-ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=changeme npx tsx scripts/create-es-api-key.ts production-key 30d env
+npx tsx upload-pdf.ts ./papers/research-paper.pdf
 ```
 
-This will:
-1. Create an API key named "production-key"
-2. Set it to expire in 30 days
-3. Save the encoded key to your `.env` file as `ELASTICSEARCH_API_KEY`
-
-### Create API key with JSON output
+### Upload with full metadata
 
 ```bash
-npx tsx scripts/create-es-api-key.ts temp-key 1h json
+npx tsx upload-pdf.ts ./papers/ai-research-2023.pdf \
+  --title "Advances in Artificial Intelligence" \
+  --author "Dr. Jane Smith" \
+  --author "Prof. John Doe" \
+  --year 2023 \
+  --publisher "Academic Press" \
+  --isbn "978-0123456789" \
+  --doi "10.1000/182" \
+  --tags "artificial-intelligence,machine-learning,research" \
+  --abstract "This paper presents recent advances in AI research..." \
+  --collections "AI-Research,2023-Papers" \
+  --language "en"
 ```
 
-Output:
-```json
-{
-  "id": "abc123",
-  "name": "temp-key",
-  "api_key": "def456",
-  "encoded": "encoded_key_here",
-  "expiration": 1640995200000,
-  "invalidated": false,
-  "created_by": "script",
-  "created": 1640908800000
+## Workflow
+
+The script performs the following steps:
+
+1. **File Validation**: Checks if the PDF file exists and is readable
+2. **Metadata Extraction**: Extracts file hash, size, and page count
+3. **Get Upload URL**: Requests a presigned S3 URL from the bibliography service
+4. **Upload to S3**: Uploads the PDF file using the presigned URL
+5. **Create Library Item**: Creates a new library item with the provided metadata
+6. **Add Archive**: Associates the uploaded PDF with the library item as an archive
+
+## Error Handling
+
+The script includes comprehensive error handling:
+
+- File not found errors
+- Network connectivity issues
+- API response errors
+- PDF parsing errors
+- S3 upload failures
+- Duplicate file detection (prevents uploading the same file twice to the same item)
+
+All errors are logged with descriptive messages to help with troubleshooting.
+
+**Note**: The system prevents duplicate archives with the same file hash from being added to the same library item. If you try to upload the same PDF file multiple times to the same item, you'll receive an error indicating the archive already exists.
+
+## Output
+
+On successful upload, the script outputs:
+
+- Item ID of the created library item
+- S3 key where the file was stored
+- Confirmation of each step in the workflow
+
+On failure, it provides detailed error information to help diagnose the issue.
+
+## Integration
+
+The script can be integrated into other workflows:
+
+- As part of a CI/CD pipeline
+- In batch processing scripts
+- As a library function in other TypeScript applications
+
+### Programmatic Usage
+
+```typescript
+import { uploadPdf, UploadConfig } from './upload-pdf';
+
+const config: UploadConfig = {
+  pdfPath: './document.pdf',
+  title: 'My Document',
+  authors: [{ name: 'John Doe' }],
+  tags: ['research', 'science'],
+};
+
+const result = await uploadPdf(config);
+if (result.success) {
+  console.log('Upload successful:', result.itemId);
+} else {
+  console.error('Upload failed:', result.error);
 }
-```
-
-## Troubleshooting
-
-### "Elasticsearch security is not enabled"
-
-This error means your Elasticsearch instance doesn't have security features enabled. To fix this:
-
-1. Update your `docker-compose.yml`:
-   ```yaml
-   elasticsearch:
-     environment:
-       - xpack.security.enabled=true
-       - ELASTIC_PASSWORD=yourpassword
-   ```
-
-2. Restart containers:
-   ```bash
-   docker-compose down
-   docker-compose up -d
-   ```
-
-3. Set up passwords (if not using ELASTIC_PASSWORD):
-   ```bash
-   docker exec -it container-es bin/elasticsearch-setup-passwords interactive
-   ```
-
-### "Authentication failed"
-
-This means you provided invalid credentials. Ensure:
-- Username and password are correct
-- User has `manage_api_key` privilege
-- Elasticsearch security is enabled
-
-### "Insufficient permissions"
-
-The user needs the `manage_api_key` privilege. Use the `elastic` superuser or grant the appropriate role.
-
-## Security Notes
-
-- API keys are more secure than using username/password in applications
-- Store API keys securely (environment variables, secret management)
-- Set appropriate expiration times
-- Regularly rotate API keys
-- Monitor API key usage in Elasticsearch
-
-## Integration with Project
-
-This script integrates with the existing Elasticsearch configuration in this project:
-
-- The generated API key can be used with `ELASTICSEARCH_API_KEY` environment variable
-- The `ElasticsearchItemVectorStorage` class in `libs/item-vector-storage` will automatically use the API key
-- The script can automatically update the `.env` file when using the `env` output format
-
-# Elasticsearch Connection Verification Script
-
-This script helps you verify that your Elasticsearch instance is accessible and properly configured.
-
-## Usage
-
-```bash
-# Basic connection verification
-npx tsx scripts/verify-elasticsearch-connection.ts
-```
-
-## What it does
-
-1. **Loads environment variables** from `.env` file
-2. **Creates Elasticsearch client** using `ELASTICSEARCH_URL`
-3. **Pings the cluster** to verify connectivity
-4. **Displays cluster information** including:
-   - Cluster name
-   - Elasticsearch version
-   - Cluster tagline
-
-## Environment Variables
-
-- `ELASTICSEARCH_URL`: Elasticsearch URL (default: `http://localhost:9200`)
-
-## Example Output
-
-```
-Verifying Elasticsearch connection...
-Elasticsearch URL: http://elasticsearch:9200
-✅ Successfully connected to Elasticsearch!
-📊 Cluster info:
-   - Name: docker-cluster
-   - Version: 9.1.3
-   - Tagline: You Know, for Search
-```
-
-## Exit Codes
-
-- `0`: Connection successful
-- `1`: Connection failed or error occurred
-
-## Troubleshooting
-
-### "Elasticsearch URL not set"
-Ensure the `ELASTICSEARCH_URL` environment variable is set in your `.env` file.
-
-### Connection timeout or refused
-- Verify Elasticsearch is running: `docker ps`
-- Check the URL and port in your `.env` file
-- Ensure network connectivity between your application and Elasticsearch
-
-### Authentication errors
-If security is enabled, you may need to add authentication to the script or use the API key creation script first.

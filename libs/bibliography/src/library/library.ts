@@ -29,11 +29,34 @@ export interface ILibrary {
    * @param pdfBuffer The PDF file buffer
    * @param fileName The file name
    * @param metadata PDF metadata
+   * @deprecated Use createItem and addArchiveToItem separately
    */
   storePdf(
     pdfBuffer: Buffer,
     fileName: string,
     metadata: Partial<ItemMetadata>,
+  ): Promise<LibraryItem>;
+
+  /**
+   * Create a new library item without any archives
+   * @param metadata The item metadata
+   * @returns The created library item
+   */
+  createItem(metadata: Partial<ItemMetadata>): Promise<LibraryItem>;
+
+  /**
+   * Add an archive to an existing library item
+   * @param itemId The ID of the library item
+   * @param pdfBuffer The PDF file buffer
+   * @param fileName The file name
+   * @param pageCount The page count of the PDF
+   * @returns The updated library item
+   */
+  addArchiveToItem(
+    itemId: string,
+    pdfBuffer: Buffer,
+    fileName: string,
+    pageCount?: number,
   ): Promise<LibraryItem>;
 
   /**
@@ -164,6 +187,93 @@ export class Library implements ILibrary {
     // In a full implementation, you would queue this for processing here
 
     return libraryItem;
+  }
+
+  /**
+   * Create a new library item without any archives
+   * @param metadata The item metadata
+   * @returns The created library item
+   */
+  async createItem(metadata: Partial<ItemMetadata>): Promise<LibraryItem> {
+    const fullMetadata: ItemMetadata = {
+      title: metadata.title || 'Untitled',
+      dateAdded: new Date(),
+      dateModified: new Date(),
+      tags: metadata.tags || [],
+      collections: metadata.collections || [],
+      authors: metadata.authors || [],
+      archives: [], // Start with empty archives
+      ...metadata,
+    };
+
+    // Save metadata to get the ID
+    const savedMetadata = await this.storage.saveMetadata(fullMetadata);
+    return new LibraryItem(savedMetadata, this.storage);
+  }
+
+  /**
+   * Add an archive to an existing library item
+   * @param itemId The ID of the library item
+   * @param pdfBuffer The PDF file buffer
+   * @param fileName The file name
+   * @param pageCount The page count of the PDF
+   * @returns The updated library item
+   */
+  async addArchiveToItem(
+    itemId: string,
+    pdfBuffer: Buffer,
+    fileName: string,
+    pageCount?: number,
+  ): Promise<LibraryItem> {
+    // Validate inputs
+    if (!fileName) {
+      throw new Error('File name is required when providing a buffer');
+    }
+
+    // Get the existing item
+    const item = await this.getItem(itemId);
+    if (!item) {
+      throw new Error(`Library item with ID ${itemId} not found`);
+    }
+
+    // Generate hash from file content
+    const contentHash = HashUtils.generateHashFromBuffer(pdfBuffer);
+
+    // Check if archive with same hash already exists for this item
+    const existingArchive = item.metadata.archives.find(
+      (archive) => archive.fileHash === contentHash,
+    );
+    if (existingArchive) {
+      logger.info(
+        `Archive with same content already exists for item ${itemId}, returning existing item.`,
+      );
+      return item;
+    }
+
+    // Upload to S3
+    logger.info(`Uploading PDF to S3 for item ${itemId}...`);
+    const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
+
+    // Create the new archive
+    const newArchive: ItemArchive = {
+      fileType: 'pdf',
+      fileSize: pdfBuffer.length,
+      fileHash: contentHash,
+      addDate: new Date(),
+      s3Key: pdfInfo.s3Key,
+      pageCount: pageCount || 0,
+    };
+
+    // Add the archive to the item's metadata
+    await this.storage.addArchiveToMetadata(itemId, newArchive);
+
+    // Return the updated item
+    const updatedItem = await this.getItem(itemId);
+    if (!updatedItem) {
+      throw new Error(`Failed to retrieve updated library item ${itemId}`);
+    }
+
+    return updatedItem;
   }
 
   /**

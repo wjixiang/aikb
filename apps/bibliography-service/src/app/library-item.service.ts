@@ -42,8 +42,7 @@ export class LibraryItemService {
   async createLibraryItem(
     createLibraryItemDto: CreateLibraryItemDto,
   ): Promise<LibraryItem> {
-    // For now, we'll create a library item without PDF
-    // In a full implementation, you might handle PDF upload separately
+    // Create a library item without any archives using the new separated approach
     const metadata = {
       title: createLibraryItemDto.title,
       authors: createLibraryItemDto.authors,
@@ -57,15 +56,9 @@ export class LibraryItemService {
       notes: createLibraryItemDto.notes,
       collections: createLibraryItemDto.collections,
       language: createLibraryItemDto.language,
-      archives: createLibraryItemDto.archives || [],
     };
 
-    // Create a placeholder PDF buffer for now
-    // In a real implementation, you would upload the PDF file first
-    const pdfBuffer = Buffer.from('placeholder');
-    const fileName = `${createLibraryItemDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
-
-    return await this.library.storePdf(pdfBuffer, fileName, metadata, 1); // Default page count for placeholder
+    return await this.library.createItem(metadata);
   }
 
   /**
@@ -76,6 +69,7 @@ export class LibraryItemService {
   async createLibraryItemWithPdfBuffer(
     createLibraryItemWithPdfDto: CreateLibraryItemWithPdfDto,
   ): Promise<LibraryItem> {
+    // First create the item without archives
     const metadata = {
       title: createLibraryItemWithPdfDto.title,
       authors: createLibraryItemWithPdfDto.authors,
@@ -89,16 +83,22 @@ export class LibraryItemService {
       notes: createLibraryItemWithPdfDto.notes,
       collections: createLibraryItemWithPdfDto.collections,
       language: createLibraryItemWithPdfDto.language,
-      archives: [], // Will be populated by the library.storePdf method
     };
 
-    // Use the provided PDF buffer
+    const item = await this.library.createItem(metadata);
+
+    // Then add the PDF archive to the created item
     const pdfBuffer = createLibraryItemWithPdfDto.pdfBuffer;
     const fileName =
       createLibraryItemWithPdfDto.fileName ||
       `${createLibraryItemWithPdfDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
-    return await this.library.storePdf(pdfBuffer, fileName, metadata, createLibraryItemWithPdfDto.pageCount);
+    return await this.library.addArchiveToItem(
+      item.getItemId(),
+      pdfBuffer,
+      fileName,
+      createLibraryItemWithPdfDto.pageCount
+    );
   }
 
   /**
@@ -352,7 +352,8 @@ export class LibraryItemService {
             addDate: newArchive.addDate,
             s3Key: newArchive.s3Key,
             pageCount: newArchive.pageCount
-          })
+          });
+          break;
         default:
           this.logger.error(`none support file type for markdown extraction`, newArchive)
       }
