@@ -14,6 +14,12 @@
         "tsConfig": "libs/mineru-client/tsconfig.lib.json",
         "assets": ["libs/mineru-client/*.md"]
       }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "exclude": "**/*.e2e.test.ts"
+      }
     }
   }
 }

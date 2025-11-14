@@ -19,7 +19,37 @@ import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliter } from '@aikb/pdf-splitter';
-import { uploadToS3, getPdfDownloadUrl, deleteFromS3 } from '@aikb/s3-service';
+import { uploadFile, getPdfDownloadUrl, deleteFromS3, type S3ServiceConfig } from '@aikb/s3-service';
+
+// Internal S3 configuration for this project
+const pdfAnalysisS3Config: S3ServiceConfig = {
+  accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
+  secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY!,
+  region: process.env.OSS_REGION!,
+  bucketName: process.env.PDF_OSS_BUCKET_NAME!,
+  endpoint: process.env.S3_ENDPOINT!,
+  provider: 'aws',
+};
+
+/**
+ * Internal wrapper function for uploading files to S3
+ * Uses new uploadFile function with project-specific configuration
+ */
+async function uploadToS3(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string,
+  acl: string = 'private'
+): Promise<string> {
+  const result = await uploadFile(
+    pdfAnalysisS3Config,
+    fileName,
+    buffer,
+    contentType,
+    acl as any
+  );
+  return result.url;
+}
 
 const logger = createLoggerWithPrefix('PdfAnalyzerService');
 

@@ -4,7 +4,6 @@ import { Pdf2MArkdownDto } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
 import * as fs from 'fs';
 
-
 // Mock axios with named exports - declare variables before mock
 const mockGet = vi.fn();
 const mockPost = vi.fn();
@@ -12,7 +11,13 @@ const mockPost = vi.fn();
 // Mock external dependencies
 vi.mock('pdf-lib');
 vi.mock('mineru-client');
-vi.mock('@aikb/s3-service');
+vi.mock('@aikb/s3-service', () => ({
+  uploadFile: vi.fn().mockResolvedValue({ url: 'http://test-s3-url.com' }),
+  uploadToS3: vi.fn().mockResolvedValue('http://test-s3-url.com'),
+  getPdfDownloadUrl: vi
+    .fn()
+    .mockResolvedValue('http://test-s3-download-url.com'),
+}));
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
   existsSync: vi.fn(),
@@ -23,11 +28,11 @@ vi.mock('axios', () => ({
   get: vi.fn().mockImplementation((url: string, options?: any) => {
     if (url.includes('download-url')) {
       return Promise.resolve({
-        data: { downloadUrl: 'http://test-pdf-url.com' }
+        data: { downloadUrl: 'http://test-pdf-url.com' },
       });
     } else if (options?.responseType === 'arraybuffer') {
       return Promise.resolve({
-        data: Buffer.from('mock pdf data')
+        data: Buffer.from('mock pdf data'),
       });
     }
     return Promise.resolve({ data: {} });
@@ -37,36 +42,36 @@ vi.mock('axios', () => ({
     get: vi.fn().mockImplementation((url: string, options?: any) => {
       if (url.includes('download-url')) {
         return Promise.resolve({
-          data: { downloadUrl: 'http://test-pdf-url.com' }
+          data: { downloadUrl: 'http://test-pdf-url.com' },
         });
       } else if (options?.responseType === 'arraybuffer') {
         return Promise.resolve({
-          data: Buffer.from('mock pdf data')
+          data: Buffer.from('mock pdf data'),
         });
       }
       return Promise.resolve({ data: {} });
     }),
-    post: vi.fn().mockResolvedValue({})
-  }
+    post: vi.fn().mockResolvedValue({}),
+  },
 }));
 
 // Create a mock that can handle different page counts based on test needs
 let mockPageCount = 25; // Default for chunking tests
 
-vi.mock('pdf-lib',()=>({
+vi.mock('pdf-lib', () => ({
   PDFDocument: {
-    load: vi.fn().mockImplementation((pdfBytes: Buffer)=>{
+    load: vi.fn().mockImplementation((pdfBytes: Buffer) => {
       return {
-        getPageCount: vi.fn().mockImplementation(()=>mockPageCount),
-      }
+        getPageCount: vi.fn().mockImplementation(() => mockPageCount),
+      };
     }),
     create: vi.fn().mockResolvedValue({
       copyPages: vi.fn().mockResolvedValue([{}]),
       addPage: vi.fn(),
       save: vi.fn().mockResolvedValue(Buffer.from('mock pdf chunk')),
-    })
-  }
-}))
+    }),
+  },
+}));
 
 const mockMinerUClient = {
   createSingleFileTask: vi.fn(),
@@ -75,7 +80,7 @@ const mockMinerUClient = {
     token: 'test-token',
     baseUrl: 'https://test-api.com',
     downloadDir: './test-downloads',
-  }
+  },
 };
 
 vi.mock('mineru-client', () => ({
@@ -109,12 +114,12 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
     mockMinerUClient.createSingleFileTask.mockResolvedValue('test-task-id');
     mockMinerUClient.waitForTaskCompletion.mockResolvedValue({
       result: { state: 'done' },
-      downloadedFiles: ['/path/to/markdown.md']
+      downloadedFiles: ['/path/to/markdown.md'],
     });
 
     // Setup axios mocks
     mockGet.mockResolvedValue({
-      data: { downloadUrl: 'http://test-pdf-url.com' }
+      data: { downloadUrl: 'http://test-pdf-url.com' },
     });
     mockPost.mockResolvedValue({});
 
@@ -125,6 +130,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
 
     // Setup S3 mock
     vi.doMock('@aikb/s3-service', () => ({
+      uploadFile: vi.fn().mockResolvedValue({ url: 'https://mock-s3-url.com/file.pdf' }),
       uploadToS3: vi.fn().mockResolvedValue('https://mock-s3-url.com/file.pdf'),
     }));
 
@@ -153,7 +159,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result1 = await service.handlePdf2MdRequest(reqBelowThreshold);
-      
+
       // Verify no chunking occurred
       expect(result1.chunked).toBe(false);
       expect(result1.itemId).toBe('test-item-1');
@@ -173,7 +179,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result2 = await service.handlePdf2MdRequest(reqAboveThreshold);
-      
+
       // Verify chunking occurred
       expect(result2.chunked).toBe(true);
       expect(result2.itemId).toBe('test-item-2');
@@ -201,7 +207,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result = await service.handlePdf2MdRequest(req);
-      
+
       // Verify chunking occurred with correct calculations
       expect(result.chunked).toBe(true);
       expect(result.itemId).toBe('test-item-chunk-calc');
@@ -229,7 +235,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result = await service.handlePdf2MdRequest(req);
-      
+
       // Verify no chunking occurred (equal to threshold means no chunking)
       expect(result.chunked).toBe(false);
       expect(result.itemId).toBe('test-item-equal-threshold');
@@ -255,7 +261,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result = await service.handlePdf2MdRequest(req);
-      
+
       // Verify chunking occurred with default values
       expect(result.chunked).toBe(true);
       expect(result.itemId).toBe('test-item-defaults');
@@ -285,14 +291,14 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result = await service.handlePdf2MdRequest(req);
-      
+
       // Verify chunking occurred with correct page ranges
       expect(result.chunked).toBe(true);
       expect(result.itemId).toBe('test-item-page-ranges');
       expect(result.pageNum).toBe(12);
       expect(result.chunkCount).toBe(3); // 12 pages / 5 per chunk = 3 chunks
       expect(result.chunkSize).toBe(5);
-      
+
       // Verify chunk page ranges
       expect(result.chunks![0]).toMatchObject({
         chunkIndex: 0,
@@ -329,7 +335,7 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
       );
 
       const result = await service.handlePdf2MdRequest(req);
-      
+
       // Verify single page chunks
       expect(result.chunked).toBe(false); // 3 pages with threshold 5 means no chunking
       expect(result.itemId).toBe('test-item-single-page');

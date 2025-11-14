@@ -7,13 +7,19 @@ import {
 } from './mineru-client';
 
 // Mock axios
-const mockAxiosInstance = {
+let mockAxiosInstance: any = {
   get: vi.fn(),
   post: vi.fn(),
   delete: vi.fn(),
+  request: vi.fn(),
+  getUri: vi.fn(),
+  defaults: {},
   interceptors: {
+    request: { use: vi.fn(), eject: vi.fn(), clear: vi.fn() },
     response: {
       use: vi.fn(),
+      eject: vi.fn(),
+      clear: vi.fn(),
     },
   },
 };
@@ -41,6 +47,10 @@ vi.mock('path', () => ({
     join: vi.fn((...paths: string[]) => paths.join('/')),
     extname: vi.fn((path: string) => '.' + path.split('.').pop()),
   },
+  basename: vi.fn((path: string) => path.split('/').pop()),
+  resolve: vi.fn((...paths: string[]) => paths.join('/')),
+  join: vi.fn((...paths: string[]) => paths.join('/')),
+  extname: vi.fn((path: string) => '.' + path.split('.').pop()),
 }));
 
 describe('MinerUClient', () => {
@@ -59,6 +69,23 @@ describe('MinerUClient', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset the global mock to default state for most tests
+    mockAxiosInstance = {
+      get: vi.fn(),
+      post: vi.fn(),
+      delete: vi.fn(),
+      request: vi.fn(),
+      getUri: vi.fn(),
+      defaults: {},
+      interceptors: {
+        request: { use: vi.fn(), eject: vi.fn(), clear: vi.fn() },
+        response: {
+          use: vi.fn(),
+          eject: vi.fn(),
+          clear: vi.fn(),
+        },
+      },
+    };
     client = new MinerUClient(mockConfig);
   });
 
@@ -78,19 +105,36 @@ describe('MinerUClient', () => {
   describe('validateToken', () => {
     it('should return true for valid token (404 response)', async () => {
       const axios = await import('axios');
-      const mockAxiosInstance = {
+
+      // Create a fresh mock instance for this test
+      const testMockAxiosInstance = {
         get: vi.fn().mockRejectedValue({
           response: {
             status: 404,
             data: { code: 'NOT_FOUND' },
           },
         }),
+        post: vi.fn(),
+        delete: vi.fn(),
+        request: vi.fn(),
+        getUri: vi.fn(),
+        defaults: {},
         interceptors: {
-          response: { use: vi.fn() },
+          request: { use: vi.fn(), eject: vi.fn(), clear: vi.fn() },
+          response: {
+            use: vi.fn((_, error) => {
+              // Let the error propagate to validateToken without transformation
+              return Promise.reject(error);
+            }),
+            eject: vi.fn(),
+            clear: vi.fn(),
+          },
         },
       };
 
-      vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
+      vi.mocked(axios.default.create).mockReturnValue(
+        testMockAxiosInstance as any,
+      );
       const testClient = new MinerUClient(mockConfig);
 
       const isValid = await testClient.validateToken();
@@ -99,18 +143,36 @@ describe('MinerUClient', () => {
 
     it('should return false for invalid token (401 response)', async () => {
       const axios = await import('axios');
-      const mockAxiosInstance = {
-        get: vi
-          .fn()
-          .mockRejectedValue(
-            new MinerUApiError('UNAUTHORIZED', 'Invalid token'),
-          ),
+
+      // Create a fresh mock instance for this test
+      const testMockAxiosInstance = {
+        get: vi.fn().mockRejectedValue({
+          response: {
+            status: 401,
+            data: { code: 'UNAUTHORIZED' },
+          },
+        }),
+        post: vi.fn(),
+        delete: vi.fn(),
+        request: vi.fn(),
+        getUri: vi.fn(),
+        defaults: {},
         interceptors: {
-          response: { use: vi.fn() },
+          request: { use: vi.fn(), eject: vi.fn(), clear: vi.fn() },
+          response: {
+            use: vi.fn((_, error) => {
+              // Let the error propagate to validateToken without transformation
+              return Promise.reject(error);
+            }),
+            eject: vi.fn(),
+            clear: vi.fn(),
+          },
         },
       };
 
-      vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
+      vi.mocked(axios.default.create).mockReturnValue(
+        testMockAxiosInstance as any,
+      );
       const testClient = new MinerUClient(mockConfig);
 
       const isValid = await testClient.validateToken();
@@ -305,52 +367,51 @@ describe('MinerUClient', () => {
 
   describe('Error handling', () => {
     it('should handle API errors correctly', async () => {
-      const axios = await import('axios');
-      const mockAxiosInstance = {
-        get: vi.fn().mockRejectedValue({
-          response: {
-            status: 400,
-            data: { code: 'BAD_REQUEST', msg: 'Invalid request' },
-          },
-        }),
-        interceptors: {
-          response: {
-            use: vi.fn((_, error) => {
-              throw new MinerUApiError('BAD_REQUEST', 'Invalid request');
-            }),
-          },
+      // Test the error handling directly by calling the handleApiError method
+      const client = new MinerUClient(mockConfig);
+
+      // Access the private method through type assertion for testing
+      const handleApiError = (client as any).handleApiError.bind(client);
+
+      const apiError = {
+        response: {
+          status: 400,
+          data: { code: 'BAD_REQUEST', msg: 'Invalid request' },
+          headers: { 'content-type': 'application/json' },
         },
+        config: { url: '/test', method: 'get' },
       };
 
-      vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
-      const testClient = new MinerUClient(mockConfig);
-
-      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(
-        MinerUApiError,
-      );
+      expect(() => handleApiError(apiError)).toThrow(MinerUApiError);
     });
 
     it('should handle network errors correctly', async () => {
-      const axios = await import('axios');
-      const mockAxiosInstance = {
-        get: vi.fn().mockRejectedValue(new Error('Network error')),
-        interceptors: {
-          response: {
-            use: vi.fn((_, error) => {
-              throw new MinerUTimeoutError(
-                'Network request failed: Network error',
-              );
-            }),
-          },
-        },
-      };
+      // Test the error handling directly by calling the handleApiError method
+      const client = new MinerUClient(mockConfig);
 
-      vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance as any);
-      const testClient = new MinerUClient(mockConfig);
+      // Access the private method through type assertion for testing
+      const handleApiError = (client as any).handleApiError.bind(client);
 
-      await expect(testClient.getTaskResult('invalid-task')).rejects.toThrow(
-        MinerUTimeoutError,
-      );
+      const networkError = new Error('Network error');
+      // Make sure it doesn't have response or request properties to trigger the final else path
+      Object.defineProperty(networkError, 'response', {
+        value: undefined,
+        writable: false,
+        configurable: true,
+      });
+      Object.defineProperty(networkError, 'request', {
+        value: undefined,
+        writable: false,
+        configurable: true,
+      });
+      // Also ensure it doesn't have a config property
+      Object.defineProperty(networkError, 'config', {
+        value: undefined,
+        writable: false,
+        configurable: true,
+      });
+
+      expect(() => handleApiError(networkError)).toThrow(MinerUTimeoutError);
     });
   });
 

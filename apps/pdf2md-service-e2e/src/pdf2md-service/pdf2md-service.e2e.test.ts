@@ -7,7 +7,7 @@ describe('PDF2MD Service E2E Tests', () => {
   beforeEach(async () => {
     // Get the client from global setup
     client = globalThis.rabbitmqClient;
-    
+
     // Ensure client is connected
     if (!client) {
       throw new Error('RabbitMQ client not initialized. Check global setup.');
@@ -26,13 +26,15 @@ describe('PDF2MD Service E2E Tests', () => {
         options: {
           format: 'markdown',
           includeImages: true,
-          preserveFormatting: true
-        }
+          preserveFormatting: true,
+        },
       };
 
       try {
-        const response = await client.send({ cmd: 'process_pdf' }, message).toPromise();
-        
+        const response = await client
+          .send({ cmd: 'process_pdf' }, message)
+          .toPromise();
+
         expect(response).toBeDefined();
         expect(response.success).toBe(true);
         expect(response.markdown).toBeDefined();
@@ -40,7 +42,10 @@ describe('PDF2MD Service E2E Tests', () => {
         expect(response.markdown.length).toBeGreaterThan(0);
       } catch (error) {
         // If the service is not implemented yet, we can skip this test
-        console.log('PDF processing service may not be fully implemented:', error.message);
+        console.log(
+          'PDF processing service may not be fully implemented:',
+          error.message,
+        );
         expect(error.message).toContain('timeout'); // Expected if service is not running
       }
     }, 10000); // Increase timeout for message processing
@@ -49,8 +54,8 @@ describe('PDF2MD Service E2E Tests', () => {
       const message = {
         pdfUrl: 'invalid-url',
         options: {
-          format: 'markdown'
-        }
+          format: 'markdown',
+        },
       };
 
       try {
@@ -66,8 +71,8 @@ describe('PDF2MD Service E2E Tests', () => {
     it('should handle missing PDF URL', async () => {
       const message = {
         options: {
-          format: 'markdown'
-        }
+          format: 'markdown',
+        },
       };
 
       try {
@@ -86,15 +91,20 @@ describe('PDF2MD Service E2E Tests', () => {
       const message = { timestamp: new Date().toISOString() };
 
       try {
-        const response = await client.send({ cmd: 'health_check' }, message).toPromise();
-        
+        const response = await client
+          .send({ cmd: 'health_check' }, message)
+          .toPromise();
+
         expect(response).toBeDefined();
         expect(response.status).toBe('ok');
         expect(response.timestamp).toBeDefined();
         expect(response.service).toBe('pdf2md-service');
       } catch (error) {
         // Health check might not be implemented
-        console.log('Health check command may not be implemented:', error.message);
+        console.log(
+          'Health check command may not be implemented:',
+          error.message,
+        );
         expect(error.message).toContain('timeout');
       }
     }, 5000);
@@ -105,8 +115,10 @@ describe('PDF2MD Service E2E Tests', () => {
       const message = {};
 
       try {
-        const response = await client.send({ cmd: 'get_config' }, message).toPromise();
-        
+        const response = await client
+          .send({ cmd: 'get_config' }, message)
+          .toPromise();
+
         expect(response).toBeDefined();
         expect(response.service).toBe('pdf2md-service');
         expect(response.version).toBeDefined();
@@ -114,7 +126,10 @@ describe('PDF2MD Service E2E Tests', () => {
         expect(Array.isArray(response.capabilities)).toBe(true);
       } catch (error) {
         // Configuration command might not be implemented
-        console.log('Get config command may not be implemented:', error.message);
+        console.log(
+          'Get config command may not be implemented:',
+          error.message,
+        );
         expect(error.message).toContain('timeout');
       }
     }, 5000);
@@ -141,9 +156,9 @@ describe('PDF2MD Service E2E Tests', () => {
         options: undefined,
         nested: {
           deep: {
-            value: undefined
-          }
-        }
+            value: undefined,
+          },
+        },
       };
 
       try {
@@ -161,16 +176,16 @@ describe('PDF2MD Service E2E Tests', () => {
     it('should handle multiple concurrent requests', async () => {
       const messages = Array.from({ length: 5 }, (_, i) => ({
         pdfUrl: `https://example.com/sample${i}.pdf`,
-        options: { format: 'markdown' }
+        options: { format: 'markdown' },
       }));
 
       try {
-        const promises = messages.map(msg => 
-          client.send({ cmd: 'process_pdf' }, msg).toPromise()
+        const promises = messages.map((msg) =>
+          client.send({ cmd: 'process_pdf' }, msg).toPromise(),
         );
-        
+
         const responses = await Promise.allSettled(promises);
-        
+
         // At least some responses should be successful or properly handled
         responses.forEach((response, index) => {
           if (response.status === 'fulfilled') {

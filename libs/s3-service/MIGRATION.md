@@ -30,11 +30,22 @@ const signedUrl = await getSignedUploadUrl('file.txt', 'text/plain');
 You can gradually migrate to the new API while keeping legacy functions for existing code:
 
 ```typescript
-import { createS3ServiceFromEnv, uploadToS3 } from '@aikb/s3-service';
+import { createS3ServiceFromEnv, uploadToS3, uploadFile } from '@aikb/s3-service';
 
 // New code uses class-based API
 const s3Service = createS3ServiceFromEnv();
 const result = await s3Service.uploadToS3(buffer, 'new-file.txt', { contentType: 'text/plain' });
+
+// Or use the new uploadFile function with flexible parameters
+const s3Config = {
+  accessKeyId: 'your-access-key',
+  secretAccessKey: 'your-secret-key',
+  bucketName: 'your-bucket',
+  region: 'us-east-1',
+  endpoint: 'https://s3.us-east-1.amazonaws.com',
+  provider: 'aws' as const,
+};
+const uploadResult = await uploadFile(s3Config, 'flexible-file.txt', buffer, 'text/plain');
 
 // Existing code continues to work
 const legacyUrl = await uploadToS3(buffer, 'old-file.txt', 'text/plain');

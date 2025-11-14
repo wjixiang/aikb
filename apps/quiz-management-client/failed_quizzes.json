@@ -303,5 +303,47 @@
     },
     "error": "Failed to add quiz",
     "timestamp": "2025-11-10T02:58:51.426Z"
+  },
+  {
+    "quiz": {
+      "type": "A1",
+      "class": "外科学",
+      "unit": "",
+      "tags": [
+        "2026"
+      ],
+      "source": "小凯精选模拟题",
+      "question": "尿道膜部撕裂时，临床表现特点是",
+      "options": [
+        {
+          "oid": "A",
+          "text": "A. 尿道出血常见"
+        },
+        {
+          "oid": "B",
+          "text": "B. 可出现排尿困难"
+        },
+        {
+          "oid": "C",
+          "text": "C. 可出现失血性休克"
+        },
+        {
+          "oid": "D",
+          "text": "D. 下腹疼痛明显"
+        }
+      ],
+      "answer": [
+        "B",
+        "C",
+        "D"
+      ],
+      "analysis": {
+        "point": null,
+        "discuss": "解析：BCD",
+        "link": []
+      }
+    },
+    "error": "Failed to add quiz",
+    "timestamp": "2025-11-13T07:13:25.799Z"
   }
 ]

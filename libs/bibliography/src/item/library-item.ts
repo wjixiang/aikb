@@ -56,7 +56,7 @@ export class LibraryItem {
   /**
    * Get markdown representation of the item
    */
-  async getMarkdown(): Promise<string|null> {
+  async getMarkdown(): Promise<string | null> {
     // First try to get stored markdown content
     const storedMarkdown = await this.storage.getMarkdown(this.metadata.id!);
     if (storedMarkdown) {

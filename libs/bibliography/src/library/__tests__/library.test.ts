@@ -148,7 +148,9 @@ describe('Library', () => {
 
       expect(result).toBeInstanceOf(LibraryItem);
       expect(result.metadata.title).toBe('Test Document');
-      expect(result.metadata.authors).toEqual([{ firstName: 'John', lastName: 'Doe' }]);
+      expect(result.metadata.authors).toEqual([
+        { firstName: 'John', lastName: 'Doe' },
+      ]);
       expect(result.metadata.abstract).toBe('Test abstract');
       expect(result.metadata.publicationYear).toBe(2023);
       expect(result.metadata.publisher).toBe('Test Publisher');
@@ -209,7 +211,9 @@ describe('Library', () => {
       const result = await library.createItem(partialMetadata);
 
       expect(result.metadata.title).toBe('Partial Document');
-      expect(result.metadata.authors).toEqual([{ firstName: 'Jane', lastName: 'Smith' }]);
+      expect(result.metadata.authors).toEqual([
+        { firstName: 'Jane', lastName: 'Smith' },
+      ]);
       expect(result.metadata.tags).toEqual(['partial']);
       expect(result.metadata.collections).toEqual([]); // Default value
       expect(result.metadata.archives).toEqual([]); // Default value
@@ -227,10 +231,14 @@ describe('Library', () => {
 
       const result = await library.createItem(specialMetadata);
 
-      expect(result.metadata.title).toBe('Test & Special <Characters> "Quotes"');
+      expect(result.metadata.title).toBe(
+        'Test & Special <Characters> "Quotes"',
+      );
       expect(result.metadata.authors[0].firstName).toBe('José');
       expect(result.metadata.authors[0].lastName).toBe('García');
-      expect(result.metadata.abstract).toBe('Special chars: @#$%^&*()_+-=[]{}|;:,.<>?');
+      expect(result.metadata.abstract).toBe(
+        'Special chars: @#$%^&*()_+-=[]{}|;:,.<>?',
+      );
       expect(result.metadata.tags).toEqual(['special-chars', '测试']);
     });
 
@@ -253,7 +261,9 @@ describe('Library', () => {
 
     it('should create item that appears in search results', async () => {
       await library.createItem(metadata);
-      const searchResults = await library.searchItems({ query: 'Test Document' });
+      const searchResults = await library.searchItems({
+        query: 'Test Document',
+      });
 
       expect(searchResults).toHaveLength(1);
       expect(searchResults[0].metadata.title).toBe('Test Document');
@@ -269,9 +279,9 @@ describe('Library', () => {
 
       const errorLibrary = new Library(errorStorage);
 
-      await expect(
-        errorLibrary.createItem({ title: 'Test' }),
-      ).rejects.toThrow('Storage error');
+      await expect(errorLibrary.createItem({ title: 'Test' })).rejects.toThrow(
+        'Storage error',
+      );
     });
   });
 
@@ -291,7 +301,12 @@ describe('Library', () => {
       const items = await library.searchItems({ query: 'Test Document' });
       const itemId = items[0].getItemId();
 
-      const result = await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
+      const result = await library.addArchiveToItem(
+        itemId,
+        pdfBuffer,
+        fileName,
+        10,
+      );
 
       expect(result).toBeInstanceOf(LibraryItem);
       expect(result.getItemId()).toBe(itemId);
@@ -323,7 +338,11 @@ describe('Library', () => {
       const items = await library.searchItems({ query: 'Test Document' });
       const itemId = items[0].getItemId();
 
-      const result = await library.addArchiveToItem(itemId, pdfBuffer, fileName);
+      const result = await library.addArchiveToItem(
+        itemId,
+        pdfBuffer,
+        fileName,
+      );
 
       expect(result.metadata.archives[0].pageCount).toBe(0);
     });
@@ -333,11 +352,21 @@ describe('Library', () => {
       const itemId = items[0].getItemId();
 
       // Add first archive
-      const firstResult = await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
+      const firstResult = await library.addArchiveToItem(
+        itemId,
+        pdfBuffer,
+        fileName,
+        10,
+      );
       expect(firstResult.metadata.archives).toHaveLength(1);
 
       // Try to add same content again
-      const secondResult = await library.addArchiveToItem(itemId, pdfBuffer, 'different.pdf', 15);
+      const secondResult = await library.addArchiveToItem(
+        itemId,
+        pdfBuffer,
+        'different.pdf',
+        15,
+      );
       expect(secondResult.metadata.archives).toHaveLength(1); // Should still be 1
     });
 
@@ -351,10 +380,17 @@ describe('Library', () => {
       await library.addArchiveToItem(itemId, pdfBuffer, fileName, 10);
 
       // Add second archive with different content
-      const result = await library.addArchiveToItem(itemId, pdfBuffer2, 'test2.pdf', 20);
+      const result = await library.addArchiveToItem(
+        itemId,
+        pdfBuffer2,
+        'test2.pdf',
+        20,
+      );
 
       expect(result.metadata.archives).toHaveLength(2);
-      expect(result.metadata.archives[0].fileHash).not.toBe(result.metadata.archives[1].fileHash);
+      expect(result.metadata.archives[0].fileHash).not.toBe(
+        result.metadata.archives[1].fileHash,
+      );
     });
 
     it('should handle storage errors gracefully', async () => {
@@ -369,10 +405,16 @@ describe('Library', () => {
 
       const errorLibrary = new Library(errorStorage);
       // Create item in error library
-      const createdItem = await errorLibrary.createItem({ title: 'Error Test' });
+      const createdItem = await errorLibrary.createItem({
+        title: 'Error Test',
+      });
 
       await expect(
-        errorLibrary.addArchiveToItem(createdItem.getItemId(), pdfBuffer, fileName),
+        errorLibrary.addArchiveToItem(
+          createdItem.getItemId(),
+          pdfBuffer,
+          fileName,
+        ),
       ).rejects.toThrow('Upload error');
     });
   });

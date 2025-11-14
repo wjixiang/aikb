@@ -45,6 +45,35 @@ const signedUrl = await getSignedUploadUrl('client-upload.txt', 'text/plain');
 console.log('Signed URL:', signedUrl);
 ```
 
+### Using New uploadFile Function (Recommended)
+
+```typescript
+import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
+
+// Configure S3 service
+const s3Config: S3ServiceConfig = {
+  accessKeyId: 'your-access-key',
+  secretAccessKey: 'your-secret-key',
+  bucketName: 'your-bucket-name',
+  region: 'us-east-1',
+  endpoint: 'https://s3.us-east-1.amazonaws.com',
+  provider: 'aws',
+};
+
+// Upload a file with flexible parameters
+const buffer = Buffer.from('Hello, World!');
+const result = await uploadFile(
+  s3Config,
+  'hello.txt',
+  buffer,
+  'text/plain',
+  'private'
+);
+
+console.log('File uploaded to:', result.url);
+console.log('Upload result:', result);
+```
+
 ### Using the New Class-based API
 
 ```typescript
@@ -104,6 +133,20 @@ interface S3ServiceConfig {
 ```
 
 #### Methods
+
+##### uploadFile
+
+Uploads a buffer to S3/OSS with flexible parameters.
+
+```typescript
+async uploadFile(
+  s3Config: S3ServiceConfig,
+  s3Key: string,
+  buffer: Buffer,
+  contentType: string,
+  acl?: ObjectCannedACL
+): Promise<UploadResult>
+```
 
 ##### uploadToS3
 

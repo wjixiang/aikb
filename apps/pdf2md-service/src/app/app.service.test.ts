@@ -10,8 +10,8 @@ vi.mock('mineru-client', () => ({
     createSingleFileTask: vi.fn().mockResolvedValue('test-task-id'),
     waitForTaskCompletion: vi.fn().mockResolvedValue({
       result: { state: 'done' },
-      downloadedFiles: ['/path/to/markdown.md']
-    })
+      downloadedFiles: ['/path/to/markdown.md'],
+    }),
   })),
   MinerUDefaultConfig: {
     baseUrl: 'https://mineru.net/api/v4',
@@ -27,7 +27,7 @@ vi.mock('mineru-client', () => ({
       model_version: 'pipeline',
     },
     token: 'test-token',
-  }
+  },
 }));
 
 // Mock axios
@@ -35,11 +35,11 @@ vi.mock('axios', () => ({
   get: vi.fn().mockImplementation((url: string, options?: any) => {
     if (url.includes('download-url')) {
       return Promise.resolve({
-        data: { downloadUrl: 'http://test-pdf-url.com' }
+        data: { downloadUrl: 'http://test-pdf-url.com' },
       });
     } else if (options?.responseType === 'arraybuffer') {
       return Promise.resolve({
-        data: Buffer.from('mock pdf data')
+        data: Buffer.from('mock pdf data'),
       });
     }
     return Promise.resolve({ data: {} });
@@ -49,28 +49,32 @@ vi.mock('axios', () => ({
     get: vi.fn().mockImplementation((url: string, options?: any) => {
       if (url.includes('download-url')) {
         return Promise.resolve({
-          data: { downloadUrl: 'http://test-pdf-url.com' }
+          data: { downloadUrl: 'http://test-pdf-url.com' },
         });
       } else if (options?.responseType === 'arraybuffer') {
         return Promise.resolve({
-          data: Buffer.from('mock pdf data')
+          data: Buffer.from('mock pdf data'),
         });
       }
       return Promise.resolve({ data: {} });
     }),
-    post: vi.fn().mockResolvedValue({})
-  }
+    post: vi.fn().mockResolvedValue({}),
+  },
 }));
 
 // Mock fs
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue('# Test markdown content'),
-  existsSync: vi.fn().mockReturnValue(true)
+  existsSync: vi.fn().mockReturnValue(true),
 }));
 
 // Mock @aikb/s3-service
 vi.mock('@aikb/s3-service', () => ({
-  uploadToS3: vi.fn().mockResolvedValue('http://test-s3-url.com')
+  uploadFile: vi.fn().mockResolvedValue({ url: 'http://test-s3-url.com' }),
+  uploadToS3: vi.fn().mockResolvedValue('http://test-s3-url.com'),
+  getPdfDownloadUrl: vi
+    .fn()
+    .mockResolvedValue('http://test-s3-download-url.com'),
 }));
 
 describe(AppService, () => {
@@ -88,11 +92,11 @@ describe(AppService, () => {
     } as any;
 
     service = new AppService(mockClientProxy);
-    
+
     // Get the mocked MinerUClient instance
     mockMinerUClient = (service as any).minerUClient;
   });
-  
+
   it('should handle PDF with page count below threshold', async () => {
     // Set environment variables for testing
     process.env['PDF_CHUNK_SIZE_THRESHOLD'] = '20';

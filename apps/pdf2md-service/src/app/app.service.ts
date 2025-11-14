@@ -3,17 +3,46 @@ import { Pdf2MArkdownDto, UpdateMarkdownDto } from 'library-shared';
 import { get, post } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { ClientProxy } from '@nestjs/microservices';
-import { uploadToS3 } from '@aikb/s3-service';
+import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
 import { MinerUClient, MinerUDefaultConfig } from 'mineru-client';
 import * as fs from 'fs';
-import { createLoggerWithPrefix } from '@aikb/log-management'
+import { createLoggerWithPrefix } from '@aikb/log-management';
 import * as path from 'path';
+import { getPdfDownloadUrl } from '@aikb/s3-service';
 
+// Internal S3 configuration for this project
+const pdf2mdS3Config: S3ServiceConfig = {
+  accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
+  secretAccessKey: process.env['OSS_SECRET_ACCESS_KEY']!,
+  region: process.env['OSS_REGION']!,
+  bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
+  endpoint: process.env['S3_ENDPOINT']!
+};
+
+/**
+ * Internal wrapper function for uploading files to S3
+ * Uses new uploadFile function with project-specific configuration
+ */
+async function uploadToS3(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string,
+  acl: string = 'private'
+): Promise<string> {
+  const result = await uploadFile(
+    pdf2mdS3Config,
+    fileName,
+    buffer,
+    contentType,
+    acl as any
+  );
+  return result.url;
+}
 
 @Injectable()
 export class AppService {
   private minerUClient: MinerUClient;
-  private logger = createLoggerWithPrefix('pdf2md-service-AppService')
+  private logger = createLoggerWithPrefix('pdf2md-service-AppService');
   constructor(
     @Inject('pdf_2_markdown_service') private rabbitClient: ClientProxy,
   ) {
@@ -38,7 +67,7 @@ export class AppService {
 
     if (!req.pageCount) {
       // Download pdf and extract page number
-      pdfInfo.s3Url = await this.getPdfDownloadUrl(pdfInfo.itemId);
+      pdfInfo.s3Url = await getPdfDownloadUrl(pdfInfo.s3Key);
       pdfInfo.pdfData = await this.downloadPdfData(pdfInfo.s3Url);
       pdfInfo.pageCount = await this.calculatePageNum(pdfInfo.pdfData);
     }
@@ -63,7 +92,7 @@ export class AppService {
       if (!pdfInfo.pdfData) {
         // Download PDF data if not available
         if (!pdfInfo.s3Url) {
-          pdfInfo.s3Url = await this.getPdfDownloadUrl(pdfInfo.itemId);
+          pdfInfo.s3Url = await getPdfDownloadUrl(pdfInfo.s3Key);
         }
         pdfInfo.pdfData = await this.downloadPdfData(pdfInfo.s3Url);
       }
@@ -73,7 +102,9 @@ export class AppService {
         pdfInfo.pdfData,
         chunkSize,
       );
-      this.logger.info(`PDF ${pdfInfo.itemId} split into ${pdfChunks.length} chunks`);
+      this.logger.info(
+        `PDF ${pdfInfo.itemId} split into ${pdfChunks.length} chunks`,
+      );
 
       // Upload each chunk to S3
       const uploadPromises = pdfChunks.map(async (chunk, index) => {
@@ -97,7 +128,10 @@ export class AppService {
             fileName: chunkFileName,
           };
         } catch (error) {
-          this.logger.error(`Failed to upload chunk ${index + 1} for PDF ${pdfInfo.itemId}:`, error);
+          this.logger.error(
+            `Failed to upload chunk ${index + 1} for PDF ${pdfInfo.itemId}:`,
+            error,
+          );
           throw new Error(
             `Failed to upload chunk ${index + 1} to S3: ${error}`,
           );
@@ -106,7 +140,9 @@ export class AppService {
 
       // Wait for all uploads to complete
       const uploadedChunks = await Promise.all(uploadPromises);
-      this.logger.info(`All ${uploadedChunks.length} chunks uploaded successfully for PDF ${pdfInfo.itemId}`);
+      this.logger.info(
+        `All ${uploadedChunks.length} chunks uploaded successfully for PDF ${pdfInfo.itemId}`,
+      );
 
       // Process each chunk individually and merge results
       const chunkResults = await this.processPdfChunks(
@@ -139,6 +175,7 @@ export class AppService {
 
       // Convert the entire PDF to markdown
       const markdownContent = await this.convertSinglePdfToMarkdown(
+        pdfInfo.s3Key!,
         pdfInfo.s3Url!,
         pdfInfo.itemId,
       );
@@ -153,17 +190,6 @@ export class AppService {
         markdownContent,
       };
     }
-  }
-
-  async getPdfDownloadUrl(itemId: string): Promise<string> {
-    const bibliographyEndpoint = process.env['BIBLIOGRAPHY_SERVICE_ENDPOINT'];
-    if (!bibliographyEndpoint)
-      throw new Error('Miss env varible: BIBLIOGRAPHY_SERVICE_ENDPOINT');
-    const response = await get(
-      `${bibliographyEndpoint}/library-items/${itemId}/download-url`,
-    );
-    const pdfUrl = response.data.downloadUrl;
-    return pdfUrl;
   }
 
   async downloadPdfData(url: string): Promise<Buffer> {
@@ -242,7 +268,9 @@ export class AppService {
 
       // Save the new PDF document as bytes
       const newPdfBytes = await newPdfDoc.save();
-      this.logger.debug(`Created new PDF with byte length: ${newPdfBytes.length}`);
+      this.logger.debug(
+        `Created new PDF with byte length: ${newPdfBytes.length}`,
+      );
 
       return newPdfBytes;
     } catch (error) {
@@ -296,11 +324,33 @@ export class AppService {
    * Convert a single PDF to Markdown using MinerU
    */
   private async convertSinglePdfToMarkdown(
+    s3Key: string,
     s3Url: string,
     itemId: string,
   ): Promise<string> {
     try {
       this.logger.info(`Converting single PDF to Markdown for item: ${itemId}`);
+
+      // Add diagnostic logging for S3 URL
+      this.logger.info(`[DIAGNOSTIC] S3 URL for item ${itemId}: ${s3Url}`);
+      if (!s3Url) {
+        this.logger.error(
+          `[DIAGNOSTIC] CRITICAL: S3 URL is null or undefined for item ${itemId}`,
+        );
+
+        // Try to regenerate S3 URL as fallback
+        this.logger.info(
+          `[FALLBACK] Attempting to regenerate S3 URL for item ${itemId}`,
+        );
+        s3Url = await getPdfDownloadUrl(s3Key);
+        this.logger.info(`[FALLBACK] Regenerated S3 URL: ${s3Url}`);
+
+        if (!s3Url) {
+          throw new Error(
+            `Failed to generate S3 URL for item ${itemId}. Cannot proceed with MinerU conversion.`,
+          );
+        }
+      }
 
       // Create a single file task with MinerU
       const taskId = await this.minerUClient.createSingleFileTask({
@@ -320,7 +370,8 @@ export class AppService {
         await this.minerUClient.waitForTaskCompletion(taskId, {
           pollInterval: 5000,
           timeout: 300000, // 5 minutes
-          downloadDir: process.env['MINERU_DOWNLOAD_DIR'] || './mineru-downloads',
+          downloadDir:
+            process.env['MINERU_DOWNLOAD_DIR'] || './mineru-downloads',
         });
 
       if (result.state !== 'done') {
@@ -344,7 +395,9 @@ export class AppService {
         throw new Error('No markdown content available from MinerU result');
       }
 
-      this.logger.info(`Successfully converted PDF to Markdown for item: ${itemId}`);
+      this.logger.info(
+        `Successfully converted PDF to Markdown for item: ${itemId}`,
+      );
       return markdownContent;
     } catch (error) {
       this.logger.error(
@@ -364,7 +417,9 @@ export class AppService {
   ): Promise<Array<{ chunkIndex: number; markdownContent: string }>> {
     const results: Array<{ chunkIndex: number; markdownContent: string }> = [];
 
-    this.logger.info(`Processing ${chunks.length} PDF chunks for item: ${itemId}`);
+    this.logger.info(
+      `Processing ${chunks.length} PDF chunks for item: ${itemId}`,
+    );
 
     for (const chunk of chunks) {
       try {
@@ -373,6 +428,7 @@ export class AppService {
         );
 
         const markdownContent = await this.convertSinglePdfToMarkdown(
+          chunk.fileName,
           chunk.s3Url,
           `${itemId}-chunk-${chunk.chunkIndex}`,
         );
@@ -541,7 +597,10 @@ export class AppService {
             }
           }
         } catch (imageError) {
-          this.logger.error(`Failed to process image ${imagePath}:`, imageError);
+          this.logger.error(
+            `Failed to process image ${imagePath}:`,
+            imageError,
+          );
           // Keep original image reference if upload fails
         }
       }

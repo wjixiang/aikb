@@ -118,7 +118,7 @@ describe('LibraryItemService - End to End', () => {
           useValue: {
             getSignedUploadUrl: vi.fn(),
             getSignedDownloadUrl: vi.fn(),
-            uploadToS3: vi.fn(),
+            uploadToS3: vi.fn().mockResolvedValue({ url: 'http://test-s3-url.com' }),
             deleteFromS3: vi.fn(),
           },
         },
@@ -359,7 +359,7 @@ describe('LibraryItemService - End to End', () => {
               useValue: {
                 getSignedUploadUrl: vi.fn(),
                 getSignedDownloadUrl: vi.fn(),
-                uploadToS3: vi.fn(),
+                uploadToS3: vi.fn().mockResolvedValue({ url: 'http://test-s3-url.com' }),
                 deleteFromS3: vi.fn(),
               },
             },

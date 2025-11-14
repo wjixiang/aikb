@@ -9,6 +9,8 @@ import {
   S3Service,
   createAWSS3Service,
   createAliyunOSSService,
+  uploadFile,
+  type S3ServiceConfig,
 } from '../src/index';
 import { uploadToS3 } from '../src/index'; // Legacy function
 
@@ -154,6 +156,39 @@ async function differentContentTypesExample() {
   }
 }
 
+// Example 6: Using new uploadFile function
+async function uploadFileExample() {
+  console.log('\n=== uploadFile Function Example ===');
+
+  // Configure S3 service
+  const s3Config: S3ServiceConfig = {
+    accessKeyId: 'your-access-key',
+    secretAccessKey: 'your-secret-key',
+    bucketName: 'your-bucket-name',
+    region: 'us-east-1',
+    endpoint: 'https://s3.us-east-1.amazonaws.com',
+    provider: 'aliyun',
+  };
+
+  try {
+    const buffer = Buffer.from('Hello, uploadFile Function!');
+    const result = await uploadFile(
+      s3Config,
+      'hello-uploadfile.txt',
+      buffer,
+      'text/plain',
+      'private'
+    );
+
+    console.log('Upload successful!');
+    console.log('URL:', result.url);
+    console.log('Bucket:', result.bucket);
+    console.log('Key:', result.key);
+  } catch (error) {
+    console.error('Upload failed:', error);
+  }
+}
+
 // Run all examples
 async function runExamples() {
   console.log('S3 Service Basic Upload Examples\n');
@@ -164,6 +199,7 @@ async function runExamples() {
   // await customConfigExample();
   // await legacyExample();
   // await differentContentTypesExample();
+  // await uploadFileExample();
 
   console.log(
     '\nNote: Uncomment the examples above and update credentials to run them',
@@ -181,4 +217,5 @@ export {
   customConfigExample,
   legacyExample,
   differentContentTypesExample,
+  uploadFileExample,
 };

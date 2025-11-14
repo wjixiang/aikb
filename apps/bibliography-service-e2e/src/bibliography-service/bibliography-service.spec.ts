@@ -20,12 +20,12 @@ describe('Bibliography Service E2E Tests', () => {
           {
             firstName: 'John',
             lastName: 'Doe',
-            middleName: 'William'
+            middleName: 'William',
           },
           {
             firstName: 'Jane',
-            lastName: 'Smith'
-          }
+            lastName: 'Smith',
+          },
         ],
         abstract: 'This is a test abstract for the end-to-end test',
         publicationYear: 2023,
@@ -37,7 +37,8 @@ describe('Bibliography Service E2E Tests', () => {
         notes: 'Test notes for the library item',
         collections: ['test-collection'],
         language: 'en',
-        markdownContent: '# Test Book\n\nThis is the markdown content of the test book.'
+        markdownContent:
+          '# Test Book\n\nThis is the markdown content of the test book.',
       };
 
       // Send POST request to create the library item
@@ -46,7 +47,7 @@ describe('Bibliography Service E2E Tests', () => {
       // Verify the response
       expect(res.status).toBe(201);
       expect(res.data).toBeDefined();
-      
+
       // Check the metadata structure in the response
       const metadata = res.data.metadata;
       expect(metadata.title).toBe(createLibraryItemDto.title);
@@ -56,7 +57,9 @@ describe('Bibliography Service E2E Tests', () => {
       expect(metadata.authors[1].firstName).toBe('Jane');
       expect(metadata.authors[1].lastName).toBe('Smith');
       expect(metadata.abstract).toBe(createLibraryItemDto.abstract);
-      expect(metadata.publicationYear).toBe(createLibraryItemDto.publicationYear);
+      expect(metadata.publicationYear).toBe(
+        createLibraryItemDto.publicationYear,
+      );
       expect(metadata.publisher).toBe(createLibraryItemDto.publisher);
       expect(metadata.isbn).toBe(createLibraryItemDto.isbn);
       expect(metadata.doi).toBe(createLibraryItemDto.doi);
@@ -76,7 +79,7 @@ describe('Bibliography Service E2E Tests', () => {
         // Missing required title and authors
         abstract: 'This is a test abstract',
         tags: [],
-        collections: []
+        collections: [],
       };
 
       try {
@@ -87,7 +90,9 @@ describe('Bibliography Service E2E Tests', () => {
         // Verify that the error response has the expected status code
         expect(error.response.status).toBe(500);
         expect(error.response.data).toBeDefined();
-        expect(error.response.data.message).toContain('Failed to create library item');
+        expect(error.response.data.message).toContain(
+          'Failed to create library item',
+        );
       }
     });
   });
@@ -97,7 +102,7 @@ describe('Bibliography Service E2E Tests', () => {
       // Create test data for the upload URL request
       const pdfUploadUrlDto = {
         fileName: 'test-document.pdf',
-        expiresIn: 3600 // 1 hour
+        expiresIn: 3600, // 1 hour
       };
 
       // Send POST request to generate upload URL
@@ -106,7 +111,7 @@ describe('Bibliography Service E2E Tests', () => {
       // Verify the response
       expect(res.status).toBe(201);
       expect(res.data).toBeDefined();
-      
+
       // Check the response structure
       expect(res.data.uploadUrl).toBeDefined();
       expect(typeof res.data.uploadUrl).toBe('string');
@@ -116,7 +121,7 @@ describe('Bibliography Service E2E Tests', () => {
       expect(res.data.s3Key).toContain('test-document.pdf');
       expect(res.data.expiresAt).toBeDefined();
       expect(typeof res.data.expiresAt).toBe('string');
-      
+
       // Verify the upload URL is a valid presigned URL
       expect(res.data.uploadUrl).toContain('https://');
       expect(res.data.uploadUrl).toContain('X-Amz-Signature=');
@@ -125,7 +130,7 @@ describe('Bibliography Service E2E Tests', () => {
     it('should generate a PDF upload URL with default expiration', async () => {
       // Create test data without specifying expiration
       const pdfUploadUrlDto = {
-        fileName: 'test-document-default.pdf'
+        fileName: 'test-document-default.pdf',
       };
 
       // Send POST request to generate upload URL
@@ -134,7 +139,7 @@ describe('Bibliography Service E2E Tests', () => {
       // Verify the response
       expect(res.status).toBe(201);
       expect(res.data).toBeDefined();
-      
+
       // Check the response structure
       expect(res.data.uploadUrl).toBeDefined();
       expect(res.data.s3Key).toBeDefined();
@@ -144,7 +149,7 @@ describe('Bibliography Service E2E Tests', () => {
     it('should return 500 when generating upload URL with invalid data', async () => {
       // Create invalid test data (missing required fileName)
       const invalidPdfUploadUrlDto = {
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       try {
@@ -157,7 +162,9 @@ describe('Bibliography Service E2E Tests', () => {
         if (error.response) {
           expect(error.response.status).toBe(500);
           expect(error.response.data).toBeDefined();
-          expect(error.response.data.message).toContain('Failed to get PDF upload URL');
+          expect(error.response.data.message).toContain(
+            'Failed to get PDF upload URL',
+          );
         } else {
           // If no response property, check if it's a network error or other type
           expect(error).toBeDefined();

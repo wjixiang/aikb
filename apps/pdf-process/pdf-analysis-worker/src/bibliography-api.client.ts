@@ -1,10 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { LibraryItem } from 'bibliography';
-import {
-  UpdateMetadataDto,
-  UpdateProcessingStatusDto,
-  PdfDownloadUrlDto,
-} from 'library-shared';
+import { UpdateMetadataDto, PdfDownloadUrlDto } from 'library-shared';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
 
 const logger = createLoggerWithPrefix('BibliographyApiClient');
@@ -89,27 +85,6 @@ export class BibliographyApiClient {
       logger.error(`Failed to update library item metadata ${id}:`, error);
       throw new Error(
         `Failed to update library item metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
-
-  /**
-   * Update PDF processing status
-   */
-  async updatePdfProcessingStatus(
-    id: string,
-    statusUpdate: UpdateProcessingStatusDto,
-  ): Promise<LibraryItem> {
-    try {
-      const response: AxiosResponse<LibraryItem> = await this.axiosInstance.put(
-        `/api/library-items/${id}/processing-status`,
-        statusUpdate,
-      );
-      return response.data;
-    } catch (error) {
-      logger.error(`Failed to update PDF processing status ${id}:`, error);
-      throw new Error(
-        `Failed to update PDF processing status: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }

@@ -25,24 +25,20 @@ vi.mock('bibliography', () => ({
 // Create a mock storage instance with addArchiveToMetadata method
 const mockStorage = {
   // PDF operations
-  uploadPdf: vi
-    .fn()
-    .mockResolvedValue({
-      id: 'test-pdf-id',
-      name: 'test.pdf',
-      s3Key: 'test-key',
-      url: 'test-url',
-      createDate: new Date(),
-    }),
-  uploadPdfFromPath: vi
-    .fn()
-    .mockResolvedValue({
-      id: 'test-pdf-id',
-      name: 'test.pdf',
-      s3Key: 'test-key',
-      url: 'test-url',
-      createDate: new Date(),
-    }),
+  uploadPdf: vi.fn().mockResolvedValue({
+    id: 'test-pdf-id',
+    name: 'test.pdf',
+    s3Key: 'test-key',
+    url: 'test-url',
+    createDate: new Date(),
+  }),
+  uploadPdfFromPath: vi.fn().mockResolvedValue({
+    id: 'test-pdf-id',
+    name: 'test.pdf',
+    s3Key: 'test-key',
+    url: 'test-url',
+    createDate: new Date(),
+  }),
   getPdfDownloadUrl: vi.fn().mockResolvedValue('http://example.com'),
   getPdf: vi.fn().mockResolvedValue(Buffer.from('test pdf content')),
 
@@ -112,7 +108,7 @@ describe('LibraryItemService - Add Archive', () => {
           useValue: {
             getSignedUploadUrl: vi.fn(),
             getSignedDownloadUrl: vi.fn(),
-            uploadToS3: vi.fn(),
+            uploadToS3: vi.fn().mockResolvedValue({ url: 'http://test-s3-url.com' }),
             deleteFromS3: vi.fn(),
           },
         },

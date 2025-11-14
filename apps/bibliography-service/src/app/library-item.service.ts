@@ -97,7 +97,7 @@ export class LibraryItemService {
       item.getItemId(),
       pdfBuffer,
       fileName,
-      createLibraryItemWithPdfDto.pageCount
+      createLibraryItemWithPdfDto.pageCount,
     );
   }
 
@@ -340,9 +340,9 @@ export class LibraryItemService {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
 
-    if(! await updatedItem.getMarkdown()) {
+    if (!(await updatedItem.getMarkdown())) {
       // Triger markdown extraction
-      switch(newArchive.fileType) {
+      switch (newArchive.fileType) {
         case 'pdf':
           await this.producePdf2MarkdownRequest({
             itemId: updatedItem.getItemId(),
@@ -351,14 +351,16 @@ export class LibraryItemService {
             fileHash: newArchive.fileHash,
             addDate: newArchive.addDate,
             s3Key: newArchive.s3Key,
-            pageCount: newArchive.pageCount
+            pageCount: newArchive.pageCount,
           });
           break;
         default:
-          this.logger.error(`none support file type for markdown extraction`, newArchive)
+          this.logger.error(
+            `none support file type for markdown extraction`,
+            newArchive,
+          );
       }
     }
-    
 
     return updatedItem;
   }
