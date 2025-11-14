@@ -852,6 +852,9 @@ importers:
       '@aikb/item-vector-storage':
         specifier: workspace:*
         version: link:../item-vector-storage
+      '@elastic/elasticsearch':
+        specifier: ^8.0.0
+        version: 8.19.1
       tslib:
         specifier: ^2.3.0
         version: 2.8.1

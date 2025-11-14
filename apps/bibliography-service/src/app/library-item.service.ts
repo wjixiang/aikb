@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  S3MongoLibraryStorage,
+  S3ElasticSearchLibraryStorage,
   LibraryItem,
   Library,
   ItemArchive,
@@ -30,7 +30,8 @@ export class LibraryItemService {
     @Inject('S3_SERVICE') private s3Service: S3Service,
   ) {
     // Initialize the storage and library
-    const storage = new S3MongoLibraryStorage();
+    const elasticsearchUrl = process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
+    const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
     this.library = new Library(storage);
   }
 

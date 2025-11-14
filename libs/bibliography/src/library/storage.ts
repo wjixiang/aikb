@@ -22,7 +22,6 @@ export interface AbstractPdf {
 export interface ILibraryStorage {
   // PDF operations
   uploadPdf(pdfData: Buffer, fileName: string): Promise<AbstractPdf>;
-  uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf>;
   getPdfDownloadUrl(s3Key: string): Promise<string>;
   getPdf(s3Key: string): Promise<Buffer>;
 

@@ -9,14 +9,6 @@ import {
   ItemArchive,
 } from '../library/types.js';
 import { IdUtils, S3Utils } from 'utils';
-import path from 'path';
-import fs from 'fs';
-// Don't import s3-service at module level to avoid eager initialization
-// import {
-//   uploadToS3,
-//   uploadPdfFromPath,
-//   getSignedUrlForDownload,
-// } from '@aikb/s3-service';
 
 export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
   private readonly metadataIndexName = 'library_metadata';
@@ -92,13 +84,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
               collections: { type: 'keyword' },
               dateAdded: { type: 'date' },
               dateModified: { type: 'date' },
-              fileType: { type: 'keyword' },
-              s3Key: { type: 'keyword' },
-              s3Url: { type: 'keyword' },
-              fileSize: { type: 'long' },
-              pageCount: { type: 'integer' },
               language: { type: 'keyword' },
-              contentHash: { type: 'keyword' },
             },
           },
         } as any);
@@ -216,27 +202,7 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
     return pdfInfo;
   }
 
-  async uploadPdfFromPath(pdfPath: string): Promise<AbstractPdf> {
-    const fileName = path.basename(pdfPath);
-    const s3Key = S3Utils.generatePdfS3Key(fileName);
 
-    // Lazy import s3-service functions to avoid eager initialization
-    const { uploadPdfFromPath } = await import('@aikb/s3-service');
-    const url = await uploadPdfFromPath(pdfPath, s3Key);
-
-    const stats = fs.statSync(pdfPath);
-
-    const pdfInfo: AbstractPdf = {
-      id: IdUtils.generateId(),
-      name: fileName,
-      s3Key,
-      url,
-      fileSize: stats.size,
-      createDate: new Date(),
-    };
-
-    return pdfInfo;
-  }
 
   async getPdfDownloadUrl(s3Key: string): Promise<string> {
     // Lazy import s3-service functions to avoid eager initialization

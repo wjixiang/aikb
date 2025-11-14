@@ -6,6 +6,7 @@
   "types": "./src/index.d.ts",
   "dependencies": {
     "tslib": "^2.3.0",
-    "@aikb/item-vector-storage": "workspace:*"
+    "@aikb/item-vector-storage": "workspace:*",
+    "@elastic/elasticsearch": "^8.0.0"
   }
 }
