@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import * as path from 'path';
 import { getPdfDownloadUrl } from '@aikb/s3-service';
+import * as yauzl from 'yauzl';
 
 // Internal S3 configuration for this project
 const pdf2mdS3Config: S3ServiceConfig = {
@@ -536,9 +537,14 @@ export class AppService {
         `Downloaded zip file, size: ${zipBuffer.length} bytes for item: ${itemId}`,
       );
 
-      // For now, return a placeholder markdown content
-      // In a real implementation, you would extract the actual markdown content
-      return `# Extracted Content for ${itemId}\n\nThis is a placeholder for the extracted markdown content from the zip file.\n\nIn a real implementation, this would contain the actual markdown content extracted from the PDF.`;
+      // Extract the actual markdown content from the zip
+      const mdExtractRes = await this.extractMdFromZip(zipBuffer);
+      
+      if (mdExtractRes) {
+        return mdExtractRes;
+      } else {
+        throw new Error('Failed to extract full.md from zip file');
+      }
     } catch (error) {
       this.logger.error(
         `Failed to download and extract from zip for item ${itemId}:`,
@@ -546,6 +552,81 @@ export class AppService {
       );
       throw error;
     }
+  }
+
+  async extractMdFromZip(zipBuffer: Buffer): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const markdownContents: string[] = [];
+      
+      // Use yauzl.fromBuffer with the Buffer directly
+      yauzl.fromBuffer(zipBuffer, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          this.logger.error(`Error opening zip file: ${err}`);
+          return reject(err);
+        }
+
+        if (!zipfile) {
+          return reject(new Error('Failed to open zip file'));
+        }
+
+        // Read entries
+        zipfile.readEntry();
+        
+        zipfile.on('entry', (entry) => {
+          // Check if the entry is full.md
+          if (entry.fileName === 'full.md' || entry.fileName.endsWith('/full.md')) {
+            // Open the entry stream
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                this.logger.error(`Error opening entry stream for ${entry.fileName}: ${err}`);
+                return reject(err);
+              }
+
+              if (!readStream) {
+                return reject(new Error(`Failed to open read stream for ${entry.fileName}`));
+              }
+
+              // Collect the data
+              const chunks: Buffer[] = [];
+              readStream.on('data', (chunk) => {
+                chunks.push(chunk);
+              });
+
+              readStream.on('end', () => {
+                const content = Buffer.concat(chunks).toString('utf8');
+                markdownContents.push(content);
+                // Continue reading next entries
+                zipfile.readEntry();
+              });
+
+              readStream.on('error', (err) => {
+                this.logger.error(`Error reading entry ${entry.fileName}: ${err}`);
+                reject(err);
+              });
+            });
+          } else {
+            // Skip this entry and read the next one
+            zipfile.readEntry();
+          }
+        });
+
+        zipfile.on('end', () => {
+          // When all entries have been processed
+          if (markdownContents.length > 0) {
+            // Return the first full.md content found
+            resolve(markdownContents[0]);
+          } else {
+            this.logger.warn('No full.md file found in zip archive');
+            resolve(null);
+          }
+        });
+
+        zipfile.on('error', (err) => {
+          this.logger.error(`Zip file error: ${err}`);
+          reject(err);
+        });
+      });
+    });
   }
 
   /**

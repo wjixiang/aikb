@@ -16,11 +16,11 @@ import { ConversionResult, ImageUploadResult, IPdfConvertor } from './types';
 
 // Internal S3 configuration for this project
 const pdfConverterS3Config: S3ServiceConfig = {
-  accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
-  secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY!,
-  region: process.env.OSS_REGION!,
-  bucketName: process.env.PDF_OSS_BUCKET_NAME!,
-  endpoint: process.env.S3_ENDPOINT!
+  accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
+  secretAccessKey: process.env['OSS_SECRET_ACCESS_KEY']!,
+  region: process.env['OSS_REGION']!,
+  bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
+  endpoint: process.env['S3_ENDPOINT']!
 };
 
 /**

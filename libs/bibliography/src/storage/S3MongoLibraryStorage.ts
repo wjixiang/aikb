@@ -74,12 +74,11 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
     
     // Create S3 config from environment variables
     const s3Config = {
-      accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY!,
-      region: process.env.OSS_REGION!,
-      bucketName: process.env.PDF_OSS_BUCKET_NAME!,
-      endpoint: process.env.S3_ENDPOINT!,
-      provider: 'aws' as const,
+      accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
+      secretAccessKey: process.env['OSS_SECRET_ACCESS_KEY']!,
+      region: process.env['OSS_REGION']!,
+      bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
+      endpoint: process.env['S3_ENDPOINT']!,
     };
     
     const result = await uploadFile(s3Config, s3Key, pdfData, 'application/pdf', 'private');

@@ -26,13 +26,14 @@ vi.mock('fs', () => ({
 // Mock axios
 vi.mock('axios', () => ({
   get: vi.fn().mockImplementation((url: string, options?: any) => {
-    if (url.includes('download-url')) {
-      return Promise.resolve({
-        data: { downloadUrl: 'http://test-pdf-url.com' },
-      });
-    } else if (options?.responseType === 'arraybuffer') {
+    // Check for arraybuffer first to ensure correct response type
+    if (options?.responseType === 'arraybuffer') {
       return Promise.resolve({
         data: Buffer.from('mock pdf data'),
+      });
+    } else if (url.includes('download-url')) {
+      return Promise.resolve({
+        data: { downloadUrl: 'http://test-pdf-url.com' },
       });
     }
     return Promise.resolve({ data: {} });
@@ -40,13 +41,14 @@ vi.mock('axios', () => ({
   post: vi.fn().mockResolvedValue({}),
   default: {
     get: vi.fn().mockImplementation((url: string, options?: any) => {
-      if (url.includes('download-url')) {
-        return Promise.resolve({
-          data: { downloadUrl: 'http://test-pdf-url.com' },
-        });
-      } else if (options?.responseType === 'arraybuffer') {
+      // Check for arraybuffer first to ensure correct response type
+      if (options?.responseType === 'arraybuffer') {
         return Promise.resolve({
           data: Buffer.from('mock pdf data'),
+        });
+      } else if (url.includes('download-url')) {
+        return Promise.resolve({
+          data: { downloadUrl: 'http://test-pdf-url.com' },
         });
       }
       return Promise.resolve({ data: {} });
