@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pdf2MArkdownDto, UpdateMarkdownDto } from 'library-shared';
-import { get, post } from 'axios';
+import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { ClientProxy } from '@nestjs/microservices';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
@@ -370,7 +370,7 @@ export class AppService {
       const { result, downloadedFiles } =
         await this.minerUClient.waitForTaskCompletion(taskId, {
           pollInterval: 5000,
-          timeout: 300000, // 5 minutes
+          timeout: 600000, // 10 minutes
           downloadDir:
             process.env['MINERU_DOWNLOAD_DIR'] || './mineru-downloads',
         });
@@ -379,22 +379,12 @@ export class AppService {
         throw new Error(`MinerU task failed: ${result.err_msg}`);
       }
 
-      // Extract and process images if downloaded files exist
-      let markdownContent = '';
-      if (downloadedFiles && downloadedFiles.length > 0) {
-        markdownContent = await this.extractMarkdownFromDownloadedFiles(
-          downloadedFiles,
-          itemId,
-        );
-      } else if (result.full_zip_url) {
-        // Download and extract from zip URL
-        markdownContent = await this.downloadAndExtractFromZip(
-          result.full_zip_url,
-          itemId,
-        );
-      } else {
-        throw new Error('No markdown content available from MinerU result');
-      }
+      // Extract markdown content using the unified function
+      const markdownContent = await this.extractMarkdownContent(
+        downloadedFiles || null,
+        result.full_zip_url || null,
+        itemId,
+      );
 
       this.logger.info(
         `Successfully converted PDF to Markdown for item: ${itemId}`,
@@ -482,72 +472,66 @@ export class AppService {
   }
 
   /**
-   * Extract markdown content from downloaded files
+   * Extract markdown content from downloaded files or zip URL
+   * This unified function handles both local files and zip downloads
    */
-  private async extractMarkdownFromDownloadedFiles(
-    downloadedFiles: string[],
+  private async extractMarkdownContent(
+    downloadedFiles: string[] | null,
+    zipUrl: string | null,
     itemId: string,
   ): Promise<string> {
     try {
-      // Look for markdown files in the downloaded files
-      for (const filePath of downloadedFiles) {
-        if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
-          const content = fs.readFileSync(filePath, 'utf-8');
+      let markdownContent = '';
+      
+      // First try to extract from downloaded files
+      if (downloadedFiles && downloadedFiles.length > 0) {
+        this.logger.debug(`Extracting markdown from downloaded files for item: ${itemId}`);
+        
+        // Look for markdown files in the downloaded files
+        for (const filePath of downloadedFiles) {
+          if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+            const content = fs.readFileSync(filePath, 'utf-8');
 
-          // Process images in the markdown and upload to S3
-          const processedContent = await this.processAndUploadImages(
-            content,
-            itemId,
-            path.dirname(filePath),
-          );
+            // Process images in the markdown and upload to S3
+            const processedContent = await this.processAndUploadImages(
+              content,
+              itemId,
+              path.dirname(filePath),
+            );
 
-          return processedContent;
+            return processedContent;
+          }
+        }
+        
+        this.logger.warn(`No markdown file found in downloaded files for item: ${itemId}`);
+      }
+      
+      // If no markdown found in downloaded files, try zip URL
+      if (zipUrl) {
+        this.logger.debug(`Downloading and extracting from zip: ${zipUrl} for item: ${itemId}`);
+
+        // Download the zip file
+        const response = await get(zipUrl, { responseType: 'arraybuffer' });
+        const zipBuffer = Buffer.from(response.data);
+
+        this.logger.debug(
+          `Downloaded zip file, size: ${zipBuffer.length} bytes for item: ${itemId}`,
+        );
+
+        // Extract all files from zip in a single operation
+        const extractResult = await this.extractAllFilesAndMarkdownFromZip(zipBuffer, itemId);
+        
+        if (extractResult.markdownContent) {
+          return extractResult.markdownContent;
+        } else {
+          this.logger.warn(`Failed to extract full.md from zip file for item: ${itemId}`);
         }
       }
-
-      throw new Error('No markdown file found in downloaded files');
-    } catch (error) {
-      this.logger.error(
-        `Failed to extract markdown from downloaded files for item ${itemId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Download and extract markdown from a zip file
-   */
-  private async downloadAndExtractFromZip(
-    zipUrl: string,
-    itemId: string,
-  ): Promise<string> {
-    try {
-      this.logger.debug(`Downloading and extracting from zip: ${zipUrl}`);
-
-      // For now, we'll use a simpler approach - just return a placeholder
-      // In a real implementation, you would use a proper zip extraction library
-      // like node-stream-zip or adm-zip
-
-      // Download the zip file to check if it's accessible
-      const response = await get(zipUrl, { responseType: 'arraybuffer' });
-      const zipBuffer = Buffer.from(response.data);
-
-      this.logger.debug(
-        `Downloaded zip file, size: ${zipBuffer.length} bytes for item: ${itemId}`,
-      );
-
-      // Extract the actual markdown content from the zip
-      const mdExtractRes = await this.extractMdFromZip(zipBuffer);
       
-      if (mdExtractRes) {
-        return mdExtractRes;
-      } else {
-        throw new Error('Failed to extract full.md from zip file');
-      }
+      throw new Error('No markdown content available from downloaded files or zip URL');
     } catch (error) {
       this.logger.error(
-        `Failed to download and extract from zip for item ${itemId}:`,
+        `Failed to extract markdown content for item ${itemId}:`,
         error,
       );
       throw error;
@@ -619,6 +603,243 @@ export class AppService {
             this.logger.warn('No full.md file found in zip archive');
             resolve(null);
           }
+        });
+
+        zipfile.on('error', (err) => {
+          this.logger.error(`Zip file error: ${err}`);
+          reject(err);
+        });
+      });
+    });
+  }
+
+  /**
+   * Extract all files from zip buffer and process markdown content in a single operation
+   */
+  private async extractAllFilesAndMarkdownFromZip(
+    zipBuffer: Buffer,
+    itemId: string
+  ): Promise<{ markdownContent: string | null }> {
+    return new Promise((resolve, reject) => {
+      const tempDir = path.join(process.env['MINERU_DOWNLOAD_DIR'] || './mineru-downloads', `temp-${itemId}-${Date.now()}`);
+      let markdownContent: string | null = null;
+      let extractedFiles = false;
+      
+      // Create temporary directory
+      fs.mkdirSync(tempDir, { recursive: true });
+      
+      // Use yauzl.fromBuffer with Buffer directly
+      yauzl.fromBuffer(zipBuffer, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          // Clean up on error
+          if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          }
+          this.logger.error(`Error opening zip file: ${err}`);
+          return reject(err);
+        }
+
+        if (!zipfile) {
+          // Clean up on error
+          if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          }
+          return reject(new Error('Failed to open zip file'));
+        }
+
+        // Read entries
+        zipfile.readEntry();
+        
+        zipfile.on('entry', (entry) => {
+          // Check if the entry is full.md
+          if (entry.fileName === 'full.md' || entry.fileName.endsWith('/full.md')) {
+            // Open the entry stream for markdown content
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                this.logger.error(`Error opening entry stream for ${entry.fileName}: ${err}`);
+                return reject(err);
+              }
+
+              if (!readStream) {
+                return reject(new Error(`Failed to open read stream for ${entry.fileName}`));
+              }
+
+              // Collect the markdown data
+              const chunks: Buffer[] = [];
+              readStream.on('data', (chunk) => {
+                chunks.push(chunk);
+              });
+
+              readStream.on('end', () => {
+                const content = Buffer.concat(chunks).toString('utf8');
+                markdownContent = content;
+                // Continue reading next entries
+                zipfile.readEntry();
+              });
+
+              readStream.on('error', (err) => {
+                this.logger.error(`Error reading entry ${entry.fileName}: ${err}`);
+                reject(err);
+              });
+            });
+          } else if (!/\/$/.test(entry.fileName)) {
+            // Extract non-directory files (images, etc.)
+            extractedFiles = true;
+            
+            // Create directory structure if needed
+            const fullPath = path.join(tempDir, entry.fileName);
+            const dirPath = path.dirname(fullPath);
+            
+            if (!fs.existsSync(dirPath)) {
+              fs.mkdirSync(dirPath, { recursive: true });
+            }
+
+            // Open the entry stream
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                this.logger.error(`Error opening entry stream for ${entry.fileName}: ${err}`);
+                return reject(err);
+              }
+
+              if (!readStream) {
+                return reject(new Error(`Failed to open read stream for ${entry.fileName}`));
+              }
+
+              // Create write stream
+              const writeStream = fs.createWriteStream(fullPath);
+              
+              readStream.pipe(writeStream);
+              
+              writeStream.on('finish', () => {
+                // Continue reading next entries
+                zipfile.readEntry();
+              });
+
+              writeStream.on('error', (err) => {
+                this.logger.error(`Error writing file ${entry.fileName}: ${err}`);
+                reject(err);
+              });
+
+              readStream.on('error', (err) => {
+                this.logger.error(`Error reading entry ${entry.fileName}: ${err}`);
+                reject(err);
+              });
+            });
+          } else {
+            // Skip directories and continue reading next entries
+            zipfile.readEntry();
+          }
+        });
+
+        zipfile.on('end', async () => {
+          // When all entries have been processed
+          try {
+            let processedContent = markdownContent;
+            
+            // If we extracted files and have markdown content, process images
+            if (extractedFiles && markdownContent) {
+              processedContent = await this.processAndUploadImages(
+                markdownContent,
+                itemId,
+                tempDir,
+              );
+            }
+            
+            // Clean up temporary directory
+            fs.rmSync(tempDir, { recursive: true, force: true });
+            
+            resolve({ markdownContent: processedContent });
+          } catch (error) {
+            // Clean up on error
+            if (fs.existsSync(tempDir)) {
+              fs.rmSync(tempDir, { recursive: true, force: true });
+            }
+            reject(error);
+          }
+        });
+
+        zipfile.on('error', (err) => {
+          // Clean up on error
+          if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          }
+          this.logger.error(`Zip file error: ${err}`);
+          reject(err);
+        });
+      });
+    });
+  }
+
+  /**
+   * Extract all files from zip buffer to a directory
+   */
+  private async extractAllFilesFromZip(zipBuffer: Buffer, targetDir: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Use yauzl.fromBuffer with Buffer directly
+      yauzl.fromBuffer(zipBuffer, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          this.logger.error(`Error opening zip file: ${err}`);
+          return reject(err);
+        }
+
+        if (!zipfile) {
+          return reject(new Error('Failed to open zip file'));
+        }
+
+        // Read entries
+        zipfile.readEntry();
+        
+        zipfile.on('entry', (entry) => {
+          // Skip directories
+          if (/\/$/.test(entry.fileName)) {
+            zipfile.readEntry();
+            return;
+          }
+
+          // Create directory structure if needed
+          const fullPath = path.join(targetDir, entry.fileName);
+          const dirPath = path.dirname(fullPath);
+          
+          if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
+
+          // Open the entry stream
+          zipfile.openReadStream(entry, (err, readStream) => {
+            if (err) {
+              this.logger.error(`Error opening entry stream for ${entry.fileName}: ${err}`);
+              return reject(err);
+            }
+
+            if (!readStream) {
+              return reject(new Error(`Failed to open read stream for ${entry.fileName}`));
+            }
+
+            // Create write stream
+            const writeStream = fs.createWriteStream(fullPath);
+            
+            readStream.pipe(writeStream);
+            
+            writeStream.on('finish', () => {
+              // Continue reading next entries
+              zipfile.readEntry();
+            });
+
+            writeStream.on('error', (err) => {
+              this.logger.error(`Error writing file ${entry.fileName}: ${err}`);
+              reject(err);
+            });
+
+            readStream.on('error', (err) => {
+              this.logger.error(`Error reading entry ${entry.fileName}: ${err}`);
+              reject(err);
+            });
+          });
+        });
+
+        zipfile.on('end', () => {
+          // When all entries have been processed
+          resolve();
         });
 
         zipfile.on('error', (err) => {
@@ -725,14 +946,14 @@ export class AppService {
         );
       }
 
-      this.logger.info(`Updating bibliography service for item: ${itemId}`);
+      this.logger.info(`Updating markdown content for item: ${itemId}`);
 
       const updateDto: UpdateMarkdownDto = {
         id: itemId,
         markdownContent,
       };
 
-      const response = await post(
+      const response = await put(
         `${bibliographyEndpoint}/library-items/${itemId}/markdown`,
         updateDto,
         {

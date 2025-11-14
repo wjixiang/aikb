@@ -8,6 +8,13 @@
       "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "dependsOn": ["bibliography-service:build","bibliography-service:serve"]
+    },
+    "testUploadPdf": {
+      "command": "npx tsx '/workspace/scripts/upload-pdf.ts' '/workspace/test/ACEI.pdf'",
+      "dependsOn": [
+        "bibliography-service:serve",
+        "pdf2md-service:serve"
+      ]
     }
   }
 }
