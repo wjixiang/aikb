@@ -1,8 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Pdf2MArkdownDto, UpdateMarkdownDto } from 'library-shared';
 import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
-import { ClientProxy } from '@nestjs/microservices';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
 import { MinerUClient, MinerUDefaultConfig } from 'mineru-client';
 import * as fs from 'fs';
@@ -44,9 +43,7 @@ async function uploadToS3(
 export class AppService {
   private minerUClient: MinerUClient;
   private logger = createLoggerWithPrefix('pdf2md-service-AppService');
-  constructor(
-    @Inject('pdf_2_markdown_service') private rabbitClient: ClientProxy,
-  ) {
+  constructor() {
     // Initialize MinerUClient with environment configuration
     this.minerUClient = new MinerUClient({
       ...MinerUDefaultConfig,
@@ -872,7 +869,7 @@ export class AppService {
         const [fullMatch, altText, imagePath] = match;
 
         try {
-          // Check if the image is a local file
+          // Check if image is a local file
           if (!imagePath.startsWith('http')) {
             const fullImagePath = path.resolve(baseDir, imagePath);
 
@@ -889,7 +886,7 @@ export class AppService {
                 this.getMimeType(imageExtension),
               );
 
-              // Replace the image reference in markdown
+              // Replace image reference in markdown
               processedContent = processedContent.replace(
                 fullMatch,
                 `![${altText}](${s3Url})`,

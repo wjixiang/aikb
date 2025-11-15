@@ -14,11 +14,11 @@ import {
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
 } from 'library-shared';
-import { ClientProxy } from '@nestjs/microservices';
 import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export class LibraryItemService {
@@ -26,7 +26,7 @@ export class LibraryItemService {
   private logger = createLoggerWithPrefix('bibliography-service');
 
   constructor(
-    @Inject('PDF_2_MARKDOWN_SERVICE') private rabbitClient: ClientProxy,
+    private amqpConnection: AmqpConnection,
     @Inject('S3_SERVICE') private s3Service: S3Service,
   ) {
     // Initialize the storage and library
@@ -251,10 +251,9 @@ export class LibraryItemService {
   async producePdf2MarkdownRequest(req: Pdf2MArkdownDto) {
     this.logger.debug('producePdf2MarkdownRequest called with:', req);
     try {
-      // Send message to the configured queue
-      // The pattern name should match to routing key expected by consumers
-      this.rabbitClient.emit('pdf-2-markdown-conversion', req);
-      this.logger.debug('Message emitted to RabbitMQ successfully', req);
+      // Use @golevelup/nestjs-rabbitmq
+      this.amqpConnection.publish('library','item.pdf2md', req)
+
     } catch (error) {
       this.logger.error('Error sending message to RabbitMQ:', error);
       throw error;

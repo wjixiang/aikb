@@ -1,26 +1,23 @@
 import { Module } from '@nestjs/common';
 import { LibraryItemController } from './library-item/library-item.controller';
 import { LibraryItemService } from './library-item/library-item.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { S3ServiceProvider } from './s3/s3.provider';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: 'PDF_2_MARKDOWN_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [
-            `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
-          ],
-          queue: 'pdf_2_markdown_queue',
-          connectionInitOptions: { timeout: 30000 },
-          heartbeat: 60,
-          prefetchCount: 1,
-        },
-      },
-    ]),
+    RabbitMQModule.forRoot({
+      exchanges: [
+        {
+          name: 'library',
+          type: 'topic'
+        }
+      ],
+      uri: `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
+      connectionInitOptions: {
+        timeout: 30000
+      }
+    })
   ],
   controllers: [LibraryItemController],
   providers: [LibraryItemService, S3ServiceProvider],

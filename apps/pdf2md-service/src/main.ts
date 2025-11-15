@@ -1,27 +1,17 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  Logger.log('Starting PDF2MD microservice bootstrap...');
+  Logger.log('Starting PDF2MD service bootstrap...');
 
-  const app = await NestFactory.createMicroservice(AppModule, {
-    name: 'pdf_2_markdown_service',
-    transport: Transport.RMQ,
-    options: {
-      urls: [
-        `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
-      ],
-      queue: 'pdf_2_markdown_queue',
-    },
-  });
+  const app = await NestFactory.create(AppModule);
 
-  Logger.log('Microservice created, starting to listen...');
-  await app.listen();
+  Logger.log('Application created, starting to listen...');
+  await app.listen(3001);
 
   Logger.log(
-    `🚀 RMQ: amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
+    `🚀 PDF2MD Service is running on port 3001 and listening for RabbitMQ messages`,
   );
 }
 
