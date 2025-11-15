@@ -130,9 +130,9 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug libraryItemVectorSearch with Nx",
+      "name": "Debug libraryItemVectorService with Nx",
       "runtimeExecutable": "pnpm exec",
-      "runtimeArgs": ["nx", "serve", "libraryItemVectorSearch"],
+      "runtimeArgs": ["nx", "serve", "libraryItemVectorService"],
       "env": {
         "NODE_OPTIONS": "--inspect=9236"
       },
@@ -141,7 +141,7 @@
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/apps/libraryItemVectorSearch/dist/**/*.(m|c|)js",
+        "${workspaceFolder}/apps/libraryItemVectorService/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
     }

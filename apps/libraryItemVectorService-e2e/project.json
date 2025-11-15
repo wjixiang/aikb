@@ -1,19 +1,19 @@
 {
-  "name": "libraryItemVectorSearch-e2e",
+  "name": "libraryItemVectorService-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["libraryItemVectorSearch"],
+  "implicitDependencies": ["libraryItemVectorService"],
   "targets": {
     "e2e": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "options": {
-        "jestConfig": "apps/libraryItemVectorSearch-e2e/jest.config.ts",
+        "jestConfig": "apps/libraryItemVectorService-e2e/jest.config.ts",
         "passWithNoTests": true
       },
       "dependsOn": [
-        "libraryItemVectorSearch:build",
-        "libraryItemVectorSearch:serve"
+        "libraryItemVectorService:build",
+        "libraryItemVectorService:serve"
       ]
     }
   }

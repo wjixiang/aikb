@@ -1,5 +1,5 @@
 export default {
-  displayName: 'libraryItemVectorSearch-e2e',
+  displayName: 'libraryItemVectorService-e2e',
   preset: '../../jest.preset.js',
   globalSetup: '<rootDir>/src/support/global-setup.ts',
   globalTeardown: '<rootDir>/src/support/global-teardown.ts',
@@ -14,5 +14,5 @@ export default {
     ],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../coverage/libraryItemVectorSearch-e2e',
+  coverageDirectory: '../../coverage/libraryItemVectorService-e2e',
 };

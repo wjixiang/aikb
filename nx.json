@@ -15,7 +15,11 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": ["libs/pdf2md-lib/*"]
+      "exclude": [
+        "libs/pdf2md-lib/*",
+        "libs/rabbitmq-lib/*",
+        "libs/rabbitmqPublist/*"
+      ]
     },
     {
       "plugin": "@nx/vite/plugin",
@@ -67,7 +71,11 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["libs/pdf2md-lib/*"],
+      "include": [
+        "libs/pdf2md-lib/*",
+        "libs/rabbitmq-lib/*",
+        "libs/rabbitmqPublist/*"
+      ],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -79,7 +87,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/libraryItemVectorSearch-e2e/**/*"]
+      "exclude": ["apps/libraryItemVectorService-e2e/**/*"]
     }
   ],
   "targetDefaults": {

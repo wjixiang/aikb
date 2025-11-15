@@ -4,10 +4,10 @@ import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  Logger.log('Starting PDF2MD microservice bootstrap...');
+  Logger.log('Starting libraryItemVectorService microservice bootstrap...');
 
   const app = await NestFactory.createMicroservice(AppModule, {
-    name: 'pdf_2_markdown_service',
+    name: 'libraryItemVectorService',
     transport: Transport.RMQ,
     options: {
       urls: [

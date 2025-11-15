@@ -5,7 +5,7 @@ import {
   ItemChunk,
   ItemChunkSemanticSearchQuery,
   ItemVectorStorageStatus,
-  ChunkingEmbeddingGroupInfo,
+  ChunkEmbedGroupMetadata,
 } from './types.js';
 
 /**
@@ -311,7 +311,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async insertItemChunk(
-    group: ChunkingEmbeddingGroupInfo,
+    group: ChunkEmbedGroupMetadata,
     itemChunk: ItemChunk,
   ): Promise<boolean> {
     try {
@@ -357,7 +357,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async batchInsertItemChunks(
-    group: ChunkingEmbeddingGroupInfo,
+    group: ChunkEmbedGroupMetadata,
     itemChunks: ItemChunk[],
   ): Promise<boolean> {
     try {
@@ -406,15 +406,15 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async createNewChunkEmbedGroupInfo(
-    config: Omit<ChunkingEmbeddingGroupInfo, 'id'>,
-  ): Promise<ChunkingEmbeddingGroupInfo> {
+    config: Omit<ChunkEmbedGroupMetadata, 'id'>,
+  ): Promise<ChunkEmbedGroupMetadata> {
     try {
       await this.initializeIndices();
 
       const id = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
-      const groupInfo: ChunkingEmbeddingGroupInfo = {
+      const groupInfo: ChunkEmbedGroupMetadata = {
         ...config,
         id,
         createdAt: now,
@@ -443,7 +443,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
 
   async getChunkEmbedGroupInfoById(
     groupId: string,
-  ): Promise<ChunkingEmbeddingGroupInfo> {
+  ): Promise<ChunkEmbedGroupMetadata> {
     try {
       const result = await this.client.get({
         index: this.groupsIndexName,
@@ -456,7 +456,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
           ..._source,
           createdAt: new Date(_source.createdAt),
           updatedAt: new Date(_source.updatedAt),
-        } as ChunkingEmbeddingGroupInfo;
+        } as ChunkEmbedGroupMetadata;
       }
 
       throw new Error(`Chunk embedding group ${groupId} not found`);
@@ -478,7 +478,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }> {
     try {
       // Get the group info to determine the dimension
-      let group: ChunkingEmbeddingGroupInfo;
+      let group: ChunkEmbedGroupMetadata;
       try {
         group = await this.getChunkEmbedGroupInfoById(groupId);
       } catch (error) {

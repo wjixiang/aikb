@@ -2,7 +2,7 @@ import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-stor
 import {
   ItemVectorStorageStatus,
   ItemChunk,
-  ChunkingEmbeddingGroupInfo,
+  ChunkEmbedGroupMetadata,
 } from './types';
 import {
   EmbeddingConfig,
@@ -40,7 +40,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
   });
 
   describe('Group Management E2E', () => {
-    const testGroupConfig: Omit<ChunkingEmbeddingGroupInfo, 'id'> = {
+    const testGroupConfig: Omit<ChunkEmbedGroupMetadata, 'id'> = {
       name: 'Test Group',
       description: 'Test group for E2E testing',
       chunkingConfig: {
@@ -65,7 +65,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
     };
 
     it('should create and retrieve a chunk embedding group', async () => {
-      let createdGroup: ChunkingEmbeddingGroupInfo;
+      let createdGroup: ChunkEmbedGroupMetadata;
       createdGroup =
         await storage.createNewChunkEmbedGroupInfo(testGroupConfig);
 
@@ -143,7 +143,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
   });
 
   describe('Chunk Operations E2E', () => {
-    let testGroup: ChunkingEmbeddingGroupInfo;
+    let testGroup: ChunkEmbedGroupMetadata;
 
     beforeEach(async () => {
       testGroup = await storage.createNewChunkEmbedGroupInfo({

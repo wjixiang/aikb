@@ -66,7 +66,7 @@ export interface ItemChunkSemanticSearchQuery {
   threshold: number;
 }
 
-export interface ChunkingEmbeddingGroupInfo {
+export interface ChunkEmbedGroupMetadata {
   id: string; // Unique identifier for this group
   name: string; // Human-readable name
   description?: string;
@@ -92,19 +92,19 @@ export interface IItemVectorStorage {
     query: ItemChunkSemanticSearchQuery,
   ) => Promise<Omit<ItemChunk, 'embedding'>>;
   insertItemChunk: (
-    group: ChunkingEmbeddingGroupInfo,
+    group: ChunkEmbedGroupMetadata,
     ItemChunk: ItemChunk,
   ) => Promise<boolean>;
   batchInsertItemChunks: (
-    group: ChunkingEmbeddingGroupInfo,
+    group: ChunkEmbedGroupMetadata,
     ItemChunks: ItemChunk[],
   ) => Promise<boolean>;
   createNewChunkEmbedGroupInfo: (
-    config: Omit<ChunkingEmbeddingGroupInfo, 'id'>,
-  ) => Promise<ChunkingEmbeddingGroupInfo>;
+    config: Omit<ChunkEmbedGroupMetadata, 'id'>,
+  ) => Promise<ChunkEmbedGroupMetadata>;
   getChunkEmbedGroupInfoById: (
     groupId: string,
-  ) => Promise<ChunkingEmbeddingGroupInfo>;
+  ) => Promise<ChunkEmbedGroupMetadata>;
   deleteChunkEmbedGroupById: (groupId: string) => Promise<{
     deletedGroupId: string;
     deletedChunkNum: number;

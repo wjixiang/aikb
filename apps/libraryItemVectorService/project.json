@@ -1,7 +1,7 @@
 {
-  "name": "libraryItemVectorSearch",
+  "name": "libraryItemVectorService",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/libraryItemVectorSearch/src",
+  "sourceRoot": "apps/libraryItemVectorService/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "options": {
         "command": "webpack-cli build",
         "args": ["--node-env=production"],
-        "cwd": "apps/libraryItemVectorSearch"
+        "cwd": "apps/libraryItemVectorService"
       },
       "configurations": {
         "development": {
@@ -23,8 +23,8 @@
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
-        "{workspaceRoot}/dist/apps/libraryItemVectorSearch/package.json",
-        "{workspaceRoot}/dist/apps/libraryItemVectorSearch/pnpm-lock.yaml"
+        "{workspaceRoot}/dist/apps/libraryItemVectorService/package.json",
+        "{workspaceRoot}/dist/apps/libraryItemVectorService/pnpm-lock.yaml"
       ],
       "options": {
         "buildTarget": "build"
@@ -34,7 +34,7 @@
       "dependsOn": ["build"],
       "cache": true,
       "outputs": [
-        "{workspaceRoot}/dist/apps/libraryItemVectorSearch/workspace_modules"
+        "{workspaceRoot}/dist/apps/libraryItemVectorService/workspace_modules"
       ],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
@@ -51,15 +51,15 @@
       "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
-        "buildTarget": "libraryItemVectorSearch:build",
+        "buildTarget": "libraryItemVectorService:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "libraryItemVectorSearch:build:development"
+          "buildTarget": "libraryItemVectorService:build:development"
         },
         "production": {
-          "buildTarget": "libraryItemVectorSearch:build:production"
+          "buildTarget": "libraryItemVectorService:build:production"
         }
       }
     }

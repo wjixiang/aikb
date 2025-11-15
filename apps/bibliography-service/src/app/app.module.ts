@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { LibraryItemController } from './library-item.controller';
-import { LibraryItemService } from './library-item.service';
+import { LibraryItemController } from './library-item/library-item.controller';
+import { LibraryItemService } from './library-item/library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { S3ServiceProvider } from './s3/s3.provider';
 
@@ -14,7 +14,7 @@ import { S3ServiceProvider } from './s3/s3.provider';
           urls: [
             `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
           ],
-          queue: process.env['RABBITMQ_QUEUE'] || 'pdf_2_markdown_queue',
+          queue: 'pdf_2_markdown_queue',
           connectionInitOptions: { timeout: 30000 },
           heartbeat: 60,
           prefetchCount: 1,
