@@ -6,19 +6,40 @@
 import { Logger } from '@nestjs/common';
 import { createLoggerWithPrefix } from '@aikb/log-management';
 import { NestFactory } from '@nestjs/core';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
+import { join } from 'path';
 import { AppModule } from './app/app.module';
 
 console.log('>>> ROOT LOG <<<');
 
 async function bootstrap() {
   const logger = createLoggerWithPrefix('bibliography-service');
+  
+  // Create HTTP application
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const httpPort = process.env.PORT || 3000;
+  
+  // Create gRPC microservice
+  const grpcPort = process.env.GRPC_PORT || 50051;
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: 'bibliography',
+      protoPath: join(__dirname, '../proto/bibliography.proto'),
+      url: `0.0.0.0:${grpcPort}`,
+    },
+  });
+  
+  await app.listen(httpPort);
+  await app.startAllMicroservices();
+  
   logger.info(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 HTTP Application is running on: http://localhost:${httpPort}/${globalPrefix}`,
+  );
+  logger.info(
+    `🚀 gRPC Service is running on: localhost:${grpcPort}`,
   );
 }
 

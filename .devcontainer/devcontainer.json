@@ -13,7 +13,8 @@
 				"ms-python.vscode-pylance",
 				"rooveterinaryinc.roo-cline",
 				"naveenvignesh5nv.html-live-server",
-				"shellomo.enhanced-toml"
+				"shellomo.enhanced-toml",
+				"zxh404.vscode-proto3"
 			]
 		}
 	}

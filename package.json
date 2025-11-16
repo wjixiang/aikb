@@ -28,7 +28,9 @@
     "doc": "npx typedoc --entryPointStrategy Expand ./*",
     "cli": "node knowledgeBase/cli/simple-cli.js",
     "search": "node knowledgeBase/cli/interactive-search.js",
-    "clear:library:indices": "knowledgeBase/scripts/clear-library-indices.sh"
+    "clear:library:indices": "knowledgeBase/scripts/clear-library-indices.sh",
+    "clear:rabbitmq": "npx tsx scripts/clear-rabbitmq-queues.ts",
+    "clear:rabbitmq:safe": "npx tsx scripts/clear-rabbitmq-queues.ts --dry-run"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
@@ -222,6 +224,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-fsrs": "^4.7.0",
     "ts-node": "^10.9.2",
+    "ts-proto": "^2.8.3",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "use-stick-to-bottom": "^1.1.1",

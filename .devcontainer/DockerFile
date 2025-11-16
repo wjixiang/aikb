@@ -30,9 +30,14 @@ RUN apt-get update && \
     python3-dev \
     wget \
     curl \
-    && npm install -g pnpm tsx pm2@latest nx\
+    && npm install -g pnpm tsx pm2@latest\
     && pipx install uv \
     && pipx ensurepath
+
+# Install golang
+RUN apt-get install golang
+ENV PATH=$PATH:$(go env GOPATH)/bin
+RUN go install github.com/zeromicro/go-zero/tools/goctl@latest
 
 # RUN uv pip install -U crawl4ai
 # RUN uv run crawl4ai-setup

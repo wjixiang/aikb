@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package pdf2md;
+
+// PDF2MD service definition
+service Pdf2MdService {
+  // Convert PDF to Markdown
+  rpc ConvertPdfToMarkdown(Pdf2MarkdownRequest) returns (Pdf2MarkdownResponse);
+}
+
+// PDF Chunk information
+message PdfChunk {
+  int32 chunk_index = 1;
+  int32 start_page = 2;
+  int32 end_page = 3;
+  string s3_url = 4;
+  string file_name = 5;
+}
+
+// Request to convert PDF to Markdown
+message Pdf2MarkdownRequest {
+  string item_id = 1;
+  string file_type = 2;
+  int64 file_size = 3;
+  string file_hash = 4;
+  string add_date = 5;
+  string s3_key = 6;
+  int32 page_count = 7;
+  optional int64 word_count = 8;
+}
+
+// Response from PDF to Markdown conversion
+message Pdf2MarkdownResponse {
+  string item_id = 1;
+  int32 page_num = 2;
+  bool chunked = 3;
+  optional int32 chunk_count = 4;
+  optional int32 chunk_size = 5;
+  string markdown_content = 6;
+  repeated PdfChunk chunks = 7;
+}

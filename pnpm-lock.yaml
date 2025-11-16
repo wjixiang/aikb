@@ -581,6 +581,9 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.5.29(@swc/helpers@0.5.17))(@types/node@22.18.6)(typescript@5.9.2)
+      ts-proto:
+        specifier: ^2.8.3
+        version: 2.8.3
       unified:
         specifier: ^11.0.5
         version: 11.0.5
@@ -849,6 +852,94 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.6)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.4.2)(jsdom@22.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.102.1)
+
+  apps/bibliography-service:
+    dependencies:
+      '@aikb/log-management':
+        specifier: workspace:*
+        version: link:../../libs/log-management
+      '@aikb/rabbitmq':
+        specifier: workspace:*
+        version: link:../../libs/rabbitmq
+      '@grpc/grpc-js':
+        specifier: ^1.13.3
+        version: 1.14.0
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^3.1.1
+        version: 3.3.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.0.0
+        version: 11.1.7(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/microservices@11.1.8)(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/microservices':
+        specifier: ^11.1.8
+        version: 11.1.8(@grpc/grpc-js@1.14.0)(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.7)(amqp-connection-manager@5.0.0(amqplib@0.10.9))(amqplib@0.10.9)(ioredis@5.8.2)(kafkajs@2.2.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.0.0
+        version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.7)
+      amqplib:
+        specifier: ^0.10.9
+        version: 0.10.9
+      bibliography:
+        specifier: workspace:*
+        version: link:../../libs/bibliography
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.2
+        version: 0.14.2
+      google-protobuf:
+        specifier: ^4.0.0
+        version: 4.0.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+    devDependencies:
+      '@grpc/proto-loader':
+        specifier: ^0.8.0
+        version: 0.8.0
+      '@nestjs/testing':
+        specifier: ^11.0.1
+        version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.7)(@nestjs/microservices@11.1.8)(@nestjs/platform-express@11.1.6)
+      '@types/amqplib':
+        specifier: ^0.10.7
+        version: 0.10.7
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.18.6
+      '@types/supertest':
+        specifier: ^6.0.2
+        version: 6.0.3
+      grpc-js:
+        specifier: link:@types/@grpc/grpc-js
+        version: link:@types/@grpc/grpc-js
+      grpc-tools:
+        specifier: ^1.13.0
+        version: 1.13.0(encoding@0.1.13)
+      protoc-gen-ts:
+        specifier: ^0.8.7
+        version: 0.8.7
+      supertest:
+        specifier: ^7.0.0
+        version: 7.1.4
+      ts-proto:
+        specifier: ^2.8.3
+        version: 2.8.3
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.6)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
       webpack-cli:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.102.1)
@@ -4564,6 +4655,12 @@ packages:
         optional: true
       class-validator:
         optional: true
+
+  '@nestjs/config@3.3.0':
+    resolution: {integrity: sha512-pdGTp8m9d0ZCrjTpjkUbZx6gyf2IKf+7zlkrPNMsJzYZ4bFRRTpXrnj+556/5uiI6AfL5mMrJc2u7dB6bvM+VA==}
+    peerDependencies:
+      '@nestjs/common': ^8.0.0 || ^9.0.0 || ^10.0.0
+      rxjs: ^7.1.0
 
   '@nestjs/config@4.0.2':
     resolution: {integrity: sha512-McMW6EXtpc8+CwTUwFdg6h7dYcBUpH5iUILCclAsa+MbCEvC9ZKu4dCHRlJqALuhjLw97pbQu62l4+wRwGeZqA==}
@@ -8380,6 +8477,10 @@ packages:
   caniuse-lite@1.0.30001751:
     resolution: {integrity: sha512-A0QJhug0Ly64Ii3eIqHu5X51ebln3k4yTUkY1j8drqpWHVreg/VLijN48cZ1bYPiqOQuqpkIKnzr/Ul8V+p6Cw==}
 
+  case-anything@2.1.13:
+    resolution: {integrity: sha512-zlOQ80VrQ2Ue+ymH5OuM/DlDq64mEm+B9UTdHULv5osUMD6HalNTblf2b1u/m6QecjsnOkBpqVZ+XPwIVsy7Ng==}
+    engines: {node: '>=12.13'}
+
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
 
@@ -9531,6 +9632,10 @@ packages:
     resolution: {integrity: sha512-LaKRbou8gt0RNID/9RoI+J2rvXsBRPMV7p+ElHlPhcSARbCPDYcYG2s1TIzAfWv4YSgyY5taidWzzs31lNV3yQ==}
     engines: {node: '>=12'}
 
+  dotenv@16.4.5:
+    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
+
   dotenv@16.4.7:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
@@ -9538,6 +9643,9 @@ packages:
   dotenv@17.2.2:
     resolution: {integrity: sha512-Sf2LSQP+bOlhKWWyhFsn0UsfdK/kCWRv1iuA2gXAwt3dyNabr6QSj00I2V10pidqz69soatm9ZwZvpQMTIOd5Q==}
     engines: {node: '>=12'}
+
+  dprint-node@1.0.8:
+    resolution: {integrity: sha512-iVKnUtYfGrYcW1ZAlfR/F59cUVL8QIhWoBJoSjkkdua/dkWIgjZfiLMeTjiB06X0ZLkQ0M2C1VbUj/CxkIf1zg==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -10554,6 +10662,9 @@ packages:
     engines: {node: '>=14'}
     deprecated: The gm module has been sunset. Please migrate to an alternative. https://github.com/aheckmann/gm?tab=readme-ov-file#2025-02-24-this-project-is-not-maintained
 
+  google-protobuf@4.0.0:
+    resolution: {integrity: sha512-b8wmenhUMf2WNL+xIJ/slvD/hEE6V3nRnG86O2bzkBrMweM9gnqZE1dfXlDjibY3aXJXDNbAHepevYyQ7qWKsQ==}
+
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -10580,6 +10691,10 @@ packages:
   gremlin@3.7.4:
     resolution: {integrity: sha512-BC/6q97uFcyJGjf1xVq0Uy5q06bJVbrb4KpAAOu8lfGV2RalGuvsIG7svlWatS/3q8b/HuwqHrMESVEDNBkBhw==}
     engines: {node: '>=20'}
+
+  grpc-tools@1.13.0:
+    resolution: {integrity: sha512-7CbkJ1yWPfX0nHjbYG58BQThNhbICXBZynzCUxCb3LzX5X9B3hQbRY2STiRgIEiLILlK9fgl0z0QVGwPCdXf5g==}
+    hasBin: true
 
   guid-typescript@1.0.9:
     resolution: {integrity: sha512-Y8T4vYhEfwJOTbouREvG+3XDsjr8E3kIr7uf+JZ0BYloFsttiHU0WfvANVsR7TxNUJa/WpCnw/Ino/p+DeBhBQ==}
@@ -14013,6 +14128,10 @@ packages:
     resolution: {integrity: sha512-CvexbZtbov6jW2eXAvLukXjXUW1TzFaivC46BpWc/3BpcCysb5Vffu+B3XHMm8lVEuy2Mm4XGex8hBSg1yapPg==}
     engines: {node: '>=12.0.0'}
 
+  protoc-gen-ts@0.8.7:
+    resolution: {integrity: sha512-jr4VJey2J9LVYCV7EVyVe53g1VMw28cCmYJhBe5e3YX5wiyiDwgxWxeDf9oTqAe4P1bN/YGAkW2jhlH8LohwiQ==}
+    hasBin: true
+
   proxy-addr@2.0.7:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
@@ -16032,6 +16151,16 @@ packages:
         optional: true
       '@swc/wasm':
         optional: true
+
+  ts-poet@6.12.0:
+    resolution: {integrity: sha512-xo+iRNMWqyvXpFTaOAvLPA5QAWO6TZrSUs5s4Odaya3epqofBu/fMLHEWl8jPmjhA0s9sgj9sNvF1BmaQlmQkA==}
+
+  ts-proto-descriptors@2.0.0:
+    resolution: {integrity: sha512-wHcTH3xIv11jxgkX5OyCSFfw27agpInAd6yh89hKG6zqIXnjW9SYqSER2CVQxdPj4czeOhGagNvZBEbJPy7qkw==}
+
+  ts-proto@2.8.3:
+    resolution: {integrity: sha512-TdXInqG+61pj/TvORqITWjvjTTsL1EZxwX49iEj89+xFAcqPT8tjChpAGQXzfcF4MJwvNiuoCEbBOKqVf3ds3g==}
+    hasBin: true
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -20821,6 +20950,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@nestjs/config@3.3.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      dotenv: 16.4.5
+      dotenv-expand: 10.0.0
+      lodash: 4.17.21
+      rxjs: 7.8.2
+
   '@nestjs/config@4.0.2(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -24433,7 +24570,7 @@ snapshots:
   '@vitest/snapshot@3.2.4':
     dependencies:
       '@vitest/pretty-format': 3.2.4
-      magic-string: 0.30.19
+      magic-string: 0.30.21
       pathe: 2.0.3
 
   '@vitest/spy@3.2.4':
@@ -25594,6 +25731,8 @@ snapshots:
 
   caniuse-lite@1.0.30001751: {}
 
+  case-anything@2.1.13: {}
+
   ccount@2.0.1: {}
 
   chai@5.3.3:
@@ -26675,8 +26814,7 @@ snapshots:
 
   detect-indent@6.1.0: {}
 
-  detect-libc@1.0.3:
-    optional: true
+  detect-libc@1.0.3: {}
 
   detect-libc@2.1.2: {}
 
@@ -26799,9 +26937,15 @@ snapshots:
     dependencies:
       dotenv: 16.4.7
 
+  dotenv@16.4.5: {}
+
   dotenv@16.4.7: {}
 
   dotenv@17.2.2: {}
+
+  dprint-node@1.0.8:
+    dependencies:
+      detect-libc: 1.0.3
 
   dunder-proto@1.0.1:
     dependencies:
@@ -28164,6 +28308,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  google-protobuf@4.0.0: {}
+
   gopd@1.2.0: {}
 
   got@13.0.0:
@@ -28204,6 +28350,13 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  grpc-tools@1.13.0(encoding@0.1.13):
+    dependencies:
+      '@mapbox/node-pre-gyp': 1.0.11(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   guid-typescript@1.0.9: {}
 
@@ -29510,7 +29663,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 20.19.17
+      '@types/node': 22.18.6
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -32378,6 +32531,8 @@ snapshots:
       '@types/node': 22.18.6
       long: 5.3.2
 
+  protoc-gen-ts@0.8.7: {}
+
   proxy-addr@2.0.7:
     dependencies:
       forwarded: 0.2.0
@@ -34918,6 +35073,21 @@ snapshots:
       yn: 3.1.1
     optionalDependencies:
       '@swc/core': 1.5.29(@swc/helpers@0.5.17)
+
+  ts-poet@6.12.0:
+    dependencies:
+      dprint-node: 1.0.8
+
+  ts-proto-descriptors@2.0.0:
+    dependencies:
+      '@bufbuild/protobuf': 2.10.0
+
+  ts-proto@2.8.3:
+    dependencies:
+      '@bufbuild/protobuf': 2.10.0
+      case-anything: 2.1.13
+      ts-poet: 6.12.0
+      ts-proto-descriptors: 2.0.0
 
   tsconfck@3.1.6(typescript@5.9.2):
     optionalDependencies:

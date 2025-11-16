@@ -1,0 +1,15 @@
+{
+  "name": "protos",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "./",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "compile": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["tsx /workspace/protos/scripts/generate-proto.ts"]
+      }
+    }
+  }
+}

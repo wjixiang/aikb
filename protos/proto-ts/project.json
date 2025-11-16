@@ -1,0 +1,9 @@
+{
+  "name": "proto-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "protos/proto-ts/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project proto-ts --web",
+  "targets": {}
+}

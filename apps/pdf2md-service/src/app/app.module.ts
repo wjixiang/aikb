@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { Pdf2MdGrpcController } from '../grpc/pdf2md.grpc.controller';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
       enableControllerDiscovery: true
     })
   ],
-  controllers: [AppController],
+  controllers: [AppController, Pdf2MdGrpcController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -45,7 +45,8 @@
       "pdf2md-lib": ["libs/pdf2md-lib/src/index.ts"],
       "mineru-client": ["libs/mineru-client/src/index.ts"],
       "rabbitmq-lib": ["libs/rabbitmq-lib/src/index.ts"],
-      "rabbitmqPublist": ["libs/rabbitmqPublist/src/index.ts"]
+      "rabbitmqPublist": ["libs/rabbitmqPublist/src/index.ts"],
+      "proto-ts": ["protos/proto-ts/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
