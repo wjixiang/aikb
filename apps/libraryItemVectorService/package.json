@@ -13,9 +13,9 @@
     "test:e2e": "vitest run --config vitest.config.ts --testNamePattern=e2e"
   },
   "dependencies": {
-    "@aikb/log-management": "workspace:*",
-    "@aikb/embedding": "workspace:*",
-    "@aikb/item-vector-storage": "workspace:*",
+    "embedding": "workspace:*",
+    "item-vector-storage": "workspace:*",
+    "proto-ts": "workspace:*",
     "@grpc/grpc-js": "^1.13.3",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.1.1",

@@ -8,220 +8,93 @@
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
-export const protobufPackage = "library_item_vector";
+export const protobufPackage = "libraryItemVector";
 
-/** Vector data representation */
-export interface VectorData {
-  values: number[];
-  dimensions: number;
-  modelName: string;
+/** Chunking configuration */
+export interface ChunkingConfig {
+  /** e.g., 'h1', 'paragraph', 'semantic' */
+  strategy: string;
+  /** Strategy-specific parameters */
+  parameters: { [key: string]: string };
 }
 
-/** Embedding information */
-export interface Embedding {
-  itemId: string;
-  vector:
-    | VectorData
-    | undefined;
-  /** e.g., "title", "abstract", "full_content" */
-  contentType: string;
-  createdAt: string;
-  updatedAt: string;
+export interface ChunkingConfig_ParametersEntry {
+  key: string;
+  value: string;
 }
 
-/** Search result with similarity score */
-export interface SimilarItemResult {
-  itemId: string;
-  similarityScore: number;
-  title: string;
-  authors: string[];
-  abstract: string;
+/** Embedding configuration */
+export interface EmbeddingConfig {
+  /** e.g., 'openai', 'cohere', 'local' */
+  provider: string;
+  /** e.g., 'text-embedding-ada-002' */
+  model: string;
+  /** Vector dimension */
+  dimension: number;
+  /** Provider-specific parameters */
+  parameters: { [key: string]: string };
 }
 
-export interface GenerateEmbeddingRequest {
-  itemId: string;
-  content: string;
-  contentType: string;
-  modelName?: string | undefined;
+export interface EmbeddingConfig_ParametersEntry {
+  key: string;
+  value: string;
 }
 
-export interface GenerateEmbeddingResponse {
-  success: boolean;
-  message: string;
-  embedding: VectorData | undefined;
+/** Request to create a new chunk embedding group */
+export interface CreateChunkEmbedGroupRequest {
+  name: string;
+  description: string;
+  chunkingConfig: ChunkingConfig | undefined;
+  embeddingConfig: EmbeddingConfig | undefined;
+  isDefault: boolean;
+  isActive: boolean;
+  createdBy: string;
+  tags: string[];
 }
 
-export interface StoreEmbeddingRequest {
-  itemId: string;
-  vector: VectorData | undefined;
-  contentType: string;
-  modelName?: string | undefined;
+/** Response containing the created chunk embedding group */
+export interface CreateChunkEmbedGroupResponse {
+  group: ChunkEmbedGroupMetadata | undefined;
 }
 
-export interface StoreEmbeddingResponse {
-  success: boolean;
-  message: string;
-  embeddingId: string;
+/** Chunk embedding group metadata */
+export interface ChunkEmbedGroupMetadata {
+  id: string;
+  name: string;
+  description: string;
+  chunkingConfig: ChunkingConfig | undefined;
+  embeddingConfig: EmbeddingConfig | undefined;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
+  createdBy: string;
+  tags: string[];
 }
 
-export interface SearchSimilarItemsRequest {
-  itemId: string;
-  queryVector?: VectorData | undefined;
-  contentType?: string | undefined;
-  limit?: number | undefined;
-  threshold?:
-    | number
-    | undefined;
-  /** e.g., tags, collections */
-  filters: string[];
-}
-
-export interface SearchSimilarItemsResponse {
-  success: boolean;
-  message: string;
-  results: SimilarItemResult[];
-  totalCount: number;
-}
-
-export interface DeleteEmbeddingRequest {
-  itemId: string;
-  contentType?: string | undefined;
-}
-
-export interface DeleteEmbeddingResponse {
-  success: boolean;
-  message: string;
-}
-
-export interface UpdateEmbeddingRequest {
-  itemId: string;
-  vector: VectorData | undefined;
-  contentType: string;
-  modelName?: string | undefined;
-}
-
-export interface UpdateEmbeddingResponse {
-  success: boolean;
-  message: string;
-}
-
-export interface GetEmbeddingRequest {
-  itemId: string;
-  contentType?: string | undefined;
-}
-
-export interface GetEmbeddingResponse {
-  success: boolean;
-  message: string;
-  embeddings: Embedding[];
-}
-
-export interface BatchGenerateEmbeddingsRequest {
-  requests: GenerateEmbeddingRequest[];
-}
-
-export interface BatchGenerateEmbeddingsResponse {
-  success: boolean;
-  message: string;
-  results: GenerateEmbeddingResponse[];
-  successCount: number;
-  failureCount: number;
-}
-
-export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "library_item_vector";
+export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */
 
 export interface LibraryItemVectorServiceClient {
-  /** Generate embedding for a library item */
+  /** Create a new chunk embedding group */
 
-  generateEmbedding(request: GenerateEmbeddingRequest): Observable<GenerateEmbeddingResponse>;
-
-  /** Store embedding for a library item */
-
-  storeEmbedding(request: StoreEmbeddingRequest): Observable<StoreEmbeddingResponse>;
-
-  /** Search for similar items using vector similarity */
-
-  searchSimilarItems(request: SearchSimilarItemsRequest): Observable<SearchSimilarItemsResponse>;
-
-  /** Delete embedding for a library item */
-
-  deleteEmbedding(request: DeleteEmbeddingRequest): Observable<DeleteEmbeddingResponse>;
-
-  /** Update embedding for a library item */
-
-  updateEmbedding(request: UpdateEmbeddingRequest): Observable<UpdateEmbeddingResponse>;
-
-  /** Get embedding for a library item */
-
-  getEmbedding(request: GetEmbeddingRequest): Observable<GetEmbeddingResponse>;
-
-  /** Batch generate embeddings for multiple library items */
-
-  batchGenerateEmbeddings(request: BatchGenerateEmbeddingsRequest): Observable<BatchGenerateEmbeddingsResponse>;
+  createChunkEmbedGroup(request: CreateChunkEmbedGroupRequest): Observable<CreateChunkEmbedGroupResponse>;
 }
 
 /** Library Item Vector service definition */
 
 export interface LibraryItemVectorServiceController {
-  /** Generate embedding for a library item */
+  /** Create a new chunk embedding group */
 
-  generateEmbedding(
-    request: GenerateEmbeddingRequest,
-  ): Promise<GenerateEmbeddingResponse> | Observable<GenerateEmbeddingResponse> | GenerateEmbeddingResponse;
-
-  /** Store embedding for a library item */
-
-  storeEmbedding(
-    request: StoreEmbeddingRequest,
-  ): Promise<StoreEmbeddingResponse> | Observable<StoreEmbeddingResponse> | StoreEmbeddingResponse;
-
-  /** Search for similar items using vector similarity */
-
-  searchSimilarItems(
-    request: SearchSimilarItemsRequest,
-  ): Promise<SearchSimilarItemsResponse> | Observable<SearchSimilarItemsResponse> | SearchSimilarItemsResponse;
-
-  /** Delete embedding for a library item */
-
-  deleteEmbedding(
-    request: DeleteEmbeddingRequest,
-  ): Promise<DeleteEmbeddingResponse> | Observable<DeleteEmbeddingResponse> | DeleteEmbeddingResponse;
-
-  /** Update embedding for a library item */
-
-  updateEmbedding(
-    request: UpdateEmbeddingRequest,
-  ): Promise<UpdateEmbeddingResponse> | Observable<UpdateEmbeddingResponse> | UpdateEmbeddingResponse;
-
-  /** Get embedding for a library item */
-
-  getEmbedding(
-    request: GetEmbeddingRequest,
-  ): Promise<GetEmbeddingResponse> | Observable<GetEmbeddingResponse> | GetEmbeddingResponse;
-
-  /** Batch generate embeddings for multiple library items */
-
-  batchGenerateEmbeddings(
-    request: BatchGenerateEmbeddingsRequest,
-  ):
-    | Promise<BatchGenerateEmbeddingsResponse>
-    | Observable<BatchGenerateEmbeddingsResponse>
-    | BatchGenerateEmbeddingsResponse;
+  createChunkEmbedGroup(
+    request: CreateChunkEmbedGroupRequest,
+  ): Promise<CreateChunkEmbedGroupResponse> | Observable<CreateChunkEmbedGroupResponse> | CreateChunkEmbedGroupResponse;
 }
 
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = [
-      "generateEmbedding",
-      "storeEmbedding",
-      "searchSimilarItems",
-      "deleteEmbedding",
-      "updateEmbedding",
-      "getEmbedding",
-      "batchGenerateEmbeddings",
-    ];
+    const grpcMethods: string[] = ["createChunkEmbedGroup"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);

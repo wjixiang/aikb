@@ -1,0 +1,11 @@
+{
+  "name": "proto-ts",
+  "version": "0.0.1",
+  "description": "Generated TypeScript protobuf definitions",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": "./src/index.js",
+    "./lib/*": "./src/lib/*.js"
+  }
+}

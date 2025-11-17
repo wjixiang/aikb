@@ -10,8 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {
-      package: 'bibliography',
-      protoPath: '/workspace/protos/bibliography.proto',
+      package: 'libraryItemVector',
+      protoPath: '/workspace/protos/libraryItemVector.proto',
       url: `0.0.0.0:${grpcPort}`,
     },
   });

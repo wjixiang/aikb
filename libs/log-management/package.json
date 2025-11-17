@@ -3,28 +3,28 @@
   "version": "0.0.1",
   "description": "Log management utilities with Elasticsearch integration",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/libs/log-management/src/index.js",
+  "types": "./dist/libs/log-management/src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.js",
-      "types": "./src/index.d.ts"
+      "types": "./dist/libs/log-management/src/index.d.ts",
+      "import": "./dist/libs/log-management/src/index.js",
+      "require": "./dist/libs/log-management/src/index.js"
     },
     "./logger": {
-      "import": "./src/logger.js",
-      "require": "./src/logger.js",
-      "types": "./src/logger.d.ts"
+      "types": "./dist/libs/log-management/src/logger.d.ts",
+      "import": "./dist/libs/log-management/src/logger.js",
+      "require": "./dist/libs/log-management/src/logger.js"
     },
     "./elasticsearch-transport": {
-      "import": "./src/elasticsearch-transport.js",
-      "require": "./src/elasticsearch-transport.js",
-      "types": "./src/elasticsearch-transport.d.ts"
+      "types": "./dist/libs/log-management/src/elasticsearch-transport.d.ts",
+      "import": "./dist/libs/log-management/src/elasticsearch-transport.js",
+      "require": "./dist/libs/log-management/src/elasticsearch-transport.js"
     },
     "./error-handler": {
-      "import": "./src/errorHandler.js",
-      "require": "./src/errorHandler.js",
-      "types": "./src/errorHandler.d.ts"
+      "types": "./dist/libs/log-management/src/errorHandler.d.ts",
+      "import": "./dist/libs/log-management/src/errorHandler.js",
+      "require": "./dist/libs/log-management/src/errorHandler.js"
     }
   },
   "scripts": {
