@@ -8,7 +8,7 @@ vi.mock('axios');
 const mockedAxios = vi.mocked(axios);
 
 // Mock the logger to avoid console output during tests
-vi.mock('@aikb/log-management/logger', () => ({
+vi.mock('log-management/logger', () => ({
   default: vi.fn().mockImplementation((prefix: string) => ({
     info: vi.fn(),
     warn: vi.fn(),

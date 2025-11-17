@@ -54,7 +54,7 @@ const chunks = await splitter.splitPdfIntoChunks(pdfBuffer, 10);
 ## Dependencies
 
 - `pdf-lib`: For PDF manipulation
-- `@aikb/log-management`: For logging functionality
+- `log-management`: For logging functionality
 
 ## Development
 

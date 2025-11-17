@@ -1,4 +1,4 @@
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import {
   EmbeddingProviderBase,
   OpenAIEmbeddingProvider,

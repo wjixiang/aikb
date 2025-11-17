@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import {
   IPdfPartTracker,
   PdfPartTrackingData,

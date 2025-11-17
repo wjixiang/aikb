@@ -15,7 +15,7 @@ import {
   AddItemArchiveDto,
 } from 'library-shared';
 import { Pdf2MArkdownDto } from 'library-shared';
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';

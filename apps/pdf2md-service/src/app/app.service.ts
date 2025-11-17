@@ -5,7 +5,7 @@ import { PDFDocument } from 'pdf-lib';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
 import { MinerUClient, MinerUDefaultConfig } from 'mineru-client';
 import * as fs from 'fs';
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import * as path from 'path';
 import { getPdfDownloadUrl } from '@aikb/s3-service';
 import * as yauzl from 'yauzl';

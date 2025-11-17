@@ -5,10 +5,10 @@
 // source: library-item-vector.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 
-export const protobufPackage = "library_item_vector";
+export const protobufPackage = 'library_item_vector';
 
 /** Vector data representation */
 export interface VectorData {
@@ -20,9 +20,7 @@ export interface VectorData {
 /** Embedding information */
 export interface Embedding {
   itemId: string;
-  vector:
-    | VectorData
-    | undefined;
+  vector: VectorData | undefined;
   /** e.g., "title", "abstract", "full_content" */
   contentType: string;
   createdAt: string;
@@ -69,9 +67,7 @@ export interface SearchSimilarItemsRequest {
   queryVector?: VectorData | undefined;
   contentType?: string | undefined;
   limit?: number | undefined;
-  threshold?:
-    | number
-    | undefined;
+  threshold?: number | undefined;
   /** e.g., tags, collections */
   filters: string[];
 }
@@ -128,30 +124,40 @@ export interface BatchGenerateEmbeddingsResponse {
   failureCount: number;
 }
 
-export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "library_item_vector";
+export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = 'library_item_vector';
 
 /** Library Item Vector service definition */
 
 export interface LibraryItemVectorServiceClient {
   /** Generate embedding for a library item */
 
-  generateEmbedding(request: GenerateEmbeddingRequest): Observable<GenerateEmbeddingResponse>;
+  generateEmbedding(
+    request: GenerateEmbeddingRequest,
+  ): Observable<GenerateEmbeddingResponse>;
 
   /** Store embedding for a library item */
 
-  storeEmbedding(request: StoreEmbeddingRequest): Observable<StoreEmbeddingResponse>;
+  storeEmbedding(
+    request: StoreEmbeddingRequest,
+  ): Observable<StoreEmbeddingResponse>;
 
   /** Search for similar items using vector similarity */
 
-  searchSimilarItems(request: SearchSimilarItemsRequest): Observable<SearchSimilarItemsResponse>;
+  searchSimilarItems(
+    request: SearchSimilarItemsRequest,
+  ): Observable<SearchSimilarItemsResponse>;
 
   /** Delete embedding for a library item */
 
-  deleteEmbedding(request: DeleteEmbeddingRequest): Observable<DeleteEmbeddingResponse>;
+  deleteEmbedding(
+    request: DeleteEmbeddingRequest,
+  ): Observable<DeleteEmbeddingResponse>;
 
   /** Update embedding for a library item */
 
-  updateEmbedding(request: UpdateEmbeddingRequest): Observable<UpdateEmbeddingResponse>;
+  updateEmbedding(
+    request: UpdateEmbeddingRequest,
+  ): Observable<UpdateEmbeddingResponse>;
 
   /** Get embedding for a library item */
 
@@ -159,7 +165,9 @@ export interface LibraryItemVectorServiceClient {
 
   /** Batch generate embeddings for multiple library items */
 
-  batchGenerateEmbeddings(request: BatchGenerateEmbeddingsRequest): Observable<BatchGenerateEmbeddingsResponse>;
+  batchGenerateEmbeddings(
+    request: BatchGenerateEmbeddingsRequest,
+  ): Observable<BatchGenerateEmbeddingsResponse>;
 }
 
 /** Library Item Vector service definition */
@@ -169,37 +177,55 @@ export interface LibraryItemVectorServiceController {
 
   generateEmbedding(
     request: GenerateEmbeddingRequest,
-  ): Promise<GenerateEmbeddingResponse> | Observable<GenerateEmbeddingResponse> | GenerateEmbeddingResponse;
+  ):
+    | Promise<GenerateEmbeddingResponse>
+    | Observable<GenerateEmbeddingResponse>
+    | GenerateEmbeddingResponse;
 
   /** Store embedding for a library item */
 
   storeEmbedding(
     request: StoreEmbeddingRequest,
-  ): Promise<StoreEmbeddingResponse> | Observable<StoreEmbeddingResponse> | StoreEmbeddingResponse;
+  ):
+    | Promise<StoreEmbeddingResponse>
+    | Observable<StoreEmbeddingResponse>
+    | StoreEmbeddingResponse;
 
   /** Search for similar items using vector similarity */
 
   searchSimilarItems(
     request: SearchSimilarItemsRequest,
-  ): Promise<SearchSimilarItemsResponse> | Observable<SearchSimilarItemsResponse> | SearchSimilarItemsResponse;
+  ):
+    | Promise<SearchSimilarItemsResponse>
+    | Observable<SearchSimilarItemsResponse>
+    | SearchSimilarItemsResponse;
 
   /** Delete embedding for a library item */
 
   deleteEmbedding(
     request: DeleteEmbeddingRequest,
-  ): Promise<DeleteEmbeddingResponse> | Observable<DeleteEmbeddingResponse> | DeleteEmbeddingResponse;
+  ):
+    | Promise<DeleteEmbeddingResponse>
+    | Observable<DeleteEmbeddingResponse>
+    | DeleteEmbeddingResponse;
 
   /** Update embedding for a library item */
 
   updateEmbedding(
     request: UpdateEmbeddingRequest,
-  ): Promise<UpdateEmbeddingResponse> | Observable<UpdateEmbeddingResponse> | UpdateEmbeddingResponse;
+  ):
+    | Promise<UpdateEmbeddingResponse>
+    | Observable<UpdateEmbeddingResponse>
+    | UpdateEmbeddingResponse;
 
   /** Get embedding for a library item */
 
   getEmbedding(
     request: GetEmbeddingRequest,
-  ): Promise<GetEmbeddingResponse> | Observable<GetEmbeddingResponse> | GetEmbeddingResponse;
+  ):
+    | Promise<GetEmbeddingResponse>
+    | Observable<GetEmbeddingResponse>
+    | GetEmbeddingResponse;
 
   /** Batch generate embeddings for multiple library items */
 
@@ -214,24 +240,38 @@ export interface LibraryItemVectorServiceController {
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "generateEmbedding",
-      "storeEmbedding",
-      "searchSimilarItems",
-      "deleteEmbedding",
-      "updateEmbedding",
-      "getEmbedding",
-      "batchGenerateEmbeddings",
+      'generateEmbedding',
+      'storeEmbedding',
+      'searchSimilarItems',
+      'deleteEmbedding',
+      'updateEmbedding',
+      'getEmbedding',
+      'batchGenerateEmbeddings',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('LibraryItemVectorService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('LibraryItemVectorService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const LIBRARY_ITEM_VECTOR_SERVICE_NAME = "LibraryItemVectorService";
+export const LIBRARY_ITEM_VECTOR_SERVICE_NAME = 'LibraryItemVectorService';

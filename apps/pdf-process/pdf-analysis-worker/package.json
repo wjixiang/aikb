@@ -21,7 +21,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@aikb/rabbitmq": "workspace:*",
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "bibliography": "workspace:*",
     "library-shared": "workspace:*",
     "@aikb/pdf-splitter": "workspace:*",

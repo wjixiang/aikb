@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { Client } from '@elastic/elasticsearch';
 import { AbstractKnowledgeVectorStorage } from './abstract-storage';
 

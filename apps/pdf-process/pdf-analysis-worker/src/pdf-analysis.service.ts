@@ -15,7 +15,7 @@ import {
 import { getRabbitMQService } from '@aikb/rabbitmq';
 import { BibliographyApiClient } from './bibliography-api.client';
 import { UpdateMetadataDto, UpdateProcessingStatusDto } from 'library-shared';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliter } from '@aikb/pdf-splitter';

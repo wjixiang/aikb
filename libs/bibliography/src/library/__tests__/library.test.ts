@@ -16,7 +16,7 @@ vi.mock('@aikb/s3-service', () => ({
 }));
 
 // Mock the logger
-vi.mock('@aikb/log-management', () => ({
+vi.mock('log-management', () => ({
   default: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

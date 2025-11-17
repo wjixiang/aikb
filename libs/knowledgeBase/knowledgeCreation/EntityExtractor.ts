@@ -1,6 +1,6 @@
 import { b } from '../../../baml_client';
 import { EntityExtractResult } from '../../../baml_client/types';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 /**
  * Class for extracting entities and relationships from natural language text

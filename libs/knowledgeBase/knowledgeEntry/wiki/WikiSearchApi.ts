@@ -2,7 +2,7 @@ import axios from 'axios';
 import { app_config } from 'libs/knowledgeBase/config';
 import * as cheerio from 'cheerio';
 import { WikipediaHtmlToMarkdownConverter } from './WikipediaHtmlToMarkdownConverter';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 /**
  * Parameters for searching Wikipedia

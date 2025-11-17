@@ -18,7 +18,7 @@ import { IPdfConversionService } from './pdf-conversion.service.interface.js';
 import { PdfConversionService } from './pdf-conversion.service.js';
 import { IPdfConversionMessageHandler } from './pdf-conversion-message-handler.interface.js';
 import { PdfConversionMessageHandler } from './pdf-conversion-message-handler.js';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfConversionWorker');
 

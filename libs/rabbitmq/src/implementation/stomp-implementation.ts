@@ -11,7 +11,7 @@ import {
   BaseRabbitMQMessage,
   RabbitMQMessageOptions,
 } from '../messages/message.types';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import {
   Client,
   StompSubscription,

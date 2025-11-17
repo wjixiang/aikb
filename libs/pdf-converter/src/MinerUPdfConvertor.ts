@@ -15,7 +15,7 @@ import {
   uploadFile,
   type S3ServiceConfig,
 } from '@aikb/s3-service';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { createLoggerWithPrefix } from 'log-management';
 import { ConversionResult, ImageUploadResult, IPdfConvertor } from './types';
 
 // Internal S3 configuration for this project

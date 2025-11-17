@@ -1,5 +1,5 @@
 import * as amqp from 'amqplib';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { config } from 'dotenv';
 import { hostname } from 'os';
 config();

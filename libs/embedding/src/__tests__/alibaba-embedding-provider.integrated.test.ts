@@ -2,7 +2,7 @@ import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { AlibabaEmbeddingProvider } from '../embedding-providers.js';
 
 // Mock the logger to avoid console output during tests
-vi.mock('@aikb/log-management/logger', () => ({
+vi.mock('log-management/logger', () => ({
   default: vi.fn().mockImplementation((prefix: string) => ({
     info: vi.fn(),
     warn: vi.fn(),

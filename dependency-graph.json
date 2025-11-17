@@ -1825,8 +1825,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/item-vector-storage": {
-        "name": "@aikb/item-vector-storage",
+      "item-vector-storage": {
+        "name": "item-vector-storage",
         "type": "lib",
         "data": {
           "root": "libs/item-vector-storage",
@@ -1912,7 +1912,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/item-vector-storage --includeDependentProjects -- pnpm exec nx build-deps @aikb/item-vector-storage"
+                "command": "pnpm exec nx watch --projects item-vector-storage --includeDependentProjects -- pnpm exec nx build-deps item-vector-storage"
               },
               "configurations": {},
               "parallelism": true
@@ -2071,7 +2071,7 @@
               ]
             },
             "js": {
-              "packageName": "@aikb/item-vector-storage",
+              "packageName": "item-vector-storage",
               "packageVersion": "0.0.1",
               "packageExports": {
                 ".": {
@@ -2083,7 +2083,7 @@
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "@aikb/item-vector-storage",
+          "name": "item-vector-storage",
           "tags": [
             "npm:public"
           ],
@@ -2676,8 +2676,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/log-management": {
-        "name": "@aikb/log-management",
+      "log-management": {
+        "name": "log-management",
         "type": "lib",
         "data": {
           "root": "libs/log-management",
@@ -2758,7 +2758,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/log-management --includeDependentProjects -- pnpm exec nx build-deps @aikb/log-management"
+                "command": "pnpm exec nx watch --projects log-management --includeDependentProjects -- pnpm exec nx build-deps log-management"
               },
               "configurations": {},
               "parallelism": true
@@ -2820,7 +2820,7 @@
               "parallelism": true
             }
           },
-          "name": "@aikb/log-management",
+          "name": "log-management",
           "tags": [
             "npm:public"
           ],
@@ -2828,7 +2828,7 @@
             "targetGroups": {},
             "description": "Log management utilities with Elasticsearch integration",
             "js": {
-              "packageName": "@aikb/log-management",
+              "packageName": "log-management",
               "packageVersion": "0.0.1",
               "packageExports": {
                 ".": {
@@ -7354,7 +7354,7 @@
         },
         {
           "source": "markdown-storage-worker",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7371,7 +7371,7 @@
         },
         {
           "source": "pdf-conversion-worker",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7418,7 +7418,7 @@
         },
         {
           "source": "pdf-analysis-worker",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7464,7 +7464,7 @@
         },
         {
           "source": "bibliography-service",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7478,19 +7478,19 @@
           "type": "static"
         }
       ],
-      "@aikb/item-vector-storage": [
+      "item-vector-storage": [
         {
-          "source": "@aikb/item-vector-storage",
-          "target": "@aikb/log-management",
+          "source": "item-vector-storage",
+          "target": "log-management",
           "type": "static"
         },
         {
-          "source": "@aikb/item-vector-storage",
+          "source": "item-vector-storage",
           "target": "@aikb/chunking",
           "type": "static"
         },
         {
-          "source": "@aikb/item-vector-storage",
+          "source": "item-vector-storage",
           "target": "@aikb/embedding",
           "type": "static"
         }
@@ -7498,7 +7498,7 @@
       "markdown-part-cache": [
         {
           "source": "markdown-part-cache",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         }
       ],
@@ -7512,11 +7512,11 @@
       "pdf-part-tracker": [
         {
           "source": "pdf-part-tracker",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         }
       ],
-      "@aikb/log-management": [],
+      "log-management": [],
       "library-shared": [
         {
           "source": "library-shared",
@@ -7551,7 +7551,7 @@
         },
         {
           "source": "@aikb/pdf-converter",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         }
       ],
@@ -7568,7 +7568,7 @@
         },
         {
           "source": "bibliography",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7588,14 +7588,14 @@
         },
         {
           "source": "bibliography",
-          "target": "@aikb/item-vector-storage",
+          "target": "item-vector-storage",
           "type": "static"
         }
       ],
       "@aikb/pdf-splitter": [
         {
           "source": "@aikb/pdf-splitter",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         }
       ],
@@ -7605,7 +7605,7 @@
       "@aikb/embedding": [
         {
           "source": "@aikb/embedding",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7618,7 +7618,7 @@
       "@aikb/rabbitmq": [
         {
           "source": "@aikb/rabbitmq",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {
@@ -7652,7 +7652,7 @@
       "aikb": [
         {
           "source": "aikb",
-          "target": "@aikb/log-management",
+          "target": "log-management",
           "type": "static"
         },
         {

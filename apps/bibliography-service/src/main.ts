@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@nestjs/common';
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { join } from 'path';

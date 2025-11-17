@@ -17,7 +17,6 @@
     "paths": {
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/embedding": ["./libs/embedding/src/index.ts"],
-      "@aikb/log-management": ["./libs/log-management/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
@@ -35,7 +34,6 @@
       "library-item-chunkembed-storage": [
         "libs/library-item-chunkembed-storage/src/index.ts"
       ],
-      "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
       "utils": ["libs/utils/src/index.ts"],
       "library-shared": ["libs/library-shared/src/index.ts"],
       "components": ["libs/components/src/index.ts"],
@@ -46,7 +44,9 @@
       "mineru-client": ["libs/mineru-client/src/index.ts"],
       "rabbitmq-lib": ["libs/rabbitmq-lib/src/index.ts"],
       "rabbitmqPublist": ["libs/rabbitmqPublist/src/index.ts"],
-      "proto-ts": ["protos/proto-ts/src/index.ts"]
+      "proto-ts": ["protos/proto-ts/src/index.ts"],
+      "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
+      "log-management": ["libs/log-management/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

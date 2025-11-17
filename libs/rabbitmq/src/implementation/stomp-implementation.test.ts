@@ -25,7 +25,7 @@ vi.mock('@stomp/stompjs', () => ({
 }));
 
 // Mock the logger
-vi.mock('@aikb/log-management/logger', () => ({
+vi.mock('log-management/logger', () => ({
   default: vi.fn(() => ({
     info: vi.fn(),
     error: vi.fn(),

@@ -12,7 +12,7 @@ import {
 } from '../lib/rabbitmq/queue-routing-mappings';
 import { getStompDestination } from '../lib/rabbitmq/stomp.config';
 import { RABBITMQ_ROUTING_KEYS } from '../lib/rabbitmq/message.types';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('VerifyUnifiedMappings');
 

@@ -6,7 +6,7 @@ import {
 } from './message-service.interface';
 import { MessageServiceFactory } from './message-service-factory.js';
 import { getRabbitMQConfig } from './rabbitmq.config';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQService');
 

@@ -40,7 +40,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",

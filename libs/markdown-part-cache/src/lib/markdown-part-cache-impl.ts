@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import {
   IMarkdownPartCache,
   MarkdownPartCacheData,

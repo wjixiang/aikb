@@ -1,4 +1,4 @@
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import { embeddingManager } from './embedding-manager.js';
 import { EmbeddingProviderBase } from './embedding-providers.js';
 const logger = createLoggerWithPrefix('Embedding');

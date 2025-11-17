@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import {createLoggerWithPrefix} from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import { EmbeddingConfig } from '@aikb/embedding';
 import {
   IItemVectorStorage,
@@ -22,7 +22,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   /**
    * Get the chunks index name for a specific embedding configuration
    */
-  private getChunksIndexNameForEmbeddingConfig(embeddingConfig: EmbeddingConfig): string {
+  private getChunksIndexNameForEmbeddingConfig(
+    embeddingConfig: EmbeddingConfig,
+  ): string {
     // Create a unique index name based on provider, model, and dimension
     // This ensures different embedding configurations use different indices
     const { provider, model, dimension } = embeddingConfig;
@@ -45,14 +47,16 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   /**
    * Initialize the indices with proper mappings
    */
-  private async initializeIndices(embeddingConfig?: EmbeddingConfig): Promise<void> {
+  private async initializeIndices(
+    embeddingConfig?: EmbeddingConfig,
+  ): Promise<void> {
     try {
       if (embeddingConfig) {
         await this.initializeEmbeddingConfigChunksIndex(embeddingConfig);
       } else {
         await this.initializeDefaultChunksIndex();
       }
-      
+
       await this.initializeGroupsIndex();
     } catch (error) {
       if (
@@ -70,8 +74,11 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   /**
    * Initialize chunks index for a specific embedding configuration
    */
-  private async initializeEmbeddingConfigChunksIndex(embeddingConfig: EmbeddingConfig): Promise<void> {
-    const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(embeddingConfig);
+  private async initializeEmbeddingConfigChunksIndex(
+    embeddingConfig: EmbeddingConfig,
+  ): Promise<void> {
+    const chunksIndexName =
+      this.getChunksIndexNameForEmbeddingConfig(embeddingConfig);
     const chunksExists = await this.client.indices.exists({
       index: chunksIndexName,
     });
@@ -156,9 +163,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
           },
         },
       } as any);
-      this.logger.info(
-        `Created default chunks index: ${this.chunksIndexName}`,
-      );
+      this.logger.info(`Created default chunks index: ${this.chunksIndexName}`);
     }
   }
 

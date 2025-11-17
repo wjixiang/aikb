@@ -19,7 +19,7 @@ import {
   MessageHandlerResult,
 } from './pdf-conversion-message-handler.interface';
 import { v4 as uuidv4 } from 'uuid';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfConversionMessageHandler');
 

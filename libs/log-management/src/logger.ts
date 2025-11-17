@@ -1,7 +1,7 @@
 import winston, { level } from 'winston';
 import { ElasticsearchTransport } from './elasticsearch-transport.js';
 
-const createLoggerWithPrefix = (prefix: string) => {
+export const createLoggerWithPrefix = (prefix: string) => {
   const consoleFormat = winston.format.printf(
     ({ level, message, label, timestamp, meta }) => {
       const metaStr =
@@ -85,5 +85,3 @@ const createLoggerWithPrefix = (prefix: string) => {
 
   return logger;
 };
-
-export default createLoggerWithPrefix;

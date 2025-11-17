@@ -1,5 +1,5 @@
 import { MessageProtocol } from './message-service.interface';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { IRabbitMQService } from './rabbitmq-service.interface';
 
 const logger = createLoggerWithPrefix('RabbitMQDebugTools');

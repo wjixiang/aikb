@@ -1,7 +1,7 @@
 import Entity from './Entity';
 import { KnowledgeData, KnowledgeDataWithId } from './knowledge.type';
 import { AbstractKnowledgeStorage } from './storage/abstract-storage';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 // interface KnowledgeTree {
 //     id: string;

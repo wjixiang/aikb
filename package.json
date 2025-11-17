@@ -36,7 +36,7 @@
     "@ai-sdk/openai": "^1.3.22",
     "@aikb/chunking": "workspace:*",
     "@aikb/embedding": "workspace:*",
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "@auth/mongodb-adapter": "^3.8.0",

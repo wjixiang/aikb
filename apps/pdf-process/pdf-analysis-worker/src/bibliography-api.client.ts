@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { LibraryItem } from 'bibliography';
 import { UpdateMetadataDto, PdfDownloadUrlDto } from 'library-shared';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('BibliographyApiClient');
 

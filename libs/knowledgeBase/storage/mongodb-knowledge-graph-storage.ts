@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { connectToDatabase } from '../../bibliography/src/storage/mongodb';
 import { AbstractKnowledgeGraphStorage } from './abstract-storage';
 

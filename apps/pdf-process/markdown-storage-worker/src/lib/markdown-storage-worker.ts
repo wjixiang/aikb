@@ -12,7 +12,7 @@ import { IRabbitMQService } from '@aikb/rabbitmq';
 import { MessageProtocol } from '@aikb/rabbitmq';
 import { ILibraryStorage, ItemMetadata } from 'bibliography';
 import { defaultChunkingConfig } from '@aikb/chunking';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { defaultEmbeddingConfig } from '@aikb/embedding';
 

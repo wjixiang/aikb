@@ -36,7 +36,7 @@
   "peerDependencies": {
     "mineru-client": "workspace:*",
     "@aikb/s3-service": "workspace:*",
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "dotenv": "^17.2.2"
   },
   "files": [

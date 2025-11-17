@@ -30,7 +30,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "axios": "^1.12.2",
     "utils":"workspace:*"
   },

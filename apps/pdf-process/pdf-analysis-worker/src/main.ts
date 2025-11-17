@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { PdfAnalyzerService } from './pdf-analysis.service';
 import { BibliographyApiClient } from './bibliography-api.client';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 // Load environment variables
 config();

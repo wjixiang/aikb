@@ -19,7 +19,7 @@ import {
   rabbitMQExchangeConfigs,
 } from '../rabbitmq.config';
 import { getRoutingKeyForQueue } from '../queue-routing-mappings';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQMessageService');
 

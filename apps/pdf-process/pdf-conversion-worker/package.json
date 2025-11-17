@@ -23,7 +23,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@aikb/rabbitmq": "workspace:*",
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",

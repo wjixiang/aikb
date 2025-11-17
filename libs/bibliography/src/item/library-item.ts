@@ -1,4 +1,4 @@
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import { v4 } from 'uuid';
 import { ILibraryStorage } from '../library/storage.js';
 import { ItemArchive, ItemMetadata } from '../library/types.js';

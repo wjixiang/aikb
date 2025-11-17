@@ -4,7 +4,7 @@ import { MockLibraryStorage } from '../../library/__tests__/mock-storage.js';
 import { ItemMetadata, ItemArchive, Author } from '../../library/types.js';
 
 // Mock the logger
-vi.mock('@aikb/log-management', () => ({
+vi.mock('log-management', () => ({
   createLoggerWithPrefix: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

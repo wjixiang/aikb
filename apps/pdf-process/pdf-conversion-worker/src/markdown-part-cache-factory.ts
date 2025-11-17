@@ -1,6 +1,6 @@
 import { MarkdownPartCache } from './markdown-part-cache';
 import { MongoDBMarkdownPartCache } from './markdown-part-cache-mongodb';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('MarkdownPartCacheFactory');
 

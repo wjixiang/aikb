@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import { ILibraryStorage, AbstractPdf } from '../library/storage.js';
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 import {
   ItemMetadata,
   Collection,

@@ -12,7 +12,7 @@ import {
   RABBITMQ_CONSUMER_TAGS,
 } from './message.types';
 import { IRabbitMQService } from './rabbitmq-service.interface';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('RabbitMQService');
 

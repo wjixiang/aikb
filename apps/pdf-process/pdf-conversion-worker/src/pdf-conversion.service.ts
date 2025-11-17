@@ -14,7 +14,7 @@ import {
   PdfPartConversionResult,
   ProgressCallback,
 } from './pdf-conversion.service.interface';
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 
 const logger = createLoggerWithPrefix('PdfConversionService');
 

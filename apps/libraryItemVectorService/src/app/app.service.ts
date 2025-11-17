@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchItemVectorStorage } from 'item-vector-storage';
 import { ChunkingStrategy } from '@aikb/chunking';
-import { EmbeddingProvider, OpenAIModel, AlibabaModel, OnnxModel } from '@aikb/embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+  AlibabaModel,
+  OnnxModel,
+} from '@aikb/embedding';
 import { libraryItemVectorProto } from 'proto-ts';
 
 @Injectable()
@@ -12,29 +17,35 @@ export class AppService {
     this.itemVectorStorage = new ElasticsearchItemVectorStorage();
   }
 
-  async createChunkEmbedGroup(request: libraryItemVectorProto.CreateChunkEmbedGroupRequest): Promise<libraryItemVectorProto.ChunkEmbedGroupMetadata> {
+  async createChunkEmbedGroup(
+    request: libraryItemVectorProto.CreateChunkEmbedGroupRequest,
+  ): Promise<libraryItemVectorProto.ChunkEmbedGroupMetadata> {
     // Convert protobuf types to internal types
     const chunkingConfig = {
-      strategy: (request.chunkingConfig?.strategy || 'paragraph') as ChunkingStrategy,
+      strategy: (request.chunkingConfig?.strategy ||
+        'paragraph') as ChunkingStrategy,
       parameters: request.chunkingConfig?.parameters || {},
     };
 
     // Convert string provider to enum
     let provider: EmbeddingProvider;
     let model: OpenAIModel | AlibabaModel | OnnxModel;
-    
+
     switch (request.embeddingConfig?.provider) {
       case 'openai':
         provider = EmbeddingProvider.OPENAI;
-        model = (request.embeddingConfig?.model || 'text-embedding-ada-002') as OpenAIModel;
+        model = (request.embeddingConfig?.model ||
+          'text-embedding-ada-002') as OpenAIModel;
         break;
       case 'alibaba':
         provider = EmbeddingProvider.ALIBABA;
-        model = (request.embeddingConfig?.model || 'text-embedding-v3') as AlibabaModel;
+        model = (request.embeddingConfig?.model ||
+          'text-embedding-v3') as AlibabaModel;
         break;
       case 'onnx':
         provider = EmbeddingProvider.ONNX;
-        model = (request.embeddingConfig?.model || 'default') as unknown as OnnxModel;
+        model = (request.embeddingConfig?.model ||
+          'default') as unknown as OnnxModel;
         break;
       default:
         provider = EmbeddingProvider.OPENAI;
@@ -65,7 +76,8 @@ export class AppService {
       updatedAt: now,
     };
 
-    const createdGroup = await this.itemVectorStorage.createNewChunkEmbedGroupInfo(groupConfig);
+    const createdGroup =
+      await this.itemVectorStorage.createNewChunkEmbedGroupInfo(groupConfig);
 
     // Convert internal type back to protobuf type
     return {

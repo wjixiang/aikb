@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { IMarkdownPartCache } from './markdown-part-cache.interface';
 import { MarkdownPartCache } from './markdown-part-cache-impl';
 

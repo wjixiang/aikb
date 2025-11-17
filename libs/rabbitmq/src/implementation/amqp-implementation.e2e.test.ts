@@ -25,7 +25,7 @@ import {
 import { getRabbitMQConfig } from '../rabbitmq.config';
 
 // Mock logger to avoid noise in tests
-vi.mock('@aikb/log-management/logger', () => ({
+vi.mock('log-management/logger', () => ({
   default: vi.fn(() => ({
     info: vi.fn(),
     error: vi.fn(),

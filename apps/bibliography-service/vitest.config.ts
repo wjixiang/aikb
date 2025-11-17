@@ -19,7 +19,7 @@ export default defineConfig({
   resolve: {
     alias: {
       bibliography: resolve(__dirname, '../../libs/bibliography/src/index.ts'),
-      '@aikb/log-management': resolve(
+      'log-management': resolve(
         __dirname,
         '../../libs/log-management/src/index.ts',
       ),

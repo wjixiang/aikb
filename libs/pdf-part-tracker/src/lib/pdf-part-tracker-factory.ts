@@ -1,4 +1,4 @@
-import createLoggerWithPrefix from '@aikb/log-management/logger';
+import createLoggerWithPrefix from 'log-management/logger';
 import { IPdfPartTracker } from './pdf-part-tracker.interface';
 import { PdfPartTracker } from './pdf-part-tracker-impl';
 import { PdfPartTrackerElasticsearch } from './pdf-part-tracker-impl-elasticsearch';

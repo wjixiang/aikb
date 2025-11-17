@@ -1,4 +1,4 @@
-import { ChunkSearchFilter, ItemChunk } from '@aikb/item-vector-storage';
+import { ChunkSearchFilter, ItemChunk } from 'item-vector-storage';
 import { ILibraryStorage } from '../storage.js';
 import { ItemMetadata, Collection, Citation, ItemArchive } from '../types.js';
 // import { IdUtils } from 'utils';

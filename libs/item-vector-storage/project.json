@@ -1,19 +1,9 @@
 {
-  "name": "@aikb/item-vector-storage",
+  "name": "item-vector-storage",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/item-vector-storage/src",
   "projectType": "library",
   "tags": [],
-  "targets": {
-    "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
-      "options": {
-        "outputPath": "dist/libs/item-vector-storage",
-        "main": "libs/item-vector-storage/src/index.ts",
-        "tsConfig": "libs/item-vector-storage/tsconfig.lib.json",
-        "assets": ["libs/item-vector-storage/*.md"]
-      }
-    }
-  }
+  "// targets": "to see all targets run: nx show project item-vector-storage --web",
+  "targets": {}
 }

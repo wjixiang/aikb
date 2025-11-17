@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { createLoggerWithPrefix } from '@aikb/log-management';
+import { createLoggerWithPrefix } from 'log-management';
 
 // Create a global logger for the Library module
 const logger = createLoggerWithPrefix('Library');

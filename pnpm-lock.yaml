@@ -17,7 +17,7 @@ importers:
       '@aikb/embedding':
         specifier: workspace:*
         version: link:libs/embedding
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:libs/log-management
       '@aikb/pdf-converter':
@@ -861,7 +861,7 @@ importers:
 
   libs/bibliography:
     dependencies:
-      '@aikb/item-vector-storage':
+      'item-vector-storage':
         specifier: workspace:*
         version: link:../item-vector-storage
       '@elastic/elasticsearch':
@@ -887,7 +887,7 @@ importers:
 
   libs/embedding:
     dependencies:
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       axios:
@@ -915,7 +915,7 @@ importers:
       '@aikb/embedding':
         specifier: workspace:*
         version: link:../embedding
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       '@elastic/elasticsearch':
@@ -961,7 +961,7 @@ importers:
 
   libs/markdown-part-cache:
     dependencies:
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       tslib:
@@ -983,7 +983,7 @@ importers:
 
   libs/pdf-converter:
     dependencies:
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       '@aikb/s3-service':
@@ -1014,7 +1014,7 @@ importers:
 
   libs/pdf-part-tracker:
     dependencies:
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       '@elastic/elasticsearch':
@@ -1033,7 +1033,7 @@ importers:
 
   libs/pdf-splitter:
     dependencies:
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       pdf-lib:
@@ -1064,7 +1064,7 @@ importers:
       '@aikb/embedding':
         specifier: workspace:*
         version: link:../embedding
-      '@aikb/log-management':
+      'log-management':
         specifier: workspace:*
         version: link:../log-management
       '@aikb/pdf-converter':

@@ -15,7 +15,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@aikb/log-management": "workspace:*",
+    "log-management": "workspace:*",
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {

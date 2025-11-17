@@ -13,8 +13,7 @@
     "test:e2e": "vitest run --config vitest.config.ts --testNamePattern=e2e"
   },
   "dependencies": {
-    "@aikb/log-management": "workspace:*",
-    "@aikb/rabbitmq": "workspace:*",
+    "log-management": "workspace:*",
     "@grpc/grpc-js": "^1.13.3",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.1.1",
