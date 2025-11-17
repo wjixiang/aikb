@@ -44,7 +44,7 @@
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",
-    "@aikb/embedding": "workspace:*",
+    "embedding": "workspace:*",
     "@aikb/chunking": "workspace:*",
     "dotenv": "^17.2.2"
   },

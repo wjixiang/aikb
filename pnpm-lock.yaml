@@ -14,7 +14,7 @@ importers:
       '@aikb/chunking':
         specifier: workspace:*
         version: link:libs/chunking
-      '@aikb/embedding':
+      'embedding':
         specifier: workspace:*
         version: link:libs/embedding
       'log-management':
@@ -912,7 +912,7 @@ importers:
       '@aikb/chunking':
         specifier: workspace:*
         version: link:../chunking
-      '@aikb/embedding':
+      'embedding':
         specifier: workspace:*
         version: link:../embedding
       'log-management':
@@ -1061,7 +1061,7 @@ importers:
       '@aikb/chunking':
         specifier: workspace:*
         version: link:../chunking
-      '@aikb/embedding':
+      'embedding':
         specifier: workspace:*
         version: link:../embedding
       'log-management':

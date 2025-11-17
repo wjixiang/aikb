@@ -1,6 +1,6 @@
 import { BaseRabbitMQMessage } from '@aikb/rabbitmq';
 import { ChunkingConfig } from '@aikb/chunking';
-import { EmbeddingConfig } from '@aikb/embedding';
+import { EmbeddingConfig } from 'embedding';
 
 export interface ChunkingEmbeddingGroupCreationConfig {
   groupName: string;

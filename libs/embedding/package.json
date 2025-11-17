@@ -1,48 +1,11 @@
 {
-  "name": "@aikb/embedding",
+  "name": "embedding",
   "version": "0.0.1",
-  "description": "Embedding providers and management utilities",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./embedding": {
-      "import": "./dist/embedding.js",
-      "types": "./dist/embedding.d.ts"
-    },
-    "./embedding-manager": {
-      "import": "./dist/embedding-manager.js",
-      "types": "./dist/embedding-manager.d.ts"
-    },
-    "./embedding-providers": {
-      "import": "./dist/embedding-providers.js",
-      "types": "./dist/embedding-providers.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
-  },
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "dependencies": {
-    "log-management": "workspace:*",
-    "axios": "^1.12.2",
-    "utils":"workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.7",
-    "typescript": "^5.7.3",
-    "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "typescript": "^5.7.3"
-  },
-  "files": [
-    "dist"
-  ]
+    "tslib": "^2.3.0"
+  }
 }

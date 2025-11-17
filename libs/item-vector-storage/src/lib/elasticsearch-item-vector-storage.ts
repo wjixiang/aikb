@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import { createLoggerWithPrefix } from 'log-management';
-import { EmbeddingConfig } from '@aikb/embedding';
+import { EmbeddingConfig } from 'embedding';
 import {
   IItemVectorStorage,
   ItemChunk,

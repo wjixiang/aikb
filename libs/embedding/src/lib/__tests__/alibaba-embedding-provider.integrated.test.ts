@@ -13,7 +13,7 @@ vi.mock('log-management/logger', () => ({
 
 describe('AlibabaEmbeddingProvider Native API Tests', () => {
   let provider: AlibabaEmbeddingProvider;
-  const apiKey = process.env.ALIBABA_API_KEY;
+  const apiKey = process.env['ALIBABA_API_KEY'];
 
   // Skip all tests if API key is not available
   beforeEach(() => {

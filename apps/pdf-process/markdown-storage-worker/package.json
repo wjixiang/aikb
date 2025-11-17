@@ -12,7 +12,7 @@
     "@nestjs/microservices": "^11.1.7",
     "bibliography": "*",
     "@aikb/chunking": "*",
-    "@aikb/embedding": "*",
+    "embedding": "*",
     "log-management": "*",
     "@aikb/rabbitmq": "*",
     "tslib": "^2.3.0",

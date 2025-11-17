@@ -8,7 +8,7 @@ import {
   EmbeddingConfig,
   EmbeddingProvider,
   OpenAIModel,
-} from '@aikb/embedding';
+} from 'embedding';
 import { ChunkingStrategy } from '@aikb/chunking';
 
 describe('ElasticsearchItemVectorStorage E2E Tests', () => {

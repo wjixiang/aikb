@@ -6,7 +6,7 @@ import {
   OpenAIModel,
   AlibabaModel,
   OnnxModel,
-} from '@aikb/embedding';
+} from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
 
 @Injectable()

@@ -16,7 +16,6 @@
     "baseUrl": "./",
     "paths": {
       "@aikb/chunking": ["./libs/chunking/src/index.ts"],
-      "@aikb/embedding": ["./libs/embedding/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
@@ -46,7 +45,8 @@
       "rabbitmqPublist": ["libs/rabbitmqPublist/src/index.ts"],
       "proto-ts": ["protos/proto-ts/src/index.ts"],
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
-      "log-management": ["libs/log-management/src/index.ts"]
+      "log-management": ["libs/log-management/src/index.ts"],
+      "embedding": ["libs/embedding/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

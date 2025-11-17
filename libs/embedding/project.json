@@ -1,0 +1,19 @@
+{
+  "name": "embedding",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/embedding/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/embedding",
+        "main": "libs/embedding/src/index.ts",
+        "tsConfig": "libs/embedding/tsconfig.lib.json",
+        "assets": ["libs/embedding/*.md"]
+      }
+    }
+  }
+}

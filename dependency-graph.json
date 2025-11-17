@@ -5369,8 +5369,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/embedding": {
-        "name": "@aikb/embedding",
+      "embedding": {
+        "name": "embedding",
         "type": "lib",
         "data": {
           "root": "libs/embedding",
@@ -5502,7 +5502,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/embedding --includeDependentProjects -- pnpm exec nx build-deps @aikb/embedding"
+                "command": "pnpm exec nx watch --projects embedding --includeDependentProjects -- pnpm exec nx build-deps embedding"
               },
               "configurations": {},
               "parallelism": true
@@ -5615,7 +5615,7 @@
             },
             "description": "Embedding providers and management utilities",
             "js": {
-              "packageName": "@aikb/embedding",
+              "packageName": "embedding",
               "packageVersion": "0.0.1",
               "packageExports": {
                 ".": {
@@ -5639,7 +5639,7 @@
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "@aikb/embedding",
+          "name": "embedding",
           "tags": [
             "npm:public"
           ],
@@ -7327,7 +7327,7 @@
         },
         {
           "source": "item-chunk-embed-service",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         }
       ],
@@ -7349,7 +7349,7 @@
         },
         {
           "source": "markdown-storage-worker",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -7391,7 +7391,7 @@
         },
         {
           "source": "pdf-conversion-worker",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -7491,7 +7491,7 @@
         },
         {
           "source": "item-vector-storage",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         }
       ],
@@ -7563,7 +7563,7 @@
         },
         {
           "source": "bibliography",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -7602,14 +7602,14 @@
       "quiz-shared": [],
       "@aikb/s3-service": [],
       "components": [],
-      "@aikb/embedding": [
+      "embedding": [
         {
-          "source": "@aikb/embedding",
+          "source": "embedding",
           "target": "log-management",
           "type": "static"
         },
         {
-          "source": "@aikb/embedding",
+          "source": "embedding",
           "target": "utils",
           "type": "static"
         }
@@ -7638,7 +7638,7 @@
         },
         {
           "source": "@aikb/rabbitmq",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -7667,7 +7667,7 @@
         },
         {
           "source": "aikb",
-          "target": "@aikb/embedding",
+          "target": "embedding",
           "type": "static"
         },
         {

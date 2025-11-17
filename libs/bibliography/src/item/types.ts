@@ -1,6 +1,6 @@
 // Import required types for the remaining interfaces
 import { ChunkingConfig } from '@aikb/chunking';
-import { EmbeddingConfig } from '@aikb/embedding';
+import { EmbeddingConfig } from 'embedding';
 
 export interface ChunkSearchFilter {
   query?: string;

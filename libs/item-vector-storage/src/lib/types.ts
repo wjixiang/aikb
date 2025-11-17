@@ -1,5 +1,5 @@
 import { ChunkingConfig } from '@aikb/chunking';
-import { Embedding, EmbeddingConfig } from '@aikb/embedding';
+import { Embedding, EmbeddingConfig } from 'embedding';
 
 export enum ItemVectorStorageStatus {
   PENDING = 'pending',

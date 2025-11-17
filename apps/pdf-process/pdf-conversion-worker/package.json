@@ -27,7 +27,7 @@
     "@aikb/pdf-converter": "workspace:*",
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",
-    "@aikb/embedding": "workspace:*",
+    "embedding": "workspace:*",
     "@aikb/chunking": "workspace:*",
     "@aikb/pdf-part-tracker": "workspace:*",
     "@aikb/markdown-part-cache": "workspace:*",
