@@ -1,5 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import createLoggerWithPrefix from '@aikb/log-management/logger';
+import { EmbeddingConfig } from '@aikb/embedding';
 import {
   IItemVectorStorage,
   ItemChunk,
@@ -19,10 +20,13 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   private readonly logger: ReturnType<typeof createLoggerWithPrefix>;
 
   /**
-   * Get the chunks index name for a specific dimension
+   * Get the chunks index name for a specific embedding configuration
    */
-  private getChunksIndexNameForDimension(dimension: number): string {
-    return `${this.chunksIndexName}_${dimension}`;
+  private getChunksIndexNameForEmbeddingConfig(embeddingConfig: EmbeddingConfig): string {
+    // Create a unique index name based on provider, model, and dimension
+    // This ensures different embedding configurations use different indices
+    const { provider, model, dimension } = embeddingConfig;
+    return `${this.chunksIndexName}_${provider}_${model}_${dimension}`;
   }
 
   constructor(
@@ -41,123 +45,15 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   /**
    * Initialize the indices with proper mappings
    */
-  private async initializeIndices(dimension?: number): Promise<void> {
+  private async initializeIndices(embeddingConfig?: EmbeddingConfig): Promise<void> {
     try {
-      // Initialize chunks index for specific dimension if provided
-      if (dimension) {
-        const chunksIndexName = this.getChunksIndexNameForDimension(dimension);
-        const chunksExists = await this.client.indices.exists({
-          index: chunksIndexName,
-        });
-
-        if (!chunksExists) {
-          await this.client.indices.create({
-            index: chunksIndexName,
-            mappings: {
-              properties: {
-                id: { type: 'keyword' },
-                itemId: { type: 'keyword' },
-                denseVectorIndexGroupId: { type: 'keyword' },
-                title: { type: 'text' },
-                content: { type: 'text' },
-                index: { type: 'integer' },
-                embedding: {
-                  type: 'dense_vector',
-                  dims: dimension,
-                },
-                strategyMetadata: {
-                  properties: {
-                    chunkingStrategy: { type: 'keyword' },
-                    chunkingConfig: { type: 'object', dynamic: true },
-                    embeddingConfig: { type: 'object', dynamic: true },
-                    processingTimestamp: { type: 'date' },
-                    processingDuration: { type: 'float' },
-                  },
-                },
-                metadata: {
-                  type: 'object',
-                  dynamic: true,
-                },
-                createdAt: { type: 'date' },
-                updatedAt: { type: 'date' },
-              },
-            },
-          } as any);
-          this.logger.info(
-            `Created chunks index for dimension ${dimension}: ${chunksIndexName}`,
-          );
-        }
+      if (embeddingConfig) {
+        await this.initializeEmbeddingConfigChunksIndex(embeddingConfig);
       } else {
-        // Initialize default chunks index (for backward compatibility)
-        const chunksExists = await this.client.indices.exists({
-          index: this.chunksIndexName,
-        });
-
-        if (!chunksExists) {
-          await this.client.indices.create({
-            index: this.chunksIndexName,
-            mappings: {
-              properties: {
-                id: { type: 'keyword' },
-                itemId: { type: 'keyword' },
-                denseVectorIndexGroupId: { type: 'keyword' },
-                title: { type: 'text' },
-                content: { type: 'text' },
-                index: { type: 'integer' },
-                embedding: {
-                  type: 'dense_vector',
-                  dims: 1536, // Default dimension
-                },
-                strategyMetadata: {
-                  properties: {
-                    chunkingStrategy: { type: 'keyword' },
-                    chunkingConfig: { type: 'object', dynamic: true },
-                    embeddingConfig: { type: 'object', dynamic: true },
-                    processingTimestamp: { type: 'date' },
-                    processingDuration: { type: 'float' },
-                  },
-                },
-                metadata: {
-                  type: 'object',
-                  dynamic: true,
-                },
-                createdAt: { type: 'date' },
-                updatedAt: { type: 'date' },
-              },
-            },
-          } as any);
-          this.logger.info(
-            `Created default chunks index: ${this.chunksIndexName}`,
-          );
-        }
+        await this.initializeDefaultChunksIndex();
       }
-
-      // Initialize groups index
-      const groupsExists = await this.client.indices.exists({
-        index: this.groupsIndexName,
-      });
-
-      if (!groupsExists) {
-        await this.client.indices.create({
-          index: this.groupsIndexName,
-          mappings: {
-            properties: {
-              id: { type: 'keyword' },
-              name: { type: 'text' },
-              description: { type: 'text' },
-              chunkingConfig: { type: 'object', dynamic: true },
-              embeddingConfig: { type: 'object', dynamic: true },
-              isDefault: { type: 'boolean' },
-              isActive: { type: 'boolean' },
-              createdAt: { type: 'date' },
-              updatedAt: { type: 'date' },
-              createdBy: { type: 'keyword' },
-              tags: { type: 'keyword' },
-            },
-          },
-        } as any);
-        this.logger.info(`Created groups index: ${this.groupsIndexName}`);
-      }
+      
+      await this.initializeGroupsIndex();
     } catch (error) {
       if (
         (error as any)?.meta?.body?.error?.type ===
@@ -171,6 +67,132 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     }
   }
 
+  /**
+   * Initialize chunks index for a specific embedding configuration
+   */
+  private async initializeEmbeddingConfigChunksIndex(embeddingConfig: EmbeddingConfig): Promise<void> {
+    const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(embeddingConfig);
+    const chunksExists = await this.client.indices.exists({
+      index: chunksIndexName,
+    });
+
+    if (!chunksExists) {
+      await this.client.indices.create({
+        index: chunksIndexName,
+        mappings: {
+          properties: {
+            id: { type: 'keyword' },
+            itemId: { type: 'keyword' },
+            denseVectorIndexGroupId: { type: 'keyword' },
+            title: { type: 'text' },
+            content: { type: 'text' },
+            index: { type: 'integer' },
+            embedding: {
+              type: 'dense_vector',
+              dims: embeddingConfig.dimension,
+            },
+            strategyMetadata: {
+              properties: {
+                chunkingStrategy: { type: 'keyword' },
+                chunkingConfig: { type: 'object', dynamic: true },
+                embeddingConfig: { type: 'object', dynamic: true },
+                processingTimestamp: { type: 'date' },
+                processingDuration: { type: 'float' },
+              },
+            },
+            metadata: {
+              type: 'object',
+              dynamic: true,
+            },
+            createdAt: { type: 'date' },
+            updatedAt: { type: 'date' },
+          },
+        },
+      } as any);
+      this.logger.info(
+        `Created chunks index for embedding config ${embeddingConfig.provider}_${embeddingConfig.model}_${embeddingConfig.dimension}: ${chunksIndexName}`,
+      );
+    }
+  }
+
+  /**
+   * Initialize default chunks index (for backward compatibility)
+   */
+  private async initializeDefaultChunksIndex(): Promise<void> {
+    const chunksExists = await this.client.indices.exists({
+      index: this.chunksIndexName,
+    });
+
+    if (!chunksExists) {
+      await this.client.indices.create({
+        index: this.chunksIndexName,
+        mappings: {
+          properties: {
+            id: { type: 'keyword' },
+            itemId: { type: 'keyword' },
+            denseVectorIndexGroupId: { type: 'keyword' },
+            title: { type: 'text' },
+            content: { type: 'text' },
+            index: { type: 'integer' },
+            embedding: {
+              type: 'dense_vector',
+              dims: 1536, // Default dimension
+            },
+            strategyMetadata: {
+              properties: {
+                chunkingStrategy: { type: 'keyword' },
+                chunkingConfig: { type: 'object', dynamic: true },
+                embeddingConfig: { type: 'object', dynamic: true },
+                processingTimestamp: { type: 'date' },
+                processingDuration: { type: 'float' },
+              },
+            },
+            metadata: {
+              type: 'object',
+              dynamic: true,
+            },
+            createdAt: { type: 'date' },
+            updatedAt: { type: 'date' },
+          },
+        },
+      } as any);
+      this.logger.info(
+        `Created default chunks index: ${this.chunksIndexName}`,
+      );
+    }
+  }
+
+  /**
+   * Initialize groups index
+   */
+  private async initializeGroupsIndex(): Promise<void> {
+    const groupsExists = await this.client.indices.exists({
+      index: this.groupsIndexName,
+    });
+
+    if (!groupsExists) {
+      await this.client.indices.create({
+        index: this.groupsIndexName,
+        mappings: {
+          properties: {
+            id: { type: 'keyword' },
+            name: { type: 'text' },
+            description: { type: 'text' },
+            chunkingConfig: { type: 'object', dynamic: true },
+            embeddingConfig: { type: 'object', dynamic: true },
+            isDefault: { type: 'boolean' },
+            isActive: { type: 'boolean' },
+            createdAt: { type: 'date' },
+            updatedAt: { type: 'date' },
+            createdBy: { type: 'keyword' },
+            tags: { type: 'keyword' },
+          },
+        },
+      } as any);
+      this.logger.info(`Created groups index: ${this.groupsIndexName}`);
+    }
+  }
+
   async getStatus(groupId: string): Promise<ItemVectorStorageStatus> {
     try {
       const group = await this.getChunkEmbedGroupInfoById(groupId);
@@ -180,9 +202,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       }
 
       // Check if there are any chunks for this group
-      // Try the dimension-specific index first
-      const chunksIndexName = this.getChunksIndexNameForDimension(
-        group.embeddingConfig.dimension,
+      // Try the embedding config specific index first
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(
+        group.embeddingConfig,
       );
       let result;
 
@@ -315,7 +337,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     itemChunk: ItemChunk,
   ): Promise<boolean> {
     try {
-      await this.initializeIndices(group.embeddingConfig.dimension);
+      await this.initializeIndices(group.embeddingConfig);
 
       // Validate vector dimensions against group configuration
       if (itemChunk.embedding.length !== group.embeddingConfig.dimension) {
@@ -336,8 +358,8 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         },
       };
 
-      const chunksIndexName = this.getChunksIndexNameForDimension(
-        group.embeddingConfig.dimension,
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(
+        group.embeddingConfig,
       );
       await this.client.index({
         index: chunksIndexName,
@@ -361,7 +383,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     itemChunks: ItemChunk[],
   ): Promise<boolean> {
     try {
-      await this.initializeIndices(group.embeddingConfig.dimension);
+      await this.initializeIndices(group.embeddingConfig);
 
       // Validate all vectors have correct dimensions based on group configuration
       for (const chunk of itemChunks) {
@@ -372,8 +394,8 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         }
       }
 
-      const chunksIndexName = this.getChunksIndexNameForDimension(
-        group.embeddingConfig.dimension,
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(
+        group.embeddingConfig,
       );
       const body = itemChunks.flatMap((chunk) => [
         { index: { _index: chunksIndexName, _id: chunk.id } },
@@ -491,8 +513,8 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       }
 
       // Count and delete chunks from the dimension-specific index
-      const chunksIndexName = this.getChunksIndexNameForDimension(
-        group.embeddingConfig.dimension,
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(
+        group.embeddingConfig,
       );
       let chunkCount = 0;
 
