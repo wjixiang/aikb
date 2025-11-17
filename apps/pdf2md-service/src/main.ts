@@ -15,7 +15,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'pdf2md',
-      protoPath: join(__dirname, '../proto/pdf2md.proto'),
+      protoPath: '/workspace/protos/pdf2md.proto',
       url: `0.0.0.0:${grpcPort}`,
     },
   });
@@ -27,9 +27,7 @@ async function bootstrap() {
   Logger.log(
     `🚀 PDF2MD Service is running on port 3001 and listening for RabbitMQ messages`,
   );
-  Logger.log(
-    `🚀 gRPC Service is running on: localhost:${grpcPort}`,
-  );
+  Logger.log(`🚀 gRPC Service is running on: localhost:${grpcPort}`);
 }
 
 bootstrap();

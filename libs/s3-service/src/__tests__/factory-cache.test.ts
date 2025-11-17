@@ -4,7 +4,7 @@ import {
   clearS3ServiceCache,
   getS3ServiceCacheSize,
   getS3ServiceCacheStats,
-  preloadS3ServiceCache
+  preloadS3ServiceCache,
 } from '../factory';
 import type { S3ServiceConfig } from '../types';
 
@@ -34,11 +34,11 @@ describe('S3Service Caching', () => {
     // Create first instance
     const service1 = createS3Service(mockS3Config);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     // Create second instance with same config
     const service2 = createS3Service(mockS3Config);
     expect(getS3ServiceCacheSize()).toBe(1); // Should still be 1, not 2
-    
+
     // Should return the same instance
     expect(service1).toBe(service2);
   });
@@ -46,14 +46,14 @@ describe('S3Service Caching', () => {
   it('should create new instances for different configs', () => {
     const config1 = { ...mockS3Config };
     const config2 = { ...mockS3Config, bucketName: 'different-bucket' };
-    
+
     // Create instances with different configs
     const service1 = createS3Service(config1);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     const service2 = createS3Service(config2);
     expect(getS3ServiceCacheSize()).toBe(2); // Should be 2 now
-    
+
     // Should return different instances
     expect(service1).not.toBe(service2);
   });
@@ -61,14 +61,14 @@ describe('S3Service Caching', () => {
   it('should create new instances for configs with different optional properties', () => {
     const config1 = { ...mockS3Config };
     const config2 = { ...mockS3Config, forcePathStyle: true };
-    
+
     // Create instances with different optional properties
     const service1 = createS3Service(config1);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     const service2 = createS3Service(config2);
     expect(getS3ServiceCacheSize()).toBe(2); // Should be 2 now
-    
+
     // Should return different instances
     expect(service1).not.toBe(service2);
   });
@@ -77,7 +77,7 @@ describe('S3Service Caching', () => {
     // Create an instance
     createS3Service(mockS3Config);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     // Clear cache
     clearS3ServiceCache();
     expect(getS3ServiceCacheSize()).toBe(0);
@@ -87,15 +87,15 @@ describe('S3Service Caching', () => {
     // Create first instance
     const service1 = createS3Service(mockS3Config);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     // Clear cache
     clearS3ServiceCache();
     expect(getS3ServiceCacheSize()).toBe(0);
-    
+
     // Create new instance with same config
     const service2 = createS3Service(mockS3Config);
     expect(getS3ServiceCacheSize()).toBe(1);
-    
+
     // Should be different instances since cache was cleared
     expect(service1).not.toBe(service2);
   });
@@ -106,17 +106,17 @@ describe('S3Service Caching', () => {
       forcePathStyle: true,
       signingRegion: 'custom-region',
     };
-    
+
     const complexConfig2: S3ServiceConfig = {
       ...mockS3Config,
       forcePathStyle: true,
       signingRegion: 'custom-region',
     };
-    
+
     // Create instances with identical complex configs
     const service1 = createS3Service(complexConfig1);
     const service2 = createS3Service(complexConfig2);
-    
+
     expect(getS3ServiceCacheSize()).toBe(1);
     expect(service1).toBe(service2);
   });
@@ -127,17 +127,17 @@ describe('S3Service Caching', () => {
       ...mockS3Config,
       bucketName: `bucket-${i}`,
     }));
-    
+
     // Create instances for all configs
-    const services = configs.map(config => createS3Service(config));
-    
+    const services = configs.map((config) => createS3Service(config));
+
     // Cache should only contain 10 instances
     expect(getS3ServiceCacheSize()).toBe(10);
-    
+
     // First instance should be evicted
     const firstService = services[0];
     const lastService = services[10];
-    
+
     // Creating the first config again should create a new instance
     const firstServiceAgain = createS3Service(configs[0]);
     expect(firstServiceAgain).not.toBe(firstService);
@@ -145,9 +145,9 @@ describe('S3Service Caching', () => {
 
   it('should provide cache statistics', () => {
     createS3Service(mockS3Config);
-    
+
     const stats = getS3ServiceCacheStats();
-    
+
     expect(stats.size).toBe(1);
     expect(stats.maxSize).toBe(10);
     expect(stats.keys).toContain(generateConfigKey(mockS3Config));
@@ -159,20 +159,20 @@ describe('S3Service Caching', () => {
       { ...mockS3Config, bucketName: 'bucket-2' },
       { ...mockS3Config, bucketName: 'bucket-3' },
     ];
-    
+
     // Clear cache first
     clearS3ServiceCache();
     expect(getS3ServiceCacheSize()).toBe(0);
-    
+
     // Preload configurations
     preloadS3ServiceCache(configs);
     expect(getS3ServiceCacheSize()).toBe(3);
-    
+
     // Creating instances with preloaded configs should return cached instances
     const service1 = createS3Service(configs[0]);
     const service2 = createS3Service(configs[1]);
     const service3 = createS3Service(configs[2]);
-    
+
     expect(getS3ServiceCacheSize()).toBe(3); // Should still be 3
   });
 });

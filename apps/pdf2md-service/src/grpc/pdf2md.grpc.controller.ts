@@ -37,7 +37,9 @@ export class Pdf2MdGrpcController {
   constructor(private readonly appService: AppService) {}
 
   @GrpcMethod('Pdf2MdService', 'ConvertPdfToMarkdown')
-  async convertPdfToMarkdown(request: Pdf2MarkdownRequest): Promise<Pdf2MarkdownResponse> {
+  async convertPdfToMarkdown(
+    request: Pdf2MarkdownRequest,
+  ): Promise<Pdf2MarkdownResponse> {
     const pdf2MarkdownDto = {
       itemId: request.itemId,
       fileType: request.fileType as 'pdf',
@@ -50,7 +52,7 @@ export class Pdf2MdGrpcController {
     };
 
     const result = await this.appService.handlePdf2MdRequest(pdf2MarkdownDto);
-    
+
     return {
       itemId: result.itemId,
       pageNum: result.pageNum,
@@ -58,13 +60,14 @@ export class Pdf2MdGrpcController {
       chunkCount: result.chunkCount,
       chunkSize: result.chunkSize,
       markdownContent: result.markdownContent,
-      chunks: result.chunks?.map(chunk => ({
-        chunkIndex: chunk.chunkIndex,
-        startPage: chunk.startPage,
-        endPage: chunk.endPage,
-        s3Url: chunk.s3Url,
-        fileName: chunk.fileName,
-      })) || [],
+      chunks:
+        result.chunks?.map((chunk) => ({
+          chunkIndex: chunk.chunkIndex,
+          startPage: chunk.startPage,
+          endPage: chunk.endPage,
+          s3Url: chunk.s3Url,
+          fileName: chunk.fileName,
+        })) || [],
     };
   }
 }

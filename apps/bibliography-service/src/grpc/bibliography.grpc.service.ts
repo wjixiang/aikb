@@ -1,127 +1,39 @@
 import { Client, Transport, type ClientGrpc } from '@nestjs/microservices';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
-
-// Define interfaces based on our protobuf definition
-interface Author {
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-}
-
-interface ItemArchive {
-  fileType: string;
-  fileSize: number;
-  fileHash: string;
-  addDate: string;
-  s3Key: string;
-  pageCount: number;
-  wordCount?: number;
-}
-
-interface LibraryItem {
-  id: string;
-  title: string;
-  authors: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags: string[];
-  notes?: string;
-  collections: string[];
-  dateAdded: string;
-  dateModified: string;
-  language?: string;
-  markdownContent?: string;
-  markdownUpdatedDate?: string;
-  archives: ItemArchive[];
-}
-
-interface CreateLibraryItemRequest {
-  title: string;
-  authors: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags: string[];
-  notes?: string;
-  collections: string[];
-  language?: string;
-}
-
-interface GetLibraryItemRequest {
-  id: string;
-}
-
-interface SearchLibraryItemsRequest {
-  query?: string;
-  tags?: string[];
-  collections?: string[];
-}
-
-interface DeleteLibraryItemRequest {
-  id: string;
-}
-
-interface UpdateLibraryItemMetadataRequest {
-  id: string;
-  title?: string;
-  authors?: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags?: string[];
-  notes?: string;
-  collections?: string[];
-  language?: string;
-  markdownContent?: string;
-  archives?: ItemArchive[];
-}
-
-interface UpdateLibraryItemMarkdownRequest {
-  id: string;
-  markdownContent: string;
-}
-
-interface GetPdfDownloadUrlRequest {
-  id: string;
-}
-
-interface GetPdfUploadUrlRequest {
-  fileName: string;
-  expiresIn?: number;
-}
-
-interface AddArchiveToItemRequest {
-  id: string;
-  fileType: string;
-  fileSize: number;
-  fileHash: string;
-  s3Key: string;
-  pageCount: number;
-  wordCount?: number;
-}
+import { bibliographyProto } from 'proto-ts';
 
 interface BibliographyServiceGrpc {
-  createLibraryItem(request: CreateLibraryItemRequest): Promise<{ item: LibraryItem }>;
-  createLibraryItemWithPdf(request: any): Promise<{ item: LibraryItem }>;
-  getLibraryItem(request: GetLibraryItemRequest): Promise<{ item: LibraryItem }>;
-  searchLibraryItems(request: SearchLibraryItemsRequest): Promise<{ items: LibraryItem[] }>;
-  deleteLibraryItem(request: DeleteLibraryItemRequest): Promise<{ success: boolean; message: string }>;
-  updateLibraryItemMetadata(request: UpdateLibraryItemMetadataRequest): Promise<{ item: LibraryItem }>;
-  updateLibraryItemMarkdown(request: UpdateLibraryItemMarkdownRequest): Promise<{ item: LibraryItem }>;
-  getPdfDownloadUrl(request: GetPdfDownloadUrlRequest): Promise<{ downloadUrl: string; expiresAt: string }>;
-  getPdfUploadUrl(request: GetPdfUploadUrlRequest): Promise<{ uploadUrl: string; s3Key: string; expiresAt: string }>;
-  addArchiveToItem(request: AddArchiveToItemRequest): Promise<{ item: LibraryItem }>;
+  createLibraryItem(
+    request: bibliographyProto.CreateLibraryItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
+  createLibraryItemWithPdf(
+    request: any,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
+  getLibraryItem(
+    request: bibliographyProto.GetLibraryItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
+  searchLibraryItems(
+    request: bibliographyProto.SearchLibraryItemsRequest,
+  ): Promise<{ items: bibliographyProto.LibraryItem[] }>;
+  deleteLibraryItem(
+    request: bibliographyProto.DeleteLibraryItemRequest,
+  ): Promise<{ success: boolean; message: string }>;
+  updateLibraryItemMetadata(
+    request: bibliographyProto.UpdateLibraryItemMetadataRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
+  updateLibraryItemMarkdown(
+    request: bibliographyProto.UpdateLibraryItemMarkdownRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
+  getPdfDownloadUrl(
+    request: bibliographyProto.GetPdfDownloadUrlRequest,
+  ): Promise<{ downloadUrl: string; expiresAt: string }>;
+  getPdfUploadUrl(
+    request: bibliographyProto.GetPdfUploadUrlRequest,
+  ): Promise<{ uploadUrl: string; s3Key: string; expiresAt: string }>;
+  addArchiveToItem(
+    request: bibliographyProto.AddArchiveToItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }>;
 }
 
 @Injectable()
@@ -139,42 +51,62 @@ export class BibliographyGrpcClient {
   private bibliographyService: BibliographyServiceGrpc;
 
   onModuleInit() {
-    this.bibliographyService = this.client.getService<BibliographyServiceGrpc>('BibliographyService');
+    this.bibliographyService = this.client.getService<BibliographyServiceGrpc>(
+      'BibliographyService',
+    );
   }
 
-  async createLibraryItem(request: CreateLibraryItemRequest): Promise<{ item: LibraryItem }> {
+  async createLibraryItem(
+    request: bibliographyProto.CreateLibraryItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }> {
     return this.bibliographyService.createLibraryItem(request);
   }
 
-  async getLibraryItem(request: GetLibraryItemRequest): Promise<{ item: LibraryItem }> {
+  async getLibraryItem(
+    request: bibliographyProto.GetLibraryItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }> {
     return this.bibliographyService.getLibraryItem(request);
   }
 
-  async searchLibraryItems(request: SearchLibraryItemsRequest): Promise<{ items: LibraryItem[] }> {
+  async searchLibraryItems(
+    request: bibliographyProto.SearchLibraryItemsRequest,
+  ): Promise<{ items: bibliographyProto.LibraryItem[] }> {
     return this.bibliographyService.searchLibraryItems(request);
   }
 
-  async deleteLibraryItem(request: DeleteLibraryItemRequest): Promise<{ success: boolean; message: string }> {
+  async deleteLibraryItem(
+    request: bibliographyProto.DeleteLibraryItemRequest,
+  ): Promise<{ success: boolean; message: string }> {
     return this.bibliographyService.deleteLibraryItem(request);
   }
 
-  async updateLibraryItemMetadata(request: UpdateLibraryItemMetadataRequest): Promise<{ item: LibraryItem }> {
+  async updateLibraryItemMetadata(
+    request: bibliographyProto.UpdateLibraryItemMetadataRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }> {
     return this.bibliographyService.updateLibraryItemMetadata(request);
   }
 
-  async updateLibraryItemMarkdown(request: UpdateLibraryItemMarkdownRequest): Promise<{ item: LibraryItem }> {
+  async updateLibraryItemMarkdown(
+    request: bibliographyProto.UpdateLibraryItemMarkdownRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }> {
     return this.bibliographyService.updateLibraryItemMarkdown(request);
   }
 
-  async getPdfDownloadUrl(request: GetPdfDownloadUrlRequest): Promise<{ downloadUrl: string; expiresAt: string }> {
+  async getPdfDownloadUrl(
+    request: bibliographyProto.GetPdfDownloadUrlRequest,
+  ): Promise<{ downloadUrl: string; expiresAt: string }> {
     return this.bibliographyService.getPdfDownloadUrl(request);
   }
 
-  async getPdfUploadUrl(request: GetPdfUploadUrlRequest): Promise<{ uploadUrl: string; s3Key: string; expiresAt: string }> {
+  async getPdfUploadUrl(
+    request: bibliographyProto.GetPdfUploadUrlRequest,
+  ): Promise<{ uploadUrl: string; s3Key: string; expiresAt: string }> {
     return this.bibliographyService.getPdfUploadUrl(request);
   }
 
-  async addArchiveToItem(request: AddArchiveToItemRequest): Promise<{ item: LibraryItem }> {
+  async addArchiveToItem(
+    request: bibliographyProto.AddArchiveToItemRequest,
+  ): Promise<{ item: bibliographyProto.LibraryItem }> {
     return this.bibliographyService.addArchiveToItem(request);
   }
 }

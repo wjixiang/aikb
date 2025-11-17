@@ -38,7 +38,7 @@ let initializationAttempted = false;
 
 /**
  * @deprecated
- * @returns 
+ * @returns
  */
 async function getDefaultS3Service(): Promise<S3Service> {
   if (!defaultS3Service && !initializationAttempted) {
@@ -82,7 +82,6 @@ export async function uploadToS3(
   });
   return result.url;
 }
-
 
 /**
  * Uploads a file to S3-compatible storage using the provided configuration
@@ -145,26 +144,28 @@ export async function uploadFile(
   if (!s3Config) {
     throw new Error('Missing required parameter: s3Config is required');
   }
-  
+
   if (!s3Key || s3Key.trim() === '') {
     throw new Error('Missing required parameter: s3Key is required');
   }
-  
+
   if (!buffer || buffer.length === 0) {
-    throw new Error('Missing required parameter: buffer is required and cannot be empty');
+    throw new Error(
+      'Missing required parameter: buffer is required and cannot be empty',
+    );
   }
-  
+
   try {
     // Create a new service instance with the provided config
     const { createS3Service } = await import('./factory.js');
     const service = createS3Service(s3Config);
-    
+
     // Upload the file using the service
     const result = await service.uploadToS3(buffer, s3Key, {
       contentType,
       acl,
     });
-    
+
     return result;
   } catch (error) {
     console.error('Error uploading file:', error);

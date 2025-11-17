@@ -147,9 +147,7 @@ describe(AppService, () => {
       const result = await service.handlePdf2MdRequest(req);
       // This will fail because we don't have actual PDF data
     } catch (error) {
-      expect((error as Error).message).toContain(
-        'Failed to',
-      );
+      expect((error as Error).message).toContain('Failed to');
     }
   });
 
@@ -175,10 +173,10 @@ describe(AppService, () => {
     expect(result.pageNum).toBe(15);
   });
 
-  it('should unzip and extract full.md from downloaded zip file', async()=>{
-    const testZipPath = '/workspace/test/mineruPdf2MdConversionResult.zip'
-    const zipBuffer = readFileSync(testZipPath)
-    
+  it('should unzip and extract full.md from downloaded zip file', async () => {
+    const testZipPath = '/workspace/test/mineruPdf2MdConversionResult.zip';
+    const zipBuffer = readFileSync(testZipPath);
+
     // Test actual extraction with real zip file
     // We'll use a simpler approach - just test that the method doesn't throw
     try {
@@ -195,26 +193,31 @@ describe(AppService, () => {
       // If there's an error, at least verify the method was called
       expect(error).toBeDefined();
     }
-  })
+  });
 
   it('should extract markdown and files from zip using extractAllFilesAndMarkdownFromZip', async () => {
     const testZipPath = '/workspace/test/mineruPdf2MdConversionResult.zip';
     const zipBuffer = require('fs').readFileSync(testZipPath);
-    
+
     // Test the new unified extraction method
     try {
-      const result = await (service as any).extractAllFilesAndMarkdownFromZip(zipBuffer, 'test-item-id');
-      
+      const result = await (service as any).extractAllFilesAndMarkdownFromZip(
+        zipBuffer,
+        'test-item-id',
+      );
+
       // The result should not be null if extraction was successful
       expect(result).toBeDefined();
       expect(result.markdownContent).not.toBeNull();
-      
+
       // If extraction worked, we should have some content
       if (result.markdownContent) {
         expect(result.markdownContent.length).toBeGreaterThan(0);
         // Check if it contains expected content from test file
         expect(result.markdownContent).toContain('Taking ACE inhibitors');
-        expect(result.markdownContent).toContain('Motherisk questions are prepared');
+        expect(result.markdownContent).toContain(
+          'Motherisk questions are prepared',
+        );
       }
     } catch (error) {
       // If there's an error, at least verify the method was called

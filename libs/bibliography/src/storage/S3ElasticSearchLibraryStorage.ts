@@ -177,17 +177,23 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
     // Lazy import s3-service functions to avoid eager initialization
     const { uploadFile } = await import('@aikb/s3-service');
-    
+
     // Create S3 config from environment variables
     const s3Config = {
       accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
       secretAccessKey: process.env['OSS_SECRET_ACCESS_KEY']!,
       region: process.env['OSS_REGION']!,
       bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
-      endpoint: process.env['S3_ENDPOINT']!
+      endpoint: process.env['S3_ENDPOINT']!,
     };
-    
-    const result = await uploadFile(s3Config, s3Key, pdfData, 'application/pdf', 'private');
+
+    const result = await uploadFile(
+      s3Config,
+      s3Key,
+      pdfData,
+      'application/pdf',
+      'private',
+    );
     const url = result.url;
 
     const pdfInfo: AbstractPdf = {
@@ -201,8 +207,6 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
     return pdfInfo;
   }
-
-
 
   async getPdfDownloadUrl(s3Key: string): Promise<string> {
     // Lazy import s3-service functions to avoid eager initialization

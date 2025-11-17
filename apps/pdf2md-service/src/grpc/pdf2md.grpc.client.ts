@@ -1,40 +1,7 @@
 import { Client, Transport, type ClientGrpc } from '@nestjs/microservices';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
-
-// Define interfaces based on our protobuf definition
-interface PdfChunk {
-  chunkIndex: number;
-  startPage: number;
-  endPage: number;
-  s3Url: string;
-  fileName: string;
-}
-
-interface Pdf2MarkdownRequest {
-  itemId: string;
-  fileType: string;
-  fileSize: number;
-  fileHash: string;
-  addDate: string;
-  s3Key: string;
-  pageCount: number;
-  wordCount?: number;
-}
-
-interface Pdf2MarkdownResponse {
-  itemId: string;
-  pageNum: number;
-  chunked: boolean;
-  chunkCount?: number;
-  chunkSize?: number;
-  markdownContent: string;
-  chunks: PdfChunk[];
-}
-
-interface Pdf2MdServiceGrpc {
-  convertPdfToMarkdown(request: Pdf2MarkdownRequest): Promise<Pdf2MarkdownResponse>;
-}
+import { pdf2mdProto } from 'proto-ts';
 
 @Injectable()
 export class Pdf2MdGrpcClient {
@@ -42,19 +9,33 @@ export class Pdf2MdGrpcClient {
     transport: Transport.GRPC,
     options: {
       package: 'pdf2md',
-      protoPath: join(__dirname, '../proto/pdf2md.proto'),
-      url: 'localhost:50052',
+      protoPath: '/workspace/protos/pdf2md.proto',
+      url: process.env['PDF2MD_SERVICE_GRPC_URL'] || 'localhost:50052',
     },
   })
   private client!: ClientGrpc;
 
-  private pdf2MdService!: Pdf2MdServiceGrpc;
+  private pdf2MdService!: pdf2mdProto.Pdf2MdServiceClient;
 
   onModuleInit() {
-    this.pdf2MdService = this.client.getService<Pdf2MdServiceGrpc>('Pdf2MdService');
+    this.pdf2MdService =
+      this.client.getService<pdf2mdProto.Pdf2MdServiceClient>('Pdf2MdService');
   }
 
-  async convertPdfToMarkdown(request: Pdf2MarkdownRequest): Promise<Pdf2MarkdownResponse> {
-    return this.pdf2MdService.convertPdfToMarkdown(request);
+  async convertPdfToMarkdown(
+    request: pdf2mdProto.Pdf2MarkdownRequest,
+  ): Promise<pdf2mdProto.Pdf2MarkdownResponse> {
+    try {
+      const response = await this.pdf2MdService
+        .convertPdfToMarkdown(request)
+        .toPromise();
+      if (!response) {
+        throw new Error('Invalid response: missing pdf2md response');
+      }
+      return response;
+    } catch (error) {
+      console.error('Error in convertPdfToMarkdown:', error);
+      throw error;
+    }
   }
 }

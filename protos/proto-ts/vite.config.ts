@@ -41,7 +41,17 @@ export default defineConfig(() => ({
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      external: [],
+      external: [
+        'fs',
+        'path',
+        'os',
+        'crypto',
+        '@nestjs/microservices',
+        '@nestjs/core',
+        '@grpc/grpc-js',
+        '@grpc/proto-loader',
+        'rxjs',
+      ],
     },
   },
   test: {

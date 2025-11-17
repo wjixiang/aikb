@@ -12,16 +12,16 @@ async function uploadWithCustomConfig() {
   };
 
   const fileBuffer = Buffer.from('Hello, World!', 'utf-8');
-  
+
   try {
     const result = await uploadFile(
       s3Config,
       'uploads/hello.txt',
       fileBuffer,
       'text/plain',
-      'private'
+      'private',
     );
-    
+
     console.log('File uploaded successfully:', result);
     console.log('URL:', result.url);
   } catch (error) {
@@ -40,15 +40,11 @@ async function uploadMinimal() {
   };
 
   const fileBuffer = Buffer.from('Hello, World!', 'utf-8');
-  
+
   try {
     // Uses default content type (application/octet-stream) and ACL (private)
-    const result = await uploadFile(
-      s3Config,
-      'uploads/hello.bin',
-      fileBuffer
-    );
-    
+    const result = await uploadFile(s3Config, 'uploads/hello.bin', fileBuffer);
+
     console.log('File uploaded successfully:', result);
     console.log('URL:', result.url);
   } catch (error) {
@@ -68,11 +64,7 @@ async function uploadWithErrorHandling() {
 
   try {
     // This will throw an error because s3Config is null
-    await uploadFile(
-      null as any,
-      'test.txt',
-      Buffer.from('test')
-    );
+    await uploadFile(null as any, 'test.txt', Buffer.from('test'));
   } catch (error) {
     console.error('Expected error (missing s3Config):', error.message);
   }
@@ -82,7 +74,7 @@ async function uploadWithErrorHandling() {
     await uploadFile(
       s3Config,
       '', // Empty key
-      Buffer.from('test')
+      Buffer.from('test'),
     );
   } catch (error) {
     console.error('Expected error (missing s3Key):', error.message);
@@ -93,7 +85,7 @@ async function uploadWithErrorHandling() {
     await uploadFile(
       s3Config,
       'test.txt',
-      Buffer.alloc(0) // Empty buffer
+      Buffer.alloc(0), // Empty buffer
     );
   } catch (error) {
     console.error('Expected error (missing buffer):', error.message);
@@ -118,7 +110,7 @@ async function uploadDifferentFileTypes() {
       s3Config,
       'data/test.json',
       jsonBuffer,
-      'application/json'
+      'application/json',
     );
     console.log('JSON file uploaded:', jsonResult.url);
 
@@ -128,7 +120,7 @@ async function uploadDifferentFileTypes() {
       s3Config,
       'images/test.jpg',
       imageBuffer,
-      'image/jpeg'
+      'image/jpeg',
     );
     console.log('Image file uploaded:', imageResult.url);
 
@@ -138,7 +130,7 @@ async function uploadDifferentFileTypes() {
       s3Config,
       'documents/test.pdf',
       pdfBuffer,
-      'application/pdf'
+      'application/pdf',
     );
     console.log('PDF file uploaded:', pdfResult.url);
   } catch (error) {
@@ -149,18 +141,22 @@ async function uploadDifferentFileTypes() {
 // Run examples
 if (require.main === module) {
   console.log('Running uploadFile examples...\n');
-  
+
   console.log('1. Upload with custom config:');
-  uploadWithCustomConfig().then(() => {
-    console.log('\n2. Upload with minimal parameters:');
-    return uploadMinimal();
-  }).then(() => {
-    console.log('\n3. Error handling examples:');
-    return uploadWithErrorHandling();
-  }).then(() => {
-    console.log('\n4. Upload different file types:');
-    return uploadDifferentFileTypes();
-  }).catch(console.error);
+  uploadWithCustomConfig()
+    .then(() => {
+      console.log('\n2. Upload with minimal parameters:');
+      return uploadMinimal();
+    })
+    .then(() => {
+      console.log('\n3. Error handling examples:');
+      return uploadWithErrorHandling();
+    })
+    .then(() => {
+      console.log('\n4. Upload different file types:');
+      return uploadDifferentFileTypes();
+    })
+    .catch(console.error);
 }
 
 export {

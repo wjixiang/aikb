@@ -22,9 +22,7 @@ describe('BibliographyGrpcController', () => {
   };
 
   beforeEach(() => {
-    controller = new BibliographyGrpcController(
-      mockLibraryItemService as any,
-    );
+    controller = new BibliographyGrpcController(mockLibraryItemService as any);
     service = mockLibraryItemService as any;
   });
 
@@ -144,7 +142,11 @@ describe('BibliographyGrpcController', () => {
 
       const result = await controller.searchLibraryItems(request);
 
-      expect(service.searchLibraryItems).toHaveBeenCalledWith('test', ['test'], ['default']);
+      expect(service.searchLibraryItems).toHaveBeenCalledWith(
+        'test',
+        ['test'],
+        ['default'],
+      );
       expect(result.items).toHaveLength(2);
       expect(result.items[0].title).toBe('Test Book 1');
       expect(result.items[1].title).toBe('Test Book 2');

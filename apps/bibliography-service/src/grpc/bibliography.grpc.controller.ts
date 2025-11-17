@@ -1,167 +1,19 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { LibraryItemService } from '../app/library-item/library-item.service';
-
-// Define interfaces based on our protobuf definition
-interface Author {
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-}
-
-interface ItemArchive {
-  fileType: string;
-  fileSize: number;
-  fileHash: string;
-  addDate: string;
-  s3Key: string;
-  pageCount: number;
-  wordCount?: number;
-}
-
-interface LibraryItem {
-  id: string;
-  title: string;
-  authors: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags: string[];
-  notes?: string;
-  collections: string[];
-  dateAdded: string;
-  dateModified: string;
-  language?: string;
-  markdownContent?: string;
-  markdownUpdatedDate?: string;
-  archives: ItemArchive[];
-}
-
-interface CreateLibraryItemRequest {
-  title: string;
-  authors: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags: string[];
-  notes?: string;
-  collections: string[];
-  language?: string;
-}
-
-interface CreateLibraryItemWithPdfRequest {
-  title: string;
-  authors: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags: string[];
-  notes?: string;
-  collections: string[];
-  language?: string;
-  pdfBuffer: Uint8Array;
-  fileName?: string;
-  pageCount: number;
-}
-
-interface GetLibraryItemRequest {
-  id: string;
-}
-
-interface SearchLibraryItemsRequest {
-  query?: string;
-  tags?: string[];
-  collections?: string[];
-}
-
-interface SearchLibraryItemsResponse {
-  items: LibraryItem[];
-}
-
-interface DeleteLibraryItemRequest {
-  id: string;
-}
-
-interface DeleteLibraryItemResponse {
-  success: boolean;
-  message: string;
-}
-
-interface UpdateLibraryItemMetadataRequest {
-  id: string;
-  title?: string;
-  authors?: Author[];
-  abstract?: string;
-  publicationYear?: number;
-  publisher?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  tags?: string[];
-  notes?: string;
-  collections?: string[];
-  language?: string;
-  markdownContent?: string;
-  archives?: ItemArchive[];
-}
-
-interface UpdateLibraryItemMarkdownRequest {
-  id: string;
-  markdownContent: string;
-}
-
-interface GetPdfDownloadUrlRequest {
-  id: string;
-}
-
-interface PdfDownloadUrlResponse {
-  downloadUrl: string;
-  expiresAt: string;
-}
-
-interface GetPdfUploadUrlRequest {
-  fileName: string;
-  expiresIn?: number;
-}
-
-interface PdfUploadUrlResponse {
-  uploadUrl: string;
-  s3Key: string;
-  expiresAt: string;
-}
-
-interface AddArchiveToItemRequest {
-  id: string;
-  fileType: string;
-  fileSize: number;
-  fileHash: string;
-  s3Key: string;
-  pageCount: number;
-  wordCount?: number;
-}
-
-interface LibraryItemResponse {
-  item: LibraryItem;
-}
+import { bibliographyProto } from 'proto-ts';
 
 @Controller()
 export class BibliographyGrpcController {
   constructor(private readonly libraryItemService: LibraryItemService) {}
 
   @GrpcMethod('BibliographyService', 'CreateLibraryItem')
-  async createLibraryItem(request: CreateLibraryItemRequest): Promise<LibraryItemResponse> {
+  async createLibraryItem(
+    request: bibliographyProto.CreateLibraryItemRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
     const createLibraryItemDto = {
       title: request.title,
-      authors: request.authors.map(author => ({
+      authors: request.authors.map((author) => ({
         firstName: author.firstName,
         lastName: author.lastName,
         middleName: author.middleName,
@@ -178,15 +30,18 @@ export class BibliographyGrpcController {
       language: request.language,
     };
 
-    const item = await this.libraryItemService.createLibraryItem(createLibraryItemDto);
+    const item =
+      await this.libraryItemService.createLibraryItem(createLibraryItemDto);
     return { item: this.mapLibraryItemToProto(item) };
   }
 
   @GrpcMethod('BibliographyService', 'CreateLibraryItemWithPdf')
-  async createLibraryItemWithPdf(request: CreateLibraryItemWithPdfRequest): Promise<LibraryItemResponse> {
+  async createLibraryItemWithPdf(
+    request: bibliographyProto.CreateLibraryItemWithPdfRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
     const createLibraryItemWithPdfDto = {
       title: request.title,
-      authors: request.authors.map(author => ({
+      authors: request.authors.map((author) => ({
         firstName: author.firstName,
         lastName: author.lastName,
         middleName: author.middleName,
@@ -206,12 +61,16 @@ export class BibliographyGrpcController {
       pageCount: request.pageCount,
     };
 
-    const item = await this.libraryItemService.createLibraryItemWithPdfBuffer(createLibraryItemWithPdfDto);
+    const item = await this.libraryItemService.createLibraryItemWithPdfBuffer(
+      createLibraryItemWithPdfDto,
+    );
     return { item: this.mapLibraryItemToProto(item) };
   }
 
   @GrpcMethod('BibliographyService', 'GetLibraryItem')
-  async getLibraryItem(request: GetLibraryItemRequest): Promise<LibraryItemResponse> {
+  async getLibraryItem(
+    request: bibliographyProto.GetLibraryItemRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
     const item = await this.libraryItemService.getLibraryItem(request.id);
     if (!item) {
       throw new Error(`Library item with ID ${request.id} not found`);
@@ -220,17 +79,21 @@ export class BibliographyGrpcController {
   }
 
   @GrpcMethod('BibliographyService', 'SearchLibraryItems')
-  async searchLibraryItems(request: SearchLibraryItemsRequest): Promise<SearchLibraryItemsResponse> {
+  async searchLibraryItems(
+    request: bibliographyProto.SearchLibraryItemsRequest,
+  ): Promise<bibliographyProto.SearchLibraryItemsResponse> {
     const items = await this.libraryItemService.searchLibraryItems(
       request.query,
       request.tags,
       request.collections,
     );
-    return { items: items.map(item => this.mapLibraryItemToProto(item)) };
+    return { items: items.map((item) => this.mapLibraryItemToProto(item)) };
   }
 
   @GrpcMethod('BibliographyService', 'DeleteLibraryItem')
-  async deleteLibraryItem(request: DeleteLibraryItemRequest): Promise<DeleteLibraryItemResponse> {
+  async deleteLibraryItem(
+    request: bibliographyProto.DeleteLibraryItemRequest,
+  ): Promise<bibliographyProto.DeleteLibraryItemResponse> {
     const deleted = await this.libraryItemService.deleteLibraryItem(request.id);
     if (!deleted) {
       throw new Error(`Library item with ID ${request.id} not found`);
@@ -239,10 +102,12 @@ export class BibliographyGrpcController {
   }
 
   @GrpcMethod('BibliographyService', 'UpdateLibraryItemMetadata')
-  async updateLibraryItemMetadata(request: UpdateLibraryItemMetadataRequest): Promise<LibraryItemResponse> {
+  async updateLibraryItemMetadata(
+    request: bibliographyProto.UpdateLibraryItemMetadataRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
     const updateMetadataDto = {
       title: request.title,
-      authors: request.authors?.map(author => ({
+      authors: request.authors?.map((author) => ({
         firstName: author.firstName,
         lastName: author.lastName,
         middleName: author.middleName,
@@ -258,7 +123,7 @@ export class BibliographyGrpcController {
       collections: request.collections,
       language: request.language,
       markdownContent: request.markdownContent,
-      archives: request.archives?.map(archive => ({
+      archives: request.archives?.map((archive) => ({
         fileType: archive.fileType as 'pdf',
         fileSize: archive.fileSize,
         fileHash: archive.fileHash,
@@ -269,18 +134,42 @@ export class BibliographyGrpcController {
       })),
     };
 
-    const item = await this.libraryItemService.updateLibraryItemMetadata(request.id, updateMetadataDto);
+    const item = await this.libraryItemService.updateLibraryItemMetadata(
+      request.id,
+      updateMetadataDto,
+    );
     return { item: this.mapLibraryItemToProto(item) };
   }
 
   @GrpcMethod('BibliographyService', 'UpdateLibraryItemMarkdown')
-  async updateLibraryItemMarkdown(request: UpdateLibraryItemMarkdownRequest): Promise<LibraryItemResponse> {
-    const item = await this.libraryItemService.updateLibraryItemMarkdown(request.id, request.markdownContent);
-    return { item: this.mapLibraryItemToProto(item) };
+  async updateLibraryItemMarkdown(
+    request: bibliographyProto.UpdateLibraryItemMarkdownRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
+    try {
+      const item = await this.libraryItemService.updateLibraryItemMarkdown(
+        request.id,
+        request.markdownContent,
+      );
+      console.debug(
+        `[DEBUG] Successfully updated item: ${JSON.stringify(item)}`,
+      );
+
+      const protoItem = this.mapLibraryItemToProto(item);
+      console.debug(
+        `[DEBUG] Mapped to proto item: ${JSON.stringify(protoItem)}`,
+      );
+
+      return { item: protoItem };
+    } catch (error) {
+      console.error(`[ERROR] Failed to update library item markdown:`, error);
+      throw error;
+    }
   }
 
   @GrpcMethod('BibliographyService', 'GetPdfDownloadUrl')
-  async getPdfDownloadUrl(request: GetPdfDownloadUrlRequest): Promise<PdfDownloadUrlResponse> {
+  async getPdfDownloadUrl(
+    request: bibliographyProto.GetPdfDownloadUrlRequest,
+  ): Promise<bibliographyProto.PdfDownloadUrlResponse> {
     const result = await this.libraryItemService.getPdfDownloadUrl(request.id);
     return {
       downloadUrl: result.downloadUrl,
@@ -289,13 +178,16 @@ export class BibliographyGrpcController {
   }
 
   @GrpcMethod('BibliographyService', 'GetPdfUploadUrl')
-  async getPdfUploadUrl(request: GetPdfUploadUrlRequest): Promise<PdfUploadUrlResponse> {
+  async getPdfUploadUrl(
+    request: bibliographyProto.GetPdfUploadUrlRequest,
+  ): Promise<bibliographyProto.PdfUploadUrlResponse> {
     const pdfUploadUrlDto = {
       fileName: request.fileName,
       expiresIn: request.expiresIn,
     };
 
-    const result = await this.libraryItemService.getPdfUploadUrl(pdfUploadUrlDto);
+    const result =
+      await this.libraryItemService.getPdfUploadUrl(pdfUploadUrlDto);
     return {
       uploadUrl: result.uploadUrl,
       s3Key: result.s3Key,
@@ -304,7 +196,9 @@ export class BibliographyGrpcController {
   }
 
   @GrpcMethod('BibliographyService', 'AddArchiveToItem')
-  async addArchiveToItem(request: AddArchiveToItemRequest): Promise<LibraryItemResponse> {
+  async addArchiveToItem(
+    request: bibliographyProto.AddArchiveToItemRequest,
+  ): Promise<bibliographyProto.LibraryItemResponse> {
     const addItemArchiveDto = {
       fileType: request.fileType as 'pdf',
       fileSize: request.fileSize,
@@ -314,12 +208,32 @@ export class BibliographyGrpcController {
       wordCount: request.wordCount,
     };
 
-    const item = await this.libraryItemService.addArchiveToItem(request.id, addItemArchiveDto);
+    const item = await this.libraryItemService.addArchiveToItem(
+      request.id,
+      addItemArchiveDto,
+    );
     return { item: this.mapLibraryItemToProto(item) };
   }
 
-  private mapLibraryItemToProto(item: any): LibraryItem {
-    return {
+  private mapLibraryItemToProto(item: any): bibliographyProto.LibraryItem {
+    console.debug(
+      `[DEBUG] Mapping item to proto: ${JSON.stringify(item.metadata)}`,
+    );
+
+    // Helper function to handle date conversion (handles both Date objects and ISO strings)
+    const toISOString = (
+      date: Date | string | undefined,
+      fallback: Date = new Date(),
+    ): string => {
+      if (!date) return fallback.toISOString();
+      if (date instanceof Date) {
+        return date.toISOString();
+      }
+      // If it's already a string, assume it's in ISO format
+      return typeof date === 'string' ? date : fallback.toISOString();
+    };
+
+    const protoItem = {
       id: item.getItemId(),
       title: item.metadata.title,
       authors: item.metadata.authors.map((author: any) => ({
@@ -336,20 +250,25 @@ export class BibliographyGrpcController {
       tags: item.metadata.tags,
       notes: item.metadata.notes,
       collections: item.metadata.collections,
-      dateAdded: item.metadata.dateAdded.toISOString(),
-      dateModified: item.metadata.dateModified.toISOString(),
+      dateAdded: toISOString(item.metadata.dateAdded),
+      dateModified: toISOString(item.metadata.dateModified),
       language: item.metadata.language,
       markdownContent: item.metadata.markdownContent,
-      markdownUpdatedDate: item.metadata.markdownUpdatedDate?.toISOString(),
+      markdownUpdatedDate: item.metadata.markdownUpdatedDate
+        ? toISOString(item.metadata.markdownUpdatedDate)
+        : undefined,
       archives: item.metadata.archives.map((archive: any) => ({
         fileType: archive.fileType,
         fileSize: archive.fileSize,
         fileHash: archive.fileHash,
-        addDate: archive.addDate.toISOString(),
+        addDate: toISOString(archive.addDate),
         s3Key: archive.s3Key,
         pageCount: archive.pageCount,
         wordCount: archive.wordCount,
       })),
     };
+
+    console.debug(`[DEBUG] Mapped proto item: ${JSON.stringify(protoItem)}`);
+    return protoItem;
   }
 }

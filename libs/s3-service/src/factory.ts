@@ -102,20 +102,20 @@ export function createS3ServiceFromEnv(): S3Service {
  */
 export function createS3Service(config: S3ServiceConfig): S3Service {
   const configKey = generateConfigKey(config);
-  
+
   // Check if we already have an instance for this configuration
   const cachedInstance = s3ServiceCache.get(configKey);
   if (cachedInstance) {
     return cachedInstance;
   }
-  
+
   // Manage cache size before adding new instance
   manageCacheSize(configKey);
-  
+
   // Create new instance and cache it
   const newInstance = new S3Service(config);
   s3ServiceCache.set(configKey, newInstance);
-  
+
   return newInstance;
 }
 
@@ -157,7 +157,7 @@ export function getS3ServiceCacheStats(): {
  * @param configs - Array of common configurations to preload
  */
 export function preloadS3ServiceCache(configs: S3ServiceConfig[]): void {
-  configs.forEach(config => {
+  configs.forEach((config) => {
     const configKey = generateConfigKey(config);
     if (!s3ServiceCache.has(configKey)) {
       manageCacheSize(configKey);

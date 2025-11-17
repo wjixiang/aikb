@@ -7,8 +7,6 @@ import { rabbitMQQueueConfigs } from '../libs/rabbitmq/src/rabbitmq.config';
 // Load environment variables
 config();
 
-
-
 /**
  * Clear all messages from all RabbitMQ queues
  */
@@ -56,9 +54,13 @@ async function clearAllQueues(): Promise<void> {
         const messageCount = queueInfo.messageCount;
 
         if (messageCount > 0) {
-          console.info(`正在清除队列 '${queueName}' (${messageCount} 条消息)...`);
+          console.info(
+            `正在清除队列 '${queueName}' (${messageCount} 条消息)...`,
+          );
           await channel!.purgeQueue(queueName);
-          console.info(`✅ 已清除队列 '${queueName}' 的 ${messageCount} 条消息`);
+          console.info(
+            `✅ 已清除队列 '${queueName}' 的 ${messageCount} 条消息`,
+          );
           totalCleared += messageCount;
         } else {
           console.info(`队列 '${queueName}' 已经是空的`);
@@ -77,11 +79,7 @@ async function clearAllQueues(): Promise<void> {
     console.info('\n检查是否有额外的队列...');
     try {
       // Get all queues from the management API or by trying common patterns
-      const additionalQueuePatterns = [
-        'test-',
-        'temp-',
-        'debug-',
-      ];
+      const additionalQueuePatterns = ['test-', 'temp-', 'debug-'];
 
       for (const pattern of additionalQueuePatterns) {
         // This is a simple approach - in a real implementation you might want to use
@@ -100,7 +98,6 @@ async function clearAllQueues(): Promise<void> {
       console.warn(`⚠️ 遇到 ${totalErrors} 个错误`);
     }
     console.info('🎉 所有队列清除操作已完成！');
-
   } catch (error) {
     console.error('❌ 清除队列过程中发生错误:', error);
     throw error;
@@ -151,9 +148,13 @@ async function clearSpecificQueues(queueNames: string[]): Promise<void> {
         const messageCount = queueInfo.messageCount;
 
         if (messageCount > 0) {
-          console.info(`正在清除队列 '${queueName}' (${messageCount} 条消息)...`);
+          console.info(
+            `正在清除队列 '${queueName}' (${messageCount} 条消息)...`,
+          );
           await channel!.purgeQueue(queueName);
-          console.info(`✅ 已清除队列 '${queueName}' 的 ${messageCount} 条消息`);
+          console.info(
+            `✅ 已清除队列 '${queueName}' 的 ${messageCount} 条消息`,
+          );
           totalCleared += messageCount;
         } else {
           console.info(`队列 '${queueName}' 已经是空的`);
@@ -169,7 +170,6 @@ async function clearSpecificQueues(queueNames: string[]): Promise<void> {
     }
 
     console.info(`✅ 总共清除了 ${totalCleared} 条消息`);
-
   } finally {
     if (channel) await channel.close();
     if (connection) await connection.close();
@@ -214,18 +214,18 @@ RabbitMQ 队列清除脚本
 // Main execution
 async function main() {
   const args = process.argv.slice(2);
-  
+
   // Handle help and version flags
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     process.exit(0);
   }
-  
+
   if (args.includes('--version') || args.includes('-v')) {
     console.log('RabbitMQ Queue Clearer v1.0.0');
     process.exit(0);
   }
-  
+
   try {
     if (args.length > 0) {
       // Clear specific queues if provided as arguments
@@ -234,7 +234,7 @@ async function main() {
       // Clear all configured queues
       await clearAllQueues();
     }
-    
+
     console.info('🎉 脚本执行成功完成！');
     process.exit(0);
   } catch (error) {

@@ -19,7 +19,12 @@ import createLoggerWithPrefix from '@aikb/log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { PdfSpliter } from '@aikb/pdf-splitter';
-import { uploadFile, getPdfDownloadUrl, deleteFromS3, type S3ServiceConfig } from '@aikb/s3-service';
+import {
+  uploadFile,
+  getPdfDownloadUrl,
+  deleteFromS3,
+  type S3ServiceConfig,
+} from '@aikb/s3-service';
 
 // Internal S3 configuration for this project
 const pdfAnalysisS3Config: S3ServiceConfig = {
@@ -39,14 +44,14 @@ async function uploadToS3(
   buffer: Buffer,
   fileName: string,
   contentType: string,
-  acl: string = 'private'
+  acl: string = 'private',
 ): Promise<string> {
   const result = await uploadFile(
     pdfAnalysisS3Config,
     fileName,
     buffer,
     contentType,
-    acl as any
+    acl as any,
   );
   return result.url;
 }

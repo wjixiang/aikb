@@ -30,7 +30,8 @@ export class LibraryItemService {
     @Inject('S3_SERVICE') private s3Service: S3Service,
   ) {
     // Initialize the storage and library
-    const elasticsearchUrl = process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
+    const elasticsearchUrl =
+      process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
     const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
     this.library = new Library(storage);
   }
@@ -252,8 +253,7 @@ export class LibraryItemService {
     this.logger.debug('producePdf2MarkdownRequest called with:', req);
     try {
       // Use @golevelup/nestjs-rabbitmq
-      this.amqpConnection.publish('library','item.pdf2md', req)
-
+      this.amqpConnection.publish('library', 'item.pdf2md', req);
     } catch (error) {
       this.logger.error('Error sending message to RabbitMQ:', error);
       throw error;
@@ -274,17 +274,26 @@ export class LibraryItemService {
     id: string,
     markdownContent: string,
   ): Promise<LibraryItem> {
+    console.debug(
+      `[DEBUG] updateLibraryItemMarkdown called with id: ${id}, markdownContent length: ${markdownContent.length}`,
+    );
     const item = await this.library.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
     }
+    console.debug(`[DEBUG] Found item: ${JSON.stringify(item.metadata)}`);
 
     // Update the markdown content
     const updatedMetadata = {
       ...item.metadata,
       markdownContent,
+      markdownUpdatedDate: new Date(),
       dateModified: new Date(),
     };
+
+    console.debug(
+      `[DEBUG] Updating metadata with: ${JSON.stringify(updatedMetadata)}`,
+    );
 
     // Update the metadata through the storage
     await this.library['storage'].updateMetadata(updatedMetadata);
@@ -294,6 +303,9 @@ export class LibraryItemService {
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
+    console.debug(
+      `[DEBUG] Updated item: ${JSON.stringify(updatedItem.metadata)}`,
+    );
     return updatedItem;
   }
 

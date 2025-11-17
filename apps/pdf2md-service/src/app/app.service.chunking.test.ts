@@ -132,7 +132,9 @@ describe('AppService - PDF Chunking Fixed Tests', () => {
 
     // Setup S3 mock
     vi.doMock('@aikb/s3-service', () => ({
-      uploadFile: vi.fn().mockResolvedValue({ url: 'https://mock-s3-url.com/file.pdf' }),
+      uploadFile: vi
+        .fn()
+        .mockResolvedValue({ url: 'https://mock-s3-url.com/file.pdf' }),
       uploadToS3: vi.fn().mockResolvedValue('https://mock-s3-url.com/file.pdf'),
     }));
 

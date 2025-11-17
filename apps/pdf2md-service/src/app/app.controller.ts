@@ -10,7 +10,7 @@ export class AppController {
   @RabbitRPC({
     exchange: 'library',
     routingKey: 'item.pdf2md',
-    queue: 'pdf2md-service-queue'
+    queue: 'pdf2md-service-queue',
   })
   handlePdf2MdRequest(data: Pdf2MArkdownDto) {
     console.log('Controller received pdf conversion request', data);

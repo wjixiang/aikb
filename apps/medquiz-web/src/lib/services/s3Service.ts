@@ -37,7 +37,7 @@ export async function uploadToS3(
       fileName,
       buffer,
       contentType,
-      'public-read'
+      'public-read',
     );
     return result.url;
   } catch (error) {

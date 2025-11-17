@@ -40,7 +40,7 @@ describe('uploadFile', () => {
     const mockService = {
       uploadToS3: vi.fn().mockResolvedValue(mockUploadResult),
     };
-    
+
     vi.mocked(createS3Service).mockReturnValue(mockService as any);
 
     const result = await uploadFile(
@@ -48,14 +48,18 @@ describe('uploadFile', () => {
       'test-key',
       mockBuffer,
       'text/plain',
-      'private'
+      'private',
     );
 
     expect(createS3Service).toHaveBeenCalledWith(mockS3Config);
-    expect(mockService.uploadToS3).toHaveBeenCalledWith(mockBuffer, 'test-key', {
-      contentType: 'text/plain',
-      acl: 'private',
-    });
+    expect(mockService.uploadToS3).toHaveBeenCalledWith(
+      mockBuffer,
+      'test-key',
+      {
+        contentType: 'text/plain',
+        acl: 'private',
+      },
+    );
     expect(result).toEqual(mockUploadResult);
   });
 
@@ -63,65 +67,61 @@ describe('uploadFile', () => {
     const mockService = {
       uploadToS3: vi.fn().mockResolvedValue(mockUploadResult),
     };
-    
+
     vi.mocked(createS3Service).mockReturnValue(mockService as any);
 
-    const result = await uploadFile(
-      mockS3Config,
-      'test-key',
-      mockBuffer
-    );
+    const result = await uploadFile(mockS3Config, 'test-key', mockBuffer);
 
     expect(createS3Service).toHaveBeenCalledWith(mockS3Config);
-    expect(mockService.uploadToS3).toHaveBeenCalledWith(mockBuffer, 'test-key', {
-      contentType: 'application/octet-stream',
-      acl: 'private',
-    });
+    expect(mockService.uploadToS3).toHaveBeenCalledWith(
+      mockBuffer,
+      'test-key',
+      {
+        contentType: 'application/octet-stream',
+        acl: 'private',
+      },
+    );
     expect(result).toEqual(mockUploadResult);
   });
 
   it('should throw error when s3Config is missing', async () => {
-    await expect(uploadFile(
-      null as any,
-      'test-key',
-      mockBuffer
-    )).rejects.toThrow('Missing required parameter: s3Config is required');
+    await expect(
+      uploadFile(null as any, 'test-key', mockBuffer),
+    ).rejects.toThrow('Missing required parameter: s3Config is required');
   });
 
   it('should throw error when s3Key is missing', async () => {
-    await expect(uploadFile(
-      mockS3Config,
-      '',
-      mockBuffer
-    )).rejects.toThrow('Missing required parameter: s3Key is required');
+    await expect(uploadFile(mockS3Config, '', mockBuffer)).rejects.toThrow(
+      'Missing required parameter: s3Key is required',
+    );
   });
 
   it('should throw error when buffer is missing', async () => {
-    await expect(uploadFile(
-      mockS3Config,
-      'test-key',
-      Buffer.alloc(0)
-    )).rejects.toThrow('Missing required parameter: buffer is required and cannot be empty');
+    await expect(
+      uploadFile(mockS3Config, 'test-key', Buffer.alloc(0)),
+    ).rejects.toThrow(
+      'Missing required parameter: buffer is required and cannot be empty',
+    );
   });
 
   it('should work with minimal parameters using custom config', async () => {
     const mockService = {
       uploadToS3: vi.fn().mockResolvedValue(mockUploadResult),
     };
-    
+
     vi.mocked(createS3Service).mockReturnValue(mockService as any);
 
-    const result = await uploadFile(
-      mockS3Config,
-      'test-key',
-      mockBuffer
-    );
+    const result = await uploadFile(mockS3Config, 'test-key', mockBuffer);
 
     expect(createS3Service).toHaveBeenCalledWith(mockS3Config);
-    expect(mockService.uploadToS3).toHaveBeenCalledWith(mockBuffer, 'test-key', {
-      contentType: 'application/octet-stream',
-      acl: 'private',
-    });
+    expect(mockService.uploadToS3).toHaveBeenCalledWith(
+      mockBuffer,
+      'test-key',
+      {
+        contentType: 'application/octet-stream',
+        acl: 'private',
+      },
+    );
     expect(result).toEqual(mockUploadResult);
   });
 });

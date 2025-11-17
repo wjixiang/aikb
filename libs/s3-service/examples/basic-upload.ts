@@ -177,7 +177,7 @@ async function uploadFileExample() {
       'hello-uploadfile.txt',
       buffer,
       'text/plain',
-      'private'
+      'private',
     );
 
     console.log('Upload successful!');

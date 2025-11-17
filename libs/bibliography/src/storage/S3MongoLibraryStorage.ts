@@ -71,7 +71,7 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
 
     // Lazy import s3-service to avoid eager initialization
     const { uploadFile } = await import('@aikb/s3-service');
-    
+
     // Create S3 config from environment variables
     const s3Config = {
       accessKeyId: process.env['OSS_ACCESS_KEY_ID']!,
@@ -80,8 +80,14 @@ export class S3MongoLibraryStorage implements ILibraryStorage {
       bucketName: process.env['PDF_OSS_BUCKET_NAME']!,
       endpoint: process.env['S3_ENDPOINT']!,
     };
-    
-    const result = await uploadFile(s3Config, s3Key, pdfData, 'application/pdf', 'private');
+
+    const result = await uploadFile(
+      s3Config,
+      s3Key,
+      pdfData,
+      'application/pdf',
+      'private',
+    );
 
     const pdfInfo: AbstractPdf = {
       id: IdUtils.generateId(),
