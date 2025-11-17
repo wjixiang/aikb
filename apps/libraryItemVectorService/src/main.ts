@@ -6,23 +6,24 @@ import { Transport } from '@nestjs/microservices';
 async function bootstrap() {
   Logger.log('Starting libraryItemVectorService microservice bootstrap...');
 
+  const grpcPort = process.env.GRPC_PORT || 50051;
   const app = await NestFactory.createMicroservice(AppModule, {
-    name: 'libraryItemVectorService',
-    transport: Transport.RMQ,
+    transport: Transport.GRPC,
     options: {
-      urls: [
-        `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
-      ],
-      queue: 'libraryItemVectorServiceQueue',
+      package: 'bibliography',
+      protoPath: '/workspace/protos/bibliography.proto',
+      url: `0.0.0.0:${grpcPort}`,
     },
   });
+
 
   Logger.log('Microservice created, starting to listen...');
   await app.listen();
 
-  Logger.log(
-    `🚀 RMQ: amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
-  );
+  // Logger.log(
+  //   `🚀 RMQ: amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
+  // );
 }
 
 bootstrap();
+// /workspace/protos/libraryItemVector.proto

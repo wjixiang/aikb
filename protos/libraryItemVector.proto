@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package library_item_vector;
+
+// Library Item Vector service definition
+service LibraryItemVectorService {
+  // Generate embedding for a library item
+  rpc GenerateEmbedding(GenerateEmbeddingRequest) returns (GenerateEmbeddingResponse);
+  
+  // Store embedding for a library item
+  rpc StoreEmbedding(StoreEmbeddingRequest) returns (StoreEmbeddingResponse);
+  
+  // Search for similar items using vector similarity
+  rpc SearchSimilarItems(SearchSimilarItemsRequest) returns (SearchSimilarItemsResponse);
+  
+  // Delete embedding for a library item
+  rpc DeleteEmbedding(DeleteEmbeddingRequest) returns (DeleteEmbeddingResponse);
+  
+  // Update embedding for a library item
+  rpc UpdateEmbedding(UpdateEmbeddingRequest) returns (UpdateEmbeddingResponse);
+  
+  // Get embedding for a library item
+  rpc GetEmbedding(GetEmbeddingRequest) returns (GetEmbeddingResponse);
+  
+  // Batch generate embeddings for multiple library items
+  rpc BatchGenerateEmbeddings(BatchGenerateEmbeddingsRequest) returns (BatchGenerateEmbeddingsResponse);
+}
+
+// Vector data representation
+message VectorData {
+  repeated float values = 1;
+  int32 dimensions = 2;
+  string model_name = 3;
+}
+
+// Embedding information
+message Embedding {
+  string item_id = 1;
+  VectorData vector = 2;
+  string content_type = 3; // e.g., "title", "abstract", "full_content"
+  string created_at = 4;
+  string updated_at = 5;
+}
+
+// Search result with similarity score
+message SimilarItemResult {
+  string item_id = 1;
+  float similarity_score = 2;
+  string title = 3;
+  repeated string authors = 4;
+  string abstract = 5;
+}
+
+// Request and Response messages
+
+message GenerateEmbeddingRequest {
+  string item_id = 1;
+  string content = 2;
+  string content_type = 3;
+  optional string model_name = 4;
+}
+
+message GenerateEmbeddingResponse {
+  bool success = 1;
+  string message = 2;
+  VectorData embedding = 3;
+}
+
+message StoreEmbeddingRequest {
+  string item_id = 1;
+  VectorData vector = 2;
+  string content_type = 3;
+  optional string model_name = 4;
+}
+
+message StoreEmbeddingResponse {
+  bool success = 1;
+  string message = 2;
+  string embedding_id = 3;
+}
+
+message SearchSimilarItemsRequest {
+  string item_id = 1;
+  optional VectorData query_vector = 2;
+  optional string content_type = 3;
+  optional int32 limit = 4;
+  optional float threshold = 5;
+  repeated string filters = 6; // e.g., tags, collections
+}
+
+message SearchSimilarItemsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated SimilarItemResult results = 3;
+  int32 total_count = 4;
+}
+
+message DeleteEmbeddingRequest {
+  string item_id = 1;
+  optional string content_type = 2;
+}
+
+message DeleteEmbeddingResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateEmbeddingRequest {
+  string item_id = 1;
+  VectorData vector = 2;
+  string content_type = 3;
+  optional string model_name = 4;
+}
+
+message UpdateEmbeddingResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetEmbeddingRequest {
+  string item_id = 1;
+  optional string content_type = 2;
+}
+
+message GetEmbeddingResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Embedding embeddings = 3;
+}
+
+message BatchGenerateEmbeddingsRequest {
+  repeated GenerateEmbeddingRequest requests = 1;
+}
+
+message BatchGenerateEmbeddingsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated GenerateEmbeddingResponse results = 3;
+  int32 success_count = 4;
+  int32 failure_count = 5;
+}

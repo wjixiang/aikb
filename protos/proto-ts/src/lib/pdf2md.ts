@@ -5,10 +5,10 @@
 // source: pdf2md.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'pdf2md';
+export const protobufPackage = "pdf2md";
 
 /** PDF Chunk information */
 export interface PdfChunk {
@@ -42,16 +42,14 @@ export interface Pdf2MarkdownResponse {
   chunks: PdfChunk[];
 }
 
-export const PDF2MD_PACKAGE_NAME = 'pdf2md';
+export const PDF2MD_PACKAGE_NAME = "pdf2md";
 
 /** PDF2MD service definition */
 
 export interface Pdf2MdServiceClient {
   /** Convert PDF to Markdown */
 
-  convertPdfToMarkdown(
-    request: Pdf2MarkdownRequest,
-  ): Observable<Pdf2MarkdownResponse>;
+  convertPdfToMarkdown(request: Pdf2MarkdownRequest): Observable<Pdf2MarkdownResponse>;
 }
 
 /** PDF2MD service definition */
@@ -61,39 +59,22 @@ export interface Pdf2MdServiceController {
 
   convertPdfToMarkdown(
     request: Pdf2MarkdownRequest,
-  ):
-    | Promise<Pdf2MarkdownResponse>
-    | Observable<Pdf2MarkdownResponse>
-    | Pdf2MarkdownResponse;
+  ): Promise<Pdf2MarkdownResponse> | Observable<Pdf2MarkdownResponse> | Pdf2MarkdownResponse;
 }
 
 export function Pdf2MdServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ['convertPdfToMarkdown'];
+    const grpcMethods: string[] = ["convertPdfToMarkdown"];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcMethod('Pdf2MdService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("Pdf2MdService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcStreamMethod('Pdf2MdService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("Pdf2MdService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const PDF2_MD_SERVICE_NAME = 'Pdf2MdService';
+export const PDF2_MD_SERVICE_NAME = "Pdf2MdService";
