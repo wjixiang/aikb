@@ -16,67 +16,88 @@ execSync(
 );
 
 // Generate main index file for proto exports (will be updated later with client exports)
-const protoExports = protos.map((e) => `export * as ${e.replace('.proto', '')}Proto from './lib/${e.replace('.proto', '')}.js'`);
+const protoExports = protos.map(
+  (e) =>
+    `export * as ${e.replace('.proto', '')}Proto from './lib/${e.replace('.proto', '')}.js'`,
+);
 
 // Function to parse proto file and extract service information
-function parseProtoService(protoFileName: string): { serviceName: string; packageName: string; methods: { name: string; inputType: string; outputType: string }[] } | null {
+function parseProtoService(
+  protoFileName: string,
+): {
+  serviceName: string;
+  packageName: string;
+  methods: { name: string; inputType: string; outputType: string }[];
+} | null {
   const protoContent = readFileSync(join(PROTO_DIR, protoFileName), 'utf-8');
-  
+
   // Extract package name
   const packageMatch = protoContent.match(/package\s+([^;]+);/);
   const packageName = packageMatch ? packageMatch[1].trim() : '';
-  
+
   // Extract service definition
   const serviceMatch = protoContent.match(/service\s+(\w+)\s*{([^}]+)}/s);
   if (!serviceMatch) {
     console.warn(`No service found in ${protoFileName}`);
     return null;
   }
-  
+
   const serviceName = serviceMatch[1];
   const serviceBody = serviceMatch[2];
-  
+
   // Extract RPC methods
-  const rpcMatches = serviceBody.matchAll(/rpc\s+(\w+)\s*\(([^)]+)\)\s*returns\s*\(([^)]+)\)/g);
+  const rpcMatches = serviceBody.matchAll(
+    /rpc\s+(\w+)\s*\(([^)]+)\)\s*returns\s*\(([^)]+)\)/g,
+  );
   const methods: { name: string; inputType: string; outputType: string }[] = [];
-  
+
   for (const match of rpcMatches) {
     methods.push({
       name: match[1],
       inputType: match[2].trim(),
-      outputType: match[3].trim()
+      outputType: match[3].trim(),
     });
   }
-  
+
   return {
     serviceName,
     packageName,
-    methods
+    methods,
   };
 }
 
 // Function to generate gRPC client class
-function generateGrpcClient(protoFileName: string, serviceInfo: { serviceName: string; packageName: string; methods: { name: string; inputType: string; outputType: string }[] }): string {
+function generateGrpcClient(
+  protoFileName: string,
+  serviceInfo: {
+    serviceName: string;
+    packageName: string;
+    methods: { name: string; inputType: string; outputType: string }[];
+  },
+): string {
   const protoName = protoFileName.replace('.proto', '');
   const className = `${protoName.charAt(0).toUpperCase() + protoName.slice(1)}GrpcClient`;
   const serviceName = serviceInfo.serviceName;
   const packageName = serviceInfo.packageName;
   const protoNameCamelCase = protoName;
-  
+
   // Generate method implementations
-  const methodImplementations = serviceInfo.methods.map(method => {
-    const methodName = method.name.charAt(0).toLowerCase() + method.name.slice(1);
-    const inputType = `${protoNameCamelCase}Proto.${method.inputType}`;
-    const outputType = `${protoNameCamelCase}Proto.${method.outputType}`;
-    
-    return `  ${methodName}(
+  const methodImplementations = serviceInfo.methods
+    .map((method) => {
+      const methodName =
+        method.name.charAt(0).toLowerCase() + method.name.slice(1);
+      const inputType = `${protoNameCamelCase}Proto.${method.inputType}`;
+      const outputType = `${protoNameCamelCase}Proto.${method.outputType}`;
+
+      return `  ${methodName}(
     request: ${inputType},
   ): Observable<${outputType}> {
     return this.${serviceName.charAt(0).toLowerCase() + serviceName.slice(1)}Service
       .${methodName}(request);
   }`;
-  }).join('\n\n');
-  
+    })
+    .join('\n\n');
+
   return `import { Client, Transport, type ClientGrpc } from '@nestjs/microservices';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
@@ -116,10 +137,10 @@ for (const proto of protos) {
     const clientCode = generateGrpcClient(proto, serviceInfo);
     const clientFileName = proto.replace('.proto', '.grpc.client.ts');
     const clientPath = join(CLIENTS_DIR, clientFileName);
-    
+
     writeFileSync(clientPath, clientCode);
     console.log(`Generated gRPC client: ${clientPath}`);
-    
+
     const exportName = proto.replace('.proto', '');
     clientExports.push(`export * from './clients/${exportName}.grpc.client';`);
   }
@@ -128,7 +149,7 @@ for (const proto of protos) {
 // Generate main index file with both proto and client exports
 writeFileSync(
   '/workspace/protos/proto-ts/src/index.ts',
-  [...protoExports, ...clientExports].join('\n')
+  [...protoExports, ...clientExports].join('\n'),
 );
 
 console.log('Generated gRPC clients index file');

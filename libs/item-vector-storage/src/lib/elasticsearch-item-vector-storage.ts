@@ -620,6 +620,132 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     }
   }
 
+  async listChunkEmbedGroupInfo(
+    itemId?: string,
+    pageSize: number = 10,
+    pageToken?: string,
+    filter?: string,
+    orderBy?: string,
+  ): Promise<{
+    groups: ChunkEmbedGroupMetadata[];
+    nextPageToken?: string;
+    totalSize: number;
+  }> {
+    try {
+      // Build the query
+      const query: any = {
+        query: {
+          match_all: {},
+        },
+        size: pageSize,
+        sort: [],
+      };
+
+      // Add item ID filter if provided
+      if (itemId) {
+        query.query = {
+          term: {
+            itemId: itemId,
+          },
+        };
+      }
+
+      // Add filter if provided
+      if (filter) {
+        const existingQuery = query.query;
+        query.query = {
+          bool: {
+            must: [existingQuery],
+            should: [
+              {
+                match: {
+                  name: {
+                    query: filter,
+                    boost: 2.0,
+                  },
+                },
+              },
+              {
+                match: {
+                  description: filter,
+                },
+              },
+              {
+                match: {
+                  tags: filter,
+                },
+              },
+            ],
+            minimum_should_match: 1,
+          },
+        };
+      }
+
+      // Add sorting
+      if (orderBy) {
+        const [field, direction] = orderBy.split(' ');
+        const sortField = field === 'name' ? 'name.keyword' : field;
+        query.sort.push({
+          [sortField]: {
+            order: direction?.toLowerCase() === 'desc' ? 'desc' : 'asc',
+          },
+        });
+      } else {
+        // Default sort by createdAt descending
+        query.sort.push({
+          createdAt: {
+            order: 'desc',
+          },
+        });
+      }
+
+      // Add pagination
+      if (pageToken) {
+        query.search_after = JSON.parse(Buffer.from(pageToken, 'base64').toString());
+      }
+
+      const result = await this.client.search({
+        index: this.groupsIndexName,
+        body: query,
+      } as any);
+
+      const hits = result.hits.hits;
+      const groups = hits.map((hit: any) => {
+        const { _source } = hit;
+        return {
+          ..._source,
+          createdAt: new Date(_source.createdAt),
+          updatedAt: new Date(_source.updatedAt),
+        } as ChunkEmbedGroupMetadata;
+      });
+
+      // Get total count
+      const countResult = await this.client.count({
+        index: this.groupsIndexName,
+        body: {
+          query: query.query,
+        },
+      } as any);
+
+      // Generate next page token if there are more results
+      let nextPageToken;
+      if (hits.length === pageSize && hits.length > 0) {
+        const lastHit = hits[hits.length - 1];
+        const sortValues = lastHit.sort;
+        nextPageToken = Buffer.from(JSON.stringify(sortValues)).toString('base64');
+      }
+
+      return {
+        groups,
+        nextPageToken,
+        totalSize: countResult.count,
+      };
+    } catch (error) {
+      this.logger.error('Failed to list chunk embedding groups:', error);
+      throw error;
+    }
+  }
+
   /**
    * Helper method to get embedding for text
    * This should be implemented based on your embedding service

@@ -1,4 +1,4 @@
-import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-storage';
+import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-storage.js';
 
 describe('ElasticsearchItemVectorStorage', () => {
   let storage: ElasticsearchItemVectorStorage;
@@ -68,6 +68,12 @@ describe('ElasticsearchItemVectorStorage', () => {
   describe('deleteChunkEmbedGroupById', () => {
     it('should have a deleteChunkEmbedGroupById method', () => {
       expect(typeof storage.deleteChunkEmbedGroupById).toBe('function');
+    });
+  });
+
+  describe('listChunkEmbedGroupInfo', () => {
+    it('should have a listChunkEmbedGroupInfo method', () => {
+      expect(typeof storage.listChunkEmbedGroupInfo).toBe('function');
     });
   });
 });

@@ -6,6 +6,7 @@ package libraryItemVector;
 service LibraryItemVectorService {
   // Create a new chunk embedding group
   rpc CreateChunkEmbedGroup(CreateChunkEmbedGroupRequest) returns (CreateChunkEmbedGroupResponse);
+  rpc ListChunkEmbedGroupMetadata(ListItemChunkEmbedGroupMetadataRequest) returns (ListItemChunkEmbedGroupMetadataResponse);
 }
 
 // Chunking configuration
@@ -52,4 +53,18 @@ message ChunkEmbedGroupMetadata {
   int64 updated_at = 9;
   string created_by = 10;
   repeated string tags = 11;
+}
+
+message ListItemChunkEmbedGroupMetadataRequest {
+  string id = 1; // ID of target item
+  int32 page_size = 2; // Pagination
+  string page_token = 3;
+  string filter = 4;
+  string order_by = 5;
+}
+
+message ListItemChunkEmbedGroupMetadataResponse {
+  repeated ChunkEmbedGroupMetadata groups = 1;  
+  string next_page_token = 2;                   
+  int32 total_size = 3;                         
 }

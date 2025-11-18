@@ -109,4 +109,15 @@ export interface IItemVectorStorage {
     deletedGroupId: string;
     deletedChunkNum: number;
   }>;
+  listChunkEmbedGroupInfo: (
+    itemId?: string,
+    pageSize?: number,
+    pageToken?: string,
+    filter?: string,
+    orderBy?: string,
+  ) => Promise<{
+    groups: ChunkEmbedGroupMetadata[];
+    nextPageToken?: string;
+    totalSize: number;
+  }>;
 }

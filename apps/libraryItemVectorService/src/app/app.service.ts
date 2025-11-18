@@ -48,8 +48,8 @@ export class AppService {
           'default') as unknown as OnnxModel;
         break;
       default:
-        provider = EmbeddingProvider.OPENAI;
-        model = OpenAIModel.TEXT_EMBEDDING_ADA_002;
+        provider = EmbeddingProvider.ALIBABA;
+        model = AlibabaModel.TEXT_EMBEDDING_V3;
     }
 
     const embeddingConfig = {
@@ -100,6 +100,48 @@ export class AppService {
       updatedAt: createdGroup.updatedAt.getTime(),
       createdBy: createdGroup.createdBy || '',
       tags: createdGroup.tags || [],
+    };
+  }
+
+  async listChunkEmbedGroupMetadata(
+    request: libraryItemVectorProto.ListItemChunkEmbedGroupMetadataRequest,
+  ): Promise<libraryItemVectorProto.ListItemChunkEmbedGroupMetadataResponse> {
+    // Get the list of chunk embed groups from storage
+    const result = await this.itemVectorStorage.listChunkEmbedGroupInfo(
+      request.id, // itemId
+      request.pageSize || 10,
+      request.pageToken,
+      request.filter,
+      request.orderBy,
+    );
+
+    // Convert internal types to protobuf types
+    const groups = result.groups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      description: group.description || '',
+      chunkingConfig: {
+        strategy: group.chunkingConfig.strategy || 'paragraph',
+        parameters: {}, // ChunkingConfig doesn't have parameters in the internal type
+      },
+      embeddingConfig: {
+        provider: group.embeddingConfig.provider,
+        model: group.embeddingConfig.model as string,
+        dimension: group.embeddingConfig.dimension,
+        parameters: {}, // EmbeddingConfig doesn't have parameters in the internal type
+      },
+      isDefault: group.isDefault,
+      isActive: group.isActive,
+      createdAt: group.createdAt.getTime(),
+      updatedAt: group.updatedAt.getTime(),
+      createdBy: group.createdBy || '',
+      tags: group.tags || [],
+    }));
+
+    return {
+      groups,
+      nextPageToken: result.nextPageToken || '',
+      totalSize: result.totalSize,
     };
   }
 }

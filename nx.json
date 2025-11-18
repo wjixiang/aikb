@@ -92,6 +92,13 @@
         "targetName": "test"
       },
       "exclude": ["apps/libraryItemVectorService-e2e/**/*"]
+    },
+    {
+      "plugin": "@nx/docker",
+      "options": {
+        "buildTarget": "docker:build",
+        "runTarget": "docker:run"
+      }
     }
   ],
   "targetDefaults": {

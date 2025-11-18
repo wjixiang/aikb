@@ -1,6 +1,5 @@
 // Import required types for the remaining interfaces
 
-
 export interface ChunkSearchFilter {
   query?: string;
   itemId?: string;

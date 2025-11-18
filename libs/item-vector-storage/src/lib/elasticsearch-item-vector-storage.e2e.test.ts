@@ -4,11 +4,7 @@ import {
   ItemChunk,
   ChunkEmbedGroupMetadata,
 } from './types';
-import {
-  EmbeddingConfig,
-  EmbeddingProvider,
-  OpenAIModel,
-} from 'embedding';
+import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from 'embedding';
 import { ChunkingStrategy } from '@aikb/chunking';
 
 describe('ElasticsearchItemVectorStorage E2E Tests', () => {

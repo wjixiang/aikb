@@ -72,6 +72,22 @@ export interface ChunkEmbedGroupMetadata {
   tags: string[];
 }
 
+export interface ListItemChunkEmbedGroupMetadataRequest {
+  /** ID of target item */
+  id: string;
+  /** Pagination */
+  pageSize: number;
+  pageToken: string;
+  filter: string;
+  orderBy: string;
+}
+
+export interface ListItemChunkEmbedGroupMetadataResponse {
+  groups: ChunkEmbedGroupMetadata[];
+  nextPageToken: string;
+  totalSize: number;
+}
+
 export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */
@@ -80,6 +96,10 @@ export interface LibraryItemVectorServiceClient {
   /** Create a new chunk embedding group */
 
   createChunkEmbedGroup(request: CreateChunkEmbedGroupRequest): Observable<CreateChunkEmbedGroupResponse>;
+
+  listChunkEmbedGroupMetadata(
+    request: ListItemChunkEmbedGroupMetadataRequest,
+  ): Observable<ListItemChunkEmbedGroupMetadataResponse>;
 }
 
 /** Library Item Vector service definition */
@@ -90,11 +110,18 @@ export interface LibraryItemVectorServiceController {
   createChunkEmbedGroup(
     request: CreateChunkEmbedGroupRequest,
   ): Promise<CreateChunkEmbedGroupResponse> | Observable<CreateChunkEmbedGroupResponse> | CreateChunkEmbedGroupResponse;
+
+  listChunkEmbedGroupMetadata(
+    request: ListItemChunkEmbedGroupMetadataRequest,
+  ):
+    | Promise<ListItemChunkEmbedGroupMetadataResponse>
+    | Observable<ListItemChunkEmbedGroupMetadataResponse>
+    | ListItemChunkEmbedGroupMetadataResponse;
 }
 
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createChunkEmbedGroup"];
+    const grpcMethods: string[] = ["createChunkEmbedGroup", "listChunkEmbedGroupMetadata"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);

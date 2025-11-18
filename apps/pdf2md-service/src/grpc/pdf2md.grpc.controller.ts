@@ -29,13 +29,14 @@ export class Pdf2MdGrpcController {
       chunkCount: result.chunkCount,
       chunkSize: result.chunkSize,
       markdownContent: result.markdownContent,
-      chunks: result.chunks?.map(chunk => ({
-        chunkIndex: chunk.chunkIndex,
-        startPage: chunk.startPage,
-        endPage: chunk.endPage,
-        s3Url: chunk.s3Url,
-        fileName: chunk.fileName,
-      })) || [],
+      chunks:
+        result.chunks?.map((chunk) => ({
+          chunkIndex: chunk.chunkIndex,
+          startPage: chunk.startPage,
+          endPage: chunk.endPage,
+          s3Url: chunk.s3Url,
+          fileName: chunk.fileName,
+        })) || [],
     };
   }
 }

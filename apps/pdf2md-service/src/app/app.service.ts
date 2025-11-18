@@ -1004,10 +1004,9 @@ export class AppService {
         `[DEBUG] Sending gRPC request: ${JSON.stringify(updateRequest)}`,
       );
 
-      const response =
-        await firstValueFrom(this.bibliographyGrpcClient.updateLibraryItemMarkdown(
-          updateRequest,
-        ));
+      const response = await firstValueFrom(
+        this.bibliographyGrpcClient.updateLibraryItemMarkdown(updateRequest),
+      );
 
       this.logger.debug(
         `[DEBUG] Received gRPC response: ${JSON.stringify(response)}`,
