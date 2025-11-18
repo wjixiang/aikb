@@ -44,9 +44,9 @@
       "rabbitmqPublist": ["libs/rabbitmqPublist/src/index.ts"],
       "proto-ts": ["protos/proto-ts/src/index.ts"],
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
-      "log-management": ["libs/log-management/src/index.ts"],
       "embedding": ["libs/embedding/src/index.ts"],
-      "bibliography": ["libs/bibliography/src/index.ts"]
+      "bibliography": ["libs/bibliography/src/index.ts"],
+      "log-management": ["libs/log-management/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

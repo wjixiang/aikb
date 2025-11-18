@@ -1,4 +1,4 @@
-import { createLoggerWithPrefix } from './logger.js';
+import { createLoggerWithPrefix } from './logger';
 
 /**
  * Error handling utility for multi-version chunking and embedding operations

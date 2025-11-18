@@ -5,16 +5,13 @@
   "implicitDependencies": ["libraryItemVectorService"],
   "targets": {
     "e2e": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "options": {
-        "jestConfig": "apps/libraryItemVectorService-e2e/jest.config.ts",
+        
         "passWithNoTests": true
-      },
-      "dependsOn": [
-        "libraryItemVectorService:build",
-        "libraryItemVectorService:serve"
-      ]
+      }
+      
     }
   }
 }

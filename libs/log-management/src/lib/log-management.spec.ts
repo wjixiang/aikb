@@ -1,4 +1,4 @@
-import { logManagement } from './log-management.js';
+import { logManagement } from './log-management';
 
 describe('logManagement', () => {
   it('should work', () => {

@@ -1,6 +1,6 @@
 import { createLoggerWithPrefix } from 'log-management';
 import axios, { AxiosError } from 'axios';
-import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding.js';
+import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding';
 
 const logger = createLoggerWithPrefix('EmbeddingProviders');
 

@@ -1,5 +1,5 @@
 import winston, { level } from 'winston';
-import { ElasticsearchTransport } from './elasticsearch-transport.js';
+import { ElasticsearchTransport } from './elasticsearch-transport';
 
 export const createLoggerWithPrefix = (prefix: string) => {
   const consoleFormat = winston.format.printf(

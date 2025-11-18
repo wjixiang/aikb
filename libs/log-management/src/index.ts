@@ -1,1 +1,1 @@
-export { createLoggerWithPrefix } from './logger.js';
+export { createLoggerWithPrefix } from './logger';

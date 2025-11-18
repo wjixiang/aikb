@@ -9,6 +9,10 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
+  externals: {
+    'log-management': 'log-management',
+    'item-vector-storage': 'item-vector-storage',
+  },
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',
