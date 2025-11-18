@@ -14,12 +14,6 @@ importers:
       '@aikb/chunking':
         specifier: workspace:*
         version: link:libs/chunking
-      'embedding':
-        specifier: workspace:*
-        version: link:libs/embedding
-      'log-management':
-        specifier: workspace:*
-        version: link:libs/log-management
       '@aikb/pdf-converter':
         specifier: workspace:*
         version: link:libs/pdf-converter
@@ -320,6 +314,9 @@ importers:
       dotenv:
         specifier: ^17.2.2
         version: 17.2.2
+      embedding:
+        specifier: workspace:*
+        version: link:libs/embedding
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.2.0)
@@ -374,6 +371,9 @@ importers:
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8
+      log-management:
+        specifier: workspace:*
+        version: link:libs/log-management
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.0)
@@ -555,7 +555,7 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       rxjs:
-        specifier: ^7.8.1
+        specifier: ^7.8.2
         version: 7.8.2
       segmentit:
         specifier: ^2.0.3
@@ -861,12 +861,12 @@ importers:
 
   libs/bibliography:
     dependencies:
-      'item-vector-storage':
-        specifier: workspace:*
-        version: link:../item-vector-storage
       '@elastic/elasticsearch':
         specifier: ^8.0.0
         version: 8.19.1
+      item-vector-storage:
+        specifier: workspace:*
+        version: link:../item-vector-storage
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -887,43 +887,11 @@ importers:
 
   libs/embedding:
     dependencies:
-      'log-management':
-        specifier: workspace:*
-        version: link:../log-management
-      axios:
-        specifier: ^1.12.2
-        version: 1.12.2(debug@4.4.3)
-      utils:
-        specifier: workspace:*
-        version: link:../utils
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.7
-        version: 22.18.6
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.6)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
-
-  libs/item-vector-storage:
-    dependencies:
-      '@aikb/chunking':
-        specifier: workspace:*
-        version: link:../chunking
-      'embedding':
-        specifier: workspace:*
-        version: link:../embedding
-      'log-management':
-        specifier: workspace:*
-        version: link:../log-management
-      '@elastic/elasticsearch':
-        specifier: ^9.1.1
-        version: 9.1.1
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+
+  libs/item-vector-storage: {}
 
   libs/library-shared:
     dependencies:
@@ -937,31 +905,11 @@ importers:
         specifier: ^2.3.0
         version: 2.8.1
 
-  libs/log-management:
-    dependencies:
-      '@elastic/elasticsearch':
-        specifier: ^9.1.1
-        version: 9.1.1
-      winston:
-        specifier: ^3.17.0
-        version: 3.17.0
-      winston-transport:
-        specifier: ^4.9.0
-        version: 4.9.0
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.7
-        version: 22.18.6
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.6)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+  libs/log-management: {}
 
   libs/markdown-part-cache:
     dependencies:
-      'log-management':
+      log-management:
         specifier: workspace:*
         version: link:../log-management
       tslib:
@@ -983,15 +931,15 @@ importers:
 
   libs/pdf-converter:
     dependencies:
-      'log-management':
-        specifier: workspace:*
-        version: link:../log-management
       '@aikb/s3-service':
         specifier: workspace:*
         version: link:../s3-service
       dotenv:
         specifier: ^17.2.2
         version: 17.2.2
+      log-management:
+        specifier: workspace:*
+        version: link:../log-management
       mineru-client:
         specifier: workspace:*
         version: link:../mineru-client
@@ -1014,12 +962,12 @@ importers:
 
   libs/pdf-part-tracker:
     dependencies:
-      'log-management':
-        specifier: workspace:*
-        version: link:../log-management
       '@elastic/elasticsearch':
         specifier: ^8.0.0
         version: 8.19.1
+      log-management:
+        specifier: workspace:*
+        version: link:../log-management
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -1033,7 +981,7 @@ importers:
 
   libs/pdf-splitter:
     dependencies:
-      'log-management':
+      log-management:
         specifier: workspace:*
         version: link:../log-management
       pdf-lib:
@@ -1061,12 +1009,6 @@ importers:
       '@aikb/chunking':
         specifier: workspace:*
         version: link:../chunking
-      'embedding':
-        specifier: workspace:*
-        version: link:../embedding
-      'log-management':
-        specifier: workspace:*
-        version: link:../log-management
       '@aikb/pdf-converter':
         specifier: workspace:*
         version: link:../pdf-converter
@@ -1082,6 +1024,12 @@ importers:
       dotenv:
         specifier: ^17.2.2
         version: 17.2.2
+      embedding:
+        specifier: workspace:*
+        version: link:../embedding
+      log-management:
+        specifier: workspace:*
+        version: link:../log-management
       mineru-client:
         specifier: workspace:*
         version: link:../mineru-client

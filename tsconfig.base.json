@@ -20,7 +20,6 @@
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],
       "@aikb/s3-service": ["./libs/s3-service/src/index.ts"],
-      "bibliography": ["./libs/bibliography/src/index.ts"],
       "@aikb/pdf-part-tracker": ["libs/pdf-part-tracker/src/index.ts"],
       "@aikb/markdown-part-cache": ["libs/markdown-part-cache/src/index.ts"],
       "markdown-storage-worker": [
@@ -46,7 +45,8 @@
       "proto-ts": ["protos/proto-ts/src/index.ts"],
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
       "log-management": ["libs/log-management/src/index.ts"],
-      "embedding": ["libs/embedding/src/index.ts"]
+      "embedding": ["libs/embedding/src/index.ts"],
+      "bibliography": ["libs/bibliography/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

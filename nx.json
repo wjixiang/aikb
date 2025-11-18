@@ -18,7 +18,9 @@
       "exclude": [
         "libs/pdf2md-lib/*",
         "libs/rabbitmq-lib/*",
-        "libs/rabbitmqPublist/*"
+        "libs/rabbitmqPublist/*",
+        "libs/nestjs/nestgRPCClient/*",
+        "libs/nestjs/nestjs_gRPC_client/*"
       ]
     },
     {
@@ -74,7 +76,9 @@
       "include": [
         "libs/pdf2md-lib/*",
         "libs/rabbitmq-lib/*",
-        "libs/rabbitmqPublist/*"
+        "libs/rabbitmqPublist/*",
+        "libs/nestjs/nestgRPCClient/*",
+        "libs/nestjs/nestjs_gRPC_client/*"
       ],
       "options": {
         "typecheck": {

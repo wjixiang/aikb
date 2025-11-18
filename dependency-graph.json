@@ -18,7 +18,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -242,7 +263,26 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "!{projectRoot}/vite.config.ts",
+                "!{projectRoot}/vite.config.mts",
+                "!{projectRoot}/vitest.config.ts",
+                "!{projectRoot}/vitest.config.mts",
+                "!{projectRoot}/src/**/*.test.ts",
+                "!{projectRoot}/src/**/*.spec.ts",
+                "!{projectRoot}/src/**/*.test.tsx",
+                "!{projectRoot}/src/**/*.spec.tsx",
+                "!{projectRoot}/src/**/*.test.js",
+                "!{projectRoot}/src/**/*.spec.js",
+                "!{projectRoot}/src/**/*.test.jsx",
+                "!{projectRoot}/src/**/*.spec.jsx",
                 "^default"
               ],
               "outputs": [
@@ -481,7 +521,14 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.ts",
                 "^default"
               ],
               "outputs": [
@@ -810,11 +857,19 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.ts",
                 "^default"
               ],
               "outputs": [
                 "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
                 "{projectRoot}/dist/tsconfig.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -1021,23 +1076,30 @@
           "implicitDependencies": []
         }
       },
-      "bibliography-service-e2e": {
-        "name": "bibliography-service-e2e",
+      "libraryItemVectorService-e2e": {
+        "name": "libraryItemVectorService-e2e",
         "type": "e2e",
         "data": {
-          "root": "apps/bibliography-service-e2e",
+          "root": "apps/libraryItemVectorService-e2e",
           "targets": {
             "typecheck": {
               "dependsOn": [
                 "^typecheck"
               ],
               "options": {
-                "cwd": "apps/bibliography-service-e2e",
+                "cwd": "apps/libraryItemVectorService-e2e",
                 "command": "tsc --build --emitDeclarationOnly"
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/jest.config.ts",
+                "{projectRoot}/src/**/*.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -1064,6 +1126,229 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/libraryItemVectorService-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/libraryItemVectorService-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{e2eProjectRoot}"
+              ],
+              "options": {
+                "jestConfig": "apps/libraryItemVectorService-e2e/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "dependsOn": [
+                "libraryItemVectorService:build",
+                "libraryItemVectorService:serve"
+              ],
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "libraryItemVectorService-e2e",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "implicitDependencies": [
+            "libraryItemVectorService"
+          ],
+          "tags": []
+        }
+      },
+      "bibliography-service-e2e": {
+        "name": "bibliography-service-e2e",
+        "type": "e2e",
+        "data": {
+          "root": "apps/bibliography-service-e2e",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "apps/bibliography-service-e2e",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "apps/bibliography-service-e2e",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/apps/bibliography-service-e2e"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/bibliography-service-e2e",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects bibliography-service-e2e --includeDependentProjects -- pnpm exec nx build-deps bibliography-service-e2e"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -1107,22 +1392,32 @@
               "parallelism": true
             },
             "e2e": {
-              "executor": "@nx/jest:jest",
+              "executor": "@nx/vite:test",
               "outputs": [
                 "{workspaceRoot}/coverage/{e2eProjectRoot}"
               ],
-              "options": {
-                "jestConfig": "apps/bibliography-service-e2e/jest.config.ts",
-                "passWithNoTests": true
-              },
               "dependsOn": [
                 "bibliography-service:build",
                 "bibliography-service:serve"
               ],
               "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "testUploadPdf": {
+              "dependsOn": [
+                "bibliography-service:serve",
+                "pdf2md-service:serve"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx tsx '/workspace/scripts/upload-pdf.ts' '/workspace/test/ACEI.pdf'"
+              },
+              "configurations": {},
               "parallelism": true
             }
           },
+          "metadata": {},
           "name": "bibliography-service-e2e",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "application",
@@ -1130,6 +1425,284 @@
             "bibliography-service"
           ],
           "tags": []
+        }
+      },
+      "libraryItemVectorService": {
+        "name": "libraryItemVectorService",
+        "type": "app",
+        "data": {
+          "root": "apps/libraryItemVectorService",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.app.json",
+                "{projectRoot}/src/**/*.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/libraryItemVectorService/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "webpack-cli"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/apps/libraryItemVectorService"
+              ],
+              "metadata": {
+                "technologies": [
+                  "webpack"
+                ],
+                "description": "Runs Webpack build",
+                "help": {
+                  "command": "pnpm exec webpack-cli build --help",
+                  "example": {
+                    "options": {
+                      "json": "stats.json"
+                    },
+                    "args": [
+                      "--profile"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "args": [
+                  "--node-env=production"
+                ],
+                "command": "webpack-cli build"
+              },
+              "configurations": {
+                "development": {
+                  "args": [
+                    "--node-env=development"
+                  ]
+                }
+              },
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@nx/js:node",
+              "defaultConfiguration": "development",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "buildTarget": "libraryItemVectorService:build",
+                "runBuildTargetDependencies": false
+              },
+              "configurations": {
+                "development": {
+                  "buildTarget": "libraryItemVectorService:build:development"
+                },
+                "production": {
+                  "buildTarget": "libraryItemVectorService:build:production"
+                }
+              },
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "args": [
+                  "--node-env=production"
+                ],
+                "command": "webpack-cli serve"
+              },
+              "metadata": {
+                "technologies": [
+                  "webpack"
+                ],
+                "description": "Starts Webpack dev server in production mode",
+                "help": {
+                  "command": "pnpm exec webpack-cli serve --help",
+                  "example": {
+                    "options": {
+                      "args": [
+                        "--client-progress",
+                        "--history-api-fallback "
+                      ]
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects libraryItemVectorService --includeDependentProjects -- pnpm exec nx build-deps libraryItemVectorService"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prune-lockfile": {
+              "dependsOn": [
+                "build"
+              ],
+              "cache": true,
+              "executor": "@nx/js:prune-lockfile",
+              "outputs": [
+                "{workspaceRoot}/dist/apps/libraryItemVectorService/package.json",
+                "{workspaceRoot}/dist/apps/libraryItemVectorService/pnpm-lock.yaml"
+              ],
+              "options": {
+                "buildTarget": "build"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "copy-workspace-modules": {
+              "dependsOn": [
+                "build"
+              ],
+              "cache": true,
+              "outputs": [
+                "{workspaceRoot}/dist/apps/libraryItemVectorService/workspace_modules"
+              ],
+              "executor": "@nx/js:copy-workspace-modules",
+              "options": {
+                "buildTarget": "build"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prune": {
+              "dependsOn": [
+                "prune-lockfile",
+                "copy-workspace-modules"
+              ],
+              "executor": "nx:noop",
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "application",
+          "metadata": {},
+          "name": "libraryItemVectorService",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/libraryItemVectorService/src",
+          "tags": [],
+          "implicitDependencies": []
         }
       },
       "quiz-management-client": {
@@ -1149,7 +1722,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -1629,12 +2223,15 @@
               "continuous": true,
               "executor": "@nx/js:node",
               "dependsOn": [
-                "build"
+                "build",
+                "pdf2md-service:serve"
               ],
               "options": {
                 "buildTarget": "bibliography-service:build",
                 "runBuildTargetDependencies": false,
-                "watch": true
+                "watch": true,
+                "inspect": true,
+                "port": 9229
               },
               "configurations": {},
               "parallelism": true
@@ -1796,6 +2393,19 @@
               },
               "configurations": {},
               "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "./**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
             }
           },
           "metadata": {
@@ -1842,7 +2452,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -1873,28 +2504,45 @@
               "parallelism": true
             },
             "build": {
-              "executor": "@nx/js:tsc",
-              "outputs": [
-                "{options.outputPath}"
-              ],
               "options": {
-                "outputPath": "dist/libs/item-vector-storage",
-                "main": "libs/item-vector-storage/src/index.ts",
-                "tsConfig": "libs/item-vector-storage/tsconfig.lib.json",
-                "assets": [
-                  "libs/item-vector-storage/*.md"
-                ]
+                "cwd": "libs/item-vector-storage",
+                "command": "vite build"
               },
-              "configurations": {},
-              "parallelism": true,
               "cache": true,
               "dependsOn": [
                 "^build"
               ],
               "inputs": [
                 "default",
-                "^default"
-              ]
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/libs/item-vector-storage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "pnpm exec vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
             },
             "build-deps": {
               "dependsOn": [
@@ -1954,6 +2602,92 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "libs/item-vector-storage",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "libs/item-vector-storage",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "libs/item-vector-storage",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "pnpm exec vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -2028,68 +2762,24 @@
               "executor": "nx:run-commands",
               "configurations": {},
               "parallelism": true
-            },
-            "test": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test"
-              },
-              "metadata": {
-                "scriptContent": "vitest run",
-                "runCommand": "pnpm run test"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "lint": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "lint"
-              },
-              "metadata": {
-                "scriptContent": "npx eslint",
-                "runCommand": "pnpm run lint"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
             }
           },
+          "projectType": "library",
           "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "test",
-                "lint"
-              ]
-            },
+            "targetGroups": {},
             "js": {
               "packageName": "item-vector-storage",
               "packageVersion": "0.0.1",
-              "packageExports": {
-                ".": {
-                  "import": "./src/index.ts",
-                  "types": "./src/index.ts"
-                }
-              },
-              "packageMain": "./src/index.ts",
+              "packageMain": "./index.js",
               "isInPackageManagerWorkspaces": true
             }
           },
           "name": "item-vector-storage",
           "tags": [
-            "npm:public"
+            "npm:private"
           ],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "libs/item-vector-storage/src",
-          "projectType": "library",
           "implicitDependencies": []
         }
       },
@@ -2110,7 +2800,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -2345,7 +3056,25 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -2372,6 +3101,100 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "apps/pdf2md-service-e2e",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/apps/pdf2md-service-e2e"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/pdf2md-service-e2e",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects pdf2md-service-e2e --includeDependentProjects -- pnpm exec nx build-deps pdf2md-service-e2e"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -2415,22 +3238,20 @@
               "parallelism": true
             },
             "e2e": {
-              "executor": "@nx/jest:jest",
+              "executor": "@nx/vite:test",
               "outputs": [
                 "{workspaceRoot}/coverage/{e2eProjectRoot}"
               ],
-              "options": {
-                "jestConfig": "apps/pdf2md-service-e2e/jest.config.ts",
-                "passWithNoTests": true
-              },
               "dependsOn": [
                 "pdf2md-service:build",
                 "pdf2md-service:serve"
               ],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
+          "metadata": {},
           "name": "pdf2md-service-e2e",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "application",
@@ -2457,7 +3278,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -2676,104 +3518,23 @@
           "implicitDependencies": []
         }
       },
-      "log-management": {
-        "name": "log-management",
+      "rabbitmqPublist": {
+        "name": "rabbitmqPublist",
         "type": "lib",
         "data": {
-          "root": "libs/log-management",
+          "root": "libs/rabbitmqPublist",
           "targets": {
-            "typecheck": {
-              "dependsOn": [
-                "build",
-                "^typecheck"
-              ],
-              "options": {
-                "cwd": "libs/log-management",
-                "command": "tsc --build --emitDeclarationOnly"
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default"
-              ],
-              "outputs": [
-                "{workspaceRoot}/dist/**/*.d.ts",
-                "{workspaceRoot}/dist/tsconfig.tsbuildinfo"
-              ],
-              "syncGenerators": [
-                "@nx/js:typescript-sync"
-              ],
-              "metadata": {
-                "technologies": [
-                  "typescript"
-                ],
-                "description": "Runs type-checking for the project.",
-                "help": {
-                  "command": "pnpm exec tsc --build --help",
-                  "example": {
-                    "args": [
-                      "--force"
-                    ]
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build": {
-              "executor": "@nx/js:tsc",
-              "outputs": [
-                "{options.outputPath}"
-              ],
-              "options": {
-                "outputPath": "dist/libs/log-management",
-                "main": "libs/log-management/src/index.ts",
-                "tsConfig": "libs/log-management/tsconfig.lib.json"
-              },
-              "configurations": {},
-              "parallelism": true,
-              "cache": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "default",
-                "^default"
-              ]
-            },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects log-management --includeDependentProjects -- pnpm exec nx build-deps log-management"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
             "eslint:lint": {
               "cache": true,
               "options": {
-                "cwd": "libs/log-management",
+                "cwd": "libs/rabbitmqPublist",
                 "command": "eslint ."
               },
               "inputs": [
                 "default",
                 "^default",
                 "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/rabbitmqPublist/eslint.config.mjs",
                 "{workspaceRoot}/tools/eslint-rules/**/*",
                 {
                   "externalDependencies": [
@@ -2802,63 +3563,58 @@
               "configurations": {},
               "parallelism": true
             },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
+            "typecheck": {
               "dependsOn": [
-                "^nx-release-publish"
+                "^typecheck"
               ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
-            },
-            "test": {
-              "executor": "@nx/vite:test",
               "options": {
-                "configFile": "libs/log-management/vitest.config.ts"
+                "cwd": "libs/rabbitmqPublist",
+                "command": "tsc --build --emitDeclarationOnly"
               },
-              "configurations": {},
-              "parallelism": true
-            }
-          },
-          "name": "log-management",
-          "tags": [
-            "npm:public"
-          ],
-          "metadata": {
-            "targetGroups": {},
-            "description": "Log management utilities with Elasticsearch integration",
-            "js": {
-              "packageName": "log-management",
-              "packageVersion": "0.0.1",
-              "packageExports": {
-                ".": {
-                  "import": "./src/index.js",
-                  "require": "./src/index.js",
-                  "types": "./src/index.d.ts"
-                },
-                "./logger": {
-                  "import": "./src/logger.js",
-                  "require": "./src/logger.js",
-                  "types": "./src/logger.d.ts"
-                },
-                "./elasticsearch-transport": {
-                  "import": "./src/elasticsearch-transport.js",
-                  "require": "./src/elasticsearch-transport.js",
-                  "types": "./src/elasticsearch-transport.d.ts"
-                },
-                "./error-handler": {
-                  "import": "./src/errorHandler.js",
-                  "require": "./src/errorHandler.js",
-                  "types": "./src/errorHandler.d.ts"
+              "cache": true,
+              "inputs": [
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
                 }
               },
-              "packageMain": "./src/index.js",
-              "isInPackageManagerWorkspaces": true
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
             }
           },
+          "name": "rabbitmqPublist",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
-          "sourceRoot": "src",
+          "sourceRoot": "libs/rabbitmqPublist/src",
           "projectType": "library",
+          "tags": [],
           "implicitDependencies": []
         }
       },
@@ -2879,7 +3635,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -3086,23 +3863,45 @@
           "implicitDependencies": []
         }
       },
-      "pdf2md-service": {
-        "name": "pdf2md-service",
-        "type": "app",
+      "log-management": {
+        "name": "log-management",
+        "type": "lib",
         "data": {
-          "root": "apps/pdf2md-service",
+          "root": "libs/log-management",
           "targets": {
             "typecheck": {
               "dependsOn": [
+                "build",
                 "^typecheck"
               ],
               "options": {
-                "cwd": "apps/pdf2md-service",
+                "cwd": "libs/log-management",
                 "command": "tsc --build --emitDeclarationOnly"
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -3129,6 +3928,446 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/libs/log-management"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "pnpm exec vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects log-management --includeDependentProjects -- pnpm exec nx build-deps log-management"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/libs/log-management"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "pnpm exec vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/log-management",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/log-management/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "library",
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "log-management",
+              "packageVersion": "0.0.1",
+              "packageMain": "./index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "log-management",
+          "tags": [
+            "npm:private"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/log-management/src",
+          "implicitDependencies": []
+        }
+      },
+      "pdf2md-service": {
+        "name": "pdf2md-service",
+        "type": "app",
+        "data": {
+          "root": "apps/pdf2md-service",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "apps/pdf2md-service",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.app.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "!{projectRoot}/vite.config.mts",
+                "!{projectRoot}/vitest.config.ts",
+                "!{projectRoot}/vitest.config.mts",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "apps/pdf2md-service",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/apps/pdf2md-service"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/pdf2md-service",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects pdf2md-service --includeDependentProjects -- pnpm exec nx build-deps pdf2md-service"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -3186,7 +4425,7 @@
                 }
               ],
               "outputs": [
-                "{workspaceRoot}/dist/apps/pdf2md-service"
+                "{workspaceRoot}/dist/apps/bibliography-service"
               ],
               "metadata": {
                 "technologies": [
@@ -3231,7 +4470,9 @@
               ],
               "options": {
                 "buildTarget": "pdf2md-service:build",
-                "runBuildTargetDependencies": false
+                "runBuildTargetDependencies": false,
+                "inspect": true,
+                "port": 9230
               },
               "configurations": {
                 "development": {
@@ -3286,27 +4527,6 @@
               "configurations": {},
               "parallelism": true
             },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects pdf2md-service --includeDependentProjects -- pnpm exec nx build-deps pdf2md-service"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
             "prune-lockfile": {
               "dependsOn": [
                 "build"
@@ -3347,325 +4567,22 @@
               "configurations": {},
               "options": {},
               "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "options": {
+                "vitestConfig": "vitest.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true
             }
           },
-          "projectType": "application",
           "metadata": {},
+          "projectType": "application",
           "name": "pdf2md-service",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "apps/pdf2md-service/src",
           "tags": [],
-          "implicitDependencies": []
-        }
-      },
-      "mineru-client": {
-        "name": "mineru-client",
-        "type": "lib",
-        "data": {
-          "root": "libs/mineru-client",
-          "targets": {
-            "typecheck": {
-              "dependsOn": [
-                "^typecheck"
-              ],
-              "options": {
-                "cwd": "libs/mineru-client",
-                "command": "tsc --build --emitDeclarationOnly"
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default"
-              ],
-              "outputs": [
-                "{projectRoot}/dist/**/*.d.ts",
-                "{projectRoot}/*.tsbuildinfo"
-              ],
-              "syncGenerators": [
-                "@nx/js:typescript-sync"
-              ],
-              "metadata": {
-                "technologies": [
-                  "typescript"
-                ],
-                "description": "Runs type-checking for the project.",
-                "help": {
-                  "command": "pnpm exec tsc --build --help",
-                  "example": {
-                    "args": [
-                      "--force"
-                    ]
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "vite:test": {
-              "options": {
-                "cwd": "libs/mineru-client",
-                "command": "vitest"
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "vitest"
-                  ]
-                },
-                {
-                  "env": "CI"
-                }
-              ],
-              "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Run Vite tests",
-                "help": {
-                  "command": "pnpm exec vitest --help",
-                  "example": {
-                    "options": {
-                      "bail": 1,
-                      "coverage": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "vite:typecheck": {
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
-                }
-              ],
-              "options": {
-                "cwd": "libs/mineru-client",
-                "command": "tsc --noEmit -p tsconfig.json"
-              },
-              "metadata": {
-                "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
-                "help": {
-                  "command": "pnpm exec tsc -p tsconfig.json --help",
-                  "example": {
-                    "options": {
-                      "noEmit": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects mineru-client --includeDependentProjects -- pnpm exec nx build-deps mineru-client"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "eslint:lint": {
-              "cache": true,
-              "options": {
-                "cwd": "libs/mineru-client",
-                "command": "eslint ."
-              },
-              "inputs": [
-                "default",
-                "^default",
-                "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/eslint.config.mjs",
-                "{workspaceRoot}/tools/eslint-rules/**/*",
-                {
-                  "externalDependencies": [
-                    "eslint"
-                  ]
-                }
-              ],
-              "outputs": [
-                "{options.outputFile}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "eslint"
-                ],
-                "description": "Runs ESLint on project",
-                "help": {
-                  "command": "pnpm exec eslint --help",
-                  "example": {
-                    "options": {
-                      "max-warnings": 0
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "build"
-              },
-              "metadata": {
-                "scriptContent": "tsc",
-                "runCommand": "pnpm run build"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "dev": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "dev"
-              },
-              "metadata": {
-                "scriptContent": "tsc --watch",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test"
-              },
-              "metadata": {
-                "scriptContent": "vitest run",
-                "runCommand": "pnpm run test"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:watch": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:watch"
-              },
-              "metadata": {
-                "scriptContent": "vitest",
-                "runCommand": "pnpm run test:watch"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:coverage": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:coverage"
-              },
-              "metadata": {
-                "scriptContent": "vitest run --coverage",
-                "runCommand": "pnpm run test:coverage"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "package": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "package"
-              },
-              "metadata": {
-                "scriptContent": "pnpm run build && pnpm pack",
-                "runCommand": "pnpm run package"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "prepublishOnly": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "prepublishOnly"
-              },
-              "metadata": {
-                "scriptContent": "pnpm run build",
-                "runCommand": "pnpm run prepublishOnly"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
-            }
-          },
-          "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "build",
-                "dev",
-                "test",
-                "test:watch",
-                "test:coverage",
-                "package",
-                "prepublishOnly"
-              ]
-            },
-            "description": "Independent MinerU API client for document parsing and conversion",
-            "js": {
-              "packageName": "mineru-client",
-              "packageVersion": "1.0.0",
-              "packageExports": {
-                ".": {
-                  "types": "./src/index.ts",
-                  "import": "./src/index.ts",
-                  "require": "./src/index.ts"
-                }
-              },
-              "packageMain": "./src/index.ts",
-              "isInPackageManagerWorkspaces": true
-            }
-          },
-          "name": "mineru-client",
-          "tags": [
-            "npm:public",
-            "npm:mineru",
-            "npm:document-parsing",
-            "npm:pdf",
-            "npm:ocr",
-            "npm:api-client",
-            "npm:document-conversion"
-          ],
           "implicitDependencies": []
         }
       },
@@ -3685,12 +4602,19 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.ts",
                 "^default"
               ],
               "outputs": [
-                "{projectRoot}/dist/**/*.d.ts",
-                "{projectRoot}/*.tsbuildinfo"
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo"
               ],
               "syncGenerators": [
                 "@nx/js:typescript-sync"
@@ -3981,11 +4905,11 @@
           "implicitDependencies": []
         }
       },
-      "bibliography": {
-        "name": "bibliography",
+      "mineru-client": {
+        "name": "mineru-client",
         "type": "lib",
         "data": {
-          "root": "libs/bibliography",
+          "root": "libs/mineru-client",
           "targets": {
             "typecheck": {
               "dependsOn": [
@@ -3993,19 +4917,39 @@
                 "^typecheck"
               ],
               "options": {
-                "cwd": "libs/bibliography",
+                "cwd": "libs/mineru-client",
                 "command": "tsc --build --emitDeclarationOnly"
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
                 "{workspaceRoot}/dist/**/*.d.ts",
                 "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
                 "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
-                "{workspaceRoot}/dist/out-tsc/libs/bibliography/*.tsbuildinfo",
                 "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -4035,9 +4979,12 @@
                 "{options.outputPath}"
               ],
               "options": {
-                "outputPath": "dist/libs/bibliography",
-                "main": "libs/bibliography/src/index.ts",
-                "tsConfig": "libs/bibliography/tsconfig.lib.json"
+                "outputPath": "dist/libs/mineru-client",
+                "main": "libs/mineru-client/src/index.ts",
+                "tsConfig": "libs/mineru-client/tsconfig.lib.json",
+                "assets": [
+                  "libs/mineru-client/*.md"
+                ]
               },
               "configurations": {},
               "parallelism": true,
@@ -4066,12 +5013,16 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects bibliography --includeDependentProjects -- pnpm exec nx build-deps bibliography"
+                "command": "pnpm exec nx watch --projects mineru-client --includeDependentProjects -- pnpm exec nx build-deps mineru-client"
               },
               "configurations": {},
               "parallelism": true
             },
             "vite:test": {
+              "options": {
+                "cwd": "libs/mineru-client",
+                "command": "vitest"
+              },
               "cache": true,
               "inputs": [
                 "default",
@@ -4086,11 +5037,10 @@
                 }
               ],
               "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
+                "{workspaceRoot}/coverage/libs/mineru-client"
               ],
               "metadata": {
                 "technologies": [
-                  "vite",
                   "vite"
                 ],
                 "description": "Run Vite tests",
@@ -4105,10 +5055,6 @@
                 }
               },
               "executor": "nx:run-commands",
-              "options": {
-                "cwd": "libs/bibliography",
-                "command": "vitest"
-              },
               "configurations": {},
               "parallelism": true
             },
@@ -4123,10 +5069,13 @@
                   ]
                 }
               ],
+              "options": {
+                "cwd": "libs/mineru-client",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
               "metadata": {
                 "description": "Runs type-checking for the project.",
                 "technologies": [
-                  "typescript",
                   "typescript"
                 ],
                 "help": {
@@ -4139,24 +5088,20 @@
                 }
               },
               "executor": "nx:run-commands",
-              "options": {
-                "cwd": "libs/bibliography",
-                "command": "tsc --noEmit -p tsconfig.lib.json"
-              },
               "configurations": {},
               "parallelism": true
             },
             "eslint:lint": {
               "cache": true,
               "options": {
-                "cwd": "libs/bibliography",
+                "cwd": "libs/mineru-client",
                 "command": "eslint ."
               },
               "inputs": [
                 "default",
                 "^default",
                 "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/libs/bibliography/eslint.config.mjs",
+                "{workspaceRoot}/libs/mineru-client/eslint.config.mjs",
                 "{workspaceRoot}/tools/eslint-rules/**/*",
                 {
                   "externalDependencies": [
@@ -4185,86 +5130,30 @@
               "configurations": {},
               "parallelism": true
             },
-            "test:watch": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:watch"
-              },
-              "metadata": {
-                "scriptContent": "vitest --watch",
-                "runCommand": "pnpm run test:watch"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:coverage": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:coverage"
-              },
-              "metadata": {
-                "scriptContent": "vitest run --coverage",
-                "runCommand": "pnpm run test:coverage"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
-            },
             "test": {
               "executor": "@nx/vite:test",
               "options": {
-                "configFile": "libs/bibliography/vitest.config.ts"
+                "exclude": "**/*.e2e.test.ts"
               },
               "configurations": {},
               "parallelism": true
             }
           },
           "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "test:watch",
-                "test:coverage"
-              ]
-            },
-            "description": "Bibliography and library management system for academic documents",
+            "targetGroups": {},
             "js": {
-              "packageName": "bibliography",
+              "packageName": "mineru-client",
               "packageVersion": "0.0.1",
-              "packageExports": {
-                ".": {
-                  "types": "./dist/src/index.d.ts",
-                  "import": "./dist/src/index.js",
-                  "require": "./dist/src/index.js"
-                },
-                "./library": {
-                  "types": "./dist/src/library/index.d.ts",
-                  "import": "./dist/src/library/index.js",
-                  "require": "./dist/src/library/index.js"
-                },
-                "./storage": {
-                  "types": "./dist/src/storage/index.d.ts",
-                  "import": "./dist/src/storage/index.js",
-                  "require": "./dist/src/storage/index.js"
-                }
-              },
-              "packageMain": "./dist/src/index.js",
+              "packageMain": "./src/index.js",
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "bibliography",
+          "name": "mineru-client",
           "tags": [
-            "npm:public"
+            "npm:private"
           ],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
-          "sourceRoot": "src",
+          "sourceRoot": "libs/mineru-client/src",
           "projectType": "library",
           "implicitDependencies": []
         }
@@ -4285,11 +5174,19 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
                 "^default"
               ],
               "outputs": [
                 "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
                 "{projectRoot}/dist/libs/pdf-splitter/*.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -4508,6 +5405,667 @@
           "implicitDependencies": []
         }
       },
+      "bibliography": {
+        "name": "bibliography",
+        "type": "lib",
+        "data": {
+          "root": "libs/bibliography",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/libs/bibliography/*.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/bibliography",
+                "main": "libs/bibliography/src/index.ts",
+                "tsConfig": "libs/bibliography/tsconfig.lib.json"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects bibliography --includeDependentProjects -- pnpm exec nx build-deps bibliography"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/bibliography/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "bibliography",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "bibliography",
+          "tags": [
+            "npm:private"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "medquiz-web": {
+        "name": "medquiz-web",
+        "type": "app",
+        "data": {
+          "root": "apps/medquiz-web",
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev",
+                "start"
+              ]
+            },
+            "js": {
+              "packageName": "medquiz-web",
+              "packageVersion": "0.1.0",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "targets": {
+            "vite:test": {
+              "options": {
+                "cwd": "apps/medquiz-web",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/medquiz-web",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects medquiz-web --includeDependentProjects -- pnpm exec nx build-deps medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/medquiz-web/.eslintrc.json",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint",
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/medquiz-web",
+                "env": {
+                  "ESLINT_USE_FLAT_CONFIG": "false"
+                },
+                "command": "eslint ."
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/next:build",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "defaultConfiguration": "production",
+              "options": {
+                "root": "apps/medquiz-web",
+                "outputPath": "dist/apps/medquiz-web"
+              },
+              "configurations": {
+                "development": {
+                  "outputPath": "dist/apps/medquiz-web"
+                },
+                "production": {}
+              },
+              "parallelism": true
+            },
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "next dev",
+                "runCommand": "pnpm run dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start"
+              },
+              "metadata": {
+                "scriptContent": "next start",
+                "runCommand": "pnpm run start"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/medquiz-web",
+                "command": "next start"
+              },
+              "dependsOn": [
+                "build"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "executor": "@nx/next:server",
+              "defaultConfiguration": "development",
+              "options": {
+                "buildTarget": "medquiz-web:build",
+                "dev": true,
+                "port": 3000
+              },
+              "configurations": {
+                "development": {
+                  "buildTarget": "medquiz-web:build:development",
+                  "dev": true
+                },
+                "production": {
+                  "buildTarget": "medquiz-web:build:production",
+                  "dev": false
+                }
+              },
+              "parallelism": true,
+              "continuous": true
+            },
+            "export": {
+              "executor": "@nx/next:export",
+              "options": {
+                "buildTarget": "medquiz-web:build:production"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "passWithNoTests": true,
+                "reportsDirectory": "../../coverage/apps/medquiz-web"
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "coverage": {
+                    "reportsDirectory": "../../coverage/apps/medquiz-web"
+                  }
+                }
+              },
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/linter:eslint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "apps/medquiz-web/**/*.{ts,tsx,js,jsx}"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "storybook": {
+              "executor": "@nx/storybook:storybook",
+              "options": {
+                "port": 6006,
+                "configDir": "apps/medquiz-web/.storybook",
+                "uiFramework": "@storybook/nextjs"
+              },
+              "configurations": {
+                "ci": {
+                  "quiet": true
+                }
+              },
+              "parallelism": true
+            },
+            "build-storybook": {
+              "executor": "@nx/storybook:build",
+              "outputs": [
+                "{options.outputDir}"
+              ],
+              "options": {
+                "configDir": "apps/medquiz-web/.storybook",
+                "outputDir": "dist/storybook/medquiz-web",
+                "uiFramework": "@storybook/nextjs"
+              },
+              "configurations": {
+                "ci": {
+                  "quiet": true
+                }
+              },
+              "parallelism": true
+            },
+            "baml-generate": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx baml-cli generate",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:similar-search": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx src/script/test-similar-search.ts test",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "doc": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx typedoc --entryPointStrategy Expand src",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "janusgraph": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx src/script/janusGraphCli.ts",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "rag-quiz-analysis": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx src/script/rag-quiz-analysis.ts",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "init:tag-presets": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx src/scripts/initDefaultTagPresets.ts",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:sync": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts sync",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:search": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts search",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:status": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts status",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:embed-single": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts embed-single",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:batch": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts batch-embed",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "embedding:cleanup": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx manage.ts cleanup",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "knowledgebase:sync:download-only": {
+              "executor": "@nx/workspace:run-commands",
+              "options": {
+                "command": "npx tsx '/home/wjx/MedQuiz/src/script/s3-sync-cli.ts' sync",
+                "cwd": "apps/medquiz-web"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "medquiz-web",
+          "tags": [
+            "npm:private"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/medquiz-web/src",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      },
       "quiz-shared": {
         "name": "quiz-shared",
         "type": "lib",
@@ -4525,7 +6083,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -5039,7 +6618,31 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.js",
+                "{projectRoot}/src/**/*.jsx",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/src/**/*.tsx",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -5369,28 +6972,52 @@
           "implicitDependencies": []
         }
       },
-      "embedding": {
-        "name": "embedding",
+      "proto-ts": {
+        "name": "proto-ts",
         "type": "lib",
         "data": {
-          "root": "libs/embedding",
+          "root": "protos/proto-ts",
           "targets": {
             "typecheck": {
               "dependsOn": [
+                "build",
                 "^typecheck"
               ],
               "options": {
-                "cwd": "libs/embedding",
+                "cwd": "protos/proto-ts",
                 "command": "tsc --build --emitDeclarationOnly"
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
-                "{projectRoot}/dist/**/*.d.ts",
-                "{projectRoot}/*.tsbuildinfo"
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
               ],
               "syncGenerators": [
                 "@nx/js:typescript-sync"
@@ -5413,6 +7040,392 @@
               "configurations": {},
               "parallelism": true
             },
+            "build": {
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/protos/proto-ts"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "pnpm exec vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects proto-ts --includeDependentProjects -- pnpm exec nx build-deps proto-ts"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/protos/proto-ts"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "pnpm exec vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "protos/proto-ts",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/protos/proto-ts/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "library",
+          "metadata": {
+            "targetGroups": {},
+            "description": "Generated TypeScript protobuf definitions",
+            "js": {
+              "packageName": "proto-ts",
+              "packageVersion": "0.0.1",
+              "packageExports": {
+                ".": "./src/index.js",
+                "./lib/*": "./src/lib/*.js"
+              },
+              "packageMain": "src/index.js",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "name": "proto-ts",
+          "tags": [
+            "npm:public"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "protos/proto-ts/src",
+          "implicitDependencies": []
+        }
+      },
+      "embedding": {
+        "name": "embedding",
+        "type": "lib",
+        "data": {
+          "root": "libs/embedding",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/embedding",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/embedding",
+                "main": "libs/embedding/src/index.ts",
+                "tsConfig": "libs/embedding/tsconfig.lib.json",
+                "assets": [
+                  "libs/embedding/*.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects embedding --includeDependentProjects -- pnpm exec nx build-deps embedding"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
             "vite:test": {
               "options": {
                 "cwd": "libs/embedding",
@@ -5432,7 +7445,7 @@
                 }
               ],
               "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
+                "{workspaceRoot}/coverage/libs/embedding"
               ],
               "metadata": {
                 "technologies": [
@@ -5466,7 +7479,7 @@
               ],
               "options": {
                 "cwd": "libs/embedding",
-                "command": "tsc --noEmit -p tsconfig.json"
+                "command": "tsc --noEmit -p tsconfig.lib.json"
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
@@ -5474,7 +7487,7 @@
                   "typescript"
                 ],
                 "help": {
-                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
                   "example": {
                     "options": {
                       "noEmit": true
@@ -5483,27 +7496,6 @@
                 }
               },
               "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects embedding --includeDependentProjects -- pnpm exec nx build-deps embedding"
-              },
               "configurations": {},
               "parallelism": true
             },
@@ -5517,7 +7509,7 @@
                 "default",
                 "^default",
                 "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/embedding/eslint.config.mjs",
                 "{workspaceRoot}/tools/eslint-rules/**/*",
                 {
                   "externalDependencies": [
@@ -5545,104 +7537,24 @@
               "executor": "nx:run-commands",
               "configurations": {},
               "parallelism": true
-            },
-            "build": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "build"
-              },
-              "metadata": {
-                "scriptContent": "tsc",
-                "runCommand": "pnpm run build"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test"
-              },
-              "metadata": {
-                "scriptContent": "vitest run",
-                "runCommand": "pnpm run test"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:watch": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:watch"
-              },
-              "metadata": {
-                "scriptContent": "vitest --watch",
-                "runCommand": "pnpm run test:watch"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:coverage": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:coverage"
-              },
-              "metadata": {
-                "scriptContent": "vitest run --coverage",
-                "runCommand": "pnpm run test:coverage"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
             }
           },
           "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "build",
-                "test",
-                "test:watch",
-                "test:coverage"
-              ]
-            },
-            "description": "Embedding providers and management utilities",
+            "targetGroups": {},
             "js": {
               "packageName": "embedding",
               "packageVersion": "0.0.1",
-              "packageExports": {
-                ".": {
-                  "import": "./dist/index.js",
-                  "types": "./dist/index.d.ts"
-                },
-                "./embedding": {
-                  "import": "./dist/embedding.js",
-                  "types": "./dist/embedding.d.ts"
-                },
-                "./embedding-manager": {
-                  "import": "./dist/embedding-manager.js",
-                  "types": "./dist/embedding-manager.d.ts"
-                },
-                "./embedding-providers": {
-                  "import": "./dist/embedding-providers.js",
-                  "types": "./dist/embedding-providers.d.ts"
-                }
-              },
-              "packageMain": "./dist/index.js",
+              "packageMain": "./src/index.js",
               "isInPackageManagerWorkspaces": true
             }
           },
           "name": "embedding",
           "tags": [
-            "npm:public"
+            "npm:private"
           ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/embedding/src",
+          "projectType": "library",
           "implicitDependencies": []
         }
       },
@@ -6244,431 +8156,6 @@
           "implicitDependencies": []
         }
       },
-      "med-quiz": {
-        "name": "med-quiz",
-        "type": "app",
-        "data": {
-          "root": "apps/med-quiz",
-          "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "dev",
-                "build",
-                "start",
-                "lint",
-                "storybook",
-                "build-storybook",
-                "test",
-                "test:similar-search",
-                "doc",
-                "janusgraph",
-                "rag-quiz-analysis",
-                "init:tag-presets",
-                "embedding:sync",
-                "embedding:search",
-                "embedding:status",
-                "embedding:embed-single",
-                "embedding:batch",
-                "embedding:cleanup",
-                "knowledgebase:sync:download-only"
-              ]
-            },
-            "js": {
-              "packageName": "med-quiz",
-              "packageVersion": "0.1.0",
-              "isInPackageManagerWorkspaces": false
-            }
-          },
-          "targets": {
-            "vite:test": {
-              "options": {
-                "cwd": "apps/med-quiz",
-                "command": "vitest"
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "vitest"
-                  ]
-                },
-                {
-                  "env": "CI"
-                }
-              ],
-              "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Run Vite tests",
-                "help": {
-                  "command": "pnpm exec vitest --help",
-                  "example": {
-                    "options": {
-                      "bail": 1,
-                      "coverage": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "vite:typecheck": {
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
-                }
-              ],
-              "options": {
-                "cwd": "apps/med-quiz",
-                "command": "tsc --noEmit -p tsconfig.json"
-              },
-              "metadata": {
-                "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
-                "help": {
-                  "command": "pnpm exec tsc -p tsconfig.json --help",
-                  "example": {
-                    "options": {
-                      "noEmit": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects med-quiz --includeDependentProjects -- pnpm exec nx build-deps med-quiz"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "eslint:lint": {
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/apps/med-quiz/.eslintrc.json",
-                "{workspaceRoot}/tools/eslint-rules/**/*",
-                {
-                  "externalDependencies": [
-                    "eslint"
-                  ]
-                }
-              ],
-              "outputs": [
-                "{options.outputFile}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "eslint",
-                  "eslint"
-                ],
-                "description": "Runs ESLint on project",
-                "help": {
-                  "command": "pnpm exec eslint --help",
-                  "example": {
-                    "options": {
-                      "max-warnings": 0
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "options": {
-                "cwd": "apps/med-quiz",
-                "env": {
-                  "ESLINT_USE_FLAT_CONFIG": "false"
-                },
-                "command": "eslint ."
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "build": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "build"
-              },
-              "metadata": {
-                "scriptContent": "next build",
-                "runCommand": "pnpm run build"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "dev": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "dev"
-              },
-              "metadata": {
-                "scriptContent": "next dev",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "start": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "start"
-              },
-              "metadata": {
-                "scriptContent": "next start",
-                "runCommand": "pnpm run start"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "serve-static": {
-              "continuous": true,
-              "options": {
-                "cwd": "apps/med-quiz",
-                "command": "next start"
-              },
-              "dependsOn": [
-                "build"
-              ],
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "lint": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "lint"
-              },
-              "metadata": {
-                "scriptContent": "next lint",
-                "runCommand": "pnpm run lint"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "storybook": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "storybook"
-              },
-              "metadata": {
-                "scriptContent": "storybook dev -p 6006",
-                "runCommand": "pnpm run storybook"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "build-storybook": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "build-storybook"
-              },
-              "metadata": {
-                "scriptContent": "storybook build",
-                "runCommand": "pnpm run build-storybook"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test"
-              },
-              "metadata": {
-                "scriptContent": "vitest run ",
-                "runCommand": "pnpm run test"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:similar-search": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:similar-search"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx src/script/test-similar-search.ts test",
-                "runCommand": "pnpm run test:similar-search"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "doc": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "doc"
-              },
-              "metadata": {
-                "scriptContent": "npx typedoc --entryPointStrategy Expand src",
-                "runCommand": "pnpm run doc"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "janusgraph": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "janusgraph"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx src/script/janusGraphCli.ts",
-                "runCommand": "pnpm run janusgraph"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "rag-quiz-analysis": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "rag-quiz-analysis"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx src/script/rag-quiz-analysis.ts",
-                "runCommand": "pnpm run rag-quiz-analysis"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "init:tag-presets": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "init:tag-presets"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx src/scripts/initDefaultTagPresets.ts",
-                "runCommand": "pnpm run init:tag-presets"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:sync": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:sync"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts sync",
-                "runCommand": "pnpm run embedding:sync"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:search": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:search"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts search",
-                "runCommand": "pnpm run embedding:search"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:status": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:status"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts status",
-                "runCommand": "pnpm run embedding:status"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:embed-single": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:embed-single"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts embed-single",
-                "runCommand": "pnpm run embedding:embed-single"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:batch": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:batch"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts batch-embed",
-                "runCommand": "pnpm run embedding:batch"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "embedding:cleanup": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "embedding:cleanup"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx manage.ts cleanup",
-                "runCommand": "pnpm run embedding:cleanup"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "knowledgebase:sync:download-only": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "knowledgebase:sync:download-only"
-              },
-              "metadata": {
-                "scriptContent": "npx tsx '/home/wjx/MedQuiz/src/script/s3-sync-cli.ts' sync",
-                "runCommand": "pnpm run knowledgebase:sync:download-only"
-              },
-              "configurations": {},
-              "parallelism": true
-            }
-          },
-          "name": "med-quiz",
-          "tags": [
-            "npm:private"
-          ],
-          "$schema": "../../node_modules/nx/schemas/project-schema.json",
-          "sourceRoot": "apps/med-quiz",
-          "projectType": "application",
-          "implicitDependencies": []
-        }
-      },
       "utils": {
         "name": "utils",
         "type": "lib",
@@ -6686,7 +8173,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -6893,6 +8401,70 @@
           "implicitDependencies": []
         }
       },
+      "protos": {
+        "name": "protos",
+        "type": "lib",
+        "data": {
+          "root": "protos",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "protos",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "compile": {
+              "executor": "nx:run-commands",
+              "options": {
+                "commands": [
+                  "tsx /workspace/protos/scripts/generate-proto.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "protos",
+          "$schema": "../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "./",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
       "aikb": {
         "name": "aikb",
         "type": "app",
@@ -6923,7 +8495,9 @@
                 "doc",
                 "cli",
                 "search",
-                "clear:library:indices"
+                "clear:library:indices",
+                "clear:rabbitmq",
+                "clear:rabbitmq:safe"
               ]
             },
             "description": "",
@@ -6935,10 +8509,6 @@
           },
           "targets": {
             "vite:test": {
-              "options": {
-                "cwd": ".",
-                "command": "vitest"
-              },
               "cache": true,
               "inputs": [
                 "default",
@@ -6957,6 +8527,7 @@
               ],
               "metadata": {
                 "technologies": [
+                  "vite",
                   "vite"
                 ],
                 "description": "Run Vite tests",
@@ -6971,6 +8542,10 @@
                 }
               },
               "executor": "nx:run-commands",
+              "options": {
+                "cwd": ".",
+                "command": "vitest"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -6985,13 +8560,10 @@
                   ]
                 }
               ],
-              "options": {
-                "cwd": ".",
-                "command": "tsc --noEmit -p tsconfig.json"
-              },
               "metadata": {
                 "description": "Runs type-checking for the project.",
                 "technologies": [
+                  "typescript",
                   "typescript"
                 ],
                 "help": {
@@ -7004,6 +8576,10 @@
                 }
               },
               "executor": "nx:run-commands",
+              "options": {
+                "cwd": ".",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -7303,6 +8879,30 @@
               },
               "configurations": {},
               "parallelism": true
+            },
+            "clear:rabbitmq": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "clear:rabbitmq"
+              },
+              "metadata": {
+                "scriptContent": "npx tsx scripts/clear-rabbitmq-queues.ts",
+                "runCommand": "pnpm run clear:rabbitmq"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "clear:rabbitmq:safe": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "clear:rabbitmq:safe"
+              },
+              "metadata": {
+                "scriptContent": "npx tsx scripts/clear-rabbitmq-queues.ts --dry-run",
+                "runCommand": "pnpm run clear:rabbitmq:safe"
+              },
+              "configurations": {},
+              "parallelism": true
             }
           },
           "name": "aikb",
@@ -7324,11 +8924,6 @@
           "source": "item-chunk-embed-service",
           "target": "@aikb/chunking",
           "type": "static"
-        },
-        {
-          "source": "item-chunk-embed-service",
-          "target": "embedding",
-          "type": "static"
         }
       ],
       "markdown-storage-worker": [
@@ -7345,11 +8940,6 @@
         {
           "source": "markdown-storage-worker",
           "target": "@aikb/chunking",
-          "type": "static"
-        },
-        {
-          "source": "markdown-storage-worker",
-          "target": "embedding",
           "type": "static"
         },
         {
@@ -7387,11 +8977,6 @@
         {
           "source": "pdf-conversion-worker",
           "target": "mineru-client",
-          "type": "static"
-        },
-        {
-          "source": "pdf-conversion-worker",
-          "target": "embedding",
           "type": "static"
         },
         {
@@ -7442,11 +9027,55 @@
           "type": "static"
         }
       ],
+      "libraryItemVectorService-e2e": [
+        {
+          "source": "libraryItemVectorService-e2e",
+          "target": "libraryItemVectorService",
+          "type": "implicit"
+        }
+      ],
       "bibliography-service-e2e": [
         {
           "source": "bibliography-service-e2e",
           "target": "bibliography-service",
           "type": "implicit"
+        },
+        {
+          "source": "bibliography-service-e2e",
+          "target": "bibliography-service",
+          "type": "static"
+        },
+        {
+          "source": "bibliography-service-e2e",
+          "target": "library-shared",
+          "type": "static"
+        },
+        {
+          "source": "bibliography-service-e2e",
+          "target": "bibliography",
+          "type": "static"
+        },
+        {
+          "source": "bibliography-service-e2e",
+          "target": "@aikb/s3-service",
+          "type": "static"
+        }
+      ],
+      "libraryItemVectorService": [
+        {
+          "source": "libraryItemVectorService",
+          "target": "proto-ts",
+          "type": "static"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "item-vector-storage",
+          "type": "static"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "@aikb/chunking",
+          "type": "static"
         }
       ],
       "quiz-management-client": [
@@ -7459,31 +9088,36 @@
       "bibliography-service": [
         {
           "source": "bibliography-service",
-          "target": "bibliography",
-          "type": "static"
-        },
-        {
-          "source": "bibliography-service",
           "target": "log-management",
           "type": "static"
         },
         {
           "source": "bibliography-service",
-          "target": "@aikb/rabbitmq",
+          "target": "bibliography",
           "type": "static"
         },
         {
           "source": "bibliography-service",
           "target": "library-shared",
           "type": "static"
+        },
+        {
+          "source": "bibliography-service",
+          "target": "@aikb/s3-service",
+          "type": "static"
+        },
+        {
+          "source": "bibliography-service",
+          "target": "utils",
+          "type": "static"
+        },
+        {
+          "source": "bibliography-service",
+          "target": "proto-ts",
+          "type": "static"
         }
       ],
       "item-vector-storage": [
-        {
-          "source": "item-vector-storage",
-          "target": "log-management",
-          "type": "static"
-        },
         {
           "source": "item-vector-storage",
           "target": "@aikb/chunking",
@@ -7491,7 +9125,7 @@
         },
         {
           "source": "item-vector-storage",
-          "target": "embedding",
+          "target": "log-management",
           "type": "static"
         }
       ],
@@ -7516,7 +9150,7 @@
           "type": "static"
         }
       ],
-      "log-management": [],
+      "rabbitmqPublist": [],
       "library-shared": [
         {
           "source": "library-shared",
@@ -7524,17 +9158,31 @@
           "type": "static"
         }
       ],
+      "log-management": [],
       "pdf2md-service": [
         {
           "source": "pdf2md-service",
           "target": "library-shared",
           "type": "static"
-        }
-      ],
-      "mineru-client": [
+        },
         {
-          "source": "mineru-client",
+          "source": "pdf2md-service",
+          "target": "mineru-client",
+          "type": "static"
+        },
+        {
+          "source": "pdf2md-service",
           "target": "@aikb/s3-service",
+          "type": "static"
+        },
+        {
+          "source": "pdf2md-service",
+          "target": "log-management",
+          "type": "static"
+        },
+        {
+          "source": "pdf2md-service",
+          "target": "proto-ts",
           "type": "static"
         }
       ],
@@ -7555,40 +9203,10 @@
           "type": "static"
         }
       ],
-      "bibliography": [
+      "mineru-client": [
         {
-          "source": "bibliography",
-          "target": "@aikb/chunking",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
-          "target": "embedding",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
-          "target": "log-management",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
-          "target": "@aikb/pdf-converter",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
+          "source": "mineru-client",
           "target": "@aikb/s3-service",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
-          "target": "utils",
-          "type": "static"
-        },
-        {
-          "source": "bibliography",
-          "target": "item-vector-storage",
           "type": "static"
         }
       ],
@@ -7599,18 +9217,53 @@
           "type": "static"
         }
       ],
-      "quiz-shared": [],
-      "@aikb/s3-service": [],
-      "components": [],
-      "embedding": [
+      "bibliography": [
         {
-          "source": "embedding",
+          "source": "bibliography",
           "target": "log-management",
           "type": "static"
         },
         {
-          "source": "embedding",
+          "source": "bibliography",
+          "target": "@aikb/s3-service",
+          "type": "dynamic"
+        },
+        {
+          "source": "bibliography",
+          "target": "@aikb/s3-service",
+          "type": "static"
+        },
+        {
+          "source": "bibliography",
+          "target": "item-vector-storage",
+          "type": "static"
+        },
+        {
+          "source": "bibliography",
           "target": "utils",
+          "type": "static"
+        },
+        {
+          "source": "bibliography",
+          "target": "@aikb/pdf-converter",
+          "type": "static"
+        }
+      ],
+      "medquiz-web": [
+        {
+          "source": "medquiz-web",
+          "target": "@aikb/s3-service",
+          "type": "static"
+        }
+      ],
+      "quiz-shared": [],
+      "@aikb/s3-service": [],
+      "components": [],
+      "proto-ts": [],
+      "embedding": [
+        {
+          "source": "embedding",
+          "target": "log-management",
           "type": "static"
         }
       ],
@@ -7638,36 +9291,16 @@
         },
         {
           "source": "@aikb/rabbitmq",
-          "target": "embedding",
-          "type": "static"
-        },
-        {
-          "source": "@aikb/rabbitmq",
           "target": "@aikb/chunking",
           "type": "static"
         }
       ],
-      "med-quiz": [],
       "utils": [],
+      "protos": [],
       "aikb": [
         {
           "source": "aikb",
-          "target": "log-management",
-          "type": "static"
-        },
-        {
-          "source": "aikb",
-          "target": "mineru-client",
-          "type": "static"
-        },
-        {
-          "source": "aikb",
           "target": "@aikb/chunking",
-          "type": "static"
-        },
-        {
-          "source": "aikb",
-          "target": "embedding",
           "type": "static"
         },
         {
@@ -7682,17 +9315,37 @@
         },
         {
           "source": "aikb",
-          "target": "@aikb/pdf-splitter",
-          "type": "static"
-        },
-        {
-          "source": "aikb",
           "target": "@aikb/s3-service",
           "type": "static"
         },
         {
           "source": "aikb",
+          "target": "embedding",
+          "type": "static"
+        },
+        {
+          "source": "aikb",
+          "target": "log-management",
+          "type": "static"
+        },
+        {
+          "source": "aikb",
+          "target": "mineru-client",
+          "type": "static"
+        },
+        {
+          "source": "aikb",
+          "target": "mineru-client",
+          "type": "dynamic"
+        },
+        {
+          "source": "aikb",
           "target": "utils",
+          "type": "static"
+        },
+        {
+          "source": "aikb",
+          "target": "@aikb/rabbitmq",
           "type": "static"
         }
       ]

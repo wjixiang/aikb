@@ -1,7 +1,7 @@
 {
   "name": "bibliography",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "src",
+  "sourceRoot": "libs/bibliography/src",
   "projectType": "library",
   "tags": [],
   "targets": {
@@ -11,11 +11,9 @@
       "options": {
         "outputPath": "dist/libs/bibliography",
         "main": "libs/bibliography/src/index.ts",
-        "tsConfig": "libs/bibliography/tsconfig.lib.json"
+        "tsConfig": "libs/bibliography/tsconfig.lib.json",
+        "assets": ["libs/bibliography/*.md"]
       }
-    },
-    "test": {
-      "executor": "@nx/vite:test"
     }
   }
 }

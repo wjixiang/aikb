@@ -9,8 +9,9 @@ import { createLoggerWithPrefix } from 'log-management';
 import * as path from 'path';
 import { getPdfDownloadUrl } from '@aikb/s3-service';
 import * as yauzl from 'yauzl';
-import { BibliographyGrpcClient } from '../grpc/bibliography.grpc.client';
-import { bibliographyProto } from 'proto-ts';
+// import { BibliographyGrpcClient } from '../grpc/bibliography.grpc.client';
+import { bibliographyProto, BibliographyGrpcClient } from 'proto-ts';
+import { firstValueFrom } from 'rxjs';
 
 // Internal S3 configuration for this project
 const pdf2mdS3Config: S3ServiceConfig = {
@@ -1004,9 +1005,9 @@ export class AppService {
       );
 
       const response =
-        await this.bibliographyGrpcClient.updateLibraryItemMarkdown(
+        await firstValueFrom(this.bibliographyGrpcClient.updateLibraryItemMarkdown(
           updateRequest,
-        );
+        ));
 
       this.logger.debug(
         `[DEBUG] Received gRPC response: ${JSON.stringify(response)}`,

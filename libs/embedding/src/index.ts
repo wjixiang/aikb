@@ -1,1 +1,1 @@
-export * from './lib/embedding';
+export * from './lib/embedding.js';
