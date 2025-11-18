@@ -159,73 +159,82 @@ export class AppService {
         return {
           success: false,
           message: `Chunk embed group ${request.chunkEmbedGroupId} is not active`,
-          chunkId: '',
+          chunkIds: [],
         };
       }
 
-      // Generate embedding for the content
-      const embedding = await this.generateEmbedding(
-        request.content,
+      // Extract content from all chunks for batch embedding
+      const chunkContents = request.chunks.map(chunk => chunk.content);
+      
+      // Generate embeddings for all chunks using batch functionality
+      const embeddings = await this.generateBatchEmbeddings(
+        chunkContents,
         group.embeddingConfig,
       );
 
-      if (!embedding) {
+      // Check if any embeddings failed
+      const failedEmbeddings = embeddings.some(embedding => embedding === null);
+      if (failedEmbeddings) {
         return {
           success: false,
-          message: 'Failed to generate embedding for content',
-          chunkId: '',
+          message: 'Failed to generate embeddings for one or more chunks',
+          chunkIds: [],
         };
       }
 
-      // Create the item chunk
+      // Create item chunks with embeddings
       const now = new Date();
-      const chunkId = `chunk_${Date.now()}_${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
+      const itemChunks: ItemChunk[] = request.chunks.map((chunk, index) => {
+        const chunkId = `chunk_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}_${index}`;
 
-      const itemChunk: ItemChunk = {
-        id: chunkId,
-        itemId: request.itemId,
-        denseVectorIndexGroupId: request.chunkEmbedGroupId,
-        title: request.title,
-        content: request.content,
-        index: request.index,
-        embedding,
-        strategyMetadata: {
-          chunkingStrategy: group.chunkingConfig.strategy || 'paragraph',
-          chunkingConfig: group.chunkingConfig,
-          embeddingConfig: group.embeddingConfig,
-          processingTimestamp: now,
-          processingDuration: 0, // Will be calculated
-        },
-        metadata: this.convertMetadataFromProto(request.metadata),
-        createdAt: now,
-        updatedAt: now,
-      };
+        return {
+          id: chunkId,
+          itemId: chunk.itemId,
+          denseVectorIndexGroupId: request.chunkEmbedGroupId,
+          title: chunk.title,
+          content: chunk.content,
+          index: chunk.index,
+          embedding: embeddings[index]!, // We know it's not null from the check above
+          strategyMetadata: {
+            chunkingStrategy: group.chunkingConfig.strategy || 'paragraph',
+            chunkingConfig: group.chunkingConfig,
+            embeddingConfig: group.embeddingConfig,
+            processingTimestamp: now,
+            processingDuration: 0, // Will be calculated
+          },
+          metadata: this.convertMetadataFromProto(chunk.metadata),
+          createdAt: now,
+          updatedAt: now,
+        };
+      });
 
-      // Calculate processing duration
-      const startTime = now.getTime();
-      const success = await this.itemVectorStorage.insertItemChunk(group, itemChunk);
-      const endTime = Date.now();
+      // Insert all chunks using batch insert for better performance
+      const success = await this.itemVectorStorage.batchInsertItemChunks(
+        group,
+        itemChunks,
+      );
       
       if (success) {
+        const chunkIds = itemChunks.map(chunk => chunk.id);
         return {
           success: true,
-          message: 'Chunk embedded successfully',
-          chunkId,
+          message: `${itemChunks.length} chunks embedded successfully`,
+          chunkIds,
         };
       } else {
         return {
           success: false,
-          message: 'Failed to insert chunk into storage',
-          chunkId: '',
+          message: 'Failed to insert chunks into storage',
+          chunkIds: [],
         };
       }
     } catch (error) {
       return {
         success: false,
-        message: `Error embedding chunk: ${error.message}`,
-        chunkId: '',
+        message: `Error embedding chunks: ${error.message}`,
+        chunkIds: [],
       };
     }
   }
@@ -241,13 +250,38 @@ export class AppService {
       // Set the provider based on the configuration
       embeddingService.setProvider(embeddingConfig.provider);
       
-      // Generate embedding
-      const embedding = await embeddingService.embed(content);
+      // Generate embedding using batch functionality for better performance
+      const embeddings = await embeddingService.embedBatch([content]);
       
-      return embedding;
+      // Return the first (and only) embedding from the batch result
+      return embeddings[0] || null;
     } catch (error) {
       console.error('Failed to generate embedding:', error);
       return null;
+    }
+  }
+
+  private async generateBatchEmbeddings(
+    contents: string[],
+    embeddingConfig: EmbeddingConfig,
+  ): Promise<(number[] | null)[]> {
+    try {
+      // Import embedding service dynamically to avoid circular dependencies
+      const { embeddingService } = await import('embedding');
+      
+      // Set the provider based on the configuration
+      embeddingService.setProvider(embeddingConfig.provider);
+      
+      // Generate embeddings using batch functionality
+      const embeddings = await embeddingService.embedBatch(
+        contents,
+        embeddingConfig.provider,
+      );
+      
+      return embeddings;
+    } catch (error) {
+      console.error('Failed to generate batch embeddings:', error);
+      return new Array(contents.length).fill(null);
     }
   }
 

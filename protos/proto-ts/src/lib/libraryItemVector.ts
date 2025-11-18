@@ -90,6 +90,10 @@ export interface ListItemChunkEmbedGroupMetadataResponse {
 
 export interface EmbedChunksRequest {
   chunkEmbedGroupId: string;
+  chunks: ChunkData[];
+}
+
+export interface ChunkData {
   itemId: string;
   title: string;
   content: string;
@@ -97,7 +101,7 @@ export interface EmbedChunksRequest {
   metadata: { [key: string]: string };
 }
 
-export interface EmbedChunksRequest_MetadataEntry {
+export interface ChunkData_MetadataEntry {
   key: string;
   value: string;
 }
@@ -105,7 +109,7 @@ export interface EmbedChunksRequest_MetadataEntry {
 export interface EmbedChunksResponse {
   success: boolean;
   message: string;
-  chunkId: string;
+  chunkIds: string[];
 }
 
 export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
