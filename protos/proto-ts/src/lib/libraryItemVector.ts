@@ -88,6 +88,26 @@ export interface ListItemChunkEmbedGroupMetadataResponse {
   totalSize: number;
 }
 
+export interface EmbedChunksRequest {
+  chunkEmbedGroupId: string;
+  itemId: string;
+  title: string;
+  content: string;
+  index: number;
+  metadata: { [key: string]: string };
+}
+
+export interface EmbedChunksRequest_MetadataEntry {
+  key: string;
+  value: string;
+}
+
+export interface EmbedChunksResponse {
+  success: boolean;
+  message: string;
+  chunkId: string;
+}
+
 export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */
@@ -100,6 +120,8 @@ export interface LibraryItemVectorServiceClient {
   listChunkEmbedGroupMetadata(
     request: ListItemChunkEmbedGroupMetadataRequest,
   ): Observable<ListItemChunkEmbedGroupMetadataResponse>;
+
+  embedChunks(request: EmbedChunksRequest): Observable<EmbedChunksResponse>;
 }
 
 /** Library Item Vector service definition */
@@ -117,11 +139,15 @@ export interface LibraryItemVectorServiceController {
     | Promise<ListItemChunkEmbedGroupMetadataResponse>
     | Observable<ListItemChunkEmbedGroupMetadataResponse>
     | ListItemChunkEmbedGroupMetadataResponse;
+
+  embedChunks(
+    request: EmbedChunksRequest,
+  ): Promise<EmbedChunksResponse> | Observable<EmbedChunksResponse> | EmbedChunksResponse;
 }
 
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createChunkEmbedGroup", "listChunkEmbedGroupMetadata"];
+    const grpcMethods: string[] = ["createChunkEmbedGroup", "listChunkEmbedGroupMetadata", "embedChunks"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);

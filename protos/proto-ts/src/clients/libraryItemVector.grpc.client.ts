@@ -37,4 +37,11 @@ export class LibraryItemVectorGrpcClient {
     return this.libraryItemVectorServiceService
       .listChunkEmbedGroupMetadata(request);
   }
+
+  embedChunks(
+    request: libraryItemVectorProto.EmbedChunksRequest,
+  ): Observable<libraryItemVectorProto.EmbedChunksResponse> {
+    return this.libraryItemVectorServiceService
+      .embedChunks(request);
+  }
 }

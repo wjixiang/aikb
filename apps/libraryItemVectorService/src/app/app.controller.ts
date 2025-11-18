@@ -39,4 +39,17 @@ export class AppController
       );
     }
   }
+
+  @GrpcMethod('EmbedChunks')
+  async embedChunks(
+    request: libraryItemVectorProto.EmbedChunksRequest,
+  ): Promise<libraryItemVectorProto.EmbedChunksResponse> {
+    try {
+      return await this.libraryItemVectorService.embedChunks(request);
+    } catch (error) {
+      throw new Error(
+        `Failed to embed chunks: ${error.message}`,
+      );
+    }
+  }
 }

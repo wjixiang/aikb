@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { ElasticsearchItemVectorStorage } from 'item-vector-storage';
+import { ElasticsearchItemVectorStorage, ItemChunk } from 'item-vector-storage';
 import { ChunkingStrategy } from '@aikb/chunking';
 import {
   EmbeddingProvider,
   OpenAIModel,
   AlibabaModel,
   OnnxModel,
+  EmbeddingConfig,
 } from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
 
@@ -143,5 +144,138 @@ export class AppService {
       nextPageToken: result.nextPageToken || '',
       totalSize: result.totalSize,
     };
+  }
+
+  async embedChunks(
+    request: libraryItemVectorProto.EmbedChunksRequest,
+  ): Promise<libraryItemVectorProto.EmbedChunksResponse> {
+    try {
+      // Get the chunk embed group info to validate it exists and get configuration
+      const group = await this.itemVectorStorage.getChunkEmbedGroupInfoById(
+        request.chunkEmbedGroupId,
+      );
+
+      if (!group.isActive) {
+        return {
+          success: false,
+          message: `Chunk embed group ${request.chunkEmbedGroupId} is not active`,
+          chunkId: '',
+        };
+      }
+
+      // Generate embedding for the content
+      const embedding = await this.generateEmbedding(
+        request.content,
+        group.embeddingConfig,
+      );
+
+      if (!embedding) {
+        return {
+          success: false,
+          message: 'Failed to generate embedding for content',
+          chunkId: '',
+        };
+      }
+
+      // Create the item chunk
+      const now = new Date();
+      const chunkId = `chunk_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      const itemChunk: ItemChunk = {
+        id: chunkId,
+        itemId: request.itemId,
+        denseVectorIndexGroupId: request.chunkEmbedGroupId,
+        title: request.title,
+        content: request.content,
+        index: request.index,
+        embedding,
+        strategyMetadata: {
+          chunkingStrategy: group.chunkingConfig.strategy || 'paragraph',
+          chunkingConfig: group.chunkingConfig,
+          embeddingConfig: group.embeddingConfig,
+          processingTimestamp: now,
+          processingDuration: 0, // Will be calculated
+        },
+        metadata: this.convertMetadataFromProto(request.metadata),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Calculate processing duration
+      const startTime = now.getTime();
+      const success = await this.itemVectorStorage.insertItemChunk(group, itemChunk);
+      const endTime = Date.now();
+      
+      if (success) {
+        return {
+          success: true,
+          message: 'Chunk embedded successfully',
+          chunkId,
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Failed to insert chunk into storage',
+          chunkId: '',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error embedding chunk: ${error.message}`,
+        chunkId: '',
+      };
+    }
+  }
+
+  private async generateEmbedding(
+    content: string,
+    embeddingConfig: EmbeddingConfig,
+  ): Promise<number[] | null> {
+    try {
+      // Import embedding service dynamically to avoid circular dependencies
+      const { embeddingService } = await import('embedding');
+      
+      // Set the provider based on the configuration
+      embeddingService.setProvider(embeddingConfig.provider);
+      
+      // Generate embedding
+      const embedding = await embeddingService.embed(content);
+      
+      return embedding;
+    } catch (error) {
+      console.error('Failed to generate embedding:', error);
+      return null;
+    }
+  }
+
+  private convertMetadataFromProto(
+    protoMetadata: { [key: string]: string } | undefined,
+  ): ItemChunk['metadata'] {
+    if (!protoMetadata) return undefined;
+
+    const metadata: ItemChunk['metadata'] = {};
+    
+    // Convert string values to appropriate types based on common keys
+    for (const [key, value] of Object.entries(protoMetadata)) {
+      switch (key) {
+        case 'startPosition':
+        case 'endPosition':
+        case 'wordCount':
+          metadata[key] = parseInt(value, 10);
+          break;
+        case 'chunkType':
+          metadata[key] = value;
+          break;
+        default:
+          // Keep as string for unknown keys
+          metadata[key] = value;
+          break;
+      }
+    }
+    
+    return metadata;
   }
 }
