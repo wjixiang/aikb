@@ -337,6 +337,122 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     }
   }
 
+  async semanticSearchByItemidAndGroupid(
+    itemId: string,
+    groupId: string,
+    searchVector: number[],
+    topK: number,
+    scoreThreshold: number,
+    filter?: { [key: string]: string },
+  ): Promise<Array<Omit<ItemChunk, 'embedding'> & { similarity: number }>> {
+    try {
+      // Get the group info to determine the correct index
+      const group = await this.getChunkEmbedGroupInfoById(groupId);
+      
+      // Get the chunks index name for this embedding configuration
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(group.embeddingConfig);
+      
+      // Build the search query
+      const searchQuery: any = {
+        index: chunksIndexName,
+        body: {
+          query: {
+            bool: {
+              must: [
+                {
+                  term: {
+                    itemId: itemId,
+                  },
+                },
+                {
+                  term: {
+                    denseVectorIndexGroupId: groupId,
+                  },
+                },
+              ],
+              should: [
+                {
+                  script_score: {
+                    query: { match_all: {} },
+                    script: {
+                      source: "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
+                      params: {
+                        query_vector: searchVector,
+                      },
+                    },
+                  },
+                },
+              ],
+              minimum_should_match: 1,
+            },
+          },
+          size: topK,
+          min_score: scoreThreshold,
+        },
+      };
+
+      // Add additional filters if provided
+      if (filter && Object.keys(filter).length > 0) {
+        const filterTerms = Object.entries(filter).map(([key, value]) => ({
+          term: {
+            [`metadata.${key}`]: value,
+          },
+        }));
+        
+        searchQuery.body.query.bool.must.push(...filterTerms);
+      }
+
+      const result = await this.client.search(searchQuery);
+
+      const hits = result.hits.hits;
+      const chunks = hits.map(
+        (hit): Omit<ItemChunk, 'embedding'> & { similarity: number } => {
+          const { _source } = hit as any;
+          const { embedding: _embedding, ...chunkWithoutEmbedding } = _source;
+          
+          // Convert date strings back to Date objects
+          const chunkWithDates = {
+            ...chunkWithoutEmbedding,
+            createdAt: new Date(_source.createdAt),
+            updatedAt: new Date(_source.updatedAt),
+            strategyMetadata: {
+              ..._source.strategyMetadata,
+              processingTimestamp: new Date(_source.strategyMetadata.processingTimestamp),
+            },
+          };
+          
+          return {
+            ...chunkWithDates,
+            similarity: (hit._score || 0) - 1.0, // Adjust score back to cosine similarity range [-1, 1]
+          };
+        },
+      );
+
+      return chunks;
+    } catch (error) {
+      this.logger.error('Failed to perform semantic search by item ID and group ID:', error);
+      
+      // Fallback to the basic semantic search method if the enhanced search fails
+      try {
+        const basicResult = await this.semanticSearch({
+          itemId: [itemId],
+          groupId: groupId,
+          searchVector: searchVector,
+          resultNum: topK,
+          threshold: scoreThreshold,
+        });
+        
+        return [{
+          ...basicResult,
+          similarity: 0.0, // Basic search doesn't provide similarity score
+        }];
+      } catch (fallbackError) {
+        this.logger.error('Fallback semantic search also failed:', fallbackError);
+        return [];
+      }
+    }
+  }
+
   async insertItemChunk(
     group: ChunkEmbedGroupMetadata,
     itemChunk: ItemChunk,

@@ -44,4 +44,11 @@ export class LibraryItemVectorGrpcClient {
     return this.libraryItemVectorServiceService
       .embedChunks(request);
   }
+
+  semanticSearchByItemidAndGroupid(
+    request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
+  ): Observable<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
+    return this.libraryItemVectorServiceService
+      .semanticSearchByItemidAndGroupid(request);
+  }
 }

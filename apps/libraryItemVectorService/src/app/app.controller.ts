@@ -52,4 +52,19 @@ export class AppController
       );
     }
   }
+
+  @GrpcMethod('SemanticSearchByItemidAndGroupid')
+  async semanticSearchByItemidAndGroupid(
+    request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
+  ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
+    try {
+      return await this.libraryItemVectorService.semanticSearchByItemidAndGroupid(
+        request,
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to perform semantic search: ${error.message}`,
+      );
+    }
+  }
 }

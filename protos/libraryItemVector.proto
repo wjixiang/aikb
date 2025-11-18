@@ -8,6 +8,7 @@ service LibraryItemVectorService {
   rpc CreateChunkEmbedGroup(CreateChunkEmbedGroupRequest) returns (CreateChunkEmbedGroupResponse);
   rpc ListChunkEmbedGroupMetadata(ListItemChunkEmbedGroupMetadataRequest) returns (ListItemChunkEmbedGroupMetadataResponse);
   rpc EmbedChunks(EmbedChunksRequest) returns (EmbedChunksResponse);
+  rpc SemanticSearchByItemidAndGroupid(SemanticSearchByItemidAndGroupidRequest) returns (SemanticSearchByItemidAndGroupidResponse);
 }
 
 // Chunking configuration
@@ -87,4 +88,28 @@ message EmbedChunksResponse {
   bool success = 1;
   string message = 2;
   repeated string chunk_ids = 3;
+}
+
+message SemanticSearchByItemidAndGroupidRequest {
+  string item_id = 1;
+  string chunk_embed_group_id = 2;
+  string query = 3;
+  int32 top_k = 4;
+  float score_threshold = 5;
+  map<string, string> filter = 6;
+}
+
+message SemanticSearchByItemidAndGroupidResponse {
+  bool success = 1;
+  string message = 2;
+  repeated SemanticSearchResult results = 3;
+}
+
+message SemanticSearchResult {
+  string chunk_id = 1;
+  string item_id = 2;
+  string title = 3;
+  string content = 4;
+  float score = 5;
+  map<string, string> metadata = 6;
 }

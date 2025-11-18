@@ -312,4 +312,86 @@ export class AppService {
     
     return metadata;
   }
+
+  async semanticSearchByItemidAndGroupid(
+    request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
+  ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
+    try {
+      // Validate that the chunk embed group exists and is active
+      const group = await this.itemVectorStorage.getChunkEmbedGroupInfoById(
+        request.chunkEmbedGroupId,
+      );
+
+      if (!group.isActive) {
+        return {
+          success: false,
+          message: `Chunk embed group ${request.chunkEmbedGroupId} is not active`,
+          results: [],
+        };
+      }
+
+      // Generate embedding for the search query
+      const queryEmbedding = await this.generateEmbedding(
+        request.query,
+        group.embeddingConfig,
+      );
+
+      if (!queryEmbedding) {
+        return {
+          success: false,
+          message: 'Failed to generate embedding for search query',
+          results: [],
+        };
+      }
+
+      // Perform semantic search using the storage layer's new method
+      const searchResults = await this.itemVectorStorage.semanticSearchByItemidAndGroupid(
+        request.itemId,
+        request.chunkEmbedGroupId,
+        queryEmbedding,
+        request.topK || 10,
+        request.scoreThreshold || 0.0,
+        request.filter || {},
+      );
+
+      // Convert internal results to protobuf format
+      const protobufResults = searchResults.map(result => ({
+        chunkId: result.id,
+        itemId: result.itemId,
+        title: result.title,
+        content: result.content,
+        score: result.similarity || 0.0,
+        metadata: this.convertMetadataToProto(result.metadata || {}),
+      }));
+
+      return {
+        success: true,
+        message: `Found ${protobufResults.length} matching chunks`,
+        results: protobufResults,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error performing semantic search: ${error.message}`,
+        results: [],
+      };
+    }
+  }
+
+  /**
+   * Convert internal metadata to protobuf format
+   */
+  private convertMetadataToProto(metadata: ItemChunk['metadata']): { [key: string]: string } {
+    if (!metadata) return {};
+
+    const protoMetadata: { [key: string]: string } = {};
+    
+    for (const [key, value] of Object.entries(metadata)) {
+      if (value !== undefined && value !== null) {
+        protoMetadata[key] = String(value);
+      }
+    }
+    
+    return protoMetadata;
+  }
 }

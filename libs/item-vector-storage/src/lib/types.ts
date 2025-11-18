@@ -91,6 +91,14 @@ export interface IItemVectorStorage {
   semanticSearch: (
     query: ItemChunkSemanticSearchQuery,
   ) => Promise<Omit<ItemChunk, 'embedding'>>;
+  semanticSearchByItemidAndGroupid: (
+    itemId: string,
+    groupId: string,
+    searchVector: number[],
+    topK: number,
+    scoreThreshold: number,
+    filter?: { [key: string]: string },
+  ) => Promise<Array<Omit<ItemChunk, 'embedding'> & { similarity: number }>>;
   insertItemChunk: (
     group: ChunkEmbedGroupMetadata,
     ItemChunk: ItemChunk,

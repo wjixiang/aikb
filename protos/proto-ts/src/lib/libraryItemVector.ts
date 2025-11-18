@@ -112,6 +112,40 @@ export interface EmbedChunksResponse {
   chunkIds: string[];
 }
 
+export interface SemanticSearchByItemidAndGroupidRequest {
+  itemId: string;
+  chunkEmbedGroupId: string;
+  query: string;
+  topK: number;
+  scoreThreshold: number;
+  filter: { [key: string]: string };
+}
+
+export interface SemanticSearchByItemidAndGroupidRequest_FilterEntry {
+  key: string;
+  value: string;
+}
+
+export interface SemanticSearchByItemidAndGroupidResponse {
+  success: boolean;
+  message: string;
+  results: SemanticSearchResult[];
+}
+
+export interface SemanticSearchResult {
+  chunkId: string;
+  itemId: string;
+  title: string;
+  content: string;
+  score: number;
+  metadata: { [key: string]: string };
+}
+
+export interface SemanticSearchResult_MetadataEntry {
+  key: string;
+  value: string;
+}
+
 export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */
@@ -126,6 +160,10 @@ export interface LibraryItemVectorServiceClient {
   ): Observable<ListItemChunkEmbedGroupMetadataResponse>;
 
   embedChunks(request: EmbedChunksRequest): Observable<EmbedChunksResponse>;
+
+  semanticSearchByItemidAndGroupid(
+    request: SemanticSearchByItemidAndGroupidRequest,
+  ): Observable<SemanticSearchByItemidAndGroupidResponse>;
 }
 
 /** Library Item Vector service definition */
@@ -147,11 +185,23 @@ export interface LibraryItemVectorServiceController {
   embedChunks(
     request: EmbedChunksRequest,
   ): Promise<EmbedChunksResponse> | Observable<EmbedChunksResponse> | EmbedChunksResponse;
+
+  semanticSearchByItemidAndGroupid(
+    request: SemanticSearchByItemidAndGroupidRequest,
+  ):
+    | Promise<SemanticSearchByItemidAndGroupidResponse>
+    | Observable<SemanticSearchByItemidAndGroupidResponse>
+    | SemanticSearchByItemidAndGroupidResponse;
 }
 
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createChunkEmbedGroup", "listChunkEmbedGroupMetadata", "embedChunks"];
+    const grpcMethods: string[] = [
+      "createChunkEmbedGroup",
+      "listChunkEmbedGroupMetadata",
+      "embedChunks",
+      "semanticSearchByItemidAndGroupid",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);
