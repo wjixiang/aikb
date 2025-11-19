@@ -14,6 +14,12 @@
         "tsConfig": "libs/utils/tsconfig.lib.json",
         "assets": ["libs/utils/*.md"]
       }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "rootDir": "libs/utils"
+      }
     }
   }
 }

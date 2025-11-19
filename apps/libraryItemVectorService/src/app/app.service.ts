@@ -9,6 +9,7 @@ import {
   EmbeddingConfig,
 } from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
+import {IdUtils} from 'utils'
 
 @Injectable()
 export class AppService {
@@ -185,9 +186,7 @@ export class AppService {
       // Create item chunks with embeddings
       const now = new Date();
       const itemChunks: ItemChunk[] = request.chunks.map((chunk, index) => {
-        const chunkId = `chunk_${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}_${index}`;
+        const chunkId = IdUtils.generateChunkId(chunk.itemId, index)
 
         return {
           id: chunkId,

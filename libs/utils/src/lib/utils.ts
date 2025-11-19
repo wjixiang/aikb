@@ -1,4 +1,7 @@
 import { v4 } from 'uuid';
+import { nanoid } from 'nanoid';
+
+
 
 /**
  * Utility functions for generating IDs without database dependency
@@ -16,6 +19,18 @@ export class IdUtils {
    */
   static generateUUID(): string {
     return v4();
+  }
+
+  /**
+   * Generate a unique chunk ID based on item ID and chunk index
+   * Format: chunk-{itemId}-{chunkIndex}-{shortId}
+   * @param itemId The parent item ID
+   * @param chunkIndex The index of the chunk within the item
+   * @returns A unique chunk identifier
+   */
+  static generateChunkId(itemId: string, chunkIndex: number): string {
+    const shortId = nanoid(6); // Generate 6-character short ID for uniqueness
+    return `chunk-${itemId}-${chunkIndex}-${shortId}`;
   }
 }
 
