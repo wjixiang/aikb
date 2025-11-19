@@ -68,6 +68,7 @@ export interface ItemChunkSemanticSearchQuery {
 
 export interface ChunkEmbedGroupMetadata {
   id: string; // Unique identifier for this group
+  itemId: string; // Reference to the parent item
   name: string; // Human-readable name
   description?: string;
 
@@ -136,3 +137,5 @@ export interface IItemVectorStorage {
     totalSize: number;
   }>;
 }
+
+export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id'>

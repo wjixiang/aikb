@@ -70,7 +70,7 @@ export class Embedding {
    */
   public setProvider(provider: EmbeddingProvider): void {
     if (!embeddingManager.hasProvider(provider)) {
-      logger.error(`Provider ${provider} is not available`);
+      logger.error(`setProvider failed: provider ${provider} is not available`);
       return;
     }
     this.activeProvider = provider;
@@ -109,7 +109,7 @@ export class Embedding {
     const providerInstance = embeddingManager.getProvider(targetProvider);
 
     if (!providerInstance) {
-      logger.error(`Provider ${targetProvider} is not available`);
+      logger.error(`embed failed: provider ${targetProvider} is not available`);
       return null;
     }
 
@@ -132,7 +132,7 @@ export class Embedding {
     const providerInstance = embeddingManager.getProvider(targetProvider);
 
     if (!providerInstance) {
-      logger.error(`Provider ${targetProvider} is not available`);
+      logger.error(`embedBatch failed: provider ${targetProvider} is not available`);
       return new Array(texts.length).fill(null);
     }
 

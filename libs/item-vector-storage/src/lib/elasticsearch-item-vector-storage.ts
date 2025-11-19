@@ -7,6 +7,7 @@ import {
   ItemChunkSemanticSearchQuery,
   ItemVectorStorageStatus,
   ChunkEmbedGroupMetadata,
+  ChunkEmbedGroupConfig,
 } from './types.js';
 
 /**
@@ -181,6 +182,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         mappings: {
           properties: {
             id: { type: 'keyword' },
+            itemId: { type: 'keyword' },
             name: { type: 'text' },
             description: { type: 'text' },
             chunkingConfig: { type: 'object', dynamic: true },
@@ -549,7 +551,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async createNewChunkEmbedGroupInfo(
-    config: Omit<ChunkEmbedGroupMetadata, 'id'>,
+    config: ChunkEmbedGroupConfig
   ): Promise<ChunkEmbedGroupMetadata> {
     try {
       await this.initializeIndices();

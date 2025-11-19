@@ -10,12 +10,14 @@ import {
 } from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
 import {IdUtils} from 'utils'
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { ChunkEmbedItemDto } from 'library-shared';
 
 @Injectable()
 export class AppService {
   private readonly itemVectorStorage: ElasticsearchItemVectorStorage;
 
-  constructor() {
+  constructor(private amqpConnection: AmqpConnection,) {
     this.itemVectorStorage = new ElasticsearchItemVectorStorage();
   }
 
@@ -66,6 +68,7 @@ export class AppService {
     // Create the chunk embedding group using the storage implementation
     const now = new Date();
     const groupConfig = {
+      itemId: request.itemId,
       name: request.name,
       description: request.description,
       chunkingConfig,
@@ -81,9 +84,18 @@ export class AppService {
     const createdGroup =
       await this.itemVectorStorage.createNewChunkEmbedGroupInfo(groupConfig);
 
+    // Produce chunkEmbed message
+    const chunEmbedRequest: ChunkEmbedItemDto = {
+      itemId: request.itemId,
+      chunkEmbedGroupMetadata: createdGroup
+    }
+    await this.amqpConnection.publish('library', 'item.vector.chunkEmbed', chunEmbedRequest)
+    console.log("Produce chunkEmbed message after creating chunkEmbedGroup")
+
     // Convert internal type back to protobuf type
     return {
       id: createdGroup.id,
+      itemId: createdGroup.itemId,
       name: createdGroup.name,
       description: createdGroup.description || '',
       chunkingConfig: {
@@ -120,6 +132,7 @@ export class AppService {
     // Convert internal types to protobuf types
     const groups = result.groups.map((group) => ({
       id: group.id,
+      itemId: group.itemId,
       name: group.name,
       description: group.description || '',
       chunkingConfig: {

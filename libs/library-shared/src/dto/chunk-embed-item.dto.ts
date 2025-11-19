@@ -83,6 +83,10 @@ class ChunkEmbedGroupMetadataDto {
 
   @IsString()
   @IsNotEmpty()
+  itemId!: string;
+
+  @IsString()
+  @IsNotEmpty()
   name!: string;
 
   @IsOptional()

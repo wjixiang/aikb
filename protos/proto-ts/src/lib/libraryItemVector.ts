@@ -42,6 +42,7 @@ export interface EmbeddingConfig_ParametersEntry {
 
 /** Request to create a new chunk embedding group */
 export interface CreateChunkEmbedGroupRequest {
+  itemId: string;
   name: string;
   description: string;
   chunkingConfig: ChunkingConfig | undefined;
@@ -60,6 +61,7 @@ export interface CreateChunkEmbedGroupResponse {
 /** Chunk embedding group metadata */
 export interface ChunkEmbedGroupMetadata {
   id: string;
+  itemId: string;
   name: string;
   description: string;
   chunkingConfig: ChunkingConfig | undefined;

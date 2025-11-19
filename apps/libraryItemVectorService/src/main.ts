@@ -6,7 +6,7 @@ import { Transport } from '@nestjs/microservices';
 async function bootstrap() {
   Logger.log('Starting libraryItemVectorService microservice bootstrap...');
 
-  const grpcPort = process.env.GRPC_PORT || 50051;
+  const grpcPort = process.env.GRPC_PORT || 50053;
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {

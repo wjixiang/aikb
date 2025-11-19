@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Pdf2MArkdownDto, UpdateMarkdownDto } from 'library-shared';
+import { Pdf2MArkdownDto, UpdateMarkdownDto, CreateGroupAndChunkEmbedDto } from 'library-shared';
 import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
@@ -9,9 +9,11 @@ import { createLoggerWithPrefix } from 'log-management';
 import * as path from 'path';
 import { getPdfDownloadUrl } from '@aikb/s3-service';
 import * as yauzl from 'yauzl';
-// import { BibliographyGrpcClient } from '../grpc/bibliography.grpc.client';
 import { bibliographyProto, BibliographyGrpcClient } from 'proto-ts';
 import { firstValueFrom } from 'rxjs';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { defaultChunkingConfig } from 'chunking';
+import { defaultEmbeddingConfig } from 'embedding';
 
 // Internal S3 configuration for this project
 const pdf2mdS3Config: S3ServiceConfig = {
@@ -46,7 +48,10 @@ async function uploadToS3(
 export class AppService {
   private minerUClient: MinerUClient;
   private logger = createLoggerWithPrefix('pdf2md-service-AppService');
-  constructor(private bibliographyGrpcClient: BibliographyGrpcClient) {
+  constructor(
+    private bibliographyGrpcClient: BibliographyGrpcClient,
+    private amqpConnection: AmqpConnection,
+  ) {
     // Initialize MinerUClient with environment configuration
     this.minerUClient = new MinerUClient({
       ...MinerUDefaultConfig,
@@ -155,6 +160,9 @@ export class AppService {
       // Update the bibliography service with the complete markdown
       await this.updateItemMarkdown(pdfInfo.itemId, mergedMarkdown);
 
+      // Publish message to create chunk embed group and process chunk embedding
+      await this.publishCreateGroupAndChunkEmbed(pdfInfo.itemId);
+
       return {
         itemId: pdfInfo.itemId,
         pageNum: pdfInfo.pageCount,
@@ -183,6 +191,9 @@ export class AppService {
 
       // Update the bibliography service with the markdown content
       await this.updateItemMarkdown(pdfInfo.itemId, markdownContent);
+
+      // Publish message to create chunk embed group and process chunk embedding
+      await this.publishCreateGroupAndChunkEmbed(pdfInfo.itemId);
 
       return {
         itemId: pdfInfo.itemId,
@@ -1031,6 +1042,33 @@ export class AppService {
         error,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Publish a message to create a chunk embed group and process chunk embedding
+   */
+  private async publishCreateGroupAndChunkEmbed(itemId: string): Promise<void> {
+    try {
+      this.logger.info(`Publishing createGroupAndChunkEmbed message for item: ${itemId}`);
+
+      // Create the message payload with default configuration
+      const message: CreateGroupAndChunkEmbedDto = {
+        itemId,
+        groupName: `Default chunk group for ${itemId}`,
+        groupDescription: `Automatically created chunk embed group for item ${itemId}`,
+        chunkingConfig: defaultChunkingConfig,
+        embeddingConfig: defaultEmbeddingConfig,
+      };
+
+      // Publish the message to RabbitMQ
+      await this.amqpConnection.publish('library', 'item.vector.createGroupAndChunkEmbed', message);
+
+      this.logger.info(`Successfully published createGroupAndChunkEmbed message for item: ${itemId}`);
+    } catch (error) {
+      this.logger.error(`Failed to publish createGroupAndChunkEmbed message for item ${itemId}:`, error);
+      // Don't throw the error to avoid interrupting the main flow
+      // The chunk embedding can be triggered manually later if needed
     }
   }
 }

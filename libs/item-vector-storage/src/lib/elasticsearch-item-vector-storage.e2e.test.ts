@@ -1,9 +1,9 @@
-import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-storage';
+import { ElasticsearchItemVectorStorage } from './elasticsearch-item-vector-storage.js';
 import {
   ItemVectorStorageStatus,
   ItemChunk,
   ChunkEmbedGroupMetadata,
-} from './types';
+} from './types.js';
 import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from 'embedding';
 import { ChunkingStrategy } from 'chunking';
 
@@ -37,6 +37,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
 
   describe('Group Management E2E', () => {
     const testGroupConfig: Omit<ChunkEmbedGroupMetadata, 'id'> = {
+      itemId: 'test-item-1',
       name: 'Test Group',
       description: 'Test group for E2E testing',
       chunkingConfig: {
@@ -143,6 +144,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
 
     beforeEach(async () => {
       testGroup = await storage.createNewChunkEmbedGroupInfo({
+        itemId: 'test-item-chunk-ops',
         name: 'E2E Test Group',
         description: 'Group for chunk operations testing',
         chunkingConfig: {
@@ -273,6 +275,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
     it('should support groups with different dimensions', async () => {
       // Create group with 1536 dimensions
       const group1536 = await storage.createNewChunkEmbedGroupInfo({
+        itemId: 'test-item-1536',
         name: '1536 Dimension Group',
         embeddingConfig: {
           model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
@@ -295,6 +298,7 @@ describe('ElasticsearchItemVectorStorage E2E Tests', () => {
 
       // Create group with 768 dimensions
       const group768 = await storage.createNewChunkEmbedGroupInfo({
+        itemId: 'test-item-768',
         name: '768 Dimension Group',
         embeddingConfig: {
           model: OpenAIModel.TEXT_EMBEDDING_ADA_002,

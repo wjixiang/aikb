@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchItemVectorStorage, ItemChunk, ChunkEmbedGroupMetadata } from 'item-vector-storage';
+import { ElasticsearchItemVectorStorage, ItemChunk, ChunkEmbedGroupMetadata, ChunkEmbedGroupConfig } from 'item-vector-storage';
 import { ChunkEmbedItemDto } from 'library-shared';
 import { chunkTextWithEnum, ChunkingStrategy } from 'chunking';
 import { embeddingService, EmbeddingProvider } from 'embedding';
@@ -248,5 +248,9 @@ export class ChunkEmbedService {
       this.logger.error('Failed to generate batch embeddings:', error);
       return new Array(contents.length).fill(null);
     }
+  }
+
+  async createChunkEmbedGroup(config: ChunkEmbedGroupConfig) {
+    return await this.itemVectorStorage.createNewChunkEmbedGroupInfo(config)
   }
 }

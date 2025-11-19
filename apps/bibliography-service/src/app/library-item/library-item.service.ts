@@ -291,10 +291,6 @@ export class LibraryItemService {
       dateModified: new Date(),
     };
 
-    console.debug(
-      `[DEBUG] Updating metadata with: ${JSON.stringify(updatedMetadata)}`,
-    );
-
     // Update the metadata through the storage
     await this.library['storage'].updateMetadata(updatedMetadata);
 
@@ -303,9 +299,9 @@ export class LibraryItemService {
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
-    console.debug(
-      `[DEBUG] Updated item: ${JSON.stringify(updatedItem.metadata)}`,
-    );
+    
+    
+
     return updatedItem;
   }
 
