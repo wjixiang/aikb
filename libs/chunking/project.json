@@ -1,0 +1,19 @@
+{
+  "name": "chunking",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/chunking/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/chunking",
+        "main": "libs/chunking/src/index.ts",
+        "tsConfig": "libs/chunking/tsconfig.lib.json",
+        "assets": ["libs/chunking/*.md"]
+      }
+    }
+  }
+}

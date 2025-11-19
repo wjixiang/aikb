@@ -15,7 +15,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@aikb/chunking": ["./libs/chunking/src/index.ts"],
+      "chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
       "@aikb/rabbitmq": ["./libs/rabbitmq/src/index.ts"],

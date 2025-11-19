@@ -7,8 +7,8 @@ import {
   ChunkingStrategyCompatibility,
   ChunkingStrategyType,
 } from './chunking-strategy.js';
-import { H1ChunkingStrategy } from './strategies/h1-chunking-strategy.js';
-import { ParagraphChunkingStrategy } from './strategies/paragraph-chunking-strategy.js';
+import { H1ChunkingStrategy } from '../strategies/h1-chunking-strategy.js';
+import { ParagraphChunkingStrategy } from '../strategies/paragraph-chunking-strategy.js';
 
 /**
  * Chunking策略管理器

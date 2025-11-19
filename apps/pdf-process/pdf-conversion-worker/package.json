@@ -28,7 +28,7 @@
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",
     "embedding": "workspace:*",
-    "@aikb/chunking": "workspace:*",
+    "chunking": "workspace:*",
     "@aikb/pdf-part-tracker": "workspace:*",
     "@aikb/markdown-part-cache": "workspace:*",
     "dotenv": "^17.2.2",

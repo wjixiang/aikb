@@ -5,7 +5,7 @@ import {
   ChunkEmbedGroupMetadata,
 } from './types';
 import { EmbeddingConfig, EmbeddingProvider, OpenAIModel } from 'embedding';
-import { ChunkingStrategy } from '@aikb/chunking';
+import { ChunkingStrategy } from 'chunking';
 
 describe('ElasticsearchItemVectorStorage E2E Tests', () => {
   let storage: ElasticsearchItemVectorStorage;

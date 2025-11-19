@@ -45,7 +45,7 @@
     "@aikb/s3-service": "workspace:*",
     "mineru-client": "workspace:*",
     "embedding": "workspace:*",
-    "@aikb/chunking": "workspace:*",
+    "chunking": "workspace:*",
     "dotenv": "^17.2.2"
   },
   "files": [

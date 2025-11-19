@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AppGrpcController } from './app.grpc.controller';
-import { AppService } from './app.service';
+import { ChunkEmbedController } from './chunkEmbed.controller';
+import { ChunkEmbedService } from './chunkEmbed.service';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { ChunkEmbedModule } from '../chunkEmbed/chunkEmbed.module';
+import { BibliographyGrpcClient } from 'proto-ts';
 
 @Module({
   imports: [
@@ -19,9 +19,8 @@ import { ChunkEmbedModule } from '../chunkEmbed/chunkEmbed.module';
       },
       enableControllerDiscovery: true,
     }),
-    ChunkEmbedModule,
   ],
-  controllers: [AppGrpcController],
-  providers: [AppService],
+  controllers: [ChunkEmbedController],
+  providers: [ChunkEmbedService, BibliographyGrpcClient],
 })
-export class AppModule {}
+export class ChunkEmbedModule {}

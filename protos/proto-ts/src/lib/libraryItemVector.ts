@@ -146,6 +146,12 @@ export interface SemanticSearchResult_MetadataEntry {
   value: string;
 }
 
+export interface ChunkEmbedItemRequest {
+}
+
+export interface ChunkEmbedItemResponse {
+}
+
 export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */

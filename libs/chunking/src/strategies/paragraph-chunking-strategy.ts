@@ -3,7 +3,7 @@ import {
   ChunkingConfig,
   BaseChunkResult,
   ChunkingStrategy,
-} from '../chunking-strategy.js';
+} from '../lib/chunking-strategy.js';
 
 /**
  * 基于段落的文本切片策略

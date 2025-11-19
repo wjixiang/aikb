@@ -6559,8 +6559,8 @@
           "implicitDependencies": []
         }
       },
-      "@aikb/chunking": {
-        "name": "@aikb/chunking",
+      "chunking": {
+        "name": "chunking",
         "type": "lib",
         "data": {
           "root": "libs/chunking",
@@ -6692,7 +6692,7 @@
               ],
               "executor": "nx:run-commands",
               "options": {
-                "command": "pnpm exec nx watch --projects @aikb/chunking --includeDependentProjects -- pnpm exec nx build-deps @aikb/chunking"
+                "command": "pnpm exec nx watch --projects chunking --includeDependentProjects -- pnpm exec nx build-deps chunking"
               },
               "configurations": {},
               "parallelism": true
@@ -6805,7 +6805,7 @@
             },
             "description": "Text chunking strategies and management utilities",
             "js": {
-              "packageName": "@aikb/chunking",
+              "packageName": "chunking",
               "packageVersion": "0.0.1",
               "packageExports": {
                 ".": {
@@ -6837,7 +6837,7 @@
               "isInPackageManagerWorkspaces": true
             }
           },
-          "name": "@aikb/chunking",
+          "name": "chunking",
           "tags": [
             "npm:public"
           ],
@@ -7812,7 +7812,7 @@
         },
         {
           "source": "item-chunk-embed-service",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {
@@ -7834,7 +7834,7 @@
         },
         {
           "source": "markdown-storage-worker",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {
@@ -7886,7 +7886,7 @@
         },
         {
           "source": "pdf-conversion-worker",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {
@@ -7981,7 +7981,7 @@
         },
         {
           "source": "item-vector-storage",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {
@@ -8058,7 +8058,7 @@
       "bibliography": [
         {
           "source": "bibliography",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {
@@ -8120,7 +8120,7 @@
           "type": "static"
         }
       ],
-      "@aikb/chunking": [],
+      "chunking": [],
       "@aikb/rabbitmq": [
         {
           "source": "@aikb/rabbitmq",
@@ -8149,7 +8149,7 @@
         },
         {
           "source": "@aikb/rabbitmq",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         }
       ],
@@ -8162,7 +8162,7 @@
         },
         {
           "source": "aikb",
-          "target": "@aikb/chunking",
+          "target": "chunking",
           "type": "static"
         },
         {

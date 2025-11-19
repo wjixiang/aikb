@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchItemVectorStorage, ItemChunk } from 'item-vector-storage';
-import { ChunkingStrategy } from '@aikb/chunking';
+import { ChunkingStrategy } from 'chunking';
 import {
   EmbeddingProvider,
   OpenAIModel,

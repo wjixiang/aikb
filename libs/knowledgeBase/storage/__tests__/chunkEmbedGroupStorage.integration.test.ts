@@ -8,7 +8,7 @@ import {
   ChunkingConfig,
   defaultChunkingConfig,
   ChunkingStrategy,
-} from '@aikb/chunking';
+} from 'chunking';
 import {
   EmbeddingConfig,
   defaultEmbeddingConfig,

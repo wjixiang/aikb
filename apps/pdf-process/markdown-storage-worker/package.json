@@ -11,7 +11,7 @@
     "@nestjs/core": "^11.1.7",
     "@nestjs/microservices": "^11.1.7",
     "bibliography": "*",
-    "@aikb/chunking": "*",
+    "chunking": "*",
     "embedding": "*",
     "log-management": "*",
     "@aikb/rabbitmq": "*",

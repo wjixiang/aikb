@@ -11,7 +11,7 @@ import { getRabbitMQService } from '@aikb/rabbitmq';
 import { IRabbitMQService } from '@aikb/rabbitmq';
 import { MessageProtocol } from '@aikb/rabbitmq';
 import { ILibraryStorage, ItemMetadata } from 'bibliography';
-import { defaultChunkingConfig } from '@aikb/chunking';
+import { defaultChunkingConfig } from 'chunking';
 import createLoggerWithPrefix from 'log-management/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { defaultEmbeddingConfig } from 'embedding';

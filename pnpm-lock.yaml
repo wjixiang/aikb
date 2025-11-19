@@ -11,7 +11,7 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.3.22
         version: 1.3.24(zod@3.25.76)
-      '@aikb/chunking':
+      'chunking':
         specifier: workspace:*
         version: link:libs/chunking
       '@aikb/pdf-converter':
@@ -1010,7 +1010,7 @@ importers:
 
   libs/rabbitmq:
     dependencies:
-      '@aikb/chunking':
+      'chunking':
         specifier: workspace:*
         version: link:../chunking
       '@aikb/pdf-converter':

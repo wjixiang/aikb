@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 
 @Controller()
 @libraryItemVectorProto.LibraryItemVectorServiceControllerMethods()
-export class AppController
+export class AppGrpcController
   implements libraryItemVectorProto.LibraryItemVectorServiceController
 {
   constructor(private readonly libraryItemVectorService: AppService) {}

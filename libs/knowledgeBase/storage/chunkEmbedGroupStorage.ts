@@ -1,4 +1,4 @@
-import { ChunkingConfig, defaultChunkingConfig } from '@aikb/chunking';
+import { ChunkingConfig, defaultChunkingConfig } from 'chunking';
 import { EmbeddingConfig, defaultEmbeddingConfig } from 'embedding';
 import { ChunkingEmbeddingGroup } from 'knowledgeBase/knowledgeImport/library';
 import { Client } from '@elastic/elasticsearch';
