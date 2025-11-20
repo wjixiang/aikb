@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   S3ElasticSearchLibraryStorage,
+  PrismaLibraryStorage,
   LibraryItem,
   Library,
   ItemArchive,
@@ -18,7 +19,9 @@ import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from 'log-management';
 import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
+import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import {prisma} from 'bibliography-db'
 
 @Injectable()
 export class LibraryItemService {
@@ -30,9 +33,17 @@ export class LibraryItemService {
     @Inject('S3_SERVICE') private s3Service: S3Service,
   ) {
     // Initialize the storage and library
-    const elasticsearchUrl =
-      process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
-    const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
+    // const elasticsearchUrl =
+    //   process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
+    // const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
+    const storage = new PrismaLibraryStorage(prisma, {
+      accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY || '',
+      bucketName: process.env.PDF_OSS_BUCKET_NAME || '',
+      region: process.env.OSS_REGION || '',
+      endpoint: process.env.S3_ENDPOINT || '',
+      forcePathStyle: true
+    })
     this.library = new Library(storage);
   }
 
@@ -95,12 +106,36 @@ export class LibraryItemService {
       createLibraryItemWithPdfDto.fileName ||
       `${createLibraryItemWithPdfDto.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
 
-    return await this.library.addArchiveToItem(
-      item.getItemId(),
-      pdfBuffer,
-      fileName,
-      createLibraryItemWithPdfDto.pageCount,
-    );
+    // Generate S3 key for the PDF file
+    const s3Key = S3Utils.generatePdfS3Key(fileName);
+    
+    // Generate hash for the PDF buffer
+    const fileHash = HashUtils.generateHashFromBuffer(pdfBuffer);
+    
+    // Upload the PDF to S3
+    await this.s3Service.uploadToS3(pdfBuffer, s3Key, {
+      contentType: 'application/pdf',
+    });
+    
+    // Create an ItemArchive object with the PDF information
+    const newArchive: ItemArchive = {
+      fileType: 'pdf',
+      fileSize: pdfBuffer.length,
+      fileHash,
+      addDate: new Date(),
+      s3Key,
+      pageCount: createLibraryItemWithPdfDto.pageCount,
+    };
+
+    // Add the archive to the item
+    await item.addArchiveToMetadata(newArchive);
+    
+    // Return the updated item
+    const updatedItem = await this.library.getItem(item.getItemId());
+    if (!updatedItem) {
+      throw new Error(`Failed to retrieve updated library item ${item.getItemId()}`);
+    }
+    return updatedItem;
   }
 
   /**
