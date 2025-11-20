@@ -1095,7 +1095,6 @@
                 "{workspaceRoot}/tsconfig.base.json",
                 "{projectRoot}/tsconfig.json",
                 "{projectRoot}/tsconfig.spec.json",
-                "{projectRoot}/jest.config.ts",
                 "{projectRoot}/src/**/*.ts",
                 "!{workspaceRoot}/apps/web-frontend",
                 "!{workspaceRoot}/node_modules",
@@ -1126,6 +1125,102 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/libraryItemVectorService-e2e"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/libraryItemVectorService-e2e",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/libraryItemVectorService-e2e",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects libraryItemVectorService-e2e --includeDependentProjects -- pnpm exec nx build-deps libraryItemVectorService-e2e"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -1169,22 +1264,18 @@
               "parallelism": true
             },
             "e2e": {
-              "executor": "@nx/jest:jest",
+              "executor": "@nx/vite:test",
               "outputs": [
                 "{workspaceRoot}/coverage/{e2eProjectRoot}"
               ],
               "options": {
-                "jestConfig": "apps/libraryItemVectorService-e2e/jest.config.ts",
                 "passWithNoTests": true
               },
-              "dependsOn": [
-                "libraryItemVectorService:build",
-                "libraryItemVectorService:serve"
-              ],
               "configurations": {},
               "parallelism": true
             }
           },
+          "metadata": {},
           "name": "libraryItemVectorService-e2e",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "application",
@@ -1446,7 +1537,21 @@
                 "{workspaceRoot}/tsconfig.base.json",
                 "{projectRoot}/tsconfig.json",
                 "{projectRoot}/tsconfig.app.json",
+                "{projectRoot}/tsconfig.spec.json",
                 "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
                 "!{workspaceRoot}/apps/web-frontend",
                 "!{workspaceRoot}/node_modules",
                 "!{workspaceRoot}/dist",
@@ -1476,6 +1581,102 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/libraryItemVectorService",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects libraryItemVectorService --includeDependentProjects -- pnpm exec nx build-deps libraryItemVectorService"
+              },
               "configurations": {},
               "parallelism": true
             },
@@ -1633,27 +1834,6 @@
               "configurations": {},
               "parallelism": true
             },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects libraryItemVectorService --includeDependentProjects -- pnpm exec nx build-deps libraryItemVectorService"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
             "prune-lockfile": {
               "dependsOn": [
                 "build"
@@ -1696,8 +1876,8 @@
               "parallelism": true
             }
           },
-          "projectType": "application",
           "metadata": {},
+          "projectType": "application",
           "name": "libraryItemVectorService",
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "apps/libraryItemVectorService/src",
@@ -2762,6 +2942,12 @@
               "executor": "nx:run-commands",
               "configurations": {},
               "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "configurations": {},
+              "options": {},
+              "parallelism": true
             }
           },
           "projectType": "library",
@@ -3518,6 +3704,149 @@
           "implicitDependencies": []
         }
       },
+      "bibliography-db": {
+        "name": "bibliography-db",
+        "type": "lib",
+        "data": {
+          "root": "libs/bibliography-db",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/bibliography-db",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/bibliography-db",
+                "main": "libs/bibliography-db/src/index.ts",
+                "tsConfig": "libs/bibliography-db/tsconfig.lib.json",
+                "assets": [
+                  "libs/bibliography-db/*.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects bibliography-db --includeDependentProjects -- pnpm exec nx build-deps bibliography-db"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/bibliography-db",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "bibliography-db",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
       "rabbitmqPublist": {
         "name": "rabbitmqPublist",
         "type": "lib",
@@ -3932,45 +4261,28 @@
               "parallelism": true
             },
             "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
               "options": {
-                "cwd": "libs/log-management",
-                "command": "vite build"
+                "outputPath": "dist/libs/log-management",
+                "main": "libs/log-management/src/index.ts",
+                "tsConfig": "libs/log-management/tsconfig.lib.json",
+                "assets": [
+                  "libs/log-management/*.md"
+                ]
               },
+              "configurations": {},
+              "parallelism": true,
               "cache": true,
               "dependsOn": [
                 "^build"
               ],
               "inputs": [
                 "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "vite"
-                  ]
-                }
-              ],
-              "outputs": [
-                "{workspaceRoot}/dist/libs/log-management"
-              ],
-              "metadata": {
-                "technologies": [
-                  "typescript",
-                  "vite"
-                ],
-                "description": "Run Vite build",
-                "help": {
-                  "command": "pnpm exec vite build --help",
-                  "example": {
-                    "options": {
-                      "sourcemap": true,
-                      "manifest": "manifest.json"
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
+                "^default"
+              ]
             },
             "build-deps": {
               "dependsOn": [
@@ -4030,92 +4342,6 @@
                 }
               },
               "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "serve": {
-              "continuous": true,
-              "options": {
-                "cwd": "libs/log-management",
-                "command": "vite"
-              },
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Starts Vite dev server",
-                "help": {
-                  "command": "pnpm exec vite --help",
-                  "example": {
-                    "options": {
-                      "port": 3000
-                    }
-                  }
-                },
-                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "dev": {
-              "continuous": true,
-              "options": {
-                "cwd": "libs/log-management",
-                "command": "vite"
-              },
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Starts Vite dev server",
-                "help": {
-                  "command": "pnpm exec vite --help",
-                  "example": {
-                    "options": {
-                      "port": 3000
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "preview": {
-              "continuous": true,
-              "dependsOn": [
-                "build"
-              ],
-              "options": {
-                "cwd": "libs/log-management",
-                "command": "vite preview"
-              },
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Locally preview Vite production build",
-                "help": {
-                  "command": "pnpm exec vite preview --help",
-                  "example": {
-                    "options": {
-                      "port": 3000
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "serve-static": {
-              "continuous": true,
-              "executor": "@nx/web:file-server",
-              "options": {
-                "buildTarget": "build",
-                "spa": true
-              },
               "configurations": {},
               "parallelism": true
             },
@@ -4192,13 +4418,12 @@
               "parallelism": true
             }
           },
-          "projectType": "library",
           "metadata": {
             "targetGroups": {},
             "js": {
               "packageName": "log-management",
               "packageVersion": "0.0.1",
-              "packageMain": "./index.js",
+              "packageMain": "./src/index.js",
               "isInPackageManagerWorkspaces": true
             }
           },
@@ -4208,6 +4433,7 @@
           ],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "libs/log-management/src",
+          "projectType": "library",
           "implicitDependencies": []
         }
       },
@@ -5422,14 +5648,34 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
                 "{workspaceRoot}/dist/**/*.d.ts",
                 "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
                 "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
-                "{workspaceRoot}/dist/out-tsc/libs/bibliography/*.tsbuildinfo",
                 "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -5461,7 +5707,10 @@
               "options": {
                 "outputPath": "dist/libs/bibliography",
                 "main": "libs/bibliography/src/index.ts",
-                "tsConfig": "libs/bibliography/tsconfig.lib.json"
+                "tsConfig": "libs/bibliography/tsconfig.lib.json",
+                "assets": [
+                  "libs/bibliography/*.md"
+                ]
               },
               "configurations": {},
               "parallelism": true,
@@ -5496,6 +5745,10 @@
               "parallelism": true
             },
             "vite:test": {
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "vitest"
+              },
               "cache": true,
               "inputs": [
                 "default",
@@ -5510,11 +5763,10 @@
                 }
               ],
               "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
+                "{workspaceRoot}/coverage/libs/bibliography"
               ],
               "metadata": {
                 "technologies": [
-                  "vite",
                   "vite"
                 ],
                 "description": "Run Vite tests",
@@ -5529,10 +5781,6 @@
                 }
               },
               "executor": "nx:run-commands",
-              "options": {
-                "cwd": "libs/bibliography",
-                "command": "vitest"
-              },
               "configurations": {},
               "parallelism": true
             },
@@ -5547,10 +5795,13 @@
                   ]
                 }
               ],
+              "options": {
+                "cwd": "libs/bibliography",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
               "metadata": {
                 "description": "Runs type-checking for the project.",
                 "technologies": [
-                  "typescript",
                   "typescript"
                 ],
                 "help": {
@@ -5563,10 +5814,6 @@
                 }
               },
               "executor": "nx:run-commands",
-              "options": {
-                "cwd": "libs/bibliography",
-                "command": "tsc --noEmit -p tsconfig.lib.json"
-              },
               "configurations": {},
               "parallelism": true
             },
@@ -5608,12 +5855,6 @@
               "executor": "nx:run-commands",
               "configurations": {},
               "parallelism": true
-            },
-            "test": {
-              "executor": "@nx/vite:test",
-              "configurations": {},
-              "options": {},
-              "parallelism": true
             }
           },
           "metadata": {
@@ -5630,7 +5871,7 @@
             "npm:private"
           ],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
-          "sourceRoot": "src",
+          "sourceRoot": "libs/bibliography/src",
           "projectType": "library",
           "implicitDependencies": []
         }
@@ -6327,11 +6568,18 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.ts",
                 "^default"
               ],
               "outputs": [
                 "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
                 "{projectRoot}/*.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -7351,7 +7599,28 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
                 "^default"
               ],
               "outputs": [
@@ -7558,291 +7827,6 @@
           "implicitDependencies": []
         }
       },
-      "chunking": {
-        "name": "chunking",
-        "type": "lib",
-        "data": {
-          "root": "libs/chunking",
-          "targets": {
-            "typecheck": {
-              "dependsOn": [
-                "^typecheck"
-              ],
-              "options": {
-                "cwd": "libs/chunking",
-                "command": "echo \"The 'typecheck' target is disabled because one or more project references set 'noEmit: true' in their tsconfig. Remove this property to resolve this issue.\""
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default"
-              ],
-              "outputs": [
-                "{projectRoot}/dist/**/*.d.ts",
-                "{projectRoot}/*.tsbuildinfo"
-              ],
-              "syncGenerators": [
-                "@nx/js:typescript-sync"
-              ],
-              "metadata": {
-                "technologies": [
-                  "typescript"
-                ],
-                "description": "Runs type-checking for the project.",
-                "help": {
-                  "command": "pnpm exec tsc --build --help",
-                  "example": {
-                    "args": [
-                      "--force"
-                    ]
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "vite:test": {
-              "options": {
-                "cwd": "libs/chunking",
-                "command": "vitest"
-              },
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "vitest"
-                  ]
-                },
-                {
-                  "env": "CI"
-                }
-              ],
-              "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "vite"
-                ],
-                "description": "Run Vite tests",
-                "help": {
-                  "command": "pnpm exec vitest --help",
-                  "example": {
-                    "options": {
-                      "bail": 1,
-                      "coverage": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "vite:typecheck": {
-              "cache": true,
-              "inputs": [
-                "default",
-                "^default",
-                {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
-                }
-              ],
-              "options": {
-                "cwd": "libs/chunking",
-                "command": "tsc --noEmit -p tsconfig.json"
-              },
-              "metadata": {
-                "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
-                "help": {
-                  "command": "pnpm exec tsc -p tsconfig.json --help",
-                  "example": {
-                    "options": {
-                      "noEmit": true
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
-              "configurations": {},
-              "options": {},
-              "parallelism": true,
-              "executor": "nx:noop"
-            },
-            "watch-deps": {
-              "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
-              "executor": "nx:run-commands",
-              "options": {
-                "command": "pnpm exec nx watch --projects chunking --includeDependentProjects -- pnpm exec nx build-deps chunking"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "eslint:lint": {
-              "cache": true,
-              "options": {
-                "cwd": "libs/chunking",
-                "command": "eslint ."
-              },
-              "inputs": [
-                "default",
-                "^default",
-                "{workspaceRoot}/eslint.base.config.mjs",
-                "{workspaceRoot}/eslint.config.mjs",
-                "{workspaceRoot}/tools/eslint-rules/**/*",
-                {
-                  "externalDependencies": [
-                    "eslint"
-                  ]
-                }
-              ],
-              "outputs": [
-                "{options.outputFile}"
-              ],
-              "metadata": {
-                "technologies": [
-                  "eslint"
-                ],
-                "description": "Runs ESLint on project",
-                "help": {
-                  "command": "pnpm exec eslint --help",
-                  "example": {
-                    "options": {
-                      "max-warnings": 0
-                    }
-                  }
-                }
-              },
-              "executor": "nx:run-commands",
-              "configurations": {},
-              "parallelism": true
-            },
-            "build": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "build"
-              },
-              "metadata": {
-                "scriptContent": "tsc",
-                "runCommand": "pnpm run build"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test"
-              },
-              "metadata": {
-                "scriptContent": "vitest run",
-                "runCommand": "pnpm run test"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:watch": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:watch"
-              },
-              "metadata": {
-                "scriptContent": "vitest --watch",
-                "runCommand": "pnpm run test:watch"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "test:coverage": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:coverage"
-              },
-              "metadata": {
-                "scriptContent": "vitest run --coverage",
-                "runCommand": "pnpm run test:coverage"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "nx-release-publish": {
-              "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
-              "configurations": {},
-              "parallelism": true
-            }
-          },
-          "metadata": {
-            "targetGroups": {
-              "NPM Scripts": [
-                "build",
-                "test",
-                "test:watch",
-                "test:coverage"
-              ]
-            },
-            "description": "Text chunking strategies and management utilities",
-            "js": {
-              "packageName": "chunking",
-              "packageVersion": "0.0.1",
-              "packageExports": {
-                ".": {
-                  "import": "./src/index.ts",
-                  "types": "./src/index.ts"
-                },
-                "./chunking-strategy": {
-                  "import": "./src/chunking-strategy.ts",
-                  "types": "./src/chunking-strategy.ts"
-                },
-                "./chunking-manager": {
-                  "import": "./src/chunking-manager.ts",
-                  "types": "./src/chunking-manager.ts"
-                },
-                "./chunking-tool": {
-                  "import": "./src/chunking-tool.ts",
-                  "types": "./src/chunking-tool.ts"
-                },
-                "./chunk-search-utils": {
-                  "import": "./src/chunk-search-utils.ts",
-                  "types": "./src/chunk-search-utils.ts"
-                },
-                "./strategies": {
-                  "import": "./src/strategies/index.ts",
-                  "types": "./src/strategies/index.ts"
-                }
-              },
-              "packageMain": "./src/index.ts",
-              "isInPackageManagerWorkspaces": true
-            }
-          },
-          "name": "chunking",
-          "tags": [
-            "npm:public"
-          ],
-          "implicitDependencies": []
-        }
-      },
       "@aikb/rabbitmq": {
         "name": "@aikb/rabbitmq",
         "type": "lib",
@@ -7859,11 +7843,18 @@
               },
               "cache": true,
               "inputs": [
-                "default",
+                "{projectRoot}/package.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.ts",
                 "^default"
               ],
               "outputs": [
                 "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
                 "{projectRoot}/*.tsbuildinfo"
               ],
               "syncGenerators": [
@@ -8156,6 +8147,251 @@
           "implicitDependencies": []
         }
       },
+      "chunking": {
+        "name": "chunking",
+        "type": "lib",
+        "data": {
+          "root": "libs/chunking",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/chunking",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{workspaceRoot}/apps/web-frontend",
+                "!{workspaceRoot}/node_modules",
+                "!{workspaceRoot}/dist",
+                "^default"
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/**/*.d.ts",
+                "{workspaceRoot}/dist/tsconfig.tsbuildinfo",
+                "{workspaceRoot}/dist/out-tsc/**/*.d.ts",
+                "{workspaceRoot}/dist/out-tsc/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "pnpm exec tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/chunking",
+                "main": "libs/chunking/src/index.ts",
+                "tsConfig": "libs/chunking/tsconfig.lib.json",
+                "assets": [
+                  "libs/chunking/*.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "default",
+                "^default"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects chunking --includeDependentProjects -- pnpm exec nx build-deps chunking"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "libs/chunking",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/coverage/libs/chunking"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/chunking",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/chunking",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/chunking/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "chunking",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "chunking",
+          "tags": [
+            "npm:private"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/chunking/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
       "utils": {
         "name": "utils",
         "type": "lib",
@@ -8378,6 +8614,14 @@
                 }
               },
               "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "options": {
+                "rootDir": "libs/utils"
+              },
               "configurations": {},
               "parallelism": true
             }
@@ -8924,6 +9168,11 @@
           "source": "item-chunk-embed-service",
           "target": "chunking",
           "type": "static"
+        },
+        {
+          "source": "item-chunk-embed-service",
+          "target": "embedding",
+          "type": "static"
         }
       ],
       "markdown-storage-worker": [
@@ -8940,6 +9189,11 @@
         {
           "source": "markdown-storage-worker",
           "target": "chunking",
+          "type": "static"
+        },
+        {
+          "source": "markdown-storage-worker",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -8977,6 +9231,11 @@
         {
           "source": "pdf-conversion-worker",
           "target": "mineru-client",
+          "type": "static"
+        },
+        {
+          "source": "pdf-conversion-worker",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -9032,6 +9291,11 @@
           "source": "libraryItemVectorService-e2e",
           "target": "libraryItemVectorService",
           "type": "implicit"
+        },
+        {
+          "source": "libraryItemVectorService-e2e",
+          "target": "proto-ts",
+          "type": "static"
         }
       ],
       "bibliography-service-e2e": [
@@ -9075,6 +9339,26 @@
         {
           "source": "libraryItemVectorService",
           "target": "chunking",
+          "type": "static"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "embedding",
+          "type": "static"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "embedding",
+          "type": "dynamic"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "utils",
+          "type": "static"
+        },
+        {
+          "source": "libraryItemVectorService",
+          "target": "library-shared",
           "type": "static"
         }
       ],
@@ -9120,6 +9404,11 @@
       "item-vector-storage": [
         {
           "source": "item-vector-storage",
+          "target": "embedding",
+          "type": "static"
+        },
+        {
+          "source": "item-vector-storage",
           "target": "chunking",
           "type": "static"
         },
@@ -9150,11 +9439,27 @@
           "type": "static"
         }
       ],
+      "bibliography-db": [],
       "rabbitmqPublist": [],
       "library-shared": [
         {
           "source": "library-shared",
           "target": "bibliography",
+          "type": "static"
+        },
+        {
+          "source": "library-shared",
+          "target": "item-vector-storage",
+          "type": "static"
+        },
+        {
+          "source": "library-shared",
+          "target": "chunking",
+          "type": "static"
+        },
+        {
+          "source": "library-shared",
+          "target": "embedding",
           "type": "static"
         }
       ],
@@ -9183,6 +9488,16 @@
         {
           "source": "pdf2md-service",
           "target": "proto-ts",
+          "type": "static"
+        },
+        {
+          "source": "pdf2md-service",
+          "target": "chunking",
+          "type": "static"
+        },
+        {
+          "source": "pdf2md-service",
+          "target": "embedding",
           "type": "static"
         }
       ],
@@ -9267,7 +9582,6 @@
           "type": "static"
         }
       ],
-      "chunking": [],
       "@aikb/rabbitmq": [
         {
           "source": "@aikb/rabbitmq",
@@ -9291,16 +9605,27 @@
         },
         {
           "source": "@aikb/rabbitmq",
+          "target": "embedding",
+          "type": "static"
+        },
+        {
+          "source": "@aikb/rabbitmq",
           "target": "chunking",
           "type": "static"
         }
       ],
+      "chunking": [],
       "utils": [],
       "protos": [],
       "aikb": [
         {
           "source": "aikb",
           "target": "chunking",
+          "type": "static"
+        },
+        {
+          "source": "aikb",
+          "target": "embedding",
           "type": "static"
         },
         {
@@ -9316,11 +9641,6 @@
         {
           "source": "aikb",
           "target": "@aikb/s3-service",
-          "type": "static"
-        },
-        {
-          "source": "aikb",
-          "target": "embedding",
           "type": "static"
         },
         {

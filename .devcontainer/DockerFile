@@ -46,6 +46,7 @@ RUN apt-get -y install golang protobuf-compiler
 # Expose the application port
 EXPOSE 3000
 EXPOSE 8000
+EXPOSE 51212
 
 # Default command
 CMD ["pnpm", "start:dev"]
