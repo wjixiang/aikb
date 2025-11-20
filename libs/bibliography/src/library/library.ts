@@ -5,6 +5,7 @@ import { createLoggerWithPrefix } from 'log-management';
 const logger = createLoggerWithPrefix('Library');
 import { MinerUPdfConvertor } from '@aikb/pdf-converter';
 import { LibraryItem } from '../item/library-item.js';
+import { LibraryStorageAdapter } from '../item/library-storage-adapter.js';
 
 import {
   Author,
@@ -152,7 +153,7 @@ export class Library implements ILibrary {
       logger.info(
         `Item with same content already exists (ID: ${existingItem.id}), returning existing item.`,
       );
-      return new LibraryItem(existingItem, this.storage);
+      return new LibraryItem(existingItem, new LibraryStorageAdapter(this.storage));
     }
 
     // Upload to S3
@@ -181,7 +182,7 @@ export class Library implements ILibrary {
 
     // Save metadata first to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    const libraryItem = new LibraryItem(savedMetadata, this.storage);
+    const libraryItem = new LibraryItem(savedMetadata, new LibraryStorageAdapter(this.storage));
 
     // Note: RabbitMQ integration removed for simplified version
     // In a full implementation, you would queue this for processing here
@@ -208,7 +209,7 @@ export class Library implements ILibrary {
 
     // Save metadata to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    return new LibraryItem(savedMetadata, this.storage);
+    return new LibraryItem(savedMetadata, new LibraryStorageAdapter(this.storage));
   }
 
   /**
@@ -282,7 +283,7 @@ export class Library implements ILibrary {
   async getItem(id: string): Promise<LibraryItem | null> {
     const metadata = await this.storage.getMetadata(id);
     if (!metadata) return null;
-    return new LibraryItem(metadata, this.storage);
+    return new LibraryItem(metadata, new LibraryStorageAdapter(this.storage));
   }
 
   /**
@@ -291,7 +292,7 @@ export class Library implements ILibrary {
   async searchItems(filter: SearchFilter): Promise<LibraryItem[]> {
     const metadataList = await this.storage.searchMetadata(filter);
     return metadataList.map(
-      (metadata) => new LibraryItem(metadata, this.storage),
+      (metadata) => new LibraryItem(metadata, new LibraryStorageAdapter(this.storage)),
     );
   }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LibraryItem } from '../library-item.js';
 import { MockLibraryStorage } from '../../library/__tests__/mock-storage.js';
+import { LibraryStorageAdapter } from '../library-storage-adapter.js';
 import { ItemMetadata, ItemArchive, Author } from '../../library/types.js';
 
 // Mock the logger
@@ -36,8 +37,8 @@ describe('LibraryItem', () => {
     // Save the metadata to storage
     await mockStorage.saveMetadata(testMetadata);
 
-    // Create LibraryItem instance with a fresh copy of metadata
-    libraryItem = new LibraryItem({ ...testMetadata }, mockStorage);
+    // Create LibraryItem instance with a fresh copy of metadata using adapter
+    libraryItem = new LibraryItem({ ...testMetadata }, new LibraryStorageAdapter(mockStorage));
   });
 
   describe('addArchiveToMetadata', () => {
@@ -61,7 +62,7 @@ describe('LibraryItem', () => {
 
     it('should throw error if item has no ID', async () => {
       const metadataWithoutId = { ...testMetadata, id: undefined };
-      const itemWithoutId = new LibraryItem(metadataWithoutId, mockStorage);
+      const itemWithoutId = new LibraryItem(metadataWithoutId, new LibraryStorageAdapter(mockStorage));
 
       const newArchive: ItemArchive = {
         fileType: 'pdf',
@@ -69,6 +70,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-123',
         addDate: new Date(),
         s3Key: 'test-s3-key',
+        pageCount: 10,
       };
 
       await expect(
@@ -88,6 +90,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-123',
         addDate: new Date(),
         s3Key: 'test-s3-key',
+        pageCount: 10,
       };
 
       await libraryItem.addArchiveToMetadata(newArchive);
@@ -104,6 +107,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-1',
         addDate: new Date(),
         s3Key: 'test-s3-key-1',
+        pageCount: 10,
       };
 
       const secondArchive: ItemArchive = {
@@ -112,6 +116,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-2',
         addDate: new Date(),
         s3Key: 'test-s3-key-2',
+        pageCount: 20,
       };
 
       await libraryItem.addArchiveToMetadata(firstArchive);
@@ -134,6 +139,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-123',
         addDate: new Date(),
         s3Key: 'test-s3-key',
+        pageCount: 10,
       };
 
       await expect(
@@ -156,6 +162,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-1',
         addDate: new Date(),
         s3Key: 'test-s3-key-1',
+        pageCount: 10,
       };
 
       const secondArchive: ItemArchive = {
@@ -164,6 +171,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-2',
         addDate: new Date(),
         s3Key: 'test-s3-key-2',
+        pageCount: 20,
       };
 
       await libraryItem.addArchiveToMetadata(firstArchive);
@@ -182,6 +190,7 @@ describe('LibraryItem', () => {
         fileHash: 'test-hash-123',
         addDate: new Date(),
         s3Key: 'test-s3-key',
+        pageCount: 10,
       };
 
       await libraryItem.addArchiveToMetadata(newArchive);
@@ -194,6 +203,7 @@ describe('LibraryItem', () => {
         fileHash: 'modified-hash',
         addDate: new Date(),
         s3Key: 'modified-s3-key',
+        pageCount: 5,
       } as ItemArchive);
 
       // Check that the original metadata is not affected

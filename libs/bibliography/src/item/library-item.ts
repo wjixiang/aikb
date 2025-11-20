@@ -1,6 +1,6 @@
 import { createLoggerWithPrefix } from 'log-management';
 import { v4 } from 'uuid';
-import { ILibraryStorage } from '../library/storage.js';
+import { IItemStorage } from './item-storage.js';
 import { ItemArchive, ItemMetadata } from '../library/types.js';
 
 const logger = createLoggerWithPrefix('LibraryItem');
@@ -8,7 +8,7 @@ const logger = createLoggerWithPrefix('LibraryItem');
 export class LibraryItem {
   constructor(
     public metadata: ItemMetadata,
-    private storage: ILibraryStorage,
+    private storage: IItemStorage,
   ) {}
 
   /**
