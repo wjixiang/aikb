@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { ILibraryStorage, AbstractPdf } from '../library/storage.js';
+import { ILibraryStorage, AbstractPdf } from '../storage.js';
 import { createLoggerWithPrefix } from 'log-management';
 import {
   ItemMetadata,
@@ -7,7 +7,7 @@ import {
   Citation,
   SearchFilter,
   ItemArchive,
-} from '../library/types.js';
+} from '../types.js';
 import { IdUtils, S3Utils } from 'utils';
 
 export class S3ElasticSearchLibraryStorage implements ILibraryStorage {

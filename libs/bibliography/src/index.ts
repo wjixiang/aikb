@@ -1,6 +1,6 @@
 // Main bibliography exports
 export * from './library/index.js';
-export * from './storage/index.js';
+export * from './library/storage/index.js';
 export * from './item/index.js';
 
 // Re-export commonly used types and interfaces

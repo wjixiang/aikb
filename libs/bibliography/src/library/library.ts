@@ -26,39 +26,11 @@ import { IdUtils } from 'utils';
  */
 export interface ILibrary {
   /**
-   * Store a PDF file from a buffer
-   * @param pdfBuffer The PDF file buffer
-   * @param fileName The file name
-   * @param metadata PDF metadata
-   * @deprecated Use createItem and addArchiveToItem separately
-   */
-  storePdf(
-    pdfBuffer: Buffer,
-    fileName: string,
-    metadata: Partial<ItemMetadata>,
-  ): Promise<LibraryItem>;
-
-  /**
    * Create a new library item without any archives
    * @param metadata The item metadata
    * @returns The created library item
    */
   createItem(metadata: Partial<ItemMetadata>): Promise<LibraryItem>;
-
-  /**
-   * Add an archive to an existing library item
-   * @param itemId The ID of the library item
-   * @param pdfBuffer The PDF file buffer
-   * @param fileName The file name
-   * @param pageCount The page count of the PDF
-   * @returns The updated library item
-   */
-  addArchiveToItem(
-    itemId: string,
-    pdfBuffer: Buffer,
-    fileName: string,
-    pageCount?: number,
-  ): Promise<LibraryItem>;
 
   /**
    * Get a item by ID
@@ -127,70 +99,6 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Store a PDF file from a buffer
-   * @param pdfBuffer The PDF file buffer
-   * @param fileName The file name
-   * @param metadata PDF metadata
-   * @deprecated seperate item creating and pdf data appending
-   */
-  async storePdf(
-    pdfBuffer: Buffer,
-    fileName: string,
-    metadata: Partial<ItemMetadata>,
-    pageCount?: number,
-  ): Promise<LibraryItem> {
-    // Validate inputs
-    if (!fileName) {
-      throw new Error('File name is required when providing a buffer');
-    }
-
-    // Generate hash from file content
-    const contentHash = HashUtils.generateHashFromBuffer(pdfBuffer);
-
-    // Check if item with same hash already exists
-    const existingItem = await this.storage.getMetadataByHash(contentHash);
-    if (existingItem) {
-      logger.info(
-        `Item with same content already exists (ID: ${existingItem.id}), returning existing item.`,
-      );
-      return new LibraryItem(existingItem, new LibraryStorageAdapter(this.storage));
-    }
-
-    // Upload to S3
-    logger.info(`Pdf not exist, uploading to s3...`);
-    const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
-
-    const fullMetadata: ItemMetadata = {
-      ...metadata,
-      title: metadata.title || path.basename(fileName, '.pdf'),
-      dateAdded: new Date(),
-      dateModified: new Date(),
-      tags: metadata.tags || [],
-      collections: metadata.collections || [],
-      authors: metadata.authors || [],
-      archives: [
-        {
-          fileType: 'pdf',
-          fileSize: pdfBuffer.length,
-          fileHash: contentHash,
-          addDate: new Date(),
-          s3Key: pdfInfo.s3Key,
-          pageCount: pageCount || 0, // Default to 0 if not provided, but should be provided for PDF files
-        },
-      ],
-    };
-
-    // Save metadata first to get the ID
-    const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    const libraryItem = new LibraryItem(savedMetadata, new LibraryStorageAdapter(this.storage));
-
-    // Note: RabbitMQ integration removed for simplified version
-    // In a full implementation, you would queue this for processing here
-
-    return libraryItem;
-  }
-
-  /**
    * Create a new library item without any archives
    * @param metadata The item metadata
    * @returns The created library item
@@ -212,70 +120,6 @@ export class Library implements ILibrary {
     return new LibraryItem(savedMetadata, new LibraryStorageAdapter(this.storage));
   }
 
-  /**
-   * Add an archive to an existing library item
-   * @param itemId The ID of the library item
-   * @param pdfBuffer The PDF file buffer
-   * @param fileName The file name
-   * @param pageCount The page count of the PDF
-   * @returns The updated library item
-   */
-  async addArchiveToItem(
-    itemId: string,
-    pdfBuffer: Buffer,
-    fileName: string,
-    pageCount?: number,
-  ): Promise<LibraryItem> {
-    // Validate inputs
-    if (!fileName) {
-      throw new Error('File name is required when providing a buffer');
-    }
-
-    // Get the existing item
-    const item = await this.getItem(itemId);
-    if (!item) {
-      throw new Error(`Library item with ID ${itemId} not found`);
-    }
-
-    // Generate hash from file content
-    const contentHash = HashUtils.generateHashFromBuffer(pdfBuffer);
-
-    // Check if archive with same hash already exists for this item
-    const existingArchive = item.metadata.archives.find(
-      (archive) => archive.fileHash === contentHash,
-    );
-    if (existingArchive) {
-      logger.info(
-        `Archive with same content already exists for item ${itemId}, returning existing item.`,
-      );
-      return item;
-    }
-
-    // Upload to S3
-    logger.info(`Uploading PDF to S3 for item ${itemId}...`);
-    const pdfInfo = await this.storage.uploadPdf(pdfBuffer, fileName);
-
-    // Create the new archive
-    const newArchive: ItemArchive = {
-      fileType: 'pdf',
-      fileSize: pdfBuffer.length,
-      fileHash: contentHash,
-      addDate: new Date(),
-      s3Key: pdfInfo.s3Key,
-      pageCount: pageCount || 0,
-    };
-
-    // Add the archive to the item's metadata
-    await this.storage.addArchiveToMetadata(itemId, newArchive);
-
-    // Return the updated item
-    const updatedItem = await this.getItem(itemId);
-    if (!updatedItem) {
-      throw new Error(`Failed to retrieve updated library item ${itemId}`);
-    }
-
-    return updatedItem;
-  }
 
   /**
    * Get a book by ID

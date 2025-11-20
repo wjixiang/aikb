@@ -7,7 +7,7 @@ import {
   Collection,
   Citation,
   ItemArchive,
-} from '../library/index.js';
+} from '../index.js';
 import { connectToDatabase } from './mongodb.js';
 // Don't import s3-service at module level to avoid eager initialization
 // import {
