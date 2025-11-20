@@ -10,7 +10,6 @@ import {
 export interface IItemStorage {
   // PDF operations
   getPdfDownloadUrl(s3Key: string): Promise<string>;
-  getPdf(s3Key: string): Promise<Buffer>;
 
   // Metadata operations
   getMetadata(id: string): Promise<ItemMetadata | null>;

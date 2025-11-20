@@ -14,9 +14,6 @@ export class LibraryStorageAdapter implements IItemStorage {
     return this.libraryStorage.getPdfDownloadUrl(s3Key);
   }
 
-  async getPdf(s3Key: string): Promise<Buffer> {
-    return this.libraryStorage.getPdf(s3Key);
-  }
 
   // Metadata operations
   async getMetadata(id: string): Promise<any> {

@@ -16,11 +16,6 @@ export class PrismaItemStorage implements IItemStorage {
     return `https://s3.amazonaws.com/bucket/${s3Key}`;
   }
 
-  async getPdf(s3Key: string): Promise<Buffer> {
-    // This method would typically fetch the PDF from S3
-    // For now, we'll return a mock PDF buffer
-    throw new Error('PDF retrieval not implemented in PrismaItemStorage');
-  }
 
   // Metadata operations
   async getMetadata(id: string): Promise<ItemMetadata | null> {

@@ -93,13 +93,6 @@ describe('PrismaItemStorage', () => {
     });
   });
 
-  describe('getPdf', () => {
-    it('should throw an error for PDF retrieval', async () => {
-      await expect(storage.getPdf('test-s3-key')).rejects.toThrow(
-        'PDF retrieval not implemented in PrismaItemStorage',
-      );
-    });
-  });
 
   describe('getMetadata', () => {
     it('should return null when item is not found', async () => {

@@ -31,15 +31,6 @@ export class LibraryItem {
     return this.metadata.id;
   }
 
-  /**
-   * Get the PDF file if available
-   */
-  async getPdf(): Promise<Buffer | null> {
-    if (this.metadata.archives.length === 0) {
-      throw new Error('No PDF file associated with this item');
-    }
-    return await this.storage.getPdf(this.metadata.archives[0].s3Key);
-  }
 
   /**
    * Get the PDF download URL if available
