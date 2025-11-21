@@ -90,6 +90,8 @@ model items {
   item_authors          item_authors[]
   item_collections      item_collections[]
   markdowns             markdowns?
+  chunk_embed_groups    chunk_embed_groups[]
+  item_chunks           item_chunks[]
 }
 
 model markdowns {
@@ -116,4 +118,47 @@ model quizzes {
   specific_data Json?
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model chunk_embed_groups {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  item_id           String   @db.Uuid
+  name              String   @db.VarChar(255)
+  description       String?
+  chunking_config   Json     // ChunkingConfig as JSON
+  embedding_config  Json     // EmbeddingConfig as JSON
+  is_default        Boolean  @default(false)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  created_by        String?  @db.VarChar(255)
+  tags              String[] @default([])
+  status            String   @default("WAIT_FOR_CHUNK_EMBED") @db.VarChar(50)
+  items             items    @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  item_chunks       item_chunks[]
+  
+  @@index([item_id])
+  @@index([status])
+  @@index([is_active])
+}
+
+model item_chunks {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  item_id                   String   @db.Uuid
+  dense_vector_index_group_id String @db.Uuid
+  title                     String   @db.VarChar(500)
+  content                   String
+  index                     Int
+  embedding                 Unsupported("vector(1024)")?  // Vector embedding using pgvector extension
+  strategy_metadata         Json     // Strategy metadata as JSON
+  metadata                  Json?    // Additional metadata as JSON
+  created_at                DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime @default(now()) @db.Timestamptz(6)
+  
+  items                     items              @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  chunk_embed_groups        chunk_embed_groups @relation(fields: [dense_vector_index_group_id], references: [id], onDelete: Cascade)
+  
+  @@index([item_id])
+  @@index([dense_vector_index_group_id])
+  @@index([index])
 }

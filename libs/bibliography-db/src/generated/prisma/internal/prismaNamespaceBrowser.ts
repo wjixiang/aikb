@@ -59,7 +59,9 @@ export const ModelName = {
   item_collections: 'item_collections',
   items: 'items',
   markdowns: 'markdowns',
-  quizzes: 'quizzes'
+  quizzes: 'quizzes',
+  chunk_embed_groups: 'chunk_embed_groups',
+  item_chunks: 'item_chunks'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -196,6 +198,41 @@ export const QuizzesScalarFieldEnum = {
 export type QuizzesScalarFieldEnum = (typeof QuizzesScalarFieldEnum)[keyof typeof QuizzesScalarFieldEnum]
 
 
+export const Chunk_embed_groupsScalarFieldEnum = {
+  id: 'id',
+  item_id: 'item_id',
+  name: 'name',
+  description: 'description',
+  chunking_config: 'chunking_config',
+  embedding_config: 'embedding_config',
+  is_default: 'is_default',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  created_by: 'created_by',
+  tags: 'tags',
+  status: 'status'
+} as const
+
+export type Chunk_embed_groupsScalarFieldEnum = (typeof Chunk_embed_groupsScalarFieldEnum)[keyof typeof Chunk_embed_groupsScalarFieldEnum]
+
+
+export const Item_chunksScalarFieldEnum = {
+  id: 'id',
+  item_id: 'item_id',
+  dense_vector_index_group_id: 'dense_vector_index_group_id',
+  title: 'title',
+  content: 'content',
+  index: 'index',
+  strategy_metadata: 'strategy_metadata',
+  metadata: 'metadata',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Item_chunksScalarFieldEnum = (typeof Item_chunksScalarFieldEnum)[keyof typeof Item_chunksScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -210,6 +247,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: 'JsonNull'
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

@@ -84,3 +84,13 @@ export type markdowns = Prisma.markdownsModel
  * 
  */
 export type quizzes = Prisma.quizzesModel
+/**
+ * Model chunk_embed_groups
+ * 
+ */
+export type chunk_embed_groups = Prisma.chunk_embed_groupsModel
+/**
+ * Model item_chunks
+ * 
+ */
+export type item_chunks = Prisma.item_chunksModel

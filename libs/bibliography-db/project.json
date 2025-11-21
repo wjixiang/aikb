@@ -19,10 +19,17 @@
         "gen-client"
       ]
     },
-    "pull": {
+    "db-pull": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/bibliography-db"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
         "cwd": "libs/bibliography-db"
       }
     },
@@ -33,17 +40,17 @@
         "cwd": "libs/bibliography-db"
       }
     },
-    "reset": {
+    "reset-db": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx prisma reset --schema ./src/prisma/schema.prisma",
+        "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
         "cwd": "libs/bibliography-db"
       }
     },
     "migrate-dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx prisma dev --schema ./src/prisma/schema.prisma",
+        "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
         "cwd": "libs/bibliography-db"
       }
     },
