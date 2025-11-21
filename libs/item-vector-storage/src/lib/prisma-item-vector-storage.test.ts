@@ -579,4 +579,534 @@ describe('PrismaItemVectorStorage', () => {
         expect(results).toBeDefined();
         expect(results.length).toBe(0);
     });
+
+    describe('Vector Length Handling', () => {
+        it('should store and search vectors with different dimensions', async () => {
+            // Create chunks with different vector dimensions
+            const chunk512Id = uuidv4();
+            const chunk768Id = uuidv4();
+            const chunk1536Id = uuidv4();
+            
+            // Create vectors with different dimensions
+            const vector512 = Array(512).fill(0.1);
+            const vector768 = Array(768).fill(0.2);
+            const vector1536 = Array(1536).fill(0.3);
+            
+            // Insert chunk with 512-dimensional vector
+            const vector512String = `[${vector512.join(',')}]`;
+            await prisma.$executeRaw`
+                INSERT INTO item_chunks (
+                    id, item_id, dense_vector_index_group_id, title, content, "index",
+                    embedding, strategy_metadata, metadata, created_at, updated_at
+                ) VALUES (
+                    ${chunk512Id}, ${testItemId}, ${testGroupId},
+                    ${'512-dim Chunk'}, ${'This chunk has a 512-dimensional embedding.'}, ${1},
+                    ${vector512String}::vector, ${JSON.stringify({
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: 'paragraph'
+                        },
+                        embeddingConfig: {
+                            model: 'text-embedding-512',
+                            dimension: 512,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: 'alibaba'
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    })}, ${JSON.stringify({
+                        chunkType: 'paragraph',
+                        startPosition: 100,
+                        endPosition: 150,
+                        wordCount: 12
+                    })}, ${new Date()}, ${new Date()}
+                )
+            `;
+            
+            // Insert chunk with 768-dimensional vector
+            const vector768String = `[${vector768.join(',')}]`;
+            await prisma.$executeRaw`
+                INSERT INTO item_chunks (
+                    id, item_id, dense_vector_index_group_id, title, content, "index",
+                    embedding, strategy_metadata, metadata, created_at, updated_at
+                ) VALUES (
+                    ${chunk768Id}, ${testItemId}, ${testGroupId},
+                    ${'768-dim Chunk'}, ${'This chunk has a 768-dimensional embedding.'}, ${2},
+                    ${vector768String}::vector, ${JSON.stringify({
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: 'paragraph'
+                        },
+                        embeddingConfig: {
+                            model: 'text-embedding-768',
+                            dimension: 768,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: 'alibaba'
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    })}, ${JSON.stringify({
+                        chunkType: 'paragraph',
+                        startPosition: 200,
+                        endPosition: 250,
+                        wordCount: 14
+                    })}, ${new Date()}, ${new Date()}
+                )
+            `;
+            
+            // Insert chunk with 1536-dimensional vector
+            const vector1536String = `[${vector1536.join(',')}]`;
+            await prisma.$executeRaw`
+                INSERT INTO item_chunks (
+                    id, item_id, dense_vector_index_group_id, title, content, "index",
+                    embedding, strategy_metadata, metadata, created_at, updated_at
+                ) VALUES (
+                    ${chunk1536Id}, ${testItemId}, ${testGroupId},
+                    ${'1536-dim Chunk'}, ${'This chunk has a 1536-dimensional embedding.'}, ${3},
+                    ${vector1536String}::vector, ${JSON.stringify({
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: 'paragraph'
+                        },
+                        embeddingConfig: {
+                            model: 'text-embedding-1536',
+                            dimension: 1536,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: 'alibaba'
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    })}, ${JSON.stringify({
+                        chunkType: 'paragraph',
+                        startPosition: 300,
+                        endPosition: 350,
+                        wordCount: 16
+                    })}, ${new Date()}, ${new Date()}
+                )
+            `;
+            
+            // Verify all chunks were inserted
+            const chunk512 = await prisma.item_chunks.findUnique({
+                where: { id: chunk512Id }
+            });
+            const chunk768 = await prisma.item_chunks.findUnique({
+                where: { id: chunk768Id }
+            });
+            const chunk1536 = await prisma.item_chunks.findUnique({
+                where: { id: chunk1536Id }
+            });
+            
+            expect(chunk512).toBeDefined();
+            expect(chunk768).toBeDefined();
+            expect(chunk1536).toBeDefined();
+            expect(chunk512?.title).toBe('512-dim Chunk');
+            expect(chunk768?.title).toBe('768-dim Chunk');
+            expect(chunk1536?.title).toBe('1536-dim Chunk');
+            
+            // Clean up
+            await prisma.item_chunks.deleteMany({
+                where: { id: { in: [chunk512Id, chunk768Id, chunk1536Id] } }
+            });
+        });
+        
+        it('should handle search with vectors of different dimensions', async () => {
+            // Create a new group specifically for this test with a different embedding config
+            const testGroupDifferentDim = await prisma.chunk_embed_groups.create({
+                data: {
+                    item_id: testItemId,
+                    name: 'Different Dim Test Group',
+                    description: 'Test group for different dimensions',
+                    chunking_config: {
+                        maxChunkSize: 1000,
+                        minChunkSize: 100,
+                        overlap: 50,
+                        strategy: 'paragraph'
+                    },
+                    embedding_config: {
+                        model: 'text-embedding-768',
+                        dimension: 768,
+                        batchSize: 20,
+                        maxRetries: 3,
+                        timeout: 20000,
+                        provider: 'alibaba'
+                    },
+                    is_default: false,
+                    is_active: true,
+                    created_by: 'test-user',
+                    tags: ['test-different-dim'],
+                    status: ChunkEmbedGroupStatus.WAIT_FOR_CHUNK_EMBED
+                }
+            });
+            
+            // Create chunks with 768-dimensional vectors
+            const chunk1Id = uuidv4();
+            const chunk2Id = uuidv4();
+            
+            const baseVector768 = Array(768).fill(0.1);
+            const similarVector768 = [...baseVector768];
+            similarVector768[0] = 0.15; // Slight variation
+            
+            // Insert chunks with 768-dimensional vectors
+            const baseVectorString = `[${baseVector768.join(',')}]`;
+            await prisma.$executeRaw`
+                INSERT INTO item_chunks (
+                    id, item_id, dense_vector_index_group_id, title, content, "index",
+                    embedding, strategy_metadata, metadata, created_at, updated_at
+                ) VALUES (
+                    ${chunk1Id}, ${testItemId}, ${testGroupDifferentDim.id},
+                    ${'768-dim Base Chunk'}, ${'This is a base chunk with 768 dimensions.'}, ${0},
+                    ${baseVectorString}::vector, ${JSON.stringify({
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: 'paragraph'
+                        },
+                        embeddingConfig: {
+                            model: 'text-embedding-768',
+                            dimension: 768,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: 'alibaba'
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    })}, ${JSON.stringify({
+                        chunkType: 'paragraph',
+                        startPosition: 0,
+                        endPosition: 50,
+                        wordCount: 10
+                    })}, ${new Date()}, ${new Date()}
+                )
+            `;
+            
+            const similarVectorString = `[${similarVector768.join(',')}]`;
+            await prisma.$executeRaw`
+                INSERT INTO item_chunks (
+                    id, item_id, dense_vector_index_group_id, title, content, "index",
+                    embedding, strategy_metadata, metadata, created_at, updated_at
+                ) VALUES (
+                    ${chunk2Id}, ${testItemId}, ${testGroupDifferentDim.id},
+                    ${'768-dim Similar Chunk'}, ${'This is a similar chunk with 768 dimensions.'}, ${1},
+                    ${similarVectorString}::vector, ${JSON.stringify({
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: 'paragraph'
+                        },
+                        embeddingConfig: {
+                            model: 'text-embedding-768',
+                            dimension: 768,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: 'alibaba'
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    })}, ${JSON.stringify({
+                        chunkType: 'paragraph',
+                        startPosition: 50,
+                        endPosition: 100,
+                        wordCount: 12
+                    })}, ${new Date()}, ${new Date()}
+                )
+            `;
+            
+            // Perform semantic search with 768-dimensional vector
+            const searchQuery = {
+                itemId: [testItemId],
+                groupId: testGroupDifferentDim.id,
+                searchVector: baseVector768,
+                resultNum: 2,
+                threshold: 0.5
+            };
+            
+            const result = await storage.semanticSearch(searchQuery);
+            
+            expect(result).toBeDefined();
+            expect(result.itemId).toBe(testItemId);
+            expect(result.denseVectorIndexGroupId).toBe(testGroupDifferentDim.id);
+            expect(['768-dim Base Chunk', '768-dim Similar Chunk']).toContain(result.title);
+            
+            // Clean up
+            await prisma.item_chunks.deleteMany({
+                where: { id: { in: [chunk1Id, chunk2Id] } }
+            });
+            await prisma.chunk_embed_groups.delete({
+                where: { id: testGroupDifferentDim.id }
+            });
+        });
+        
+        it('should handle dimension mismatch errors gracefully', async () => {
+            // Create a chunk with 1024-dimensional vector (from the existing test setup)
+            const searchVector512 = Array(512).fill(0.1); // Different dimension
+            
+            // Try to search with a vector of different dimension
+            const searchQuery = {
+                itemId: [testItemId],
+                groupId: testGroupId,
+                searchVector: searchVector512,
+                resultNum: 1,
+                threshold: 0.5
+            };
+            
+            // This should fail due to dimension mismatch
+            await expect(storage.semanticSearch(searchQuery)).rejects.toThrow();
+        });
+        
+        it('should insert item chunks with different vector dimensions using insertItemChunk', async () => {
+            // Create a new group for this test
+            const testGroup512 = await prisma.chunk_embed_groups.create({
+                data: {
+                    item_id: testItemId,
+                    name: '512-dim Test Group',
+                    description: 'Test group for 512 dimensions',
+                    chunking_config: {
+                        maxChunkSize: 1000,
+                        minChunkSize: 100,
+                        overlap: 50,
+                        strategy: 'paragraph'
+                    },
+                    embedding_config: {
+                        model: 'text-embedding-512',
+                        dimension: 512,
+                        batchSize: 20,
+                        maxRetries: 3,
+                        timeout: 20000,
+                        provider: 'alibaba'
+                    },
+                    is_default: false,
+                    is_active: true,
+                    created_by: 'test-user',
+                    tags: ['test-512'],
+                    status: ChunkEmbedGroupStatus.WAIT_FOR_CHUNK_EMBED
+                }
+            });
+            
+            // Create a chunk with 512-dimensional vector
+            const chunk512Id = uuidv4();
+            const vector512 = Array(512).fill(0.1);
+            
+            const newChunk: ItemChunk = {
+                id: chunk512Id,
+                itemId: testItemId,
+                denseVectorIndexGroupId: testGroup512.id,
+                title: '512-dim Chunk via insertItemChunk',
+                content: 'This chunk has a 512-dimensional embedding.',
+                index: 0,
+                embedding: vector512,
+                strategyMetadata: {
+                    chunkingStrategy: 'paragraph',
+                    chunkingConfig: {
+                        maxChunkSize: 1000,
+                        minChunkSize: 100,
+                        overlap: 50,
+                        strategy: ChunkingStrategy.PARAGRAPH
+                    },
+                    embeddingConfig: {
+                        model: AlibabaModel.TEXT_EMBEDDING_V3,
+                        dimension: 512,
+                        batchSize: 20,
+                        maxRetries: 3,
+                        timeout: 20000,
+                        provider: EmbeddingProvider.ALIBABA
+                    },
+                    processingTimestamp: new Date(),
+                    processingDuration: 1000
+                },
+                metadata: {
+                    chunkType: 'paragraph',
+                    startPosition: 0,
+                    endPosition: 50,
+                    wordCount: 10
+                },
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            
+            // Insert the chunk
+            const result = await storage.insertItemChunk(
+                await storage.getChunkEmbedGroupInfoById(testGroup512.id),
+                newChunk
+            );
+            
+            expect(result).toBe(true);
+            
+            // Verify the chunk was inserted
+            const insertedChunk = await prisma.item_chunks.findUnique({
+                where: { id: chunk512Id }
+            });
+            
+            expect(insertedChunk).toBeDefined();
+            expect(insertedChunk?.title).toBe('512-dim Chunk via insertItemChunk');
+            
+            // Clean up
+            await prisma.item_chunks.delete({
+                where: { id: chunk512Id }
+            });
+            await prisma.chunk_embed_groups.delete({
+                where: { id: testGroup512.id }
+            });
+        });
+        
+        it('should batch insert item chunks with different vector dimensions', async () => {
+            // Create a new group for this test
+            const testGroupMixed = await prisma.chunk_embed_groups.create({
+                data: {
+                    item_id: testItemId,
+                    name: 'Mixed-dim Test Group',
+                    description: 'Test group for mixed dimensions',
+                    chunking_config: {
+                        maxChunkSize: 1000,
+                        minChunkSize: 100,
+                        overlap: 50,
+                        strategy: 'paragraph'
+                    },
+                    embedding_config: {
+                        model: 'text-embedding-768',
+                        dimension: 768,
+                        batchSize: 20,
+                        maxRetries: 3,
+                        timeout: 20000,
+                        provider: 'alibaba'
+                    },
+                    is_default: false,
+                    is_active: true,
+                    created_by: 'test-user',
+                    tags: ['test-mixed'],
+                    status: ChunkEmbedGroupStatus.WAIT_FOR_CHUNK_EMBED
+                }
+            });
+            
+            // Create chunks with 768-dimensional vectors
+            const chunk1Id = uuidv4();
+            const chunk2Id = uuidv4();
+            const vector768_1 = Array(768).fill(0.1);
+            const vector768_2 = Array(768).fill(0.2);
+            
+            const chunks: ItemChunk[] = [
+                {
+                    id: chunk1Id,
+                    itemId: testItemId,
+                    denseVectorIndexGroupId: testGroupMixed.id,
+                    title: '768-dim Batch Chunk 1',
+                    content: 'First batch chunk with 768 dimensions.',
+                    index: 0,
+                    embedding: vector768_1,
+                    strategyMetadata: {
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: ChunkingStrategy.PARAGRAPH
+                        },
+                        embeddingConfig: {
+                            model: AlibabaModel.TEXT_EMBEDDING_V3,
+                            dimension: 768,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: EmbeddingProvider.ALIBABA
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    },
+                    metadata: {
+                        chunkType: 'paragraph',
+                        startPosition: 0,
+                        endPosition: 50,
+                        wordCount: 10
+                    },
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+                {
+                    id: chunk2Id,
+                    itemId: testItemId,
+                    denseVectorIndexGroupId: testGroupMixed.id,
+                    title: '768-dim Batch Chunk 2',
+                    content: 'Second batch chunk with 768 dimensions.',
+                    index: 1,
+                    embedding: vector768_2,
+                    strategyMetadata: {
+                        chunkingStrategy: 'paragraph',
+                        chunkingConfig: {
+                            maxChunkSize: 1000,
+                            minChunkSize: 100,
+                            overlap: 50,
+                            strategy: ChunkingStrategy.PARAGRAPH
+                        },
+                        embeddingConfig: {
+                            model: AlibabaModel.TEXT_EMBEDDING_V3,
+                            dimension: 768,
+                            batchSize: 20,
+                            maxRetries: 3,
+                            timeout: 20000,
+                            provider: EmbeddingProvider.ALIBABA
+                        },
+                        processingTimestamp: new Date(),
+                        processingDuration: 1000
+                    },
+                    metadata: {
+                        chunkType: 'paragraph',
+                        startPosition: 50,
+                        endPosition: 100,
+                        wordCount: 12
+                    },
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                }
+            ];
+            
+            // Batch insert the chunks
+            const result = await storage.batchInsertItemChunks(
+                await storage.getChunkEmbedGroupInfoById(testGroupMixed.id),
+                chunks
+            );
+            
+            expect(result).toBe(true);
+            
+            // Verify the chunks were inserted
+            const insertedChunk1 = await prisma.item_chunks.findUnique({
+                where: { id: chunk1Id }
+            });
+            const insertedChunk2 = await prisma.item_chunks.findUnique({
+                where: { id: chunk2Id }
+            });
+            
+            expect(insertedChunk1).toBeDefined();
+            expect(insertedChunk2).toBeDefined();
+            expect(insertedChunk1?.title).toBe('768-dim Batch Chunk 1');
+            expect(insertedChunk2?.title).toBe('768-dim Batch Chunk 2');
+            
+            // Clean up
+            await prisma.item_chunks.deleteMany({
+                where: { id: { in: [chunk1Id, chunk2Id] } }
+            });
+            await prisma.chunk_embed_groups.delete({
+                where: { id: testGroupMixed.id }
+            });
+        });
+    });
 });

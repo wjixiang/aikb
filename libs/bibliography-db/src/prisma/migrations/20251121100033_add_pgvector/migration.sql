@@ -136,6 +136,8 @@ CREATE TABLE "chunk_embed_groups" (
 );
 
 -- CreateTable
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE "item_chunks" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "item_id" UUID NOT NULL,
@@ -143,7 +145,7 @@ CREATE TABLE "item_chunks" (
     "title" VARCHAR(500) NOT NULL,
     "content" TEXT NOT NULL,
     "index" INTEGER NOT NULL,
-    "embedding" DOUBLE PRECISION[],
+    "embedding" VECTOR,
     "strategy_metadata" JSONB NOT NULL,
     "metadata" JSONB,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -179,9 +181,6 @@ CREATE INDEX "item_chunks_dense_vector_index_group_id_idx" ON "item_chunks"("den
 -- CreateIndex
 CREATE INDEX "item_chunks_index_idx" ON "item_chunks"("index");
 
--- CreateIndex
-CREATE INDEX "item_chunks_embedding_idx" ON "item_chunks" USING HASH ("embedding");
-
 -- AddForeignKey
 ALTER TABLE "citations" ADD CONSTRAINT "citations_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -210,7 +209,7 @@ ALTER TABLE "markdowns" ADD CONSTRAINT "markdowns_item_id_fkey" FOREIGN KEY ("it
 ALTER TABLE "chunk_embed_groups" ADD CONSTRAINT "chunk_embed_groups_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "item_chunks" ADD CONSTRAINT "item_chunks_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "item_chunks" ADD CONSTRAINT "item_chunks_dense_vector_index_group_id_fkey" FOREIGN KEY ("dense_vector_index_group_id") REFERENCES "chunk_embed_groups"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "item_chunks" ADD CONSTRAINT "item_chunks_dense_vector_index_group_id_fkey" FOREIGN KEY ("dense_vector_index_group_id") REFERENCES "chunk_embed_groups"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "item_chunks" ADD CONSTRAINT "item_chunks_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -60,6 +60,14 @@
         "command": "npx prisma studio",
         "cwd": "libs/bibliography-db"
       }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate deploy",
+        "cwd": "libs/bibliography-db"
+      }
     }
+    
   }
 }
