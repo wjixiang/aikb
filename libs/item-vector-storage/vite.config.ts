@@ -26,6 +26,7 @@ export default defineConfig(() => ({
     outDir: '../../dist/libs/item-vector-storage',
     emptyOutDir: true,
     reportCompressedSize: true,
+    target: 'node18', // Target Node.js environment instead of browser
     commonjsOptions: {
       transformMixedEsModules: true,
     },
@@ -36,12 +37,32 @@ export default defineConfig(() => ({
       fileName: 'index',
       // Change this to the formats you want to support.
       // Don't forget to update your package.json as well.
-      formats: ['es' as const],
+      formats: ['cjs' as const], // Use CommonJS for Node.js compatibility
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      external: ['fs'],
+      external: ['fs', '@prisma/client', 'bibliography-db', 'path', 'url', 'module', 'process', 'crypto', 'util', 'buffer', 'stream', 'events', 'os'],
     },
+  },
+  resolve: {
+    alias: {
+      // Add Node.js polyfills for browser compatibility
+      'node:fs': 'fs',
+      'node:path': 'path',
+      'node:url': 'url',
+      'node:module': 'module',
+      'node:process': 'process',
+      'node:crypto': 'crypto',
+      'node:util': 'util',
+      'node:buffer': 'buffer',
+      'node:stream': 'stream',
+      'node:events': 'events',
+      'node:os': 'os',
+    },
+  },
+  define: {
+    // Define global variables for Node.js compatibility
+    global: 'globalThis',
   },
   test: {
     name: 'item-vector-storage',

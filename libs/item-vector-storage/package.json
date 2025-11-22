@@ -2,8 +2,7 @@
   "name": "item-vector-storage",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
-  "main": "./index.js",
+  "main": "./index.cjs",
   "types": "./index.d.ts",
   "dependencies": {}
 }

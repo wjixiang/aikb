@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  ElasticsearchItemVectorStorage,
+  PrismaItemVectorStorage,
   ItemChunk,
   ChunkEmbedGroupMetadata,
   ChunkEmbedGroupConfig,
@@ -15,10 +15,10 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class ChunkEmbedService {
   private readonly logger = new Logger(ChunkEmbedService.name);
-  private readonly itemVectorStorage: ElasticsearchItemVectorStorage;
+  private readonly itemVectorStorage: PrismaItemVectorStorage;
 
   constructor(private bibliographyGrpcClient: BibliographyGrpcClient) {
-    this.itemVectorStorage = new ElasticsearchItemVectorStorage();
+    this.itemVectorStorage = new PrismaItemVectorStorage();
   }
 
   /**

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ElasticsearchItemVectorStorage, ItemChunk } from 'item-vector-storage';
+import { ItemChunk, PrismaItemVectorStorage } from 'item-vector-storage';
 import { ChunkingStrategy } from 'chunking';
 import {
   EmbeddingProvider,
@@ -15,10 +15,10 @@ import { ChunkEmbedItemDto } from 'library-shared';
 
 @Injectable()
 export class AppService {
-  private readonly itemVectorStorage: ElasticsearchItemVectorStorage;
+  private readonly itemVectorStorage: PrismaItemVectorStorage;
 
   constructor(private amqpConnection: AmqpConnection) {
-    this.itemVectorStorage = new ElasticsearchItemVectorStorage();
+    this.itemVectorStorage = new PrismaItemVectorStorage();
   }
 
   async createChunkEmbedGroup(
