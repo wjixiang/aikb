@@ -21,7 +21,7 @@ import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
 import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import {prisma} from 'bibliography-db'
+import { prisma } from 'bibliography-db';
 
 @Injectable()
 export class LibraryItemService {
@@ -42,8 +42,8 @@ export class LibraryItemService {
       bucketName: process.env.PDF_OSS_BUCKET_NAME || '',
       region: process.env.OSS_REGION || '',
       endpoint: process.env.S3_ENDPOINT || '',
-      forcePathStyle: true
-    })
+      forcePathStyle: true,
+    });
     this.library = new Library(storage);
   }
 
@@ -108,15 +108,15 @@ export class LibraryItemService {
 
     // Generate S3 key for the PDF file
     const s3Key = S3Utils.generatePdfS3Key(fileName);
-    
+
     // Generate hash for the PDF buffer
     const fileHash = HashUtils.generateHashFromBuffer(pdfBuffer);
-    
+
     // Upload the PDF to S3
     await this.s3Service.uploadToS3(pdfBuffer, s3Key, {
       contentType: 'application/pdf',
     });
-    
+
     // Create an ItemArchive object with the PDF information
     const newArchive: ItemArchive = {
       fileType: 'pdf',
@@ -129,11 +129,13 @@ export class LibraryItemService {
 
     // Add the archive to the item
     await item.addArchiveToMetadata(newArchive);
-    
+
     // Return the updated item
     const updatedItem = await this.library.getItem(item.getItemId());
     if (!updatedItem) {
-      throw new Error(`Failed to retrieve updated library item ${item.getItemId()}`);
+      throw new Error(
+        `Failed to retrieve updated library item ${item.getItemId()}`,
+      );
     }
     return updatedItem;
   }
@@ -334,8 +336,6 @@ export class LibraryItemService {
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
-    
-    
 
     return updatedItem;
   }

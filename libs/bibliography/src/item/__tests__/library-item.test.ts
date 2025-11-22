@@ -38,7 +38,10 @@ describe('LibraryItem', () => {
     await mockStorage.saveMetadata(testMetadata);
 
     // Create LibraryItem instance with a fresh copy of metadata using adapter
-    libraryItem = new LibraryItem({ ...testMetadata }, new LibraryStorageAdapter(mockStorage));
+    libraryItem = new LibraryItem(
+      { ...testMetadata },
+      new LibraryStorageAdapter(mockStorage),
+    );
   });
 
   describe('addArchiveToMetadata', () => {
@@ -62,7 +65,10 @@ describe('LibraryItem', () => {
 
     it('should throw error if item has no ID', async () => {
       const metadataWithoutId = { ...testMetadata, id: undefined };
-      const itemWithoutId = new LibraryItem(metadataWithoutId, new LibraryStorageAdapter(mockStorage));
+      const itemWithoutId = new LibraryItem(
+        metadataWithoutId,
+        new LibraryStorageAdapter(mockStorage),
+      );
 
       const newArchive: ItemArchive = {
         fileType: 'pdf',

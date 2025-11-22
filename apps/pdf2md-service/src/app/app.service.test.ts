@@ -14,6 +14,21 @@ vi.mock('mineru-client', () => ({
       downloadedFiles: ['/path/to/markdown.md'],
     }),
   })),
+  ZipProcessor: vi.fn().mockImplementation(() => ({
+    processZipBuffer: vi.fn().mockResolvedValue({
+      markdownContent: '# Test Markdown Content',
+      extractedFiles: true,
+      images: [],
+    }),
+    extractAllFilesAndMarkdownFromZip: vi.fn().mockResolvedValue({
+      markdownContent: '# Test Markdown Content',
+    }),
+    extractAllFilesFromZip: vi.fn().mockResolvedValue(true),
+    extractMarkdownFromZip: vi
+      .fn()
+      .mockResolvedValue('# Test Markdown Content'),
+    extractImagesFromZip: vi.fn().mockResolvedValue([]),
+  })),
   MinerUDefaultConfig: {
     baseUrl: 'https://mineru.net/api/v4',
     timeout: 30000,
@@ -79,8 +94,12 @@ vi.mock('@aikb/s3-service', () => ({
     .fn()
     .mockResolvedValue('http://test-s3-download-url.com'),
   createS3Service: vi.fn().mockReturnValue({
-    uploadToS3: vi.fn().mockResolvedValue({ key: 'test-key', url: 'http://test-s3-url.com' }),
-    getSignedDownloadUrl: vi.fn().mockResolvedValue('http://test-s3-download-url.com'),
+    uploadToS3: vi
+      .fn()
+      .mockResolvedValue({ key: 'test-key', url: 'http://test-s3-url.com' }),
+    getSignedDownloadUrl: vi
+      .fn()
+      .mockResolvedValue('http://test-s3-download-url.com'),
   }),
 }));
 
@@ -199,7 +218,8 @@ describe(AppService, () => {
     // Test actual extraction with real zip file
     // We'll use a simpler approach - just test that the method doesn't throw
     try {
-      const result = await service.zipProcessor.extractMarkdownFromZip(zipBuffer);
+      const result =
+        await service.zipProcessor.extractMarkdownFromZip(zipBuffer);
       // The result should not be null if extraction was successful
       expect(result).not.toBeNull();
       // If extraction worked, we should have some content
@@ -215,7 +235,8 @@ describe(AppService, () => {
   });
 
   it('should extract markdown and files from zip using extractAllFilesAndMarkdownFromZip', async () => {
-    const testZipPath = '/workspace/test/mineruPdf2MdConversionResult.zip';
+    const testZipPath =
+      '/workspace/libs/mineru-client/tests/mineruPdf2MdConversionResult.zip';
     const zipBuffer = require('fs').readFileSync(testZipPath);
 
     // Test the new unified extraction method

@@ -15,7 +15,12 @@ import {
 import { Type } from 'class-transformer';
 import type { ChunkEmbedGroupMetadata } from 'item-vector-storage';
 import { ChunkingStrategy } from 'chunking';
-import { EmbeddingProvider, OpenAIModel, AlibabaModel, OnnxModel } from 'embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+  AlibabaModel,
+  OnnxModel,
+} from 'embedding';
 
 // Nested validation classes for ChunkEmbedGroupMetadata
 class ChunkingConfigDto {
@@ -40,7 +45,11 @@ class ChunkingConfigDto {
 }
 
 class EmbeddingConfigDto {
-  @IsEnum([...Object.values(OpenAIModel), ...Object.values(AlibabaModel), ...Object.values(OnnxModel)])
+  @IsEnum([
+    ...Object.values(OpenAIModel),
+    ...Object.values(AlibabaModel),
+    ...Object.values(OnnxModel),
+  ])
   model!: OpenAIModel | AlibabaModel | OnnxModel;
 
   @IsNumber()

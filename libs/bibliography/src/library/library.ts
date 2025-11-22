@@ -117,9 +117,11 @@ export class Library implements ILibrary {
 
     // Save metadata to get the ID
     const savedMetadata = await this.storage.saveMetadata(fullMetadata);
-    return new LibraryItem(savedMetadata, new LibraryStorageAdapter(this.storage));
+    return new LibraryItem(
+      savedMetadata,
+      new LibraryStorageAdapter(this.storage),
+    );
   }
-
 
   /**
    * Get a book by ID
@@ -136,7 +138,8 @@ export class Library implements ILibrary {
   async searchItems(filter: SearchFilter): Promise<LibraryItem[]> {
     const metadataList = await this.storage.searchMetadata(filter);
     return metadataList.map(
-      (metadata) => new LibraryItem(metadata, new LibraryStorageAdapter(this.storage)),
+      (metadata) =>
+        new LibraryItem(metadata, new LibraryStorageAdapter(this.storage)),
     );
   }
 

@@ -16,7 +16,6 @@ export class PrismaItemStorage implements IItemStorage {
     return `https://s3.amazonaws.com/bucket/${s3Key}`;
   }
 
-
   // Metadata operations
   async getMetadata(id: string): Promise<ItemMetadata | null> {
     const item = await this.prisma.items.findUnique({
@@ -87,13 +86,15 @@ export class PrismaItemStorage implements IItemStorage {
           },
         });
 
-        const authorRecord = existingAuthor || await this.prisma.authors.create({
-          data: {
-            first_name: author.firstName,
-            last_name: author.lastName,
-            middle_name: author.middleName,
-          },
-        });
+        const authorRecord =
+          existingAuthor ||
+          (await this.prisma.authors.create({
+            data: {
+              first_name: author.firstName,
+              last_name: author.lastName,
+              middle_name: author.middleName,
+            },
+          }));
 
         // Create relationship
         await this.prisma.item_authors.create({

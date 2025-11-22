@@ -1,8 +1,6 @@
 import { v4 } from 'uuid';
 import { nanoid } from 'nanoid';
 
-
-
 /**
  * Utility functions for generating IDs without database dependency
  */

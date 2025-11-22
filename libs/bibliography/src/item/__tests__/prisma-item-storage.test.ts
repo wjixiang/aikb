@@ -93,7 +93,6 @@ describe('PrismaItemStorage', () => {
     });
   });
 
-
   describe('getMetadata', () => {
     it('should return null when item is not found', async () => {
       mockPrisma.items.findUnique.mockResolvedValue(null);
@@ -270,7 +269,9 @@ describe('PrismaItemStorage', () => {
     });
 
     it('should return false when deletion fails', async () => {
-      mockPrisma.citations.deleteMany.mockRejectedValue(new Error('Delete failed'));
+      mockPrisma.citations.deleteMany.mockRejectedValue(
+        new Error('Delete failed'),
+      );
       const result = await storage.deleteCitations('test-id');
       expect(result).toBe(false);
     });

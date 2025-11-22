@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Pdf2MArkdownDto, UpdateMarkdownDto, CreateGroupAndChunkEmbedDto } from 'library-shared';
+import {
+  Pdf2MArkdownDto,
+  UpdateMarkdownDto,
+  CreateGroupAndChunkEmbedDto,
+} from 'library-shared';
 import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
@@ -46,7 +50,7 @@ async function uploadToS3(
   // Lazy import s3-service to avoid eager initialization
   const s3ServiceModule = await import('@aikb/s3-service');
   const { uploadFile } = s3ServiceModule;
-  
+
   const result = await uploadFile(
     pdf2mdS3Config,
     fileName,
@@ -62,6 +66,7 @@ export class AppService {
   private minerUClient: MinerUClient;
   private logger = createLoggerWithPrefix('pdf2md-service-AppService');
   private partPdfs3Service = createS3Service(pdf2mdS3Config);
+  private pdfS3Service = createS3Service(pdf2mdS3Config);
   public zipProcessor = new ZipProcessor();
 
   constructor(
@@ -135,13 +140,13 @@ export class AppService {
 
         try {
           // Use dynamic import to ensure uploadFile is available
-          
+
           const uploadResult = await this.partPdfs3Service.uploadToS3(
             chunkBuffer,
             chunkFileName,
             {
-              contentType: 'application/pdf'
-            }
+              contentType: 'application/pdf',
+            },
           );
           this.logger.debug(
             `Uploaded chunk ${index + 1}/${pdfChunks.length} to S3: ${uploadResult}`,
@@ -410,12 +415,53 @@ export class AppService {
         throw new Error(`MinerU task failed: ${result.err_msg}`);
       }
 
-      // Extract markdown content using the unified function
-      const markdownContent = await this.extractMarkdownContent(
-        downloadedFiles || null,
-        result.full_zip_url || null,
-        itemId,
-      );
+      // Extract markdown and images using ZipProcessor
+      let markdownContent: string;
+
+      if (result.full_zip_url) {
+        // Download zip file as buffer
+        const zipResponse = await get(result.full_zip_url, {
+          responseType: 'arraybuffer',
+        });
+        const zipBuffer = Buffer.from(zipResponse.data);
+
+        this.logger.debug(
+          `Downloaded zip file, size: ${zipBuffer.length} bytes for item: ${itemId}`,
+        );
+
+        // Process zip buffer to extract markdown and images
+        const processResult = await this.zipProcessor.processZipBuffer(
+          zipBuffer,
+          {
+            extractMarkdown: true,
+            extractAllFiles: true,
+            extractImages: true,
+            itemId,
+          },
+        );
+
+        if (processResult.markdownContent) {
+          markdownContent = processResult.markdownContent;
+
+          // Upload extracted images to S3 if any
+          if (processResult.images && processResult.images.length > 0) {
+            await this.uploadExtractedImages(processResult.images, itemId);
+          }
+        } else {
+          throw new Error('Failed to extract markdown content from zip file');
+        }
+      } else if (downloadedFiles && downloadedFiles.length > 0) {
+        // Fallback to existing method for downloaded files
+        markdownContent = await this.extractMarkdownContent(
+          downloadedFiles,
+          null,
+          itemId,
+        );
+      } else {
+        throw new Error(
+          'No zip URL or downloaded files available for extraction',
+        );
+      }
 
       this.logger.info(
         `Successfully converted PDF to Markdown for item: ${itemId}`,
@@ -554,11 +600,12 @@ export class AppService {
         );
 
         // Extract markdown content using the unified method
-        const result = await this.zipProcessor.extractAllFilesAndMarkdownFromZip(
-          zipBuffer,
-          itemId,
-          this.processAndUploadImages.bind(this)
-        );
+        const result =
+          await this.zipProcessor.extractAllFilesAndMarkdownFromZip(
+            zipBuffer,
+            itemId,
+            this.processAndUploadImages.bind(this),
+          );
 
         if (result.markdownContent) {
           return result.markdownContent;
@@ -580,9 +627,6 @@ export class AppService {
       throw error;
     }
   }
-
-
-
 
   /**
    * Extract all files from zip buffer to a directory
@@ -659,6 +703,100 @@ export class AppService {
   }
 
   /**
+   * Upload extracted image buffers to S3
+   */
+  private async uploadExtractedImages(
+    images: { fileName: string; buffer: Buffer }[],
+    itemId: string,
+  ): Promise<string[]> {
+    const uploadedUrls: string[] = [];
+
+    this.logger.debug(
+      `Uploading ${images.length} extracted images for item: ${itemId}`,
+    );
+
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const imageData = images[i];
+        const imageBuffer = imageData.buffer;
+        const originalFileName = imageData.fileName;
+
+        // Try to detect image type from buffer as fallback
+        const mimeType = this.detectImageMimeType(imageBuffer);
+        const finalFileName = `images/${itemId}/${originalFileName}`;
+
+        const s3Url = await this.pdfS3Service.uploadToS3(
+          imageBuffer,
+          finalFileName,
+          {
+            contentType: mimeType,
+          },
+        );
+
+        uploadedUrls.push(s3Url.url);
+        this.logger.debug(
+          `Uploaded extracted image ${i + 1}/${images.length} (${originalFileName}) to S3: ${s3Url}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to upload extracted image ${i + 1} for item ${itemId}: ${JSON.stringify(error)}`,
+          error,
+        );
+        // Continue with other images even if one fails
+      }
+    }
+
+    this.logger.info(
+      `Successfully uploaded ${uploadedUrls.length}/${images.length} images for item: ${itemId}`,
+    );
+    return uploadedUrls;
+  }
+
+  /**
+   * Detect image MIME type from buffer
+   */
+  private detectImageMimeType(buffer: Buffer): string {
+    // Check file signature to determine image type
+    if (buffer.length < 4) return 'application/octet-stream';
+
+    const signature = buffer.subarray(0, 4).toString('hex');
+
+    // PNG signature: 89 50 4E 47
+    if (signature.startsWith('89504e47')) return 'image/png';
+
+    // JPEG signature: FF D8 FF
+    if (signature.startsWith('ffd8ff')) return 'image/jpeg';
+
+    // GIF signature: 47 49 46 38
+    if (signature.startsWith('47494638')) return 'image/gif';
+
+    // BMP signature: 42 4D
+    if (signature.startsWith('424d')) return 'image/bmp';
+
+    // WebP signature: 52 49 46 46
+    if (signature.startsWith('52494646')) return 'image/webp';
+
+    // Default to PNG if we can't detect
+    return 'image/png';
+  }
+
+  /**
+   * Get file extension from MIME type
+   */
+  private getExtensionFromMimeType(mimeType: string): string {
+    const extensions: { [key: string]: string } = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'image/bmp': '.bmp',
+      'image/webp': '.webp',
+      'image/svg+xml': '.svg',
+    };
+
+    return extensions[mimeType] || '.png';
+  }
+
+  /**
    * Get MIME type based on file extension
    */
   private getMimeType(extension: string): string {
@@ -732,7 +870,9 @@ export class AppService {
    */
   private async publishCreateGroupAndChunkEmbed(itemId: string): Promise<void> {
     try {
-      this.logger.info(`Publishing createGroupAndChunkEmbed message for item: ${itemId}`);
+      this.logger.info(
+        `Publishing createGroupAndChunkEmbed message for item: ${itemId}`,
+      );
 
       // Create the message payload with default configuration
       const message: CreateGroupAndChunkEmbedDto = {
@@ -744,11 +884,20 @@ export class AppService {
       };
 
       // Publish the message to RabbitMQ
-      await this.amqpConnection.publish('library', 'item.vector.createGroupAndChunkEmbed', message);
+      await this.amqpConnection.publish(
+        'library',
+        'item.vector.createGroupAndChunkEmbed',
+        message,
+      );
 
-      this.logger.info(`Successfully published createGroupAndChunkEmbed message for item: ${itemId}`);
+      this.logger.info(
+        `Successfully published createGroupAndChunkEmbed message for item: ${itemId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to publish createGroupAndChunkEmbed message for item ${itemId}:`, error);
+      this.logger.error(
+        `Failed to publish createGroupAndChunkEmbed message for item ${itemId}:`,
+        error,
+      );
       // Don't throw the error to avoid interrupting the main flow
       // The chunk embedding can be triggered manually later if needed
     }

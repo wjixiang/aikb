@@ -85,13 +85,13 @@ export interface ChunkEmbedGroupMetadata {
   updatedAt: Date;
   createdBy?: string; // User or system that created this group
   tags?: string[]; // For categorization and filtering
-  status?: ChunkEmbedGroupStatus
+  status?: ChunkEmbedGroupStatus;
 }
 
-export enum ChunkEmbedGroupStatus{
-  WAIT_FOR_CHUNK_EMBED = "WAIT_FOR_CHUNK_EMBED",
-  CHUNK_EMBED_COMPLETE = "CHUNK_EMBED_COMPLETE",
-  CHUNK_EMBED_FAILED = "CHUNK_EMBED_FAILED"
+export enum ChunkEmbedGroupStatus {
+  WAIT_FOR_CHUNK_EMBED = 'WAIT_FOR_CHUNK_EMBED',
+  CHUNK_EMBED_COMPLETE = 'CHUNK_EMBED_COMPLETE',
+  CHUNK_EMBED_FAILED = 'CHUNK_EMBED_FAILED',
 }
 
 export interface IItemVectorStorage {
@@ -138,4 +138,4 @@ export interface IItemVectorStorage {
   }>;
 }
 
-export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id'>
+export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id'>;

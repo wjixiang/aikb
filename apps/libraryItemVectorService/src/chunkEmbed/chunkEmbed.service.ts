@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchItemVectorStorage, ItemChunk, ChunkEmbedGroupMetadata, ChunkEmbedGroupConfig } from 'item-vector-storage';
+import {
+  ElasticsearchItemVectorStorage,
+  ItemChunk,
+  ChunkEmbedGroupMetadata,
+  ChunkEmbedGroupConfig,
+} from 'item-vector-storage';
 import { ChunkEmbedItemDto } from 'library-shared';
 import { chunkTextWithEnum, ChunkingStrategy } from 'chunking';
 import { embeddingService, EmbeddingProvider } from 'embedding';
@@ -30,7 +35,9 @@ export class ChunkEmbedService {
     chunkIds?: string[];
   }> {
     try {
-      this.logger.log(`Processing chunk embed request for item: ${data.itemId}`);
+      this.logger.log(
+        `Processing chunk embed request for item: ${data.itemId}`,
+      );
 
       // Get the chunk embed group metadata to validate it exists and get configuration
       const group = await this.itemVectorStorage.getChunkEmbedGroupInfoById(
@@ -47,7 +54,7 @@ export class ChunkEmbedService {
       // For now, we assume the item content is already available and converted to markdown
       // In a real implementation, you might need to fetch the content from a storage service
       const itemContent = await this.getItemContent(data.itemId);
-      
+
       if (!itemContent) {
         return {
           success: false,
@@ -75,14 +82,16 @@ export class ChunkEmbedService {
       }
 
       // Generate embeddings for all chunks
-      const chunkContents = chunks.map(chunk => chunk.content);
+      const chunkContents = chunks.map((chunk) => chunk.content);
       const embeddings = await this.generateBatchEmbeddings(
         chunkContents,
         data.chunkEmbedGroupMetadata.embeddingConfig,
       );
 
       // Check if any embeddings failed
-      const failedEmbeddings = embeddings.some(embedding => embedding === null);
+      const failedEmbeddings = embeddings.some(
+        (embedding) => embedding === null,
+      );
       if (failedEmbeddings) {
         return {
           success: false,
@@ -104,7 +113,8 @@ export class ChunkEmbedService {
           index: index,
           embedding: embeddings[index]!, // We know it's not null from the check above
           strategyMetadata: {
-            chunkingStrategy: chunkingConfig.strategy || ChunkingStrategy.PARAGRAPH,
+            chunkingStrategy:
+              chunkingConfig.strategy || ChunkingStrategy.PARAGRAPH,
             chunkingConfig: {
               strategy: chunkingConfig.strategy || ChunkingStrategy.PARAGRAPH,
               parameters: {
@@ -135,8 +145,10 @@ export class ChunkEmbedService {
       );
 
       if (success) {
-        const chunkIds = itemChunks.map(chunk => chunk.id);
-        this.logger.log(`Successfully processed ${itemChunks.length} chunks for item: ${data.itemId}`);
+        const chunkIds = itemChunks.map((chunk) => chunk.id);
+        this.logger.log(
+          `Successfully processed ${itemChunks.length} chunks for item: ${data.itemId}`,
+        );
         return {
           success: true,
           message: `${itemChunks.length} chunks embedded and stored successfully`,
@@ -149,7 +161,10 @@ export class ChunkEmbedService {
         };
       }
     } catch (error) {
-      this.logger.error(`Error processing chunk embed request for item ${data.itemId}:`, error);
+      this.logger.error(
+        `Error processing chunk embed request for item ${data.itemId}:`,
+        error,
+      );
       return {
         success: false,
         message: `Error processing chunk embed request: ${error.message}`,
@@ -163,29 +178,33 @@ export class ChunkEmbedService {
   private async getItemContent(itemId: string): Promise<string | null> {
     try {
       this.logger.log(`Fetching markdown content for item: ${itemId}`);
-      
+
       // Use BibliographyGrpcClient to get the library item
       const response = await firstValueFrom(
-        this.bibliographyGrpcClient.getLibraryItem({ id: itemId })
+        this.bibliographyGrpcClient.getLibraryItem({ id: itemId }),
       );
-      
+
       const libraryItem = response.item;
-      
+
       if (!libraryItem) {
         this.logger.warn(`Library item not found: ${itemId}`);
         return null;
       }
-      
+
       if (!libraryItem.markdownContent) {
         this.logger.warn(`No markdown content found for item: ${itemId}`);
         return null;
       }
-      
-      this.logger.log(`Successfully retrieved markdown content for item: ${itemId}`);
+
+      this.logger.log(
+        `Successfully retrieved markdown content for item: ${itemId}`,
+      );
       return libraryItem.markdownContent;
-      
     } catch (error) {
-      this.logger.error(`Error fetching markdown content for item ${itemId}:`, error);
+      this.logger.error(
+        `Error fetching markdown content for item ${itemId}:`,
+        error,
+      );
       return null;
     }
   }
@@ -201,17 +220,19 @@ export class ChunkEmbedService {
       minChunkSize: number;
       overlap: number;
     },
-  ): Promise<Array<{
-    title?: string;
-    content: string;
-    startPosition?: number;
-    endPosition?: number;
-    wordCount?: number;
-    chunkType?: string;
-  }>> {
+  ): Promise<
+    Array<{
+      title?: string;
+      content: string;
+      startPosition?: number;
+      endPosition?: number;
+      wordCount?: number;
+      chunkType?: string;
+    }>
+  > {
     try {
       const chunks = await chunkTextWithEnum(content, strategy, config);
-      
+
       return chunks.map((chunk, index) => ({
         title: (chunk as any).title || `Chunk ${index + 1}`,
         content: chunk.content,
@@ -235,14 +256,16 @@ export class ChunkEmbedService {
   ): Promise<(number[] | null)[]> {
     try {
       // Set the provider based on the configuration
-      embeddingService.setProvider(embeddingConfig.provider as EmbeddingProvider);
-      
+      embeddingService.setProvider(
+        embeddingConfig.provider as EmbeddingProvider,
+      );
+
       // Generate embeddings using batch functionality
       const embeddings = await embeddingService.embedBatch(
         contents,
         embeddingConfig.provider as EmbeddingProvider,
       );
-      
+
       return embeddings;
     } catch (error) {
       this.logger.error('Failed to generate batch embeddings:', error);
@@ -251,6 +274,6 @@ export class ChunkEmbedService {
   }
 
   async createChunkEmbedGroup(config: ChunkEmbedGroupConfig) {
-    return await this.itemVectorStorage.createNewChunkEmbedGroupInfo(config)
+    return await this.itemVectorStorage.createNewChunkEmbedGroupInfo(config);
   }
 }

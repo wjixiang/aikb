@@ -15,10 +15,8 @@ export interface ZipProcessOptions {
   targetDir?: string;
   /** Item ID for logging and processing */
   itemId?: string;
-  /** Whether to process images in markdown */
-  processImages?: boolean;
-  /** Function to process images in markdown content */
-  imageProcessor?: (content: string, itemId: string, baseDir: string) => Promise<string>;
+  /** Whether to extract images as buffers */
+  extractImages?: boolean;
 }
 
 /**
@@ -29,6 +27,11 @@ export interface ZipProcessResult {
   markdownContent?: string | null;
   /** Whether any files were extracted */
   extractedFiles?: boolean;
+  /** Extracted image buffers */
+  images?: {
+    fileName: string;
+    buffer: Buffer;
+  }[];
 }
 
 /**
@@ -44,20 +47,20 @@ export class ZipProcessor {
    */
   async processZipBuffer(
     zipBuffer: Buffer,
-    options: ZipProcessOptions = {}
+    options: ZipProcessOptions = {},
   ): Promise<ZipProcessResult> {
     const {
       extractMarkdown = true,
       extractAllFiles = false,
       targetDir,
       itemId,
-      processImages = false,
-      imageProcessor,
+      extractImages = false,
     } = options;
 
     return new Promise((resolve, reject) => {
       let markdownContent: string | null = null;
       let extractedFiles = false;
+      let images: { fileName: string; buffer: Buffer }[] = [];
       let tempDir: string | null = null;
 
       // Create temporary directory if needed
@@ -95,7 +98,8 @@ export class ZipProcessor {
           // Check if the entry is full.md and we need to extract markdown
           if (
             extractMarkdown &&
-            (entry.fileName === 'full.md' || entry.fileName.endsWith('/full.md'))
+            (entry.fileName === 'full.md' ||
+              entry.fileName.endsWith('/full.md'))
           ) {
             // Open the entry stream for markdown content
             zipfile.openReadStream(entry, (err, readStream) => {
@@ -165,31 +169,76 @@ export class ZipProcessor {
                 );
               }
 
-              // Create write stream
-              const writeStream = fs.createWriteStream(fullPath);
+              // Check if this is an image file and we need to extract it as buffer
+              const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(
+                entry.fileName,
+              );
 
-              readStream.pipe(writeStream);
+              if (extractImages && isImageFile) {
+                // Collect image data as buffer
+                const chunks: Buffer[] = [];
+                readStream.on('data', (chunk) => {
+                  chunks.push(chunk);
+                });
 
-              writeStream.on('finish', () => {
-                // Continue reading next entries
-                zipfile.readEntry();
-              });
+                readStream.on('end', () => {
+                  const imageBuffer = Buffer.concat(chunks);
+                  images.push({
+                    fileName: entry.fileName,
+                    buffer: imageBuffer,
+                  });
+                  // Also write to file if extractAllFiles is enabled
+                  const writeStream = fs.createWriteStream(fullPath);
+                  writeStream.write(imageBuffer);
+                  writeStream.end();
 
-              writeStream.on('error', (err) => {
-                cleanup();
-                this.logger.error(
-                  `Error writing file ${entry.fileName}: ${err}`,
-                );
-                reject(err);
-              });
+                  writeStream.on('finish', () => {
+                    zipfile.readEntry();
+                  });
 
-              readStream.on('error', (err) => {
-                cleanup();
-                this.logger.error(
-                  `Error reading entry ${entry.fileName}: ${err}`,
-                );
-                reject(err);
-              });
+                  writeStream.on('error', (err) => {
+                    cleanup();
+                    this.logger.error(
+                      `Error writing image file ${entry.fileName}: ${err}`,
+                    );
+                    reject(err);
+                  });
+                });
+
+                readStream.on('error', (err) => {
+                  cleanup();
+                  this.logger.error(
+                    `Error reading image ${entry.fileName}: ${err}`,
+                  );
+                  reject(err);
+                });
+              } else {
+                // Create write stream for non-image files or when extractImages is false
+                const writeStream = fs.createWriteStream(fullPath);
+
+                readStream.pipe(writeStream);
+
+                writeStream.on('finish', () => {
+                  // Continue reading next entries
+                  zipfile.readEntry();
+                });
+
+                writeStream.on('error', (err) => {
+                  cleanup();
+                  this.logger.error(
+                    `Error writing file ${entry.fileName}: ${err}`,
+                  );
+                  reject(err);
+                });
+
+                readStream.on('error', (err) => {
+                  cleanup();
+                  this.logger.error(
+                    `Error reading entry ${entry.fileName}: ${err}`,
+                  );
+                  reject(err);
+                });
+              }
             });
           } else {
             // Skip this entry and read the next one
@@ -197,36 +246,14 @@ export class ZipProcessor {
           }
         });
 
-        zipfile.on('end', async () => {
+        zipfile.on('end', () => {
           // When all entries have been processed
-          try {
-            let processedContent = markdownContent;
-
-            // If we extracted files and have markdown content, process images
-            if (
-              processImages &&
-              extractedFiles &&
-              markdownContent &&
-              itemId &&
-              imageProcessor
-            ) {
-              const baseDir = targetDir || tempDir!;
-              processedContent = await imageProcessor(
-                markdownContent,
-                itemId,
-                baseDir,
-              );
-            }
-
-            cleanup();
-            resolve({
-              markdownContent: processedContent,
-              extractedFiles,
-            });
-          } catch (error) {
-            cleanup();
-            reject(error);
-          }
+          cleanup();
+          resolve({
+            markdownContent,
+            extractedFiles,
+            images: extractImages ? images : undefined,
+          });
         });
 
         zipfile.on('error', (err) => {
@@ -275,20 +302,62 @@ export class ZipProcessor {
   }
 
   /**
-   * Extract all files and markdown from zip buffer with image processing
+   * Extract all files and markdown from zip buffer
    */
   async extractAllFilesAndMarkdownFromZip(
     zipBuffer: Buffer,
     itemId: string,
-    imageProcessor?: (content: string, itemId: string, baseDir: string) => Promise<string>,
+    targetDir?: string,
   ): Promise<{ markdownContent: string | null }> {
     const result = await this.processZipBuffer(zipBuffer, {
       extractMarkdown: true,
       extractAllFiles: true,
       itemId,
-      processImages: true,
-      imageProcessor,
+      targetDir,
     });
     return { markdownContent: result.markdownContent || null };
+  }
+
+  /**
+   * Extract images from zip buffer as buffers
+   */
+  async extractImagesFromZip(
+    zipBuffer: Buffer,
+  ): Promise<{ fileName: string; buffer: Buffer }[]> {
+    try {
+      const result = await this.processZipBuffer(zipBuffer, {
+        extractMarkdown: false,
+        extractAllFiles: false,
+        extractImages: true,
+      });
+      return result.images || [];
+    } catch (error) {
+      this.logger.error(`Error extracting images from zip: ${error}`);
+      return [];
+    }
+  }
+
+  /**
+   * Extract all files, markdown, and images from zip buffer
+   */
+  async extractAllFilesMarkdownAndImagesFromZip(
+    zipBuffer: Buffer,
+    itemId: string,
+    targetDir?: string,
+  ): Promise<{
+    markdownContent: string | null;
+    images: { fileName: string; buffer: Buffer }[];
+  }> {
+    const result = await this.processZipBuffer(zipBuffer, {
+      extractMarkdown: true,
+      extractAllFiles: true,
+      extractImages: true,
+      targetDir,
+      itemId,
+    });
+    return {
+      markdownContent: result.markdownContent || null,
+      images: result.images || [],
+    };
   }
 }

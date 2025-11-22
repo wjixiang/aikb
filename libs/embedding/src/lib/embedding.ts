@@ -132,7 +132,9 @@ export class Embedding {
     const providerInstance = embeddingManager.getProvider(targetProvider);
 
     if (!providerInstance) {
-      logger.error(`embedBatch failed: provider ${targetProvider} is not available`);
+      logger.error(
+        `embedBatch failed: provider ${targetProvider} is not available`,
+      );
       return new Array(texts.length).fill(null);
     }
 

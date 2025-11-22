@@ -350,10 +350,12 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     try {
       // Get the group info to determine the correct index
       const group = await this.getChunkEmbedGroupInfoById(groupId);
-      
+
       // Get the chunks index name for this embedding configuration
-      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(group.embeddingConfig);
-      
+      const chunksIndexName = this.getChunksIndexNameForEmbeddingConfig(
+        group.embeddingConfig,
+      );
+
       // Build the search query
       const searchQuery: any = {
         index: chunksIndexName,
@@ -377,7 +379,8 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
                   script_score: {
                     query: { match_all: {} },
                     script: {
-                      source: "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
+                      source:
+                        "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
                       params: {
                         query_vector: searchVector,
                       },
@@ -400,7 +403,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
             [`metadata.${key}`]: value,
           },
         }));
-        
+
         searchQuery.body.query.bool.must.push(...filterTerms);
       }
 
@@ -411,7 +414,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         (hit): Omit<ItemChunk, 'embedding'> & { similarity: number } => {
           const { _source } = hit as any;
           const { embedding: _embedding, ...chunkWithoutEmbedding } = _source;
-          
+
           // Convert date strings back to Date objects
           const chunkWithDates = {
             ...chunkWithoutEmbedding,
@@ -419,10 +422,12 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
             updatedAt: new Date(_source.updatedAt),
             strategyMetadata: {
               ..._source.strategyMetadata,
-              processingTimestamp: new Date(_source.strategyMetadata.processingTimestamp),
+              processingTimestamp: new Date(
+                _source.strategyMetadata.processingTimestamp,
+              ),
             },
           };
-          
+
           return {
             ...chunkWithDates,
             similarity: (hit._score || 0) - 1.0, // Adjust score back to cosine similarity range [-1, 1]
@@ -432,8 +437,11 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
 
       return chunks;
     } catch (error) {
-      this.logger.error('Failed to perform semantic search by item ID and group ID:', error);
-      
+      this.logger.error(
+        'Failed to perform semantic search by item ID and group ID:',
+        error,
+      );
+
       // Fallback to the basic semantic search method if the enhanced search fails
       try {
         const basicResult = await this.semanticSearch({
@@ -443,13 +451,18 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
           resultNum: topK,
           threshold: scoreThreshold,
         });
-        
-        return [{
-          ...basicResult,
-          similarity: 0.0, // Basic search doesn't provide similarity score
-        }];
+
+        return [
+          {
+            ...basicResult,
+            similarity: 0.0, // Basic search doesn't provide similarity score
+          },
+        ];
       } catch (fallbackError) {
-        this.logger.error('Fallback semantic search also failed:', fallbackError);
+        this.logger.error(
+          'Fallback semantic search also failed:',
+          fallbackError,
+        );
         return [];
       }
     }
@@ -551,7 +564,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async createNewChunkEmbedGroupInfo(
-    config: ChunkEmbedGroupConfig
+    config: ChunkEmbedGroupConfig,
   ): Promise<ChunkEmbedGroupMetadata> {
     try {
       await this.initializeIndices();
@@ -819,7 +832,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
 
       // Add pagination
       if (pageToken) {
-        query.search_after = JSON.parse(Buffer.from(pageToken, 'base64').toString());
+        query.search_after = JSON.parse(
+          Buffer.from(pageToken, 'base64').toString(),
+        );
       }
 
       const result = await this.client.search({
@@ -850,7 +865,9 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       if (hits.length === pageSize && hits.length > 0) {
         const lastHit = hits[hits.length - 1];
         const sortValues = lastHit.sort;
-        nextPageToken = Buffer.from(JSON.stringify(sortValues)).toString('base64');
+        nextPageToken = Buffer.from(JSON.stringify(sortValues)).toString(
+          'base64',
+        );
       }
 
       return {

@@ -31,7 +31,6 @@ export class LibraryItem {
     return this.metadata.id;
   }
 
-
   /**
    * Get the PDF download URL if available
    */

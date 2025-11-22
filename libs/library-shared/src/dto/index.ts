@@ -10,5 +10,5 @@ export {
 } from './pdf-upload-url.dto.js';
 export { AddItemArchiveDto } from './add-item-archive.dto.js';
 export * from './pdf_process.dto.js';
-export {ChunkEmbedItemDto} from './chunk-embed-item.dto.js';
-export {CreateGroupAndChunkEmbedDto} from './create-group-and-chunk-embed.dto.js';
+export { ChunkEmbedItemDto } from './chunk-embed-item.dto.js';
+export { CreateGroupAndChunkEmbedDto } from './create-group-and-chunk-embed.dto.js';

@@ -9,7 +9,7 @@ import {
   EmbeddingConfig,
 } from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
-import {IdUtils} from 'utils'
+import { IdUtils } from 'utils';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ChunkEmbedItemDto } from 'library-shared';
 
@@ -17,7 +17,7 @@ import { ChunkEmbedItemDto } from 'library-shared';
 export class AppService {
   private readonly itemVectorStorage: ElasticsearchItemVectorStorage;
 
-  constructor(private amqpConnection: AmqpConnection,) {
+  constructor(private amqpConnection: AmqpConnection) {
     this.itemVectorStorage = new ElasticsearchItemVectorStorage();
   }
 
@@ -87,10 +87,14 @@ export class AppService {
     // Produce chunkEmbed message
     const chunEmbedRequest: ChunkEmbedItemDto = {
       itemId: request.itemId,
-      chunkEmbedGroupMetadata: createdGroup
-    }
-    await this.amqpConnection.publish('library', 'item.vector.chunkEmbed', chunEmbedRequest)
-    console.log("Produce chunkEmbed message after creating chunkEmbedGroup")
+      chunkEmbedGroupMetadata: createdGroup,
+    };
+    await this.amqpConnection.publish(
+      'library',
+      'item.vector.chunkEmbed',
+      chunEmbedRequest,
+    );
+    console.log('Produce chunkEmbed message after creating chunkEmbedGroup');
 
     // Convert internal type back to protobuf type
     return {
@@ -178,8 +182,8 @@ export class AppService {
       }
 
       // Extract content from all chunks for batch embedding
-      const chunkContents = request.chunks.map(chunk => chunk.content);
-      
+      const chunkContents = request.chunks.map((chunk) => chunk.content);
+
       // Generate embeddings for all chunks using batch functionality
       const embeddings = await this.generateBatchEmbeddings(
         chunkContents,
@@ -187,7 +191,9 @@ export class AppService {
       );
 
       // Check if any embeddings failed
-      const failedEmbeddings = embeddings.some(embedding => embedding === null);
+      const failedEmbeddings = embeddings.some(
+        (embedding) => embedding === null,
+      );
       if (failedEmbeddings) {
         return {
           success: false,
@@ -199,7 +205,7 @@ export class AppService {
       // Create item chunks with embeddings
       const now = new Date();
       const itemChunks: ItemChunk[] = request.chunks.map((chunk, index) => {
-        const chunkId = IdUtils.generateChunkId(chunk.itemId, index)
+        const chunkId = IdUtils.generateChunkId(chunk.itemId, index);
 
         return {
           id: chunkId,
@@ -227,9 +233,9 @@ export class AppService {
         group,
         itemChunks,
       );
-      
+
       if (success) {
-        const chunkIds = itemChunks.map(chunk => chunk.id);
+        const chunkIds = itemChunks.map((chunk) => chunk.id);
         return {
           success: true,
           message: `${itemChunks.length} chunks embedded successfully`,
@@ -258,13 +264,13 @@ export class AppService {
     try {
       // Import embedding service dynamically to avoid circular dependencies
       const { embeddingService } = await import('embedding');
-      
+
       // Set the provider based on the configuration
       embeddingService.setProvider(embeddingConfig.provider);
-      
+
       // Generate embedding using batch functionality for better performance
       const embeddings = await embeddingService.embedBatch([content]);
-      
+
       // Return the first (and only) embedding from the batch result
       return embeddings[0] || null;
     } catch (error) {
@@ -280,16 +286,16 @@ export class AppService {
     try {
       // Import embedding service dynamically to avoid circular dependencies
       const { embeddingService } = await import('embedding');
-      
+
       // Set the provider based on the configuration
       embeddingService.setProvider(embeddingConfig.provider);
-      
+
       // Generate embeddings using batch functionality
       const embeddings = await embeddingService.embedBatch(
         contents,
         embeddingConfig.provider,
       );
-      
+
       return embeddings;
     } catch (error) {
       console.error('Failed to generate batch embeddings:', error);
@@ -303,7 +309,7 @@ export class AppService {
     if (!protoMetadata) return undefined;
 
     const metadata: ItemChunk['metadata'] = {};
-    
+
     // Convert string values to appropriate types based on common keys
     for (const [key, value] of Object.entries(protoMetadata)) {
       switch (key) {
@@ -321,7 +327,7 @@ export class AppService {
           break;
       }
     }
-    
+
     return metadata;
   }
 
@@ -357,17 +363,18 @@ export class AppService {
       }
 
       // Perform semantic search using the storage layer's new method
-      const searchResults = await this.itemVectorStorage.semanticSearchByItemidAndGroupid(
-        request.itemId,
-        request.chunkEmbedGroupId,
-        queryEmbedding,
-        request.topK || 10,
-        request.scoreThreshold || 0.0,
-        request.filter || {},
-      );
+      const searchResults =
+        await this.itemVectorStorage.semanticSearchByItemidAndGroupid(
+          request.itemId,
+          request.chunkEmbedGroupId,
+          queryEmbedding,
+          request.topK || 10,
+          request.scoreThreshold || 0.0,
+          request.filter || {},
+        );
 
       // Convert internal results to protobuf format
-      const protobufResults = searchResults.map(result => ({
+      const protobufResults = searchResults.map((result) => ({
         chunkId: result.id,
         itemId: result.itemId,
         title: result.title,
@@ -393,17 +400,19 @@ export class AppService {
   /**
    * Convert internal metadata to protobuf format
    */
-  private convertMetadataToProto(metadata: ItemChunk['metadata']): { [key: string]: string } {
+  private convertMetadataToProto(metadata: ItemChunk['metadata']): {
+    [key: string]: string;
+  } {
     if (!metadata) return {};
 
     const protoMetadata: { [key: string]: string } = {};
-    
+
     for (const [key, value] of Object.entries(metadata)) {
       if (value !== undefined && value !== null) {
         protoMetadata[key] = String(value);
       }
     }
-    
+
     return protoMetadata;
   }
 }

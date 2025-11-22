@@ -47,9 +47,7 @@ export class AppGrpcController
     try {
       return await this.libraryItemVectorService.embedChunks(request);
     } catch (error) {
-      throw new Error(
-        `Failed to embed chunks: ${error.message}`,
-      );
+      throw new Error(`Failed to embed chunks: ${error.message}`);
     }
   }
 
@@ -62,9 +60,7 @@ export class AppGrpcController
         request,
       );
     } catch (error) {
-      throw new Error(
-        `Failed to perform semantic search: ${error.message}`,
-      );
+      throw new Error(`Failed to perform semantic search: ${error.message}`);
     }
   }
 }

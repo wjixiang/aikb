@@ -22,9 +22,7 @@ const protoExports = protos.map(
 );
 
 // Function to parse proto file and extract service information
-function parseProtoService(
-  protoFileName: string,
-): {
+function parseProtoService(protoFileName: string): {
   serviceName: string;
   packageName: string;
   methods: { name: string; inputType: string; outputType: string }[];

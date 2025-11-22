@@ -1,7 +1,4 @@
-import {
-  ItemMetadata,
-  ItemArchive,
-} from '../library/types.js';
+import { ItemMetadata, ItemArchive } from '../library/types.js';
 
 /**
  * Storage interface for item-specific operations

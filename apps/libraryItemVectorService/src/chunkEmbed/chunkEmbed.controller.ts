@@ -26,7 +26,10 @@ export class ChunkEmbedController {
     queue: 'item-vector-createGroupAndChunkEmbed-queue',
   })
   async createGroupAndChunkEmbedItemHandler(data: CreateGroupAndChunkEmbedDto) {
-    console.log('Controller received create group and chunk embed request', data);
+    console.log(
+      'Controller received create group and chunk embed request',
+      data,
+    );
     return this.createGroupAndChunkEmbedItem(data);
   }
 
@@ -39,7 +42,8 @@ export class ChunkEmbedController {
     const config: ChunkEmbedGroupConfig = {
       itemId: data.itemId,
       name: data.groupName,
-      description: data.groupDescription || `Chunk embed group for item ${data.itemId}`,
+      description:
+        data.groupDescription || `Chunk embed group for item ${data.itemId}`,
       chunkingConfig: {
         strategy: data.chunkingConfig?.strategy || ChunkingStrategy.PARAGRAPH,
         maxChunkSize: data.chunkingConfig?.maxChunkSize || 1000,
@@ -48,7 +52,8 @@ export class ChunkEmbedController {
       },
       embeddingConfig: {
         provider: data.embeddingConfig?.provider || EmbeddingProvider.OPENAI,
-        model: data.embeddingConfig?.model || OpenAIModel.TEXT_EMBEDDING_ADA_002,
+        model:
+          data.embeddingConfig?.model || OpenAIModel.TEXT_EMBEDDING_ADA_002,
         dimension: data.embeddingConfig?.dimension || 1536,
         batchSize: data.embeddingConfig?.batchSize || 10,
         maxRetries: data.embeddingConfig?.maxRetries || 3,
@@ -63,8 +68,9 @@ export class ChunkEmbedController {
     };
 
     // Create the new chunk embed group
-    const newChunkEmbedGroupMetadata = await this.chunkEmbedService.createChunkEmbedGroup(config);
-    
+    const newChunkEmbedGroupMetadata =
+      await this.chunkEmbedService.createChunkEmbedGroup(config);
+
     // Process the item for chunk embedding using the newly created group
     const result = await this.chunkEmbedService.handleChunkEmbedRequest({
       itemId: data.itemId,
