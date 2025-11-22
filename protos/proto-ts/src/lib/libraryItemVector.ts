@@ -5,10 +5,10 @@
 // source: libraryItemVector.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'libraryItemVector';
+export const protobufPackage = "libraryItemVector";
 
 /** Chunking configuration */
 export interface ChunkingConfig {
@@ -50,6 +50,7 @@ export interface CreateChunkEmbedGroupRequest {
   isActive: boolean;
   createdBy: string;
   tags: string[];
+  itemId: string;
 }
 
 /** Response containing the created chunk embedding group */
@@ -60,6 +61,7 @@ export interface CreateChunkEmbedGroupResponse {
 /** Chunk embedding group metadata */
 export interface ChunkEmbedGroupMetadata {
   id: string;
+  itemId: string;
   name: string;
   description: string;
   chunkingConfig: ChunkingConfig | undefined;
@@ -74,7 +76,7 @@ export interface ChunkEmbedGroupMetadata {
 
 export interface ListItemChunkEmbedGroupMetadataRequest {
   /** ID of target item */
-  id: string;
+  itemId: string;
   /** Pagination */
   pageSize: number;
   pageToken: string;
@@ -146,16 +148,14 @@ export interface SemanticSearchResult_MetadataEntry {
   value: string;
 }
 
-export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = 'libraryItemVector';
+export const LIBRARY_ITEM_VECTOR_PACKAGE_NAME = "libraryItemVector";
 
 /** Library Item Vector service definition */
 
 export interface LibraryItemVectorServiceClient {
   /** Create a new chunk embedding group */
 
-  createChunkEmbedGroup(
-    request: CreateChunkEmbedGroupRequest,
-  ): Observable<CreateChunkEmbedGroupResponse>;
+  createChunkEmbedGroup(request: CreateChunkEmbedGroupRequest): Observable<CreateChunkEmbedGroupResponse>;
 
   listChunkEmbedGroupMetadata(
     request: ListItemChunkEmbedGroupMetadataRequest,
@@ -175,10 +175,7 @@ export interface LibraryItemVectorServiceController {
 
   createChunkEmbedGroup(
     request: CreateChunkEmbedGroupRequest,
-  ):
-    | Promise<CreateChunkEmbedGroupResponse>
-    | Observable<CreateChunkEmbedGroupResponse>
-    | CreateChunkEmbedGroupResponse;
+  ): Promise<CreateChunkEmbedGroupResponse> | Observable<CreateChunkEmbedGroupResponse> | CreateChunkEmbedGroupResponse;
 
   listChunkEmbedGroupMetadata(
     request: ListItemChunkEmbedGroupMetadataRequest,
@@ -189,10 +186,7 @@ export interface LibraryItemVectorServiceController {
 
   embedChunks(
     request: EmbedChunksRequest,
-  ):
-    | Promise<EmbedChunksResponse>
-    | Observable<EmbedChunksResponse>
-    | EmbedChunksResponse;
+  ): Promise<EmbedChunksResponse> | Observable<EmbedChunksResponse> | EmbedChunksResponse;
 
   semanticSearchByItemidAndGroupid(
     request: SemanticSearchByItemidAndGroupidRequest,
@@ -205,35 +199,21 @@ export interface LibraryItemVectorServiceController {
 export function LibraryItemVectorServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      'createChunkEmbedGroup',
-      'listChunkEmbedGroupMetadata',
-      'embedChunks',
-      'semanticSearchByItemidAndGroupid',
+      "createChunkEmbedGroup",
+      "listChunkEmbedGroupMetadata",
+      "embedChunks",
+      "semanticSearchByItemidAndGroupid",
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcMethod('LibraryItemVectorService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcStreamMethod('LibraryItemVectorService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("LibraryItemVectorService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const LIBRARY_ITEM_VECTOR_SERVICE_NAME = 'LibraryItemVectorService';
+export const LIBRARY_ITEM_VECTOR_SERVICE_NAME = "LibraryItemVectorService";

@@ -19,12 +19,15 @@ export class Pdf2mdGrpcClient {
 
   onModuleInit() {
     this.pdf2MdServiceService =
-      this.client.getService<pdf2mdProto.Pdf2MdServiceClient>('Pdf2MdService');
+      this.client.getService<pdf2mdProto.Pdf2MdServiceClient>(
+        'Pdf2MdService',
+      );
   }
 
   convertPdfToMarkdown(
     request: pdf2mdProto.Pdf2MarkdownRequest,
   ): Observable<pdf2mdProto.Pdf2MarkdownResponse> {
-    return this.pdf2MdServiceService.convertPdfToMarkdown(request);
+    return this.pdf2MdServiceService
+      .convertPdfToMarkdown(request);
   }
 }

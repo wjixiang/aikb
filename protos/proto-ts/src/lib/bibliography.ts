@@ -5,10 +5,10 @@
 // source: bibliography.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'bibliography';
+export const protobufPackage = "bibliography";
 
 /** Author message */
 export interface Author {
@@ -163,70 +163,50 @@ export interface LibraryItemResponse {
   item: LibraryItem | undefined;
 }
 
-export const BIBLIOGRAPHY_PACKAGE_NAME = 'bibliography';
+export const BIBLIOGRAPHY_PACKAGE_NAME = "bibliography";
 
 /** Bibliography service definition */
 
 export interface BibliographyServiceClient {
   /** Create a new library item */
 
-  createLibraryItem(
-    request: CreateLibraryItemRequest,
-  ): Observable<LibraryItemResponse>;
+  createLibraryItem(request: CreateLibraryItemRequest): Observable<LibraryItemResponse>;
 
   /** Create a new library item with PDF */
 
-  createLibraryItemWithPdf(
-    request: CreateLibraryItemWithPdfRequest,
-  ): Observable<LibraryItemResponse>;
+  createLibraryItemWithPdf(request: CreateLibraryItemWithPdfRequest): Observable<LibraryItemResponse>;
 
   /** Get a library item by ID */
 
-  getLibraryItem(
-    request: GetLibraryItemRequest,
-  ): Observable<LibraryItemResponse>;
+  getLibraryItem(request: GetLibraryItemRequest): Observable<LibraryItemResponse>;
 
   /** Search for library items */
 
-  searchLibraryItems(
-    request: SearchLibraryItemsRequest,
-  ): Observable<SearchLibraryItemsResponse>;
+  searchLibraryItems(request: SearchLibraryItemsRequest): Observable<SearchLibraryItemsResponse>;
 
   /** Delete a library item by ID */
 
-  deleteLibraryItem(
-    request: DeleteLibraryItemRequest,
-  ): Observable<DeleteLibraryItemResponse>;
+  deleteLibraryItem(request: DeleteLibraryItemRequest): Observable<DeleteLibraryItemResponse>;
 
   /** Update library item metadata */
 
-  updateLibraryItemMetadata(
-    request: UpdateLibraryItemMetadataRequest,
-  ): Observable<LibraryItemResponse>;
+  updateLibraryItemMetadata(request: UpdateLibraryItemMetadataRequest): Observable<LibraryItemResponse>;
 
   /** Update library item markdown content */
 
-  updateLibraryItemMarkdown(
-    request: UpdateLibraryItemMarkdownRequest,
-  ): Observable<LibraryItemResponse>;
+  updateLibraryItemMarkdown(request: UpdateLibraryItemMarkdownRequest): Observable<LibraryItemResponse>;
 
   /** Get PDF download URL */
 
-  getPdfDownloadUrl(
-    request: GetPdfDownloadUrlRequest,
-  ): Observable<PdfDownloadUrlResponse>;
+  getPdfDownloadUrl(request: GetPdfDownloadUrlRequest): Observable<PdfDownloadUrlResponse>;
 
   /** Get PDF upload URL */
 
-  getPdfUploadUrl(
-    request: GetPdfUploadUrlRequest,
-  ): Observable<PdfUploadUrlResponse>;
+  getPdfUploadUrl(request: GetPdfUploadUrlRequest): Observable<PdfUploadUrlResponse>;
 
   /** Add an archive to a library item */
 
-  addArchiveToItem(
-    request: AddArchiveToItemRequest,
-  ): Observable<LibraryItemResponse>;
+  addArchiveToItem(request: AddArchiveToItemRequest): Observable<LibraryItemResponse>;
 }
 
 /** Bibliography service definition */
@@ -236,131 +216,87 @@ export interface BibliographyServiceController {
 
   createLibraryItem(
     request: CreateLibraryItemRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 
   /** Create a new library item with PDF */
 
   createLibraryItemWithPdf(
     request: CreateLibraryItemWithPdfRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 
   /** Get a library item by ID */
 
   getLibraryItem(
     request: GetLibraryItemRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 
   /** Search for library items */
 
   searchLibraryItems(
     request: SearchLibraryItemsRequest,
-  ):
-    | Promise<SearchLibraryItemsResponse>
-    | Observable<SearchLibraryItemsResponse>
-    | SearchLibraryItemsResponse;
+  ): Promise<SearchLibraryItemsResponse> | Observable<SearchLibraryItemsResponse> | SearchLibraryItemsResponse;
 
   /** Delete a library item by ID */
 
   deleteLibraryItem(
     request: DeleteLibraryItemRequest,
-  ):
-    | Promise<DeleteLibraryItemResponse>
-    | Observable<DeleteLibraryItemResponse>
-    | DeleteLibraryItemResponse;
+  ): Promise<DeleteLibraryItemResponse> | Observable<DeleteLibraryItemResponse> | DeleteLibraryItemResponse;
 
   /** Update library item metadata */
 
   updateLibraryItemMetadata(
     request: UpdateLibraryItemMetadataRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 
   /** Update library item markdown content */
 
   updateLibraryItemMarkdown(
     request: UpdateLibraryItemMarkdownRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 
   /** Get PDF download URL */
 
   getPdfDownloadUrl(
     request: GetPdfDownloadUrlRequest,
-  ):
-    | Promise<PdfDownloadUrlResponse>
-    | Observable<PdfDownloadUrlResponse>
-    | PdfDownloadUrlResponse;
+  ): Promise<PdfDownloadUrlResponse> | Observable<PdfDownloadUrlResponse> | PdfDownloadUrlResponse;
 
   /** Get PDF upload URL */
 
   getPdfUploadUrl(
     request: GetPdfUploadUrlRequest,
-  ):
-    | Promise<PdfUploadUrlResponse>
-    | Observable<PdfUploadUrlResponse>
-    | PdfUploadUrlResponse;
+  ): Promise<PdfUploadUrlResponse> | Observable<PdfUploadUrlResponse> | PdfUploadUrlResponse;
 
   /** Add an archive to a library item */
 
   addArchiveToItem(
     request: AddArchiveToItemRequest,
-  ):
-    | Promise<LibraryItemResponse>
-    | Observable<LibraryItemResponse>
-    | LibraryItemResponse;
+  ): Promise<LibraryItemResponse> | Observable<LibraryItemResponse> | LibraryItemResponse;
 }
 
 export function BibliographyServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      'createLibraryItem',
-      'createLibraryItemWithPdf',
-      'getLibraryItem',
-      'searchLibraryItems',
-      'deleteLibraryItem',
-      'updateLibraryItemMetadata',
-      'updateLibraryItemMarkdown',
-      'getPdfDownloadUrl',
-      'getPdfUploadUrl',
-      'addArchiveToItem',
+      "createLibraryItem",
+      "createLibraryItemWithPdf",
+      "getLibraryItem",
+      "searchLibraryItems",
+      "deleteLibraryItem",
+      "updateLibraryItemMetadata",
+      "updateLibraryItemMarkdown",
+      "getPdfDownloadUrl",
+      "getPdfUploadUrl",
+      "addArchiveToItem",
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcMethod('BibliographyService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("BibliographyService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcStreamMethod('BibliographyService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("BibliographyService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const BIBLIOGRAPHY_SERVICE_NAME = 'BibliographyService';
+export const BIBLIOGRAPHY_SERVICE_NAME = "BibliographyService";

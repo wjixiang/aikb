@@ -126,7 +126,7 @@ export class AppService {
   ): Promise<libraryItemVectorProto.ListItemChunkEmbedGroupMetadataResponse> {
     // Get the list of chunk embed groups from storage
     const result = await this.itemVectorStorage.listChunkEmbedGroupInfo(
-      request.id, // itemId
+      request.itemId, // itemId
       request.pageSize || 10,
       request.pageToken,
       request.filter,

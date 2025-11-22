@@ -35,6 +35,7 @@ message CreateChunkEmbedGroupRequest {
   bool is_active = 6;
   string created_by = 7;
   repeated string tags = 8;
+  string item_id = 9;
 }
 
 // Response containing the created chunk embedding group
@@ -45,20 +46,21 @@ message CreateChunkEmbedGroupResponse {
 // Chunk embedding group metadata
 message ChunkEmbedGroupMetadata {
   string id = 1;
-  string name = 2;
-  string description = 3;
-  ChunkingConfig chunking_config = 4;
-  EmbeddingConfig embedding_config = 5;
-  bool is_default = 6;
-  bool is_active = 7;
-  int64 created_at = 8;
-  int64 updated_at = 9;
-  string created_by = 10;
-  repeated string tags = 11;
+  string item_id = 2;
+  string name = 3;
+  string description = 5;
+  ChunkingConfig chunking_config = 6;
+  EmbeddingConfig embedding_config = 7;
+  bool is_default = 8;
+  bool is_active = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+  string created_by = 12;
+  repeated string tags = 13;
 }
 
 message ListItemChunkEmbedGroupMetadataRequest {
-  string id = 1; // ID of target item
+  string item_id = 1; // ID of target item
   int32 page_size = 2; // Pagination
   string page_token = 3;
   string filter = 4;

@@ -10,8 +10,7 @@ export class LibraryItemVectorGrpcClient {
     options: {
       package: 'libraryItemVector',
       protoPath: '/workspace/protos/libraryItemVector.proto',
-      url:
-        process.env['LIBRARYITEMVECTOR_SERVICE_GRPC_URL'] || 'localhost:50051',
+      url: process.env['LIBRARYITEMVECTOR_SERVICE_GRPC_URL'] || 'localhost:50051',
     },
   })
   private client!: ClientGrpc;
@@ -28,28 +27,28 @@ export class LibraryItemVectorGrpcClient {
   createChunkEmbedGroup(
     request: libraryItemVectorProto.CreateChunkEmbedGroupRequest,
   ): Observable<libraryItemVectorProto.CreateChunkEmbedGroupResponse> {
-    return this.libraryItemVectorServiceService.createChunkEmbedGroup(request);
+    return this.libraryItemVectorServiceService
+      .createChunkEmbedGroup(request);
   }
 
   listChunkEmbedGroupMetadata(
     request: libraryItemVectorProto.ListItemChunkEmbedGroupMetadataRequest,
   ): Observable<libraryItemVectorProto.ListItemChunkEmbedGroupMetadataResponse> {
-    return this.libraryItemVectorServiceService.listChunkEmbedGroupMetadata(
-      request,
-    );
+    return this.libraryItemVectorServiceService
+      .listChunkEmbedGroupMetadata(request);
   }
 
   embedChunks(
     request: libraryItemVectorProto.EmbedChunksRequest,
   ): Observable<libraryItemVectorProto.EmbedChunksResponse> {
-    return this.libraryItemVectorServiceService.embedChunks(request);
+    return this.libraryItemVectorServiceService
+      .embedChunks(request);
   }
 
   semanticSearchByItemidAndGroupid(
     request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
   ): Observable<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
-    return this.libraryItemVectorServiceService.semanticSearchByItemidAndGroupid(
-      request,
-    );
+    return this.libraryItemVectorServiceService
+      .semanticSearchByItemidAndGroupid(request);
   }
 }
