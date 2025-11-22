@@ -184,7 +184,7 @@ export class ZipProcessor {
                 readStream.on('end', () => {
                   const imageBuffer = Buffer.concat(chunks);
                   images.push({
-                    fileName: entry.fileName,
+                    fileName: path.basename(entry.fileName),
                     buffer: imageBuffer,
                   });
                   // Also write to file if extractAllFiles is enabled
