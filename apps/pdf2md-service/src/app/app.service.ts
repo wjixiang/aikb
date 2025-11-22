@@ -723,7 +723,7 @@ export class AppService {
 
         // Try to detect image type from buffer as fallback
         const mimeType = this.detectImageMimeType(imageBuffer);
-        const finalFileName = `images/${itemId}/${originalFileName}`;
+        const finalFileName = `images/${originalFileName}`;
 
         const s3Url = await this.pdfS3Service.uploadToS3(
           imageBuffer,
