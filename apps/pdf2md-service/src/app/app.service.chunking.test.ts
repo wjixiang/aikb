@@ -17,6 +17,10 @@ vi.mock('@aikb/s3-service', () => ({
   getPdfDownloadUrl: vi
     .fn()
     .mockResolvedValue('http://test-s3-download-url.com'),
+  createS3Service: vi.fn().mockReturnValue({
+    uploadToS3: vi.fn().mockResolvedValue({ key: 'test-key', url: 'http://test-s3-url.com' }),
+    getSignedDownloadUrl: vi.fn().mockResolvedValue('http://test-s3-download-url.com'),
+  }),
 }));
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
@@ -96,21 +100,36 @@ vi.mock('mineru-client', () => ({
 
 describe('AppService - PDF Chunking Fixed Tests', () => {
   let service: AppService;
-  let mockClientProxy: ClientProxy;
+  let mockBibliographyGrpcClient: any;
 
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
 
-    // Create a mock ClientProxy
-    mockClientProxy = {
-      connect: vi.fn(),
-      close: vi.fn(),
-      send: vi.fn(),
-      emit: vi.fn(),
+    // Create mock BibliographyGrpcClient
+    mockBibliographyGrpcClient = {
+      client: vi.fn(),
+      bibliographyServiceService: vi.fn(),
+      onModuleInit: vi.fn(),
+      createLibraryItem: vi.fn(),
+      updateLibraryItem: vi.fn(),
+      deleteLibraryItem: vi.fn(),
+      getLibraryItem: vi.fn(),
+      listLibraryItems: vi.fn(),
+      updateLibraryItemMarkdown: vi.fn().mockReturnValue({
+        subscribe: vi.fn().mockImplementation((observer) => {
+          observer.next({ item: { id: 'test-item-id' } });
+          observer.complete();
+        }),
+      }),
+    };
+
+    // Create mock AmqpConnection
+    const mockAmqpConnection = {
+      publish: vi.fn().mockResolvedValue({}),
     } as any;
 
-    service = new AppService(mockClientProxy);
+    service = new AppService(mockBibliographyGrpcClient, mockAmqpConnection);
 
     // Setup MinerU client mocks
     mockMinerUClient.createSingleFileTask.mockResolvedValue('test-task-id');

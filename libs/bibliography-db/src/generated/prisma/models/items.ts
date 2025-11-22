@@ -292,13 +292,13 @@ export type itemsWhereInput = {
   language?: Prisma.StringNullableFilter<"items"> | string | null
   markdown_content?: Prisma.StringNullableFilter<"items"> | string | null
   markdown_updated_date?: Prisma.DateTimeNullableFilter<"items"> | Date | string | null
+  chunk_embed_groups?: Prisma.Chunk_embed_groupsListRelationFilter
   citations?: Prisma.CitationsListRelationFilter
   item_archives?: Prisma.Item_archivesListRelationFilter
   item_authors?: Prisma.Item_authorsListRelationFilter
+  item_chunks?: Prisma.Item_chunksListRelationFilter
   item_collections?: Prisma.Item_collectionsListRelationFilter
   markdowns?: Prisma.XOR<Prisma.MarkdownsNullableScalarRelationFilter, Prisma.markdownsWhereInput> | null
-  chunk_embed_groups?: Prisma.Chunk_embed_groupsListRelationFilter
-  item_chunks?: Prisma.Item_chunksListRelationFilter
 }
 
 export type itemsOrderByWithRelationInput = {
@@ -317,13 +317,13 @@ export type itemsOrderByWithRelationInput = {
   language?: Prisma.SortOrderInput | Prisma.SortOrder
   markdown_content?: Prisma.SortOrderInput | Prisma.SortOrder
   markdown_updated_date?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunk_embed_groups?: Prisma.chunk_embed_groupsOrderByRelationAggregateInput
   citations?: Prisma.citationsOrderByRelationAggregateInput
   item_archives?: Prisma.item_archivesOrderByRelationAggregateInput
   item_authors?: Prisma.item_authorsOrderByRelationAggregateInput
+  item_chunks?: Prisma.item_chunksOrderByRelationAggregateInput
   item_collections?: Prisma.item_collectionsOrderByRelationAggregateInput
   markdowns?: Prisma.markdownsOrderByWithRelationInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsOrderByRelationAggregateInput
-  item_chunks?: Prisma.item_chunksOrderByRelationAggregateInput
 }
 
 export type itemsWhereUniqueInput = Prisma.AtLeast<{
@@ -345,13 +345,13 @@ export type itemsWhereUniqueInput = Prisma.AtLeast<{
   language?: Prisma.StringNullableFilter<"items"> | string | null
   markdown_content?: Prisma.StringNullableFilter<"items"> | string | null
   markdown_updated_date?: Prisma.DateTimeNullableFilter<"items"> | Date | string | null
+  chunk_embed_groups?: Prisma.Chunk_embed_groupsListRelationFilter
   citations?: Prisma.CitationsListRelationFilter
   item_archives?: Prisma.Item_archivesListRelationFilter
   item_authors?: Prisma.Item_authorsListRelationFilter
+  item_chunks?: Prisma.Item_chunksListRelationFilter
   item_collections?: Prisma.Item_collectionsListRelationFilter
   markdowns?: Prisma.XOR<Prisma.MarkdownsNullableScalarRelationFilter, Prisma.markdownsWhereInput> | null
-  chunk_embed_groups?: Prisma.Chunk_embed_groupsListRelationFilter
-  item_chunks?: Prisma.Item_chunksListRelationFilter
 }, "id">
 
 export type itemsOrderByWithAggregationInput = {
@@ -414,13 +414,13 @@ export type itemsCreateInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateInput = {
@@ -439,13 +439,13 @@ export type itemsUncheckedCreateInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUpdateInput = {
@@ -464,13 +464,13 @@ export type itemsUpdateInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateInput = {
@@ -489,13 +489,13 @@ export type itemsUncheckedUpdateInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateManyInput = {
@@ -752,12 +752,12 @@ export type itemsCreateWithoutCitationsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutCitationsInput = {
@@ -776,12 +776,12 @@ export type itemsUncheckedCreateWithoutCitationsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutCitationsInput = {
@@ -816,12 +816,12 @@ export type itemsUpdateWithoutCitationsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutCitationsInput = {
@@ -840,12 +840,12 @@ export type itemsUncheckedUpdateWithoutCitationsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_archivesInput = {
@@ -864,12 +864,12 @@ export type itemsCreateWithoutItem_archivesInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_archivesInput = {
@@ -888,12 +888,12 @@ export type itemsUncheckedCreateWithoutItem_archivesInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_archivesInput = {
@@ -928,12 +928,12 @@ export type itemsUpdateWithoutItem_archivesInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_archivesInput = {
@@ -952,12 +952,12 @@ export type itemsUncheckedUpdateWithoutItem_archivesInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_authorsInput = {
@@ -976,12 +976,12 @@ export type itemsCreateWithoutItem_authorsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_authorsInput = {
@@ -1000,12 +1000,12 @@ export type itemsUncheckedCreateWithoutItem_authorsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_authorsInput = {
@@ -1040,12 +1040,12 @@ export type itemsUpdateWithoutItem_authorsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_authorsInput = {
@@ -1064,12 +1064,12 @@ export type itemsUncheckedUpdateWithoutItem_authorsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_collectionsInput = {
@@ -1088,12 +1088,12 @@ export type itemsCreateWithoutItem_collectionsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
+  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_collectionsInput = {
@@ -1112,12 +1112,12 @@ export type itemsUncheckedCreateWithoutItem_collectionsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
+  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_collectionsInput = {
@@ -1152,12 +1152,12 @@ export type itemsUpdateWithoutItem_collectionsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
+  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_collectionsInput = {
@@ -1176,12 +1176,12 @@ export type itemsUncheckedUpdateWithoutItem_collectionsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
+  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutMarkdownsInput = {
@@ -1200,12 +1200,12 @@ export type itemsCreateWithoutMarkdownsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
-  item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
+  item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutMarkdownsInput = {
@@ -1224,12 +1224,12 @@ export type itemsUncheckedCreateWithoutMarkdownsInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
-  item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
+  item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutMarkdownsInput = {
@@ -1264,12 +1264,12 @@ export type itemsUpdateWithoutMarkdownsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
-  item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
+  item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutMarkdownsInput = {
@@ -1288,12 +1288,12 @@ export type itemsUncheckedUpdateWithoutMarkdownsInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
-  item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
+  item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutChunk_embed_groupsInput = {
@@ -1315,9 +1315,9 @@ export type itemsCreateWithoutChunk_embed_groupsInput = {
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutChunk_embed_groupsInput = {
@@ -1339,9 +1339,9 @@ export type itemsUncheckedCreateWithoutChunk_embed_groupsInput = {
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
+  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutChunk_embed_groupsInput = {
@@ -1379,9 +1379,9 @@ export type itemsUpdateWithoutChunk_embed_groupsInput = {
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutChunk_embed_groupsInput = {
@@ -1403,9 +1403,9 @@ export type itemsUncheckedUpdateWithoutChunk_embed_groupsInput = {
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
+  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_chunksInput = {
@@ -1424,12 +1424,12 @@ export type itemsCreateWithoutItem_chunksInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsCreateNestedManyWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_chunksInput = {
@@ -1448,12 +1448,12 @@ export type itemsUncheckedCreateWithoutItem_chunksInput = {
   language?: string | null
   markdown_content?: string | null
   markdown_updated_date?: Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
   markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_chunksInput = {
@@ -1488,12 +1488,12 @@ export type itemsUpdateWithoutItem_chunksInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateManyWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_chunksInput = {
@@ -1512,12 +1512,12 @@ export type itemsUncheckedUpdateWithoutItem_chunksInput = {
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
   markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 
@@ -1526,21 +1526,21 @@ export type itemsUncheckedUpdateWithoutItem_chunksInput = {
  */
 
 export type ItemsCountOutputType = {
+  chunk_embed_groups: number
   citations: number
   item_archives: number
   item_authors: number
-  item_collections: number
-  chunk_embed_groups: number
   item_chunks: number
+  item_collections: number
 }
 
 export type ItemsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  chunk_embed_groups?: boolean | ItemsCountOutputTypeCountChunk_embed_groupsArgs
   citations?: boolean | ItemsCountOutputTypeCountCitationsArgs
   item_archives?: boolean | ItemsCountOutputTypeCountItem_archivesArgs
   item_authors?: boolean | ItemsCountOutputTypeCountItem_authorsArgs
-  item_collections?: boolean | ItemsCountOutputTypeCountItem_collectionsArgs
-  chunk_embed_groups?: boolean | ItemsCountOutputTypeCountChunk_embed_groupsArgs
   item_chunks?: boolean | ItemsCountOutputTypeCountItem_chunksArgs
+  item_collections?: boolean | ItemsCountOutputTypeCountItem_collectionsArgs
 }
 
 /**
@@ -1551,6 +1551,13 @@ export type ItemsCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
    * Select specific fields to fetch from the ItemsCountOutputType
    */
   select?: Prisma.ItemsCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ItemsCountOutputType without action
+ */
+export type ItemsCountOutputTypeCountChunk_embed_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.chunk_embed_groupsWhereInput
 }
 
 /**
@@ -1577,22 +1584,15 @@ export type ItemsCountOutputTypeCountItem_authorsArgs<ExtArgs extends runtime.Ty
 /**
  * ItemsCountOutputType without action
  */
-export type ItemsCountOutputTypeCountItem_collectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.item_collectionsWhereInput
-}
-
-/**
- * ItemsCountOutputType without action
- */
-export type ItemsCountOutputTypeCountChunk_embed_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.chunk_embed_groupsWhereInput
-}
-
-/**
- * ItemsCountOutputType without action
- */
 export type ItemsCountOutputTypeCountItem_chunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.item_chunksWhereInput
+}
+
+/**
+ * ItemsCountOutputType without action
+ */
+export type ItemsCountOutputTypeCountItem_collectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.item_collectionsWhereInput
 }
 
 
@@ -1612,13 +1612,13 @@ export type itemsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   language?: boolean
   markdown_content?: boolean
   markdown_updated_date?: boolean
+  chunk_embed_groups?: boolean | Prisma.items$chunk_embed_groupsArgs<ExtArgs>
   citations?: boolean | Prisma.items$citationsArgs<ExtArgs>
   item_archives?: boolean | Prisma.items$item_archivesArgs<ExtArgs>
   item_authors?: boolean | Prisma.items$item_authorsArgs<ExtArgs>
+  item_chunks?: boolean | Prisma.items$item_chunksArgs<ExtArgs>
   item_collections?: boolean | Prisma.items$item_collectionsArgs<ExtArgs>
   markdowns?: boolean | Prisma.items$markdownsArgs<ExtArgs>
-  chunk_embed_groups?: boolean | Prisma.items$chunk_embed_groupsArgs<ExtArgs>
-  item_chunks?: boolean | Prisma.items$item_chunksArgs<ExtArgs>
   _count?: boolean | Prisma.ItemsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["items"]>
 
@@ -1678,13 +1678,13 @@ export type itemsSelectScalar = {
 
 export type itemsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "abstract" | "publication_year" | "publisher" | "isbn" | "doi" | "url" | "tags" | "notes" | "date_added" | "date_modified" | "language" | "markdown_content" | "markdown_updated_date", ExtArgs["result"]["items"]>
 export type itemsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  chunk_embed_groups?: boolean | Prisma.items$chunk_embed_groupsArgs<ExtArgs>
   citations?: boolean | Prisma.items$citationsArgs<ExtArgs>
   item_archives?: boolean | Prisma.items$item_archivesArgs<ExtArgs>
   item_authors?: boolean | Prisma.items$item_authorsArgs<ExtArgs>
+  item_chunks?: boolean | Prisma.items$item_chunksArgs<ExtArgs>
   item_collections?: boolean | Prisma.items$item_collectionsArgs<ExtArgs>
   markdowns?: boolean | Prisma.items$markdownsArgs<ExtArgs>
-  chunk_embed_groups?: boolean | Prisma.items$chunk_embed_groupsArgs<ExtArgs>
-  item_chunks?: boolean | Prisma.items$item_chunksArgs<ExtArgs>
   _count?: boolean | Prisma.ItemsCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type itemsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1693,13 +1693,13 @@ export type itemsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
 export type $itemsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "items"
   objects: {
+    chunk_embed_groups: Prisma.$chunk_embed_groupsPayload<ExtArgs>[]
     citations: Prisma.$citationsPayload<ExtArgs>[]
     item_archives: Prisma.$item_archivesPayload<ExtArgs>[]
     item_authors: Prisma.$item_authorsPayload<ExtArgs>[]
+    item_chunks: Prisma.$item_chunksPayload<ExtArgs>[]
     item_collections: Prisma.$item_collectionsPayload<ExtArgs>[]
     markdowns: Prisma.$markdownsPayload<ExtArgs> | null
-    chunk_embed_groups: Prisma.$chunk_embed_groupsPayload<ExtArgs>[]
-    item_chunks: Prisma.$item_chunksPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2111,13 +2111,13 @@ readonly fields: itemsFieldRefs;
  */
 export interface Prisma__itemsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  chunk_embed_groups<T extends Prisma.items$chunk_embed_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$chunk_embed_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$chunk_embed_groupsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   citations<T extends Prisma.items$citationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$citationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$citationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   item_archives<T extends Prisma.items$item_archivesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_archivesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_archivesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   item_authors<T extends Prisma.items$item_authorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_authorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_authorsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  item_chunks<T extends Prisma.items$item_chunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_chunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_chunksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   item_collections<T extends Prisma.items$item_collectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_collectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_collectionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   markdowns<T extends Prisma.items$markdownsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$markdownsArgs<ExtArgs>>): Prisma.Prisma__markdownsClient<runtime.Types.Result.GetResult<Prisma.$markdownsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  chunk_embed_groups<T extends Prisma.items$chunk_embed_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$chunk_embed_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$chunk_embed_groupsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  item_chunks<T extends Prisma.items$item_chunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_chunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_chunksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2550,6 +2550,30 @@ export type itemsDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
+ * items.chunk_embed_groups
+ */
+export type items$chunk_embed_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the chunk_embed_groups
+   */
+  select?: Prisma.chunk_embed_groupsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the chunk_embed_groups
+   */
+  omit?: Prisma.chunk_embed_groupsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.chunk_embed_groupsInclude<ExtArgs> | null
+  where?: Prisma.chunk_embed_groupsWhereInput
+  orderBy?: Prisma.chunk_embed_groupsOrderByWithRelationInput | Prisma.chunk_embed_groupsOrderByWithRelationInput[]
+  cursor?: Prisma.chunk_embed_groupsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Chunk_embed_groupsScalarFieldEnum | Prisma.Chunk_embed_groupsScalarFieldEnum[]
+}
+
+/**
  * items.citations
  */
 export type items$citationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2622,6 +2646,30 @@ export type items$item_authorsArgs<ExtArgs extends runtime.Types.Extensions.Inte
 }
 
 /**
+ * items.item_chunks
+ */
+export type items$item_chunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the item_chunks
+   */
+  select?: Prisma.item_chunksSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the item_chunks
+   */
+  omit?: Prisma.item_chunksOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.item_chunksInclude<ExtArgs> | null
+  where?: Prisma.item_chunksWhereInput
+  orderBy?: Prisma.item_chunksOrderByWithRelationInput | Prisma.item_chunksOrderByWithRelationInput[]
+  cursor?: Prisma.item_chunksWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Item_chunksScalarFieldEnum | Prisma.Item_chunksScalarFieldEnum[]
+}
+
+/**
  * items.item_collections
  */
 export type items$item_collectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2662,54 +2710,6 @@ export type items$markdownsArgs<ExtArgs extends runtime.Types.Extensions.Interna
    */
   include?: Prisma.markdownsInclude<ExtArgs> | null
   where?: Prisma.markdownsWhereInput
-}
-
-/**
- * items.chunk_embed_groups
- */
-export type items$chunk_embed_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the chunk_embed_groups
-   */
-  select?: Prisma.chunk_embed_groupsSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the chunk_embed_groups
-   */
-  omit?: Prisma.chunk_embed_groupsOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.chunk_embed_groupsInclude<ExtArgs> | null
-  where?: Prisma.chunk_embed_groupsWhereInput
-  orderBy?: Prisma.chunk_embed_groupsOrderByWithRelationInput | Prisma.chunk_embed_groupsOrderByWithRelationInput[]
-  cursor?: Prisma.chunk_embed_groupsWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Chunk_embed_groupsScalarFieldEnum | Prisma.Chunk_embed_groupsScalarFieldEnum[]
-}
-
-/**
- * items.item_chunks
- */
-export type items$item_chunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the item_chunks
-   */
-  select?: Prisma.item_chunksSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the item_chunks
-   */
-  omit?: Prisma.item_chunksOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.item_chunksInclude<ExtArgs> | null
-  where?: Prisma.item_chunksWhereInput
-  orderBy?: Prisma.item_chunksOrderByWithRelationInput | Prisma.item_chunksOrderByWithRelationInput[]
-  cursor?: Prisma.item_chunksWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Item_chunksScalarFieldEnum | Prisma.Item_chunksScalarFieldEnum[]
 }
 
 /**

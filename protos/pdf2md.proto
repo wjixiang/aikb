@@ -13,7 +13,7 @@ message PdfChunk {
   int32 chunk_index = 1;
   int32 start_page = 2;
   int32 end_page = 3;
-  string s3_url = 4;
+  string s3_key = 4;
   string file_name = 5;
 }
 

@@ -176,7 +176,8 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
     const s3Key = S3Utils.generatePdfS3Key(fileName);
 
     // Lazy import s3-service functions to avoid eager initialization
-    const { uploadFile } = await import('@aikb/s3-service');
+    const s3ServiceModule = await import('@aikb/s3-service');
+    const { uploadFile } = s3ServiceModule;
 
     // Create S3 config from environment variables
     const s3Config = {
@@ -210,7 +211,8 @@ export class S3ElasticSearchLibraryStorage implements ILibraryStorage {
 
   async getPdfDownloadUrl(s3Key: string): Promise<string> {
     // Lazy import s3-service functions to avoid eager initialization
-    const { getSignedUrlForDownload } = await import('@aikb/s3-service');
+    const s3ServiceModule = await import('@aikb/s3-service');
+    const { getSignedUrlForDownload } = s3ServiceModule;
     const url = await getSignedUrlForDownload(
       process.env['PDF_OSS_BUCKET_NAME'] as string,
       s3Key,

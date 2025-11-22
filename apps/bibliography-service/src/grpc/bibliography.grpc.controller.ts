@@ -268,7 +268,7 @@ export class BibliographyGrpcController {
       })),
     };
 
-    console.debug(`[DEBUG] Mapped proto item: ${JSON.stringify(protoItem)}`);
+    console.debug(`[DEBUG] Mapped proto item: ${protoItem.id}`);
     return protoItem;
   }
 }

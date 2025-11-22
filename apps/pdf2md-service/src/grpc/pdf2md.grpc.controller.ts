@@ -34,7 +34,7 @@ export class Pdf2MdGrpcController {
           chunkIndex: chunk.chunkIndex,
           startPage: chunk.startPage,
           endPage: chunk.endPage,
-          s3Url: chunk.s3Url,
+          s3Key: chunk.s3Key,
           fileName: chunk.fileName,
         })) || [],
     };
