@@ -49,7 +49,13 @@
       "log-management": ["libs/log-management/src/index.ts"],
       "prisma-plugin": ["plugins/prisma-plugin/src/index.ts"],
       "auth": ["libs/auth-db/src/index.ts"],
-      "auth-db": ["libs/auth/auth-db/src/index.ts"]
+      "auth-db": ["libs/auth/auth-db/src/index.ts"],
+      "auth-lib": ["libs/auth/auth-lib/src/index.ts"],
+      "ui": ["libs/ui/src/index.ts"],
+      "ui/*": ["libs/ui/src/*"],
+      "ui/components/*": ["libs/ui/src/components/ui/*"],
+      "ui/libs/*": ["libs/ui/src/lib/*"],
+      "libs/lib/utils": ["libs/ui/src/lib/utils"]
     },
     "incremental": true,
     "skipLibCheck": true,

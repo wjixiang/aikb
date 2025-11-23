@@ -1,7 +1,7 @@
 {
   "name": "auth-db",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/auth-db/src",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/auth/auth-db/src",
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project auth-db --web",
@@ -10,10 +10,10 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/auth-db",
-        "main": "libs/auth-db/src/index.ts",
-        "tsConfig": "libs/auth-db/tsconfig.lib.json",
-        "assets": ["libs/auth-db/*.md"]
+        "outputPath": "dist/libs/auth/auth-db",
+        "main": "libs/auth/auth-db/src/index.ts",
+        "tsConfig": "libs/auth/auth-db/tsconfig.lib.json",
+        "assets": ["libs/auth/auth-db/*.md"]
       },
       "dependsOn": ["gen-client"]
     },
@@ -21,49 +21,49 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "db-push": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "gen-client": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma generate --schema ./src/prisma/schema.prisma",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "reset-db": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "migrate-dev": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "studio": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma studio",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     },
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx prisma migrate deploy",
-        "cwd": "libs/auth-db"
+        "cwd": "libs/auth/auth-db"
       }
     }
   }

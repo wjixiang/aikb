@@ -20,7 +20,8 @@
         "libs/rabbitmq-lib/*",
         "libs/rabbitmqPublist/*",
         "libs/nestjs/nestgRPCClient/*",
-        "libs/nestjs/nestjs_gRPC_client/*"
+        "libs/nestjs/nestjs_gRPC_client/*",
+        "libs/auth/auth-lib/*"
       ]
     },
     {
@@ -78,7 +79,8 @@
         "libs/rabbitmq-lib/*",
         "libs/rabbitmqPublist/*",
         "libs/nestjs/nestgRPCClient/*",
-        "libs/nestjs/nestjs_gRPC_client/*"
+        "libs/nestjs/nestjs_gRPC_client/*",
+        "libs/auth/auth-lib/*"
       ],
       "options": {
         "typecheck": {
@@ -117,7 +119,18 @@
     },
     "@nx/react": {
       "library": {
+        "style": "tailwind",
+        "linter": "eslint",
         "unitTestRunner": "vitest"
+      },
+      "application": {
+        "babel": true,
+        "style": "tailwind",
+        "linter": "eslint",
+        "bundler": "vite"
+      },
+      "component": {
+        "style": "tailwind"
       }
     }
   }

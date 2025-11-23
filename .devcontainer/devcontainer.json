@@ -15,7 +15,8 @@
 				"naveenvignesh5nv.html-live-server",
 				"shellomo.enhanced-toml",
 				"zxh404.vscode-proto3",
-				"Prisma.prisma"
+				"Prisma.prisma",
+				"bradlc.vscode-tailwindcss"
 			]
 		}
 	}
