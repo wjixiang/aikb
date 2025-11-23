@@ -238,7 +238,7 @@ export type item_chunksWhereInput = {
   AND?: Prisma.item_chunksWhereInput | Prisma.item_chunksWhereInput[]
   OR?: Prisma.item_chunksWhereInput[]
   NOT?: Prisma.item_chunksWhereInput | Prisma.item_chunksWhereInput[]
-  id?: Prisma.UuidFilter<"item_chunks"> | string
+  id?: Prisma.StringFilter<"item_chunks"> | string
   item_id?: Prisma.UuidFilter<"item_chunks"> | string
   dense_vector_index_group_id?: Prisma.UuidFilter<"item_chunks"> | string
   title?: Prisma.StringFilter<"item_chunks"> | string
@@ -307,7 +307,7 @@ export type item_chunksScalarWhereWithAggregatesInput = {
   AND?: Prisma.item_chunksScalarWhereWithAggregatesInput | Prisma.item_chunksScalarWhereWithAggregatesInput[]
   OR?: Prisma.item_chunksScalarWhereWithAggregatesInput[]
   NOT?: Prisma.item_chunksScalarWhereWithAggregatesInput | Prisma.item_chunksScalarWhereWithAggregatesInput[]
-  id?: Prisma.UuidWithAggregatesFilter<"item_chunks"> | string
+  id?: Prisma.StringWithAggregatesFilter<"item_chunks"> | string
   item_id?: Prisma.UuidWithAggregatesFilter<"item_chunks"> | string
   dense_vector_index_group_id?: Prisma.UuidWithAggregatesFilter<"item_chunks"> | string
   title?: Prisma.StringWithAggregatesFilter<"item_chunks"> | string
@@ -599,7 +599,7 @@ export type item_chunksScalarWhereInput = {
   AND?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
   OR?: Prisma.item_chunksScalarWhereInput[]
   NOT?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
-  id?: Prisma.UuidFilter<"item_chunks"> | string
+  id?: Prisma.StringFilter<"item_chunks"> | string
   item_id?: Prisma.UuidFilter<"item_chunks"> | string
   dense_vector_index_group_id?: Prisma.UuidFilter<"item_chunks"> | string
   title?: Prisma.StringFilter<"item_chunks"> | string

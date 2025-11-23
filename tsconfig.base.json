@@ -45,8 +45,10 @@
       "item-vector-storage": ["libs/item-vector-storage/src/index.ts"],
       "embedding": ["libs/embedding/src/index.ts"],
       "bibliography": ["libs/bibliography/src/index.ts"],
+      "bibliography-db": ["libs/bibliography-db/src/index.ts"],
       "log-management": ["libs/log-management/src/index.ts"],
-      "bibliography-db": ["libs/bibliography-db/src/index.ts"]
+      "prisma-plugin": ["plugins/prisma-plugin/src/index.ts"],
+      "auth": ["libs/auth-db/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

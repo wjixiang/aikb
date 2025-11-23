@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "DbGenerator",
+  "title": "",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What name would you like to use?"
+    },
+      "dbName": {
+      "type": "string",
+      "description": "",
+      "x-prompt": "database name?"
+    }
+  },
+  "required": ["name"]
+}

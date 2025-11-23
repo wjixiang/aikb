@@ -26,7 +26,7 @@ export default defineConfig(() => ({
     outDir: '../../dist/libs/item-vector-storage',
     emptyOutDir: true,
     reportCompressedSize: true,
-    target: 'node18', // Target Node.js environment instead of browser
+    target: 'node20', // Target Node.js environment instead of browser
     commonjsOptions: {
       transformMixedEsModules: true,
     },

@@ -1,0 +1,73 @@
+{
+  "name": "<%=name%>",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/<%=name%>/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project <%=name%> --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/<%=name%>",
+        "main": "libs/<%=name%>/src/index.ts",
+        "tsConfig": "libs/<%=name%>/tsconfig.lib.json",
+        "assets": ["libs/<%=name%>/*.md"]
+      },
+      "dependsOn": [
+        "gen-client"
+      ]
+    },
+    "db-pull": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "gen-client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma generate --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "reset-db": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "migrate-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma studio",
+        "cwd": "libs/<%=name%>"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate deploy",
+        "cwd": "libs/<%=name%>"
+      }
+    }
+    
+  }
+}

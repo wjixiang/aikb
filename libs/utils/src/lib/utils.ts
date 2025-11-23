@@ -20,13 +20,24 @@ export class IdUtils {
   }
 
   /**
-   * Generate a unique chunk ID based on item ID and chunk index
+   * Generate a unique chunk ID as a proper UUID
+   * @param itemId The parent item ID (not used in ID generation but kept for API compatibility)
+   * @param chunkIndex The index of the chunk within the item (not used in ID generation but kept for API compatibility)
+   * @returns A valid UUID for the chunk
+   */
+  static generateChunkId(itemId: string, chunkIndex: number): string {
+    // Generate a proper UUID for database compatibility
+    return v4();
+  }
+
+  /**
+   * Generate a human-readable chunk identifier for logging/tracking
    * Format: chunk-{itemId}-{chunkIndex}-{shortId}
    * @param itemId The parent item ID
    * @param chunkIndex The index of the chunk within the item
-   * @returns A unique chunk identifier
+   * @returns A human-readable chunk identifier (not for database storage)
    */
-  static generateChunkId(itemId: string, chunkIndex: number): string {
+  static generateChunkIdentifier(itemId: string, chunkIndex: number): string {
     const shortId = nanoid(6); // Generate 6-character short ID for uniqueness
     return `chunk-${itemId}-${chunkIndex}-${shortId}`;
   }
