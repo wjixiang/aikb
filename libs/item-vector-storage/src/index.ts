@@ -3,4 +3,4 @@ import { PrismaItemVectorStorage } from './lib/prisma-item-vector-storage.js';
 
 export * from './lib/types.js';
 export { ElasticsearchItemVectorStorage };
-export {PrismaItemVectorStorage}
+export { PrismaItemVectorStorage };

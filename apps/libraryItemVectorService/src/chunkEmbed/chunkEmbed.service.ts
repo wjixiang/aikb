@@ -103,8 +103,11 @@ export class ChunkEmbedService {
       const now = new Date();
       const itemChunks: ItemChunk[] = chunks.map((chunk, index) => {
         const chunkId = IdUtils.generateChunkId(data.itemId, index);
-        const chunkIdentifier = IdUtils.generateChunkIdentifier(data.itemId, index);
-        
+        const chunkIdentifier = IdUtils.generateChunkIdentifier(
+          data.itemId,
+          index,
+        );
+
         // DEBUG: Log the generated chunk ID and identifier to validate format
         this.logger.log(`Generated chunk UUID: ${chunkId}`);
         this.logger.log(`Generated chunk identifier: ${chunkIdentifier}`);

@@ -41,7 +41,21 @@ export default defineConfig(() => ({
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      external: ['fs', '@prisma/client', 'bibliography-db', 'path', 'url', 'module', 'process', 'crypto', 'util', 'buffer', 'stream', 'events', 'os'],
+      external: [
+        'fs',
+        '@prisma/client',
+        'bibliography-db',
+        'path',
+        'url',
+        'module',
+        'process',
+        'crypto',
+        'util',
+        'buffer',
+        'stream',
+        'events',
+        'os',
+      ],
     },
   },
   resolve: {
