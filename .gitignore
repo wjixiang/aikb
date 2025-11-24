@@ -77,3 +77,6 @@ vitest.config.*.timestamp*
 .next
 out
 /prisma/generated/prisma
+
+
+storybook-static

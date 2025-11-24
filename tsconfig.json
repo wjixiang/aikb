@@ -24,5 +24,11 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["vitest/globals"]
   },
-  "exclude": ["apps/web-frontend", "./node_modules", "dist"]
+  "exclude": ["apps/web-frontend", "./node_modules", "dist"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node10"
+    }
+  }
 }

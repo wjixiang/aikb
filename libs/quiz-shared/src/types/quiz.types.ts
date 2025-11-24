@@ -85,3 +85,69 @@ export type answerType = string | string[];
 export type QuizWithUserAnswer = quiz & {
   userAnswer?: answerType;
 };
+
+
+/**
+ * @interface PracticeRecord
+ * @description Represents a record of a user's practice attempt on a quiz.
+ */
+export interface PracticeRecord {
+  /**
+   * @property {string} _id - The unique identifier for the practice record.
+   */
+  _id: string;
+  /**
+   * @property {string} userid - The ID of the user who attempted the quiz.
+   */
+  userid: string;
+  /**
+   * @property {string} quizid - The ID of the quiz that was attempted.
+   */
+  quizid: string;
+  /**
+   * @property {boolean} correct - Indicates whether the user answered the quiz correctly.
+   */
+  correct: boolean;
+  /**
+   * @property {Date} timestamp - The timestamp when the practice attempt was recorded.
+   */
+  timestamp: Date;
+  /**
+   * The answer record
+   */
+  selectrecord: oid[];
+  subject: string;
+}
+
+/**
+ * @interface PracticeRecordData
+ * @description For database returned format: Represents a record of a user's practice attempt on a quiz.
+ */
+export interface PracticeRecordData {
+  /**
+   * @property {string} _id - The unique identifier for the practice record.
+   */
+  _id: string;
+  /**
+   * @property {string} userid - The ID of the user who attempted the quiz.
+   */
+  userid: string;
+  /**
+   * @property {string} quizid - The ID of the quiz that was attempted.
+   */
+  quizid: string;
+  /**
+   * @property {boolean} correct - Indicates whether the user answered the quiz correctly.
+   */
+  correct: boolean;
+  /**
+   * @property {Date} timestamp - The timestamp when the practice attempt was recorded.
+   */
+  timestamp: Date;
+  /**
+   * The answer record
+   */
+  selectrecord: oid[] | '';
+  subject: string;
+  tags?: string[];
+}

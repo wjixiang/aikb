@@ -101,6 +101,17 @@
         "buildTarget": "docker:build",
         "runTarget": "docker:run"
       }
+    },
+    {
+      "plugin": "@nx/storybook/plugin",
+      "options": {
+        "serveStorybookTargetName": "serve:storybook",
+        "buildStorybookTargetName": "build:storybook",
+        "testStorybookTargetName": "test-storybook",
+        "staticStorybookTargetName": "static-storybook",
+        "buildDepsTargetName": "storybook:build-deps",
+        "watchDepsTargetName": "storybook:watch-deps"
+      }
     }
   ],
   "targetDefaults": {

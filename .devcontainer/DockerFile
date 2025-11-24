@@ -30,11 +30,11 @@ RUN apt-get update && \
     python3-dev \
     wget \
     curl \
-    && npm install -g pnpm tsx pm2@latest\
+    && npm install -g pnpm tsx pm2@latest nx\
     && pipx install uv \
     && pipx ensurepath
 
-# Install golang
+# Install golang & proto
 RUN apt-get -y install golang protobuf-compiler
 
 # RUN uv pip install -U crawl4ai

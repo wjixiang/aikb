@@ -4,9 +4,10 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+} from "ui";
+import { Skeleton } from "ui";
+import { Badge } from "ui";
+
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
@@ -17,7 +18,19 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeStringify from "rehype-stringify";
 import remarkWikiLink from "remark-wiki-link";
 import { visit } from "unist-util-visit";
-import type { Parent } from "unist";
+// Define our own types since unist types are not properly available
+interface UnistNode {
+  type: string;
+  value?: string;
+  tagName?: string;
+  properties?: Record<string, any>;
+  children?: UnistNode[];
+}
+
+interface UnistParent {
+  type: string;
+  children: UnistNode[];
+}
 import { useRouter } from "next/navigation";
 import "./reference-hover-card.css";
 import "./wiki-links.css";
@@ -66,14 +79,15 @@ function remarkReferences(references: Reference[]) {
       tree,
       "text",
       (
-        node: { type: "text"; value: string },
+        node: UnistNode,
         index: number | undefined,
-        parent: Parent | undefined,
+        parent: UnistParent | undefined,
       ) => {
         if (!parent || !Array.isArray(parent.children)) {
           return;
         }
 
+        if (!node.value) return;
         const parts = node.value.split(/(\[ref:\d+\])/g);
         if (parts.length <= 1) return;
 
@@ -125,7 +139,7 @@ function remarkReferences(references: Reference[]) {
 
 function remarkEmbeds() {
   return () => (tree: any) => {
-    visit(tree, "text", (node: any, index: any, parent: any) => {
+    visit(tree, "text", (node: UnistNode, index: any, parent: UnistParent | undefined) => {
       if (
         typeof node.value !== "string" ||
         !parent ||
@@ -134,6 +148,7 @@ function remarkEmbeds() {
         return;
       }
 
+      if (!node.value) return;
       const parts = node.value.split(/(!\[\[.*?\]\])/g);
       if (parts.length <= 1) return;
 
@@ -158,7 +173,7 @@ function remarkEmbeds() {
                   <div class="embed-loading">加载图片中...</div>
                 </div>
               </div>`,
-            });
+            } as any);
           } else {
             newNodes.push({
               type: "html",
@@ -168,10 +183,10 @@ function remarkEmbeds() {
                   <div class="embed-loading">加载中...</div>
                 </div>
               </div>`,
-            });
+            } as any);
           }
         } else {
-          newNodes.push({ type: "text", value: parts[i] });
+          newNodes.push({ type: "text", value: parts[i] } as any);
         }
       }
 
@@ -188,7 +203,7 @@ function remarkEmbeds() {
 
 function remarkPDFCallouts() {
   return (tree: any) => {
-    visit(tree, "text", (node: any) => {
+    visit(tree, "text", (node: UnistNode) => {
       if (typeof node.value === "string") {
         node.value = node.value.replace(/\[!PDF(\|[^\]]*)?\]/g, "[!note]");
       }
@@ -328,7 +343,7 @@ const YamlMetadata: React.FC<{ tags: string[]; aliases: string[] }> = ({
   );
 };
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
   basePath = "/wiki",
@@ -926,7 +941,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             querySelector: ".mermaid",
             nodes: Array.from(mutation.addedNodes).filter(
               (node): node is HTMLElement =>
-                node.nodeType === 1 && // Node.ELEMENT_NODE
+                node.nodeType === 1 && // ELEMENT_NODE constant value
                 (node as HTMLElement).querySelector(".mermaid") !== null,
             ),
           });
@@ -1332,5 +1347,3 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     </div>
   );
 };
-
-export default MarkdownRenderer;

@@ -1,4 +1,5 @@
 import NxWelcome from './nx-welcome';
+import 'ui/styles/globals.css'
 
 export function App() {
   return (
