@@ -91,7 +91,7 @@ export const UserSessionQuerySchema = z.object({
 
 // 批量操作DTO
 export const BulkOperationSchema = z.object({
-  userIds: z.array(z.string().uuid()),
+  userIds: z.array(z.string().uuid()).min(1, '用户ID数组不能为空'),
   action: z.enum(['activate', 'deactivate', 'delete']),
 });
 

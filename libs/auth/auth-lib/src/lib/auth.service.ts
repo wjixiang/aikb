@@ -49,7 +49,10 @@ export class AuthService {
   async getUsers(query: UserQueryDto): Promise<PaginatedResponse<UserResponse>> {
     const { page, limit, search, isActive, isEmailVerified, isPhoneVerified, sortBy, sortOrder } = query;
     
-    const skip = (page - 1) * limit;
+    // 确保参数是数字类型
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
     
     // 构建查询条件
     const where: any = {};
@@ -77,12 +80,20 @@ export class AuthService {
     // 获取总数
     const total = await this.prisma.user.count({ where });
     
+    // 构建排序条件，确保 sortBy 和 sortOrder 不为 undefined
+    const orderBy: any = {};
+    if (sortBy && sortOrder) {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = 'desc'; // 默认排序
+    }
+    
     // 获取用户列表
     const users = await this.prisma.user.findMany({
       where,
       skip,
-      take: limit,
-      orderBy: { [sortBy]: sortOrder },
+      take: limitNum,
+      orderBy,
       select: {
         id: true,
         email: true,
@@ -115,12 +126,12 @@ export class AuthService {
     return {
       data: userResponses,
       pagination: {
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
+        totalPages: Math.ceil(total / limitNum),
+        hasNext: pageNum * limitNum < total,
+        hasPrev: pageNum > 1,
       },
     };
   }
@@ -395,9 +406,15 @@ export class AuthService {
   async getUserSessions(query: UserSessionQueryDto): Promise<SessionResponse[]> {
     const { userId, isActive } = query;
     
+    // Validate required userId
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+    
     const where: any = { userId };
     if (isActive !== undefined) {
-      where.isActive = isActive;
+      // Convert string to boolean if needed
+      where.isActive = typeof isActive === 'string' ? isActive === 'true' : isActive;
     }
     
     const sessions = await this.prisma.session.findMany({

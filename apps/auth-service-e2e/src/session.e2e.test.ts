@@ -1,17 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { axiosInstance } from './support/axios-instance';
+function generateRandomUser() {
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).substring(2, 8);
+  return {
+    email: `test-${timestamp}-${randomSuffix}@example.com`,
+    password: 'password123',
+    name: `Test User ${timestamp}-${randomSuffix}`
+  };
+}
+
 
 describe('Session Management Endpoints', () => {
   let authToken: string;
   let testUserId: string;
+  let user = generateRandomUser()
 
   beforeAll(async () => {
     // Create a test user and get auth token
-    const registerResponse = await axiosInstance.post('/auth/register', {
-      email: 'sessiontest@example.com',
-      password: 'password123',
-      name: 'Session Test'
-    });
+    const registerResponse = await axiosInstance.post('/auth/register', user);
 
     authToken = registerResponse.data.accessToken;
     testUserId = registerResponse.data.user.id;
@@ -73,8 +80,8 @@ describe('Session Management Endpoints', () => {
     beforeAll(async () => {
       // Create a session by logging in again
       const loginResponse = await axiosInstance.post('/auth/login', {
-        email: 'sessiontest@example.com',
-        password: 'password123'
+        email: user.email,
+        password: user.password
       });
 
       // Get sessions to find a session ID

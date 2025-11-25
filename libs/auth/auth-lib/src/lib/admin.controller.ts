@@ -1,14 +1,16 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
   UseGuards
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import type { 
-  BulkOperationDto, 
+import { ZodValidationPipe } from './pipes/zod-validation.pipe';
+import { BulkOperationSchema } from './auth.schema';
+import type {
+  BulkOperationDto,
   BulkOperationResponse,
   UserStatsResponse
 } from './auth.dto';
@@ -24,7 +26,7 @@ export class AdminController {
   }
 
   @Post('bulk-operation')
-  async bulkOperation(@Body() bulkOperationDto: BulkOperationDto): Promise<BulkOperationResponse> {
+  async bulkOperation(@Body(new ZodValidationPipe(BulkOperationSchema)) bulkOperationDto: BulkOperationDto): Promise<BulkOperationResponse> {
     return this.authService.bulkOperation(bulkOperationDto);
   }
 }

@@ -1,26 +1,30 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { axiosInstance } from './support/axios-instance';
 
+function generateRandomUser() {
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).substring(2, 8);
+  return {
+    email: `test-${timestamp}-${randomSuffix}@example.com`,
+    password: 'password123',
+    name: `Test User ${timestamp}-${randomSuffix}`
+  };
+}
+
 describe('Admin Endpoints', () => {
   let authToken: string;
   let testUserIds: string[] = [];
-
+  let user = [generateRandomUser(),generateRandomUser(),generateRandomUser()]
   beforeAll(async () => {
     // Create test users for admin operations
+    user = [generateRandomUser(),generateRandomUser(),generateRandomUser()]
     for (let i = 0; i < 3; i++) {
-      const registerResponse = await axiosInstance.post('/auth/register', {
-        email: `admintest${i}@example.com`,
-        password: 'password123',
-        name: `Admin Test User ${i}`
-      });
+      const registerResponse = await axiosInstance.post('/auth/register',user[i]);
       testUserIds.push(registerResponse.data.user.id);
     }
 
     // Get auth token for admin operations
-    const loginResponse = await axiosInstance.post('/auth/login', {
-      email: 'admintest0@example.com',
-      password: 'password123'
-    });
+    const loginResponse = await axiosInstance.post('/auth/login', user[0]);
     authToken = loginResponse.data.accessToken;
   });
 
@@ -73,12 +77,9 @@ describe('Admin Endpoints', () => {
 
     beforeAll(async () => {
       // Create additional users for bulk operations
+      const bulkUsers = [generateRandomUser(), generateRandomUser(), generateRandomUser()];
       for (let i = 0; i < 3; i++) {
-        const registerResponse = await axiosInstance.post('/auth/register', {
-          email: `bulktest${i}@example.com`,
-          password: 'password123',
-          name: `Bulk Test User ${i}`
-        });
+        const registerResponse = await axiosInstance.post('/auth/register', bulkUsers[i]);
         bulkTestUserIds.push(registerResponse.data.user.id);
       }
     });
@@ -120,12 +121,9 @@ describe('Admin Endpoints', () => {
     it('should delete users in bulk successfully', async () => {
       // Create new users for deletion test
       const deleteTestUserIds: string[] = [];
+      const deleteUsers = [generateRandomUser(), generateRandomUser()];
       for (let i = 0; i < 2; i++) {
-        const registerResponse = await axiosInstance.post('/auth/register', {
-          email: `deletetest${i}@example.com`,
-          password: 'password123',
-          name: `Delete Test User ${i}`
-        });
+        const registerResponse = await axiosInstance.post('/auth/register', deleteUsers[i]);
         deleteTestUserIds.push(registerResponse.data.user.id);
       }
 

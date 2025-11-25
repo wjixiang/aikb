@@ -1,17 +1,22 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { axiosInstance } from './support/axios-instance';
-
+function generateRandomUser() {
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).substring(2, 8);
+  return {
+    email: `test-${timestamp}-${randomSuffix}@example.com`,
+    password: 'password123',
+    name: `Test User ${timestamp}-${randomSuffix}`
+  };
+}
 describe('User Management Endpoints', () => {
   let authToken: string;
   let testUserId: string;
 
   beforeAll(async () => {
     // Create a test user and get auth token
-    const registerResponse = await axiosInstance.post('/auth/register', {
-      email: 'usertest@example.com',
-      password: 'password123',
-      name: 'User Test'
-    });
+    const testUser = generateRandomUser();
+    const registerResponse = await axiosInstance.post('/auth/register', testUser);
 
     authToken = registerResponse.data.accessToken;
     testUserId = registerResponse.data.user.id;
@@ -46,13 +51,18 @@ describe('User Management Endpoints', () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.data.pagination.page).toBe(1);
-      expect(response.data.pagination.limit).toBe(5);
+      expect(Number(response.data.pagination.page)).toBe(1);
+      expect(Number(response.data.pagination.limit)).toBe(5);
       expect(response.data.data.length).toBeLessThanOrEqual(5);
     });
 
     it('should support search functionality', async () => {
-      const response = await axiosInstance.get('/users?search=User Test', {
+      // Create a user with a known name for search testing
+      const searchUser = generateRandomUser();
+      searchUser.name = 'SearchTestUser';
+      await axiosInstance.post('/auth/register', searchUser);
+
+      const response = await axiosInstance.get('/users?search=SearchTestUser', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -119,7 +129,7 @@ describe('User Management Endpoints', () => {
       const updateData = {
         name: 'Updated Name',
         avatar: 'https://example.com/avatar.jpg',
-        phone: '+1234567890'
+        phone: `+1${(Date.now() % 10000000000)}` // Generate unique phone number with max 10 digits
       };
 
       const response = await axiosInstance.put(`/users/${testUserId}`, updateData, {
@@ -150,12 +160,18 @@ describe('User Management Endpoints', () => {
     });
 
     it('should return error for invalid phone number', async () => {
+      // Create a fresh user for this test to ensure token is valid
+      const freshUser = generateRandomUser();
+      const registerResponse = await axiosInstance.post('/auth/register', freshUser);
+      const freshToken = registerResponse.data.accessToken;
+      const freshUserId = registerResponse.data.user.id;
+      
       try {
-        await axiosInstance.put(`/users/${testUserId}`, {
+        await axiosInstance.put(`/users/${freshUserId}`, {
           phone: 'invalid-phone'
         }, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${freshToken}`
           }
         });
         expect.fail('Should have thrown an error');
@@ -177,29 +193,41 @@ describe('User Management Endpoints', () => {
   });
 
   describe('POST /users/:id/password', () => {
+    let passwordTestUser: any;
+    let passwordTestUserId: string;
+    let passwordTestAuthToken: string;
+
+    beforeAll(async () => {
+      // Create a dedicated user for password tests
+      passwordTestUser = generateRandomUser();
+      const registerResponse = await axiosInstance.post('/auth/register', passwordTestUser);
+      passwordTestUserId = registerResponse.data.user.id;
+      passwordTestAuthToken = registerResponse.data.accessToken;
+    });
+
     it('should update password successfully', async () => {
-      const response = await axiosInstance.post(`/users/${testUserId}/password`, {
-        currentPassword: 'password123',
+      const response = await axiosInstance.post(`/users/${passwordTestUserId}/password`, {
+        currentPassword: passwordTestUser.password,
         newPassword: 'newpassword123'
       }, {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${passwordTestAuthToken}`
         }
       });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(response.data.success).toBe(true);
       expect(response.data.message).toContain('密码更新成功');
     });
 
     it('should return error for wrong current password', async () => {
       try {
-        await axiosInstance.post(`/users/${testUserId}/password`, {
+        await axiosInstance.post(`/users/${passwordTestUserId}/password`, {
           currentPassword: 'wrongpassword',
-          newPassword: 'newpassword123'
+          newPassword: 'newpassword456'
         }, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${passwordTestAuthToken}`
           }
         });
         expect.fail('Should have thrown an error');
@@ -211,12 +239,12 @@ describe('User Management Endpoints', () => {
 
     it('should return error for same password', async () => {
       try {
-        await axiosInstance.post(`/users/${testUserId}/password`, {
-          currentPassword: 'newpassword123',
+        await axiosInstance.post(`/users/${passwordTestUserId}/password`, {
+          currentPassword: 'newpassword123', // Use the updated password
           newPassword: 'newpassword123'
         }, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${passwordTestAuthToken}`
           }
         });
         expect.fail('Should have thrown an error');
@@ -228,8 +256,8 @@ describe('User Management Endpoints', () => {
 
     it('should return error without authentication', async () => {
       try {
-        await axiosInstance.post(`/users/${testUserId}/password`, {
-          currentPassword: 'password123',
+        await axiosInstance.post(`/users/${passwordTestUserId}/password`, {
+          currentPassword: passwordTestUser.password,
           newPassword: 'newpassword123'
         });
         expect.fail('Should have thrown an error');
@@ -240,23 +268,35 @@ describe('User Management Endpoints', () => {
   });
 
   describe('GET /users/:id/activity', () => {
+    let activityTestUser: any;
+    let activityTestUserId: string;
+    let activityTestAuthToken: string;
+
+    beforeAll(async () => {
+      // Create a dedicated user for activity tests
+      activityTestUser = generateRandomUser();
+      const registerResponse = await axiosInstance.post('/auth/register', activityTestUser);
+      activityTestUserId = registerResponse.data.user.id;
+      activityTestAuthToken = registerResponse.data.accessToken;
+    });
+
     it('should get user activity logs', async () => {
-      const response = await axiosInstance.get(`/users/${testUserId}/activity`, {
+      const response = await axiosInstance.get(`/users/${activityTestUserId}/activity`, {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${activityTestAuthToken}`
         }
       });
 
       expect(response.status).toBe(200);
       expect(response.data).toHaveProperty('userId');
       expect(response.data).toHaveProperty('activities');
-      expect(response.data.userId).toBe(testUserId);
+      expect(response.data.userId).toBe(activityTestUserId);
       expect(Array.isArray(response.data.activities)).toBe(true);
     });
 
     it('should return error without authentication', async () => {
       try {
-        await axiosInstance.get(`/users/${testUserId}/activity`);
+        await axiosInstance.get(`/users/${activityTestUserId}/activity`);
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         expect(error.response.status).toBe(401);
@@ -270,11 +310,8 @@ describe('User Management Endpoints', () => {
 
     beforeAll(async () => {
       // Create a user for deletion test
-      const registerResponse = await axiosInstance.post('/auth/register', {
-        email: 'deletetest@example.com',
-        password: 'password123',
-        name: 'Delete Test'
-      });
+      const deleteUser = generateRandomUser();
+      const registerResponse = await axiosInstance.post('/auth/register', deleteUser);
       deleteTestUserId = registerResponse.data.user.id;
       deleteAuthToken = registerResponse.data.accessToken;
     });
@@ -292,10 +329,15 @@ describe('User Management Endpoints', () => {
     });
 
     it('should return error for non-existent user deletion', async () => {
+      // Create a fresh user for this test to ensure token is valid
+      const freshUser = generateRandomUser();
+      const registerResponse = await axiosInstance.post('/auth/register', freshUser);
+      const freshToken = registerResponse.data.accessToken;
+      
       try {
         await axiosInstance.delete('/users/00000000-0000-0000-0000-000000000000', {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${freshToken}`
           }
         });
         expect.fail('Should have thrown an error');
