@@ -1,0 +1,99 @@
+{
+  "name": "auth-service",
+  "version": "0.0.1",
+  "description": "Authentication and User Management Service",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "webpack-cli build --node-env=production",
+    "build:dev": "webpack-cli build --node-env=development",
+    "start": "node dist/main.js",
+    "start:dev": "webpack-cli serve --node-env=development",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@aikb/auth-lib": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/jwt": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "zod": "^3.25.67",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "@types/express": "^5.0.3",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@nx/js": "22.1.1",
+    "@nx/webpack": "22.0.1",
+    "@nx/node": "22.0.1",
+    "nx": "22.0.1",
+    "typescript": "^5.7.3",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4",
+    "ts-node": "^10.9.2",
+    "vitest": "^3.2.4",
+    "@vitest/ui": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/webpack:webpack",
+        "outputs": ["{options.outputPath}"],
+        "defaultConfiguration": "production",
+        "options": {
+          "target": "node",
+          "compiler": "tsc",
+          "outputPath": "dist/apps/auth-service",
+          "main": "./src/main.ts",
+          "tsConfig": "tsconfig.app.json",
+          "webpackConfig": "webpack.config.js",
+          "assets": ["./src/assets"],
+          "isolatedConfig": true,
+          "generatePackageJson": true
+        },
+        "configurations": {
+          "development": {
+            "optimization": false,
+            "sourceMap": true
+          },
+          "production": {
+            "optimization": true,
+            "sourceMap": false
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/node:execute",
+        "options": {
+          "buildTarget": "auth-service:build"
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "auth-service:build:development"
+          },
+          "production": {
+            "buildTarget": "auth-service:build:production"
+          }
+        }
+      },
+      "test": {
+        "executor": "@nx/vite:test",
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    }
+  }
+}

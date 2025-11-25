@@ -1,0 +1,168 @@
+// Test Prisma schema for SQLite
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  name              String?
+  avatar            String?
+  phone             String?           @unique
+  passwordHash      String?
+  passwordSalt      String?
+  passwordIterations Int?              @default(100000)
+  isActive          Boolean           @default(true)
+  isEmailVerified   Boolean           @default(false)
+  isPhoneVerified   Boolean           @default(false)
+  lastLoginAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  refreshTokens     RefreshToken[]
+  sessions          Session[]
+  loginLogs         LoginLog[]
+  passwordHistory   PasswordHistory[]
+  emailVerifications EmailVerification[]
+  passwordResets    PasswordReset[]
+  wechatAccounts    WechatAccount[]
+  accounts          Account[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expires   DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  lastActivity DateTime @default(now())
+  clientInfo   Json?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model LoginLog {
+  id           String   @id @default(cuid())
+  userId       String
+  success      Boolean
+  loginType    String
+  failureReason String?
+  ip           String
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("login_logs")
+}
+
+model PasswordHistory {
+  id             String   @id @default(cuid())
+  userId         String
+  passwordHash   String
+  passwordSalt   String
+  iterations     Int
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_history")
+}
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  userId    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  userId    String
+  isUsed    Boolean  @default(false)
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model PhoneVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  userId    String?
+  isUsed    Boolean  @default(false)
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@map("phone_verifications")
+}
+
+model WechatAccount {
+  id        String   @id @default(cuid())
+  userId    String
+  openid    String   @unique
+  unionid   String?
+  nickname  String?
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wechat_accounts")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  type              String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+  sessionState      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}

@@ -20,8 +20,7 @@
         "libs/rabbitmq-lib/*",
         "libs/rabbitmqPublist/*",
         "libs/nestjs/nestgRPCClient/*",
-        "libs/nestjs/nestjs_gRPC_client/*",
-        "libs/auth/auth-lib/*"
+        "libs/nestjs/nestjs_gRPC_client/*"
       ]
     },
     {
@@ -93,7 +92,10 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/libraryItemVectorService-e2e/**/*"]
+      "exclude": [
+        "apps/libraryItemVectorService-e2e/**/*",
+        "apps/auth-service-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/docker",

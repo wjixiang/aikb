@@ -1,0 +1,13 @@
+{
+  "name": "auth-service-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": ["auth-service"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "dependsOn": ["auth-service:build","auth-service:serve"]
+    }
+  }
+}
