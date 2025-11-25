@@ -86,6 +86,13 @@ export type QuizWithUserAnswer = quiz & {
   userAnswer?: answerType;
 };
 
+export interface QuizHistoryItem {
+  id: string;
+  title: string;
+  createdAt: Date;
+  quizCount: number;
+}
+
 
 /**
  * @interface PracticeRecord

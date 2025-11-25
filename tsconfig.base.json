@@ -53,7 +53,9 @@
       "auth-lib": ["libs/auth/auth-lib/src/index.ts"],
       "ui": ["libs/ui/src/index.ts"],
       "ui/*": ["libs/ui/src/*"],
+      "ui/blocks/*": ["libs/ui/src/components/*"],
       "ui/components/*": ["libs/ui/src/components/ui/*"],
+      "@/components/ui/": ["libs/ui/src/components/ui/*"],
       "ui/libs/*": ["libs/ui/src/lib/*"],
       "libs/lib/utils": ["libs/ui/src/lib/utils"]
     },
