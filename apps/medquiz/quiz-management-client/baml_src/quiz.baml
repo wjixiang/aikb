@@ -156,7 +156,7 @@ function ConvertToBasicQuiz(question: string, answer: string, explanation: strin
       - 病理学
       - 生物化学与分子生物学
       - 人文精神
-    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写
+    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写。注意修正格式错误与文字错误
     
     
     ###问题###：
@@ -190,7 +190,7 @@ function ConvertToA3Quiz(question: string, answer: string, explanation: string?)
       - 病理学
       - 生物化学与分子生物学
       - 人文精神
-    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写
+    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写。注意修正格式错误与文字错误
     
     ###问题###
     {{ question }}
@@ -223,7 +223,7 @@ function ConvertToBQuiz(question: string, answer: string, explanation: string?) 
       - 病理学
       - 生物化学与分子生物学
       - 人文精神
-    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写
+    - 将解释内容抄写到explanation字段中，请你完整的抄写所有的内容，包括只是点、解析、等，若有表格、图片链接等信息，请你务必完整转写。注意修正格式错误与文字错误
     
     ###问题###
     {{ question }}

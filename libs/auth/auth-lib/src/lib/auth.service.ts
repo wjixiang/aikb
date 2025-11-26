@@ -736,6 +736,15 @@ export class AuthService {
    * 获取用户活动日志
    */
   async getUserActivity(userId: string): Promise<UserActivityResponse> {
+    // Check if user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+    
     const loginLogs = await this.prisma.loginLog.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -971,6 +980,12 @@ export class AuthService {
     if (result.count === 0) {
       throw new BadRequestException('刷新令牌不存在或已被撤销');
     }
+
+    // 同时停用对应的会话
+    await this.prisma.session.updateMany({
+      where: { sessionToken: refreshToken },
+      data: { isActive: false },
+    });
   }
 
   /**
@@ -1006,6 +1021,22 @@ export class AuthService {
     } catch (error) {
       // 如果令牌已存在，忽略错误（可能是重复生成）
       console.warn('Refresh token already exists, continuing...');
+    }
+
+    // 创建会话记录
+    try {
+      await this.prisma.session.create({
+        data: {
+          sessionToken: refreshToken,
+          userId: user.id,
+          expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后过期
+          clientInfo: {}, // 可以添加客户端信息
+          isActive: true,
+        },
+      });
+    } catch (error) {
+      // 如果会话已存在，忽略错误
+      console.warn('Session already exists, continuing...');
     }
 
     return {

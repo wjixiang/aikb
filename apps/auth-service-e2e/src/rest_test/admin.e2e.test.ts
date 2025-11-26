@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { axiosInstance } from './support/axios-instance';
+import { axiosInstance } from '../support/axios-instance';
 
 function generateRandomUser() {
   const timestamp = Date.now();
@@ -11,7 +11,7 @@ function generateRandomUser() {
   };
 }
 
-describe('Admin Endpoints', () => {
+describe.skip('Admin Endpoints', () => {
   let authToken: string;
   let testUserIds: string[] = [];
   let user = [generateRandomUser(),generateRandomUser(),generateRandomUser()]

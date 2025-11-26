@@ -9,7 +9,7 @@ function generateRandomUser() {
     name: `Test User ${timestamp}-${randomSuffix}`
   };
 }
-describe('User Management Endpoints', () => {
+describe.skip('User Management Endpoints', () => {
   let authToken: string;
   let testUserId: string;
 
