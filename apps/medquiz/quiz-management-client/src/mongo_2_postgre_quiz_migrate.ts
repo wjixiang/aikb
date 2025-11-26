@@ -1,6 +1,7 @@
 import { prisma } from 'quiz-db'
 import { QuizType } from 'quiz-shared'
 import { MongoClient, Db, Collection, WithId } from 'mongodb'
+import { randomUUID } from 'crypto'
 import * as dotenv from 'dotenv'
 
 // Import quiz types from QuizType namespace
@@ -37,13 +38,14 @@ async function connectToMongoDB(): Promise<{ client: MongoClient; db: Db }> {
  */
 function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
   const baseData = {
-    id: mongoQuiz._id.toString(),
+    id: randomUUID(), // Generate a proper UUID for PostgreSQL
+    mongo_id_legacy: mongoQuiz._id.toString(), // Store original MongoDB ObjectId
     type: mongoQuiz.type,
     class: mongoQuiz.class,
     unit: mongoQuiz.unit,
-    tags: mongoQuiz.tags,
+    tags: mongoQuiz.tags || [], // Ensure tags is always an array
     analysis: mongoQuiz.analysis as any,
-    source: mongoQuiz.source,
+    source: mongoQuiz.source || null, // Ensure source is null if undefined
     created_at: new Date(),
     updated_at: new Date()
   }
@@ -53,7 +55,7 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
     case 'A2':
       return {
         ...baseData,
-        question: mongoQuiz.question,
+        question: mongoQuiz.question || null,
         options: mongoQuiz.options as any,
         answer: mongoQuiz.answer as any,
         specific_data: null
@@ -62,11 +64,11 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
     case 'A3':
       return {
         ...baseData,
-        main_question: mongoQuiz.mainQuestion,
-        options: mongoQuiz.subQuizs.flatMap(sub => sub.options) as any,
-        answer: mongoQuiz.subQuizs.map(sub => sub.answer) as any,
+        main_question: mongoQuiz.mainQuestion || null,
+        options: mongoQuiz.subQuizs?.flatMap(sub => sub.options) as any,
+        answer: mongoQuiz.subQuizs?.map(sub => sub.answer) as any,
         specific_data: {
-          subQuizs: mongoQuiz.subQuizs
+          subQuizs: mongoQuiz.subQuizs || []
         } as any
       }
 
@@ -75,16 +77,16 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
         ...baseData,
         question: null,
         options: mongoQuiz.options as any,
-        answer: mongoQuiz.questions.map(q => q.answer) as any,
+        answer: mongoQuiz.questions?.map(q => q.answer) as any,
         specific_data: {
-          questions: mongoQuiz.questions
+          questions: mongoQuiz.questions || []
         } as any
       }
 
     case 'X':
       return {
         ...baseData,
-        question: mongoQuiz.question,
+        question: mongoQuiz.question || null,
         options: mongoQuiz.options as any,
         answer: mongoQuiz.answer as any,
         specific_data: null
@@ -96,11 +98,11 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
 }
 
 /**
- * Check if quiz already exists in PostgreSQL
+ * Check if quiz already exists in PostgreSQL using mongo_id_legacy
  */
-async function quizExists(quizId: string): Promise<boolean> {
-  const existingQuiz = await prisma.quizzes.findUnique({
-    where: { id: quizId }
+async function quizExists(mongoQuiz: WithId<quiz>): Promise<boolean> {
+  const existingQuiz = await prisma.quizzes.findFirst({
+    where: { mongo_id_legacy: mongoQuiz._id.toString() }
   })
   return existingQuiz !== null
 }
@@ -110,11 +112,11 @@ async function quizExists(quizId: string): Promise<boolean> {
  */
 async function migrateSingleQuiz(mongoQuiz: WithId<quiz>): Promise<boolean> {
   try {
-    const quizId = mongoQuiz._id.toString()
+    const mongoId = mongoQuiz._id.toString()
     
     // Check if quiz already exists
-    if (await quizExists(quizId)) {
-      console.log(`Quiz ${quizId} already exists, skipping...`)
+    if (await quizExists(mongoQuiz)) {
+      console.log(`Quiz ${mongoId} (${mongoQuiz.type}) already exists, skipping...`)
       return false
     }
 
@@ -126,10 +128,16 @@ async function migrateSingleQuiz(mongoQuiz: WithId<quiz>): Promise<boolean> {
       data: prismaData as any
     })
 
-    console.log(`Successfully migrated quiz ${quizId} (${prismaData.type})`)
+    console.log(`Successfully migrated quiz ${mongoId} -> ${prismaData.id} (${prismaData.type})`)
     return true
   } catch (error) {
-    console.error(`Error migrating quiz ${mongoQuiz._id}:`, error)
+    const mongoId = mongoQuiz._id.toString()
+    if (error instanceof Error) {
+      console.error(`Error migrating quiz ${mongoId} (${mongoQuiz.type}): ${error.message}`)
+      console.error(`Stack trace:`, error.stack)
+    } else {
+      console.error(`Unknown error migrating quiz ${mongoId} (${mongoQuiz.type}):`, error)
+    }
     return false
   }
 }

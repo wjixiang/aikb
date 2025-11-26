@@ -26,6 +26,7 @@ export type AggregateQuizzes = {
 
 export type QuizzesMinAggregateOutputType = {
   id: string | null
+  mongo_id_legacy: string | null
   type: string | null
   class: string | null
   unit: string | null
@@ -38,6 +39,7 @@ export type QuizzesMinAggregateOutputType = {
 
 export type QuizzesMaxAggregateOutputType = {
   id: string | null
+  mongo_id_legacy: string | null
   type: string | null
   class: string | null
   unit: string | null
@@ -50,6 +52,7 @@ export type QuizzesMaxAggregateOutputType = {
 
 export type QuizzesCountAggregateOutputType = {
   id: number
+  mongo_id_legacy: number
   type: number
   class: number
   unit: number
@@ -69,6 +72,7 @@ export type QuizzesCountAggregateOutputType = {
 
 export type QuizzesMinAggregateInputType = {
   id?: true
+  mongo_id_legacy?: true
   type?: true
   class?: true
   unit?: true
@@ -81,6 +85,7 @@ export type QuizzesMinAggregateInputType = {
 
 export type QuizzesMaxAggregateInputType = {
   id?: true
+  mongo_id_legacy?: true
   type?: true
   class?: true
   unit?: true
@@ -93,6 +98,7 @@ export type QuizzesMaxAggregateInputType = {
 
 export type QuizzesCountAggregateInputType = {
   id?: true
+  mongo_id_legacy?: true
   type?: true
   class?: true
   unit?: true
@@ -183,6 +189,7 @@ export type quizzesGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 
 export type QuizzesGroupByOutputType = {
   id: string
+  mongo_id_legacy: string
   type: string
   class: string
   unit: string
@@ -221,6 +228,7 @@ export type quizzesWhereInput = {
   OR?: Prisma.quizzesWhereInput[]
   NOT?: Prisma.quizzesWhereInput | Prisma.quizzesWhereInput[]
   id?: Prisma.UuidFilter<"quizzes"> | string
+  mongo_id_legacy?: Prisma.StringFilter<"quizzes"> | string
   type?: Prisma.StringFilter<"quizzes"> | string
   class?: Prisma.StringFilter<"quizzes"> | string
   unit?: Prisma.StringFilter<"quizzes"> | string
@@ -238,6 +246,7 @@ export type quizzesWhereInput = {
 
 export type quizzesOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  mongo_id_legacy?: Prisma.SortOrder
   type?: Prisma.SortOrder
   class?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -258,6 +267,7 @@ export type quizzesWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.quizzesWhereInput | Prisma.quizzesWhereInput[]
   OR?: Prisma.quizzesWhereInput[]
   NOT?: Prisma.quizzesWhereInput | Prisma.quizzesWhereInput[]
+  mongo_id_legacy?: Prisma.StringFilter<"quizzes"> | string
   type?: Prisma.StringFilter<"quizzes"> | string
   class?: Prisma.StringFilter<"quizzes"> | string
   unit?: Prisma.StringFilter<"quizzes"> | string
@@ -275,6 +285,7 @@ export type quizzesWhereUniqueInput = Prisma.AtLeast<{
 
 export type quizzesOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  mongo_id_legacy?: Prisma.SortOrder
   type?: Prisma.SortOrder
   class?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -298,6 +309,7 @@ export type quizzesScalarWhereWithAggregatesInput = {
   OR?: Prisma.quizzesScalarWhereWithAggregatesInput[]
   NOT?: Prisma.quizzesScalarWhereWithAggregatesInput | Prisma.quizzesScalarWhereWithAggregatesInput[]
   id?: Prisma.UuidWithAggregatesFilter<"quizzes"> | string
+  mongo_id_legacy?: Prisma.StringWithAggregatesFilter<"quizzes"> | string
   type?: Prisma.StringWithAggregatesFilter<"quizzes"> | string
   class?: Prisma.StringWithAggregatesFilter<"quizzes"> | string
   unit?: Prisma.StringWithAggregatesFilter<"quizzes"> | string
@@ -315,6 +327,7 @@ export type quizzesScalarWhereWithAggregatesInput = {
 
 export type quizzesCreateInput = {
   id?: string
+  mongo_id_legacy: string
   type: string
   class: string
   unit: string
@@ -332,6 +345,7 @@ export type quizzesCreateInput = {
 
 export type quizzesUncheckedCreateInput = {
   id?: string
+  mongo_id_legacy: string
   type: string
   class: string
   unit: string
@@ -349,6 +363,7 @@ export type quizzesUncheckedCreateInput = {
 
 export type quizzesUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  mongo_id_legacy?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   class?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -366,6 +381,7 @@ export type quizzesUpdateInput = {
 
 export type quizzesUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  mongo_id_legacy?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   class?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -383,6 +399,7 @@ export type quizzesUncheckedUpdateInput = {
 
 export type quizzesCreateManyInput = {
   id?: string
+  mongo_id_legacy: string
   type: string
   class: string
   unit: string
@@ -400,6 +417,7 @@ export type quizzesCreateManyInput = {
 
 export type quizzesUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  mongo_id_legacy?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   class?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -417,6 +435,7 @@ export type quizzesUpdateManyMutationInput = {
 
 export type quizzesUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  mongo_id_legacy?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   class?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -442,6 +461,7 @@ export type StringNullableListFilter<$PrismaModel = never> = {
 
 export type quizzesCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  mongo_id_legacy?: Prisma.SortOrder
   type?: Prisma.SortOrder
   class?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -459,6 +479,7 @@ export type quizzesCountOrderByAggregateInput = {
 
 export type quizzesMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  mongo_id_legacy?: Prisma.SortOrder
   type?: Prisma.SortOrder
   class?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -471,6 +492,7 @@ export type quizzesMaxOrderByAggregateInput = {
 
 export type quizzesMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  mongo_id_legacy?: Prisma.SortOrder
   type?: Prisma.SortOrder
   class?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -506,6 +528,7 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 
 export type quizzesSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  mongo_id_legacy?: boolean
   type?: boolean
   class?: boolean
   unit?: boolean
@@ -523,6 +546,7 @@ export type quizzesSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 
 export type quizzesSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  mongo_id_legacy?: boolean
   type?: boolean
   class?: boolean
   unit?: boolean
@@ -540,6 +564,7 @@ export type quizzesSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
 
 export type quizzesSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  mongo_id_legacy?: boolean
   type?: boolean
   class?: boolean
   unit?: boolean
@@ -557,6 +582,7 @@ export type quizzesSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 
 export type quizzesSelectScalar = {
   id?: boolean
+  mongo_id_legacy?: boolean
   type?: boolean
   class?: boolean
   unit?: boolean
@@ -572,13 +598,14 @@ export type quizzesSelectScalar = {
   updated_at?: boolean
 }
 
-export type quizzesOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "class" | "unit" | "tags" | "question" | "main_question" | "options" | "answer" | "analysis" | "source" | "specific_data" | "created_at" | "updated_at", ExtArgs["result"]["quizzes"]>
+export type quizzesOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "mongo_id_legacy" | "type" | "class" | "unit" | "tags" | "question" | "main_question" | "options" | "answer" | "analysis" | "source" | "specific_data" | "created_at" | "updated_at", ExtArgs["result"]["quizzes"]>
 
 export type $quizzesPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "quizzes"
   objects: {}
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    mongo_id_legacy: string
     type: string
     class: string
     unit: string
@@ -1016,6 +1043,7 @@ export interface Prisma__quizzesClient<T, Null = never, ExtArgs extends runtime.
  */
 export interface quizzesFieldRefs {
   readonly id: Prisma.FieldRef<"quizzes", 'String'>
+  readonly mongo_id_legacy: Prisma.FieldRef<"quizzes", 'String'>
   readonly type: Prisma.FieldRef<"quizzes", 'String'>
   readonly class: Prisma.FieldRef<"quizzes", 'String'>
   readonly unit: Prisma.FieldRef<"quizzes", 'String'>

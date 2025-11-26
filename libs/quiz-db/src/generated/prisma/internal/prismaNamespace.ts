@@ -519,6 +519,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const QuizzesScalarFieldEnum = {
   id: 'id',
+  mongo_id_legacy: 'mongo_id_legacy',
   type: 'type',
   class: 'class',
   unit: 'unit',

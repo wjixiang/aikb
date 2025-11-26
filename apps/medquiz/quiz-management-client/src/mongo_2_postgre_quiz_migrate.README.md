@@ -6,9 +6,11 @@ This script migrates quiz data from MongoDB to PostgreSQL using Prisma.
 
 - Migrates all quiz types (A1, A2, A3, B, X) from MongoDB to PostgreSQL
 - Handles data transformation between MongoDB and Prisma schemas
+- Preserves original MongoDB ObjectId in `mongo_id_legacy` field for reference
+- Generates proper UUIDs for PostgreSQL primary keys
 - Batch processing for performance
 - Error handling and logging
-- Duplicate detection (skips already migrated quizzes)
+- Duplicate detection using `mongo_id_legacy` (skips already migrated quizzes)
 - Progress tracking and summary reporting
 
 ## Prerequisites
