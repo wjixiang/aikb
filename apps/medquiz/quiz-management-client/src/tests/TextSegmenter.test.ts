@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TextSegmenter } from './TextSegmenter';
+import { TextSegmenter } from '../TextSegmenter';
 
 describe('TextSegmenter', () => {
   const sampleText = `1. What is the capital of France?A) London

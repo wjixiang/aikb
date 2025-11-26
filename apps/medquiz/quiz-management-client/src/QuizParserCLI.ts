@@ -6,8 +6,8 @@ import * as fs from 'fs';
 import * as toml from 'toml';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { quesiton } from './varible';
-import { answer } from './varible_answer';
+import { quesiton } from './quiz_data/varible';
+import { answer } from './quiz_data/varible_answer';
 
 // Configuration interface
 interface QuizConfig {

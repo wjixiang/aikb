@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { QuizParser } from './QuizParser';
+import { QuizParser } from '../QuizParser';
 
 describe('QuizParser chunking', () => {
   const sampleQuestions = `1. What is the capital of France?
@@ -48,7 +48,7 @@ D. 3`;
 
   test('should split input into specified number of chunks', async () => {
     // Mock the b.SplitPage function to avoid actual API calls
-    const { b } = await import('../baml_client/async_client');
+    const { b } = await import('../../baml_client/async_client.js');
     const mockSplitPage = vi.fn().mockResolvedValue([
       { start: 1, end: 15 },
       { start: 16, end: 30 },
@@ -67,7 +67,7 @@ D. 3`;
     const parser = new QuizParser(sampleQuestions, sampleAnswers);
 
     // Import the b module to mock it
-    const { b } = await import('../baml_client/async_client');
+    const { b } = await import('../../baml_client/async_client.js');
 
     // Mock the b.SplitPage to throw an error
     const mockSplitPage = vi.fn().mockRejectedValue(new Error('Test error'));

@@ -57,7 +57,8 @@
       "ui/components/*": ["libs/ui/src/components/ui/*"],
       "@/components/ui/": ["libs/ui/src/components/ui/*"],
       "ui/libs/*": ["libs/ui/src/lib/*"],
-      "libs/lib/utils": ["libs/ui/src/lib/utils"]
+      "libs/lib/utils": ["libs/ui/src/lib/utils"],
+      "quiz-db": ["libs/quiz-db/src/index.ts"],
     },
     "incremental": true,
     "skipLibCheck": true,

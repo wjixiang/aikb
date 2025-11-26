@@ -1,7 +1,7 @@
 import { ExamPaperService } from '../services/ExamPaperService';
 import { QuizProcessingService } from '../services/QuizProcessingService';
-import { quesiton } from '../varible';
-import { answer } from '../varible_answer';
+import { quesiton } from '../quiz_data/varible';
+import { answer } from '../quiz_data/varible_answer';
 
 /**
  * 试卷服务示例
