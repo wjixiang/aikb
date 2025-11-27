@@ -59,6 +59,11 @@
       "ui/libs/*": ["libs/ui/src/lib/*"],
       "libs/lib/utils": ["libs/ui/src/lib/utils"],
       "quiz-db": ["libs/quiz-db/src/index.ts"],
+      "knowledgeBase-lib": [
+        "libs/knowledgeBase/knowledgeBase-lib/src/index.ts"
+      ],
+      "knowledgeBase-db": ["libs/knowledgeBase/knowledge-db/src/index.ts"],
+      "meSH-client": ["libs/meSH-client/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -68,7 +73,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "types": ["vitest/globals"]
-    
   },
   "exclude": ["apps/web-frontend", "./node_modules", "dist"]
 }

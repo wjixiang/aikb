@@ -20,7 +20,10 @@
         "libs/rabbitmq-lib/*",
         "libs/rabbitmqPublist/*",
         "libs/nestjs/nestgRPCClient/*",
-        "libs/nestjs/nestjs_gRPC_client/*"
+        "libs/nestjs/nestjs_gRPC_client/*",
+        "apps/knowledgeBase/knowledgeBase-lib/*",
+        "libs/knowledgeBase/knowledgeBase-lib/*",
+        "libs/meSH-client/*"
       ]
     },
     {
@@ -79,7 +82,10 @@
         "libs/rabbitmqPublist/*",
         "libs/nestjs/nestgRPCClient/*",
         "libs/nestjs/nestjs_gRPC_client/*",
-        "libs/auth/auth-lib/*"
+        "libs/auth/auth-lib/*",
+        "apps/knowledgeBase/knowledgeBase-lib/*",
+        "libs/knowledgeBase/knowledgeBase-lib/*",
+        "libs/meSH-client/*"
       ],
       "options": {
         "typecheck": {
@@ -94,7 +100,8 @@
       },
       "exclude": [
         "apps/libraryItemVectorService-e2e/**/*",
-        "apps/auth-service-e2e/**/*"
+        "apps/auth-service-e2e/**/*",
+        "apps/knowledgeBase-service-e2e/**/*"
       ]
     },
     {
