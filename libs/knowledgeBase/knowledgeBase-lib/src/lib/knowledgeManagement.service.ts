@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { EntityStorage } from "./entityStorage.service";
+import { EntityStorageService } from "./entity-storage.service";
 
 @Injectable()
 export class KnowledgeManagement {
-    constructor(private entityStorage: EntityStorage) {}
+    constructor(private entityStorage: EntityStorageService) {}
 
     async digestContext(context: string) {
 
