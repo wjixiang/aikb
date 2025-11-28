@@ -1,11 +1,18 @@
 {
   "name": "NIH-client",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/meSH-client/src",
+  "sourceRoot": "libs/NIH-client/src",
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project meSH-client --web",
   "targets": {
-
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "libs/NIH-client/jest.config.e2e.js",
+        "passWithNoTests": true
+      }
+    }
   }
 }
