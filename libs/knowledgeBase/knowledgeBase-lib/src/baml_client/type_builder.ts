@@ -27,6 +27,8 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    NerResult: ClassViewer<'NerResult', "entity_name" | "entity_desc">;
+    
     WikiSearchParamsBaml: ClassViewer<'WikiSearchParamsBaml', "language_code" | "search_query" | "number_of_results">;
     
     
@@ -34,13 +36,17 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "WikiSearchParamsBaml",
+            "NerResult","WikiSearchParamsBaml",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.NerResult = this.tb.classViewer("NerResult", [
+          "entity_name","entity_desc",
+        ]);
         
         this.WikiSearchParamsBaml = this.tb.classViewer("WikiSearchParamsBaml", [
           "language_code","search_query","number_of_results",

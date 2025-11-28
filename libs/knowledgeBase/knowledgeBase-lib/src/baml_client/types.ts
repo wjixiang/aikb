@@ -47,6 +47,12 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface NerResult {
+  entity_name: string
+  entity_desc: string
+  
+}
+
 export interface WikiSearchParamsBaml {
   language_code: string
   search_query: string

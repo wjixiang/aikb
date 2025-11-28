@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  WikiSearchParamsBaml } from "./types"
+import type {  NerResult,  WikiSearchParamsBaml } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,6 +36,10 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface NerResult {
+      entity_name?: string | null
+      entity_desc?: string | null
+    }
     export interface WikiSearchParamsBaml {
       language_code?: string | null
       search_query?: string | null

@@ -63,7 +63,7 @@
         "libs/knowledgeBase/knowledgeBase-lib/src/index.ts"
       ],
       "knowledgeBase-db": ["libs/knowledgeBase/knowledge-db/src/index.ts"],
-      "meSH-client": ["libs/meSH-client/src/index.ts"]
+      "nih-client": ["libs/NIH-client/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

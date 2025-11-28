@@ -1,1 +1,1 @@
-export * from './lib/knowledgeBase-lib.module';
+export * from './lib/knowledgeBase.module';

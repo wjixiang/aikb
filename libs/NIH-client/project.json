@@ -1,9 +1,11 @@
 {
-  "name": "meSH-client",
+  "name": "NIH-client",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/meSH-client/src",
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project meSH-client --web",
-  "targets": {}
+  "targets": {
+
+  }
 }
