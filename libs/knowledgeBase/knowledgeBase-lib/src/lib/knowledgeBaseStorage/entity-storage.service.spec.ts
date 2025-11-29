@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntityStorageService } from './entity-storage.service';
-import { EntityData } from './types';
+import { EntityData } from '../types';
 
 describe('EntityStorageService', () => {
   let service: EntityStorageService;

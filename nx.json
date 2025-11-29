@@ -101,8 +101,21 @@
       "exclude": [
         "apps/libraryItemVectorService-e2e/**/*",
         "apps/auth-service-e2e/**/*",
-        "apps/knowledgeBase-service-e2e/**/*"
+        "apps/knowledgeBase-service-e2e/**/*",
+        "**/*.e2e.test.ts",
+        "**/*.e2e.spec.ts"
       ]
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "include": [
+        "**/*.e2e.test.ts",
+        "**/*.e2e.spec.ts"
+      ],
+      "options": {
+        "targetName": "e2e",
+        "ciTargetName": "e2e-ci"
+      }
     },
     {
       "plugin": "@nx/docker",

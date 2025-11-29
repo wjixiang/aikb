@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IEntityStorage, EntityData } from './types';
+import { IEntityStorage, EntityData } from '../types';
 
 /**
  * In-memory implementation of IEntityStorage for testing and development purposes.

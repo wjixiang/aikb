@@ -5,5 +5,14 @@
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project knowledgeBase-lib --web",
-  "targets": {}
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "libs/knowledgeBase/knowledgeBase-lib/jest.config.e2e.js",
+        "passWithNoTests": true
+      }
+    }
+  }
 }

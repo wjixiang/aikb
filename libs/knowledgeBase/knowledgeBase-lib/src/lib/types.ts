@@ -22,7 +22,21 @@ export interface EntityData {
             vector: number[];
         }
     };
+    
 }
+
+export interface PropertyData {
+    id: string;
+    // edgePath: string[];
+    content: string;
+}
+
+export interface EdgeData {
+    type: 'start' | 'middle' | 'end'
+    in: string;
+    out: string;
+}
+
 
 export interface IEntityStorage {
     /**
@@ -98,6 +112,51 @@ export interface IEntityStorage {
      * Check if an entity exists
      * @param id The entity ID
      * @returns Promise resolving to true if entity exists
+     */
+    exists(id: string): Promise<boolean>;
+}
+
+export interface IPropertyStorage {
+    /**
+     * Create a new property
+     * @param property The property data to create
+     * @returns Promise resolving to the created property with generated ID
+     */
+    create(property: Omit<PropertyData, 'id'>): Promise<PropertyData>;
+
+    /**
+     * Retrieve an property by ID
+     * @param id The property ID
+     * @returns Promise resolving to the property data or null if not found
+     */
+    findById(id: string): Promise<PropertyData | null>;
+
+    /**
+     * Retrieve multiple properties by their IDs
+     * @param ids Array of property IDs
+     * @returns Promise resolving to array of properties (null for not found properties)
+     */
+    findByIds(ids: string[]): Promise<(PropertyData | null)[]>;
+
+    /**
+     * Update an existing property
+     * @param id The property ID to update
+     * @param updates Partial property data to update
+     * @returns Promise resolving to the updated property or null if not found
+     */
+    update(id: string, updates: Partial<Omit<PropertyData, 'id'>>): Promise<PropertyData | null>;
+
+    /**
+     * Delete an property by ID
+     * @param id The property ID to delete
+     * @returns Promise resolving to true if deleted, false if not found
+     */
+    delete(id: string): Promise<boolean>;
+
+    /**
+     * Check if an property exists
+     * @param id The property ID
+     * @returns Promise resolving to true if property exists
      */
     exists(id: string): Promise<boolean>;
 }
