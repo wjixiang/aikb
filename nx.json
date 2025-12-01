@@ -23,7 +23,8 @@
         "libs/nestjs/nestjs_gRPC_client/*",
         "apps/knowledgeBase/knowledgeBase-lib/*",
         "libs/knowledgeBase/knowledgeBase-lib/*",
-        "libs/meSH-client/*"
+        "libs/meSH-client/*",
+        "libs/EmbeddingModule/*"
       ]
     },
     {
@@ -85,7 +86,8 @@
         "libs/auth/auth-lib/*",
         "apps/knowledgeBase/knowledgeBase-lib/*",
         "libs/knowledgeBase/knowledgeBase-lib/*",
-        "libs/meSH-client/*"
+        "libs/meSH-client/*",
+        "libs/EmbeddingModule/*"
       ],
       "options": {
         "typecheck": {
@@ -108,10 +110,7 @@
     },
     {
       "plugin": "@nx/jest/plugin",
-      "include": [
-        "**/*.e2e.test.ts",
-        "**/*.e2e.spec.ts"
-      ],
+      "include": ["**/*.e2e.test.ts", "**/*.e2e.spec.ts"],
       "options": {
         "targetName": "e2e",
         "ciTargetName": "e2e-ci"

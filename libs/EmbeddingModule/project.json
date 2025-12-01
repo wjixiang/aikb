@@ -1,0 +1,9 @@
+{
+  "name": "EmbeddingModule",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/EmbeddingModule/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project EmbeddingModule --web",
+  "targets": {}
+}
