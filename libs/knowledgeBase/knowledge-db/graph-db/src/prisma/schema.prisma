@@ -6,3 +6,55 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Vertex table for storing vertex data
+model Vertex {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete support
+  
+  // Vertex content and type
+  content   String
+  type      String   // 'concept' | 'attribute' | 'relationship' without enum restriction
+  
+  // Metadata stored as JSON
+  metadata  Json?
+  
+  // Relationships with edges (as both input and output)
+  edgesIn   Edge[]   @relation("VertexIn")
+  edgesOut  Edge[]   @relation("VertexOut")
+  
+  // Indexes for efficient queries
+  @@index([content])
+  @@index([type])
+  @@index([deletedAt])
+  @@map("vertices")
+}
+
+// Edge table for storing edge data
+model Edge {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete support
+  
+  // Edge type and connections
+  type      String   // 'start' | 'middle' | 'end' without enum restriction
+  inId      String   // Input vertex ID
+  outId     String   // Output vertex ID
+  
+  // Relationships with vertices
+  inVertex  Vertex   @relation("VertexIn", fields: [inId], references: [id], onDelete: Cascade)
+  outVertex Vertex   @relation("VertexOut", fields: [outId], references: [id], onDelete: Cascade)
+  
+  // Indexes for efficient queries
+  @@index([type])
+  @@index([inId])
+  @@index([outId])
+  @@index([deletedAt])
+  @@index([inId, outId])
+  @@index([type, inId])
+  @@index([type, outId])
+  @@map("edges")
+}

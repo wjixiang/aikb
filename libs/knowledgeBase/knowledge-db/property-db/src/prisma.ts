@@ -1,10 +1,14 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from './generated/prisma/client';
+import { Injectable } from '@nestjs/common';
 
-const connectionString = `${process.env['PROPERTY_DATABASE_URL']}`;
+@Injectable()
+export class PropertyDBPrismaService extends PrismaClient {
+  constructor() {
+    const connectionString = `${process.env['PROPERTY_DATABASE_URL']}`;
+    const adapter = new PrismaPg({ connectionString });
+    super({ adapter });
+  }
+}
 
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
-
-export { prisma };

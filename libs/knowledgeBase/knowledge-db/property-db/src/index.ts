@@ -1,2 +1,2 @@
-import { prisma } from './prisma';
-export { prisma };
+import { PropertyDBPrismaService } from './prisma';
+export { PropertyDBPrismaService };

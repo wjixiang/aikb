@@ -33,6 +33,7 @@ class MockPrismaService {
 }
 
 module.exports = {
+  EntityDBPrismaService: MockPrismaService,
   PrismaService: MockPrismaService,
   Prisma: {}, // Empty object for Prisma namespace
 };

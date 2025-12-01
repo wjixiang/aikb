@@ -4,11 +4,12 @@ import { KnowledgeBaseStorageModule } from './knowledgeBaseStorage/knowledge-bas
 import { VersionControlModule } from './versionControl/version-control.module';
 import { EventsModule } from './events/events.module';
 import { KnowledgeManagementService } from './knowledgeManagement/knowledge-management.service';
+import { EmbeddingModule } from 'EmbeddingModule';
 
 @Module({
   controllers: [],
-  providers: [EntityStorageService, KnowledgeManagementService],
+  providers: [KnowledgeManagementService],
   exports: [KnowledgeManagementService],
-  imports: [KnowledgeBaseStorageModule, VersionControlModule, EventsModule],
+  imports: [KnowledgeBaseStorageModule, VersionControlModule, EventsModule, EmbeddingModule],
 })
 export class KnowledgeBaseLibModule {}

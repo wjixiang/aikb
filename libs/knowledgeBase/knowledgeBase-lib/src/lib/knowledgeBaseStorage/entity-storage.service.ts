@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService, Prisma } from 'entity-db';
+import { EntityDBPrismaService, Prisma } from 'entity-db';
 import { IEntityStorage, EntityData } from '../types';
 
 @Injectable()
 export class EntityStorageService implements IEntityStorage {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: EntityDBPrismaService) {}
 
   /**
    * Create a new entity

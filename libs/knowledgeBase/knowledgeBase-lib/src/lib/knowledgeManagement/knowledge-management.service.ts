@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  EntityStorageMemoryService,
-  VertexStorageMemoryService,
-  PropertyStorageMemoryService,
-  EdgeStorageMemoryService,
-  GitVersionControlService,
-} from '../../index';
+import { EntityStorageMemoryService } from '../knowledgeBaseStorage/entity-storage.memory.service';
+import { VertexStorageMemoryService } from '../knowledgeBaseStorage/vertex-storage.memory.service';
+import { PropertyStorageMemoryService } from '../knowledgeBaseStorage/property-storage.memory.service';
+import { EdgeStorageMemoryService } from '../knowledgeBaseStorage/edge-storage.memory.service';
+import { GitVersionControlService } from '../versionControl/version-control.service';
 import { EventBusService } from '../events/event-bus.service';
 import {
   EntityCreatedEvent,

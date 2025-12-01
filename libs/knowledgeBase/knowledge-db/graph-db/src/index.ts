@@ -1,2 +1,2 @@
-import { prisma } from './prisma';
-export { prisma };
+import { GraphDBPrismaService } from './prisma';
+export { GraphDBPrismaService };

@@ -6,3 +6,17 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Property table for storing property data
+model Property {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Property content
+  content   String
+  
+  // Indexes for search and retrieval
+  @@index([content])
+  @@map("properties")
+}

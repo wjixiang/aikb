@@ -1,20 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { IEdgeStorage, EdgeData } from '../types';
+import { GraphDBPrismaService } from 'graph-db';
 
 @Injectable()
 export class EdgeStorageService implements IEdgeStorage {
+  constructor(private readonly prisma: GraphDBPrismaService) {}
   /**
    * Create a new edge
    * @param edge The edge data to create
    * @returns Promise resolving to the created edge with generated ID
    */
   async create(edge: Omit<EdgeData, 'id'>): Promise<EdgeData> {
-    // TODO: Implement actual storage logic (database, file system, etc.)
-    const newEdge: EdgeData = {
-      id: this.generateId(),
-      ...edge,
+    const createdEdge = await this.prisma.edge.create({
+      data: {
+        type: edge.type,
+        inId: edge.in,
+        outId: edge.out,
+      },
+    });
+
+    return {
+      id: createdEdge.id,
+      type: createdEdge.type as 'start' | 'middle' | 'end',
+      in: createdEdge.inId,
+      out: createdEdge.outId,
     };
-    return newEdge;
   }
 
   /**
@@ -23,8 +33,18 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to the edge data or null if not found
    */
   async findById(id: string): Promise<EdgeData | null> {
-    // TODO: Implement actual retrieval logic
-    return null;
+    const edge = await this.prisma.edge.findUnique({
+      where: { id, deletedAt: null },
+    });
+
+    if (!edge) return null;
+
+    return {
+      id: edge.id,
+      type: edge.type as 'start' | 'middle' | 'end',
+      in: edge.inId,
+      out: edge.outId,
+    };
   }
 
   /**
@@ -33,8 +53,26 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to array of edges (null for not found edges)
    */
   async findByIds(ids: string[]): Promise<(EdgeData | null)[]> {
-    // TODO: Implement batch retrieval logic
-    return ids.map(() => null);
+    const edges = await this.prisma.edge.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+      },
+    });
+
+    const edgeMap = new Map(edges.map((edge: any) => [edge.id, edge]));
+    
+    return ids.map(id => {
+      const edge = edgeMap.get(id);
+      if (!edge) return null;
+      
+      return {
+        id: edge.id,
+        type: edge.type as 'start' | 'middle' | 'end',
+        in: edge.inId,
+        out: edge.outId,
+      };
+    });
   }
 
   /**
@@ -47,18 +85,42 @@ export class EdgeStorageService implements IEdgeStorage {
     id: string,
     updates: Partial<Omit<EdgeData, 'id'>>,
   ): Promise<EdgeData | null> {
-    // TODO: Implement actual update logic
-    return null;
+    const updateData: any = {};
+    
+    if (updates.type !== undefined) updateData.type = updates.type;
+    if (updates.in !== undefined) updateData.inId = updates.in;
+    if (updates.out !== undefined) updateData.outId = updates.out;
+
+    const updatedEdge = await this.prisma.edge.update({
+      where: { id, deletedAt: null },
+      data: updateData,
+    });
+
+    if (!updatedEdge) return null;
+
+    return {
+      id: updatedEdge.id,
+      type: updatedEdge.type as 'start' | 'middle' | 'end',
+      in: updatedEdge.inId,
+      out: updatedEdge.outId,
+    };
   }
 
   /**
-   * Delete an edge by ID
+   * Delete an edge by ID (soft delete)
    * @param id The edge ID to delete
    * @returns Promise resolving to true if deleted, false if not found
    */
   async delete(id: string): Promise<boolean> {
-    // TODO: Implement actual deletion logic
-    return false;
+    try {
+      await this.prisma.edge.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -67,8 +129,19 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to array of edges that have this input
    */
   async findByIn(inId: string): Promise<EdgeData[]> {
-    // TODO: Implement actual query logic
-    return [];
+    const edges = await this.prisma.edge.findMany({
+      where: {
+        inId,
+        deletedAt: null,
+      },
+    });
+
+    return edges.map((edge: any) => ({
+      id: edge.id,
+      type: edge.type as 'start' | 'middle' | 'end',
+      in: edge.inId,
+      out: edge.outId,
+    }));
   }
 
   /**
@@ -77,8 +150,19 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to array of edges that have this output
    */
   async findByOut(outId: string): Promise<EdgeData[]> {
-    // TODO: Implement actual query logic
-    return [];
+    const edges = await this.prisma.edge.findMany({
+      where: {
+        outId,
+        deletedAt: null,
+      },
+    });
+
+    return edges.map((edge: any) => ({
+      id: edge.id,
+      type: edge.type as 'start' | 'middle' | 'end',
+      in: edge.inId,
+      out: edge.outId,
+    }));
   }
 
   /**
@@ -87,8 +171,19 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to array of edges of the specified type
    */
   async findByType(type: 'start' | 'middle' | 'end'): Promise<EdgeData[]> {
-    // TODO: Implement actual query logic
-    return [];
+    const edges = await this.prisma.edge.findMany({
+      where: {
+        type,
+        deletedAt: null,
+      },
+    });
+
+    return edges.map((edge: any) => ({
+      id: edge.id,
+      type: edge.type as 'start' | 'middle' | 'end',
+      in: edge.inId,
+      out: edge.outId,
+    }));
   }
 
   /**
@@ -100,10 +195,28 @@ export class EdgeStorageService implements IEdgeStorage {
     limit?: number;
     offset?: number;
   }): Promise<{ edges: EdgeData[]; total: number }> {
-    // TODO: Implement actual pagination logic
+    const { limit = 50, offset = 0 } = options || {};
+
+    const [edges, total] = await Promise.all([
+      this.prisma.edge.findMany({
+        where: { deletedAt: null },
+        take: limit,
+        skip: offset,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.edge.count({
+        where: { deletedAt: null },
+      }),
+    ]);
+
     return {
-      edges: [],
-      total: 0,
+      edges: edges.map((edge: any) => ({
+        id: edge.id,
+        type: edge.type as 'start' | 'middle' | 'end',
+        in: edge.inId,
+        out: edge.outId,
+      })),
+      total,
     };
   }
 
@@ -113,16 +226,11 @@ export class EdgeStorageService implements IEdgeStorage {
    * @returns Promise resolving to true if edge exists
    */
   async exists(id: string): Promise<boolean> {
-    // TODO: Implement actual existence check logic
-    return false;
-  }
-
-  /**
-   * Generate a unique ID for edges
-   * @returns A unique ID string
-   */
-  private generateId(): string {
-    // Simple ID generation - in production, use UUID or similar
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    const edge = await this.prisma.edge.findUnique({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    
+    return !!edge;
   }
 }

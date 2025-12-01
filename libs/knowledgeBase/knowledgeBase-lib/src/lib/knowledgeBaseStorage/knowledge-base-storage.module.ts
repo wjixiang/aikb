@@ -8,11 +8,13 @@ import { EdgeStorageMemoryService } from './edge-storage.memory.service';
 import { VertexStorageMemoryService } from './vertex-storage.memory.service';
 import { VertextStorageService } from './vertext-storage.service';
 import { GitVersionControlService } from '../versionControl/version-control.service';
-import { PrismaService } from 'entity-db';
+import { EntityDBPrismaService } from 'entity-db';
+import { PropertyDBPrismaService } from 'property-db'
 
 @Module({
   providers: [
-    PrismaService,
+    EntityDBPrismaService,
+    PropertyDBPrismaService,
     EntityStorageService,
     EntityStorageMemoryService,
     PropertyStorageService,
@@ -24,7 +26,8 @@ import { PrismaService } from 'entity-db';
     GitVersionControlService,
   ],
   exports: [
-    PrismaService,
+    EntityDBPrismaService,
+    PropertyDBPrismaService,
     EntityStorageService,
     EntityStorageMemoryService,
     PropertyStorageService,

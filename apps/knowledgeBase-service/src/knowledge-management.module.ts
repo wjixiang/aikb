@@ -9,9 +9,10 @@ import { VersionControlController } from './controllers/version-control.controll
 
 // Import the complete lib module that contains all services
 import { KnowledgeBaseLibModule } from 'knowledgeBase-lib';
+import { EmbeddingModule } from 'EmbeddingModule';
 
 @Module({
-  imports: [KnowledgeBaseLibModule],
+  imports: [KnowledgeBaseLibModule, EmbeddingModule],
   controllers: [
     EntityController,
     VertexController,
@@ -20,7 +21,5 @@ import { KnowledgeBaseLibModule } from 'knowledgeBase-lib';
     SearchController,
     VersionControlController,
   ],
-  providers: [KnowledgeManagementService],
-  exports: [KnowledgeManagementService],
 })
 export class KnowledgeManagementModule {}

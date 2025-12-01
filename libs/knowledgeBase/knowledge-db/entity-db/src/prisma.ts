@@ -11,7 +11,7 @@ import { PrismaClient } from './generated/prisma/client';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class PrismaService extends PrismaClient {
+export class EntityDBPrismaService extends PrismaClient {
   constructor() {
     const connectionString = `${process.env['ENTITY_DATABASE_URL']}`;
     const adapter = new PrismaPg({ connectionString });

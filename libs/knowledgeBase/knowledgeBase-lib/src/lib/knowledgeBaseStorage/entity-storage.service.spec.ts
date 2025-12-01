@@ -1,37 +1,50 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntityStorageService } from './entity-storage.service';
 import { EntityData } from '../types';
-import { PrismaService } from 'entity-db';
+import { EntityDBPrismaService } from 'entity-db';
+
+// Create a mock type for the Prisma service
+type MockPrismaService = {
+  entity: {
+    create: jest.Mock;
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+    count: jest.Mock;
+  };
+  $executeRaw: jest.Mock;
+};
 
 describe('EntityStorageService', () => {
   let service: EntityStorageService;
-  let prismaService: any;
+  let prismaService: MockPrismaService;
 
   beforeEach(async () => {
-    const mockPrismaService = {
+    const mockPrismaService: MockPrismaService = {
       entity: {
-        create: jest.fn(),
-        findUnique: jest.fn(),
-        findMany: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
+        create: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn().mockResolvedValue({}),
+        delete: jest.fn().mockResolvedValue({}),
+        count: jest.fn().mockResolvedValue(0),
       },
-      $executeRaw: jest.fn(),
+      $executeRaw: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntityStorageService,
         {
-          provide: PrismaService,
+          provide: EntityDBPrismaService,
           useValue: mockPrismaService,
         },
       ],
     }).compile();
 
     service = module.get<EntityStorageService>(EntityStorageService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    prismaService = module.get<MockPrismaService>(EntityDBPrismaService);
   });
 
   it('should be defined', () => {
