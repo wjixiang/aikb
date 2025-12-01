@@ -1,0 +1,28 @@
+{
+  "name": "@aikb/embedding-module",
+  "version": "0.0.1",
+  "description": "NestJS module for embedding functionality",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "keywords": ["nestjs", "embedding", "ai", "vector"],
+  "author": "AIKB Team",
+  "license": "UNLICENSED",
+  "private": true,
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/swagger": "^11.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
+    "ts-jest": "^30.0.0"
+  }
+}

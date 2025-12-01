@@ -24,7 +24,7 @@ import {
 } from '../events/types';
 import { IKnowledgeManagementService, OperationOptions, QueryOptions, BatchOperation, BatchOperationOptions, BatchResult, EntityWithRelations, RelationQueryOptions, EntityRelations, VertexConnections, ValidationResult, EntityQuery, VertexQuery, PropertyQuery, EdgeQuery } from './knowledge-management.interface';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
-import { embeddingService, EmbeddingProvider, OpenAIModel } from 'embedding';
+import { EmbeddingService, EmbeddingProvider } from 'EmbeddingModule';
 
 @Injectable()
 export class KnowledgeManagementService implements IKnowledgeManagementService {
@@ -37,6 +37,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     private readonly edgeStorage: EdgeStorageMemoryService,
     private readonly eventBus: EventBusService,
     private readonly versionControl: GitVersionControlService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   // 实体操作
@@ -47,23 +48,26 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     let entityData = { ...data };
     if (!entityData.abstract.embedding) {
       this.logger.log('Generating embedding for entity abstract...');
-      const embeddingVector = await embeddingService.embed(entityData.abstract.description);
+      const embeddingResult = await this.embeddingService.embed({
+        text: entityData.abstract.description,
+        provider: EmbeddingProvider.ALIBABA, // Use default provider from EmbeddingModule
+      });
       
-      if (embeddingVector) {
+      if (embeddingResult.success && embeddingResult.embedding) {
         entityData.abstract.embedding = {
           config: {
-            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
-            dimension: embeddingVector.length,
+            model: 'text-embedding-v3', // Use Alibaba model as default
+            dimension: embeddingResult.embedding.length,
             batchSize: 20,
             maxRetries: 3,
             timeout: 20000,
-            provider: 'openai' as EmbeddingProvider
+            provider: EmbeddingProvider.ALIBABA
           },
-          vector: embeddingVector
+          vector: embeddingResult.embedding
         };
-        this.logger.log(`Embedding generated successfully with ${embeddingVector.length} dimensions`);
+        this.logger.log(`Embedding generated successfully with ${embeddingResult.embedding.length} dimensions`);
       } else {
-        this.logger.warn('Failed to generate embedding for entity abstract');
+        this.logger.warn(`Failed to generate embedding for entity abstract: ${embeddingResult.error}`);
         // Continue without embedding - it's optional now
       }
     }
