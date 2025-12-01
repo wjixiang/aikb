@@ -8,7 +8,7 @@ import {
   Body, 
   Query 
 } from '@nestjs/common';
-import { KnowledgeManagementService } from '../services/knowledge-management.service';
+import { KnowledgeManagementService } from 'knowledgeBase-lib';
 
 @Controller('version-control')
 export class VersionControlController {

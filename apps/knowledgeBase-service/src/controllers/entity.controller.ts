@@ -28,17 +28,7 @@ export class EntityController {
       })),
       abstract: {
         description: createEntityDto.abstract.description,
-        embedding: {
-          config: {
-            model: createEntityDto.abstract.embedding.model as any,
-            dimension: createEntityDto.abstract.embedding.dimensions,
-            batchSize: 20,
-            maxRetries: 3,
-            timeout: 20000,
-            provider: 'openai' as any // Default provider
-          },
-          vector: createEntityDto.abstract.embedding.vector
-        }
+        // Embedding will be generated server-side in the service layer
       },
     };
     

@@ -24,6 +24,7 @@ import {
 } from '../events/types';
 import { IKnowledgeManagementService, OperationOptions, QueryOptions, BatchOperation, BatchOperationOptions, BatchResult, EntityWithRelations, RelationQueryOptions, EntityRelations, VertexConnections, ValidationResult, EntityQuery, VertexQuery, PropertyQuery, EdgeQuery } from './knowledge-management.interface';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
+import { embeddingService, EmbeddingProvider, OpenAIModel } from 'embedding';
 
 @Injectable()
 export class KnowledgeManagementService implements IKnowledgeManagementService {
@@ -42,7 +43,32 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   async createEntity(data: Omit<EntityData, 'id'>, options?: OperationOptions): Promise<EntityData> {
     this.logger.log(`Creating entity with nomenclature: ${data.nomanclature.map(n => n.name).join(', ')}`);
     
-    const entity = await this.entityStorage.create(data);
+    // Generate embedding if not provided
+    let entityData = { ...data };
+    if (!entityData.abstract.embedding) {
+      this.logger.log('Generating embedding for entity abstract...');
+      const embeddingVector = await embeddingService.embed(entityData.abstract.description);
+      
+      if (embeddingVector) {
+        entityData.abstract.embedding = {
+          config: {
+            model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
+            dimension: embeddingVector.length,
+            batchSize: 20,
+            maxRetries: 3,
+            timeout: 20000,
+            provider: 'openai' as EmbeddingProvider
+          },
+          vector: embeddingVector
+        };
+        this.logger.log(`Embedding generated successfully with ${embeddingVector.length} dimensions`);
+      } else {
+        this.logger.warn('Failed to generate embedding for entity abstract');
+        // Continue without embedding - it's optional now
+      }
+    }
+    
+    const entity = await this.entityStorage.create(entityData);
 
     // Publish event
     await this.eventBus.publish({

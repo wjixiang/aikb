@@ -17,10 +17,10 @@ export interface EntityData {
     nomanclature: Nomanclature[];
     abstract: {
         description: string;
-        embedding: {
+        embedding?: {
             config: EmbeddingConfig;
             vector: number[];
-        }
+        };
     };
     
 }

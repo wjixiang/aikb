@@ -129,8 +129,9 @@ export class EntityStorageMemoryService implements IEntityStorage {
         const { limit = 10, threshold = 0.5 } = options || {};
 
         const similarities = Array.from(this.entities.values())
+            .filter(entity => entity.abstract.embedding && entity.abstract.embedding.vector) // Only include entities with embeddings
             .map(entity => {
-                const similarity = this.cosineSimilarity(vector, entity.abstract.embedding.vector);
+                const similarity = this.cosineSimilarity(vector, entity.abstract.embedding!.vector);
                 return { entity: { ...entity }, similarity };
             })
             .filter(item => item.similarity >= threshold)
