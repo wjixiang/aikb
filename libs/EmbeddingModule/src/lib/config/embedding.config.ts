@@ -9,6 +9,9 @@ export default registerAs('embedding', (): EmbeddingModuleConfig => {
     defaultProvider:
       (process.env['EMBEDDING_DEFAULT_PROVIDER'] as any) ||
       defaultEmbeddingModuleConfig.defaultProvider,
+    defaultModel:
+      (process.env['EMBEDDING_DEFAULT_MODEL'] as any) ||
+      defaultEmbeddingModuleConfig.defaultModel,
     defaultConcurrencyLimit: parseInt(
       process.env['EMBEDDING_DEFAULT_CONCURRENCY_LIMIT'] || '5',
       10,

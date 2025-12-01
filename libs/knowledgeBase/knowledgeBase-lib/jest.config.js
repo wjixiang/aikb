@@ -3,7 +3,9 @@ export default {
   preset: '../../../jest.preset.js',
   coverageDirectory: '../../../coverage/libs/knowledgeBase/knowledgeBase-lib',
   transformIgnorePatterns: [
-    '/workspace/node_modules/(?!uuid)'
+    '/workspace/node_modules/(?!uuid)',
+    '/workspace/node_modules/(?!prisma)',
+    '/workspace/node_modules/(?!@prisma)'
   ],
   extensionsToTreatAsEsm: ['.ts'],
   transform: {
@@ -12,7 +14,8 @@ export default {
     }]
   },
   moduleNameMapper: {
-    '^uuid$': '<rootDir>/jest-uuid-mock.js'
+    '^uuid$': '<rootDir>/jest-uuid-mock.js',
+    '^entity-db$': '<rootDir>/mocks/entity-db.mock.js'
   },
-  setupFilesAfterEnv: []
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
 };

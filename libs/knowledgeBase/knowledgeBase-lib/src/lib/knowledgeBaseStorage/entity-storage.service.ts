@@ -1,30 +1,70 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService, Prisma } from 'entity-db';
 import { IEntityStorage, EntityData } from '../types';
 
 @Injectable()
 export class EntityStorageService implements IEntityStorage {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Create a new entity
    * @param entity The entity data to create
-   * @returns Promise resolving to the created entity with generated ID
+   * @returns Promise resolving to created entity with generated ID
    */
   async create(entity: Omit<EntityData, 'id'>): Promise<EntityData> {
-    // TODO: Implement actual storage logic (database, file system, etc.)
-    const newEntity: EntityData = {
-      id: this.generateId(),
-      ...entity,
-    };
-    return newEntity;
+    // Create entity first without embedding
+    const createdEntity = await this.prisma.entity.create({
+      data: {
+        description: entity.abstract.description,
+        nomenclatures: {
+          create: entity.nomanclature.map(nom => ({
+            name: nom.name,
+            acronym: nom.acronym,
+            language: nom.language,
+          })),
+        },
+      },
+      include: {
+        nomenclatures: true,
+        embedding: true,
+      },
+    });
+
+    // If embedding exists, create it separately using raw SQL
+    if (entity.abstract.embedding) {
+      await this.prisma.$executeRaw`
+        INSERT INTO embeddings (id, "entityId", model, dimension, "batchSize", "maxRetries", timeout, provider, vector)
+        VALUES (${createdEntity.id}, ${createdEntity.id}, ${entity.abstract.embedding.config.model}, ${entity.abstract.embedding.config.dimension}, ${entity.abstract.embedding.config.batchSize || 32}, ${entity.abstract.embedding.config.maxRetries || 3}, ${entity.abstract.embedding.config.timeout || 30000}, ${entity.abstract.embedding.config.provider || 'default'}, ${JSON.stringify(entity.abstract.embedding.vector)}::vector)
+      `;
+    }
+
+    // Fetch the complete entity with embedding
+    const completeEntity = await this.prisma.entity.findUnique({
+      where: { id: createdEntity.id },
+      include: {
+        nomenclatures: true,
+        embedding: true,
+      },
+    });
+
+    return this.mapPrismaEntityToEntityData(completeEntity!);
   }
 
   /**
    * Retrieve an entity by ID
    * @param id The entity ID
-   * @returns Promise resolving to the entity data or null if not found
+   * @returns Promise resolving to entity data or null if not found
    */
   async findById(id: string): Promise<EntityData | null> {
-    // TODO: Implement actual retrieval logic
-    return null;
+    const entity = await this.prisma.entity.findUnique({
+      where: { id },
+      include: {
+        nomenclatures: true,
+        embedding: true,
+      },
+    });
+
+    return entity ? this.mapPrismaEntityToEntityData(entity) : null;
   }
 
   /**
@@ -33,8 +73,17 @@ export class EntityStorageService implements IEntityStorage {
    * @returns Promise resolving to array of entities (null for not found entities)
    */
   async findByIds(ids: string[]): Promise<(EntityData | null)[]> {
-    // TODO: Implement batch retrieval logic
-    return ids.map(() => null);
+    const entities = await this.prisma.entity.findMany({
+      where: { id: { in: ids } },
+      include: {
+        nomenclatures: true,
+        embedding: true,
+      },
+    });
+
+    const entityMap = new Map(entities.map(e => [e.id, this.mapPrismaEntityToEntityData(e)]));
+    
+    return ids.map(id => entityMap.get(id) || null);
   }
 
   /**
@@ -47,8 +96,54 @@ export class EntityStorageService implements IEntityStorage {
     id: string,
     updates: Partial<Omit<EntityData, 'id'>>,
   ): Promise<EntityData | null> {
-    // TODO: Implement actual update logic
-    return null;
+    const updateData: any = {};
+
+    if (updates.abstract?.description) {
+      updateData.description = updates.abstract.description;
+    }
+
+    if (updates.nomanclature) {
+      updateData.nomenclatures = {
+        deleteMany: {},
+        create: updates.nomanclature.map(nom => ({
+          name: nom.name,
+          acronym: nom.acronym,
+          language: nom.language,
+        })),
+      };
+    }
+
+    if (updates.abstract?.embedding) {
+      // Handle embedding update separately with raw SQL
+      await this.prisma.$executeRaw`
+        INSERT INTO embeddings (id, "entityId", model, dimension, "batchSize", "maxRetries", timeout, provider, vector)
+        VALUES (gen_random_uuid(), ${id}, ${updates.abstract.embedding.config.model}, ${updates.abstract.embedding.config.dimension}, ${updates.abstract.embedding.config.batchSize || 32}, ${updates.abstract.embedding.config.maxRetries || 3}, ${updates.abstract.embedding.config.timeout || 30000}, ${updates.abstract.embedding.config.provider || 'default'}, ${JSON.stringify(updates.abstract.embedding.vector)}::vector)
+        ON CONFLICT ("entityId")
+        DO UPDATE SET
+          model = EXCLUDED.model,
+          dimension = EXCLUDED.dimension,
+          "batchSize" = EXCLUDED."batchSize",
+          "maxRetries" = EXCLUDED."maxRetries",
+          timeout = EXCLUDED.timeout,
+          provider = EXCLUDED.provider,
+          vector = EXCLUDED.vector
+      `;
+    }
+
+    try {
+      const updatedEntity = await this.prisma.entity.update({
+        where: { id },
+        data: updateData,
+        include: {
+          nomenclatures: true,
+          embedding: true,
+        },
+      });
+
+      return this.mapPrismaEntityToEntityData(updatedEntity);
+    } catch (error) {
+      return null;
+    }
   }
 
   /**
@@ -57,8 +152,14 @@ export class EntityStorageService implements IEntityStorage {
    * @returns Promise resolving to true if deleted, false if not found
    */
   async delete(id: string): Promise<boolean> {
-    // TODO: Implement actual deletion logic
-    return false;
+    try {
+      await this.prisma.entity.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -75,8 +176,39 @@ export class EntityStorageService implements IEntityStorage {
       language?: 'en' | 'zh';
     },
   ): Promise<EntityData[]> {
-    // TODO: Implement actual search logic
-    return [];
+    const where: any = {
+      OR: [
+        {
+          description: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          nomenclatures: {
+            some: {
+              name: {
+                contains: query,
+                mode: 'insensitive',
+              },
+              ...(options?.language && { language: options.language }),
+            },
+          },
+        },
+      ],
+    };
+
+    const entities = await this.prisma.entity.findMany({
+      where,
+      take: options?.limit || 50,
+      skip: options?.offset || 0,
+      include: {
+        nomenclatures: true,
+        embedding: true,
+      },
+    });
+
+    return entities.map(entity => this.mapPrismaEntityToEntityData(entity));
   }
 
   /**
@@ -92,7 +224,8 @@ export class EntityStorageService implements IEntityStorage {
       threshold?: number;
     },
   ): Promise<Array<{ entity: EntityData; similarity: number }>> {
-    // TODO: Implement vector similarity search logic
+    // For now, return empty array as vector similarity search requires pgvector extension
+    // This would need to be implemented with raw SQL queries using pgvector operators
     return [];
   }
 
@@ -105,10 +238,21 @@ export class EntityStorageService implements IEntityStorage {
     limit?: number;
     offset?: number;
   }): Promise<{ entities: EntityData[]; total: number }> {
-    // TODO: Implement actual pagination logic
+    const [entities, total] = await Promise.all([
+      this.prisma.entity.findMany({
+        take: options?.limit || 50,
+        skip: options?.offset || 0,
+        include: {
+          nomenclatures: true,
+          embedding: true,
+        },
+      }),
+      this.prisma.entity.count(),
+    ]);
+
     return {
-      entities: [],
-      total: 0,
+      entities: entities.map(entity => this.mapPrismaEntityToEntityData(entity)),
+      total,
     };
   }
 
@@ -118,16 +262,42 @@ export class EntityStorageService implements IEntityStorage {
    * @returns Promise resolving to true if entity exists
    */
   async exists(id: string): Promise<boolean> {
-    // TODO: Implement actual existence check logic
-    return false;
+    const entity = await this.prisma.entity.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return !!entity;
   }
 
   /**
-   * Generate a unique ID for entities
-   * @returns A unique ID string
+   * Map Prisma Entity to EntityData format
+   * @param entity Prisma Entity with relations
+   * @returns EntityData
    */
-  private generateId(): string {
-    // Simple ID generation - in production, use UUID or similar
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  private mapPrismaEntityToEntityData(entity: any): EntityData {
+    return {
+      id: entity.id,
+      nomanclature: entity.nomenclatures.map((nom: any) => ({
+        name: nom.name,
+        acronym: nom.acronym,
+        language: nom.language as 'en' | 'zh',
+      })),
+      abstract: {
+        description: entity.description,
+        ...(entity.embedding && {
+          embedding: {
+            config: {
+              model: entity.embedding.model,
+              dimension: entity.embedding.dimension,
+              batchSize: entity.embedding.batchSize,
+              maxRetries: entity.embedding.maxRetries,
+              timeout: entity.embedding.timeout,
+              provider: entity.embedding.provider,
+            },
+            vector: Array.isArray(entity.embedding.vector) ? entity.embedding.vector : [],
+          },
+        }),
+      },
+    };
   }
 }

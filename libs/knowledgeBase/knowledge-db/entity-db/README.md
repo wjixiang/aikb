@@ -1,3 +1,3 @@
-# knowledge-db
+# entity-db
 
 This library was generated with [Nx](https://nx.dev).

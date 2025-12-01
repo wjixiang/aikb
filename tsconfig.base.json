@@ -64,7 +64,8 @@
       ],
       "knowledgeBase-db": ["libs/knowledgeBase/knowledge-db/src/index.ts"],
       "nih-client": ["libs/NIH-client/src/index.ts"],
-      "EmbeddingModule": ["libs/EmbeddingModule/src/index.ts"]
+      "EmbeddingModule": ["libs/EmbeddingModule/src/index.ts"],
+      "entity-db": ["libs/knowledgeBase/knowledge-db/entity-db/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,
