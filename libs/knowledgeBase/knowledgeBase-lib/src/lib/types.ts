@@ -6,7 +6,7 @@ export interface Tag {
     description: string;
 }
 
-export interface EntityNomanclature {
+export interface Nomanclature {
     name: string;
     acronym: string | null;
     language: 'en' | 'zh'
@@ -14,7 +14,7 @@ export interface EntityNomanclature {
 
 export interface EntityData {
     id: string;
-    nomanclature: EntityNomanclature[];
+    nomanclature: Nomanclature[];
     abstract: {
         description: string;
         embedding: {
@@ -32,11 +32,95 @@ export interface PropertyData {
 }
 
 export interface EdgeData {
+    id: string;
     type: 'start' | 'middle' | 'end'
     in: string;
     out: string;
+    // Edge relationships:
+    // - start: entity -> vertex
+    // - middle: vertex -> vertex
+    // - end: vertex -> property
 }
 
+export interface VertexData {
+    id: string;
+    content: string;
+    type: 'concept' | 'attribute' | 'relationship';
+    metadata?: Record<string, any>;
+}
+
+export interface IVertexStorage {
+    /**
+     * Create a new vertex
+     * @param vertex The vertex data to create
+     * @returns Promise resolving to the created vertex with generated ID
+     */
+    create(vertex: Omit<VertexData, 'id'>): Promise<VertexData>;
+
+    /**
+     * Retrieve a vertex by ID
+     * @param id The vertex ID
+     * @returns Promise resolving to the vertex data or null if not found
+     */
+    findById(id: string): Promise<VertexData | null>;
+
+    /**
+     * Retrieve multiple vertices by their IDs
+     * @param ids Array of vertex IDs
+     * @returns Promise resolving to array of vertices (null for not found vertices)
+     */
+    findByIds(ids: string[]): Promise<(VertexData | null)[]>;
+
+    /**
+     * Update an existing vertex
+     * @param id The vertex ID to update
+     * @param updates Partial vertex data to update
+     * @returns Promise resolving to the updated vertex or null if not found
+     */
+    update(id: string, updates: Partial<Omit<VertexData, 'id'>>): Promise<VertexData | null>;
+
+    /**
+     * Delete a vertex by ID
+     * @param id The vertex ID to delete
+     * @returns Promise resolving to true if deleted, false if not found
+     */
+    delete(id: string): Promise<boolean>;
+
+    /**
+     * Find vertices by type
+     * @param type The vertex type ('concept', 'attribute', or 'relationship')
+     * @returns Promise resolving to array of vertices of the specified type
+     */
+    findByType(type: 'concept' | 'attribute' | 'relationship'): Promise<VertexData[]>;
+
+    /**
+     * Search vertices by content
+     * @param query The search query
+     * @param options Optional search parameters like limit, offset
+     * @returns Promise resolving to array of matching vertices
+     */
+    search(query: string, options?: {
+        limit?: number;
+        offset?: number;
+    }): Promise<VertexData[]>;
+
+    /**
+     * Get all vertices with pagination
+     * @param options Pagination options
+     * @returns Promise resolving to paginated vertices and total count
+     */
+    findAll(options?: {
+        limit?: number;
+        offset?: number;
+    }): Promise<{ vertices: VertexData[]; total: number }>;
+
+    /**
+     * Check if a vertex exists
+     * @param id The vertex ID
+     * @returns Promise resolving to true if vertex exists
+     */
+    exists(id: string): Promise<boolean>;
+}
 
 export interface IEntityStorage {
     /**
@@ -157,6 +241,82 @@ export interface IPropertyStorage {
      * Check if an property exists
      * @param id The property ID
      * @returns Promise resolving to true if property exists
+     */
+    exists(id: string): Promise<boolean>;
+}
+
+export interface IEdgeStorage {
+    /**
+     * Create a new edge
+     * @param edge The edge data to create
+     * @returns Promise resolving to the created edge with generated ID
+     */
+    create(edge: Omit<EdgeData, 'id'>): Promise<EdgeData>;
+
+    /**
+     * Retrieve an edge by ID
+     * @param id The edge ID
+     * @returns Promise resolving to the edge data or null if not found
+     */
+    findById(id: string): Promise<EdgeData | null>;
+
+    /**
+     * Retrieve multiple edges by their IDs
+     * @param ids Array of edge IDs
+     * @returns Promise resolving to array of edges (null for not found edges)
+     */
+    findByIds(ids: string[]): Promise<(EdgeData | null)[]>;
+
+    /**
+     * Update an existing edge
+     * @param id The edge ID to update
+     * @param updates Partial edge data to update
+     * @returns Promise resolving to the updated edge or null if not found
+     */
+    update(id: string, updates: Partial<Omit<EdgeData, 'id'>>): Promise<EdgeData | null>;
+
+    /**
+     * Delete an edge by ID
+     * @param id The edge ID to delete
+     * @returns Promise resolving to true if deleted, false if not found
+     */
+    delete(id: string): Promise<boolean>;
+
+    /**
+     * Find edges by their input node ID
+     * @param inId The input node ID
+     * @returns Promise resolving to array of edges that have this input
+     */
+    findByIn(inId: string): Promise<EdgeData[]>;
+
+    /**
+     * Find edges by their output node ID
+     * @param outId The output node ID
+     * @returns Promise resolving to array of edges that have this output
+     */
+    findByOut(outId: string): Promise<EdgeData[]>;
+
+    /**
+     * Find edges by type
+     * @param type The edge type ('start', 'middle', or 'end')
+     * @returns Promise resolving to array of edges of the specified type
+     */
+    findByType(type: 'start' | 'middle' | 'end'): Promise<EdgeData[]>;
+
+    /**
+     * Get all edges with pagination
+     * @param options Pagination options
+     * @returns Promise resolving to paginated edges and total count
+     */
+    findAll(options?: {
+        limit?: number;
+        offset?: number;
+    }): Promise<{ edges: EdgeData[]; total: number }>;
+
+    /**
+     * Check if an edge exists
+     * @param id The edge ID
+     * @returns Promise resolving to true if edge exists
      */
     exists(id: string): Promise<boolean>;
 }
