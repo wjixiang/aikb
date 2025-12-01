@@ -9,7 +9,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -22,7 +22,7 @@ describe.skip('Authentication Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup test data with random user
     testUser = generateRandomUser();
     await axiosInstance.post('/auth/register', testUser);
@@ -50,7 +50,7 @@ describe.skip('Authentication Endpoints', () => {
         await axiosInstance.post('/auth/register', {
           email: testUser.email,
           password: 'password123',
-          name: 'Duplicate User'
+          name: 'Duplicate User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -64,7 +64,7 @@ describe.skip('Authentication Endpoints', () => {
         await axiosInstance.post('/auth/register', {
           email: 'invalid-email',
           password: 'password123',
-          name: 'Invalid Email User'
+          name: 'Invalid Email User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -77,7 +77,7 @@ describe.skip('Authentication Endpoints', () => {
         await axiosInstance.post('/auth/register', {
           email: 'shortpass@example.com',
           password: '123',
-          name: 'Short Pass User'
+          name: 'Short Pass User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -90,7 +90,7 @@ describe.skip('Authentication Endpoints', () => {
     it('should login successfully with valid credentials', async () => {
       const response = await axiosInstance.post('/auth/login', {
         email: testUser.email,
-        password: testUser.password
+        password: testUser.password,
       });
 
       expect(response.status).toBe(200);
@@ -109,7 +109,7 @@ describe.skip('Authentication Endpoints', () => {
       try {
         await axiosInstance.post('/auth/login', {
           email: testUser.email,
-          password: 'wrongpassword'
+          password: 'wrongpassword',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -122,7 +122,7 @@ describe.skip('Authentication Endpoints', () => {
       try {
         await axiosInstance.post('/auth/login', {
           email: 'nonexistent@example.com',
-          password: 'password123'
+          password: 'password123',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -135,7 +135,7 @@ describe.skip('Authentication Endpoints', () => {
   describe('POST /auth/refresh', () => {
     it('should refresh access token successfully', async () => {
       const response = await axiosInstance.post('/auth/refresh', {
-        refreshToken: refreshToken
+        refreshToken: refreshToken,
       });
 
       expect(response.status).toBe(200);
@@ -152,7 +152,7 @@ describe.skip('Authentication Endpoints', () => {
     it('should return error for invalid refresh token', async () => {
       try {
         await axiosInstance.post('/auth/refresh', {
-          refreshToken: 'invalid-refresh-token'
+          refreshToken: 'invalid-refresh-token',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -166,8 +166,8 @@ describe.skip('Authentication Endpoints', () => {
     it('should validate token successfully', async () => {
       const response = await axiosInstance.get('/auth/validate', {
         headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+          Authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.status).toBe(200);
@@ -182,8 +182,8 @@ describe.skip('Authentication Endpoints', () => {
       try {
         await axiosInstance.get('/auth/validate', {
           headers: {
-            'Authorization': 'Bearer invalid-token'
-          }
+            Authorization: 'Bearer invalid-token',
+          },
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -203,13 +203,17 @@ describe.skip('Authentication Endpoints', () => {
 
   describe('POST /auth/logout', () => {
     it('should logout successfully', async () => {
-      const response = await axiosInstance.post('/auth/logout', {
-        refreshToken: refreshToken
-      }, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      const response = await axiosInstance.post(
+        '/auth/logout',
+        {
+          refreshToken: refreshToken,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
 
       expect(response.status).toBe(200);
       expect(response.data.message).toBe('登出成功');
@@ -218,7 +222,7 @@ describe.skip('Authentication Endpoints', () => {
     it('should return error for logout without token', async () => {
       try {
         await axiosInstance.post('/auth/logout', {
-          refreshToken: refreshToken
+          refreshToken: refreshToken,
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {

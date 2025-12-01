@@ -6,18 +6,18 @@ import { TestAuthLibModule } from './support/test-auth-lib.module';
 async function bootstrap() {
   const logger = new Logger('TestBootstrap');
   logger.log('Starting Test Auth Service...');
-  
+
   const port = process.env.PORT || 3001; // Use different port for tests
-  
+
   try {
     const app = await NestFactory.create(TestAuthLibModule);
-    
+
     // Enable CORS
     app.enableCors({
       origin: true,
       credentials: true,
     });
-    
+
     // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
@@ -26,10 +26,10 @@ async function bootstrap() {
         transform: true,
       }),
     );
-    
+
     await app.listen(port);
     logger.log(`Test Auth Service started successfully on port ${port}`);
-    
+
     // Keep the process running
     process.on('SIGINT', async () => {
       logger.log('Shutting down test service...');

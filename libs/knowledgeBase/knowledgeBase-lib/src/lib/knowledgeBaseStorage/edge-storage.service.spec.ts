@@ -22,7 +22,7 @@ describe('EdgeStorageService', () => {
       const edgeData: Omit<EdgeData, 'id'> = {
         type: 'start',
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
 
       const result = await service.create(edgeData);
@@ -52,7 +52,7 @@ describe('EdgeStorageService', () => {
   describe('update', () => {
     it('should return null for non-existent edge', async () => {
       const result = await service.update('non-existent-id', {
-        type: 'middle'
+        type: 'middle',
       });
       expect(result).toBeNull();
     });
@@ -102,7 +102,7 @@ describe('EdgeStorageService', () => {
     it('should accept pagination options', async () => {
       const result = await service.findAll({
         limit: 10,
-        offset: 5
+        offset: 5,
       });
       expect(result.edges).toEqual([]);
       expect(result.total).toBe(0);

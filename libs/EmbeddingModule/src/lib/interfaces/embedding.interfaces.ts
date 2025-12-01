@@ -1,4 +1,10 @@
-import { EmbeddingProvider, OpenAIModel, AlibabaModel, OnnxModel } from 'embedding';
+import {
+  EmbeddingProvider,
+  OpenAIModel,
+  AlibabaModel,
+  OnnxModel,
+  EmbeddingModel,
+} from 'embedding';
 
 /**
  * Embedding request DTO
@@ -54,6 +60,7 @@ export interface ProviderInfo {
  */
 export interface EmbeddingModuleConfig {
   defaultProvider: EmbeddingProvider;
+  defaultModel: EmbeddingModel;
   defaultConcurrencyLimit: number;
   enableHealthCheck: boolean;
   healthCheckInterval: number;
@@ -64,6 +71,7 @@ export interface EmbeddingModuleConfig {
  */
 export const defaultEmbeddingModuleConfig: EmbeddingModuleConfig = {
   defaultProvider: EmbeddingProvider.ALIBABA,
+  defaultModel: AlibabaModel.TEXT_EMBEDDING_V4,
   defaultConcurrencyLimit: 5,
   enableHealthCheck: true,
   healthCheckInterval: 30000, // 30 seconds
@@ -86,10 +94,13 @@ export interface EmbeddingStats {
   successfulRequests: number;
   failedRequests: number;
   averageResponseTime: number;
-  providerStats: Record<EmbeddingProvider, {
-    requests: number;
-    successes: number;
-    failures: number;
-    averageResponseTime: number;
-  }>;
+  providerStats: Record<
+    EmbeddingProvider,
+    {
+      requests: number;
+      successes: number;
+      failures: number;
+      averageResponseTime: number;
+    }
+  >;
 }

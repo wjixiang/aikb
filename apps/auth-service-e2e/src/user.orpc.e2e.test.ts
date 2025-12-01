@@ -9,7 +9,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -24,7 +24,7 @@ describe('User Management ORPC Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup test data with regular user
     testUser = generateRandomUser();
     const userResponse = await orpc_client.auth.register(testUser);
@@ -36,7 +36,7 @@ describe('User Management ORPC Endpoints', () => {
     adminUser = generateRandomUser();
     const adminResponse = await orpc_client.auth.register(adminUser);
     adminToken = adminResponse.accessToken;
-    
+
     // Set auth token for ORPC client (using regular user token)
     setAuthToken(authToken);
   });
@@ -49,7 +49,7 @@ describe('User Management ORPC Endpoints', () => {
     it('should list users successfully', async () => {
       const response = await orpc_client.users.list({
         page: 1,
-        limit: 10
+        limit: 10,
       });
 
       expect(response).toHaveProperty('data');
@@ -65,23 +65,27 @@ describe('User Management ORPC Endpoints', () => {
       const response = await orpc_client.users.list({
         page: 1,
         limit: 10,
-        search: testUser.name
+        search: testUser.name,
       });
 
       expect(response.data).toBeInstanceOf(Array);
       expect(response.data.length).toBeGreaterThan(0);
-      expect(response.data.some(user => user.name && user.name.includes(testUser.name))).toBe(true);
+      expect(
+        response.data.some(
+          (user) => user.name && user.name.includes(testUser.name),
+        ),
+      ).toBe(true);
     });
 
     it('should paginate results correctly', async () => {
       const response1 = await orpc_client.users.list({
         page: 1,
-        limit: 1
+        limit: 1,
       });
 
       const response2 = await orpc_client.users.list({
         page: 2,
-        limit: 1
+        limit: 1,
       });
 
       expect(response1.data.length).toBe(1);
@@ -105,7 +109,9 @@ describe('User Management ORPC Endpoints', () => {
 
     it('should return error for non-existent user ID', async () => {
       try {
-        await orpc_client.users.find({ id: '00000000-0000-0000-0000-000000000000' });
+        await orpc_client.users.find({
+          id: '00000000-0000-0000-0000-000000000000',
+        });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         // ORPC transforms all errors to 500 status codes
@@ -133,12 +139,12 @@ describe('User Management ORPC Endpoints', () => {
     it('should update user successfully', async () => {
       const updateData = {
         name: 'Updated Name',
-        email: testUser.email // Keep same email to avoid conflicts
+        email: testUser.email, // Keep same email to avoid conflicts
       };
 
       const response = await orpc_client.users.update({
         id: userId,
-        data: updateData
+        data: updateData,
       });
 
       expect(response).toHaveProperty('id');
@@ -153,7 +159,7 @@ describe('User Management ORPC Endpoints', () => {
       try {
         await orpc_client.users.update({
           id: userId,
-          data: { name: '' } // Invalid empty name
+          data: { name: '' }, // Invalid empty name
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -165,7 +171,7 @@ describe('User Management ORPC Endpoints', () => {
       try {
         await orpc_client.users.update({
           id: '00000000-0000-0000-0000-000000000000',
-          data: { name: 'Updated Name' }
+          data: { name: 'Updated Name' },
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -179,13 +185,13 @@ describe('User Management ORPC Endpoints', () => {
   describe('users.updatePassword', () => {
     it('should update user password successfully', async () => {
       const newPassword = 'newPassword123';
-      
+
       const response = await orpc_client.users.updatePassword({
         id: userId,
         data: {
           currentPassword: testUser.password,
-          newPassword: newPassword
-        }
+          newPassword: newPassword,
+        },
       });
 
       expect(response).toHaveProperty('message');
@@ -194,17 +200,17 @@ describe('User Management ORPC Endpoints', () => {
       // Verify login with new password works
       const loginResponse = await orpc_client.auth.login({
         email: testUser.email,
-        password: newPassword
+        password: newPassword,
       });
       expect(loginResponse).toHaveProperty('accessToken');
 
       // Update test user password for other tests
       testUser.password = newPassword;
-      
+
       // Update auth token with new login
       const newLoginResponse = await orpc_client.auth.login({
         email: testUser.email,
-        password: newPassword
+        password: newPassword,
       });
       setAuthToken(newLoginResponse.accessToken);
     });
@@ -215,8 +221,8 @@ describe('User Management ORPC Endpoints', () => {
           id: userId,
           data: {
             currentPassword: 'wrongpassword',
-            newPassword: 'newPassword123'
-          }
+            newPassword: 'newPassword123',
+          },
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -232,8 +238,8 @@ describe('User Management ORPC Endpoints', () => {
           id: userId,
           data: {
             currentPassword: testUser.password,
-            newPassword: '123'
-          }
+            newPassword: '123',
+          },
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -277,7 +283,9 @@ describe('User Management ORPC Endpoints', () => {
 
     it('should return error for non-existent user ID', async () => {
       try {
-        await orpc_client.users.delete({ id: '00000000-0000-0000-0000-000000000000' });
+        await orpc_client.users.delete({
+          id: '00000000-0000-0000-0000-000000000000',
+        });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         // ORPC transforms all errors to 500 status codes
@@ -299,11 +307,17 @@ describe('User Management ORPC Endpoints', () => {
 
     it('should return error for non-existent user ID', async () => {
       try {
-        await orpc_client.users.getActivity({ id: '00000000-0000-0000-0000-000000000000' });
+        await orpc_client.users.getActivity({
+          id: '00000000-0000-0000-0000-000000000000',
+        });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         // ORPC transforms all errors - handle different error structures
-        expect(error.status || error.code === 'INTERNAL_SERVER_ERROR' || error.message).toBeTruthy();
+        expect(
+          error.status ||
+            error.code === 'INTERNAL_SERVER_ERROR' ||
+            error.message,
+        ).toBeTruthy();
         expect(error.message).toContain('Internal server error');
       }
     });

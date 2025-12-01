@@ -1,8 +1,8 @@
-import type { JsonifiedClient } from '@orpc/openapi-client'
-import type { ContractRouterClient } from '@orpc/contract'
-import { createORPCClient } from '@orpc/client'
-import { OpenAPILink } from '@orpc/openapi-client/fetch'
-import { authContract } from '../../../../libs/auth/auth-lib/src/lib/orpc/orpc.contract'
+import type { JsonifiedClient } from '@orpc/openapi-client';
+import type { ContractRouterClient } from '@orpc/contract';
+import { createORPCClient } from '@orpc/client';
+import { OpenAPILink } from '@orpc/openapi-client/fetch';
+import { authContract } from '../../../../libs/auth/auth-lib/src/lib/orpc/orpc.contract';
 
 // Configure ORPC client for e2e tests
 const host = process.env.HOST ?? 'localhost';
@@ -18,17 +18,19 @@ const link = new OpenAPILink(authContract, {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     // Add authorization header if we have a token
     if (currentAuthToken) {
       headers['Authorization'] = `Bearer ${currentAuthToken}`;
     }
-    
+
     return headers;
   },
 });
 
-export const orpc_client: JsonifiedClient<ContractRouterClient<typeof authContract>> = createORPCClient(link);
+export const orpc_client: JsonifiedClient<
+  ContractRouterClient<typeof authContract>
+> = createORPCClient(link);
 
 // Helper function to set auth token
 export const setAuthToken = (token: string) => {

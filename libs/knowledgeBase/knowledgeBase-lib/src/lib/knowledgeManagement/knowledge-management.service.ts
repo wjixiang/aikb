@@ -4,7 +4,7 @@ import {
   VertexStorageMemoryService,
   PropertyStorageMemoryService,
   EdgeStorageMemoryService,
-  GitVersionControlService
+  GitVersionControlService,
 } from '../../index';
 import { EventBusService } from '../events/event-bus.service';
 import {
@@ -20,11 +20,27 @@ import {
   EdgeCreatedEvent,
   EdgeUpdatedEvent,
   EdgeDeletedEvent,
-  EVENT_TYPES
+  EVENT_TYPES,
 } from '../events/types';
-import { IKnowledgeManagementService, OperationOptions, QueryOptions, BatchOperation, BatchOperationOptions, BatchResult, EntityWithRelations, RelationQueryOptions, EntityRelations, VertexConnections, ValidationResult, EntityQuery, VertexQuery, PropertyQuery, EdgeQuery } from './knowledge-management.interface';
+import {
+  IKnowledgeManagementService,
+  OperationOptions,
+  QueryOptions,
+  BatchOperation,
+  BatchOperationOptions,
+  BatchResult,
+  EntityWithRelations,
+  RelationQueryOptions,
+  EntityRelations,
+  VertexConnections,
+  ValidationResult,
+  EntityQuery,
+  VertexQuery,
+  PropertyQuery,
+  EdgeQuery,
+} from './knowledge-management.interface';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
-import { EmbeddingService, EmbeddingProvider } from 'EmbeddingModule';
+import { EmbeddingService } from 'EmbeddingModule';
 
 @Injectable()
 export class KnowledgeManagementService implements IKnowledgeManagementService {
@@ -41,37 +57,54 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   ) {}
 
   // 实体操作
-  async createEntity(data: Omit<EntityData, 'id'>, options?: OperationOptions): Promise<EntityData> {
-    this.logger.log(`Creating entity with nomenclature: ${data.nomanclature.map(n => n.name).join(', ')}`);
-    
+  async createEntity(
+    data: Omit<EntityData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<EntityData> {
+    this.logger.log(
+      `Creating entity with nomenclature: ${data.nomanclature.map((n) => n.name).join(', ')}`,
+    );
+
     // Generate embedding if not provided
     let entityData = { ...data };
     if (!entityData.abstract.embedding) {
       this.logger.log('Generating embedding for entity abstract...');
+
+      // Get temporary config using getDefaultConfig
+      const tempConfig = this.embeddingService.getDefaultConfig();
+      this.logger.debug(
+        'Using temporary config for embedding generation:',
+        tempConfig,
+      );
+
       const embeddingResult = await this.embeddingService.embed({
         text: entityData.abstract.description,
-        provider: EmbeddingProvider.ALIBABA, // Use default provider from EmbeddingModule
+        provider: tempConfig.defaultProvider, // Use provider from temporary config
       });
-      
+
       if (embeddingResult.success && embeddingResult.embedding) {
         entityData.abstract.embedding = {
           config: {
-            model: 'text-embedding-v3', // Use Alibaba model as default
+            model: tempConfig.defaultModel,
             dimension: embeddingResult.embedding.length,
-            batchSize: 20,
+            batchSize: tempConfig.defaultConcurrencyLimit,
             maxRetries: 3,
             timeout: 20000,
-            provider: EmbeddingProvider.ALIBABA
+            provider: tempConfig.defaultProvider,
           },
-          vector: embeddingResult.embedding
+          vector: embeddingResult.embedding,
         };
-        this.logger.log(`Embedding generated successfully with ${embeddingResult.embedding.length} dimensions`);
+        this.logger.log(
+          `Embedding generated successfully with ${embeddingResult.embedding.length} dimensions using provider: ${tempConfig.defaultProvider}`,
+        );
       } else {
-        this.logger.warn(`Failed to generate embedding for entity abstract: ${embeddingResult.error}`);
+        this.logger.warn(
+          `Failed to generate embedding for entity abstract: ${embeddingResult.error}`,
+        );
         // Continue without embedding - it's optional now
       }
     }
-    
+
     const entity = await this.entityStorage.create(entityData);
 
     // Publish event
@@ -82,7 +115,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       entityType: 'entity',
       entityId: entity.id,
       data: entity,
-      userId: options?.userId
+      userId: options?.userId,
     } as EntityCreatedEvent);
 
     // Create version control commit if needed
@@ -93,23 +126,29 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
         message: `Create entity: ${entity.nomanclature[0]?.name}`,
         author: { name: 'System', email: 'system@example.com' },
         changes: {
-          added: [{
-            path: `entities/${entity.id}`,
-            objectId: entity.id,
-            type: 'entity'
-          }],
+          added: [
+            {
+              path: `entities/${entity.id}`,
+              objectId: entity.id,
+              type: 'entity',
+            },
+          ],
           modified: [],
-          deleted: []
-        }
+          deleted: [],
+        },
       });
     }
 
     return entity;
   }
 
-  async updateEntity(id: string, updates: Partial<EntityData>, options?: OperationOptions): Promise<EntityData> {
+  async updateEntity(
+    id: string,
+    updates: Partial<EntityData>,
+    options?: OperationOptions,
+  ): Promise<EntityData> {
     this.logger.log(`Updating entity with id: ${id}`);
-    
+
     const result = await this.entityStorage.update(id, updates);
 
     if (result) {
@@ -126,7 +165,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           oldData,
           newData: result,
           changes: updates,
-          userId: options?.userId
+          userId: options?.userId,
         } as EntityUpdatedEvent);
       }
       return result;
@@ -137,7 +176,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
 
   async deleteEntity(id: string, options?: OperationOptions): Promise<boolean> {
     this.logger.log(`Deleting entity with id: ${id}`);
-    
+
     const success = await this.entityStorage.delete(id);
 
     if (success) {
@@ -152,7 +191,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           entityType: 'entity',
           entityId: id,
           data: entity,
-          userId: options?.userId
+          userId: options?.userId,
         } as EntityDeletedEvent);
       }
     }
@@ -164,16 +203,19 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     return await this.entityStorage.findById(id);
   }
 
-  async findEntities(query: EntityQuery, options?: QueryOptions): Promise<EntityData[]> {
+  async findEntities(
+    query: EntityQuery,
+    options?: QueryOptions,
+  ): Promise<EntityData[]> {
     // For now, implement basic search functionality
     if (query.textSearch) {
       return await this.entityStorage.search(query.textSearch, {
         limit: options?.limit,
         offset: options?.offset,
-        language: query.languages?.[0]
+        language: query.languages?.[0],
       });
     }
-    
+
     if (query.ids) {
       const results = await this.entityStorage.findByIds(query.ids);
       return results.filter((entity): entity is EntityData => entity !== null);
@@ -184,9 +226,12 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   }
 
   // 顶点操作
-  async createVertex(data: Omit<VertexData, 'id'>, options?: OperationOptions): Promise<VertexData> {
+  async createVertex(
+    data: Omit<VertexData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<VertexData> {
     this.logger.log(`Creating vertex with type: ${data.type}`);
-    
+
     const vertex = await this.vertexStorage.create(data);
 
     // Publish event
@@ -197,15 +242,19 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       entityType: 'vertex',
       vertexId: vertex.id,
       data: vertex,
-      userId: options?.userId
+      userId: options?.userId,
     } as VertexCreatedEvent);
 
     return vertex;
   }
 
-  async updateVertex(id: string, updates: Partial<VertexData>, options?: OperationOptions): Promise<VertexData> {
+  async updateVertex(
+    id: string,
+    updates: Partial<VertexData>,
+    options?: OperationOptions,
+  ): Promise<VertexData> {
     this.logger.log(`Updating vertex with id: ${id}`);
-    
+
     const result = await this.vertexStorage.update(id, updates);
 
     if (result) {
@@ -222,7 +271,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           oldData,
           newData: result,
           changes: updates,
-          userId: options?.userId
+          userId: options?.userId,
         } as VertexUpdatedEvent);
       }
       return result;
@@ -233,7 +282,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
 
   async deleteVertex(id: string, options?: OperationOptions): Promise<boolean> {
     this.logger.log(`Deleting vertex with id: ${id}`);
-    
+
     const success = await this.vertexStorage.delete(id);
 
     if (success) {
@@ -248,7 +297,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           entityType: 'vertex',
           vertexId: id,
           data: vertex,
-          userId: options?.userId
+          userId: options?.userId,
         } as VertexDeletedEvent);
       }
     }
@@ -260,14 +309,17 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     return await this.vertexStorage.findById(id);
   }
 
-  async findVertices(query: VertexQuery, options?: QueryOptions): Promise<VertexData[]> {
+  async findVertices(
+    query: VertexQuery,
+    options?: QueryOptions,
+  ): Promise<VertexData[]> {
     if (query.contentSearch) {
       return await this.vertexStorage.search(query.contentSearch, {
         limit: options?.limit,
-        offset: options?.offset
+        offset: options?.offset,
       });
     }
-    
+
     if (query.ids) {
       const results = await this.vertexStorage.findByIds(query.ids);
       return results.filter((vertex): vertex is VertexData => vertex !== null);
@@ -278,9 +330,14 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   }
 
   // 属性操作
-  async createProperty(data: Omit<PropertyData, 'id'>, options?: OperationOptions): Promise<PropertyData> {
-    this.logger.log(`Creating property with content length: ${data.content.length}`);
-    
+  async createProperty(
+    data: Omit<PropertyData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<PropertyData> {
+    this.logger.log(
+      `Creating property with content length: ${data.content.length}`,
+    );
+
     const property = await this.propertyStorage.create(data);
 
     // Publish event
@@ -291,15 +348,19 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       entityType: 'property',
       propertyId: property.id,
       data: property,
-      userId: options?.userId
+      userId: options?.userId,
     } as PropertyCreatedEvent);
 
     return property;
   }
 
-  async updateProperty(id: string, updates: Partial<PropertyData>, options?: OperationOptions): Promise<PropertyData> {
+  async updateProperty(
+    id: string,
+    updates: Partial<PropertyData>,
+    options?: OperationOptions,
+  ): Promise<PropertyData> {
     this.logger.log(`Updating property with id: ${id}`);
-    
+
     const result = await this.propertyStorage.update(id, updates);
 
     if (result) {
@@ -316,7 +377,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           oldData,
           newData: result,
           changes: updates,
-          userId: options?.userId
+          userId: options?.userId,
         } as PropertyUpdatedEvent);
       }
       return result;
@@ -325,9 +386,12 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     throw new Error(`Property with id ${id} not found`);
   }
 
-  async deleteProperty(id: string, options?: OperationOptions): Promise<boolean> {
+  async deleteProperty(
+    id: string,
+    options?: OperationOptions,
+  ): Promise<boolean> {
     this.logger.log(`Deleting property with id: ${id}`);
-    
+
     const success = await this.propertyStorage.delete(id);
 
     if (success) {
@@ -342,7 +406,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           entityType: 'property',
           propertyId: id,
           data: property,
-          userId: options?.userId
+          userId: options?.userId,
         } as PropertyDeletedEvent);
       }
     }
@@ -354,10 +418,15 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     return await this.propertyStorage.findById(id);
   }
 
-  async findProperties(query: PropertyQuery, options?: QueryOptions): Promise<PropertyData[]> {
+  async findProperties(
+    query: PropertyQuery,
+    options?: QueryOptions,
+  ): Promise<PropertyData[]> {
     if (query.ids) {
       const results = await this.propertyStorage.findByIds(query.ids);
-      return results.filter((property): property is PropertyData => property !== null);
+      return results.filter(
+        (property): property is PropertyData => property !== null,
+      );
     }
 
     // For now, return empty array as search is not implemented for properties
@@ -365,9 +434,14 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   }
 
   // 边操作
-  async createEdge(data: Omit<EdgeData, 'id'>, options?: OperationOptions): Promise<EdgeData> {
-    this.logger.log(`Creating edge with type: ${data.type} from ${data.in} to ${data.out}`);
-    
+  async createEdge(
+    data: Omit<EdgeData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<EdgeData> {
+    this.logger.log(
+      `Creating edge with type: ${data.type} from ${data.in} to ${data.out}`,
+    );
+
     const edge = await this.edgeStorage.create(data);
 
     // Publish event
@@ -378,15 +452,19 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       entityType: 'edge',
       edgeId: edge.id,
       data: edge,
-      userId: options?.userId
+      userId: options?.userId,
     } as EdgeCreatedEvent);
 
     return edge;
   }
 
-  async updateEdge(id: string, updates: Partial<EdgeData>, options?: OperationOptions): Promise<EdgeData> {
+  async updateEdge(
+    id: string,
+    updates: Partial<EdgeData>,
+    options?: OperationOptions,
+  ): Promise<EdgeData> {
     this.logger.log(`Updating edge with id: ${id}`);
-    
+
     const result = await this.edgeStorage.update(id, updates);
 
     if (result) {
@@ -403,7 +481,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           oldData,
           newData: result,
           changes: updates,
-          userId: options?.userId
+          userId: options?.userId,
         } as EdgeUpdatedEvent);
       }
       return result;
@@ -414,7 +492,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
 
   async deleteEdge(id: string, options?: OperationOptions): Promise<boolean> {
     this.logger.log(`Deleting edge with id: ${id}`);
-    
+
     const success = await this.edgeStorage.delete(id);
 
     if (success) {
@@ -429,7 +507,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           entityType: 'edge',
           edgeId: id,
           data: edge,
-          userId: options?.userId
+          userId: options?.userId,
         } as EdgeDeletedEvent);
       }
     }
@@ -441,7 +519,10 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     return await this.edgeStorage.findById(id);
   }
 
-  async findEdges(query: EdgeQuery, options?: QueryOptions): Promise<EdgeData[]> {
+  async findEdges(
+    query: EdgeQuery,
+    options?: QueryOptions,
+  ): Promise<EdgeData[]> {
     if (query.ids) {
       const results = await this.edgeStorage.findByIds(query.ids);
       return results.filter((edge): edge is EdgeData => edge !== null);
@@ -452,13 +533,18 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   }
 
   // 批量操作
-  async executeBatch(operations: BatchOperation[], options?: BatchOperationOptions): Promise<BatchResult> {
-    this.logger.log(`Executing batch operations: ${operations.length} operations`);
-    
+  async executeBatch(
+    operations: BatchOperation[],
+    options?: BatchOperationOptions,
+  ): Promise<BatchResult> {
+    this.logger.log(
+      `Executing batch operations: ${operations.length} operations`,
+    );
+
     const batchId = `batch-${Date.now()}`;
     const successful: Array<{ operation: BatchOperation; result: any }> = [];
     const failed: Array<{ operation: BatchOperation; error: Error }> = [];
-    
+
     const startTime = Date.now();
 
     for (const operation of operations) {
@@ -484,16 +570,32 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
           case 'update':
             switch (operation.entityType) {
               case 'entity':
-                result = await this.updateEntity(operation.id!, operation.updates!, options);
+                result = await this.updateEntity(
+                  operation.id!,
+                  operation.updates!,
+                  options,
+                );
                 break;
               case 'vertex':
-                result = await this.updateVertex(operation.id!, operation.updates!, options);
+                result = await this.updateVertex(
+                  operation.id!,
+                  operation.updates!,
+                  options,
+                );
                 break;
               case 'property':
-                result = await this.updateProperty(operation.id!, operation.updates!, options);
+                result = await this.updateProperty(
+                  operation.id!,
+                  operation.updates!,
+                  options,
+                );
                 break;
               case 'edge':
-                result = await this.updateEdge(operation.id!, operation.updates!, options);
+                result = await this.updateEdge(
+                  operation.id!,
+                  operation.updates!,
+                  options,
+                );
                 break;
             }
             break;
@@ -518,9 +620,11 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
         }
         successful.push({ operation, result });
       } catch (error) {
-        this.logger.error(`Batch operation failed: ${(error as Error).message}`);
+        this.logger.error(
+          `Batch operation failed: ${(error as Error).message}`,
+        );
         failed.push({ operation, error: error as Error });
-        
+
         if (options?.stopOnError) {
           break;
         }
@@ -537,7 +641,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       totalSuccessful: successful.length,
       totalFailed: failed.length,
       duration,
-      transactionId: options?.transactionId
+      transactionId: options?.transactionId,
     };
   }
 
@@ -547,26 +651,30 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     vertices: Omit<VertexData, 'id'>[],
     properties: Omit<PropertyData, 'id'>[],
     edges: Omit<EdgeData, 'id'>[],
-    options?: OperationOptions
+    options?: OperationOptions,
   ): Promise<EntityWithRelations> {
-    this.logger.log(`Creating entity with relations: ${entityData.nomanclature.map(n => n.name).join(', ')}`);
-    
+    this.logger.log(
+      `Creating entity with relations: ${entityData.nomanclature.map((n) => n.name).join(', ')}`,
+    );
+
     // Create entity first
     const entity = await this.createEntity(entityData, options);
-    
+
     // Create vertices
     const createdVertices = await Promise.all(
-      vertices.map(vertexData => this.createVertex(vertexData, options))
+      vertices.map((vertexData) => this.createVertex(vertexData, options)),
     );
-    
+
     // Create properties
     const createdProperties = await Promise.all(
-      properties.map(propertyData => this.createProperty(propertyData, options))
+      properties.map((propertyData) =>
+        this.createProperty(propertyData, options),
+      ),
     );
-    
+
     // Create edges
     const createdEdges = await Promise.all(
-      edges.map(edgeData => this.createEdge(edgeData, options))
+      edges.map((edgeData) => this.createEdge(edgeData, options)),
     );
 
     return {
@@ -575,31 +683,46 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       properties: createdProperties,
       edges: createdEdges,
       relations: {
-        entityToVertices: createdEdges.filter(edge => 
-          createdVertices.some(v => v.id === edge.in || v.id === edge.out)
+        entityToVertices: createdEdges.filter((edge) =>
+          createdVertices.some((v) => v.id === edge.in || v.id === edge.out),
         ),
         vertexToVertices: [],
-        vertexToProperties: []
-      }
+        vertexToProperties: [],
+      },
     };
   }
 
   // 关系查询
-  async getEntityRelations(entityId: string, options?: RelationQueryOptions): Promise<EntityRelations> {
+  async getEntityRelations(
+    entityId: string,
+    options?: RelationQueryOptions,
+  ): Promise<EntityRelations> {
     // Get all edges and filter by entity
     const allEdges = await this.edgeStorage.findAll();
-    const entityEdges = allEdges.edges.filter((edge: EdgeData) => 
-      edge.in === entityId || edge.out === entityId
+    const entityEdges = allEdges.edges.filter(
+      (edge: EdgeData) => edge.in === entityId || edge.out === entityId,
     );
 
-    const vertices: Array<{ vertex: VertexData; edge: EdgeData; distance: number }> = [];
-    const properties: Array<{ property: PropertyData; edge: EdgeData; distance: number }> = [];
-    const connectedEntities: Array<{ entity: EntityData; path: EdgeData[]; distance: number }> = [];
+    const vertices: Array<{
+      vertex: VertexData;
+      edge: EdgeData;
+      distance: number;
+    }> = [];
+    const properties: Array<{
+      property: PropertyData;
+      edge: EdgeData;
+      distance: number;
+    }> = [];
+    const connectedEntities: Array<{
+      entity: EntityData;
+      path: EdgeData[];
+      distance: number;
+    }> = [];
 
     // For simplicity, implement basic relation logic
     for (const edge of entityEdges) {
       const distance = 1;
-      
+
       // Find connected vertices
       if (options?.includeVertices !== false) {
         const vertexId = edge.in === entityId ? edge.out : edge.in;
@@ -614,17 +737,28 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       entityId,
       vertices,
       properties,
-      connectedEntities
+      connectedEntities,
     };
   }
 
-  async getVertexConnections(vertexId: string, options?: RelationQueryOptions): Promise<VertexConnections> {
+  async getVertexConnections(
+    vertexId: string,
+    options?: RelationQueryOptions,
+  ): Promise<VertexConnections> {
     const allEdges = await this.edgeStorage.findAll();
-    
-    const incomingEdges = allEdges.edges.filter((edge: EdgeData) => edge.out === vertexId);
-    const outgoingEdges = allEdges.edges.filter((edge: EdgeData) => edge.in === vertexId);
 
-    const connectedVertices: Array<{ vertex: VertexData; edge: EdgeData; direction: 'incoming' | 'outgoing' }> = [];
+    const incomingEdges = allEdges.edges.filter(
+      (edge: EdgeData) => edge.out === vertexId,
+    );
+    const outgoingEdges = allEdges.edges.filter(
+      (edge: EdgeData) => edge.in === vertexId,
+    );
+
+    const connectedVertices: Array<{
+      vertex: VertexData;
+      edge: EdgeData;
+      direction: 'incoming' | 'outgoing';
+    }> = [];
 
     // Find connected vertices
     for (const edge of incomingEdges) {
@@ -641,14 +775,18 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       }
     }
 
-    const relatedEntities: Array<{ entity: EntityData; path: Array<VertexData | EdgeData>; distance: number }> = [];
+    const relatedEntities: Array<{
+      entity: EntityData;
+      path: Array<VertexData | EdgeData>;
+      distance: number;
+    }> = [];
 
     return {
       vertexId,
       incomingEdges,
       outgoingEdges,
       connectedVertices,
-      relatedEntities
+      relatedEntities,
     };
   }
 
@@ -656,28 +794,35 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
   async validateEntity(data: EntityData): Promise<ValidationResult> {
     const errors: any[] = [];
     const warnings: any[] = [];
-    
-    if (!data.nomanclature || !Array.isArray(data.nomanclature) || data.nomanclature.length === 0) {
+
+    if (
+      !data.nomanclature ||
+      !Array.isArray(data.nomanclature) ||
+      data.nomanclature.length === 0
+    ) {
       errors.push({
         field: 'nomanclature',
         code: 'REQUIRED',
-        message: 'Entity must have at least one nomenclature entry'
+        message: 'Entity must have at least one nomenclature entry',
       });
     }
-    
+
     if (!data.abstract || !data.abstract.description) {
       errors.push({
         field: 'abstract.description',
         code: 'REQUIRED',
-        message: 'Entity must have abstract description'
+        message: 'Entity must have abstract description',
       });
     }
-    
-    if (!data.abstract.embedding || !Array.isArray(data.abstract.embedding.vector)) {
+
+    if (
+      !data.abstract.embedding ||
+      !Array.isArray(data.abstract.embedding.vector)
+    ) {
       errors.push({
         field: 'abstract.embedding.vector',
         code: 'REQUIRED',
-        message: 'Entity must have embedding vector'
+        message: 'Entity must have embedding vector',
       });
     }
 
@@ -685,27 +830,31 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       isValid: errors.length === 0,
       errors,
       warnings,
-      severity: errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info'
+      severity:
+        errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info',
     };
   }
 
   async validateVertex(data: VertexData): Promise<ValidationResult> {
     const errors: any[] = [];
     const warnings: any[] = [];
-    
+
     if (!data.content) {
       errors.push({
         field: 'content',
         code: 'REQUIRED',
-        message: 'Vertex must have content'
+        message: 'Vertex must have content',
       });
     }
-    
-    if (!data.type || !['concept', 'attribute', 'relationship'].includes(data.type)) {
+
+    if (
+      !data.type ||
+      !['concept', 'attribute', 'relationship'].includes(data.type)
+    ) {
       errors.push({
         field: 'type',
         code: 'INVALID',
-        message: 'Vertex must have valid type'
+        message: 'Vertex must have valid type',
       });
     }
 
@@ -713,19 +862,20 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       isValid: errors.length === 0,
       errors,
       warnings,
-      severity: errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info'
+      severity:
+        errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info',
     };
   }
 
   async validateProperty(data: PropertyData): Promise<ValidationResult> {
     const errors: any[] = [];
     const warnings: any[] = [];
-    
+
     if (!data.content) {
       errors.push({
         field: 'content',
         code: 'REQUIRED',
-        message: 'Property must have content'
+        message: 'Property must have content',
       });
     }
 
@@ -733,27 +883,28 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       isValid: errors.length === 0,
       errors,
       warnings,
-      severity: errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info'
+      severity:
+        errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info',
     };
   }
 
   async validateEdge(data: EdgeData): Promise<ValidationResult> {
     const errors: any[] = [];
     const warnings: any[] = [];
-    
+
     if (!data.in || !data.out) {
       errors.push({
         field: 'in,out',
         code: 'REQUIRED',
-        message: 'Edge must have both in and out references'
+        message: 'Edge must have both in and out references',
       });
     }
-    
+
     if (!['start', 'middle', 'end'].includes(data.type)) {
       errors.push({
         field: 'type',
         code: 'INVALID',
-        message: 'Edge must have valid type'
+        message: 'Edge must have valid type',
       });
     }
 
@@ -761,7 +912,8 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       isValid: errors.length === 0,
       errors,
       warnings,
-      severity: errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info'
+      severity:
+        errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'info',
     };
   }
 }

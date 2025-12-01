@@ -1,36 +1,36 @@
-import { prisma } from 'quiz-db'
-import { QuizType } from 'quiz-shared'
-import { MongoClient, Db, Collection, WithId } from 'mongodb'
-import { randomUUID } from 'crypto'
-import * as dotenv from 'dotenv'
+import { prisma } from 'quiz-db';
+import { QuizType } from 'quiz-shared';
+import { MongoClient, Db, Collection, WithId } from 'mongodb';
+import { randomUUID } from 'crypto';
+import * as dotenv from 'dotenv';
 
 // Import quiz types from QuizType namespace
-type quiz = QuizType.quiz
-type A1 = QuizType.A1
-type A2 = QuizType.A2
-type A3 = QuizType.A3
-type B = QuizType.B
-type X = QuizType.X
-type oid = QuizType.oid
+type quiz = QuizType.quiz;
+type A1 = QuizType.A1;
+type A2 = QuizType.A2;
+type A3 = QuizType.A3;
+type B = QuizType.B;
+type X = QuizType.X;
+type oid = QuizType.oid;
 
-dotenv.config()
+dotenv.config();
 
 // MongoDB connection configuration
-const MONGODB_URI = process.env['MONGODB_URI'] || 'mongodb://localhost:27017/'
-const MONGODB_DB_NAME = process.env['DB_NAME'] || 'QuizBank'
-const MONGODB_COLLECTION_NAME = 'quiz'
+const MONGODB_URI = process.env['MONGODB_URI'] || 'mongodb://localhost:27017/';
+const MONGODB_DB_NAME = process.env['DB_NAME'] || 'QuizBank';
+const MONGODB_COLLECTION_NAME = 'quiz';
 
 // Batch processing configuration
-const BATCH_SIZE = 100
+const BATCH_SIZE = 100;
 
 /**
  * Connect to MongoDB
  */
 async function connectToMongoDB(): Promise<{ client: MongoClient; db: Db }> {
-  const client = new MongoClient(MONGODB_URI)
-  await client.connect()
-  const db = client.db(MONGODB_DB_NAME)
-  return { client, db }
+  const client = new MongoClient(MONGODB_URI);
+  await client.connect();
+  const db = client.db(MONGODB_DB_NAME);
+  return { client, db };
 }
 
 /**
@@ -47,8 +47,8 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
     analysis: mongoQuiz.analysis as any,
     source: mongoQuiz.source || null, // Ensure source is null if undefined
     created_at: new Date(),
-    updated_at: new Date()
-  }
+    updated_at: new Date(),
+  };
 
   switch (mongoQuiz.type) {
     case 'A1':
@@ -58,30 +58,30 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
         question: mongoQuiz.question || null,
         options: mongoQuiz.options as any,
         answer: mongoQuiz.answer as any,
-        specific_data: null
-      }
+        specific_data: null,
+      };
 
     case 'A3':
       return {
         ...baseData,
         main_question: mongoQuiz.mainQuestion || null,
-        options: mongoQuiz.subQuizs?.flatMap(sub => sub.options) as any,
-        answer: mongoQuiz.subQuizs?.map(sub => sub.answer) as any,
+        options: mongoQuiz.subQuizs?.flatMap((sub) => sub.options) as any,
+        answer: mongoQuiz.subQuizs?.map((sub) => sub.answer) as any,
         specific_data: {
-          subQuizs: mongoQuiz.subQuizs || []
-        } as any
-      }
+          subQuizs: mongoQuiz.subQuizs || [],
+        } as any,
+      };
 
     case 'B':
       return {
         ...baseData,
         question: null,
         options: mongoQuiz.options as any,
-        answer: mongoQuiz.questions?.map(q => q.answer) as any,
+        answer: mongoQuiz.questions?.map((q) => q.answer) as any,
         specific_data: {
-          questions: mongoQuiz.questions || []
-        } as any
-      }
+          questions: mongoQuiz.questions || [],
+        } as any,
+      };
 
     case 'X':
       return {
@@ -89,11 +89,11 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
         question: mongoQuiz.question || null,
         options: mongoQuiz.options as any,
         answer: mongoQuiz.answer as any,
-        specific_data: null
-      }
+        specific_data: null,
+      };
 
     default:
-      throw new Error(`Unknown quiz type: ${(mongoQuiz as any).type}`)
+      throw new Error(`Unknown quiz type: ${(mongoQuiz as any).type}`);
   }
 }
 
@@ -102,9 +102,9 @@ function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
  */
 async function quizExists(mongoQuiz: WithId<quiz>): Promise<boolean> {
   const existingQuiz = await prisma.quizzes.findFirst({
-    where: { mongo_id_legacy: mongoQuiz._id.toString() }
-  })
-  return existingQuiz !== null
+    where: { mongo_id_legacy: mongoQuiz._id.toString() },
+  });
+  return existingQuiz !== null;
 }
 
 /**
@@ -112,33 +112,42 @@ async function quizExists(mongoQuiz: WithId<quiz>): Promise<boolean> {
  */
 async function migrateSingleQuiz(mongoQuiz: WithId<quiz>): Promise<boolean> {
   try {
-    const mongoId = mongoQuiz._id.toString()
-    
+    const mongoId = mongoQuiz._id.toString();
+
     // Check if quiz already exists
     if (await quizExists(mongoQuiz)) {
-      console.log(`Quiz ${mongoId} (${mongoQuiz.type}) already exists, skipping...`)
-      return false
+      console.log(
+        `Quiz ${mongoId} (${mongoQuiz.type}) already exists, skipping...`,
+      );
+      return false;
     }
 
     // Transform data
-    const prismaData = transformQuizToPrismaFormat(mongoQuiz)
+    const prismaData = transformQuizToPrismaFormat(mongoQuiz);
 
     // Insert into PostgreSQL
     await prisma.quizzes.create({
-      data: prismaData as any
-    })
+      data: prismaData as any,
+    });
 
-    console.log(`Successfully migrated quiz ${mongoId} -> ${prismaData.id} (${prismaData.type})`)
-    return true
+    console.log(
+      `Successfully migrated quiz ${mongoId} -> ${prismaData.id} (${prismaData.type})`,
+    );
+    return true;
   } catch (error) {
-    const mongoId = mongoQuiz._id.toString()
+    const mongoId = mongoQuiz._id.toString();
     if (error instanceof Error) {
-      console.error(`Error migrating quiz ${mongoId} (${mongoQuiz.type}): ${error.message}`)
-      console.error(`Stack trace:`, error.stack)
+      console.error(
+        `Error migrating quiz ${mongoId} (${mongoQuiz.type}): ${error.message}`,
+      );
+      console.error(`Stack trace:`, error.stack);
     } else {
-      console.error(`Unknown error migrating quiz ${mongoId} (${mongoQuiz.type}):`, error)
+      console.error(
+        `Unknown error migrating quiz ${mongoId} (${mongoQuiz.type}):`,
+        error,
+      );
     }
-    return false
+    return false;
   }
 }
 
@@ -146,66 +155,67 @@ async function migrateSingleQuiz(mongoQuiz: WithId<quiz>): Promise<boolean> {
  * Main migration function
  */
 async function migrateQuizzes(): Promise<void> {
-  let mongoClient: MongoClient | null = null
-  let totalProcessed = 0
-  let totalMigrated = 0
-  let totalErrors = 0
+  let mongoClient: MongoClient | null = null;
+  let totalProcessed = 0;
+  let totalMigrated = 0;
+  let totalErrors = 0;
 
   try {
-    console.log('Starting quiz migration from MongoDB to PostgreSQL...')
-    
+    console.log('Starting quiz migration from MongoDB to PostgreSQL...');
+
     // Connect to MongoDB
-    const { client, db } = await connectToMongoDB()
-    mongoClient = client
-    
-    const collection: Collection<quiz> = db.collection(MONGODB_COLLECTION_NAME)
-    
+    const { client, db } = await connectToMongoDB();
+    mongoClient = client;
+
+    const collection: Collection<quiz> = db.collection(MONGODB_COLLECTION_NAME);
+
     // Get total count for progress tracking
-    const totalCount = await collection.countDocuments()
-    console.log(`Found ${totalCount} quizzes to migrate`)
+    const totalCount = await collection.countDocuments();
+    console.log(`Found ${totalCount} quizzes to migrate`);
 
     // Process in batches
-    let skip = 0
+    let skip = 0;
     while (skip < totalCount) {
       const batch = await collection
         .find({})
         .skip(skip)
         .limit(BATCH_SIZE)
-        .toArray()
+        .toArray();
 
-      console.log(`Processing batch ${Math.floor(skip / BATCH_SIZE) + 1}/${Math.ceil(totalCount / BATCH_SIZE)} (${batch.length} quizzes)`)
+      console.log(
+        `Processing batch ${Math.floor(skip / BATCH_SIZE) + 1}/${Math.ceil(totalCount / BATCH_SIZE)} (${batch.length} quizzes)`,
+      );
 
       // Process each quiz in the batch
       for (const mongoQuiz of batch) {
-        totalProcessed++
-        const migrated = await migrateSingleQuiz(mongoQuiz)
+        totalProcessed++;
+        const migrated = await migrateSingleQuiz(mongoQuiz);
         if (migrated) {
-          totalMigrated++
+          totalMigrated++;
         } else {
-          totalErrors++
+          totalErrors++;
         }
       }
 
-      skip += BATCH_SIZE
+      skip += BATCH_SIZE;
     }
 
-    console.log('\n=== Migration Summary ===')
-    console.log(`Total processed: ${totalProcessed}`)
-    console.log(`Successfully migrated: ${totalMigrated}`)
-    console.log(`Errors/skipped: ${totalErrors}`)
-    console.log('Migration completed!')
-
+    console.log('\n=== Migration Summary ===');
+    console.log(`Total processed: ${totalProcessed}`);
+    console.log(`Successfully migrated: ${totalMigrated}`);
+    console.log(`Errors/skipped: ${totalErrors}`);
+    console.log('Migration completed!');
   } catch (error) {
-    console.error('Migration failed:', error)
-    throw error
+    console.error('Migration failed:', error);
+    throw error;
   } finally {
     // Close MongoDB connection
     if (mongoClient) {
-      await mongoClient.close()
+      await mongoClient.close();
     }
-    
+
     // Disconnect Prisma
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
@@ -215,13 +225,13 @@ async function migrateQuizzes(): Promise<void> {
 if (require.main === module) {
   migrateQuizzes()
     .then(() => {
-      console.log('Migration completed successfully')
-      process.exit(0)
+      console.log('Migration completed successfully');
+      process.exit(0);
     })
     .catch((error) => {
-      console.error('Migration failed:', error)
-      process.exit(1)
-    })
+      console.error('Migration failed:', error);
+      process.exit(1);
+    });
 }
 
-export { migrateQuizzes, transformQuizToPrismaFormat, migrateSingleQuiz }
+export { migrateQuizzes, transformQuizToPrismaFormat, migrateSingleQuiz };

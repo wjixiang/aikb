@@ -10,7 +10,7 @@ import {
   VertexCreatedEvent,
   PropertyCreatedEvent,
   EdgeCreatedEvent,
-  EVENT_TYPES
+  EVENT_TYPES,
 } from '../events/types';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
 // Mock types to avoid importing from embedding module (which pulls in Elasticsearch dependency)
@@ -47,11 +47,21 @@ describe('Knowledge System Integration', () => {
     }).compile();
 
     eventBus = module.get<EventBusService>(EventBusService);
-    versionControl = module.get<GitVersionControlService>(GitVersionControlService);
-    entityStorage = module.get<EntityStorageMemoryService>(EntityStorageMemoryService);
-    vertexStorage = module.get<VertexStorageMemoryService>(VertexStorageMemoryService);
-    propertyStorage = module.get<PropertyStorageMemoryService>(PropertyStorageMemoryService);
-    edgeStorage = module.get<EdgeStorageMemoryService>(EdgeStorageMemoryService);
+    versionControl = module.get<GitVersionControlService>(
+      GitVersionControlService,
+    );
+    entityStorage = module.get<EntityStorageMemoryService>(
+      EntityStorageMemoryService,
+    );
+    vertexStorage = module.get<VertexStorageMemoryService>(
+      VertexStorageMemoryService,
+    );
+    propertyStorage = module.get<PropertyStorageMemoryService>(
+      PropertyStorageMemoryService,
+    );
+    edgeStorage = module.get<EdgeStorageMemoryService>(
+      EdgeStorageMemoryService,
+    );
 
     // Initialize version control repository
     await versionControl.initRepository('test-repo');
@@ -65,9 +75,7 @@ describe('Knowledge System Integration', () => {
     it('should create and retrieve knowledge graph components', async () => {
       // Create entity
       const entityData: Omit<EntityData, 'id'> = {
-        nomanclature: [
-          { name: 'Test Entity', acronym: 'TE', language: 'en' }
-        ],
+        nomanclature: [{ name: 'Test Entity', acronym: 'TE', language: 'en' }],
         abstract: {
           description: 'Test entity description',
           embedding: {
@@ -77,11 +85,11 @@ describe('Knowledge System Integration', () => {
               batchSize: 20,
               maxRetries: 3,
               timeout: 20000,
-              provider: EmbeddingProvider.OPENAI
+              provider: EmbeddingProvider.OPENAI,
             },
-            vector: new Array(128).fill(0.1)
-          }
-        }
+            vector: new Array(128).fill(0.1),
+          },
+        },
       };
 
       const entity = await entityStorage.create(entityData);
@@ -91,7 +99,7 @@ describe('Knowledge System Integration', () => {
       const vertexData: Omit<VertexData, 'id'> = {
         content: 'Test vertex content',
         type: 'concept',
-        metadata: { label: 'Test Vertex' }
+        metadata: { label: 'Test Vertex' },
       };
 
       const vertex = await vertexStorage.create(vertexData);
@@ -99,7 +107,7 @@ describe('Knowledge System Integration', () => {
 
       // Create property
       const propertyData: Omit<PropertyData, 'id'> = {
-        content: 'Test property content'
+        content: 'Test property content',
       };
 
       const property = await propertyStorage.create(propertyData);
@@ -109,13 +117,13 @@ describe('Knowledge System Integration', () => {
       const edge1Data: Omit<EdgeData, 'id'> = {
         type: 'start',
         in: entity.id,
-        out: vertex.id
+        out: vertex.id,
       };
 
       const edge2Data: Omit<EdgeData, 'id'> = {
         type: 'end',
         in: vertex.id,
-        out: property.id
+        out: property.id,
       };
 
       const edge1 = await edgeStorage.create(edge1Data);
@@ -152,30 +160,32 @@ describe('Knowledge System Integration', () => {
       const entities = await Promise.all(
         Array.from({ length: entityCount }, (_, i) =>
           entityStorage.create({
-            nomanclature: [{ name: `Entity ${i}`, acronym: `E${i}`, language: 'en' }],
+            nomanclature: [
+              { name: `Entity ${i}`, acronym: `E${i}`, language: 'en' },
+            ],
             abstract: {
               description: `Entity ${i} description`,
-              embedding: { 
+              embedding: {
                 config: {
                   model: OpenAIModel.TEXT_EMBEDDING_ADA_002,
                   dimension: 128,
                   batchSize: 20,
                   maxRetries: 3,
                   timeout: 20000,
-                  provider: EmbeddingProvider.OPENAI
+                  provider: EmbeddingProvider.OPENAI,
                 },
-                vector: new Array(128).fill(i * 0.1) 
-              }
-            }
-          })
-        )
+                vector: new Array(128).fill(i * 0.1),
+              },
+            },
+          }),
+        ),
       );
 
       const creationTime = Date.now() - startTime;
 
       // Verify all entities were created
       expect(entities).toHaveLength(entityCount);
-      entities.forEach(entity => {
+      entities.forEach((entity) => {
         expect(entity.id).toBeDefined();
       });
 
@@ -185,13 +195,13 @@ describe('Knowledge System Integration', () => {
       // Test concurrent retrieval
       const retrievalStartTime = Date.now();
       const retrievedEntities = await Promise.all(
-        entities.map(entity => entityStorage.findById(entity.id))
+        entities.map((entity) => entityStorage.findById(entity.id)),
       );
 
       const retrievalTime = Date.now() - retrievalStartTime;
 
       // Verify all entities were retrieved
-      expect(retrievedEntities.every(e => e !== null)).toBe(true);
+      expect(retrievedEntities.every((e) => e !== null)).toBe(true);
 
       // Retrieval should be fast
       expect(retrievalTime).toBeLessThan(500);
@@ -207,12 +217,14 @@ describe('Knowledge System Integration', () => {
         'entity.created',
         async (event) => {
           events.push({ type: 'entity', data: event });
-        }
+        },
       );
 
       // Create entity and publish event
       const entity = await entityStorage.create({
-        nomanclature: [{ name: 'Event Test Entity', acronym: 'ETE', language: 'en' }],
+        nomanclature: [
+          { name: 'Event Test Entity', acronym: 'ETE', language: 'en' },
+        ],
         abstract: {
           description: 'Event test entity',
           embedding: {
@@ -222,11 +234,11 @@ describe('Knowledge System Integration', () => {
               batchSize: 20,
               maxRetries: 3,
               timeout: 20000,
-              provider: EmbeddingProvider.OPENAI
+              provider: EmbeddingProvider.OPENAI,
             },
-            vector: new Array(128).fill(0.3)
-          }
-        }
+            vector: new Array(128).fill(0.3),
+          },
+        },
       });
 
       const event: EntityCreatedEvent = {
@@ -235,13 +247,13 @@ describe('Knowledge System Integration', () => {
         timestamp: new Date(),
         entityType: 'entity',
         entityId: entity.id,
-        data: entity
+        data: entity,
       };
 
       await eventBus.publish(event);
 
       // Wait for event processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Verify event was processed
       expect(events.length).toBe(1);
@@ -261,19 +273,21 @@ describe('Knowledge System Integration', () => {
         'entity.created',
         async (event) => {
           events1.push(event);
-        }
+        },
       );
 
       const sub2Id = await eventBus.subscribe<EntityCreatedEvent>(
         'entity.created',
         async (event) => {
           events2.push(event);
-        }
+        },
       );
 
       // Create and publish event
       const entity = await entityStorage.create({
-        nomanclature: [{ name: 'Multi Sub Entity', acronym: 'MSE', language: 'en' }],
+        nomanclature: [
+          { name: 'Multi Sub Entity', acronym: 'MSE', language: 'en' },
+        ],
         abstract: {
           description: 'Multi subscriber test entity',
           embedding: {
@@ -283,11 +297,11 @@ describe('Knowledge System Integration', () => {
               batchSize: 20,
               maxRetries: 3,
               timeout: 20000,
-              provider: EmbeddingProvider.OPENAI
+              provider: EmbeddingProvider.OPENAI,
             },
-            vector: new Array(128).fill(0.4)
-          }
-        }
+            vector: new Array(128).fill(0.4),
+          },
+        },
       });
 
       const event: EntityCreatedEvent = {
@@ -296,13 +310,13 @@ describe('Knowledge System Integration', () => {
         timestamp: new Date(),
         entityType: 'entity',
         entityId: entity.id,
-        data: entity
+        data: entity,
       };
 
       await eventBus.publish(event);
 
       // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Both subscribers should receive the event
       expect(events1.length).toBe(1);
@@ -328,7 +342,7 @@ describe('Knowledge System Integration', () => {
       await versionControl.createBranch({
         repositoryId: 'test-repo',
         branchName: 'feature-branch',
-        author: { name: 'Test User', email: 'test@example.com' }
+        author: { name: 'Test User', email: 'test@example.com' },
       });
 
       // Test that branch creation doesn't throw errors
@@ -347,7 +361,8 @@ describe('Knowledge System Integration', () => {
       expect(nonExistentVertex).toBeNull();
 
       // Try to find non-existent property
-      const nonExistentProperty = await propertyStorage.findById('non-existent-id');
+      const nonExistentProperty =
+        await propertyStorage.findById('non-existent-id');
       expect(nonExistentProperty).toBeNull();
 
       // Try to find non-existent edge
@@ -370,7 +385,7 @@ describe('Knowledge System Integration', () => {
           } catch (error) {
             errorCount++;
           }
-        }
+        },
       );
 
       // Create entity that will trigger error
@@ -385,11 +400,11 @@ describe('Knowledge System Integration', () => {
               batchSize: 20,
               maxRetries: 3,
               timeout: 20000,
-              provider: EmbeddingProvider.OPENAI
+              provider: EmbeddingProvider.OPENAI,
             },
-            vector: new Array(128).fill(0.5)
-          }
-        }
+            vector: new Array(128).fill(0.5),
+          },
+        },
       });
 
       const event: EntityCreatedEvent = {
@@ -398,13 +413,13 @@ describe('Knowledge System Integration', () => {
         timestamp: new Date(),
         entityType: 'entity',
         entityId: errorEntity.id,
-        data: errorEntity
+        data: errorEntity,
       };
 
       await eventBus.publish(event);
 
       // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Error should be handled
       expect(errorCount).toBe(1);

@@ -128,8 +128,8 @@ describe('EmbeddingService', () => {
       const providerInfo = service.getProviderInfo();
       expect(Array.isArray(providerInfo)).toBe(true);
       expect(providerInfo.length).toBe(Object.values(EmbeddingProvider).length);
-      
-      providerInfo.forEach(info => {
+
+      providerInfo.forEach((info) => {
         expect(info).toHaveProperty('provider');
         expect(info).toHaveProperty('available');
         expect(info).toHaveProperty('initialized');
@@ -143,7 +143,7 @@ describe('EmbeddingService', () => {
   describe('health check', () => {
     it('should perform health check', async () => {
       const health = await service.healthCheck();
-      
+
       expect(health).toBeDefined();
       expect(health).toHaveProperty('status');
       expect(health).toHaveProperty('providers');
@@ -157,14 +157,14 @@ describe('EmbeddingService', () => {
   describe('statistics', () => {
     it('should get statistics', () => {
       const stats = service.getStats();
-      
+
       expect(stats).toBeDefined();
       expect(stats).toHaveProperty('totalRequests');
       expect(stats).toHaveProperty('successfulRequests');
       expect(stats).toHaveProperty('failedRequests');
       expect(stats).toHaveProperty('averageResponseTime');
       expect(stats).toHaveProperty('providerStats');
-      
+
       expect(typeof stats.totalRequests).toBe('number');
       expect(typeof stats.successfulRequests).toBe('number');
       expect(typeof stats.failedRequests).toBe('number');
@@ -175,13 +175,13 @@ describe('EmbeddingService', () => {
     it('should reset statistics', () => {
       service.resetStats();
       const stats = service.getStats();
-      
+
       expect(stats.totalRequests).toBe(0);
       expect(stats.successfulRequests).toBe(0);
       expect(stats.failedRequests).toBe(0);
       expect(stats.averageResponseTime).toBe(0);
-      
-      Object.values(stats.providerStats).forEach(providerStat => {
+
+      Object.values(stats.providerStats).forEach((providerStat) => {
         expect(providerStat.requests).toBe(0);
         expect(providerStat.successes).toBe(0);
         expect(providerStat.failures).toBe(0);
@@ -193,9 +193,9 @@ describe('EmbeddingService', () => {
   describe('module initialization', () => {
     it('should initialize with default config when no config provided', async () => {
       mockConfigService.get.mockReturnValue(undefined);
-      
+
       await service.onModuleInit();
-      
+
       expect(service.getProvider()).toBeDefined();
     });
 
@@ -206,17 +206,21 @@ describe('EmbeddingService', () => {
         enableHealthCheck: false,
         healthCheckInterval: 60000,
       };
-      
+
       mockConfigService.get.mockReturnValue(customConfig);
-      
+
       // Reset the service to test initialization
       await service.onModuleDestroy();
       await service.onModuleInit();
-      
+
       // Note: The test might fail if OPENAI provider is not available
       // In that case, it will fall back to the default available provider
       const currentProvider = service.getProvider();
-      expect([EmbeddingProvider.OPENAI, EmbeddingProvider.ALIBABA, EmbeddingProvider.ONNX]).toContain(currentProvider);
+      expect([
+        EmbeddingProvider.OPENAI,
+        EmbeddingProvider.ALIBABA,
+        EmbeddingProvider.ONNX,
+      ]).toContain(currentProvider);
     });
   });
 });

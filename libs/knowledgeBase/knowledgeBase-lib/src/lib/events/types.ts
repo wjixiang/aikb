@@ -159,7 +159,7 @@ export interface TransactionRolledBackEvent extends TransactionEvent {
 }
 
 // 事件联合类型
-export type AnyKnowledgeEvent = 
+export type AnyKnowledgeEvent =
   | EntityCreatedEvent
   | EntityUpdatedEvent
   | EntityDeletedEvent
@@ -186,34 +186,34 @@ export enum EVENT_TYPES {
   ENTITY_CREATED = 'entity.created',
   ENTITY_UPDATED = 'entity.updated',
   ENTITY_DELETED = 'entity.deleted',
-  
+
   // 顶点事件
   VERTEX_CREATED = 'vertex.created',
   VERTEX_UPDATED = 'vertex.updated',
   VERTEX_DELETED = 'vertex.deleted',
-  
+
   // 属性事件
   PROPERTY_CREATED = 'property.created',
   PROPERTY_UPDATED = 'property.updated',
   PROPERTY_DELETED = 'property.deleted',
-  
+
   // 边事件
   EDGE_CREATED = 'edge.created',
   EDGE_UPDATED = 'edge.updated',
   EDGE_DELETED = 'edge.deleted',
-  
+
   // 批量操作事件
   BATCH_OPERATION = 'batch.operation',
-  
+
   // 版本控制事件
   COMMIT_CREATED = 'commit.created',
   BRANCH_CREATED = 'branch.created',
   BRANCH_MERGED = 'branch.merged',
-  
+
   // 事务事件
   TRANSACTION_STARTED = 'transaction.started',
   TRANSACTION_COMMITTED = 'transaction.committed',
-  TRANSACTION_ROLLED_BACK = 'transaction.rolled_back'
+  TRANSACTION_ROLLED_BACK = 'transaction.rolled_back',
 }
 
 // 事件类型常量对象 - 保持向后兼容性
@@ -222,34 +222,34 @@ export const EVENT_TYPES_CONSTANTS = {
   ENTITY_CREATED: EVENT_TYPES.ENTITY_CREATED,
   ENTITY_UPDATED: EVENT_TYPES.ENTITY_UPDATED,
   ENTITY_DELETED: EVENT_TYPES.ENTITY_DELETED,
-  
+
   // 顶点事件
   VERTEX_CREATED: EVENT_TYPES.VERTEX_CREATED,
   VERTEX_UPDATED: EVENT_TYPES.VERTEX_UPDATED,
   VERTEX_DELETED: EVENT_TYPES.VERTEX_DELETED,
-  
+
   // 属性事件
   PROPERTY_CREATED: EVENT_TYPES.PROPERTY_CREATED,
   PROPERTY_UPDATED: EVENT_TYPES.PROPERTY_UPDATED,
   PROPERTY_DELETED: EVENT_TYPES.PROPERTY_DELETED,
-  
+
   // 边事件
   EDGE_CREATED: EVENT_TYPES.EDGE_CREATED,
   EDGE_UPDATED: EVENT_TYPES.EDGE_UPDATED,
   EDGE_DELETED: EVENT_TYPES.EDGE_DELETED,
-  
+
   // 批量操作事件
   BATCH_OPERATION: EVENT_TYPES.BATCH_OPERATION,
-  
+
   // 版本控制事件
   COMMIT_CREATED: EVENT_TYPES.COMMIT_CREATED,
   BRANCH_CREATED: EVENT_TYPES.BRANCH_CREATED,
   BRANCH_MERGED: EVENT_TYPES.BRANCH_MERGED,
-  
+
   // 事务事件
   TRANSACTION_STARTED: EVENT_TYPES.TRANSACTION_STARTED,
   TRANSACTION_COMMITTED: EVENT_TYPES.TRANSACTION_COMMITTED,
-  TRANSACTION_ROLLED_BACK: EVENT_TYPES.TRANSACTION_ROLLED_BACK
+  TRANSACTION_ROLLED_BACK: EVENT_TYPES.TRANSACTION_ROLLED_BACK,
 } as const;
 
 // 导入版本控制相关类型

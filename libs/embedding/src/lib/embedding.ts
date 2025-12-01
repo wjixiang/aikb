@@ -29,9 +29,11 @@ export enum OnnxModel {
   // Placeholder for future ONNX models
 }
 
+export type EmbeddingModel = OpenAIModel | AlibabaModel | OnnxModel;
+
 // Embedding configuration interface
 export interface EmbeddingConfig {
-  model: OpenAIModel | AlibabaModel | OnnxModel; // Model name for the embedding provider
+  model: EmbeddingModel; // Model name for the embedding provider
   dimension: number; // Embedding dimension
   batchSize: number; // Batch size for processing
   maxRetries: number; // Maximum retry attempts

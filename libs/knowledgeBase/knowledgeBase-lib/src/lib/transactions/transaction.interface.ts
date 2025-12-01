@@ -5,7 +5,7 @@ export interface ITransactionManager {
   getTransactionStatus(transactionId: string): Promise<TransactionStatus>;
   executeInTransaction<T>(
     operations: () => Promise<T>,
-    options?: TransactionOptions
+    options?: TransactionOptions,
   ): Promise<T>;
   getActiveTransactions(): Promise<TransactionContext[]>;
   cleanupExpiredTransactions(): Promise<number>;
@@ -15,7 +15,7 @@ export enum TransactionStatus {
   ACTIVE = 'active',
   COMMITTED = 'committed',
   ROLLED_BACK = 'rolled_back',
-  TIMEOUT = 'timeout'
+  TIMEOUT = 'timeout',
 }
 
 export interface TransactionOptions {
@@ -30,7 +30,7 @@ export enum IsolationLevel {
   READ_UNCOMMITTED = 'read_uncommitted',
   READ_COMMITTED = 'read_committed',
   REPEATABLE_READ = 'repeatable_read',
-  SERIALIZABLE = 'serializable'
+  SERIALIZABLE = 'serializable',
 }
 
 export interface RetryPolicy {
@@ -142,7 +142,7 @@ export class TransactionError extends Error {
   constructor(
     message: string,
     public transactionId: string,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(message);
     this.name = 'TransactionError';
@@ -153,7 +153,7 @@ export class TransactionTimeoutError extends TransactionError {
   constructor(transactionId: string, timeout: number) {
     super(
       `Transaction ${transactionId} timed out after ${timeout}ms`,
-      transactionId
+      transactionId,
     );
     this.name = 'TransactionTimeoutError';
   }
@@ -161,10 +161,7 @@ export class TransactionTimeoutError extends TransactionError {
 
 export class TransactionAbortedError extends TransactionError {
   constructor(transactionId: string, reason: string) {
-    super(
-      `Transaction ${transactionId} was aborted: ${reason}`,
-      transactionId
-    );
+    super(`Transaction ${transactionId} was aborted: ${reason}`, transactionId);
     this.name = 'TransactionAbortedError';
   }
 }
@@ -173,11 +170,11 @@ export class ConcurrentModificationError extends TransactionError {
   constructor(
     transactionId: string,
     public entityType: string,
-    public entityId: string
+    public entityId: string,
   ) {
     super(
       `Concurrent modification detected on ${entityType}:${entityId} in transaction ${transactionId}`,
-      transactionId
+      transactionId,
     );
     this.name = 'ConcurrentModificationError';
   }

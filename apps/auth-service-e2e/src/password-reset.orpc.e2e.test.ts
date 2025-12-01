@@ -9,7 +9,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -20,7 +20,7 @@ describe('Password Reset ORPC Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup test data with user
     testUser = generateRandomUser();
     await orpc_client.auth.register(testUser);
@@ -33,14 +33,14 @@ describe('Password Reset ORPC Endpoints', () => {
   describe('passwordReset.request', () => {
     it('should request password reset successfully', async () => {
       const response = await orpc_client.passwordReset.request({
-        email: testUser.email
+        email: testUser.email,
       });
 
       expect(response).toHaveProperty('success');
       expect(response).toHaveProperty('message');
       expect(response.success).toBe(true);
       expect(response.message).toContain('密码重置链接已发送');
-      
+
       // Store token for confirmation test (if provided)
       if (response.token) {
         resetToken = response.token;
@@ -49,9 +49,9 @@ describe('Password Reset ORPC Endpoints', () => {
 
     it('should return error for non-existent email', async () => {
       const result = await orpc_client.passwordReset.request({
-        email: 'nonexistent@example.com'
+        email: 'nonexistent@example.com',
       });
-      
+
       // ORPC returns success even for non-existent emails for security reasons
       expect(result.success).toBe(true);
       expect(result.message).toContain('重置链接已发送');
@@ -60,7 +60,7 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should return error for invalid email format', async () => {
       try {
         await orpc_client.passwordReset.request({
-          email: 'invalid-email'
+          email: 'invalid-email',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -72,13 +72,13 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should handle rate limiting for multiple requests', async () => {
       // Send first request
       await orpc_client.passwordReset.request({
-        email: testUser.email
+        email: testUser.email,
       });
 
       // Send second request immediately (should be rate limited)
       try {
         await orpc_client.passwordReset.request({
-          email: testUser.email
+          email: testUser.email,
         });
         // If no error, rate limiting might not be implemented
         expect(true).toBe(true);
@@ -93,7 +93,7 @@ describe('Password Reset ORPC Endpoints', () => {
       // Some implementations return success even for non-existent emails for security
       try {
         const response = await orpc_client.passwordReset.request({
-          email: 'nonexistent@example.com'
+          email: 'nonexistent@example.com',
         });
         // If it returns success, that's also valid for security
         expect(response.success).toBe(true);
@@ -111,9 +111,9 @@ describe('Password Reset ORPC Endpoints', () => {
     beforeAll(async () => {
       // Request password reset to get a token
       const requestResponse = await orpc_client.passwordReset.request({
-        email: testUser.email
+        email: testUser.email,
       });
-      
+
       // In a real implementation, the token would be sent via email
       // For testing, we'll use the token from the response if available
       // or mock it for testing purposes
@@ -126,7 +126,7 @@ describe('Password Reset ORPC Endpoints', () => {
       try {
         const response = await orpc_client.passwordReset.confirm({
           token: passwordResetToken,
-          newPassword: newPassword
+          newPassword: newPassword,
         });
 
         expect(response).toHaveProperty('success');
@@ -137,7 +137,7 @@ describe('Password Reset ORPC Endpoints', () => {
         // Verify login with new password works
         const loginResponse = await orpc_client.auth.login({
           email: testUser.email,
-          password: newPassword
+          password: newPassword,
         });
         expect(loginResponse).toHaveProperty('accessToken');
 
@@ -158,9 +158,9 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should return error for invalid token', async () => {
       const result = await orpc_client.passwordReset.confirm({
         token: 'invalid-token',
-        newPassword: 'newPassword456'
+        newPassword: 'newPassword456',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('重置令牌无效');
@@ -169,9 +169,9 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should return error for expired token', async () => {
       const result = await orpc_client.passwordReset.confirm({
         token: 'expired-token',
-        newPassword: 'newPassword456'
+        newPassword: 'newPassword456',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('重置令牌无效');
@@ -180,9 +180,9 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should return error for empty token', async () => {
       const result = await orpc_client.passwordReset.confirm({
         token: '',
-        newPassword: 'newPassword456'
+        newPassword: 'newPassword456',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('重置令牌无效');
@@ -192,7 +192,7 @@ describe('Password Reset ORPC Endpoints', () => {
       try {
         await orpc_client.passwordReset.confirm({
           token: passwordResetToken,
-          newPassword: '123'
+          newPassword: '123',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -204,7 +204,7 @@ describe('Password Reset ORPC Endpoints', () => {
       try {
         await orpc_client.passwordReset.confirm({
           token: passwordResetToken,
-          newPassword: 'a'.repeat(200) // Too long password
+          newPassword: 'a'.repeat(200), // Too long password
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -216,7 +216,7 @@ describe('Password Reset ORPC Endpoints', () => {
       try {
         await orpc_client.passwordReset.confirm({
           token: passwordResetToken,
-          newPassword: ''
+          newPassword: '',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -237,7 +237,7 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should handle complete password reset flow', async () => {
       // Request password reset
       const requestResponse = await orpc_client.passwordReset.request({
-        email: integrationUser.email
+        email: integrationUser.email,
       });
       expect(requestResponse.success).toBe(true);
 
@@ -251,13 +251,13 @@ describe('Password Reset ORPC Endpoints', () => {
       // Login to create a session
       const loginResponse = await orpc_client.auth.login({
         email: integrationUser.email,
-        password: integrationUser.password
+        password: integrationUser.password,
       });
       const oldToken = loginResponse.accessToken;
 
       // Request password reset
       await orpc_client.passwordReset.request({
-        email: integrationUser.email
+        email: integrationUser.email,
       });
 
       // Try to use old token (should be invalid after reset)
@@ -275,26 +275,26 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should prevent reuse of reset tokens', async () => {
       // Request password reset
       const requestResponse = await orpc_client.passwordReset.request({
-        email: integrationUser.email
+        email: integrationUser.email,
       });
       const token = requestResponse.token || 'mock-token';
-      
+
       // Use token to reset password (if mock token works)
       try {
         await orpc_client.passwordReset.confirm({
           token: token,
-          newPassword: 'newPassword789'
+          newPassword: 'newPassword789',
         });
       } catch (error) {
         // Expected with mock token
       }
-      
+
       // Try to use the same token again
       const result = await orpc_client.passwordReset.confirm({
         token: token,
-        newPassword: 'anotherPassword123'
+        newPassword: 'anotherPassword123',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('重置令牌已被使用');
@@ -306,12 +306,12 @@ describe('Password Reset ORPC Endpoints', () => {
       // Test with non-existent email
       try {
         const response1 = await orpc_client.passwordReset.request({
-          email: 'nonexistent@example.com'
+          email: 'nonexistent@example.com',
         });
-        
+
         // Test with existing email
         const response2 = await orpc_client.passwordReset.request({
-          email: testUser.email
+          email: testUser.email,
         });
 
         // Both responses should be similar to prevent email enumeration
@@ -326,17 +326,18 @@ describe('Password Reset ORPC Endpoints', () => {
     it('should have reasonable token expiration', async () => {
       // Request password reset
       const requestResponse = await orpc_client.passwordReset.request({
-        email: testUser.email
+        email: testUser.email,
       });
 
       // The response should include expiration information
       if (requestResponse.expiresAt) {
-        const expiresAt = typeof requestResponse.expiresAt === 'string'
-          ? new Date(requestResponse.expiresAt)
-          : requestResponse.expiresAt;
-        
+        const expiresAt =
+          typeof requestResponse.expiresAt === 'string'
+            ? new Date(requestResponse.expiresAt)
+            : requestResponse.expiresAt;
+
         expect(expiresAt).toBeInstanceOf(Date);
-        
+
         // Token should expire in reasonable time (e.g., 1 hour)
         const now = new Date();
         const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);

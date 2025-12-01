@@ -6,7 +6,11 @@ export enum TabType {
 }
 
 export interface UnifiedTabsRef {
-  createTabWithQuizzes: (quizzes: QuizType.QuizWithUserAnswer[], title: string, createNewQuizSet?: boolean) => void;
+  createTabWithQuizzes: (
+    quizzes: QuizType.QuizWithUserAnswer[],
+    title: string,
+    createNewQuizSet?: boolean,
+  ) => void;
   addTab: (type: TabType) => void;
   getCurrentTabQuizzes: () => QuizType.QuizWithUserAnswer[];
   getCurrentQuiz: () => QuizType.QuizWithUserAnswer | null;

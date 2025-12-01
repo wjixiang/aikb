@@ -35,4 +35,3 @@ export * from './lib/auth.schema';
 
 // Export module
 export * from './lib/auth-lib.module';
-

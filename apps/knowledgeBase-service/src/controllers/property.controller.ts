@@ -1,26 +1,28 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Param, 
-  Body, 
-  Query 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
 } from '@nestjs/common';
 import { KnowledgeManagementService } from 'knowledgeBase-lib';
 import { CreatePropertyDto } from '../dto/index';
 
 @Controller('properties')
 export class PropertyController {
-  constructor(private readonly knowledgeManagementService: KnowledgeManagementService) {}
+  constructor(
+    private readonly knowledgeManagementService: KnowledgeManagementService,
+  ) {}
 
   @Post()
   async create(@Body() createPropertyDto: CreatePropertyDto) {
     const propertyData = {
       content: createPropertyDto.content,
     };
-    
+
     return await this.knowledgeManagementService.createProperty(propertyData);
   }
 
@@ -32,16 +34,16 @@ export class PropertyController {
   @Get()
   async findAll(
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
-    return await this.knowledgeManagementService.findProperties({}, { limit, offset });
+    return await this.knowledgeManagementService.findProperties(
+      {},
+      { limit, offset },
+    );
   }
 
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateData: any
-  ) {
+  async update(@Param('id') id: string, @Body() updateData: any) {
     return await this.knowledgeManagementService.updateProperty(id, updateData);
   }
 

@@ -7,15 +7,15 @@ export default async function () {
   const host = process.env.HOST ?? 'localhost';
   const port = process.env.PORT ?? '3000';
   const baseUrl = `http://${host}:${port}`;
-  
+
   axios.defaults.baseURL = baseUrl;
-  
+
   // Set default headers for all requests
   axios.defaults.headers.common['Content-Type'] = 'application/json';
-  
+
   console.log(`Test setup: Configured axios baseURL to ${baseUrl}`);
   console.log(`Test setup: ORPC client configured for ${baseUrl}`);
-  
+
   // Verify ORPC client is properly configured
   try {
     // Test basic connectivity with ORPC client

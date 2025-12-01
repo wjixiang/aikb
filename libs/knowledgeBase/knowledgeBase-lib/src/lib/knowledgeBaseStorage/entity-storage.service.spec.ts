@@ -24,19 +24,19 @@ describe('EntityStorageService', () => {
           {
             name: 'Test Entity',
             acronym: 'TE',
-            language: 'en'
-          }
+            language: 'en',
+          },
         ],
         abstract: {
           description: 'Test description',
           embedding: {
             config: {
               model: 'test-model',
-              dimensions: 128
+              dimensions: 128,
             } as any,
-            vector: new Array(128).fill(0.1)
-          }
-        }
+            vector: new Array(128).fill(0.1),
+          },
+        },
       };
 
       const result = await service.create(entityData);
@@ -65,7 +65,7 @@ describe('EntityStorageService', () => {
   describe('update', () => {
     it('should return null for non-existent entity', async () => {
       const result = await service.update('non-existent-id', {
-        nomanclature: [{ name: 'Updated', acronym: null, language: 'en' }]
+        nomanclature: [{ name: 'Updated', acronym: null, language: 'en' }],
       });
       expect(result).toBeNull();
     });
@@ -88,7 +88,7 @@ describe('EntityStorageService', () => {
       const result = await service.search('test query', {
         limit: 10,
         offset: 0,
-        language: 'en'
+        language: 'en',
       });
       expect(result).toEqual([]);
     });
@@ -105,7 +105,7 @@ describe('EntityStorageService', () => {
       const vector = new Array(128).fill(0.1);
       const result = await service.findBySimilarity(vector, {
         limit: 5,
-        threshold: 0.8
+        threshold: 0.8,
       });
       expect(result).toEqual([]);
     });
@@ -121,7 +121,7 @@ describe('EntityStorageService', () => {
     it('should accept pagination options', async () => {
       const result = await service.findAll({
         limit: 10,
-        offset: 5
+        offset: 5,
       });
       expect(result.entities).toEqual([]);
       expect(result.total).toBe(0);

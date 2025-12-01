@@ -1,6 +1,16 @@
-import { Controller, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Implement, implement } from '@orpc/nest';
-import { registerContract, loginContract, refreshContract, logoutContract, validateContract } from './orpc.contract';
+import {
+  registerContract,
+  loginContract,
+  refreshContract,
+  logoutContract,
+  validateContract,
+} from './orpc.contract';
 import { AuthService } from '../auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
@@ -26,7 +36,7 @@ export class ORPCAuthController {
       }
     });
   }
-  
+
   @Implement(loginContract)
   async login(input: LoginDto) {
     return implement(loginContract).handler(async ({ input }) => {
@@ -35,7 +45,8 @@ export class ORPCAuthController {
       } catch (error) {
         if (error instanceof UnauthorizedException) {
           const response = (error as any).getResponse();
-          const message = response?.message || error.message || '邮箱或密码错误';
+          const message =
+            response?.message || error.message || '邮箱或密码错误';
           // Re-throw the original NestJS exception to preserve status code
           throw new UnauthorizedException(message);
         }
@@ -43,7 +54,7 @@ export class ORPCAuthController {
       }
     });
   }
-  
+
   @Implement(refreshContract)
   async refresh(input: { refreshToken: string }) {
     return implement(refreshContract).handler(async ({ input }) => {
@@ -52,7 +63,8 @@ export class ORPCAuthController {
       } catch (error) {
         if (error instanceof UnauthorizedException) {
           const response = (error as any).getResponse();
-          const message = response?.message || error.message || '无效的刷新令牌';
+          const message =
+            response?.message || error.message || '无效的刷新令牌';
           // Re-throw the original NestJS exception to preserve status code
           throw new UnauthorizedException(message);
         }
@@ -60,7 +72,7 @@ export class ORPCAuthController {
       }
     });
   }
-  
+
   @Implement(logoutContract)
   @UseGuards(JwtAuthGuard)
   async logout(input: { refreshToken: string }) {
@@ -69,11 +81,11 @@ export class ORPCAuthController {
       return {
         success: true,
         message: '登出成功',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     });
   }
-  
+
   @Implement(validateContract)
   @UseGuards(JwtAuthGuard)
   async validate() {

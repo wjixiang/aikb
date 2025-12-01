@@ -22,4 +22,4 @@ export * from './components/ui/sheet';
 export * from './components/ui/sidebar';
 export * from './components/ui/dialog';
 export * from './hooks/use-mobile';
-export * from './lib/markdownRender'
+export * from './lib/markdownRender';

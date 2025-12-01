@@ -22,7 +22,7 @@ describe('VertextStorageService', () => {
       const vertexData = {
         content: 'Test vertex content',
         type: 'concept' as const,
-        metadata: { category: 'test' }
+        metadata: { category: 'test' },
       };
 
       const result = await service.create(vertexData);
@@ -35,9 +35,18 @@ describe('VertextStorageService', () => {
     });
 
     it('should create vertices with different types', async () => {
-      const conceptVertex = await service.create({ content: 'Concept', type: 'concept' });
-      const attributeVertex = await service.create({ content: 'Attribute', type: 'attribute' });
-      const relationshipVertex = await service.create({ content: 'Relationship', type: 'relationship' });
+      const conceptVertex = await service.create({
+        content: 'Concept',
+        type: 'concept',
+      });
+      const attributeVertex = await service.create({
+        content: 'Attribute',
+        type: 'attribute',
+      });
+      const relationshipVertex = await service.create({
+        content: 'Relationship',
+        type: 'relationship',
+      });
 
       expect(conceptVertex.type).toBe('concept');
       expect(attributeVertex.type).toBe('attribute');
@@ -67,7 +76,7 @@ describe('VertextStorageService', () => {
   describe('update', () => {
     it('should return null for non-existent vertex', async () => {
       const result = await service.update('non-existent-id', {
-        content: 'Updated content'
+        content: 'Updated content',
       });
       expect(result).toBeNull();
     });
@@ -102,7 +111,7 @@ describe('VertextStorageService', () => {
     it('should accept search options', async () => {
       const result = await service.search('test query', {
         limit: 10,
-        offset: 0
+        offset: 0,
       });
       expect(result).toEqual([]);
     });
@@ -118,7 +127,7 @@ describe('VertextStorageService', () => {
     it('should accept pagination options', async () => {
       const result = await service.findAll({
         limit: 10,
-        offset: 5
+        offset: 5,
       });
       expect(result.vertices).toEqual([]);
       expect(result.total).toBe(0);

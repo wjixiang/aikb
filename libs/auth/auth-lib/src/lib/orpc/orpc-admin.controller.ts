@@ -4,7 +4,11 @@ import { authContract } from './orpc.contract';
 import { AuthService } from '../auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
-import type { BulkOperationDto, UserStatsResponse, BulkOperationResponse } from '../auth.dto';
+import type {
+  BulkOperationDto,
+  UserStatsResponse,
+  BulkOperationResponse,
+} from '../auth.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -16,19 +20,23 @@ export class ORPCAdminController {
     return {
       getStats: implement(authContract.admin.getStats).handler(async () => {
         try {
-          return await this.authService.getUserStats() as UserStatsResponse;
+          return (await this.authService.getUserStats()) as UserStatsResponse;
         } catch (error) {
           throw error;
         }
       }),
-      
-      bulkOperation: implement(authContract.admin.bulkOperation).handler(async ({ input }: { input: BulkOperationDto }) => {
-        try {
-          return await this.authService.bulkOperation(input) as BulkOperationResponse;
-        } catch (error) {
-          throw error;
-        }
-      }),
+
+      bulkOperation: implement(authContract.admin.bulkOperation).handler(
+        async ({ input }: { input: BulkOperationDto }) => {
+          try {
+            return (await this.authService.bulkOperation(
+              input,
+            )) as BulkOperationResponse;
+          } catch (error) {
+            throw error;
+          }
+        },
+      ),
     };
   }
 }

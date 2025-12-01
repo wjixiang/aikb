@@ -10,7 +10,9 @@ describe('VertexStorageMemoryService', () => {
       providers: [VertexStorageMemoryService],
     }).compile();
 
-    service = module.get<VertexStorageMemoryService>(VertexStorageMemoryService);
+    service = module.get<VertexStorageMemoryService>(
+      VertexStorageMemoryService,
+    );
     service.clear(); // Clear any existing data before each test
   });
 
@@ -23,7 +25,7 @@ describe('VertexStorageMemoryService', () => {
       const vertexData = {
         content: 'Test vertex content',
         type: 'concept' as const,
-        metadata: { category: 'test' }
+        metadata: { category: 'test' },
       };
 
       const result = await service.create(vertexData);
@@ -38,11 +40,11 @@ describe('VertexStorageMemoryService', () => {
     it('should generate unique IDs for different vertices', async () => {
       const vertexData1 = {
         content: 'Content 1',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const vertexData2 = {
         content: 'Content 2',
-        type: 'attribute' as const
+        type: 'attribute' as const,
       };
 
       const result1 = await service.create(vertexData1);
@@ -52,9 +54,18 @@ describe('VertexStorageMemoryService', () => {
     });
 
     it('should create vertices with different types', async () => {
-      const conceptVertex = await service.create({ content: 'Concept', type: 'concept' });
-      const attributeVertex = await service.create({ content: 'Attribute', type: 'attribute' });
-      const relationshipVertex = await service.create({ content: 'Relationship', type: 'relationship' });
+      const conceptVertex = await service.create({
+        content: 'Concept',
+        type: 'concept',
+      });
+      const attributeVertex = await service.create({
+        content: 'Attribute',
+        type: 'attribute',
+      });
+      const relationshipVertex = await service.create({
+        content: 'Relationship',
+        type: 'relationship',
+      });
 
       expect(conceptVertex.type).toBe('concept');
       expect(attributeVertex.type).toBe('attribute');
@@ -64,7 +75,7 @@ describe('VertexStorageMemoryService', () => {
     it('should create vertex without metadata', async () => {
       const vertexData = {
         content: 'Simple vertex',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
 
       const result = await service.create(vertexData);
@@ -81,7 +92,7 @@ describe('VertexStorageMemoryService', () => {
       const vertexData = {
         content: 'Test vertex content',
         type: 'concept' as const,
-        metadata: { category: 'test' }
+        metadata: { category: 'test' },
       };
       const createdVertex = await service.create(vertexData);
 
@@ -98,7 +109,7 @@ describe('VertexStorageMemoryService', () => {
     it('should return a copy of vertex (not reference)', async () => {
       const vertexData = {
         content: 'Test vertex content',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const createdVertex = await service.create(vertexData);
 
@@ -114,16 +125,19 @@ describe('VertexStorageMemoryService', () => {
     it('should return vertices for existing IDs', async () => {
       const vertexData1 = {
         content: 'Content 1',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const vertexData2 = {
         content: 'Content 2',
-        type: 'attribute' as const
+        type: 'attribute' as const,
       };
       const createdVertex1 = await service.create(vertexData1);
       const createdVertex2 = await service.create(vertexData2);
 
-      const results = await service.findByIds([createdVertex1.id, createdVertex2.id]);
+      const results = await service.findByIds([
+        createdVertex1.id,
+        createdVertex2.id,
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdVertex1);
@@ -133,11 +147,14 @@ describe('VertexStorageMemoryService', () => {
     it('should return null for non-existent IDs', async () => {
       const vertexData = {
         content: 'Content 1',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const createdVertex = await service.create(vertexData);
 
-      const results = await service.findByIds([createdVertex.id, 'non-existent-id']);
+      const results = await service.findByIds([
+        createdVertex.id,
+        'non-existent-id',
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdVertex);
@@ -155,14 +172,14 @@ describe('VertexStorageMemoryService', () => {
       const vertexData = {
         content: 'Original content',
         type: 'concept' as const,
-        metadata: { category: 'original' }
+        metadata: { category: 'original' },
       };
       const createdVertex = await service.create(vertexData);
 
       const updates = {
         content: 'Updated content',
         type: 'attribute' as const,
-        metadata: { category: 'updated' }
+        metadata: { category: 'updated' },
       };
       const result = await service.update(createdVertex.id, updates);
 
@@ -175,7 +192,7 @@ describe('VertexStorageMemoryService', () => {
 
     it('should return null when trying to update non-existent vertex', async () => {
       const updates = {
-        content: 'Updated content'
+        content: 'Updated content',
       };
       const result = await service.update('non-existent-id', updates);
       expect(result).toBeNull();
@@ -184,13 +201,13 @@ describe('VertexStorageMemoryService', () => {
     it('should not allow updating ID', async () => {
       const vertexData = {
         content: 'Original content',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const createdVertex = await service.create(vertexData);
 
       const updates = {
         id: 'new-id' as string,
-        content: 'Updated content'
+        content: 'Updated content',
       };
       const result = await service.update(createdVertex.id, updates);
 
@@ -204,7 +221,7 @@ describe('VertexStorageMemoryService', () => {
     it('should delete an existing vertex', async () => {
       const vertexData = {
         content: 'Test content',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const createdVertex = await service.create(vertexData);
 
@@ -223,10 +240,22 @@ describe('VertexStorageMemoryService', () => {
 
   describe('findByType', () => {
     it('should return vertices of specified type', async () => {
-      const conceptVertex1 = await service.create({ content: 'Concept 1', type: 'concept' });
-      const conceptVertex2 = await service.create({ content: 'Concept 2', type: 'concept' });
-      const attributeVertex = await service.create({ content: 'Attribute', type: 'attribute' });
-      const relationshipVertex = await service.create({ content: 'Relationship', type: 'relationship' });
+      const conceptVertex1 = await service.create({
+        content: 'Concept 1',
+        type: 'concept',
+      });
+      const conceptVertex2 = await service.create({
+        content: 'Concept 2',
+        type: 'concept',
+      });
+      const attributeVertex = await service.create({
+        content: 'Attribute',
+        type: 'attribute',
+      });
+      const relationshipVertex = await service.create({
+        content: 'Relationship',
+        type: 'relationship',
+      });
 
       const conceptResults = await service.findByType('concept');
       expect(conceptResults).toHaveLength(2);
@@ -252,9 +281,18 @@ describe('VertexStorageMemoryService', () => {
 
   describe('search', () => {
     it('should return vertices matching search query', async () => {
-      const vertex1 = await service.create({ content: 'JavaScript programming', type: 'concept' });
-      const vertex2 = await service.create({ content: 'Python programming', type: 'concept' });
-      const vertex3 = await service.create({ content: 'Database design', type: 'concept' });
+      const vertex1 = await service.create({
+        content: 'JavaScript programming',
+        type: 'concept',
+      });
+      const vertex2 = await service.create({
+        content: 'Python programming',
+        type: 'concept',
+      });
+      const vertex3 = await service.create({
+        content: 'Database design',
+        type: 'concept',
+      });
 
       const results = await service.search('programming');
 
@@ -265,8 +303,14 @@ describe('VertexStorageMemoryService', () => {
     });
 
     it('should be case insensitive', async () => {
-      const vertex1 = await service.create({ content: 'JavaScript', type: 'concept' });
-      const vertex2 = await service.create({ content: 'javascript', type: 'concept' });
+      const vertex1 = await service.create({
+        content: 'JavaScript',
+        type: 'concept',
+      });
+      const vertex2 = await service.create({
+        content: 'javascript',
+        type: 'concept',
+      });
 
       const results1 = await service.search('JavaScript');
       const results2 = await service.search('javascript');
@@ -285,9 +329,18 @@ describe('VertexStorageMemoryService', () => {
     });
 
     it('should respect offset parameter', async () => {
-      const vertex1 = await service.create({ content: 'First item', type: 'concept' });
-      const vertex2 = await service.create({ content: 'Second item', type: 'concept' });
-      const vertex3 = await service.create({ content: 'Third item', type: 'concept' });
+      const vertex1 = await service.create({
+        content: 'First item',
+        type: 'concept',
+      });
+      const vertex2 = await service.create({
+        content: 'Second item',
+        type: 'concept',
+      });
+      const vertex3 = await service.create({
+        content: 'Third item',
+        type: 'concept',
+      });
 
       const results = await service.search('item', { offset: 1 });
       expect(results).toHaveLength(2);
@@ -306,9 +359,18 @@ describe('VertexStorageMemoryService', () => {
 
   describe('findAll', () => {
     it('should return all vertices with pagination', async () => {
-      const vertex1 = await service.create({ content: 'Content 1', type: 'concept' });
-      const vertex2 = await service.create({ content: 'Content 2', type: 'attribute' });
-      const vertex3 = await service.create({ content: 'Content 3', type: 'relationship' });
+      const vertex1 = await service.create({
+        content: 'Content 1',
+        type: 'concept',
+      });
+      const vertex2 = await service.create({
+        content: 'Content 2',
+        type: 'attribute',
+      });
+      const vertex3 = await service.create({
+        content: 'Content 3',
+        type: 'relationship',
+      });
 
       const result = await service.findAll();
       expect(result.vertices).toHaveLength(3);
@@ -329,9 +391,18 @@ describe('VertexStorageMemoryService', () => {
     });
 
     it('should respect offset parameter', async () => {
-      const vertex1 = await service.create({ content: 'Content 1', type: 'concept' });
-      const vertex2 = await service.create({ content: 'Content 2', type: 'concept' });
-      const vertex3 = await service.create({ content: 'Content 3', type: 'concept' });
+      const vertex1 = await service.create({
+        content: 'Content 1',
+        type: 'concept',
+      });
+      const vertex2 = await service.create({
+        content: 'Content 2',
+        type: 'concept',
+      });
+      const vertex3 = await service.create({
+        content: 'Content 3',
+        type: 'concept',
+      });
 
       const result = await service.findAll({ offset: 1 });
       expect(result.vertices).toHaveLength(2);
@@ -343,8 +414,14 @@ describe('VertexStorageMemoryService', () => {
 
     it('should respect both limit and offset parameters', async () => {
       await service.create({ content: 'Content 1', type: 'concept' });
-      const vertex2 = await service.create({ content: 'Content 2', type: 'concept' });
-      const vertex3 = await service.create({ content: 'Content 3', type: 'concept' });
+      const vertex2 = await service.create({
+        content: 'Content 2',
+        type: 'concept',
+      });
+      const vertex3 = await service.create({
+        content: 'Content 3',
+        type: 'concept',
+      });
       await service.create({ content: 'Content 4', type: 'concept' });
 
       const result = await service.findAll({ offset: 1, limit: 2 });
@@ -365,7 +442,7 @@ describe('VertexStorageMemoryService', () => {
     it('should return true for existing vertex', async () => {
       const vertexData = {
         content: 'Test content',
-        type: 'concept' as const
+        type: 'concept' as const,
       };
       const createdVertex = await service.create(vertexData);
 
@@ -407,7 +484,10 @@ describe('VertexStorageMemoryService', () => {
       await service.delete('any-id');
       expect(await service.count()).toBe(2); // No change since ID doesn't exist
 
-      const createdVertex = await service.create({ content: 'Content 3', type: 'relationship' });
+      const createdVertex = await service.create({
+        content: 'Content 3',
+        type: 'relationship',
+      });
       await service.delete(createdVertex.id);
       expect(await service.count()).toBe(2); // One vertex deleted
     });

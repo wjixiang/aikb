@@ -10,7 +10,7 @@ export enum UmlsInputType {
   SOURCE_CONCEPT = 'sourceConcept',
   SOURCE_DESCRIPTOR = 'sourceDescriptor',
   SOURCE_UI = 'sourceUi',
-  TTY = 'tty'
+  TTY = 'tty',
 }
 
 export enum UmlsSearchType {
@@ -19,7 +19,7 @@ export enum UmlsSearchType {
   LEFT_TRUNCATION = 'leftTruncation',
   RIGHT_TRUNCATION = 'rightTruncation',
   NORMALIZED_STRING = 'normalizedString',
-  NORMALIZED_WORDS = 'normalizedWords'
+  NORMALIZED_WORDS = 'normalizedWords',
 }
 
 export enum UmlsReturnIdType {
@@ -28,7 +28,7 @@ export enum UmlsReturnIdType {
   CODE = 'code',
   SOURCE_CONCEPT = 'sourceConcept',
   SOURCE_DESCRIPTOR = 'sourceDescriptor',
-  SOURCE_UI = 'sourceUi'
+  SOURCE_UI = 'sourceUi',
 }
 
 export interface UmlsSearchResult {
@@ -71,7 +71,9 @@ export class UmlsService {
    * @param params Search parameters
    * @returns Observable of UMLS search response
    */
-  search(params: UmlsSearchParams): Observable<AxiosResponse<UmlsSearchResponse>> {
+  search(
+    params: UmlsSearchParams,
+  ): Observable<AxiosResponse<UmlsSearchResponse>> {
     const url = this.buildSearchUrl(params);
     return this.httpService.get<UmlsSearchResponse>(url);
   }
@@ -83,7 +85,9 @@ export class UmlsService {
    */
   async searchFirstPage(params: UmlsSearchParams): Promise<UmlsSearchResponse> {
     const url = this.buildSearchUrl(params);
-    const response = await this.httpService.get<UmlsSearchResponse>(url).toPromise();
+    const response = await this.httpService
+      .get<UmlsSearchResponse>(url)
+      .toPromise();
     if (!response) {
       throw new Error('No response received from UMLS API');
     }
@@ -100,13 +104,13 @@ export class UmlsService {
   async searchByTerm(
     term: string,
     apiKey: string,
-    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey'>> = {}
+    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey'>> = {},
   ): Promise<UmlsSearchResponse> {
     return this.searchFirstPage({
       string: term,
       apiKey,
       returnIdType: UmlsReturnIdType.CONCEPT,
-      ...options
+      ...options,
     });
   }
 
@@ -122,14 +126,14 @@ export class UmlsService {
     term: string,
     apiKey: string,
     sabs: string[] = [],
-    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey' | 'sabs'>> = {}
+    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey' | 'sabs'>> = {},
   ): Promise<UmlsSearchResponse> {
     return this.searchFirstPage({
       string: term,
       apiKey,
       returnIdType: UmlsReturnIdType.CODE,
       sabs,
-      ...options
+      ...options,
     });
   }
 
@@ -145,7 +149,12 @@ export class UmlsService {
     code: string,
     apiKey: string,
     sabs: string,
-    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey' | 'sabs' | 'inputType' | 'searchType'>> = {}
+    options: Partial<
+      Omit<
+        UmlsSearchParams,
+        'string' | 'apiKey' | 'sabs' | 'inputType' | 'searchType'
+      >
+    > = {},
   ): Promise<UmlsSearchResponse> {
     return this.searchFirstPage({
       string: code,
@@ -154,7 +163,7 @@ export class UmlsService {
       searchType: UmlsSearchType.EXACT,
       sabs: [sabs],
       returnIdType: UmlsReturnIdType.CONCEPT,
-      ...options
+      ...options,
     });
   }
 
@@ -170,14 +179,16 @@ export class UmlsService {
     cui: string,
     apiKey: string,
     sabs: string,
-    options: Partial<Omit<UmlsSearchParams, 'string' | 'apiKey' | 'sabs' | 'returnIdType'>> = {}
+    options: Partial<
+      Omit<UmlsSearchParams, 'string' | 'apiKey' | 'sabs' | 'returnIdType'>
+    > = {},
   ): Promise<UmlsSearchResponse> {
     return this.searchFirstPage({
       string: cui,
       apiKey,
       sabs: [sabs],
       returnIdType: UmlsReturnIdType.CODE,
-      ...options
+      ...options,
     });
   }
 
@@ -205,7 +216,10 @@ export class UmlsService {
       queryParams.append('includeObsolete', params.includeObsolete.toString());
     }
     if (params.includeSuppressible !== undefined) {
-      queryParams.append('includeSuppressible', params.includeSuppressible.toString());
+      queryParams.append(
+        'includeSuppressible',
+        params.includeSuppressible.toString(),
+      );
     }
     if (params.returnIdType) {
       queryParams.append('returnIdType', params.returnIdType);

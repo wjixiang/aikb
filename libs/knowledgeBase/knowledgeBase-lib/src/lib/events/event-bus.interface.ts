@@ -3,25 +3,25 @@ import { KnowledgeEvent, AnyKnowledgeEvent } from './types';
 export interface IEventBus {
   // 发布事件
   publish<T extends KnowledgeEvent>(event: T): Promise<void>;
-  
+
   // 订阅事件
   subscribe<T extends KnowledgeEvent>(
     eventType: string,
-    handler: EventHandler<T>
+    handler: EventHandler<T>,
   ): Promise<string>;
-  
+
   // 取消订阅
   unsubscribe(subscriptionId: string): Promise<void>;
-  
+
   // 批量发布事件
   publishBatch(events: KnowledgeEvent[]): Promise<void>;
-  
+
   // 获取订阅统计
   getSubscriptionStats(): Record<string, number>;
-  
+
   // 获取所有订阅
   getSubscriptions(): EventSubscription[];
-  
+
   // 清理所有订阅
   clear(): Promise<void>;
 }
@@ -64,9 +64,12 @@ export interface EventMetrics {
   totalEventsProcessed: number;
   totalErrors: number;
   averageProcessingTime: number;
-  eventTypeStats: Record<string, {
-    count: number;
-    averageTime: number;
-    errorCount: number;
-  }>;
+  eventTypeStats: Record<
+    string,
+    {
+      count: number;
+      averageTime: number;
+      errorCount: number;
+    }
+  >;
 }

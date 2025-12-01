@@ -42,7 +42,7 @@ describe('EmbeddingModule', () => {
   it('should export EmbeddingService', () => {
     const moduleRef = module.get(EmbeddingModule);
     expect(moduleRef).toBeDefined();
-    
+
     // Check if the service can be resolved from the module
     const service = module.get<EmbeddingService>(EmbeddingService);
     expect(service).toBeDefined();

@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { UmlsService, UmlsInputType, UmlsSearchType, UmlsReturnIdType } from './umls.service';
+import {
+  UmlsService,
+  UmlsInputType,
+  UmlsSearchType,
+  UmlsReturnIdType,
+} from './umls.service';
 
 describe('UmlsService', () => {
   let service: UmlsService;
@@ -19,31 +24,31 @@ describe('UmlsService', () => {
             ui: 'C0009044',
             rootSource: 'SNOMEDCT_US',
             uri: 'https://uts-ws.nlm.nih.gov/rest/content/2015AA/CUI/C0009044',
-            name: 'Closed fracture carpal bone'
+            name: 'Closed fracture carpal bone',
           },
           {
             ui: 'C0016644',
             rootSource: 'MTH',
             uri: 'https://uts-ws.nlm.nih.gov/rest/content/2015AA/CUI/C0016644',
-            name: 'Fracture of carpal bone'
-          }
-        ]
-      }
+            name: 'Fracture of carpal bone',
+          },
+        ],
+      },
     },
     status: 200,
     statusText: 'OK',
     headers: {},
-    config: {} as any
+    config: {} as any,
   };
 
   beforeEach(async () => {
     const mockHttpService = {
-      get: jest.fn()
+      get: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
-      providers: [UmlsService]
+      providers: [UmlsService],
     })
       .overrideProvider(HttpService)
       .useValue(mockHttpService)
@@ -61,21 +66,21 @@ describe('UmlsService', () => {
     it('should return an Observable with search results', () => {
       const params = {
         string: 'fracture of carpal bone',
-        apiKey: mockApiKey
+        apiKey: mockApiKey,
       };
 
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result$ = service.search(params);
-      result$.subscribe(response => {
+      result$.subscribe((response) => {
         expect(response.data).toEqual(mockResponse.data);
       });
 
       expect(httpService.get).toHaveBeenCalledWith(
-        expect.stringContaining('string=fracture+of+carpal+bone')
+        expect.stringContaining('string=fracture+of+carpal+bone'),
       );
       expect(httpService.get).toHaveBeenCalledWith(
-        expect.stringContaining('apiKey=test-api-key')
+        expect.stringContaining('apiKey=test-api-key'),
       );
     });
 
@@ -90,7 +95,7 @@ describe('UmlsService', () => {
         includeObsolete: true,
         includeSuppressible: false,
         partialSearch: true,
-        pageSize: 100
+        pageSize: 100,
       };
 
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
@@ -113,7 +118,7 @@ describe('UmlsService', () => {
     it('should return search results as a Promise', async () => {
       const params = {
         string: 'diabetes',
-        apiKey: mockApiKey
+        apiKey: mockApiKey,
       };
 
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
@@ -125,13 +130,13 @@ describe('UmlsService', () => {
     it('should throw error when response is undefined', async () => {
       const params = {
         string: 'test',
-        apiKey: mockApiKey
+        apiKey: mockApiKey,
       };
 
       jest.spyOn(httpService, 'get').mockReturnValue(of(undefined as any));
 
       await expect(service.searchFirstPage(params)).rejects.toThrow(
-        'No response received from UMLS API'
+        'No response received from UMLS API',
       );
     });
   });
@@ -153,7 +158,7 @@ describe('UmlsService', () => {
 
       await service.searchByTerm('fracture', mockApiKey, {
         searchType: UmlsSearchType.EXACT,
-        sabs: ['SNOMEDCT_US']
+        sabs: ['SNOMEDCT_US'],
       });
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
@@ -166,7 +171,9 @@ describe('UmlsService', () => {
     it('should search for source-asserted identifiers', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
-      const result = await service.searchForCodes('fracture', mockApiKey, ['SNOMEDCT_US']);
+      const result = await service.searchForCodes('fracture', mockApiKey, [
+        'SNOMEDCT_US',
+      ]);
       expect(result).toEqual(mockResponse.data);
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
@@ -189,7 +196,11 @@ describe('UmlsService', () => {
     it('should map source code to UMLS CUI', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
-      const result = await service.mapCodeToCui('9468002', mockApiKey, 'SNOMEDCT_US');
+      const result = await service.mapCodeToCui(
+        '9468002',
+        mockApiKey,
+        'SNOMEDCT_US',
+      );
       expect(result).toEqual(mockResponse.data);
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
@@ -205,7 +216,11 @@ describe('UmlsService', () => {
     it('should map UMLS CUI to source codes', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
-      const result = await service.mapCuiToCodes('C0009044', mockApiKey, 'SNOMEDCT_US');
+      const result = await service.mapCuiToCodes(
+        'C0009044',
+        mockApiKey,
+        'SNOMEDCT_US',
+      );
       expect(result).toEqual(mockResponse.data);
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
@@ -222,20 +237,26 @@ describe('UmlsService', () => {
       await service.searchByTerm('test', mockApiKey);
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
-      expect(calledUrl).toContain('https://uts-ws.nlm.nih.gov/rest/search/current');
+      expect(calledUrl).toContain(
+        'https://uts-ws.nlm.nih.gov/rest/search/current',
+      );
     });
 
     it('should use custom version when specified', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
-      await service.search({
-        string: 'test',
-        apiKey: mockApiKey,
-        version: '2023AB'
-      }).subscribe();
+      await service
+        .search({
+          string: 'test',
+          apiKey: mockApiKey,
+          version: '2023AB',
+        })
+        .subscribe();
 
       const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
-      expect(calledUrl).toContain('https://uts-ws.nlm.nih.gov/rest/search/2023AB');
+      expect(calledUrl).toContain(
+        'https://uts-ws.nlm.nih.gov/rest/search/2023AB',
+      );
     });
 
     it('should use default pageSize of 200 when not specified', async () => {

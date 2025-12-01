@@ -17,7 +17,7 @@ import {
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
-    JwtModule.register({ 
+    JwtModule.register({
       secret: process.env.JWT_SECRET || 'fl5ox03',
       signOptions: { expiresIn: '1h' },
     }),
@@ -30,10 +30,7 @@ import {
     PasswordResetController,
     AdminController,
   ],
-  providers: [
-    MockAuthService,
-    JwtStrategy,
-  ],
+  providers: [MockAuthService, JwtStrategy],
   exports: [MockAuthService, JwtModule],
 })
 export class TestAuthLibModule {}

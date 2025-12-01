@@ -15,15 +15,19 @@ export class UsageExampleService {
    * Example: Generate embedding for a single text
    */
   async generateEmbedding(text: string): Promise<number[] | null> {
-    this.logger.log(`Generating embedding for text: "${text.substring(0, 50)}..."`);
-    
+    this.logger.log(
+      `Generating embedding for text: "${text.substring(0, 50)}..."`,
+    );
+
     const result = await this.embeddingService.embed({
       text,
       provider: EmbeddingProvider.ALIBABA,
     });
 
     if (result.success && result.embedding) {
-      this.logger.log(`Successfully generated embedding with ${result.embedding.length} dimensions`);
+      this.logger.log(
+        `Successfully generated embedding with ${result.embedding.length} dimensions`,
+      );
       return result.embedding;
     } else {
       this.logger.error(`Failed to generate embedding: ${result.error}`);
@@ -36,14 +40,16 @@ export class UsageExampleService {
    */
   async generateBatchEmbeddings(texts: string[]): Promise<(number[] | null)[]> {
     this.logger.log(`Generating batch embeddings for ${texts.length} texts`);
-    
+
     const result = await this.embeddingService.embedBatch({
       texts,
       provider: EmbeddingProvider.ALIBABA,
       concurrencyLimit: 3,
     });
 
-    this.logger.log(`Batch embedding completed: ${result.successCount}/${result.totalCount} successful`);
+    this.logger.log(
+      `Batch embedding completed: ${result.successCount}/${result.totalCount} successful`,
+    );
     return result.embeddings || [];
   }
 
@@ -96,7 +102,7 @@ export class UsageExampleService {
   async generateOptimizedEmbedding(text: string): Promise<number[] | null> {
     // Use different providers based on text characteristics
     let provider: EmbeddingProvider;
-    
+
     if (text.length < 100) {
       // Short texts: Use fast provider
       provider = EmbeddingProvider.ALIBABA;
@@ -108,7 +114,9 @@ export class UsageExampleService {
       provider = EmbeddingProvider.ONNX;
     }
 
-    this.logger.log(`Using provider ${provider} for text of length ${text.length}`);
+    this.logger.log(
+      `Using provider ${provider} for text of length ${text.length}`,
+    );
 
     const result = await this.embeddingService.embed({
       text,

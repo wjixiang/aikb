@@ -1,11 +1,19 @@
-import { IsString, IsArray, IsOptional, IsEnum, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EmbeddingProvider } from 'embedding';
 
 export class EmbeddingRequestDto {
   @ApiProperty({
     description: 'Text or array of texts to embed',
-    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]
+    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
   })
   @IsString()
   text!: string | string[];
@@ -13,7 +21,7 @@ export class EmbeddingRequestDto {
   @ApiPropertyOptional({
     description: 'Embedding provider to use',
     enum: EmbeddingProvider,
-    default: EmbeddingProvider.ALIBABA
+    default: EmbeddingProvider.ALIBABA,
   })
   @IsOptional()
   @IsEnum(EmbeddingProvider)
@@ -24,7 +32,7 @@ export class BatchEmbeddingRequestDto {
   @ApiProperty({
     description: 'Array of texts to embed',
     type: 'array',
-    items: { type: 'string' }
+    items: { type: 'string' },
   })
   @IsArray()
   @IsString({ each: true })
@@ -33,7 +41,7 @@ export class BatchEmbeddingRequestDto {
   @ApiPropertyOptional({
     description: 'Embedding provider to use',
     enum: EmbeddingProvider,
-    default: EmbeddingProvider.ALIBABA
+    default: EmbeddingProvider.ALIBABA,
   })
   @IsOptional()
   @IsEnum(EmbeddingProvider)
@@ -44,7 +52,7 @@ export class BatchEmbeddingRequestDto {
     type: 'number',
     default: 5,
     minimum: 1,
-    maximum: 20
+    maximum: 20,
   })
   @IsOptional()
   @IsNumber()
@@ -56,26 +64,26 @@ export class BatchEmbeddingRequestDto {
 export class EmbeddingResponseDto {
   @ApiProperty({
     description: 'Whether the embedding was generated successfully',
-    type: 'boolean'
+    type: 'boolean',
   })
   success!: boolean;
 
   @ApiPropertyOptional({
     description: 'Generated embedding vector',
     type: 'array',
-    items: { type: 'number' }
+    items: { type: 'number' },
   })
   embedding?: number[];
 
   @ApiPropertyOptional({
     description: 'Error message if embedding failed',
-    type: 'string'
+    type: 'string',
   })
   error?: string;
 
   @ApiPropertyOptional({
     description: 'Provider used for embedding',
-    enum: EmbeddingProvider
+    enum: EmbeddingProvider,
   })
   provider?: EmbeddingProvider;
 }
@@ -83,45 +91,47 @@ export class EmbeddingResponseDto {
 export class BatchEmbeddingResponseDto {
   @ApiProperty({
     description: 'Whether the batch embedding was successful',
-    type: 'boolean'
+    type: 'boolean',
   })
   success!: boolean;
 
   @ApiPropertyOptional({
     description: 'Generated embedding vectors',
     type: 'array',
-    items: { oneOf: [{ type: 'array', items: { type: 'number' } }, { type: 'null' }] }
+    items: {
+      oneOf: [{ type: 'array', items: { type: 'number' } }, { type: 'null' }],
+    },
   })
   embeddings?: (number[] | null)[];
 
   @ApiPropertyOptional({
     description: 'Error messages if any',
     type: 'array',
-    items: { type: 'string' }
+    items: { type: 'string' },
   })
   errors?: string[];
 
   @ApiPropertyOptional({
     description: 'Provider used for embedding',
-    enum: EmbeddingProvider
+    enum: EmbeddingProvider,
   })
   provider?: EmbeddingProvider;
 
   @ApiProperty({
     description: 'Total number of texts processed',
-    type: 'number'
+    type: 'number',
   })
   totalCount!: number;
 
   @ApiProperty({
     description: 'Number of successful embeddings',
-    type: 'number'
+    type: 'number',
   })
   successCount!: number;
 
   @ApiProperty({
     description: 'Number of failed embeddings',
-    type: 'number'
+    type: 'number',
   })
   failureCount!: number;
 }
@@ -129,19 +139,19 @@ export class BatchEmbeddingResponseDto {
 export class ProviderInfoDto {
   @ApiProperty({
     description: 'Provider type',
-    enum: EmbeddingProvider
+    enum: EmbeddingProvider,
   })
   provider!: EmbeddingProvider;
 
   @ApiProperty({
     description: 'Whether the provider is available',
-    type: 'boolean'
+    type: 'boolean',
   })
   available!: boolean;
 
   @ApiProperty({
     description: 'Whether the provider is initialized',
-    type: 'boolean'
+    type: 'boolean',
   })
   initialized!: boolean;
 }
@@ -149,20 +159,20 @@ export class ProviderInfoDto {
 export class HealthCheckResponseDto {
   @ApiProperty({
     description: 'Health status',
-    enum: ['healthy', 'unhealthy']
+    enum: ['healthy', 'unhealthy'],
   })
   status!: 'healthy' | 'unhealthy';
 
   @ApiProperty({
     description: 'Provider information',
     type: 'array',
-    items: { $ref: '#/components/schemas/ProviderInfoDto' }
+    items: { $ref: '#/components/schemas/ProviderInfoDto' },
   })
   providers!: ProviderInfoDto[];
 
   @ApiProperty({
     description: 'Timestamp of the health check',
-    type: 'string'
+    type: 'string',
   })
   timestamp!: string;
 }
@@ -170,25 +180,25 @@ export class HealthCheckResponseDto {
 export class EmbeddingStatsDto {
   @ApiProperty({
     description: 'Total number of requests',
-    type: 'number'
+    type: 'number',
   })
   totalRequests!: number;
 
   @ApiProperty({
     description: 'Number of successful requests',
-    type: 'number'
+    type: 'number',
   })
   successfulRequests!: number;
 
   @ApiProperty({
     description: 'Number of failed requests',
-    type: 'number'
+    type: 'number',
   })
   failedRequests!: number;
 
   @ApiProperty({
     description: 'Average response time in milliseconds',
-    type: 'number'
+    type: 'number',
   })
   averageResponseTime!: number;
 
@@ -201,14 +211,17 @@ export class EmbeddingStatsDto {
         requests: { type: 'number' },
         successes: { type: 'number' },
         failures: { type: 'number' },
-        averageResponseTime: { type: 'number' }
-      }
-    }
+        averageResponseTime: { type: 'number' },
+      },
+    },
   })
-  providerStats!: Record<EmbeddingProvider, {
-    requests: number;
-    successes: number;
-    failures: number;
-    averageResponseTime: number;
-  }>;
+  providerStats!: Record<
+    EmbeddingProvider,
+    {
+      requests: number;
+      successes: number;
+      failures: number;
+      averageResponseTime: number;
+    }
+  >;
 }

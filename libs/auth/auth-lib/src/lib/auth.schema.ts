@@ -37,7 +37,9 @@ export const UserQuerySchema = z.object({
   isActive: z.coerce.boolean().optional(),
   isEmailVerified: z.coerce.boolean().optional(),
   isPhoneVerified: z.coerce.boolean().optional(),
-  sortBy: z.enum(['id', 'email', 'name', 'createdAt', 'lastLoginAt']).default('createdAt'),
+  sortBy: z
+    .enum(['id', 'email', 'name', 'createdAt', 'lastLoginAt'])
+    .default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -45,7 +47,10 @@ export const UserQuerySchema = z.object({
 export const UpdateUserSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   avatar: z.string().url().optional(),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(),
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/)
+    .optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -202,13 +207,15 @@ export const BulkOperationResponseSchema = z.object({
 // 用户活动响应
 export const UserActivityResponseSchema = z.object({
   userId: z.string().uuid(),
-  activities: z.array(z.object({
-    type: z.string(),
-    description: z.string(),
-    timestamp: z.date(),
-    ip: z.string(),
-    userAgent: z.string().optional(),
-  })),
+  activities: z.array(
+    z.object({
+      type: z.string(),
+      description: z.string(),
+      timestamp: z.date(),
+      ip: z.string(),
+      userAgent: z.string().optional(),
+    }),
+  ),
 });
 
 // 通用API响应

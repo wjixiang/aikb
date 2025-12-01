@@ -8,7 +8,7 @@ import {
   Body,
   Query,
   UseGuards,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -21,7 +21,7 @@ import type {
   UserResponse,
   UserDetailResponse,
   PaginatedResponse,
-  ApiResponse
+  ApiResponse,
 } from './auth.dto';
 
 @Controller('users')
@@ -30,19 +30,23 @@ export class UserController {
   constructor(private readonly authService: AuthService) {}
 
   @Get()
-  async getUsers(@Query() query: UserQueryDto): Promise<PaginatedResponse<UserResponse>> {
+  async getUsers(
+    @Query() query: UserQueryDto,
+  ): Promise<PaginatedResponse<UserResponse>> {
     return this.authService.getUsers(query);
   }
 
   @Get(':id')
-  async getUserById(@Param('id', ParseUUIDPipe) id: string): Promise<UserDetailResponse> {
+  async getUserById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserDetailResponse> {
     return this.authService.getUserById(id);
   }
 
   @Put(':id')
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(UpdateUserSchema)) updateUserDto: UpdateUserDto
+    @Body(new ZodValidationPipe(UpdateUserSchema)) updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
     return this.authService.updateUser(id, updateUserDto);
   }
@@ -50,13 +54,16 @@ export class UserController {
   @Post(':id/password')
   async updatePassword(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(UpdatePasswordSchema)) updatePasswordDto: UpdatePasswordDto
+    @Body(new ZodValidationPipe(UpdatePasswordSchema))
+    updatePasswordDto: UpdatePasswordDto,
   ): Promise<ApiResponse> {
     return this.authService.updatePassword(id, updatePasswordDto);
   }
 
   @Delete(':id')
-  async deleteUser(@Param('id', ParseUUIDPipe) id: string): Promise<ApiResponse> {
+  async deleteUser(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiResponse> {
     return this.authService.deleteUser(id);
   }
 

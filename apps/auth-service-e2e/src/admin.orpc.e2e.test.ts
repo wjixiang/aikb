@@ -9,7 +9,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -25,7 +25,7 @@ describe('Admin ORPC Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup admin user
     adminUser = generateRandomUser();
     const adminResponse = await orpc_client.auth.register(adminUser);
@@ -35,15 +35,15 @@ describe('Admin ORPC Endpoints', () => {
     // Setup regular users for testing
     regularUser1 = generateRandomUser();
     regularUser2 = generateRandomUser();
-    
+
     const user1Response = await orpc_client.auth.register(regularUser1);
     const user2Response = await orpc_client.auth.register(regularUser2);
-    
+
     regularUserIds.push(user1Response.user.id);
     regularUserIds.push(user2Response.user.id);
-    
+
     regularToken = user1Response.accessToken;
-    
+
     // Set auth token for ORPC client (using admin token for admin operations)
     setAuthToken(adminToken);
   });
@@ -63,19 +63,19 @@ describe('Admin ORPC Endpoints', () => {
       expect(response).toHaveProperty('newUsersThisMonth');
       expect(response).toHaveProperty('newUsersThisWeek');
       expect(response).toHaveProperty('loginStats');
-      
+
       expect(typeof response.totalUsers).toBe('number');
       expect(typeof response.activeUsers).toBe('number');
       expect(typeof response.verifiedEmailUsers).toBe('number');
       expect(typeof response.verifiedPhoneUsers).toBe('number');
       expect(typeof response.newUsersThisMonth).toBe('number');
       expect(typeof response.newUsersThisWeek).toBe('number');
-      
+
       expect(response.loginStats).toHaveProperty('totalLogins');
       expect(response.loginStats).toHaveProperty('successfulLogins');
       expect(response.loginStats).toHaveProperty('failedLogins');
       expect(response.loginStats).toHaveProperty('todayLogins');
-      
+
       expect(typeof response.loginStats.totalLogins).toBe('number');
       expect(typeof response.loginStats.successfulLogins).toBe('number');
       expect(typeof response.loginStats.failedLogins).toBe('number');
@@ -93,7 +93,7 @@ describe('Admin ORPC Endpoints', () => {
 
     it('should include all created users in statistics', async () => {
       const response = await orpc_client.admin.getStats({});
-      
+
       // Should have at least the users we created
       expect(response.totalUsers).toBeGreaterThanOrEqual(3); // admin + 2 regular users
     });
@@ -108,11 +108,11 @@ describe('Admin ORPC Endpoints', () => {
       testUsersForBulk = [
         generateRandomUser(),
         generateRandomUser(),
-        generateRandomUser()
+        generateRandomUser(),
       ];
-      
+
       testUserIdsForBulk = [];
-      
+
       for (const user of testUsersForBulk) {
         const response = await orpc_client.auth.register(user);
         testUserIdsForBulk.push(response.user.id);
@@ -122,7 +122,7 @@ describe('Admin ORPC Endpoints', () => {
     it('should bulk activate users successfully', async () => {
       const response = await orpc_client.admin.bulkOperation({
         userIds: testUserIdsForBulk,
-        action: 'activate'
+        action: 'activate',
       });
 
       expect(response).toHaveProperty('success');
@@ -138,7 +138,7 @@ describe('Admin ORPC Endpoints', () => {
     it('should bulk deactivate users successfully', async () => {
       const response = await orpc_client.admin.bulkOperation({
         userIds: testUserIdsForBulk,
-        action: 'deactivate'
+        action: 'deactivate',
       });
 
       expect(response).toHaveProperty('success');
@@ -160,7 +160,7 @@ describe('Admin ORPC Endpoints', () => {
     it('should bulk delete users successfully', async () => {
       const response = await orpc_client.admin.bulkOperation({
         userIds: testUserIdsForBulk,
-        action: 'delete'
+        action: 'delete',
       });
 
       expect(response).toHaveProperty('success');
@@ -188,7 +188,7 @@ describe('Admin ORPC Endpoints', () => {
       try {
         await orpc_client.admin.bulkOperation({
           userIds: [],
-          action: 'activate'
+          action: 'activate',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -201,7 +201,7 @@ describe('Admin ORPC Endpoints', () => {
       try {
         await orpc_client.admin.bulkOperation({
           userIds: regularUserIds,
-          action: 'invalid-action' as any
+          action: 'invalid-action' as any,
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -219,14 +219,14 @@ describe('Admin ORPC Endpoints', () => {
 
       const response = await orpc_client.admin.bulkOperation({
         userIds: mixedUserIds,
-        action: 'activate'
+        action: 'activate',
       });
 
       expect(response).toHaveProperty('success');
       expect(response).toHaveProperty('processedCount');
       expect(response).toHaveProperty('failedCount');
       expect(response).toHaveProperty('errors');
-      
+
       expect(response.processedCount).toBe(2); // 2 valid users
       expect(response.failedCount).toBe(1); // 1 invalid user
       expect(response.errors).toBeDefined();
@@ -236,12 +236,12 @@ describe('Admin ORPC Endpoints', () => {
     it('should return error for non-existent user IDs in bulk operations', async () => {
       const nonExistentIds = [
         '00000000-0000-0000-0000-000000000001',
-        '00000000-0000-0000-0000-000000000002'
+        '00000000-0000-0000-0000-000000000002',
       ];
 
       const response = await orpc_client.admin.bulkOperation({
         userIds: nonExistentIds,
-        action: 'activate'
+        action: 'activate',
       });
 
       expect(response.success).toBe(false);
@@ -274,32 +274,29 @@ describe('Admin ORPC Endpoints', () => {
 
       // Get updated stats
       const updatedStats = await orpc_client.admin.getStats({});
-      
+
       // Stats should reflect the new user
       expect(updatedStats.totalUsers).toBe(initialUserCount + 1);
 
       // Delete the user via bulk operation
       await orpc_client.admin.bulkOperation({
         userIds: [newUserId],
-        action: 'delete'
+        action: 'delete',
       });
 
       // Get final stats
       const finalStats = await orpc_client.admin.getStats({});
-      
+
       // Stats should reflect the deletion
       expect(finalStats.totalUsers).toBe(initialUserCount);
     });
 
     it('should handle concurrent admin operations safely', async () => {
       // Create multiple users for concurrent testing
-      const concurrentUsers = [
-        generateRandomUser(),
-        generateRandomUser()
-      ];
-      
+      const concurrentUsers = [generateRandomUser(), generateRandomUser()];
+
       const concurrentUserIds: string[] = [];
-      
+
       for (const user of concurrentUsers) {
         const response = await orpc_client.auth.register(user);
         concurrentUserIds.push(response.user.id);
@@ -308,7 +305,7 @@ describe('Admin ORPC Endpoints', () => {
       // Perform concurrent operations
       const activatePromise = orpc_client.admin.bulkOperation({
         userIds: concurrentUserIds,
-        action: 'activate'
+        action: 'activate',
       });
 
       const statsPromise = orpc_client.admin.getStats({});
@@ -316,7 +313,7 @@ describe('Admin ORPC Endpoints', () => {
       // Wait for both operations to complete
       const [activateResponse, statsResponse] = await Promise.all([
         activatePromise,
-        statsPromise
+        statsPromise,
       ]);
 
       // Both operations should succeed
@@ -326,7 +323,7 @@ describe('Admin ORPC Endpoints', () => {
       // Cleanup
       await orpc_client.admin.bulkOperation({
         userIds: concurrentUserIds,
-        action: 'delete'
+        action: 'delete',
       });
     });
   });

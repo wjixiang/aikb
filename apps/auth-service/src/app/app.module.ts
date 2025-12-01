@@ -2,9 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthLibModule } from 'auth-lib';
 
 @Module({
-  imports: [
-    AuthLibModule,
-  ],
+  imports: [AuthLibModule],
   controllers: [],
   providers: [],
 })

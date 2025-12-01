@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { orpc_client, setAuthToken, clearAuthToken } from './support/orpc-client';
+import {
+  orpc_client,
+  setAuthToken,
+  clearAuthToken,
+} from './support/orpc-client';
 import { clearMockDb } from './support/test-db-setup';
 
 // Helper function to generate random user data
@@ -9,7 +13,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -22,7 +26,7 @@ describe('Authentication ORPC Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup test data with random user
     testUser = generateRandomUser();
     await orpc_client.auth.register(testUser);
@@ -49,7 +53,7 @@ describe('Authentication ORPC Endpoints', () => {
         await orpc_client.auth.register({
           email: testUser.email,
           password: 'password123',
-          name: 'Duplicate User'
+          name: 'Duplicate User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -63,7 +67,7 @@ describe('Authentication ORPC Endpoints', () => {
         await orpc_client.auth.register({
           email: 'invalid-email',
           password: 'password123',
-          name: 'Invalid Email User'
+          name: 'Invalid Email User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -76,7 +80,7 @@ describe('Authentication ORPC Endpoints', () => {
         await orpc_client.auth.register({
           email: 'shortpass@example.com',
           password: '123',
-          name: 'Short Pass User'
+          name: 'Short Pass User',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -89,7 +93,7 @@ describe('Authentication ORPC Endpoints', () => {
     it('should login successfully with valid credentials', async () => {
       const response = await orpc_client.auth.login({
         email: testUser.email,
-        password: testUser.password
+        password: testUser.password,
       });
 
       expect(response).toHaveProperty('user');
@@ -101,7 +105,7 @@ describe('Authentication ORPC Endpoints', () => {
       authToken = response.accessToken;
       refreshToken = response.refreshToken;
       userId = response.user.id;
-      
+
       // Set auth token for ORPC client
       setAuthToken(authToken);
     });
@@ -110,7 +114,7 @@ describe('Authentication ORPC Endpoints', () => {
       try {
         await orpc_client.auth.login({
           email: testUser.email,
-          password: 'wrongpassword'
+          password: 'wrongpassword',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -123,7 +127,7 @@ describe('Authentication ORPC Endpoints', () => {
       try {
         await orpc_client.auth.login({
           email: 'nonexistent@example.com',
-          password: 'password123'
+          password: 'password123',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -145,7 +149,7 @@ describe('Authentication ORPC Endpoints', () => {
       // Update tokens
       authToken = response.accessToken;
       refreshToken = response.refreshToken;
-      
+
       // Update auth token for ORPC client
       setAuthToken(authToken);
     });
@@ -153,7 +157,7 @@ describe('Authentication ORPC Endpoints', () => {
     it('should return error for invalid refresh token', async () => {
       try {
         await orpc_client.auth.refresh({
-          refreshToken: 'invalid-refresh-token'
+          refreshToken: 'invalid-refresh-token',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -188,7 +192,7 @@ describe('Authentication ORPC Endpoints', () => {
       const response = await orpc_client.auth.logout({ refreshToken });
 
       expect(response.message).toBe('登出成功');
-      
+
       // Clear auth token after logout
       clearAuthToken();
     });

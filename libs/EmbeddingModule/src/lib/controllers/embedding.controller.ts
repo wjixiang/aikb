@@ -8,7 +8,7 @@ import {
   HttpStatus,
   ValidationPipe,
   UsePipes,
-  Logger
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { EmbeddingService } from '../services/embedding.service';
@@ -19,7 +19,7 @@ import type {
   BatchEmbeddingResponse,
   HealthCheckResponse,
   EmbeddingStats,
-  ProviderInfo
+  ProviderInfo,
 } from '../interfaces/embedding.interfaces';
 import { EmbeddingProvider } from 'embedding';
 import {
@@ -29,7 +29,7 @@ import {
   BatchEmbeddingResponseDto,
   ProviderInfoDto,
   HealthCheckResponseDto,
-  EmbeddingStatsDto
+  EmbeddingStatsDto,
 } from '../dto/embedding.dto';
 
 @ApiTags('embedding')
@@ -42,45 +42,53 @@ export class EmbeddingController {
   @Post('embed')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate embedding for text(s)' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Embedding generated successfully',
-    type: EmbeddingResponseDto
+    type: EmbeddingResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Bad request' 
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
   })
   @UsePipes(new ValidationPipe({ transform: true }))
-  async embed(@Body() request: EmbeddingRequestDto): Promise<EmbeddingResponse> {
-    this.logger.debug(`Embed request received for provider: ${request.provider || 'default'}`);
+  async embed(
+    @Body() request: EmbeddingRequestDto,
+  ): Promise<EmbeddingResponse> {
+    this.logger.debug(
+      `Embed request received for provider: ${request.provider || 'default'}`,
+    );
     return this.embeddingService.embed(request);
   }
 
   @Post('embed-batch')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate embeddings for multiple texts' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Batch embeddings generated successfully',
-    type: BatchEmbeddingResponseDto
+    type: BatchEmbeddingResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Bad request' 
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
   })
   @UsePipes(new ValidationPipe({ transform: true }))
-  async embedBatch(@Body() request: BatchEmbeddingRequestDto): Promise<BatchEmbeddingResponse> {
-    this.logger.debug(`Batch embed request received for ${request.texts.length} texts`);
+  async embedBatch(
+    @Body() request: BatchEmbeddingRequestDto,
+  ): Promise<BatchEmbeddingResponse> {
+    this.logger.debug(
+      `Batch embed request received for ${request.texts.length} texts`,
+    );
     return this.embeddingService.embedBatch(request);
   }
 
   @Get('providers')
   @ApiOperation({ summary: 'Get available embedding providers' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Available providers retrieved successfully',
-    type: [ProviderInfoDto]
+    type: [ProviderInfoDto],
   })
   getProviders(): ProviderInfo[] {
     return this.embeddingService.getProviderInfo();
@@ -88,9 +96,9 @@ export class EmbeddingController {
 
   @Get('provider/current')
   @ApiOperation({ summary: 'Get current active provider' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Current provider retrieved successfully'
+  @ApiResponse({
+    status: 200,
+    description: 'Current provider retrieved successfully',
   })
   getCurrentProvider(): { provider: EmbeddingProvider } {
     return { provider: this.embeddingService.getProvider() };
@@ -100,30 +108,33 @@ export class EmbeddingController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set active embedding provider' })
   @ApiQuery({ name: 'provider', enum: EmbeddingProvider, required: true })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Provider set successfully'
+  @ApiResponse({
+    status: 200,
+    description: 'Provider set successfully',
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid provider' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid provider',
   })
-  setProvider(@Query('provider') provider: EmbeddingProvider): { success: boolean; message: string } {
+  setProvider(@Query('provider') provider: EmbeddingProvider): {
+    success: boolean;
+    message: string;
+  } {
     const success = this.embeddingService.setProvider(provider);
     return {
       success,
-      message: success 
-        ? `Provider set to ${provider} successfully` 
-        : `Failed to set provider to ${provider}`
+      message: success
+        ? `Provider set to ${provider} successfully`
+        : `Failed to set provider to ${provider}`,
     };
   }
 
   @Get('health')
   @ApiOperation({ summary: 'Check embedding service health' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Health check completed',
-    type: HealthCheckResponseDto
+    type: HealthCheckResponseDto,
   })
   async health(): Promise<HealthCheckResponse> {
     return this.embeddingService.healthCheck();
@@ -131,10 +142,10 @@ export class EmbeddingController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Get embedding service statistics' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Statistics retrieved successfully',
-    type: EmbeddingStatsDto
+    type: EmbeddingStatsDto,
   })
   getStats(): EmbeddingStats {
     return this.embeddingService.getStats();
@@ -143,15 +154,15 @@ export class EmbeddingController {
   @Post('stats/reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset embedding service statistics' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Statistics reset successfully'
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics reset successfully',
   })
   resetStats(): { success: boolean; message: string } {
     this.embeddingService.resetStats();
     return {
       success: true,
-      message: 'Statistics reset successfully'
+      message: 'Statistics reset successfully',
     };
   }
 }

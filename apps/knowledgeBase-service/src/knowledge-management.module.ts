@@ -20,11 +20,7 @@ import { KnowledgeBaseLibModule } from 'knowledgeBase-lib';
     SearchController,
     VersionControlController,
   ],
-  providers: [
-    KnowledgeManagementService,
-  ],
-  exports: [
-    KnowledgeManagementService,
-  ],
+  providers: [KnowledgeManagementService],
+  exports: [KnowledgeManagementService],
 })
 export class KnowledgeManagementModule {}

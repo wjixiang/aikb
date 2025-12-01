@@ -1,20 +1,22 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Param, 
-  Body, 
-  Query, 
-  HttpStatus 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  HttpStatus,
 } from '@nestjs/common';
 import { KnowledgeManagementService } from 'knowledgeBase-lib';
 import { CreateVertexDto } from '../dto/index';
 
 @Controller('vertices')
 export class VertexController {
-  constructor(private readonly knowledgeManagementService: KnowledgeManagementService) {}
+  constructor(
+    private readonly knowledgeManagementService: KnowledgeManagementService,
+  ) {}
 
   @Post()
   async create(@Body() createVertexDto: CreateVertexDto) {
@@ -23,7 +25,7 @@ export class VertexController {
       type: createVertexDto.type,
       metadata: createVertexDto.metadata,
     };
-    
+
     return await this.knowledgeManagementService.createVertex(vertexData);
   }
 
@@ -35,16 +37,16 @@ export class VertexController {
   @Get()
   async findAll(
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
-    return await this.knowledgeManagementService.findVertices({}, { limit, offset });
+    return await this.knowledgeManagementService.findVertices(
+      {},
+      { limit, offset },
+    );
   }
 
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateData: any
-  ) {
+  async update(@Param('id') id: string, @Body() updateData: any) {
     return await this.knowledgeManagementService.updateVertex(id, updateData);
   }
 

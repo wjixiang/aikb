@@ -10,7 +10,9 @@ describe('PropertyStorageMemoryService', () => {
       providers: [PropertyStorageMemoryService],
     }).compile();
 
-    service = module.get<PropertyStorageMemoryService>(PropertyStorageMemoryService);
+    service = module.get<PropertyStorageMemoryService>(
+      PropertyStorageMemoryService,
+    );
   });
 
   it('should be defined', () => {
@@ -21,7 +23,7 @@ describe('PropertyStorageMemoryService', () => {
     it('should create a new property with generated ID', async () => {
       const propertyData = {
         edgePath: ['node1', 'node2'],
-        content: 'Test property content'
+        content: 'Test property content',
       };
 
       const result = await service.create(propertyData);
@@ -34,11 +36,11 @@ describe('PropertyStorageMemoryService', () => {
     it('should generate unique IDs for different properties', async () => {
       const propertyData1 = {
         edgePath: ['node1'],
-        content: 'Content 1'
+        content: 'Content 1',
       };
       const propertyData2 = {
         edgePath: ['node2'],
-        content: 'Content 2'
+        content: 'Content 2',
       };
 
       const result1 = await service.create(propertyData1);
@@ -52,7 +54,7 @@ describe('PropertyStorageMemoryService', () => {
     it('should return a property when found by ID', async () => {
       const propertyData = {
         edgePath: ['node1', 'node2'],
-        content: 'Test property content'
+        content: 'Test property content',
       };
       const createdProperty = await service.create(propertyData);
 
@@ -71,16 +73,19 @@ describe('PropertyStorageMemoryService', () => {
     it('should return properties for existing IDs', async () => {
       const propertyData1 = {
         edgePath: ['node1'],
-        content: 'Content 1'
+        content: 'Content 1',
       };
       const propertyData2 = {
         edgePath: ['node2'],
-        content: 'Content 2'
+        content: 'Content 2',
       };
       const createdProperty1 = await service.create(propertyData1);
       const createdProperty2 = await service.create(propertyData2);
 
-      const results = await service.findByIds([createdProperty1.id, createdProperty2.id]);
+      const results = await service.findByIds([
+        createdProperty1.id,
+        createdProperty2.id,
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdProperty1);
@@ -90,11 +95,14 @@ describe('PropertyStorageMemoryService', () => {
     it('should return null for non-existent IDs', async () => {
       const propertyData = {
         edgePath: ['node1'],
-        content: 'Content 1'
+        content: 'Content 1',
       };
       const createdProperty = await service.create(propertyData);
 
-      const results = await service.findByIds([createdProperty.id, 'non-existent-id']);
+      const results = await service.findByIds([
+        createdProperty.id,
+        'non-existent-id',
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdProperty);
@@ -106,12 +114,12 @@ describe('PropertyStorageMemoryService', () => {
     it('should update an existing property', async () => {
       const propertyData = {
         edgePath: ['node1', 'node2'],
-        content: 'Original content'
+        content: 'Original content',
       };
       const createdProperty = await service.create(propertyData);
 
       const updates = {
-        content: 'Updated content'
+        content: 'Updated content',
       };
       const result = await service.update(createdProperty.id, updates);
 
@@ -122,7 +130,7 @@ describe('PropertyStorageMemoryService', () => {
 
     it('should return null when trying to update non-existent property', async () => {
       const updates = {
-        content: 'Updated content'
+        content: 'Updated content',
       };
       const result = await service.update('non-existent-id', updates);
       expect(result).toBeNull();
@@ -133,7 +141,7 @@ describe('PropertyStorageMemoryService', () => {
     it('should delete an existing property', async () => {
       const propertyData = {
         edgePath: ['node1', 'node2'],
-        content: 'Test content'
+        content: 'Test content',
       };
       const createdProperty = await service.create(propertyData);
 
@@ -154,7 +162,7 @@ describe('PropertyStorageMemoryService', () => {
     it('should return true for existing property', async () => {
       const propertyData = {
         edgePath: ['node1', 'node2'],
-        content: 'Test content'
+        content: 'Test content',
       };
       const createdProperty = await service.create(propertyData);
 
@@ -172,11 +180,11 @@ describe('PropertyStorageMemoryService', () => {
     it('should clear all properties', async () => {
       const propertyData1 = {
         edgePath: ['node1'],
-        content: 'Content 1'
+        content: 'Content 1',
       };
       const propertyData2 = {
         edgePath: ['node2'],
-        content: 'Content 2'
+        content: 'Content 2',
       };
       await service.create(propertyData1);
       await service.create(propertyData2);
@@ -197,14 +205,14 @@ describe('PropertyStorageMemoryService', () => {
 
       const propertyData1 = {
         edgePath: ['node1'],
-        content: 'Content 1'
+        content: 'Content 1',
       };
       await service.create(propertyData1);
       expect(await service.count()).toBe(1);
 
       const propertyData2 = {
         edgePath: ['node2'],
-        content: 'Content 2'
+        content: 'Content 2',
       };
       await service.create(propertyData2);
       expect(await service.count()).toBe(2);
@@ -213,8 +221,7 @@ describe('PropertyStorageMemoryService', () => {
       expect(await service.count()).toBe(2); // No change since ID doesn't exist
 
       const createdProperty = await service.create({
-        
-        content: 'Content 3'
+        content: 'Content 3',
       });
       await service.delete(createdProperty.id);
       expect(await service.count()).toBe(2); // One property deleted

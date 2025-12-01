@@ -1,18 +1,20 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Param, 
-  Body, 
-  Query 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
 } from '@nestjs/common';
 import { KnowledgeManagementService } from 'knowledgeBase-lib';
 
 @Controller('version-control')
 export class VersionControlController {
-  constructor(private readonly knowledgeManagementService: KnowledgeManagementService) {}
+  constructor(
+    private readonly knowledgeManagementService: KnowledgeManagementService,
+  ) {}
 
   @Post('branches')
   async createBranch(@Body() createBranchDto: any) {
@@ -43,7 +45,7 @@ export class VersionControlController {
     @Query('repositoryId') repositoryId: string,
     @Query('branchName') branchName?: string,
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
     // This would be implemented in the knowledge management service
     return { message: 'Get commits endpoint - to be implemented' };
@@ -83,7 +85,7 @@ export class VersionControlController {
   async getEntityHistory(
     @Param('entityId') entityId: string,
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
     // This would be implemented in the knowledge management service
     return { message: 'Get entity history endpoint - to be implemented' };

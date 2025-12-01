@@ -2,49 +2,95 @@ import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
 
 export interface IKnowledgeManagementService {
   // 实体操作
-  createEntity(data: Omit<EntityData, 'id'>, options?: OperationOptions): Promise<EntityData>;
-  updateEntity(id: string, updates: Partial<EntityData>, options?: OperationOptions): Promise<EntityData>;
+  createEntity(
+    data: Omit<EntityData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<EntityData>;
+  updateEntity(
+    id: string,
+    updates: Partial<EntityData>,
+    options?: OperationOptions,
+  ): Promise<EntityData>;
   deleteEntity(id: string, options?: OperationOptions): Promise<boolean>;
   getEntity(id: string): Promise<EntityData | null>;
-  findEntities(query: EntityQuery, options?: QueryOptions): Promise<EntityData[]>;
-  
+  findEntities(
+    query: EntityQuery,
+    options?: QueryOptions,
+  ): Promise<EntityData[]>;
+
   // 顶点操作
-  createVertex(data: Omit<VertexData, 'id'>, options?: OperationOptions): Promise<VertexData>;
-  updateVertex(id: string, updates: Partial<VertexData>, options?: OperationOptions): Promise<VertexData>;
+  createVertex(
+    data: Omit<VertexData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<VertexData>;
+  updateVertex(
+    id: string,
+    updates: Partial<VertexData>,
+    options?: OperationOptions,
+  ): Promise<VertexData>;
   deleteVertex(id: string, options?: OperationOptions): Promise<boolean>;
   getVertex(id: string): Promise<VertexData | null>;
-  findVertices(query: VertexQuery, options?: QueryOptions): Promise<VertexData[]>;
-  
+  findVertices(
+    query: VertexQuery,
+    options?: QueryOptions,
+  ): Promise<VertexData[]>;
+
   // 属性操作
-  createProperty(data: Omit<PropertyData, 'id'>, options?: OperationOptions): Promise<PropertyData>;
-  updateProperty(id: string, updates: Partial<PropertyData>, options?: OperationOptions): Promise<PropertyData>;
+  createProperty(
+    data: Omit<PropertyData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<PropertyData>;
+  updateProperty(
+    id: string,
+    updates: Partial<PropertyData>,
+    options?: OperationOptions,
+  ): Promise<PropertyData>;
   deleteProperty(id: string, options?: OperationOptions): Promise<boolean>;
   getProperty(id: string): Promise<PropertyData | null>;
-  findProperties(query: PropertyQuery, options?: QueryOptions): Promise<PropertyData[]>;
-  
+  findProperties(
+    query: PropertyQuery,
+    options?: QueryOptions,
+  ): Promise<PropertyData[]>;
+
   // 边操作
-  createEdge(data: Omit<EdgeData, 'id'>, options?: OperationOptions): Promise<EdgeData>;
-  updateEdge(id: string, updates: Partial<EdgeData>, options?: OperationOptions): Promise<EdgeData>;
+  createEdge(
+    data: Omit<EdgeData, 'id'>,
+    options?: OperationOptions,
+  ): Promise<EdgeData>;
+  updateEdge(
+    id: string,
+    updates: Partial<EdgeData>,
+    options?: OperationOptions,
+  ): Promise<EdgeData>;
   deleteEdge(id: string, options?: OperationOptions): Promise<boolean>;
   getEdge(id: string): Promise<EdgeData | null>;
   findEdges(query: EdgeQuery, options?: QueryOptions): Promise<EdgeData[]>;
-  
+
   // 批量操作
-  executeBatch(operations: BatchOperation[], options?: BatchOperationOptions): Promise<BatchResult>;
-  
+  executeBatch(
+    operations: BatchOperation[],
+    options?: BatchOperationOptions,
+  ): Promise<BatchResult>;
+
   // 复杂操作
   createEntityWithRelations(
     entityData: Omit<EntityData, 'id'>,
     vertices: Omit<VertexData, 'id'>[],
     properties: Omit<PropertyData, 'id'>[],
     edges: Omit<EdgeData, 'id'>[],
-    options?: OperationOptions
+    options?: OperationOptions,
   ): Promise<EntityWithRelations>;
-  
+
   // 关系查询
-  getEntityRelations(entityId: string, options?: RelationQueryOptions): Promise<EntityRelations>;
-  getVertexConnections(vertexId: string, options?: RelationQueryOptions): Promise<VertexConnections>;
-  
+  getEntityRelations(
+    entityId: string,
+    options?: RelationQueryOptions,
+  ): Promise<EntityRelations>;
+  getVertexConnections(
+    vertexId: string,
+    options?: RelationQueryOptions,
+  ): Promise<VertexConnections>;
+
   // 验证操作
   validateEntity(data: EntityData): Promise<ValidationResult>;
   validateVertex(data: VertexData): Promise<ValidationResult>;

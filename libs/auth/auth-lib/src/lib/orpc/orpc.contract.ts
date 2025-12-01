@@ -74,9 +74,11 @@ export const listUsersContract = oc
     path: '/users',
   })
   .input(UserQuerySchema)
-  .output(PaginatedResponseSchema.extend({
-    data: z.array(UserResponseSchema)
-  }));
+  .output(
+    PaginatedResponseSchema.extend({
+      data: z.array(UserResponseSchema),
+    }),
+  );
 
 export const findUserContract = oc
   .route({
@@ -91,10 +93,12 @@ export const updateUserContract = oc
     method: 'PUT',
     path: '/users/{id}',
   })
-  .input(z.object({
-    id: z.string().uuid(),
-    data: UpdateUserSchema,
-  }))
+  .input(
+    z.object({
+      id: z.string().uuid(),
+      data: UpdateUserSchema,
+    }),
+  )
   .output(UserResponseSchema);
 
 export const updateUserPasswordContract = oc
@@ -102,10 +106,12 @@ export const updateUserPasswordContract = oc
     method: 'POST',
     path: '/users/{id}/password',
   })
-  .input(z.object({
-    id: z.string().uuid(),
-    data: UpdatePasswordSchema,
-  }))
+  .input(
+    z.object({
+      id: z.string().uuid(),
+      data: UpdatePasswordSchema,
+    }),
+  )
   .output(ApiResponseSchema);
 
 export const deleteUserContract = oc

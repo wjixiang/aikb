@@ -9,7 +9,7 @@ function generateRandomUser() {
   return {
     email: `test${timestamp}${randomSuffix}@example.com`,
     password: `password${timestamp}`,
-    name: `Test User ${timestamp}`
+    name: `Test User ${timestamp}`,
   };
 }
 
@@ -20,7 +20,7 @@ describe('Verification ORPC Endpoints', () => {
   beforeAll(async () => {
     // Clear the mock database before each test run
     await clearMockDb();
-    
+
     // Setup test data with user
     testUser = generateRandomUser();
     await orpc_client.auth.register(testUser);
@@ -33,14 +33,14 @@ describe('Verification ORPC Endpoints', () => {
   describe('verification.sendEmail', () => {
     it('should send email verification successfully', async () => {
       const response = await orpc_client.verification.sendEmail({
-        email: testUser.email
+        email: testUser.email,
       });
 
       expect(response).toHaveProperty('success');
       expect(response).toHaveProperty('message');
       expect(response.success).toBe(true);
       expect(response.message).toContain('验证邮件已发送');
-      
+
       // Store token for verification test (if provided)
       if (response.token) {
         verificationToken = response.token;
@@ -50,7 +50,7 @@ describe('Verification ORPC Endpoints', () => {
     it('should return error for non-existent email', async () => {
       try {
         await orpc_client.verification.sendEmail({
-          email: 'nonexistent@example.com'
+          email: 'nonexistent@example.com',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -62,7 +62,7 @@ describe('Verification ORPC Endpoints', () => {
     it('should return error for invalid email format', async () => {
       try {
         await orpc_client.verification.sendEmail({
-          email: 'invalid-email'
+          email: 'invalid-email',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -73,13 +73,13 @@ describe('Verification ORPC Endpoints', () => {
     it('should handle rate limiting for multiple requests', async () => {
       // Send first request
       await orpc_client.verification.sendEmail({
-        email: testUser.email
+        email: testUser.email,
       });
 
       // Send second request immediately (should be rate limited)
       try {
         await orpc_client.verification.sendEmail({
-          email: testUser.email
+          email: testUser.email,
         });
         // If no error, rate limiting might not be implemented
         expect(true).toBe(true);
@@ -97,9 +97,9 @@ describe('Verification ORPC Endpoints', () => {
     beforeAll(async () => {
       // Send email verification to get a token
       const sendResponse = await orpc_client.verification.sendEmail({
-        email: testUser.email
+        email: testUser.email,
       });
-      
+
       // In a real implementation, the token would be sent via email
       // For testing, we'll use the token from the response if available
       // or mock it for testing purposes
@@ -111,7 +111,7 @@ describe('Verification ORPC Endpoints', () => {
       // For testing purposes, we might need to mock this or use a test token
       try {
         const response = await orpc_client.verification.verifyEmail({
-          token: emailVerificationToken
+          token: emailVerificationToken,
         });
 
         expect(response).toHaveProperty('success');
@@ -132,9 +132,9 @@ describe('Verification ORPC Endpoints', () => {
 
     it('should return error for invalid token', async () => {
       const result = await orpc_client.verification.verifyEmail({
-        token: 'invalid-token'
+        token: 'invalid-token',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('验证令牌无效');
@@ -142,9 +142,9 @@ describe('Verification ORPC Endpoints', () => {
 
     it('should return error for expired token', async () => {
       const result = await orpc_client.verification.verifyEmail({
-        token: 'expired-token'
+        token: 'expired-token',
       });
-      
+
       // ORPC returns error responses as result objects instead of throwing
       expect(result.success).toBe(false);
       expect(result.message).toContain('验证令牌无效');
@@ -153,7 +153,7 @@ describe('Verification ORPC Endpoints', () => {
     it('should return error for empty token', async () => {
       try {
         await orpc_client.verification.verifyEmail({
-          token: ''
+          token: '',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -170,17 +170,20 @@ describe('Verification ORPC Endpoints', () => {
     beforeAll(async () => {
       // Create a user with phone number for testing
       testUserWithPhone = generateRandomUser();
-      const registerResponse = await orpc_client.auth.register(testUserWithPhone);
-      
+      const registerResponse =
+        await orpc_client.auth.register(testUserWithPhone);
+
       // Update user with phone number (if update endpoint supports it)
       try {
         await orpc_client.users.update({
           id: registerResponse.user.id,
-          data: { phone: testPhone }
+          data: { phone: testPhone },
         });
       } catch (error) {
         // If phone update is not supported, we'll skip phone verification tests
-        console.log('Phone number update not supported, skipping phone verification tests');
+        console.log(
+          'Phone number update not supported, skipping phone verification tests',
+        );
       }
     });
 
@@ -188,7 +191,7 @@ describe('Verification ORPC Endpoints', () => {
       try {
         const response = await orpc_client.verification.verifyPhone({
           phone: testPhone,
-          code: '123456' // Mock verification code
+          code: '123456', // Mock verification code
         });
 
         expect(response).toHaveProperty('success');
@@ -210,7 +213,7 @@ describe('Verification ORPC Endpoints', () => {
       try {
         await orpc_client.verification.verifyPhone({
           phone: 'invalid-phone',
-          code: '123456'
+          code: '123456',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -221,9 +224,9 @@ describe('Verification ORPC Endpoints', () => {
     it('should return error for invalid verification code', async () => {
       const result = await orpc_client.verification.verifyPhone({
         phone: testPhone,
-        code: '000000'
+        code: '000000',
       });
-      
+
       // Phone verification is not fully implemented, returns not implemented message
       expect(result.success).toBe(false);
       expect(result.message).toContain('手机验证功能暂未实现');
@@ -234,7 +237,7 @@ describe('Verification ORPC Endpoints', () => {
       try {
         await orpc_client.verification.verifyPhone({
           phone: testPhone,
-          code: '12345' // Too short
+          code: '12345', // Too short
         });
         expect.fail('Should have thrown validation error');
       } catch (error: any) {
@@ -246,9 +249,9 @@ describe('Verification ORPC Endpoints', () => {
     it('should return error for non-existent phone number', async () => {
       const result = await orpc_client.verification.verifyPhone({
         phone: '+9999999999',
-        code: '123456'
+        code: '123456',
       });
-      
+
       // Phone verification is not fully implemented, returns not implemented message
       expect(result.success).toBe(false);
       expect(result.message).toContain('手机验证功能暂未实现');
@@ -263,7 +266,7 @@ describe('Verification ORPC Endpoints', () => {
 
       // Send verification email
       const sendResponse = await orpc_client.verification.sendEmail({
-        email: newUser.email
+        email: newUser.email,
       });
       expect(sendResponse.success).toBe(true);
 
@@ -278,9 +281,9 @@ describe('Verification ORPC Endpoints', () => {
       // In a real implementation, you'd verify an email first, then try again
       try {
         const response = await orpc_client.verification.sendEmail({
-          email: testUser.email
+          email: testUser.email,
         });
-        
+
         // The response might indicate email is already verified
         if (response.message.includes('已经验证')) {
           expect(response.success).toBe(true);

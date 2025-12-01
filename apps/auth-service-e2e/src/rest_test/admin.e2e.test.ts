@@ -7,19 +7,22 @@ function generateRandomUser() {
   return {
     email: `test-${timestamp}-${randomSuffix}@example.com`,
     password: 'password123',
-    name: `Test User ${timestamp}-${randomSuffix}`
+    name: `Test User ${timestamp}-${randomSuffix}`,
   };
 }
 
 describe.skip('Admin Endpoints', () => {
   let authToken: string;
   let testUserIds: string[] = [];
-  let user = [generateRandomUser(),generateRandomUser(),generateRandomUser()]
+  let user = [generateRandomUser(), generateRandomUser(), generateRandomUser()];
   beforeAll(async () => {
     // Create test users for admin operations
-    user = [generateRandomUser(),generateRandomUser(),generateRandomUser()]
+    user = [generateRandomUser(), generateRandomUser(), generateRandomUser()];
     for (let i = 0; i < 3; i++) {
-      const registerResponse = await axiosInstance.post('/auth/register',user[i]);
+      const registerResponse = await axiosInstance.post(
+        '/auth/register',
+        user[i],
+      );
       testUserIds.push(registerResponse.data.user.id);
     }
 
@@ -36,8 +39,8 @@ describe.skip('Admin Endpoints', () => {
     it('should get user statistics successfully', async () => {
       const response = await axiosInstance.get('/admin/stats', {
         headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+          Authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.status).toBe(200);
@@ -48,12 +51,12 @@ describe.skip('Admin Endpoints', () => {
       expect(response.data).toHaveProperty('newUsersThisMonth');
       expect(response.data).toHaveProperty('newUsersThisWeek');
       expect(response.data).toHaveProperty('loginStats');
-      
+
       expect(response.data.loginStats).toHaveProperty('totalLogins');
       expect(response.data.loginStats).toHaveProperty('successfulLogins');
       expect(response.data.loginStats).toHaveProperty('failedLogins');
       expect(response.data.loginStats).toHaveProperty('todayLogins');
-      
+
       expect(typeof response.data.totalUsers).toBe('number');
       expect(typeof response.data.activeUsers).toBe('number');
       expect(typeof response.data.verifiedEmailUsers).toBe('number');
@@ -77,22 +80,33 @@ describe.skip('Admin Endpoints', () => {
 
     beforeAll(async () => {
       // Create additional users for bulk operations
-      const bulkUsers = [generateRandomUser(), generateRandomUser(), generateRandomUser()];
+      const bulkUsers = [
+        generateRandomUser(),
+        generateRandomUser(),
+        generateRandomUser(),
+      ];
       for (let i = 0; i < 3; i++) {
-        const registerResponse = await axiosInstance.post('/auth/register', bulkUsers[i]);
+        const registerResponse = await axiosInstance.post(
+          '/auth/register',
+          bulkUsers[i],
+        );
         bulkTestUserIds.push(registerResponse.data.user.id);
       }
     });
 
     it('should activate users in bulk successfully', async () => {
-      const response = await axiosInstance.post('/admin/bulk-operation', {
-        userIds: bulkTestUserIds,
-        action: 'activate'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      const response = await axiosInstance.post(
+        '/admin/bulk-operation',
+        {
+          userIds: bulkTestUserIds,
+          action: 'activate',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
 
       expect(response.status).toBe(201);
       expect(response.data.success).toBe(true);
@@ -102,14 +116,18 @@ describe.skip('Admin Endpoints', () => {
     });
 
     it('should deactivate users in bulk successfully', async () => {
-      const response = await axiosInstance.post('/admin/bulk-operation', {
-        userIds: bulkTestUserIds,
-        action: 'deactivate'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      const response = await axiosInstance.post(
+        '/admin/bulk-operation',
+        {
+          userIds: bulkTestUserIds,
+          action: 'deactivate',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
 
       expect(response.status).toBe(201);
       expect(response.data.success).toBe(true);
@@ -123,18 +141,25 @@ describe.skip('Admin Endpoints', () => {
       const deleteTestUserIds: string[] = [];
       const deleteUsers = [generateRandomUser(), generateRandomUser()];
       for (let i = 0; i < 2; i++) {
-        const registerResponse = await axiosInstance.post('/auth/register', deleteUsers[i]);
+        const registerResponse = await axiosInstance.post(
+          '/auth/register',
+          deleteUsers[i],
+        );
         deleteTestUserIds.push(registerResponse.data.user.id);
       }
 
-      const response = await axiosInstance.post('/admin/bulk-operation', {
-        userIds: deleteTestUserIds,
-        action: 'delete'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      const response = await axiosInstance.post(
+        '/admin/bulk-operation',
+        {
+          userIds: deleteTestUserIds,
+          action: 'delete',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
 
       expect(response.status).toBe(201);
       expect(response.data.success).toBe(true);
@@ -148,17 +173,21 @@ describe.skip('Admin Endpoints', () => {
       const mixedUserIds = [
         ...bulkTestUserIds.slice(0, 1), // Valid ID
         '00000000-0000-0000-0000-000000000000', // Invalid ID
-        ...bulkTestUserIds.slice(1, 2)  // Valid ID
+        ...bulkTestUserIds.slice(1, 2), // Valid ID
       ];
 
-      const response = await axiosInstance.post('/admin/bulk-operation', {
-        userIds: mixedUserIds,
-        action: 'activate'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      const response = await axiosInstance.post(
+        '/admin/bulk-operation',
+        {
+          userIds: mixedUserIds,
+          action: 'activate',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
 
       expect(response.status).toBe(201);
       expect(response.data.success).toBe(false); // Should be false due to failures
@@ -170,14 +199,18 @@ describe.skip('Admin Endpoints', () => {
 
     it('should return error for invalid action', async () => {
       try {
-        await axiosInstance.post('/admin/bulk-operation', {
-          userIds: bulkTestUserIds,
-          action: 'invalid-action'
-        }, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        await axiosInstance.post(
+          '/admin/bulk-operation',
+          {
+            userIds: bulkTestUserIds,
+            action: 'invalid-action',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         expect(error.response.status).toBe(400);
@@ -188,7 +221,7 @@ describe.skip('Admin Endpoints', () => {
       try {
         await axiosInstance.post('/admin/bulk-operation', {
           userIds: bulkTestUserIds,
-          action: 'activate'
+          action: 'activate',
         });
         expect.fail('Should have thrown an error');
       } catch (error: any) {
@@ -198,14 +231,18 @@ describe.skip('Admin Endpoints', () => {
 
     it('should return error for empty user IDs array', async () => {
       try {
-        await axiosInstance.post('/admin/bulk-operation', {
-          userIds: [],
-          action: 'activate'
-        }, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        await axiosInstance.post(
+          '/admin/bulk-operation',
+          {
+            userIds: [],
+            action: 'activate',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         expect(error.response.status).toBe(400);
@@ -214,14 +251,18 @@ describe.skip('Admin Endpoints', () => {
 
     it('should return error for invalid UUID format', async () => {
       try {
-        await axiosInstance.post('/admin/bulk-operation', {
-          userIds: ['invalid-uuid-format'],
-          action: 'activate'
-        }, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        await axiosInstance.post(
+          '/admin/bulk-operation',
+          {
+            userIds: ['invalid-uuid-format'],
+            action: 'activate',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
         expect.fail('Should have thrown an error');
       } catch (error: any) {
         expect(error.response.status).toBe(400);

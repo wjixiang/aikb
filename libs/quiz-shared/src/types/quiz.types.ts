@@ -93,7 +93,6 @@ export interface QuizHistoryItem {
   quizCount: number;
 }
 
-
 /**
  * @interface PracticeRecord
  * @description Represents a record of a user's practice attempt on a quiz.

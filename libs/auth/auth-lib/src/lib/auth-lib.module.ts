@@ -20,7 +20,7 @@ import { ORPCSessionController } from './orpc/orpc-session.controller';
 import { ORPCVerificationController } from './orpc/orpc-verification.controller';
 import { ORPCPasswordResetController } from './orpc/orpc-password-reset.controller';
 import { ORPCAdminController } from './orpc/orpc-admin.controller';
- 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,7 +31,7 @@ import { ORPCAdminController } from './orpc/orpc-admin.controller';
       secret: 'fl5ox03',
       signOptions: {
         expiresIn: '7d',
-      }
+      },
     }),
     ORPCModule.forRootAsync({
       useFactory: (request: Request) => ({
@@ -41,13 +41,16 @@ import { ORPCAdminController } from './orpc/orpc-admin.controller';
             console.error('oRPC Error message:', error.message);
             console.error('oRPC Error name:', error.name);
             console.error('oRPC Error stack:', error.stack);
-            
+
             // For NestJS HTTP exceptions, preserve the original error message and status
-            if (error.name === 'ConflictException' || error.name === 'UnauthorizedException') {
+            if (
+              error.name === 'ConflictException' ||
+              error.name === 'UnauthorizedException'
+            ) {
               // Re-throw the original NestJS exception to preserve status code
               throw error;
             }
-            
+
             // For other HTTP exceptions
             if (error.name === 'HttpException') {
               // Re-throw the original NestJS exception to preserve status code
@@ -75,13 +78,7 @@ import { ORPCAdminController } from './orpc/orpc-admin.controller';
     ORPCPasswordResetController,
     ORPCAdminController,
   ],
-  providers: [
-    AuthService,
-    JwtStrategy,
-  ],
-  exports: [
-    AuthService,
-    JwtModule,
-  ],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService, JwtModule],
 })
 export class AuthLibModule {}

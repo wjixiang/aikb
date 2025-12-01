@@ -3,32 +3,35 @@ import type { KnowledgeEvent } from './types';
 export interface IEventStore {
   // 存储事件
   append(event: KnowledgeEvent): Promise<void>;
-  
+
   // 批量存储事件
   appendBatch(events: KnowledgeEvent[]): Promise<void>;
-  
+
   // 获取事件流
   getEvents(options?: EventQueryOptions): Promise<KnowledgeEvent[]>;
-  
+
   // 获取特定事件
   getEvent(eventId: string): Promise<KnowledgeEvent | null>;
-  
+
   // 事件重放
   replayEvents(
     handler: EventHandler<KnowledgeEvent>,
     fromEventId?: string,
-    toEventId?: string
+    toEventId?: string,
   ): Promise<void>;
-  
+
   // 获取事件统计
   getEventStats(options?: EventStatsOptions): Promise<EventStats>;
-  
+
   // 创建快照
-  createSnapshot(snapshotId: string, metadata?: SnapshotMetadata): Promise<void>;
-  
+  createSnapshot(
+    snapshotId: string,
+    metadata?: SnapshotMetadata,
+  ): Promise<void>;
+
   // 获取快照
   getSnapshot(snapshotId: string): Promise<Snapshot | null>;
-  
+
   // 删除旧事件
   cleanupEvents(olderThan: Date): Promise<number>;
 }

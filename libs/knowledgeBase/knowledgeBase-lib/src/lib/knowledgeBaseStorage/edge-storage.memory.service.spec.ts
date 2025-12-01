@@ -23,7 +23,7 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
 
       const result = await service.create(edgeData);
@@ -39,12 +39,12 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData1 = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const edgeData2 = {
         type: 'middle' as const,
         in: 'node2',
-        out: 'node3'
+        out: 'node3',
       };
 
       const result1 = await service.create(edgeData1);
@@ -54,8 +54,16 @@ describe('EdgeStorageMemoryService', () => {
     });
 
     it('should create edges with different types', async () => {
-      const startEdge = await service.create({ type: 'start', in: 'a', out: 'b' });
-      const middleEdge = await service.create({ type: 'middle', in: 'b', out: 'c' });
+      const startEdge = await service.create({
+        type: 'start',
+        in: 'a',
+        out: 'b',
+      });
+      const middleEdge = await service.create({
+        type: 'middle',
+        in: 'b',
+        out: 'c',
+      });
       const endEdge = await service.create({ type: 'end', in: 'c', out: 'd' });
 
       expect(startEdge.type).toBe('start');
@@ -69,7 +77,7 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
@@ -87,7 +95,7 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
@@ -104,17 +112,20 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData1 = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const edgeData2 = {
         type: 'middle' as const,
         in: 'node2',
-        out: 'node3'
+        out: 'node3',
       };
       const createdEdge1 = await service.create(edgeData1);
       const createdEdge2 = await service.create(edgeData2);
 
-      const results = await service.findByIds([createdEdge1.id, createdEdge2.id]);
+      const results = await service.findByIds([
+        createdEdge1.id,
+        createdEdge2.id,
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdEdge1);
@@ -125,11 +136,14 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
-      const results = await service.findByIds([createdEdge.id, 'non-existent-id']);
+      const results = await service.findByIds([
+        createdEdge.id,
+        'non-existent-id',
+      ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(createdEdge);
@@ -147,13 +161,13 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
       const updates = {
         type: 'middle' as const,
-        out: 'node3'
+        out: 'node3',
       };
       const result = await service.update(createdEdge.id, updates);
 
@@ -166,7 +180,7 @@ describe('EdgeStorageMemoryService', () => {
 
     it('should return null when trying to update non-existent edge', async () => {
       const updates = {
-        type: 'middle' as const
+        type: 'middle' as const,
       };
       const result = await service.update('non-existent-id', updates);
       expect(result).toBeNull();
@@ -176,13 +190,13 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
       const updates = {
         id: 'new-id' as string,
-        type: 'middle' as const
+        type: 'middle' as const,
       };
       const result = await service.update(createdEdge.id, updates);
 
@@ -197,7 +211,7 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
@@ -216,9 +230,21 @@ describe('EdgeStorageMemoryService', () => {
 
   describe('findByIn', () => {
     it('should return edges with matching input node', async () => {
-      const edge1 = await service.create({ type: 'start', in: 'nodeA', out: 'nodeB' });
-      const edge2 = await service.create({ type: 'middle', in: 'nodeA', out: 'nodeC' });
-      const edge3 = await service.create({ type: 'end', in: 'nodeB', out: 'nodeD' });
+      const edge1 = await service.create({
+        type: 'start',
+        in: 'nodeA',
+        out: 'nodeB',
+      });
+      const edge2 = await service.create({
+        type: 'middle',
+        in: 'nodeA',
+        out: 'nodeC',
+      });
+      const edge3 = await service.create({
+        type: 'end',
+        in: 'nodeB',
+        out: 'nodeD',
+      });
 
       const results = await service.findByIn('nodeA');
 
@@ -236,9 +262,21 @@ describe('EdgeStorageMemoryService', () => {
 
   describe('findByOut', () => {
     it('should return edges with matching output node', async () => {
-      const edge1 = await service.create({ type: 'start', in: 'nodeA', out: 'nodeB' });
-      const edge2 = await service.create({ type: 'middle', in: 'nodeC', out: 'nodeB' });
-      const edge3 = await service.create({ type: 'end', in: 'nodeD', out: 'nodeE' });
+      const edge1 = await service.create({
+        type: 'start',
+        in: 'nodeA',
+        out: 'nodeB',
+      });
+      const edge2 = await service.create({
+        type: 'middle',
+        in: 'nodeC',
+        out: 'nodeB',
+      });
+      const edge3 = await service.create({
+        type: 'end',
+        in: 'nodeD',
+        out: 'nodeE',
+      });
 
       const results = await service.findByOut('nodeB');
 
@@ -256,9 +294,21 @@ describe('EdgeStorageMemoryService', () => {
 
   describe('findByType', () => {
     it('should return edges of specified type', async () => {
-      const startEdge1 = await service.create({ type: 'start', in: 'a', out: 'b' });
-      const startEdge2 = await service.create({ type: 'start', in: 'c', out: 'd' });
-      const middleEdge = await service.create({ type: 'middle', in: 'e', out: 'f' });
+      const startEdge1 = await service.create({
+        type: 'start',
+        in: 'a',
+        out: 'b',
+      });
+      const startEdge2 = await service.create({
+        type: 'start',
+        in: 'c',
+        out: 'd',
+      });
+      const middleEdge = await service.create({
+        type: 'middle',
+        in: 'e',
+        out: 'f',
+      });
       const endEdge = await service.create({ type: 'end', in: 'g', out: 'h' });
 
       const startResults = await service.findByType('start');
@@ -338,7 +388,7 @@ describe('EdgeStorageMemoryService', () => {
       const edgeData = {
         type: 'start' as const,
         in: 'node1',
-        out: 'node2'
+        out: 'node2',
       };
       const createdEdge = await service.create(edgeData);
 
@@ -380,7 +430,11 @@ describe('EdgeStorageMemoryService', () => {
       await service.delete('any-id');
       expect(await service.count()).toBe(2); // No change since ID doesn't exist
 
-      const createdEdge = await service.create({ type: 'end', in: 'e', out: 'f' });
+      const createdEdge = await service.create({
+        type: 'end',
+        in: 'e',
+        out: 'f',
+      });
       await service.delete(createdEdge.id);
       expect(await service.count()).toBe(2); // One edge deleted
     });

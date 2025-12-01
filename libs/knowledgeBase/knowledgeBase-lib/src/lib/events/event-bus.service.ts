@@ -6,7 +6,7 @@ import type {
   EventBusConfig,
   EventMetrics,
   EventMiddleware,
-  EventFilter
+  EventFilter,
 } from './event-bus.interface';
 import { KnowledgeEvent } from './types';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class EventBusService implements IEventBus {
   private readonly logger = new Logger(EventBusService.name);
-  
+
   private subscriptions = new Map<string, EventSubscription>();
   private handlers = new Map<string, EventHandler<KnowledgeEvent>[]>();
   private middleware: EventMiddleware[] = [];
@@ -24,7 +24,7 @@ export class EventBusService implements IEventBus {
     totalEventsProcessed: 0,
     totalErrors: 0,
     averageProcessingTime: 0,
-    eventTypeStats: {}
+    eventTypeStats: {},
   };
 
   constructor(config?: EventBusConfig) {
@@ -34,9 +34,9 @@ export class EventBusService implements IEventBus {
       enableRetry: true,
       maxRetries: 3,
       retryDelay: 1000,
-      ...config
+      ...config,
     };
-    
+
     if (this.config.middleware) {
       this.middleware = this.config.middleware;
     }
@@ -44,25 +44,24 @@ export class EventBusService implements IEventBus {
 
   async publish<T extends KnowledgeEvent>(event: T): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       this.metrics.totalEventsPublished++;
-      
+
       // 应用中间件
       await this.applyMiddleware(event, async () => {
         await this.processEvent(event);
       });
-      
+
       // 更新指标
       if (this.config.enableMetrics) {
         this.updateMetrics(event.eventType, Date.now() - startTime, true);
       }
-      
     } catch (error) {
       if (this.config.enableMetrics) {
         this.updateMetrics(event.eventType, Date.now() - startTime, false);
       }
-      
+
       this.logger.error(`Error publishing event ${event.eventType}:`, error);
       throw error;
     }
@@ -70,24 +69,26 @@ export class EventBusService implements IEventBus {
 
   async subscribe<T extends KnowledgeEvent>(
     eventType: string,
-    handler: EventHandler<T>
+    handler: EventHandler<T>,
   ): Promise<string> {
     const subscriptionId = uuidv4();
     const subscription: EventSubscription = {
       id: subscriptionId,
       eventType,
       handler: handler as EventHandler<KnowledgeEvent>,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     this.subscriptions.set(subscriptionId, subscription);
-    
+
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, []);
     }
     this.handlers.get(eventType)!.push(subscription.handler);
 
-    this.logger.debug(`Subscribed to event type: ${eventType}, subscription ID: ${subscriptionId}`);
+    this.logger.debug(
+      `Subscribed to event type: ${eventType}, subscription ID: ${subscriptionId}`,
+    );
     return subscriptionId;
   }
 
@@ -99,14 +100,16 @@ export class EventBusService implements IEventBus {
     }
 
     this.subscriptions.delete(subscriptionId);
-    
+
     const handlers = this.handlers.get(subscription.eventType) || [];
     const index = handlers.indexOf(subscription.handler);
     if (index > -1) {
       handlers.splice(index, 1);
     }
 
-    this.logger.debug(`Unsubscribed from event type: ${subscription.eventType}, subscription ID: ${subscriptionId}`);
+    this.logger.debug(
+      `Unsubscribed from event type: ${subscription.eventType}, subscription ID: ${subscriptionId}`,
+    );
   }
 
   async publishBatch(events: KnowledgeEvent[]): Promise<void> {
@@ -115,11 +118,11 @@ export class EventBusService implements IEventBus {
     }
 
     this.logger.debug(`Publishing batch of ${events.length} events`);
-    
+
     // 按事件类型分组，优化处理
     const eventsByType = new Map<string, KnowledgeEvent[]>();
-    
-    events.forEach(event => {
+
+    events.forEach((event) => {
       if (!eventsByType.has(event.eventType)) {
         eventsByType.set(event.eventType, []);
       }
@@ -127,8 +130,9 @@ export class EventBusService implements IEventBus {
     });
 
     // 并行处理不同类型的事件
-    const promises = Array.from(eventsByType.entries()).map(([eventType, typeEvents]) =>
-      this.processEventsByType(eventType, typeEvents)
+    const promises = Array.from(eventsByType.entries()).map(
+      ([eventType, typeEvents]) =>
+        this.processEventsByType(eventType, typeEvents),
     );
 
     await Promise.allSettled(promises);
@@ -158,23 +162,25 @@ export class EventBusService implements IEventBus {
 
   private async processEvent(event: KnowledgeEvent): Promise<void> {
     const handlers = this.handlers.get(event.eventType) || [];
-    
+
     if (handlers.length === 0) {
-      this.logger.debug(`No handlers registered for event type: ${event.eventType}`);
+      this.logger.debug(
+        `No handlers registered for event type: ${event.eventType}`,
+      );
       return;
     }
 
     // 限制并发处理器数量
     const semaphore = new Semaphore(this.config.maxConcurrentHandlers!);
-    
-    const promises = handlers.map(handler => 
+
+    const promises = handlers.map((handler) =>
       semaphore.acquire().then(async (release) => {
         try {
           await this.executeHandler(handler, event);
         } finally {
           release();
         }
-      })
+      }),
     );
 
     await Promise.allSettled(promises);
@@ -182,24 +188,24 @@ export class EventBusService implements IEventBus {
 
   private async processEventsByType(
     eventType: string,
-    events: KnowledgeEvent[]
+    events: KnowledgeEvent[],
   ): Promise<void> {
     const handlers = this.handlers.get(eventType) || [];
-    
+
     if (handlers.length === 0) {
       return;
     }
 
     const semaphore = new Semaphore(this.config.maxConcurrentHandlers!);
-    
-    const promises = events.map(event =>
+
+    const promises = events.map((event) =>
       semaphore.acquire().then(async (release) => {
         try {
           await this.executeHandler(handlers[0], event); // 简化：每个事件只由第一个处理器处理
         } finally {
           release();
         }
-      })
+      }),
     );
 
     await Promise.allSettled(promises);
@@ -207,7 +213,7 @@ export class EventBusService implements IEventBus {
 
   private async executeHandler(
     handler: EventHandler<KnowledgeEvent>,
-    event: KnowledgeEvent
+    event: KnowledgeEvent,
   ): Promise<void> {
     if (this.config.enableRetry) {
       await this.executeWithRetry(handler, event);
@@ -218,50 +224,50 @@ export class EventBusService implements IEventBus {
 
   private async executeWithRetry(
     handler: EventHandler<KnowledgeEvent>,
-    event: KnowledgeEvent
+    event: KnowledgeEvent,
   ): Promise<void> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries!; attempt++) {
       try {
         await handler(event);
         return;
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt < this.config.maxRetries!) {
           const delay = this.config.retryDelay! * Math.pow(2, attempt - 1); // 指数退避
           this.logger.warn(
             `Handler execution failed for event ${event.eventType}, attempt ${attempt}/${this.config.maxRetries}, retrying in ${delay}ms:`,
-            error
+            error,
           );
           await this.sleep(delay);
         }
       }
     }
-    
+
     this.logger.error(
       `Handler execution failed for event ${event.eventType} after ${this.config.maxRetries} attempts:`,
-      lastError
+      lastError,
     );
     throw lastError;
   }
 
   private async applyMiddleware(
     event: KnowledgeEvent,
-    next: () => Promise<void>
+    next: () => Promise<void>,
   ): Promise<void> {
     if (this.middleware.length === 0) {
       return next();
     }
 
     let index = 0;
-    
+
     const runNext = async (): Promise<void> => {
       if (index >= this.middleware.length) {
         return next();
       }
-      
+
       const middleware = this.middleware[index++];
       return middleware(event, runNext);
     };
@@ -272,39 +278,44 @@ export class EventBusService implements IEventBus {
   private updateMetrics(
     eventType: string,
     processingTime: number,
-    success: boolean
+    success: boolean,
   ): void {
     this.metrics.totalEventsProcessed++;
-    
+
     if (!success) {
       this.metrics.totalErrors++;
     }
-    
+
     // 更新平均处理时间
-    const totalTime = this.metrics.averageProcessingTime * (this.metrics.totalEventsProcessed - 1) + processingTime;
-    this.metrics.averageProcessingTime = totalTime / this.metrics.totalEventsProcessed;
-    
+    const totalTime =
+      this.metrics.averageProcessingTime *
+        (this.metrics.totalEventsProcessed - 1) +
+      processingTime;
+    this.metrics.averageProcessingTime =
+      totalTime / this.metrics.totalEventsProcessed;
+
     // 更新事件类型统计
     if (!this.metrics.eventTypeStats[eventType]) {
       this.metrics.eventTypeStats[eventType] = {
         count: 0,
         averageTime: 0,
-        errorCount: 0
+        errorCount: 0,
       };
     }
-    
+
     const stats = this.metrics.eventTypeStats[eventType];
     stats.count++;
     if (!success) {
       stats.errorCount++;
     }
-    
-    const totalTypeTime = stats.averageTime * (stats.count - 1) + processingTime;
+
+    const totalTypeTime =
+      stats.averageTime * (stats.count - 1) + processingTime;
     stats.averageTime = totalTypeTime / stats.count;
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

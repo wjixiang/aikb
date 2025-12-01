@@ -8,30 +8,32 @@ import {
   Body,
   Query,
   HttpStatus,
-  ValidationPipe
+  ValidationPipe,
 } from '@nestjs/common';
 import { KnowledgeManagementService } from 'knowledgeBase-lib';
 import { CreateEntityDto, SearchDto } from '../dto/index';
 
 @Controller('entities')
 export class EntityController {
-  constructor(private readonly knowledgeManagementService: KnowledgeManagementService) {}
+  constructor(
+    private readonly knowledgeManagementService: KnowledgeManagementService,
+  ) {}
 
   @Post()
   async create(@Body() createEntityDto: CreateEntityDto) {
     // Convert DTO to entity data format
     const entityData = {
-      nomanclature: createEntityDto.nomenclature.map(n => ({
+      nomanclature: createEntityDto.nomenclature.map((n) => ({
         name: n.name,
         acronym: n.acronym || null,
-        language: n.language
+        language: n.language,
       })),
       abstract: {
         description: createEntityDto.abstract.description,
         // Embedding will be generated server-side in the service layer
       },
     };
-    
+
     return await this.knowledgeManagementService.createEntity(entityData);
   }
 
@@ -43,16 +45,16 @@ export class EntityController {
   @Get()
   async findAll(
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
-    return await this.knowledgeManagementService.findEntities({}, { limit, offset });
+    return await this.knowledgeManagementService.findEntities(
+      {},
+      { limit, offset },
+    );
   }
 
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateData: any
-  ) {
+  async update(@Param('id') id: string, @Body() updateData: any) {
     return await this.knowledgeManagementService.updateEntity(id, updateData);
   }
 
@@ -63,28 +65,34 @@ export class EntityController {
 
   @Post('search')
   async search(@Body() searchDto: SearchDto) {
-    return await this.knowledgeManagementService.findEntities({
-      textSearch: searchDto.query,
-      languages: searchDto.language ? [searchDto.language] : undefined
-    }, {
-      limit: searchDto.limit,
-      offset: searchDto.offset
-    });
+    return await this.knowledgeManagementService.findEntities(
+      {
+        textSearch: searchDto.query,
+        languages: searchDto.language ? [searchDto.language] : undefined,
+      },
+      {
+        limit: searchDto.limit,
+        offset: searchDto.offset,
+      },
+    );
   }
 
   @Post('batch')
-  async batch(@Body() batchData: { operations: any[], options?: any }) {
+  async batch(@Body() batchData: { operations: any[]; options?: any }) {
     // Convert operations to the format expected by the lib service
-    const libOperations = batchData.operations.map(op => ({
+    const libOperations = batchData.operations.map((op) => ({
       operationId: op.id || `op-${Date.now()}`,
       type: op.type,
       entityType: op.data?.type || 'entity',
       data: op.data,
       id: op.id,
-      updates: op.updates
+      updates: op.updates,
     }));
-    
-    return await this.knowledgeManagementService.executeBatch(libOperations, batchData.options);
+
+    return await this.knowledgeManagementService.executeBatch(
+      libOperations,
+      batchData.options,
+    );
   }
 
   @Get(':id/exists')

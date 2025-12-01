@@ -1,19 +1,21 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Param, 
-  Body, 
-  Query 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
 } from '@nestjs/common';
 import { KnowledgeManagementService } from 'knowledgeBase-lib';
 import { CreateEdgeDto } from '../dto/index';
 
 @Controller('edges')
 export class EdgeController {
-  constructor(private readonly knowledgeManagementService: KnowledgeManagementService) {}
+  constructor(
+    private readonly knowledgeManagementService: KnowledgeManagementService,
+  ) {}
 
   @Post()
   async create(@Body() createEdgeDto: CreateEdgeDto) {
@@ -22,7 +24,7 @@ export class EdgeController {
       in: createEdgeDto.in,
       out: createEdgeDto.out,
     };
-    
+
     return await this.knowledgeManagementService.createEdge(edgeData);
   }
 
@@ -34,16 +36,16 @@ export class EdgeController {
   @Get()
   async findAll(
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
-    return await this.knowledgeManagementService.findEdges({}, { limit, offset });
+    return await this.knowledgeManagementService.findEdges(
+      {},
+      { limit, offset },
+    );
   }
 
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateData: any
-  ) {
+  async update(@Param('id') id: string, @Body() updateData: any) {
     return await this.knowledgeManagementService.updateEdge(id, updateData);
   }
 
@@ -62,24 +64,27 @@ export class EdgeController {
   async findByType(
     @Param('type') type: 'start' | 'middle' | 'end',
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number
+    @Query('offset') offset?: number,
   ) {
-    return await this.knowledgeManagementService.findEdges({ types: [type] }, { limit, offset });
+    return await this.knowledgeManagementService.findEdges(
+      { types: [type] },
+      { limit, offset },
+    );
   }
 
   @Get('by-nodes/:inId/:outId')
   async findByNodes(
     @Param('inId') inId: string,
-    @Param('outId') outId: string
+    @Param('outId') outId: string,
   ) {
     const allEdges = await this.knowledgeManagementService.findEdges({});
-    const filteredEdges = allEdges.filter(edge =>
-      edge.in === inId && edge.out === outId
+    const filteredEdges = allEdges.filter(
+      (edge) => edge.in === inId && edge.out === outId,
     );
-    
+
     return {
       edges: filteredEdges,
-      total: filteredEdges.length
+      total: filteredEdges.length,
     };
   }
 }
