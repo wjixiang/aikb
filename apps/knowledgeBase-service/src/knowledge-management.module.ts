@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { KnowledgeManagementService } from 'knowledgeBase-lib';
 import { EntityController } from './controllers/entity.controller';
 import { VertexController } from './controllers/vertex.controller';
 import { PropertyController } from './controllers/property.controller';

@@ -21,6 +21,18 @@ export class EntityController {
 
   @Post()
   async create(@Body() createEntityDto: CreateEntityDto) {
+    // Debug logging to identify the issue
+    console.log('[EntityController] Received request body:', createEntityDto);
+    console.log('[EntityController] createEntityDto type:', typeof createEntityDto);
+    console.log('[EntityController] createEntityDto.nomenclature:', createEntityDto?.nomenclature);
+    console.log('[EntityController] createEntityDto.abstract:', createEntityDto?.abstract);
+    
+    // Check if nomenclature exists before trying to map it
+    if (!createEntityDto || !createEntityDto.nomenclature) {
+      console.error('[EntityController] ERROR: createEntityDto or nomenclature is undefined');
+      throw new Error('Invalid request body: nomenclature is required');
+    }
+    
     // Convert DTO to entity data format
     const entityData = {
       nomanclature: createEntityDto.nomenclature.map((n) => ({
@@ -34,6 +46,7 @@ export class EntityController {
       },
     };
 
+    console.log('[EntityController] Processed entityData:', entityData);
     return await this.knowledgeManagementService.createEntity(entityData);
   }
 

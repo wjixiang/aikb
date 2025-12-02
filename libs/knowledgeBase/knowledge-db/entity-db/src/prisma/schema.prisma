@@ -64,7 +64,9 @@ model Embedding {
   // One-to-one relationship with entity
   entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
   
-  // Index for vector similarity search (requires pgvector extension)
-  @@index([vector], map: "embedding_vector_index")
+  // Note: Removed btree index on vector as it exceeds PostgreSQL's index size limit
+  // For vector similarity search, use pgvector's HNSW or IVFFlat indexes instead:
+  // CREATE INDEX embedding_vector_hnsw_idx ON embeddings USING hnsw (vector vector_cosine_ops);
+  // Or run the migration manually after database setup
   @@map("embeddings")
 }

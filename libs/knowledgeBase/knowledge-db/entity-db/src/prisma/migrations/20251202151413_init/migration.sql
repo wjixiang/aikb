@@ -51,9 +51,6 @@ CREATE INDEX "nomenclatures_language_idx" ON "nomenclatures"("language");
 -- CreateIndex
 CREATE UNIQUE INDEX "embeddings_entityId_key" ON "embeddings"("entityId");
 
--- CreateIndex
-CREATE INDEX "embedding_vector_index" ON "embeddings"("vector");
-
 -- AddForeignKey
 ALTER TABLE "nomenclatures" ADD CONSTRAINT "nomenclatures_entityId_fkey" FOREIGN KEY ("entityId") REFERENCES "entities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

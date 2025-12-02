@@ -8,7 +8,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "options": {
-        "jestConfig": "apps/knowledgeBase-service-e2e/jest.config.ts",
+        "jestConfig": "apps/knowledgeBase-service-e2e/jest.config.js",
         "passWithNoTests": true
       },
       "dependsOn": [

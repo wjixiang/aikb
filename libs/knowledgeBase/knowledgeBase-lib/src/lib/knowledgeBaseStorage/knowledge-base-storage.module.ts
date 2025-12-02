@@ -10,11 +10,13 @@ import { VertextStorageService } from './vertext-storage.service';
 import { GitVersionControlService } from '../versionControl/version-control.service';
 import { EntityDBPrismaService } from 'entity-db';
 import { PropertyDBPrismaService } from 'property-db'
+import { GraphDBPrismaService } from 'graph-db';
 
 @Module({
   providers: [
     EntityDBPrismaService,
     PropertyDBPrismaService,
+    GraphDBPrismaService,
     EntityStorageService,
     EntityStorageMemoryService,
     PropertyStorageService,
@@ -28,6 +30,7 @@ import { PropertyDBPrismaService } from 'property-db'
   exports: [
     EntityDBPrismaService,
     PropertyDBPrismaService,
+    GraphDBPrismaService,
     EntityStorageService,
     EntityStorageMemoryService,
     PropertyStorageService,

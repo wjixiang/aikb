@@ -1,4 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EntityStorageMemoryService } from '../knowledgeBaseStorage/entity-storage.memory.service';
+import { VertexStorageMemoryService } from '../knowledgeBaseStorage/vertex-storage.memory.service';
+import { PropertyStorageMemoryService } from '../knowledgeBaseStorage/property-storage.memory.service';
+import { EdgeStorageMemoryService } from '../knowledgeBaseStorage/edge-storage.memory.service';
 import { GitVersionControlService } from '../versionControl/version-control.service';
 import { EventBusService } from '../events/event-bus.service';
 import {
@@ -35,20 +39,16 @@ import {
 } from './knowledge-management.interface';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
 import { EmbeddingService } from 'EmbeddingModule';
-import { EdgeStorageService } from '../knowledgeBaseStorage/edge-storage.service';
-import { PropertyStorageService } from '../knowledgeBaseStorage/property-storage.service';
-import { VertextStorageService } from '../knowledgeBaseStorage/vertext-storage.service';
-import { EntityStorageService } from '../knowledgeBaseStorage/entity-storage.service';
 
 @Injectable()
 export class KnowledgeManagementService implements IKnowledgeManagementService {
   private readonly logger = new Logger(KnowledgeManagementService.name);
 
   constructor(
-    private readonly entityStorage: EntityStorageService,
-    private readonly vertexStorage: VertextStorageService,
-    private readonly propertyStorage: PropertyStorageService,
-    private readonly edgeStorage: EdgeStorageService,
+    private readonly entityStorage: EntityStorageMemoryService,
+    private readonly vertexStorage: VertexStorageMemoryService,
+    private readonly propertyStorage: PropertyStorageMemoryService,
+    private readonly edgeStorage: EdgeStorageMemoryService,
     private readonly eventBus: EventBusService,
     private readonly versionControl: GitVersionControlService,
     private readonly embeddingService: EmbeddingService,
