@@ -24,12 +24,20 @@ export class VersionControlInitService implements OnModuleInit {
     for (const repositoryId of defaultRepositories) {
       try {
         await this.versionControl.initRepository(repositoryId);
-        this.logger.log(`✅ Repository '${repositoryId}' initialized successfully`);
+        this.logger.log(
+          `✅ Repository '${repositoryId}' initialized successfully`,
+        );
       } catch (error) {
-        if (error instanceof Error && error.message.includes('already exists')) {
+        if (
+          error instanceof Error &&
+          error.message.includes('already exists')
+        ) {
           this.logger.log(`✅ Repository '${repositoryId}' already exists`);
         } else {
-          this.logger.error(`❌ Failed to initialize repository '${repositoryId}':`, error);
+          this.logger.error(
+            `❌ Failed to initialize repository '${repositoryId}':`,
+            error,
+          );
           throw error;
         }
       }
@@ -42,12 +50,17 @@ export class VersionControlInitService implements OnModuleInit {
   async initializeRepository(repositoryId: string): Promise<void> {
     try {
       await this.versionControl.initRepository(repositoryId);
-      this.logger.log(`✅ Repository '${repositoryId}' initialized successfully`);
+      this.logger.log(
+        `✅ Repository '${repositoryId}' initialized successfully`,
+      );
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
         this.logger.log(`✅ Repository '${repositoryId}' already exists`);
       } else {
-        this.logger.error(`❌ Failed to initialize repository '${repositoryId}':`, error);
+        this.logger.error(
+          `❌ Failed to initialize repository '${repositoryId}':`,
+          error,
+        );
         throw error;
       }
     }
@@ -68,13 +81,15 @@ export class VersionControlInitService implements OnModuleInit {
   /**
    * 获取所有已初始化的仓库状态
    */
-  async getRepositoryStatus(repositoryIds: string[]): Promise<Record<string, boolean>> {
+  async getRepositoryStatus(
+    repositoryIds: string[],
+  ): Promise<Record<string, boolean>> {
     const status: Record<string, boolean> = {};
-    
+
     for (const repositoryId of repositoryIds) {
       status[repositoryId] = await this.isRepositoryInitialized(repositoryId);
     }
-    
+
     return status;
   }
 }

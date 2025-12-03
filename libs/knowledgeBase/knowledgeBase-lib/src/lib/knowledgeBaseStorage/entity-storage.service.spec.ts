@@ -103,7 +103,9 @@ describe('EntityStorageService', () => {
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
       expect(result.nomanclature).toEqual(entityData.nomanclature);
-      expect(result.abstract.description).toEqual(entityData.abstract.description);
+      expect(result.abstract.description).toEqual(
+        entityData.abstract.description,
+      );
     });
   });
 
@@ -125,7 +127,9 @@ describe('EntityStorageService', () => {
 
   describe('update', () => {
     it('should return null for non-existent entity', async () => {
-      prismaService.entity.update.mockRejectedValue(new Error('Entity not found'));
+      prismaService.entity.update.mockRejectedValue(
+        new Error('Entity not found'),
+      );
       const result = await service.update('non-existent-id', {
         nomanclature: [{ name: 'Updated', acronym: null, language: 'en' }],
       });
@@ -135,7 +139,9 @@ describe('EntityStorageService', () => {
 
   describe('delete', () => {
     it('should return false for non-existent entity', async () => {
-      prismaService.entity.delete.mockRejectedValue(new Error('Entity not found'));
+      prismaService.entity.delete.mockRejectedValue(
+        new Error('Entity not found'),
+      );
       const result = await service.delete('non-existent-id');
       expect(result).toBe(false);
     });

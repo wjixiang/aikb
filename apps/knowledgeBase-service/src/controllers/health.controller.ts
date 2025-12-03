@@ -1,5 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { EventBusService, GitVersionControlService, EVENT_TYPES } from 'knowledgeBase-lib';
+import {
+  EventBusService,
+  GitVersionControlService,
+  EVENT_TYPES,
+} from 'knowledgeBase-lib';
 
 @Controller('health')
 export class HealthController {
@@ -14,15 +18,17 @@ export class HealthController {
       // 检查事件处理器状态
       const eventStats = this.eventBus.getSubscriptionStats();
       const hasEntityHandlers = eventStats[EVENT_TYPES.ENTITY_CREATED] > 0;
-      
+
       // 检查版本控制状态
       let versionControlStatus = 'unknown';
       let repositoryCount = 0;
-      
+
       try {
-        const branches = await this.versionControl.getBranches('knowledge-base');
+        const branches =
+          await this.versionControl.getBranches('knowledge-base');
         repositoryCount = branches.length;
-        versionControlStatus = repositoryCount > 0 ? 'initialized' : 'not_initialized';
+        versionControlStatus =
+          repositoryCount > 0 ? 'initialized' : 'not_initialized';
       } catch (error) {
         versionControlStatus = 'error';
       }
@@ -31,7 +37,10 @@ export class HealthController {
       const metrics = this.eventBus.getMetrics();
 
       return {
-        status: this.calculateOverallStatus(hasEntityHandlers, versionControlStatus),
+        status: this.calculateOverallStatus(
+          hasEntityHandlers,
+          versionControlStatus,
+        ),
         timestamp: new Date().toISOString(),
         services: {
           eventBus: {
@@ -67,7 +76,7 @@ export class HealthController {
   async getEventStats() {
     const stats = this.eventBus.getSubscriptionStats();
     const metrics = this.eventBus.getMetrics();
-    
+
     return {
       subscriptionStats: stats,
       metrics,
@@ -80,10 +89,10 @@ export class HealthController {
     try {
       const branches = await this.versionControl.getBranches('knowledge-base');
       const status = await this.versionControl.getStatus('knowledge-base');
-      
+
       return {
         repository: 'knowledge-base',
-        branches: branches.map(branch => ({
+        branches: branches.map((branch) => ({
           name: branch.name,
           isActive: branch.isActive,
           headCommitId: branch.headCommitId,
@@ -102,7 +111,10 @@ export class HealthController {
     }
   }
 
-  private calculateOverallStatus(hasEventHandlers: boolean, versionControlStatus: string): string {
+  private calculateOverallStatus(
+    hasEventHandlers: boolean,
+    versionControlStatus: string,
+  ): string {
     if (hasEventHandlers && versionControlStatus === 'initialized') {
       return 'healthy';
     } else if (hasEventHandlers && versionControlStatus === 'not_initialized') {

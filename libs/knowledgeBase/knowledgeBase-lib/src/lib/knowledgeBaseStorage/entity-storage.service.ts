@@ -17,7 +17,7 @@ export class EntityStorageService implements IEntityStorage {
       data: {
         description: entity.abstract.description,
         nomenclatures: {
-          create: entity.nomanclature.map(nom => ({
+          create: entity.nomanclature.map((nom) => ({
             name: nom.name,
             acronym: nom.acronym,
             language: nom.language,
@@ -32,17 +32,25 @@ export class EntityStorageService implements IEntityStorage {
 
     // If embedding exists, create it separately using raw SQL
     if (entity.abstract.embedding) {
-      const vectorSize = JSON.stringify(entity.abstract.embedding.vector).length;
-      console.log(`[DEBUG] Embedding vector size: ${vectorSize} bytes, dimensions: ${entity.abstract.embedding.config.dimension}`);
-      
+      const vectorSize = JSON.stringify(
+        entity.abstract.embedding.vector,
+      ).length;
+      console.log(
+        `[DEBUG] Embedding vector size: ${vectorSize} bytes, dimensions: ${entity.abstract.embedding.config.dimension}`,
+      );
+
       try {
         await this.prisma.$executeRaw`
           INSERT INTO embeddings (id, "entityId", model, dimension, "batchSize", "maxRetries", timeout, provider, vector)
           VALUES (${createdEntity.id}, ${createdEntity.id}, ${entity.abstract.embedding.config.model}, ${entity.abstract.embedding.config.dimension}, ${entity.abstract.embedding.config.batchSize || 32}, ${entity.abstract.embedding.config.maxRetries || 3}, ${entity.abstract.embedding.config.timeout || 30000}, ${entity.abstract.embedding.config.provider || 'default'}, ${JSON.stringify(entity.abstract.embedding.vector)}::vector)
         `;
       } catch (error) {
-        console.error(`[DEBUG] Failed to insert embedding vector: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        console.error(`[DEBUG] Vector details: size=${vectorSize} bytes, dimensions=${entity.abstract.embedding.config.dimension}`);
+        console.error(
+          `[DEBUG] Failed to insert embedding vector: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+        console.error(
+          `[DEBUG] Vector details: size=${vectorSize} bytes, dimensions=${entity.abstract.embedding.config.dimension}`,
+        );
         throw error;
       }
     }
@@ -90,9 +98,11 @@ export class EntityStorageService implements IEntityStorage {
       },
     });
 
-    const entityMap = new Map(entities.map(e => [e.id, this.mapPrismaEntityToEntityData(e)]));
-    
-    return ids.map(id => entityMap.get(id) || null);
+    const entityMap = new Map(
+      entities.map((e) => [e.id, this.mapPrismaEntityToEntityData(e)]),
+    );
+
+    return ids.map((id) => entityMap.get(id) || null);
   }
 
   /**
@@ -114,7 +124,7 @@ export class EntityStorageService implements IEntityStorage {
     if (updates.nomanclature) {
       updateData.nomenclatures = {
         deleteMany: {},
-        create: updates.nomanclature.map(nom => ({
+        create: updates.nomanclature.map((nom) => ({
           name: nom.name,
           acronym: nom.acronym,
           language: nom.language,
@@ -217,7 +227,7 @@ export class EntityStorageService implements IEntityStorage {
       },
     });
 
-    return entities.map(entity => this.mapPrismaEntityToEntityData(entity));
+    return entities.map((entity) => this.mapPrismaEntityToEntityData(entity));
   }
 
   /**
@@ -260,7 +270,9 @@ export class EntityStorageService implements IEntityStorage {
     ]);
 
     return {
-      entities: entities.map(entity => this.mapPrismaEntityToEntityData(entity)),
+      entities: entities.map((entity) =>
+        this.mapPrismaEntityToEntityData(entity),
+      ),
       total,
     };
   }
@@ -303,7 +315,9 @@ export class EntityStorageService implements IEntityStorage {
               timeout: entity.embedding.timeout,
               provider: entity.embedding.provider,
             },
-            vector: Array.isArray(entity.embedding.vector) ? entity.embedding.vector : [],
+            vector: Array.isArray(entity.embedding.vector)
+              ? entity.embedding.vector
+              : [],
           },
         }),
       },

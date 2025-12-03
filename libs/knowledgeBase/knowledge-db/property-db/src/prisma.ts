@@ -11,4 +11,3 @@ export class PropertyDBPrismaService extends PrismaClient {
     super({ adapter });
   }
 }
-

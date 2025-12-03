@@ -7,11 +7,9 @@ import { EdgeStorageService } from './edge-storage.service';
 import { EdgeStorageMemoryService } from './edge-storage.memory.service';
 import { VertexStorageMemoryService } from './vertex-storage.memory.service';
 import { VertextStorageService } from './vertext-storage.service';
-import { GitVersionControlService } from '../versionControl/version-control.service';
 import { EntityDBPrismaService } from 'entity-db';
-import { PropertyDBPrismaService } from 'property-db'
+import { PropertyDBPrismaService } from 'property-db';
 import { GraphDBPrismaService } from 'graph-db';
-import { VersionControlDBPrismaService } from 'VersionControl-db'
 
 @Module({
   providers: [
@@ -26,13 +24,13 @@ import { VersionControlDBPrismaService } from 'VersionControl-db'
     EdgeStorageMemoryService,
     VertexStorageMemoryService,
     VertextStorageService,
-    GitVersionControlService,
-    VersionControlDBPrismaService
+    // GitVersionControlService,
+    // VersionControlDBPrismaService,
   ],
   exports: [
-    EntityDBPrismaService,
-    PropertyDBPrismaService,
-    GraphDBPrismaService,
+    // EntityDBPrismaService,
+    // PropertyDBPrismaService,
+    // GraphDBPrismaService,
     EntityStorageService,
     EntityStorageMemoryService,
     PropertyStorageService,
@@ -41,7 +39,6 @@ import { VersionControlDBPrismaService } from 'VersionControl-db'
     EdgeStorageMemoryService,
     VertextStorageService,
     VertexStorageMemoryService,
-    GitVersionControlService,
   ],
 })
 export class KnowledgeBaseStorageModule {}

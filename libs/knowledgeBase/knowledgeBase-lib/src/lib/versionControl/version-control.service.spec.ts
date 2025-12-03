@@ -11,7 +11,7 @@ import {
   MergeResult,
   WorkingTreeStatus,
   CommitDiff,
-  AuthorInfo
+  AuthorInfo,
 } from './types';
 import { VersionControlDBPrismaService } from 'VersionControl-db';
 
@@ -85,34 +85,54 @@ describe('GitVersionControlService', () => {
   describe('initRepository', () => {
     it('should create a new repository with main branch', async () => {
       const repositoryId = 'test-repo';
-      const mockRepository = { id: 'repo-id', repositoryId, currentBranch: 'main' };
+      const mockRepository = {
+        id: 'repo-id',
+        repositoryId,
+        currentBranch: 'main',
+      };
       const mockBranch = { id: 'branch-id', name: 'main' };
 
       // First call returns null (repository doesn't exist), second call returns the created repository
       mockVersionControlDBPrismaService.repository.findUnique
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(mockRepository);
-      mockVersionControlDBPrismaService.repository.create.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
-      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.create.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        null,
+      );
+      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(
+        mockBranch,
+      );
 
       await service.initRepository(repositoryId);
 
-      expect(mockVersionControlDBPrismaService.repository.findUnique).toHaveBeenCalledWith({
-        where: { repositoryId }
+      expect(
+        mockVersionControlDBPrismaService.repository.findUnique,
+      ).toHaveBeenCalledWith({
+        where: { repositoryId },
       });
-      expect(mockVersionControlDBPrismaService.repository.create).toHaveBeenCalledWith({
-        data: { repositoryId, currentBranch: 'main' }
+      expect(
+        mockVersionControlDBPrismaService.repository.create,
+      ).toHaveBeenCalledWith({
+        data: { repositoryId, currentBranch: 'main' },
       });
-      expect(mockVersionControlDBPrismaService.branch.create).toHaveBeenCalled();
+      expect(
+        mockVersionControlDBPrismaService.branch.create,
+      ).toHaveBeenCalled();
     });
 
     it('should throw ConflictException if repository already exists', async () => {
       const repositoryId = 'existing-repo';
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue({ id: 'repo-id' });
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        { id: 'repo-id' },
+      );
 
       await expect(service.initRepository(repositoryId)).rejects.toThrow(
-        new ConflictException(`Repository with ID ${repositoryId} already exists`)
+        new ConflictException(
+          `Repository with ID ${repositoryId} already exists`,
+        ),
       );
     });
   });
@@ -121,7 +141,10 @@ describe('GitVersionControlService', () => {
     it('should create a new branch', async () => {
       const repositoryId = 'test-repo';
       const branchName = 'feature/test';
-      const author: AuthorInfo = { name: 'Test User', email: 'test@example.com' };
+      const author: AuthorInfo = {
+        name: 'Test User',
+        email: 'test@example.com',
+      };
       const mockRepository = { id: 'repo-id', currentBranch: 'main' };
       const mockBranch = {
         id: 'branch-id',
@@ -132,42 +155,54 @@ describe('GitVersionControlService', () => {
         isActive: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        metadata: { author: author.name }
+        metadata: { author: author.name },
       };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
-      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        null,
+      );
+      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(
+        mockBranch,
+      );
 
       const result = await service.createBranch({
         repositoryId,
         branchName,
-        author
+        author,
       });
 
       expect(result).toBeDefined();
       expect(result.name).toBe(branchName);
-      expect(mockVersionControlDBPrismaService.branch.create).toHaveBeenCalledWith({
+      expect(
+        mockVersionControlDBPrismaService.branch.create,
+      ).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: branchName,
           repositoryId: mockRepository.id,
           metadata: expect.objectContaining({
-            author: author.name
-          })
-        })
+            author: author.name,
+          }),
+        }),
       });
     });
 
     it('should throw NotFoundException if repository not found', async () => {
       const repositoryId = 'non-existent-repo';
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        null,
+      );
 
-      await expect(service.createBranch({
-        repositoryId,
-        branchName: 'test',
-        author: { name: 'Test', email: 'test@example.com' }
-      })).rejects.toThrow(
-        new NotFoundException(`Repository with ID ${repositoryId} not found`)
+      await expect(
+        service.createBranch({
+          repositoryId,
+          branchName: 'test',
+          author: { name: 'Test', email: 'test@example.com' },
+        }),
+      ).rejects.toThrow(
+        new NotFoundException(`Repository with ID ${repositoryId} not found`),
       );
     });
   });
@@ -179,25 +214,35 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id', currentBranch: 'main' };
       const mockBranch = { id: 'branch-id', name: branchName };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
       mockVersionControlDBPrismaService.repository.update.mockResolvedValue({});
       mockVersionControlDBPrismaService.branch.updateMany.mockResolvedValue({});
       mockVersionControlDBPrismaService.branch.update.mockResolvedValue({});
 
       await service.switchBranch(repositoryId, branchName);
 
-      expect(mockVersionControlDBPrismaService.repository.update).toHaveBeenCalledWith({
+      expect(
+        mockVersionControlDBPrismaService.repository.update,
+      ).toHaveBeenCalledWith({
         where: { id: mockRepository.id },
-        data: { currentBranch: branchName }
+        data: { currentBranch: branchName },
       });
-      expect(mockVersionControlDBPrismaService.branch.updateMany).toHaveBeenCalledWith({
+      expect(
+        mockVersionControlDBPrismaService.branch.updateMany,
+      ).toHaveBeenCalledWith({
         where: { repositoryId: mockRepository.id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
-      expect(mockVersionControlDBPrismaService.branch.update).toHaveBeenCalledWith({
+      expect(
+        mockVersionControlDBPrismaService.branch.update,
+      ).toHaveBeenCalledWith({
         where: { id: mockBranch.id },
-        data: { isActive: true }
+        data: { isActive: true },
       });
     });
   });
@@ -208,11 +253,15 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id' };
       const mockBranches = [
         { id: 'branch-1', name: 'main' },
-        { id: 'branch-2', name: 'feature/test' }
+        { id: 'branch-2', name: 'feature/test' },
       ];
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findMany.mockResolvedValue(mockBranches);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findMany.mockResolvedValue(
+        mockBranches,
+      );
 
       const result = await service.getBranches(repositoryId);
 
@@ -229,8 +278,12 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id' };
       const mockBranch = { id: 'branch-id', name: branchName };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
 
       const result = await service.getBranch(repositoryId, branchName);
 
@@ -243,8 +296,12 @@ describe('GitVersionControlService', () => {
       const branchName = 'non-existent';
       const mockRepository = { id: 'repo-id' };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        null,
+      );
 
       const result = await service.getBranch(repositoryId, branchName);
 
@@ -259,15 +316,21 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id', currentBranch: 'main' };
       const mockBranch = { id: 'branch-id', name: branchName };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
       mockVersionControlDBPrismaService.branch.delete.mockResolvedValue({});
 
       const result = await service.deleteBranch(repositoryId, branchName);
 
       expect(result).toBe(true);
-      expect(mockVersionControlDBPrismaService.branch.delete).toHaveBeenCalledWith({
-        where: { id: mockBranch.id }
+      expect(
+        mockVersionControlDBPrismaService.branch.delete,
+      ).toHaveBeenCalledWith({
+        where: { id: mockBranch.id },
       });
     });
 
@@ -276,8 +339,12 @@ describe('GitVersionControlService', () => {
       const branchName = 'non-existent';
       const mockRepository = { id: 'repo-id' };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        null,
+      );
 
       const result = await service.deleteBranch(repositoryId, branchName);
 
@@ -290,8 +357,12 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id', currentBranch: 'main' };
       const mockBranch = { id: 'branch-id', name: branchName };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
 
       try {
         await service.deleteBranch(repositoryId, branchName);
@@ -299,7 +370,9 @@ describe('GitVersionControlService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(ConflictException);
         const actualMessage = (error as ConflictException).message;
-        expect(actualMessage).toContain(`Cannot delete the current branch ${branchName}`);
+        expect(actualMessage).toContain(
+          `Cannot delete the current branch ${branchName}`,
+        );
       }
     });
   });
@@ -319,14 +392,27 @@ describe('GitVersionControlService', () => {
         authorTimestamp: new Date(),
         committerName: 'Test User',
         committerEmail: 'test@example.com',
-        committerTimestamp: new Date()
+        committerTimestamp: new Date(),
       };
-      const mockGitObject = { id: 'git-obj-id', type: 'commit', content: {}, size: 100 };
+      const mockGitObject = {
+        id: 'git-obj-id',
+        type: 'commit',
+        content: {},
+        size: 100,
+      };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(mockCommit);
-      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
-      mockVersionControlDBPrismaService.commitParent.findMany.mockResolvedValue([]);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(
+        mockCommit,
+      );
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(
+        mockGitObject,
+      );
+      mockVersionControlDBPrismaService.commitParent.findMany.mockResolvedValue(
+        [],
+      );
       mockVersionControlDBPrismaService.change.findMany.mockResolvedValue([]);
 
       const result = await service.getCommit(repositoryId, commitId);
@@ -340,8 +426,12 @@ describe('GitVersionControlService', () => {
       const commitId = 'non-existent';
       const mockRepository = { id: 'repo-id' };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(
+        null,
+      );
 
       const result = await service.getCommit(repositoryId, commitId);
 
@@ -355,8 +445,12 @@ describe('GitVersionControlService', () => {
       const mockRepository = { id: 'repo-id', currentBranch: 'main' };
       const mockBranch = { id: 'branch-id', name: 'main' };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
 
       const result = await service.getStatus(repositoryId);
 
@@ -377,19 +471,23 @@ describe('GitVersionControlService', () => {
         objectId: treeId,
         type: 'tree',
         content: {},
-        size: 100
+        size: 100,
       };
       const mockTreeEntries = [
         {
           mode: '100644',
           name: 'test.txt',
           objectId: 'blob-id',
-          type: 'blob'
-        }
+          type: 'blob',
+        },
       ];
 
-      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
-      mockVersionControlDBPrismaService.treeEntry.findMany.mockResolvedValue(mockTreeEntries);
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(
+        mockGitObject,
+      );
+      mockVersionControlDBPrismaService.treeEntry.findMany.mockResolvedValue(
+        mockTreeEntries,
+      );
 
       const result = await service.getTree(treeId);
 
@@ -402,7 +500,9 @@ describe('GitVersionControlService', () => {
 
     it('should return null for non-tree object', async () => {
       const treeId = 'not-tree-id';
-      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(
+        null,
+      );
 
       const result = await service.getTree(treeId);
 
@@ -418,10 +518,12 @@ describe('GitVersionControlService', () => {
         objectId: blobId,
         type: 'blob',
         content: { data: 'test content' },
-        size: 12
+        size: 12,
       };
 
-      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(
+        mockGitObject,
+      );
 
       const result = await service.getBlob(blobId);
 
@@ -433,7 +535,9 @@ describe('GitVersionControlService', () => {
 
     it('should return null for non-blob object', async () => {
       const blobId = 'not-blob-id';
-      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(
+        null,
+      );
 
       const result = await service.getBlob(blobId);
 
@@ -452,19 +556,27 @@ describe('GitVersionControlService', () => {
         id: 'commit-db-id',
         objectId: commitId,
         treeId: 'tree-id',
-        message: 'Reset target commit'
+        message: 'Reset target commit',
       };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(mockCommit);
-      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
+      );
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(
+        mockCommit,
+      );
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(
+        mockBranch,
+      );
       mockVersionControlDBPrismaService.branch.update.mockResolvedValue({});
 
       await service.resetToCommit(repositoryId, commitId, mode);
 
-      expect(mockVersionControlDBPrismaService.branch.update).toHaveBeenCalledWith({
+      expect(
+        mockVersionControlDBPrismaService.branch.update,
+      ).toHaveBeenCalledWith({
         where: { id: mockBranch.id },
-        data: { headCommitId: commitId }
+        data: { headCommitId: commitId },
       });
     });
 
@@ -474,12 +586,16 @@ describe('GitVersionControlService', () => {
       const mode = 'soft' as const;
       const mockRepository = { id: 'repo-id' };
 
-      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
-      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(null);
-
-      await expect(service.resetToCommit(repositoryId, commitId, mode)).rejects.toThrow(
-        new NotFoundException(`Commit ${commitId} not found`)
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(
+        mockRepository,
       );
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.resetToCommit(repositoryId, commitId, mode),
+      ).rejects.toThrow(new NotFoundException(`Commit ${commitId} not found`));
     });
   });
 });

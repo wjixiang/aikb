@@ -60,12 +60,14 @@ export class VertextStorageService implements IVertexStorage {
       },
     });
 
-    const vertexMap = new Map(vertices.map((vertex: any) => [vertex.id, vertex]));
-    
-    return ids.map(id => {
+    const vertexMap = new Map(
+      vertices.map((vertex: any) => [vertex.id, vertex]),
+    );
+
+    return ids.map((id) => {
       const vertex = vertexMap.get(id);
       if (!vertex) return null;
-      
+
       return {
         id: vertex.id,
         content: vertex.content,
@@ -86,10 +88,11 @@ export class VertextStorageService implements IVertexStorage {
     updates: Partial<Omit<VertexData, 'id'>>,
   ): Promise<VertexData | null> {
     const updateData: any = {};
-    
+
     if (updates.content !== undefined) updateData.content = updates.content;
     if (updates.type !== undefined) updateData.type = updates.type;
-    if (updates.metadata !== undefined) updateData.metadata = updates.metadata ?? undefined;
+    if (updates.metadata !== undefined)
+      updateData.metadata = updates.metadata ?? undefined;
 
     const updatedVertex = await this.prisma.vertex.update({
       where: { id, deletedAt: null },
@@ -226,7 +229,7 @@ export class VertextStorageService implements IVertexStorage {
       where: { id, deletedAt: null },
       select: { id: true },
     });
-    
+
     return !!vertex;
   }
 }

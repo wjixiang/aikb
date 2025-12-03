@@ -18,4 +18,3 @@ export class EntityDBPrismaService extends PrismaClient {
     super({ adapter });
   }
 }
-

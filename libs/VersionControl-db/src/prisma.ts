@@ -11,4 +11,3 @@ export class VersionControlDBPrismaService extends PrismaClient {
     super({ adapter });
   }
 }
-

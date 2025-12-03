@@ -29,7 +29,9 @@ describe('PropertyStorageService', () => {
     }).compile();
 
     service = module.get<PropertyStorageService>(PropertyStorageService);
-    prismaService = module.get<PropertyDBPrismaService>(PropertyDBPrismaService);
+    prismaService = module.get<PropertyDBPrismaService>(
+      PropertyDBPrismaService,
+    );
   });
 
   it('should be defined', () => {
@@ -124,7 +126,9 @@ describe('PropertyStorageService', () => {
     });
 
     it('should return null when property not found for update', async () => {
-      mockPrismaService.property.update.mockRejectedValue(new Error('Property not found'));
+      mockPrismaService.property.update.mockRejectedValue(
+        new Error('Property not found'),
+      );
 
       const result = await service.update('non-existent-id', {
         content: 'Updated content',
@@ -147,7 +151,9 @@ describe('PropertyStorageService', () => {
     });
 
     it('should return false when property not found for deletion', async () => {
-      mockPrismaService.property.delete.mockRejectedValue(new Error('Property not found'));
+      mockPrismaService.property.delete.mockRejectedValue(
+        new Error('Property not found'),
+      );
 
       const result = await service.delete('non-existent-id');
 
@@ -157,7 +163,9 @@ describe('PropertyStorageService', () => {
 
   describe('exists', () => {
     it('should return true when property exists', async () => {
-      mockPrismaService.property.findUnique.mockResolvedValue({ id: 'test-id' });
+      mockPrismaService.property.findUnique.mockResolvedValue({
+        id: 'test-id',
+      });
 
       const result = await service.exists('test-id');
 

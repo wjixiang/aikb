@@ -11,4 +11,3 @@ export class GraphDBPrismaService extends PrismaClient {
     super({ adapter });
   }
 }
-

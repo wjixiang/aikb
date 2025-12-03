@@ -61,11 +61,11 @@ export class EdgeStorageService implements IEdgeStorage {
     });
 
     const edgeMap = new Map(edges.map((edge: any) => [edge.id, edge]));
-    
-    return ids.map(id => {
+
+    return ids.map((id) => {
       const edge = edgeMap.get(id);
       if (!edge) return null;
-      
+
       return {
         id: edge.id,
         type: edge.type as 'start' | 'middle' | 'end',
@@ -86,7 +86,7 @@ export class EdgeStorageService implements IEdgeStorage {
     updates: Partial<Omit<EdgeData, 'id'>>,
   ): Promise<EdgeData | null> {
     const updateData: any = {};
-    
+
     if (updates.type !== undefined) updateData.type = updates.type;
     if (updates.in !== undefined) updateData.inId = updates.in;
     if (updates.out !== undefined) updateData.outId = updates.out;
@@ -230,7 +230,7 @@ export class EdgeStorageService implements IEdgeStorage {
       where: { id, deletedAt: null },
       select: { id: true },
     });
-    
+
     return !!edge;
   }
 }

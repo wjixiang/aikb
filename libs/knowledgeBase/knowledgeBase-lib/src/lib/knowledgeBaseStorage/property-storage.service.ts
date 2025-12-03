@@ -44,9 +44,11 @@ export class PropertyStorageService implements IPropertyStorage {
       where: { id: { in: ids } },
     });
 
-    const propertyMap = new Map(properties.map(p => [p.id, this.mapPrismaPropertyToPropertyData(p)]));
-    
-    return ids.map(id => propertyMap.get(id) || null);
+    const propertyMap = new Map(
+      properties.map((p) => [p.id, this.mapPrismaPropertyToPropertyData(p)]),
+    );
+
+    return ids.map((id) => propertyMap.get(id) || null);
   }
 
   /**

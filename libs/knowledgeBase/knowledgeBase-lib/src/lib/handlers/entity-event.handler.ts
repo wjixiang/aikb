@@ -29,16 +29,16 @@ export class EntityEventHandler implements OnModuleInit {
   async onModuleInit() {
     // 注册实体事件处理器
     await this.registerEntityEventHandlers();
-    
+
     // 注册顶点事件处理器
     await this.registerVertexEventHandlers();
-    
+
     // 注册属性事件处理器
     await this.registerPropertyEventHandlers();
-    
+
     // 注册边事件处理器
     await this.registerEdgeEventHandlers();
-    
+
     this.logger.log('✅ All entity event handlers registered successfully');
   }
 
@@ -48,17 +48,17 @@ export class EntityEventHandler implements OnModuleInit {
   private async registerEntityEventHandlers(): Promise<void> {
     await this.eventBus.subscribe(
       EVENT_TYPES.ENTITY_CREATED,
-      this.handleEntityCreated.bind(this)
+      this.handleEntityCreated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.ENTITY_UPDATED,
-      this.handleEntityUpdated.bind(this)
+      this.handleEntityUpdated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.ENTITY_DELETED,
-      this.handleEntityDeleted.bind(this)
+      this.handleEntityDeleted.bind(this),
     );
 
     this.logger.debug('✅ Entity event handlers registered');
@@ -70,17 +70,17 @@ export class EntityEventHandler implements OnModuleInit {
   private async registerVertexEventHandlers(): Promise<void> {
     await this.eventBus.subscribe(
       EVENT_TYPES.VERTEX_CREATED,
-      this.handleVertexCreated.bind(this)
+      this.handleVertexCreated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.VERTEX_UPDATED,
-      this.handleVertexUpdated.bind(this)
+      this.handleVertexUpdated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.VERTEX_DELETED,
-      this.handleVertexDeleted.bind(this)
+      this.handleVertexDeleted.bind(this),
     );
 
     this.logger.debug('✅ Vertex event handlers registered');
@@ -92,17 +92,17 @@ export class EntityEventHandler implements OnModuleInit {
   private async registerPropertyEventHandlers(): Promise<void> {
     await this.eventBus.subscribe(
       EVENT_TYPES.PROPERTY_CREATED,
-      this.handlePropertyCreated.bind(this)
+      this.handlePropertyCreated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.PROPERTY_UPDATED,
-      this.handlePropertyUpdated.bind(this)
+      this.handlePropertyUpdated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.PROPERTY_DELETED,
-      this.handlePropertyDeleted.bind(this)
+      this.handlePropertyDeleted.bind(this),
     );
 
     this.logger.debug('✅ Property event handlers registered');
@@ -114,17 +114,17 @@ export class EntityEventHandler implements OnModuleInit {
   private async registerEdgeEventHandlers(): Promise<void> {
     await this.eventBus.subscribe(
       EVENT_TYPES.EDGE_CREATED,
-      this.handleEdgeCreated.bind(this)
+      this.handleEdgeCreated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.EDGE_UPDATED,
-      this.handleEdgeUpdated.bind(this)
+      this.handleEdgeUpdated.bind(this),
     );
 
     await this.eventBus.subscribe(
       EVENT_TYPES.EDGE_DELETED,
-      this.handleEdgeDeleted.bind(this)
+      this.handleEdgeDeleted.bind(this),
     );
 
     this.logger.debug('✅ Edge event handlers registered');
@@ -132,8 +132,10 @@ export class EntityEventHandler implements OnModuleInit {
 
   // 实体事件处理方法
   private async handleEntityCreated(event: EntityCreatedEvent): Promise<void> {
-    this.logger.log(`📝 Entity created: ${event.entityId} - ${event.data.nomanclature[0]?.name}`);
-    
+    this.logger.log(
+      `📝 Entity created: ${event.entityId} - ${event.data.nomanclature[0]?.name}`,
+    );
+
     // 这里可以添加：
     // - 更新搜索索引
     // - 发送通知
@@ -151,7 +153,9 @@ export class EntityEventHandler implements OnModuleInit {
 
   // 顶点事件处理方法
   private async handleVertexCreated(event: VertexCreatedEvent): Promise<void> {
-    this.logger.log(`📍 Vertex created: ${event.vertexId} - ${event.data.type}`);
+    this.logger.log(
+      `📍 Vertex created: ${event.vertexId} - ${event.data.type}`,
+    );
   }
 
   private async handleVertexUpdated(event: VertexUpdatedEvent): Promise<void> {
@@ -163,15 +167,21 @@ export class EntityEventHandler implements OnModuleInit {
   }
 
   // 属性事件处理方法
-  private async handlePropertyCreated(event: PropertyCreatedEvent): Promise<void> {
+  private async handlePropertyCreated(
+    event: PropertyCreatedEvent,
+  ): Promise<void> {
     this.logger.log(`🔧 Property created: ${event.propertyId}`);
   }
 
-  private async handlePropertyUpdated(event: PropertyUpdatedEvent): Promise<void> {
+  private async handlePropertyUpdated(
+    event: PropertyUpdatedEvent,
+  ): Promise<void> {
     this.logger.log(`🔧 Property updated: ${event.propertyId}`);
   }
 
-  private async handlePropertyDeleted(event: PropertyDeletedEvent): Promise<void> {
+  private async handlePropertyDeleted(
+    event: PropertyDeletedEvent,
+  ): Promise<void> {
     this.logger.log(`🔧 Property deleted: ${event.propertyId}`);
   }
 
