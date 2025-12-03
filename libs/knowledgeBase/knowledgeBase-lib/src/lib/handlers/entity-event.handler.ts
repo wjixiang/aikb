@@ -133,7 +133,7 @@ export class EntityEventHandler implements OnModuleInit {
   // 实体事件处理方法
   private async handleEntityCreated(event: EntityCreatedEvent): Promise<void> {
     this.logger.log(
-      `📝 Entity created: ${event.entityId} - ${event.data.nomanclature[0]?.name}`,
+      `📝 Entity created: ${event.entityId} - ${event.data.nomenclature[0]?.name}`,
     );
 
     // 这里可以添加：

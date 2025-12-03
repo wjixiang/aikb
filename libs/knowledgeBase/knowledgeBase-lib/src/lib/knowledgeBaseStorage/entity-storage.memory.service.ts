@@ -101,13 +101,13 @@ export class EntityStorageMemoryService implements IEntityStorage {
       // Filter by language if specified
       if (
         language &&
-        !entity.nomanclature.some((n) => n.language === language)
+        !entity.nomenclature.some((n) => n.language === language)
       ) {
         return false;
       }
 
       // Search in nomenclature names and descriptions
-      const nameMatch = entity.nomanclature.some(
+      const nameMatch = entity.nomenclature.some(
         (n) =>
           n.name.toLowerCase().includes(lowerQuery) ||
           (n.acronym && n.acronym.toLowerCase().includes(lowerQuery)),

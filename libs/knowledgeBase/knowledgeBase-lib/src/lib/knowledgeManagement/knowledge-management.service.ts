@@ -60,7 +60,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     options?: OperationOptions,
   ): Promise<EntityData> {
     this.logger.log(
-      `Creating entity with nomenclature: ${data.nomanclature.map((n) => n.name).join(', ')}`,
+      `Creating entity with nomenclature: ${data.nomenclature.map((n) => n.name).join(', ')}`,
     );
 
     // Generate embedding if not provided
@@ -121,7 +121,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
       await this.versionControl.createCommit({
         repositoryId: 'knowledge-base',
         branchName: 'main',
-        message: `Create entity: ${entity.nomanclature[0]?.name}`,
+        message: `Create entity: ${entity.nomenclature[0]?.name}`,
         author: { name: 'System', email: 'system@example.com' },
         changes: {
           added: [
@@ -652,7 +652,7 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     options?: OperationOptions,
   ): Promise<EntityWithRelations> {
     this.logger.log(
-      `Creating entity with relations: ${entityData.nomanclature.map((n) => n.name).join(', ')}`,
+      `Creating entity with relations: ${entityData.nomenclature.map((n) => n.name).join(', ')}`,
     );
 
     // Create entity first
@@ -794,12 +794,12 @@ export class KnowledgeManagementService implements IKnowledgeManagementService {
     const warnings: any[] = [];
 
     if (
-      !data.nomanclature ||
-      !Array.isArray(data.nomanclature) ||
-      data.nomanclature.length === 0
+      !data.nomenclature ||
+      !Array.isArray(data.nomenclature) ||
+      data.nomenclature.length === 0
     ) {
       errors.push({
-        field: 'nomanclature',
+        field: 'nomenclature',
         code: 'REQUIRED',
         message: 'Entity must have at least one nomenclature entry',
       });

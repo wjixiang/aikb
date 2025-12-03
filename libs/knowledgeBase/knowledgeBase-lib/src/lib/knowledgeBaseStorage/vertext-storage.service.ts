@@ -158,11 +158,13 @@ export class VertextStorageService implements IVertexStorage {
   async search(
     query: string,
     options?: {
-      limit?: number;
-      offset?: number;
+      limit?: number | string;
+      offset?: number | string;
     },
   ): Promise<VertexData[]> {
     const { limit = 50, offset = 0 } = options || {};
+    const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+    const parsedOffset = typeof offset === 'string' ? parseInt(offset, 10) : offset;
 
     const vertices = await this.prisma.vertex.findMany({
       where: {
@@ -172,8 +174,8 @@ export class VertextStorageService implements IVertexStorage {
         },
         deletedAt: null,
       },
-      take: limit,
-      skip: offset,
+      take: parsedLimit,
+      skip: parsedOffset,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -191,16 +193,18 @@ export class VertextStorageService implements IVertexStorage {
    * @returns Promise resolving to paginated vertices and total count
    */
   async findAll(options?: {
-    limit?: number;
-    offset?: number;
+    limit?: number | string;
+    offset?: number | string;
   }): Promise<{ vertices: VertexData[]; total: number }> {
     const { limit = 50, offset = 0 } = options || {};
+    const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+    const parsedOffset = typeof offset === 'string' ? parseInt(offset, 10) : offset;
 
     const [vertices, total] = await Promise.all([
       this.prisma.vertex.findMany({
         where: { deletedAt: null },
-        take: limit,
-        skip: offset,
+        take: parsedLimit,
+        skip: parsedOffset,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.vertex.count({

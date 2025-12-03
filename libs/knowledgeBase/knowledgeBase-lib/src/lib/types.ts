@@ -6,7 +6,7 @@ export interface Tag {
   description: string;
 }
 
-export interface Nomanclature {
+export interface Nomenclature {
   name: string;
   acronym: string | null;
   language: 'en' | 'zh';
@@ -14,7 +14,7 @@ export interface Nomanclature {
 
 export interface EntityData {
   id: string;
-  nomanclature: Nomanclature[];
+  nomenclature: Nomenclature[];
   abstract: {
     description: string;
     embedding?: {

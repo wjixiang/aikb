@@ -46,7 +46,7 @@ export class EntityController {
 
     // Convert DTO to entity data format
     const entityData = {
-      nomanclature: createEntityDto.nomenclature.map((n) => ({
+      nomenclature: createEntityDto.nomenclature.map((n) => ({
         name: n.name,
         acronym: n.acronym || null,
         language: n.language,

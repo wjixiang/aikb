@@ -17,7 +17,7 @@ export class EntityStorageService implements IEntityStorage {
       data: {
         description: entity.abstract.description,
         nomenclatures: {
-          create: entity.nomanclature.map((nom) => ({
+          create: entity.nomenclature.map((nom) => ({
             name: nom.name,
             acronym: nom.acronym,
             language: nom.language,
@@ -121,10 +121,10 @@ export class EntityStorageService implements IEntityStorage {
       updateData.description = updates.abstract.description;
     }
 
-    if (updates.nomanclature) {
+    if (updates.nomenclature) {
       updateData.nomenclatures = {
         deleteMany: {},
-        create: updates.nomanclature.map((nom) => ({
+        create: updates.nomenclature.map((nom) => ({
           name: nom.name,
           acronym: nom.acronym,
           language: nom.language,
@@ -190,8 +190,8 @@ export class EntityStorageService implements IEntityStorage {
   async search(
     query: string,
     options?: {
-      limit?: number;
-      offset?: number;
+      limit?: number | string;
+      offset?: number | string;
       language?: 'en' | 'zh';
     },
   ): Promise<EntityData[]> {
@@ -219,8 +219,8 @@ export class EntityStorageService implements IEntityStorage {
 
     const entities = await this.prisma.entity.findMany({
       where,
-      take: options?.limit || 50,
-      skip: options?.offset || 0,
+      take: options?.limit ? parseInt(options.limit.toString(), 10) : 50,
+      skip: options?.offset ? parseInt(options.offset.toString(), 10) : 0,
       include: {
         nomenclatures: true,
         embedding: true,
@@ -254,13 +254,13 @@ export class EntityStorageService implements IEntityStorage {
    * @returns Promise resolving to paginated entities and total count
    */
   async findAll(options?: {
-    limit?: number;
-    offset?: number;
+    limit?: number | string;
+    offset?: number | string;
   }): Promise<{ entities: EntityData[]; total: number }> {
     const [entities, total] = await Promise.all([
       this.prisma.entity.findMany({
-        take: options?.limit || 50,
-        skip: options?.offset || 0,
+        take: options?.limit ? parseInt(options.limit.toString(), 10) : 50,
+        skip: options?.offset ? parseInt(options.offset.toString(), 10) : 0,
         include: {
           nomenclatures: true,
           embedding: true,
@@ -298,7 +298,7 @@ export class EntityStorageService implements IEntityStorage {
   private mapPrismaEntityToEntityData(entity: any): EntityData {
     return {
       id: entity.id,
-      nomanclature: entity.nomenclatures.map((nom: any) => ({
+      nomenclature: entity.nomenclatures.map((nom: any) => ({
         name: nom.name,
         acronym: nom.acronym,
         language: nom.language as 'en' | 'zh',
