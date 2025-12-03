@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {CreateEntityDto, CreateAbstractDto} from 'apps/knowledgeBase-service/src/dto/create-entity.dto'
 
-describe('GET /api', () => {
+describe('create entity /api/entities', () => {
   it('should return a message', async () => {
     const data:CreateEntityDto = {
       nomenclature: [{
@@ -14,7 +14,7 @@ describe('GET /api', () => {
     }
     const res = await axios.post(`/api/entities`,data);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     // expect(res.data).toEqual({ message: 'Hello API' });
   });
 });

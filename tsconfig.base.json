@@ -68,6 +68,7 @@
       "entity-db": ["libs/knowledgeBase/knowledge-db/entity-db/src/index.ts"],
       "property-db": ["libs/knowledgeBase/knowledge-db/property-db/src/index.ts"],
       "graph-db": ["libs/knowledgeBase/knowledge-db/graph-db/src/index.ts"],
+      "VersionControl-db": ["libs/VersionControl-db/src/index.ts"],
     },
     "incremental": true,
     "skipLibCheck": true,

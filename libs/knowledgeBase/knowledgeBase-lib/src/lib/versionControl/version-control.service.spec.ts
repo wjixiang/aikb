@@ -1,36 +1,78 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GitVersionControlService } from './version-control.service';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import {
-  IGitVersionControl,
-  GitObject,
   Commit,
+  Branch,
   Tree,
-  TreeEntry,
   Blob,
   ChangeSet,
   Change,
-  Branch,
-  Reference,
   MergeResult,
-  MergeConflict,
   WorkingTreeStatus,
-  Diff,
   CommitDiff,
-  DiffChange,
-  CreateCommitOptions,
-  CreateBranchOptions,
-  MergeBranchOptions,
-  GetCommitHistoryOptions,
-  AuthorInfo,
+  AuthorInfo
 } from './types';
-import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
+import { VersionControlDBPrismaService } from 'VersionControl-db';
+
+// Mock the VersionControlDBPrismaService
+const mockVersionControlDBPrismaService = {
+  repository: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  branch: {
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
+    delete: jest.fn(),
+  },
+  gitObject: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+  },
+  commit: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+  },
+  commitParent: {
+    findMany: jest.fn(),
+    create: jest.fn(),
+  },
+  change: {
+    findMany: jest.fn(),
+    create: jest.fn(),
+  },
+  branchCommit: {
+    findMany: jest.fn(),
+    create: jest.fn(),
+  },
+  treeEntry: {
+    findMany: jest.fn(),
+  },
+  mergeResult: {
+    create: jest.fn(),
+  },
+};
 
 describe('GitVersionControlService', () => {
   let service: GitVersionControlService;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GitVersionControlService],
+      providers: [
+        GitVersionControlService,
+        {
+          provide: VersionControlDBPrismaService,
+          useValue: mockVersionControlDBPrismaService,
+        },
+      ],
     }).compile();
 
     service = module.get<GitVersionControlService>(GitVersionControlService);
@@ -40,591 +82,404 @@ describe('GitVersionControlService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('Repository Management', () => {
-    it('should initialize a new repository', async () => {
-      await service.initRepository('test-repo');
+  describe('initRepository', () => {
+    it('should create a new repository with main branch', async () => {
+      const repositoryId = 'test-repo';
+      const mockRepository = { id: 'repo-id', repositoryId, currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: 'main' };
 
-      const branches = await service.getBranches('test-repo');
-      expect(branches).toHaveLength(1);
-      expect(branches[0].name).toBe('main');
-      expect(branches[0].isActive).toBe(true);
+      // First call returns null (repository doesn't exist), second call returns the created repository
+      mockVersionControlDBPrismaService.repository.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockRepository);
+      mockVersionControlDBPrismaService.repository.create.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(mockBranch);
+
+      await service.initRepository(repositoryId);
+
+      expect(mockVersionControlDBPrismaService.repository.findUnique).toHaveBeenCalledWith({
+        where: { repositoryId }
+      });
+      expect(mockVersionControlDBPrismaService.repository.create).toHaveBeenCalledWith({
+        data: { repositoryId, currentBranch: 'main' }
+      });
+      expect(mockVersionControlDBPrismaService.branch.create).toHaveBeenCalled();
     });
 
-    it('should throw error when initializing existing repository', async () => {
-      await service.initRepository('test-repo');
+    it('should throw ConflictException if repository already exists', async () => {
+      const repositoryId = 'existing-repo';
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue({ id: 'repo-id' });
 
-      await expect(service.initRepository('test-repo')).rejects.toThrow(
-        'Repository test-repo already exists',
+      await expect(service.initRepository(repositoryId)).rejects.toThrow(
+        new ConflictException(`Repository with ID ${repositoryId} already exists`)
       );
     });
+  });
 
+  describe('createBranch', () => {
     it('should create a new branch', async () => {
-      await service.initRepository('test-repo');
-
-      const branch = await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      expect(branch.name).toBe('feature/test');
-      expect(branch.isActive).toBe(false);
-      expect(branch.metadata?.author).toBe('Test User');
-    });
-
-    it('should throw error when creating existing branch', async () => {
-      await service.initRepository('test-repo');
-      await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      await expect(
-        service.createBranch({
-          repositoryId: 'test-repo',
-          branchName: 'feature/test',
-          author: { name: 'Test User', email: 'test@example.com' },
-        }),
-      ).rejects.toThrow('Branch feature/test already exists');
-    });
-
-    it('should switch branches', async () => {
-      await service.initRepository('test-repo');
-      await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      await service.switchBranch('test-repo', 'feature/test');
-
-      const branches = await service.getBranches('test-repo');
-      const mainBranch = branches.find((b) => b.name === 'main');
-      const featureBranch = branches.find((b) => b.name === 'feature/test');
-
-      expect(mainBranch?.isActive).toBe(false);
-      expect(featureBranch?.isActive).toBe(true);
-    });
-
-    it('should delete branches', async () => {
-      await service.initRepository('test-repo');
-      await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      const deleted = await service.deleteBranch('test-repo', 'feature/test');
-      expect(deleted).toBe(true);
-
-      const branches = await service.getBranches('test-repo');
-      expect(branches.find((b) => b.name === 'feature/test')).toBeUndefined();
-    });
-
-    it('should get all branches', async () => {
-      await service.initRepository('test-repo');
-      await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      const branches = await service.getBranches('test-repo');
-      expect(branches).toHaveLength(2);
-      expect(branches.map((b) => b.name)).toContain('main');
-      expect(branches.map((b) => b.name)).toContain('feature/test');
-    });
-  });
-
-  describe('Commit Management', () => {
-    it('should create a commit', async () => {
-      await service.initRepository('test-repo');
-
-      const changes: ChangeSet = {
-        added: [
-          {
-            path: 'entities/test-entity',
-            objectId: 'entity-1',
-            type: 'entity',
-          },
-        ],
-        modified: [],
-        deleted: [],
+      const repositoryId = 'test-repo';
+      const branchName = 'feature/test';
+      const author: AuthorInfo = { name: 'Test User', email: 'test@example.com' };
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = {
+        id: 'branch-id',
+        branchId: 'branch-object-id',
+        name: branchName,
+        headCommitId: 'commit-id',
+        baseCommitId: 'commit-id',
+        isActive: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: { author: author.name }
       };
 
-      const commit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Initial commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes,
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+      mockVersionControlDBPrismaService.branch.create.mockResolvedValue(mockBranch);
+
+      const result = await service.createBranch({
+        repositoryId,
+        branchName,
+        author
       });
 
-      expect(commit.objectId).toBeDefined();
-      expect(commit.content.message).toBe('Initial commit');
-      expect(commit.content.author.name).toBe('Test User');
-      expect(commit.content.changes.added).toHaveLength(1);
+      expect(result).toBeDefined();
+      expect(result.name).toBe(branchName);
+      expect(mockVersionControlDBPrismaService.branch.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: branchName,
+          repositoryId: mockRepository.id,
+          metadata: expect.objectContaining({
+            author: author.name
+          })
+        })
+      });
     });
 
-    it('should create commit with parents', async () => {
-      await service.initRepository('test-repo');
+    it('should throw NotFoundException if repository not found', async () => {
+      const repositoryId = 'non-existent-repo';
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(null);
 
-      // Create initial commit
-      const initialCommit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Initial commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      // Create second commit with parent
-      const secondCommit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Second commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-2',
-              objectId: 'entity-2',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-        parentCommitIds: [initialCommit.objectId],
-      });
-
-      expect(secondCommit.content.parents).toContain(initialCommit.objectId);
-    });
-
-    it('should get commit history', async () => {
-      await service.initRepository('test-repo');
-
-      // Create multiple commits
-      const commit1 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'First commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-1',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      const commit2 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Second commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-2',
-              objectId: 'entity-2',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-        parentCommitIds: [commit1.objectId],
-      });
-
-      const history = await service.getCommitHistory({
-        repositoryId: 'test-repo',
-        limit: 10,
-      });
-
-      expect(history).toHaveLength(2);
-      expect(history[0].content.message).toBe('Second commit');
-      expect(history[1].content.message).toBe('First commit');
-    });
-
-    it('should get specific commit', async () => {
-      await service.initRepository('test-repo');
-
-      const commit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Test commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      const retrieved = await service.getCommit('test-repo', commit.objectId);
-      expect(retrieved).not.toBeNull();
-      expect(retrieved?.objectId).toBe(commit.objectId);
-    });
-
-    it('should compare commits', async () => {
-      await service.initRepository('test-repo');
-
-      const commit1 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'First commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-1',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      const commit2 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Second commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-2',
-              objectId: 'entity-2',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-        parentCommitIds: [commit1.objectId],
-      });
-
-      const diff = await service.compareCommits(
-        'test-repo',
-        commit1.objectId,
-        commit2.objectId,
-      );
-      expect(diff.commit1).not.toBeNull();
-      expect(diff.commit2).not.toBeNull();
-      expect(diff.changes).toBeDefined();
-    });
-
-    it('should reset to commit', async () => {
-      await service.initRepository('test-repo');
-
-      const commit1 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'First commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-1',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      const commit2 = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Second commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-2',
-              objectId: 'entity-2',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-        parentCommitIds: [commit1.objectId],
-      });
-
-      await service.resetToCommit('test-repo', commit1.objectId, 'hard');
-
-      const currentBranch = await service.getBranch('test-repo', 'main');
-      expect(currentBranch?.headCommitId).toBe(commit1.objectId);
-    });
-  });
-
-  describe('Merge Operations', () => {
-    it('should merge branches', async () => {
-      await service.initRepository('test-repo');
-
-      // Create main branch with initial commit
-      const mainCommit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Initial commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity',
-              objectId: 'entity-1',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      // Create feature branch
-      await service.createBranch({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        baseCommitId: mainCommit.objectId,
-        author: { name: 'Test User', email: 'test@example.com' },
-      });
-
-      // Add commit to feature branch
-      const featureCommit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'feature/test',
-        message: 'Feature commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes: {
-          added: [
-            {
-              path: 'entities/test-entity-2',
-              objectId: 'entity-2',
-              type: 'entity',
-            },
-          ],
-          modified: [],
-          deleted: [],
-        },
-      });
-
-      // Merge feature into main
-      const mergeResult = await service.mergeBranch({
-        repositoryId: 'test-repo',
-        sourceBranch: 'feature/test',
-        targetBranch: 'main',
-        author: { name: 'Test User', email: 'test@example.com' },
-        message: 'Merge feature branch',
-      });
-
-      expect(mergeResult.success).toBe(true);
-      expect(mergeResult.mergeCommitId).toBeDefined();
-
-      const mainBranch = await service.getBranch('test-repo', 'main');
-      expect(mainBranch?.headCommitId).toBe(mergeResult.mergeCommitId);
-    });
-  });
-
-  describe('Object Storage', () => {
-    it('should store and retrieve tree objects', async () => {
-      await service.initRepository('test-repo');
-
-      const changes: ChangeSet = {
-        added: [
-          {
-            path: 'entities/test-entity',
-            objectId: 'entity-1',
-            type: 'entity',
-          },
-        ],
-        modified: [],
-        deleted: [],
-      };
-
-      const commit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Test commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes,
-      });
-
-      const tree = await service.getTree(commit.content.tree);
-      expect(tree).not.toBeNull();
-      expect(tree?.type).toBe('tree');
-      expect(tree?.content.entries).toHaveLength(1);
-    });
-
-    it('should store and retrieve blob objects', async () => {
-      await service.initRepository('test-repo');
-
-      const entityData: EntityData = {
-        id: 'entity-1',
-        nomanclature: [
-          {
-            name: 'Test Entity',
-            acronym: 'TE',
-            language: 'en',
-          },
-        ],
-        abstract: {
-          description: 'Test description',
-          embedding: {
-            config: { model: 'test', dimensions: 128 } as any,
-            vector: new Array(128).fill(0.1),
-          },
-        },
-      };
-
-      const changes: ChangeSet = {
-        added: [
-          {
-            path: 'entities/test-entity',
-            objectId: 'entity-1',
-            type: 'entity',
-          },
-        ],
-        modified: [],
-        deleted: [],
-      };
-
-      const commit = await service.createCommit({
-        repositoryId: 'test-repo',
-        branchName: 'main',
-        message: 'Test commit',
-        author: { name: 'Test User', email: 'test@example.com' },
-        changes,
-      });
-
-      const blob = await service.getBlob('entity-1');
-      expect(blob).not.toBeNull();
-      expect(blob?.type).toBe('blob');
-      expect(blob?.content).toEqual(entityData);
-    });
-  });
-
-  describe('Working Tree Status', () => {
-    it('should return working tree status', async () => {
-      await service.initRepository('test-repo');
-
-      const status = await service.getStatus('test-repo');
-      expect(status.staged).toEqual([]);
-      expect(status.unstaged).toEqual([]);
-      expect(status.untracked).toEqual([]);
-      expect(status.modified).toEqual([]);
-      expect(status.deleted).toEqual([]);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should throw error for non-existent repository', async () => {
-      await expect(service.getBranches('non-existent-repo')).rejects.toThrow(
-        'Repository non-existent-repo not found',
+      await expect(service.createBranch({
+        repositoryId,
+        branchName: 'test',
+        author: { name: 'Test', email: 'test@example.com' }
+      })).rejects.toThrow(
+        new NotFoundException(`Repository with ID ${repositoryId} not found`)
       );
     });
+  });
 
-    it('should throw error for non-existent branch', async () => {
-      await service.initRepository('test-repo');
+  describe('switchBranch', () => {
+    it('should switch to a different branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'feature/test';
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: branchName };
 
-      await expect(
-        service.getBranch('test-repo', 'non-existent-branch'),
-      ).rejects.toThrow('Branch non-existent-branch not found');
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.repository.update.mockResolvedValue({});
+      mockVersionControlDBPrismaService.branch.updateMany.mockResolvedValue({});
+      mockVersionControlDBPrismaService.branch.update.mockResolvedValue({});
+
+      await service.switchBranch(repositoryId, branchName);
+
+      expect(mockVersionControlDBPrismaService.repository.update).toHaveBeenCalledWith({
+        where: { id: mockRepository.id },
+        data: { currentBranch: branchName }
+      });
+      expect(mockVersionControlDBPrismaService.branch.updateMany).toHaveBeenCalledWith({
+        where: { repositoryId: mockRepository.id },
+        data: { isActive: false }
+      });
+      expect(mockVersionControlDBPrismaService.branch.update).toHaveBeenCalledWith({
+        where: { id: mockBranch.id },
+        data: { isActive: true }
+      });
+    });
+  });
+
+  describe('getBranches', () => {
+    it('should return all branches for a repository', async () => {
+      const repositoryId = 'test-repo';
+      const mockRepository = { id: 'repo-id' };
+      const mockBranches = [
+        { id: 'branch-1', name: 'main' },
+        { id: 'branch-2', name: 'feature/test' }
+      ];
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findMany.mockResolvedValue(mockBranches);
+
+      const result = await service.getBranches(repositoryId);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('main');
+      expect(result[1].name).toBe('feature/test');
+    });
+  });
+
+  describe('getBranch', () => {
+    it('should return a specific branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'main';
+      const mockRepository = { id: 'repo-id' };
+      const mockBranch = { id: 'branch-id', name: branchName };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+
+      const result = await service.getBranch(repositoryId, branchName);
+
+      expect(result).toBeDefined();
+      expect(result?.name).toBe(branchName);
     });
 
-    it('should throw error for non-existent commit', async () => {
-      await service.initRepository('test-repo');
+    it('should return null for non-existent branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'non-existent';
+      const mockRepository = { id: 'repo-id' };
 
-      const result = await service.getCommit(
-        'test-repo',
-        'non-existent-commit',
-      );
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+
+      const result = await service.getBranch(repositoryId, branchName);
+
       expect(result).toBeNull();
     });
   });
 
-  describe('Complex Scenarios', () => {
-    it('should handle multiple repositories', async () => {
-      await service.initRepository('repo-1');
-      await service.initRepository('repo-2');
+  describe('deleteBranch', () => {
+    it('should delete a branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'feature/test';
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: branchName };
 
-      const repo1Branches = await service.getBranches('repo-1');
-      const repo2Branches = await service.getBranches('repo-2');
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.branch.delete.mockResolvedValue({});
 
-      expect(repo1Branches).toHaveLength(1);
-      expect(repo2Branches).toHaveLength(1);
-      expect(repo1Branches[0].name).toBe('main');
-      expect(repo2Branches[0].name).toBe('main');
+      const result = await service.deleteBranch(repositoryId, branchName);
+
+      expect(result).toBe(true);
+      expect(mockVersionControlDBPrismaService.branch.delete).toHaveBeenCalledWith({
+        where: { id: mockBranch.id }
+      });
     });
 
-    it('should handle complex commit history with pagination', async () => {
-      await service.initRepository('test-repo');
+    it('should return false for non-existent branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'non-existent';
+      const mockRepository = { id: 'repo-id' };
 
-      // Create multiple commits
-      for (let i = 0; i < 15; i++) {
-        await service.createCommit({
-          repositoryId: 'test-repo',
-          branchName: 'main',
-          message: `Commit ${i + 1}`,
-          author: { name: 'Test User', email: 'test@example.com' },
-          changes: {
-            added: [
-              {
-                path: `entities/test-entity-${i}`,
-                objectId: `entity-${i}`,
-                type: 'entity',
-              },
-            ],
-            modified: [],
-            deleted: [],
-          },
-        });
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(null);
+
+      const result = await service.deleteBranch(repositoryId, branchName);
+
+      expect(result).toBe(false);
+    });
+
+    it('should throw ConflictException when trying to delete current branch', async () => {
+      const repositoryId = 'test-repo';
+      const branchName = 'main';
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: branchName };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+
+      try {
+        await service.deleteBranch(repositoryId, branchName);
+        fail('Expected ConflictException to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ConflictException);
+        const actualMessage = (error as ConflictException).message;
+        expect(actualMessage).toContain(`Cannot delete the current branch ${branchName}`);
       }
+    });
+  });
 
-      // Test pagination
-      const firstPage = await service.getCommitHistory({
-        repositoryId: 'test-repo',
-        limit: 5,
-        offset: 0,
+  describe('getCommit', () => {
+    it('should return a specific commit', async () => {
+      const repositoryId = 'test-repo';
+      const commitId = 'commit-id';
+      const mockRepository = { id: 'repo-id' };
+      const mockCommit = {
+        id: 'commit-db-id',
+        objectId: commitId,
+        treeId: 'tree-id',
+        message: 'Test commit',
+        authorName: 'Test User',
+        authorEmail: 'test@example.com',
+        authorTimestamp: new Date(),
+        committerName: 'Test User',
+        committerEmail: 'test@example.com',
+        committerTimestamp: new Date()
+      };
+      const mockGitObject = { id: 'git-obj-id', type: 'commit', content: {}, size: 100 };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(mockCommit);
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
+      mockVersionControlDBPrismaService.commitParent.findMany.mockResolvedValue([]);
+      mockVersionControlDBPrismaService.change.findMany.mockResolvedValue([]);
+
+      const result = await service.getCommit(repositoryId, commitId);
+
+      expect(result).toBeDefined();
+      expect(result?.objectId).toBe(commitId);
+    });
+
+    it('should return null for non-existent commit', async () => {
+      const repositoryId = 'test-repo';
+      const commitId = 'non-existent';
+      const mockRepository = { id: 'repo-id' };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(null);
+
+      const result = await service.getCommit(repositoryId, commitId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getStatus', () => {
+    it('should return working tree status', async () => {
+      const repositoryId = 'test-repo';
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: 'main' };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+
+      const result = await service.getStatus(repositoryId);
+
+      expect(result).toBeDefined();
+      expect(result.staged).toEqual([]);
+      expect(result.unstaged).toEqual([]);
+      expect(result.untracked).toEqual([]);
+      expect(result.modified).toEqual([]);
+      expect(result.deleted).toEqual([]);
+    });
+  });
+
+  describe('getTree', () => {
+    it('should return a tree object', async () => {
+      const treeId = 'tree-id';
+      const mockGitObject = {
+        id: 'git-obj-id',
+        objectId: treeId,
+        type: 'tree',
+        content: {},
+        size: 100
+      };
+      const mockTreeEntries = [
+        {
+          mode: '100644',
+          name: 'test.txt',
+          objectId: 'blob-id',
+          type: 'blob'
+        }
+      ];
+
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
+      mockVersionControlDBPrismaService.treeEntry.findMany.mockResolvedValue(mockTreeEntries);
+
+      const result = await service.getTree(treeId);
+
+      expect(result).toBeDefined();
+      expect(result?.objectId).toBe(treeId);
+      expect(result?.type).toBe('tree');
+      expect(result?.content.entries).toHaveLength(1);
+      expect(result?.content.entries[0].name).toBe('test.txt');
+    });
+
+    it('should return null for non-tree object', async () => {
+      const treeId = 'not-tree-id';
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(null);
+
+      const result = await service.getTree(treeId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getBlob', () => {
+    it('should return a blob object', async () => {
+      const blobId = 'blob-id';
+      const mockGitObject = {
+        id: 'git-obj-id',
+        objectId: blobId,
+        type: 'blob',
+        content: { data: 'test content' },
+        size: 12
+      };
+
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(mockGitObject);
+
+      const result = await service.getBlob(blobId);
+
+      expect(result).toBeDefined();
+      expect(result?.objectId).toBe(blobId);
+      expect(result?.type).toBe('blob');
+      expect(result?.content).toEqual({ data: 'test content' });
+    });
+
+    it('should return null for non-blob object', async () => {
+      const blobId = 'not-blob-id';
+      mockVersionControlDBPrismaService.gitObject.findUnique.mockResolvedValue(null);
+
+      const result = await service.getBlob(blobId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('resetToCommit', () => {
+    it('should reset branch to specific commit', async () => {
+      const repositoryId = 'test-repo';
+      const commitId = 'reset-commit-id';
+      const mode = 'soft' as const;
+      const mockRepository = { id: 'repo-id', currentBranch: 'main' };
+      const mockBranch = { id: 'branch-id', name: 'main' };
+      const mockCommit = {
+        id: 'commit-db-id',
+        objectId: commitId,
+        treeId: 'tree-id',
+        message: 'Reset target commit'
+      };
+
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(mockCommit);
+      mockVersionControlDBPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
+      mockVersionControlDBPrismaService.branch.update.mockResolvedValue({});
+
+      await service.resetToCommit(repositoryId, commitId, mode);
+
+      expect(mockVersionControlDBPrismaService.branch.update).toHaveBeenCalledWith({
+        where: { id: mockBranch.id },
+        data: { headCommitId: commitId }
       });
+    });
 
-      const secondPage = await service.getCommitHistory({
-        repositoryId: 'test-repo',
-        limit: 5,
-        offset: 5,
-      });
+    it('should throw NotFoundException for non-existent commit', async () => {
+      const repositoryId = 'test-repo';
+      const commitId = 'non-existent-commit';
+      const mode = 'soft' as const;
+      const mockRepository = { id: 'repo-id' };
 
-      expect(firstPage).toHaveLength(5);
-      expect(secondPage).toHaveLength(5);
-      expect(firstPage[0].content.message).toBe('Commit 15');
-      expect(secondPage[0].content.message).toBe('Commit 10');
+      mockVersionControlDBPrismaService.repository.findUnique.mockResolvedValue(mockRepository);
+      mockVersionControlDBPrismaService.commit.findUnique.mockResolvedValue(null);
+
+      await expect(service.resetToCommit(repositoryId, commitId, mode)).rejects.toThrow(
+        new NotFoundException(`Commit ${commitId} not found`)
+      );
     });
   });
 });

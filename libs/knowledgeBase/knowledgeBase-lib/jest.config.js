@@ -16,7 +16,9 @@ export default {
   moduleNameMapper: {
     '^uuid$': '<rootDir>/jest-uuid-mock.js',
     '^entity-db$': '<rootDir>/mocks/entity-db.mock.js',
-    '^property-db$': '<rootDir>/mocks/property-db.mock.js'
+    '^property-db$': '<rootDir>/mocks/property-db.mock.js',
+    '^VersionControl-db$': '<rootDir>/mocks/version-control-db.mock.js',
+    '^graph-db$': '<rootDir>/mocks/graph-db.mock.js'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
 };

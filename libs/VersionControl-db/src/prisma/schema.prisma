@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Repository table - corresponds to repositories Map in memory
+model Repository {
+  id            String   @id @default(cuid())
+  repositoryId  String   @unique // Repository unique identifier
+  currentBranch String   @default("main")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Associated branches
+  branches Branch[]
+
+  @@map("repositories")
+}
+
+// 2. Branch table - corresponds to branches Map in memory
+model Branch {
+  id           String   @id @default(cuid())
+  branchId     String   @unique // Branch unique identifier
+  name         String
+  headCommitId String   @default("")
+  baseCommitId String   @default("")
+  isActive     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Associated repository
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  repositoryId String
+
+  // Metadata (stored in JSON format)
+  metadata Json?
+
+  // Associated commits
+  commits BranchCommit[]
+
+  @@unique([repositoryId, name]) // Branch name unique within same repository
+  @@map("branches")
+}
+
+// 3. Git object table - corresponds to objects Map in memory
+model GitObject {
+  id       String @id @default(cuid())
+  objectId String @unique // Git object's SHA-1 hash
+  type     String // 'commit' | 'tree' | 'blob'
+  content  Json   // Object content (JSON format)
+  size     Int    // Content size
+
+  // Associated commit record (if commit type)
+  commit Commit?
+
+  // Associated tree entries (if tree type)
+  treeEntries TreeEntry[]
+
+  @@index([objectId])
+  @@index([type])
+  @@map("git_objects")
+}
+
+// 4. Commit table - corresponds to Commit objects in memory
+model Commit {
+  id         String   @id @default(cuid())
+  objectId   String   @unique // Commit's Git object ID
+  treeId     String   // Root tree object ID
+  message    String
+  authorName String
+  authorEmail String
+  authorTimestamp DateTime
+  committerName String
+  committerEmail String
+  committerTimestamp DateTime
+  createdAt  DateTime @default(now())
+
+  // Associated Git object
+  gitObject GitObject @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  // Parent commit relationships (many-to-many)
+  parentCommits CommitParent[] @relation("CommitParents")
+  childCommits CommitParent[] @relation("CommitChildren")
+
+  // Branch associations (many-to-many)
+  branches BranchCommit[]
+
+  // Change records
+  changes Change[]
+
+  @@map("commits")
+}
+
+// 5. Commit parent relationship table - supports multi-parent relationships for merge commits
+model CommitParent {
+  id         String @id @default(cuid())
+  commitId   String
+  parentId   String
+
+  commit Commit @relation("CommitChildren", fields: [commitId], references: [id], onDelete: Cascade)
+  parent Commit @relation("CommitParents", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([commitId, parentId])
+  @@map("commit_parents")
+}
+
+// 6. Branch commit association table - records branch commit history
+model BranchCommit {
+  id        String @id @default(cuid())
+  branchId  String
+  commitId  String
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  commit Commit @relation(fields: [commitId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, commitId])
+  @@map("branch_commits")
+}
+
+// 7. Change record table - corresponds to Change objects in memory
+model Change {
+  id       String @id @default(cuid())
+  path     String // Data path, e.g. "entities/123"
+  objectId String // Object ID
+  type     String // 'entity' | 'vertex' | 'property' | 'edge'
+  changeType String // 'add' | 'modify' | 'delete'
+  
+  // Difference information (JSON format)
+  diff Json?
+
+  // Associated commit
+  commitId String
+  commit Commit @relation(fields: [commitId], references: [id], onDelete: Cascade)
+
+  @@index([commitId])
+  @@index([type])
+  @@index([path])
+  @@map("changes")
+}
+
+// 8. Reference table - corresponds to references Map in memory
+model Reference {
+  id       String   @id @default(cuid())
+  refId    String   @unique // Reference unique identifier
+  name     String   // e.g. "refs/heads/main", "refs/tags/v1.0"
+  objectId String   // Points to commit ID
+  type     String   // 'branch' | 'tag' | 'stash'
+  createdAt DateTime @default(now())
+
+  @@index([name])
+  @@index([type])
+  @@map("references")
+}
+
+// 9. Tree entry table - corresponds to TreeEntry objects in memory
+model TreeEntry {
+  id       String @id @default(cuid())
+  treeId   String // Parent tree object ID
+  mode     String // File permission mode
+  name     String // Entry name
+  objectId String // Points to object ID
+  type     String // 'blob' | 'tree'
+
+  // Associated tree object
+  tree GitObject @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  @@index([treeId])
+  @@index([name])
+  @@map("tree_entries")
+}
+
+// 10. Merge result table - records merge operation history
+model MergeResult {
+  id            String   @id @default(cuid())
+  sourceBranch  String
+  targetBranch  String
+  repositoryId  String
+  success       Boolean
+  mergeCommitId String?
+  message       String
+  conflicts     Json?    // Merge conflict information
+  createdAt     DateTime @default(now())
+
+  @@index([repositoryId])
+  @@index([sourceBranch, targetBranch])
+  @@map("merge_results")
+}

@@ -1,0 +1,70 @@
+{
+  "name": "VersionControl-db",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/VersionControl-db/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project VersionControl-db --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/VersionControl-db",
+        "main": "libs/VersionControl-db/src/index.ts",
+        "tsConfig": "libs/VersionControl-db/tsconfig.lib.json",
+        "assets": ["libs/VersionControl-db/*.md"]
+      },
+      "dependsOn": ["gen-client"]
+    },
+    "db-pull": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "gen-client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma generate --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "reset-db": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "migrate-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma studio",
+        "cwd": "libs/VersionControl-db"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate deploy",
+        "cwd": "libs/VersionControl-db"
+      }
+    }
+  }
+}

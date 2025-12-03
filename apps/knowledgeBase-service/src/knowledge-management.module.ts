@@ -5,6 +5,7 @@ import { PropertyController } from './controllers/property.controller';
 import { EdgeController } from './controllers/edge.controller';
 import { SearchController } from './controllers/search.controller';
 import { VersionControlController } from './controllers/version-control.controller';
+import { HealthController } from './controllers/health.controller';
 
 // Import the complete lib module that contains all services
 import { KnowledgeBaseLibModule } from 'knowledgeBase-lib';
@@ -19,6 +20,7 @@ import { EmbeddingModule } from 'EmbeddingModule';
     EdgeController,
     SearchController,
     VersionControlController,
+    HealthController, // Add health-check controller
   ],
 })
 export class KnowledgeManagementModule {}
