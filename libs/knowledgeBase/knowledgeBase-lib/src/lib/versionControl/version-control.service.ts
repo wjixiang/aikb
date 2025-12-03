@@ -24,6 +24,7 @@ import {
 } from './types';
 import { EntityData, VertexData, PropertyData, EdgeData } from '../types';
 import { VersionControlDBPrismaService } from 'VersionControl-db'
+import type { GitObjectModel, CommitModel, BranchModel, ChangeModel } from 'VersionControl-db/models';
 import { createHash } from 'crypto';
 
 /**
@@ -35,7 +36,7 @@ export class GitVersionControlService implements IGitVersionControl {
   /**
    * Generate SHA-1 hash for git objects
    */
-  private generateObjectId(content: any): string {
+  private generateObjectId(content: string | object): string {
     const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
     return createHash('sha1').update(contentStr).digest('hex');
   }
@@ -43,10 +44,10 @@ export class GitVersionControlService implements IGitVersionControl {
   /**
    * Convert database GitObject to domain GitObject
    */
-  private dbGitObjectToDomain(dbGitObject: any): GitObject {
+  private dbGitObjectToDomain(dbGitObject: GitObjectModel): GitObject {
     return {
       objectId: dbGitObject.objectId,
-      type: dbGitObject.type,
+      type: dbGitObject.type as 'commit' | 'tree' | 'blob',
       content: dbGitObject.content,
       size: dbGitObject.size
     };
@@ -55,9 +56,9 @@ export class GitVersionControlService implements IGitVersionControl {
   /**
    * Convert database Commit to domain Commit
    */
-  private async dbCommitToDomain(dbCommit: any): Promise<Commit> {
+  private async dbCommitToDomain(dbCommit: CommitModel): Promise<Commit> {
     const gitObject = await this.versionControlDbService.gitObject.findUnique({
-      where: { id: dbCommit.gitObjectId }
+      where: { objectId: dbCommit.objectId }
     });
 
     if (!gitObject) {
@@ -122,7 +123,7 @@ export class GitVersionControlService implements IGitVersionControl {
   /**
    * Convert database Branch to domain Branch
    */
-  private dbBranchToDomain(dbBranch: any): Branch {
+  private dbBranchToDomain(dbBranch: BranchModel): Branch {
     return {
       branchId: dbBranch.branchId,
       name: dbBranch.name,
@@ -222,7 +223,7 @@ export class GitVersionControlService implements IGitVersionControl {
         timestamp: new Date()
       },
       message,
-      changes: changes as any // Convert to any for JSON compatibility
+      changes: changes as ChangeSet // Convert to ChangeSet for JSON compatibility
     };
 
     const commitObjectId = this.generateObjectId(commitContent);
@@ -507,15 +508,15 @@ export class GitVersionControlService implements IGitVersionControl {
           path: change.path,
           objectId: change.objectId,
           type: change.type as 'entity' | 'vertex' | 'property' | 'edge',
-          diff: change.diff ? change.diff as unknown as Diff : undefined
+          diff: change.diff as any
         });
       }
     }
 
     const changeSet: ChangeSet = {
-      added: allChanges.filter(c => c.diff?.changeType === 'add'),
-      modified: allChanges.filter(c => c.diff?.changeType === 'modify'),
-      deleted: allChanges.filter(c => c.diff?.changeType === 'delete')
+      added: allChanges.filter(c => c.diff && typeof c.diff === 'object' && 'changeType' in c.diff ? (c.diff as Diff).changeType === 'add' : false),
+      modified: allChanges.filter(c => c.diff && typeof c.diff === 'object' && 'changeType' in c.diff ? (c.diff as Diff).changeType === 'modify' : false),
+      deleted: allChanges.filter(c => c.diff && typeof c.diff === 'object' && 'changeType' in c.diff ? (c.diff as Diff).changeType === 'delete' : false)
     };
 
     // Create merge commit
@@ -654,8 +655,8 @@ export class GitVersionControlService implements IGitVersionControl {
         path: change.path,
         type: change.type as 'entity' | 'vertex' | 'property' | 'edge',
         changeType: change.changeType as 'add' | 'modify' | 'delete',
-        oldContent: change.changeType === 'delete' ? (change.diff as any)?.old : undefined,
-        newContent: change.changeType === 'add' ? (change.diff as any)?.new : undefined,
+        oldContent: change.changeType === 'delete' && change.diff && typeof change.diff === 'object' && 'old' in (change.diff as any) ? (change.diff as any).old : undefined,
+        newContent: change.changeType === 'add' && change.diff && typeof change.diff === 'object' && 'new' in (change.diff as any) ? (change.diff as any).new : undefined,
         diff: change.diff as string | undefined
       };
       

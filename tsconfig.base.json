@@ -69,6 +69,7 @@
       "property-db": ["libs/knowledgeBase/knowledge-db/property-db/src/index.ts"],
       "graph-db": ["libs/knowledgeBase/knowledge-db/graph-db/src/index.ts"],
       "VersionControl-db": ["libs/VersionControl-db/src/index.ts"],
+      "VersionControl-db/models":["libs/VersionControl-db/src/generated/prisma/models.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

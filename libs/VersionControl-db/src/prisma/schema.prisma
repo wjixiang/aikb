@@ -80,7 +80,7 @@ model Commit {
   createdAt  DateTime @default(now())
 
   // Associated Git object
-  gitObject GitObject @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  gitObject GitObject @relation(fields: [objectId], references: [objectId], onDelete: Cascade)
 
   // Parent commit relationships (many-to-many)
   parentCommits CommitParent[] @relation("CommitParents")

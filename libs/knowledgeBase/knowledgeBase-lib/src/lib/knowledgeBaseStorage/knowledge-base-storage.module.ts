@@ -11,6 +11,7 @@ import { GitVersionControlService } from '../versionControl/version-control.serv
 import { EntityDBPrismaService } from 'entity-db';
 import { PropertyDBPrismaService } from 'property-db'
 import { GraphDBPrismaService } from 'graph-db';
+import { VersionControlDBPrismaService } from 'VersionControl-db'
 
 @Module({
   providers: [
@@ -26,6 +27,7 @@ import { GraphDBPrismaService } from 'graph-db';
     VertexStorageMemoryService,
     VertextStorageService,
     GitVersionControlService,
+    VersionControlDBPrismaService
   ],
   exports: [
     EntityDBPrismaService,
