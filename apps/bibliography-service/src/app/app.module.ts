@@ -4,6 +4,7 @@ import { LibraryItemService } from './library-item/library-item.service';
 import { S3ServiceProvider } from './s3/s3.provider';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyGrpcController } from '../grpc/bibliography.grpc.controller';
+import { BibliographyDBPrismaService } from 'bibliography-db';
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { BibliographyGrpcController } from '../grpc/bibliography.grpc.controller
     }),
   ],
   controllers: [LibraryItemController, BibliographyGrpcController],
-  providers: [LibraryItemService, S3ServiceProvider],
+  providers: [LibraryItemService, S3ServiceProvider,BibliographyDBPrismaService],
 })
 export class AppModule {}

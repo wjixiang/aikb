@@ -1,5 +1,5 @@
-import { prisma } from './prisma';
+import { prisma, BibliographyDBPrismaService } from './prisma';
 
 export { PrismaClient, Prisma } from './generated/prisma/client';
 export * from './generated/prisma/models';
-export { prisma };
+export { prisma, BibliographyDBPrismaService };

@@ -220,6 +220,7 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
   ): Promise<boolean> {
     try {
       // Use a transaction for batch insert with raw SQL
+      // Increase timeout to 30 seconds for serverless database startup time
       await prisma.$transaction(async (tx) => {
         for (const chunk of itemChunks) {
           // Convert embedding array to PostgreSQL vector format
@@ -250,6 +251,8 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
             chunk.updatedAt,
           );
         }
+      }, {
+        timeout: 30000, // 30 seconds timeout
       });
       return true;
     } catch (error) {

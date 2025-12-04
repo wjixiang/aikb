@@ -21,7 +21,7 @@ import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
 import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { prisma } from 'bibliography-db';
+import { BibliographyDBPrismaService } from 'bibliography-db';
 
 @Injectable()
 export class LibraryItemService {
@@ -31,12 +31,13 @@ export class LibraryItemService {
   constructor(
     private amqpConnection: AmqpConnection,
     @Inject('S3_SERVICE') private s3Service: S3Service,
+    private bibliographyDBPrismaService: BibliographyDBPrismaService,
   ) {
     // Initialize the storage and library
     // const elasticsearchUrl =
     //   process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
     // const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
-    const storage = new PrismaLibraryStorage(prisma, {
+    const storage = new PrismaLibraryStorage(this.bibliographyDBPrismaService, {
       accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
       secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY || '',
       bucketName: process.env.PDF_OSS_BUCKET_NAME || '',
