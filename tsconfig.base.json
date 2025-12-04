@@ -15,6 +15,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@/*": ["./*"],
       "chunking": ["./libs/chunking/src/index.ts"],
       "@aikb/pdf-converter": ["./libs/pdf-converter/src/index.ts"],
       "@aikb/pdf-splitter": ["./libs/pdf-splitter/src/index.ts"],
@@ -66,10 +67,15 @@
       "nih-client": ["libs/NIH-client/src/index.ts"],
       "EmbeddingModule": ["libs/EmbeddingModule/src/index.ts"],
       "entity-db": ["libs/knowledgeBase/knowledge-db/entity-db/src/index.ts"],
-      "property-db": ["libs/knowledgeBase/knowledge-db/property-db/src/index.ts"],
+      "property-db": [
+        "libs/knowledgeBase/knowledge-db/property-db/src/index.ts"
+      ],
       "graph-db": ["libs/knowledgeBase/knowledge-db/graph-db/src/index.ts"],
       "VersionControl-db": ["libs/VersionControl-db/src/index.ts"],
-      "VersionControl-db/models":["libs/VersionControl-db/src/generated/prisma/models.ts"]
+      "VersionControl-db/models": [
+        "libs/VersionControl-db/src/generated/prisma/models.ts"
+      ],
+      "agentLib": ["libs/agentLib/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

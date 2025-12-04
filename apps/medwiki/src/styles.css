@@ -1,0 +1,58 @@
+@import 'tailwindcss';
+@import '../../../libs/ui/src/styles/globals.css';
+@source "../../../libs";
+
+
+@theme {
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  --color-h1: oklch(0.7 0.1 125);
+  --color-h2: oklch(0.65 0.08 125);
+  --color-h3: oklch(0.6 0.06 125);
+  --color-h4: oklch(0.55 0.05 125);
+  --color-h5: oklch(0.5 0.04 125);
+  --color-h6: oklch(0.45 0.03 125);
+  
+  --color-link: oklch(0.6 0.2 250);
+  --color-link-hover: oklch(0.55 0.25 250);
+  --color-link-visited: oklch(0.5 0.15 280);
+  
+  --color-code-background: oklch(0.98 0.01 220);
+  --color-code-foreground: oklch(0.3 0.02 220);
+  --color-code-border: oklch(0.9 0.01 220);
+  
+  --color-quote-background: oklch(0.97 0.02 60);
+  --color-quote-border: oklch(0.7 0.1 60);
+  
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}

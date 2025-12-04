@@ -1,0 +1,19 @@
+{
+  "name": "agentLib",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/agentLib/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/agentLib",
+        "main": "libs/agentLib/src/index.ts",
+        "tsConfig": "libs/agentLib/tsconfig.lib.json",
+        "assets": ["libs/agentLib/*.md"]
+      }
+    }
+  }
+}

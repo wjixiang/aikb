@@ -34,6 +34,9 @@ client<llm> GLM46 {
     api_key env.GLM_API_KEY
     base_url "https://open.bigmodel.cn/api/paas/v4"
     retry_policy GLMRetry
+    thinking {
+      type "disabled"
+    }
   }
 }
 
