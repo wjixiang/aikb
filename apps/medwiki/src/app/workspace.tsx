@@ -1,9 +1,11 @@
-import WorkspacePc from "./workspace.pc";
+import WorkspacePc from './workspace.pc';
 
 function Workspace() {
-    return ( <>
-    <WorkspacePc />
-    </> );
+  return (
+    <>
+      <WorkspacePc />
+    </>
+  );
 }
 
 export default Workspace;

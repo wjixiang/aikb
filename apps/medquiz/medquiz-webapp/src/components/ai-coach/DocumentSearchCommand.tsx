@@ -9,13 +9,11 @@ interface DocumentSearchCommandProps {
   onSelectResult: (result: { path: string; title: string }) => void;
 }
 
-const DocumentSearchCommand = forwardRef<any, DocumentSearchCommandProps>((props, ref) => {
-  return (
-    <div>
-      DocumentSearchCommand Component - To be implemented
-    </div>
-  );
-});
+const DocumentSearchCommand = forwardRef<any, DocumentSearchCommandProps>(
+  (props, ref) => {
+    return <div>DocumentSearchCommand Component - To be implemented</div>;
+  },
+);
 
 DocumentSearchCommand.displayName = 'DocumentSearchCommand';
 

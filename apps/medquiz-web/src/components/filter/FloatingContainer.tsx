@@ -1,7 +1,7 @@
-import { useState } from "react";
-import styled from "styled-components";
-import * as React from "react";
-import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { useState } from 'react';
+import styled from 'styled-components';
+import * as React from 'react';
+import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 
 // 定义props接口
 interface CollapsibleProps {
@@ -33,7 +33,7 @@ const Container = ({
 // 创建可折叠的内容区域
 const CollapsibleContent = styled.div<CollapsibleContentProps>`
   transition: max-height 0.3s ease-in-out;
-  max-height: ${(props) => (props.$isopen ? "1000px" : "0")};
+  max-height: ${(props) => (props.$isopen ? '1000px' : '0')};
   overflow: hidden;
 `;
 
@@ -63,7 +63,7 @@ const Collapsible: React.FC<CollapsibleProps> = ({
     <Container className={className}>
       <Trigger onClick={toggleCollapse}>
         {trigger}
-        <span style={{ float: "right" }}>
+        <span style={{ float: 'right' }}>
           {$isopen ? <ChevronsUpDown /> : <ChevronsDownUp />}
         </span>
       </Trigger>

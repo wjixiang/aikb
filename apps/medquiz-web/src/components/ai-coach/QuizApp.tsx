@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menubar,
   MenubarContent,
@@ -12,21 +12,21 @@ import {
   MenubarSeparator,
   MenubarShortcut,
   MenubarTrigger,
-} from "@/components/ui/menubar";
-import { UnifiedTabs } from "@/components/ai-coach/UnifiedTabs";
-import { UnifiedTabsRef } from "@/components/ai-coach/UnifiedTabsTypes";
-import { TabType } from "@/components/ai-coach/UnifiedTabsTypes";
-import { DocumentSearchCommand } from "./DocumentSearchCommand";
-import AssistantSidebar from "@/components/ai-coach/AssistantSidebar";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { QuizHistory } from "./quiz-ai/QuizHistory";
-import { QuizSelectorDrawer } from "./quiz-ai/QuizSelectorDrawer";
-import { QuizFilterDrawer } from "./quiz-ai/QuizFilterDrawer";
-import { useQuizAI } from "./quiz-ai/useQuizAI";
-import { NotificationState } from "./quiz-ai/types";
-import { SidebarInset, SidebarTrigger } from "../ui/sidebar";
-import { formQuizContent } from "@/lib/utils";
+} from '@/components/ui/menubar';
+import { UnifiedTabs } from '@/components/ai-coach/UnifiedTabs';
+import { UnifiedTabsRef } from '@/components/ai-coach/UnifiedTabsTypes';
+import { TabType } from '@/components/ai-coach/UnifiedTabsTypes';
+import { DocumentSearchCommand } from './DocumentSearchCommand';
+import AssistantSidebar from '@/components/ai-coach/AssistantSidebar';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { QuizHistory } from './quiz-ai/QuizHistory';
+import { QuizSelectorDrawer } from './quiz-ai/QuizSelectorDrawer';
+import { QuizFilterDrawer } from './quiz-ai/QuizFilterDrawer';
+import { useQuizAI } from './quiz-ai/useQuizAI';
+import { NotificationState } from './quiz-ai/types';
+import { SidebarInset, SidebarTrigger } from '../ui/sidebar';
+import { formQuizContent } from '@/lib/utils';
 
 const itemsPerPage = 5;
 
@@ -83,7 +83,7 @@ export default function QuizApp() {
       const response = await fetch(`/api/quiz/create/${quizSetId}`);
       if (!response.ok) {
         const errorResult = await response.json();
-        throw new Error(errorResult.error || "恢复试卷失败");
+        throw new Error(errorResult.error || '恢复试卷失败');
       }
       const result = await response.json();
       const quizzes = result.data.quizzes.map((q: any) => ({
@@ -93,16 +93,20 @@ export default function QuizApp() {
 
       // Set the current quiz set ID to restore the original quiz set
       setCurrentQuizSetId(quizSetId);
-      
-      // Create a new tab with the restored quizzes but don't create a new quiz set
-      quizTabsRef.current?.createTabWithQuizzes(quizzes, result.data.title, false);
 
-      showNotification("试卷恢复成功", "success");
+      // Create a new tab with the restored quizzes but don't create a new quiz set
+      quizTabsRef.current?.createTabWithQuizzes(
+        quizzes,
+        result.data.title,
+        false,
+      );
+
+      showNotification('试卷恢复成功', 'success');
     } catch (error) {
       console.error(error);
       showNotification(
-        error instanceof Error ? error.message : "恢复试卷时出错",
-        "error",
+        error instanceof Error ? error.message : '恢复试卷时出错',
+        'error',
       );
     }
   };
@@ -204,7 +208,10 @@ export default function QuizApp() {
                 filterDrawerOpen={filterDrawerOpen}
                 setFilterDrawerOpen={setFilterDrawerOpen}
                 addQuizToPage={(quizzes) =>
-                  quizTabsRef.current?.createTabWithQuizzes(quizzes, `新试卷-${new Date().toLocaleString("zh-CN")}`)
+                  quizTabsRef.current?.createTabWithQuizzes(
+                    quizzes,
+                    `新试卷-${new Date().toLocaleString('zh-CN')}`,
+                  )
                 }
                 createNewTab={(quizzes, title) =>
                   quizTabsRef.current?.createTabWithQuizzes(quizzes, title)
@@ -217,7 +224,10 @@ export default function QuizApp() {
                 selectorDrawerOpen={selectorDrawerOpen}
                 setSelectorDrawerOpen={setSelectorDrawerOpen}
                 addQuizToPage={(quizzes) =>
-                  quizTabsRef.current?.createTabWithQuizzes(quizzes, `新试卷-${new Date().toLocaleString("zh-CN")}`)
+                  quizTabsRef.current?.createTabWithQuizzes(
+                    quizzes,
+                    `新试卷-${new Date().toLocaleString('zh-CN')}`,
+                  )
                 }
               />
 
@@ -251,10 +261,10 @@ export default function QuizApp() {
                       const currentQuizzes =
                         quizTabsRef.current?.getCurrentTabQuizzes() || [];
                       if (currentQuizzes.length === 0) {
-                        showNotification("请先添加试题", "error");
+                        showNotification('请先添加试题', 'error');
                         return;
                       }
-                      const title = prompt("请输入试卷标题:");
+                      const title = prompt('请输入试卷标题:');
                       if (title !== null) {
                         handleSubmit(currentQuizzes, title);
                       }
@@ -299,11 +309,11 @@ export default function QuizApp() {
 
               <MenubarMenu>
                 <MenubarTrigger>
-                  {isTestMode ? "测试模式" : "练习模式"}
+                  {isTestMode ? '测试模式' : '练习模式'}
                 </MenubarTrigger>
                 <MenubarContent>
                   <MenubarItem onClick={() => setIsTestMode(!isTestMode)}>
-                    切换到{isTestMode ? "练习模式" : "测试模式"}
+                    切换到{isTestMode ? '练习模式' : '测试模式'}
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
@@ -345,9 +355,9 @@ export default function QuizApp() {
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-md text-sm shadow-md z-50 ${
-              notification.type === "error"
-                ? "bg-red-100 text-red-800"
-                : "bg-green-100 text-green-800"
+              notification.type === 'error'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800'
             }`}
           >
             {notification.message}

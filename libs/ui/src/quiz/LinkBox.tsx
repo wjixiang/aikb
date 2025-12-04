@@ -1,4 +1,4 @@
-import { LinkBlock } from "./LinkBlock";
+import { LinkBlock } from './LinkBlock';
 
 type Props = {
   // fetchLinks: (quizId: string)=>Promise<string[]>;

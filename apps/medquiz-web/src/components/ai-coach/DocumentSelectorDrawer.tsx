@@ -1,17 +1,22 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { SearchIcon, FileTextIcon, FolderIcon } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState, useEffect } from 'react';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { SearchIcon, FileTextIcon, FolderIcon } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DocumentItem {
   path: string;
   title: string;
-  type: "file" | "folder";
+  type: 'file' | 'folder';
   children?: DocumentItem[];
 }
 
@@ -26,25 +31,29 @@ export function DocumentSelectorDrawer({
   onOpenChange,
   onSelectDocument,
 }: DocumentSelectorDrawerProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<DocumentItem[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<DocumentItem[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set(),
+  );
 
   // 获取文档列表
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/knowledge/list");
+      const response = await fetch('/api/knowledge/list');
       if (!response.ok) {
-        throw new Error("获取文档列表失败");
+        throw new Error('获取文档列表失败');
       }
       const data = await response.json();
       setDocuments(data.documents || []);
       setFilteredDocuments(data.documents || []);
     } catch (error) {
-      console.error("获取文档列表失败:", error);
+      console.error('获取文档列表失败:', error);
     } finally {
       setLoading(false);
     }
@@ -66,18 +75,20 @@ export function DocumentSelectorDrawer({
 
     const filterDocuments = (items: DocumentItem[]): DocumentItem[] => {
       return items
-        .map(item => {
+        .map((item) => {
           // 如果是文件夹，递归过滤子项
-          if (item.type === "folder" && item.children) {
+          if (item.type === 'folder' && item.children) {
             const filteredChildren = filterDocuments(item.children);
             if (filteredChildren.length > 0) {
               return { ...item, children: filteredChildren };
             }
           }
           // 如果是文件且匹配搜索查询
-          else if (item.type === "file" && 
-                   (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    item.path.toLowerCase().includes(searchQuery.toLowerCase()))) {
+          else if (
+            item.type === 'file' &&
+            (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.path.toLowerCase().includes(searchQuery.toLowerCase()))
+          ) {
             return item;
           }
           return null;
@@ -90,7 +101,7 @@ export function DocumentSelectorDrawer({
 
   // 切换文件夹展开状态
   const toggleFolder = (path: string) => {
-    setExpandedFolders(prev => {
+    setExpandedFolders((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(path)) {
         newSet.delete(path);
@@ -109,10 +120,10 @@ export function DocumentSelectorDrawer({
           <div key={item.path}>
             <div
               className={`flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer ${
-                level > 0 ? "ml-4" : ""
+                level > 0 ? 'ml-4' : ''
               }`}
               onClick={() => {
-                if (item.type === "folder") {
+                if (item.type === 'folder') {
                   toggleFolder(item.path);
                 } else {
                   onSelectDocument(item.path, item.title);
@@ -120,26 +131,26 @@ export function DocumentSelectorDrawer({
                 }
               }}
             >
-              {item.type === "folder" ? (
+              {item.type === 'folder' ? (
                 <FolderIcon className="h-4 w-4 text-blue-500" />
               ) : (
                 <FileTextIcon className="h-4 w-4 text-green-500" />
               )}
               <span className="text-sm truncate">{item.title}</span>
-              {item.type === "folder" && (
+              {item.type === 'folder' && (
                 <span className="text-xs text-muted-foreground ml-auto">
-                  {expandedFolders.has(item.path) ? "−" : "+"}
+                  {expandedFolders.has(item.path) ? '−' : '+'}
                 </span>
               )}
             </div>
-            
-            {item.type === "folder" && 
-             item.children && 
-             expandedFolders.has(item.path) && (
-              <div className="mt-1">
-                {renderDocumentTree(item.children, level + 1)}
-              </div>
-            )}
+
+            {item.type === 'folder' &&
+              item.children &&
+              expandedFolders.has(item.path) && (
+                <div className="mt-1">
+                  {renderDocumentTree(item.children, level + 1)}
+                </div>
+              )}
           </div>
         ))}
       </div>
@@ -184,8 +195,8 @@ export function DocumentSelectorDrawer({
           )}
         </div>
         <div className="p-4 pt-0 border-t">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             className="w-full"
           >

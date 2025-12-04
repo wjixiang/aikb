@@ -1,8 +1,8 @@
-"use client";
-"src/app/fsrs/manage/page.tsx";
+'use client';
+'src/app/fsrs/manage/page.tsx';
 
-import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -18,11 +18,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSession } from "next-auth/react";
-import { toast } from "sonner";
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -31,9 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
-import { AnkiCollectionPreset, UserSubscription } from "@/types/anki.types";
+} from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
+import { AnkiCollectionPreset, UserSubscription } from '@/types/anki.types';
 
 export default function FsrsPage() {
   const { data: session } = useSession();
@@ -56,7 +56,7 @@ export default function FsrsPage() {
 
   const fetchSubscriptions = async () => {
     try {
-      const response = await fetch("/api/fsrs/collections/subscriptions");
+      const response = await fetch('/api/fsrs/collections/subscriptions');
       if (response.ok) {
         const data = await response.json();
         console.log(data);
@@ -64,25 +64,25 @@ export default function FsrsPage() {
         setUserSubscriptions(data);
       }
     } catch (error) {
-      console.error("Failed to fetch subscriptions:", error);
-      toast.error("获取订阅牌组失败", {
-        description: "无法获取已经订阅设牌组信息，请稍后再试",
+      console.error('Failed to fetch subscriptions:', error);
+      toast.error('获取订阅牌组失败', {
+        description: '无法获取已经订阅设牌组信息，请稍后再试',
       });
     }
   };
 
   const fetchPresetCollections = async () => {
     try {
-      const response = await fetch("/api/fsrs/collections/presets");
+      const response = await fetch('/api/fsrs/collections/presets');
       if (response.ok) {
         const data = await response.json();
         setPresetCollections(data);
       }
     } catch (error) {
-      console.error("Failed to fetch preset collections:", error);
+      console.error('Failed to fetch preset collections:', error);
 
-      toast.error("获取预设牌组失败", {
-        description: "无法获取预设牌组信息，请稍后再试",
+      toast.error('获取预设牌组失败', {
+        description: '无法获取预设牌组信息，请稍后再试',
       });
     } finally {
       setIsLoading(false);
@@ -92,10 +92,10 @@ export default function FsrsPage() {
   // 刷新学习状态
   const refreshLearningStatus = useCallback(async (collectionId: string) => {
     try {
-      const response = await fetch("/api/fsrs/collections/refresh", {
-        method: "POST",
+      const response = await fetch('/api/fsrs/collections/refresh', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           collectionId,
@@ -104,7 +104,7 @@ export default function FsrsPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "刷新学习状态失败");
+        throw new Error(error.error || '刷新学习状态失败');
       }
 
       // 刷新订阅列表
@@ -112,9 +112,9 @@ export default function FsrsPage() {
 
       return true;
     } catch (error) {
-      console.error("Failed to refresh learning status:", error);
-      toast.error("刷新学习状态失败", {
-        description: "刷新牌组学习状态时发生错误。",
+      console.error('Failed to refresh learning status:', error);
+      toast.error('刷新学习状态失败', {
+        description: '刷新牌组学习状态时发生错误。',
       });
 
       return false;
@@ -123,10 +123,10 @@ export default function FsrsPage() {
 
   const handleSubscribe = async (collectionId: string) => {
     try {
-      const response = await fetch("/api/fsrs/collections/subscriptions", {
-        method: "POST",
+      const response = await fetch('/api/fsrs/collections/subscriptions', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           collectionId,
@@ -137,14 +137,14 @@ export default function FsrsPage() {
         // 订阅成功后，刷新学习状态
         const refreshResult = await refreshLearningStatus(collectionId);
 
-        toast.success("订阅成功", {
+        toast.success('订阅成功', {
           style: {
-            backgroundColor: "#4caf50",
-            color: "white",
+            backgroundColor: '#4caf50',
+            color: 'white',
           },
           description: refreshResult
-            ? "成功订阅牌组并初始化学习计划，现在可以开始复习了！"
-            : "成功订阅牌组，但初始化学习计划失败，请稍后手动刷新。",
+            ? '成功订阅牌组并初始化学习计划，现在可以开始复习了！'
+            : '成功订阅牌组，但初始化学习计划失败，请稍后手动刷新。',
           duration: 2000,
         });
 
@@ -152,18 +152,18 @@ export default function FsrsPage() {
         fetchSubscriptions();
       } else {
         const error = await response.json();
-        throw new Error(error.error || "订阅失败");
+        throw new Error(error.error || '订阅失败');
       }
     } catch (error) {
-      console.error("Failed to subscribe:", error);
-      toast.error("订阅失败", {
-        description: "订阅牌组时发生错误。",
+      console.error('Failed to subscribe:', error);
+      toast.error('订阅失败', {
+        description: '订阅牌组时发生错误。',
       });
     }
   };
 
   const handleUnsubscribe = async (subscriptionId: string) => {
-    if (!confirm("确定要取消订阅此牌组吗？所有复习记录将被删除。")) {
+    if (!confirm('确定要取消订阅此牌组吗？所有复习记录将被删除。')) {
       return;
     }
 
@@ -171,33 +171,33 @@ export default function FsrsPage() {
       const response = await fetch(
         `/api/fsrs/collections/subscriptions/${subscriptionId}`,
         {
-          method: "DELETE",
+          method: 'DELETE',
         },
       );
 
       if (response.ok) {
-        toast.success("取消订阅成功", {
+        toast.success('取消订阅成功', {
           style: {
-            backgroundColor: "#4caf50",
-            color: "white",
+            backgroundColor: '#4caf50',
+            color: 'white',
           },
-          description: "已取消订阅牌组",
+          description: '已取消订阅牌组',
           duration: 1000,
         });
         // 刷新订阅列表
         fetchSubscriptions();
       } else {
         const error = await response.json();
-        throw new Error(error.error || "取消订阅失败");
+        throw new Error(error.error || '取消订阅失败');
       }
     } catch (error) {
-      console.error("Failed to unsubscribe:", error);
+      console.error('Failed to unsubscribe:', error);
 
-      toast.error("取消订阅失败", {
-        description: "取消订阅牌组时发生错误。",
+      toast.error('取消订阅失败', {
+        description: '取消订阅牌组时发生错误。',
         style: {
-          backgroundColor: "#af4c4c",
-          color: "white",
+          backgroundColor: '#af4c4c',
+          color: 'white',
         },
       });
     }
@@ -208,9 +208,9 @@ export default function FsrsPage() {
       const response = await fetch(
         `/api/fsrs/collections/subscriptions/${subscriptionId}`,
         {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             fsrsParams: params,
@@ -219,27 +219,27 @@ export default function FsrsPage() {
       );
 
       if (response.ok) {
-        toast.success("设置已保存", {
+        toast.success('设置已保存', {
           style: {
-            backgroundColor: "#4caf50",
-            color: "white",
+            backgroundColor: '#4caf50',
+            color: 'white',
           },
-          description: "FSRS参数已成功更新。",
+          description: 'FSRS参数已成功更新。',
           duration: 1000,
         });
         // 刷新订阅列表
         fetchSubscriptions();
       } else {
         const error = await response.json();
-        throw new Error(error.error || "保存设置失败");
+        throw new Error(error.error || '保存设置失败');
       }
     } catch (error) {
-      console.error("Failed to save FSRS params:", error);
-      toast.error("保存设置失败", {
-        description: "保存FSRS参数时发生错误。",
+      console.error('Failed to save FSRS params:', error);
+      toast.error('保存设置失败', {
+        description: '保存FSRS参数时发生错误。',
         style: {
-          backgroundColor: "#af4c4c",
-          color: "white",
+          backgroundColor: '#af4c4c',
+          color: 'white',
         },
       });
     }
@@ -256,12 +256,12 @@ export default function FsrsPage() {
         setSelectedCollection(data);
       } else {
         const error = await response.json();
-        throw new Error(error.error || "获取牌组详情失败");
+        throw new Error(error.error || '获取牌组详情失败');
       }
     } catch (error) {
-      console.error("Failed to fetch collection details:", error);
-      toast.error("获取牌组详情失败", {
-        description: "无法获取所选牌组的详细信息。",
+      console.error('Failed to fetch collection details:', error);
+      toast.error('获取牌组详情失败', {
+        description: '无法获取所选牌组的详细信息。',
       });
     }
   };
@@ -489,7 +489,7 @@ export default function FsrsPage() {
               variant="outline"
               onClick={() => {
                 setParams(defaultParams);
-                toast.info("已重置为默认参数");
+                toast.info('已重置为默认参数');
               }}
             >
               重置默认
@@ -625,8 +625,8 @@ export default function FsrsPage() {
                         {collection.collectionName}
                       </TableCell>
                       <TableCell>{collection.description}</TableCell>
-                      <TableCell>{collection.cards.length || "未知"}</TableCell>
-                      <TableCell>{collection.creator || "系统"}</TableCell>
+                      <TableCell>{collection.cards.length || '未知'}</TableCell>
+                      <TableCell>{collection.creator || '系统'}</TableCell>
                       <TableCell className="space-x-2">
                         <Button
                           variant="outline"

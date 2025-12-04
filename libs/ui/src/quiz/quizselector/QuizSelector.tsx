@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { SubjectSelector } from "./SubjectSelector";
-import { UnitSelector } from "./UnitSelector";
-import { quiz, QuizWithUserAnswer } from "@/types/quizData.types";
+import { useState } from 'react';
+import { SubjectSelector } from './SubjectSelector';
+import { UnitSelector } from './UnitSelector';
+import { quiz, QuizWithUserAnswer } from '@/types/quizData.types';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 const sortQuizzesByType = (
@@ -43,10 +43,10 @@ export function QuizSelector({ setQuizzes }: Props) {
     setSelectedUnit(unit);
     setLoading(true);
     try {
-      const response = await fetch("/api/obcors/quiz", {
-        method: "POST",
+      const response = await fetch('/api/obcors/quiz', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           selector: {
@@ -62,7 +62,7 @@ export function QuizSelector({ setQuizzes }: Props) {
       const data = await response.text();
       setQuizzes(sortQuizzesByType(JSON.parse(data)));
     } catch (error) {
-      console.error("Failed to fetch quizzes:", error);
+      console.error('Failed to fetch quizzes:', error);
     } finally {
       setLoading(false);
     }

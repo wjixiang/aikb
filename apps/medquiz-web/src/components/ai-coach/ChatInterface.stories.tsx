@@ -1,59 +1,59 @@
-import React from "react";
-import { Meta, StoryObj } from "@storybook/nextjs";
-import ChatInterface from "./ChatInterface";
-import { SessionProvider } from "next-auth/react";
+import React from 'react';
+import { Meta, StoryObj } from '@storybook/nextjs';
+import ChatInterface from './ChatInterface';
+import { SessionProvider } from 'next-auth/react';
 
 // Mock data for the component props
 const mockMessages = [
   {
-    id: "1",
-    sender: "user",
-    content: "Hello, how can you help me with my studies?",
+    id: '1',
+    sender: 'user',
+    content: 'Hello, how can you help me with my studies?',
     timestamp: new Date(Date.now() - 300000),
   },
   {
-    id: "2",
-    sender: "ai",
+    id: '2',
+    sender: 'ai',
     content:
-      "I can help you with various subjects! I can explain concepts, answer questions, and even help you practice with quizzes. What subject are you studying today?",
+      'I can help you with various subjects! I can explain concepts, answer questions, and even help you practice with quizzes. What subject are you studying today?',
     timestamp: new Date(Date.now() - 240000),
   },
   {
-    id: "3",
-    sender: "user",
+    id: '3',
+    sender: 'user',
     content: "I'm studying biology, specifically cell biology.",
     timestamp: new Date(Date.now() - 180000),
   },
   {
-    id: "4",
-    sender: "ai",
+    id: '4',
+    sender: 'ai',
     content:
-      "Great! Cell biology is fascinating[ref:1]. I can help explain cell structures, functions, and processes. Would you like me to explain something specific about cell biology, or do you have questions about a particular topic?",
+      'Great! Cell biology is fascinating[ref:1]. I can help explain cell structures, functions, and processes. Would you like me to explain something specific about cell biology, or do you have questions about a particular topic?',
     timestamp: new Date(Date.now() - 120000),
     sources: [
       {
-        title: "Cellular Respiration - Biology LibreTexts",
-        page_number: "15",
+        title: 'Cellular Respiration - Biology LibreTexts',
+        page_number: '15',
         score: 0.95,
         content:
-          "Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.",
-        presigned_url: "https://example.com/cellular-respiration.pdf",
+          'Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.',
+        presigned_url: 'https://example.com/cellular-respiration.pdf',
       },
       {
-        title: "Mitochondrial Function in Cells",
-        page_number: "22",
+        title: 'Mitochondrial Function in Cells',
+        page_number: '22',
         score: 0.87,
         content:
-          "The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.",
-        presigned_url: "https://example.com/mitochondria.pdf",
+          'The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.',
+        presigned_url: 'https://example.com/mitochondria.pdf',
       },
     ],
   },
 ];
 
 const mockStatusMessages = [
-  "Searching knowledge base...",
-  "Generating response...",
+  'Searching knowledge base...',
+  'Generating response...',
 ];
 
 const mockCurrentAiMessage = {
@@ -63,17 +63,17 @@ const mockCurrentAiMessage = {
 };
 
 const meta: Meta<typeof ChatInterface> = {
-  title: "AI Coach/ChatInterface",
+  title: 'AI Coach/ChatInterface',
   component: ChatInterface,
   parameters: {
-    layout: "fullscreen",
+    layout: 'fullscreen',
   },
   decorators: [
     (Story) => {
       // Provide a basic div with id '__next' to simulate Next.js root element
       return (
         <SessionProvider
-          session={{ expires: "1", user: { email: "test@example.com" } }}
+          session={{ expires: '1', user: { email: 'test@example.com' } }}
         >
           <div id="__next">
             <div className="h-screen">
@@ -96,20 +96,20 @@ export const Default: Story = {
     statusMessages: mockStatusMessages,
     currentAiMessage: mockCurrentAiMessage,
     loading: false,
-    selectedSource: "",
+    selectedSource: '',
     hasSelectedQuiz: false,
     onSendMessage: async (message: string) => {
-      console.log("Sending message:", message);
+      console.log('Sending message:', message);
       return Promise.resolve();
     },
     onRegenerateLastMessage: (source: string) => {
-      console.log("Regenerating last message with source:", source);
+      console.log('Regenerating last message with source:', source);
     },
     onCancelRequest: () => {
-      console.log("Cancel request");
+      console.log('Cancel request');
     },
     onClearChat: () => {
-      console.log("Clear chat");
+      console.log('Clear chat');
     },
     cotMessages: [],
     speechQueue: [],
@@ -117,7 +117,7 @@ export const Default: Story = {
     showCoT: false,
     quizContentForInput: null,
     onMessagesUpdate: (messages: any[]) => {
-      console.log("Messages updated:", messages);
+      console.log('Messages updated:', messages);
     },
   },
 };
@@ -138,9 +138,9 @@ export const WithChainOfThought: Story = {
     ...Default.args,
     showCoT: true,
     cotMessages: [
-      "Step 1: Understanding the question about cell biology",
-      "Step 2: Retrieving relevant information from knowledge base",
-      "Step 3: Formulating a comprehensive response",
+      'Step 1: Understanding the question about cell biology',
+      'Step 2: Retrieving relevant information from knowledge base',
+      'Step 3: Formulating a comprehensive response',
     ],
   },
 };
@@ -149,7 +149,7 @@ export const WithSelectedQuiz: Story = {
   args: {
     ...Default.args,
     hasSelectedQuiz: true,
-    quizContentForInput: "What is the function of mitochondria in a cell?",
+    quizContentForInput: 'What is the function of mitochondria in a cell?',
   },
 };
 
@@ -159,24 +159,24 @@ export const StreamingResponse: Story = {
     messages: [
       ...mockMessages,
       {
-        id: "5",
-        sender: "user",
+        id: '5',
+        sender: 'user',
         content:
-          "Can you explain the process of cellular respiration in detail?",
+          'Can you explain the process of cellular respiration in detail?',
         timestamp: new Date(Date.now() - 60000),
       },
     ],
     loading: true,
     currentAiMessage: {
-      content: "",
+      content: '',
       isComplete: false,
     },
     statusMessages: [
-      "Searching knowledge base...",
-      "Generating detailed response...",
+      'Searching knowledge base...',
+      'Generating detailed response...',
     ],
     onSendMessage: async (message: string) => {
-      console.log("Sending message:", message);
+      console.log('Sending message:', message);
       return Promise.resolve();
     },
   },
@@ -221,7 +221,7 @@ export const StreamingResponse: Story = {
 
       return (
         <SessionProvider
-          session={{ expires: "1", user: { email: "test@example.com" } }}
+          session={{ expires: '1', user: { email: 'test@example.com' } }}
         >
           <div id="__next">
             <div className="h-screen">
@@ -239,42 +239,42 @@ export const StreamingResponseWithReferences: Story = {
     messages: [
       ...mockMessages,
       {
-        id: "5",
-        sender: "user",
+        id: '5',
+        sender: 'user',
         content:
-          "Can you explain the process of cellular respiration and provide references?",
+          'Can you explain the process of cellular respiration and provide references?',
         timestamp: new Date(Date.now() - 60000),
       },
     ],
     loading: true,
     currentAiMessage: {
-      content: "",
+      content: '',
       isComplete: false,
       sources: [
         {
-          title: "Cellular Respiration - Biology LibreTexts",
-          page_number: "15",
+          title: 'Cellular Respiration - Biology LibreTexts',
+          page_number: '15',
           score: 0.95,
           content:
-            "Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.",
-          presigned_url: "https://example.com/cellular-respiration.pdf",
+            'Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.',
+          presigned_url: 'https://example.com/cellular-respiration.pdf',
         },
         {
-          title: "Mitochondrial Function in Cells",
-          page_number: "22",
+          title: 'Mitochondrial Function in Cells',
+          page_number: '22',
           score: 0.87,
           content:
-            "The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.",
-          presigned_url: "https://example.com/mitochondria.pdf",
+            'The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.',
+          presigned_url: 'https://example.com/mitochondria.pdf',
         },
       ],
     },
     statusMessages: [
-      "Searching knowledge base...",
-      "Generating detailed response with references...",
+      'Searching knowledge base...',
+      'Generating detailed response with references...',
     ],
     onSendMessage: async (message: string) => {
-      console.log("Sending message:", message);
+      console.log('Sending message:', message);
       return Promise.resolve();
     },
   },
@@ -320,7 +320,7 @@ export const StreamingResponseWithReferences: Story = {
 
       return (
         <SessionProvider
-          session={{ expires: "1", user: { email: "test@example.com" } }}
+          session={{ expires: '1', user: { email: 'test@example.com' } }}
         >
           <div id="__next">
             <div className="h-screen">
@@ -338,10 +338,10 @@ export const CompletedResponseWithReferences: Story = {
     messages: [
       ...mockMessages,
       {
-        id: "5",
-        sender: "user",
+        id: '5',
+        sender: 'user',
         content:
-          "Can you explain the process of cellular respiration and provide references?",
+          'Can you explain the process of cellular respiration and provide references?',
         timestamp: new Date(Date.now() - 60000),
       },
     ],
@@ -352,20 +352,20 @@ export const CompletedResponseWithReferences: Story = {
       isComplete: true,
       sources: [
         {
-          title: "Cellular Respiration - Biology LibreTexts",
-          page_number: "15",
+          title: 'Cellular Respiration - Biology LibreTexts',
+          page_number: '15',
           score: 0.95,
           content:
-            "Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.",
-          presigned_url: "https://example.com/cellular-respiration.pdf",
+            'Cellular respiration is the process of converting glucose into ATP through glycolysis, the Krebs cycle, and the electron transport chain.',
+          presigned_url: 'https://example.com/cellular-respiration.pdf',
         },
         {
-          title: "Mitochondrial Function in Cells",
-          page_number: "22",
+          title: 'Mitochondrial Function in Cells',
+          page_number: '22',
           score: 0.87,
           content:
-            "The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.",
-          presigned_url: "https://example.com/mitochondria.pdf",
+            'The mitochondria are the powerhouse of the cell, responsible for ATP production through oxidative phosphorylation.',
+          presigned_url: 'https://example.com/mitochondria.pdf',
         },
       ],
     },

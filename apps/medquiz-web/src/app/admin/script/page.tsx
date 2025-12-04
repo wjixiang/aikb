@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardHeader,
@@ -8,21 +8,21 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 interface Param {
   name: string;
-  type: "string" | "number" | "boolean";
+  type: 'string' | 'number' | 'boolean';
   label: string;
   required?: boolean;
   defaultValue?: any;
@@ -38,99 +38,99 @@ interface Script {
 
 const scripts: Script[] = [
   {
-    name: "KDBsync",
-    description: "同步知识数据库",
+    name: 'KDBsync',
+    description: '同步知识数据库',
     params: [],
   },
   {
-    name: "batchAnnotateQuiz",
-    description: "批量注释题目",
+    name: 'batchAnnotateQuiz',
+    description: '批量注释题目',
     params: [
       {
-        name: "command",
-        type: "string",
-        label: "命令",
-        options: ["batch", "single", "list"],
+        name: 'command',
+        type: 'string',
+        label: '命令',
+        options: ['batch', 'single', 'list'],
         required: true,
       },
       {
-        name: "concurrency",
-        type: "number",
-        label: "并发数",
+        name: 'concurrency',
+        type: 'number',
+        label: '并发数',
         defaultValue: 100,
       },
-      { name: "class", type: "string", label: "科目筛选" },
-      { name: "source", type: "string", label: "来源筛选" },
+      { name: 'class', type: 'string', label: '科目筛选' },
+      { name: 'source', type: 'string', label: '来源筛选' },
       {
-        name: "quizId",
-        type: "string",
-        label: "题目ID",
-        showIf: (params) => params.command === "single",
+        name: 'quizId',
+        type: 'string',
+        label: '题目ID',
+        showIf: (params) => params.command === 'single',
       },
       {
-        name: "quizIds",
-        type: "string",
-        label: "题目ID列表(逗号分隔)",
-        showIf: (params) => params.command === "list",
+        name: 'quizIds',
+        type: 'string',
+        label: '题目ID列表(逗号分隔)',
+        showIf: (params) => params.command === 'list',
       },
     ],
   },
   {
-    name: "ner-cli",
-    description: "命名实体识别",
+    name: 'ner-cli',
+    description: '命名实体识别',
     params: [
-      { name: "text", type: "string", label: "文本", required: true },
+      { name: 'text', type: 'string', label: '文本', required: true },
       {
-        name: "schemaDir",
-        type: "string",
-        label: "Schema目录",
+        name: 'schemaDir',
+        type: 'string',
+        label: 'Schema目录',
         required: true,
       },
       {
-        name: "engine",
-        type: "string",
-        label: "引擎",
-        options: ["llm", "stanford"],
+        name: 'engine',
+        type: 'string',
+        label: '引擎',
+        options: ['llm', 'stanford'],
       },
     ],
   },
   {
-    name: "syncMongoToKDB",
-    description: "MongoDB同步到知识库",
+    name: 'syncMongoToKDB',
+    description: 'MongoDB同步到知识库',
     params: [
-      { name: "collection", type: "string", label: "集合名", required: true },
-      { name: "batchSize", type: "number", label: "批量大小", defaultValue: 1 },
+      { name: 'collection', type: 'string', label: '集合名', required: true },
+      { name: 'batchSize', type: 'number', label: '批量大小', defaultValue: 1 },
       {
-        name: "target",
-        type: "string",
-        label: "目标",
-        options: ["milvus", "neo4j", "both"],
+        name: 'target',
+        type: 'string',
+        label: '目标',
+        options: ['milvus', 'neo4j', 'both'],
       },
     ],
   },
   {
-    name: "testGraphRAG",
-    description: "测试Graph RAG",
+    name: 'testGraphRAG',
+    description: '测试Graph RAG',
     params: [
-      { name: "question", type: "string", label: "问题", required: true },
+      { name: 'question', type: 'string', label: '问题', required: true },
     ],
   },
   {
-    name: "testQuizAnalysisChain",
-    description: "测试题目分析链",
+    name: 'testQuizAnalysisChain',
+    description: '测试题目分析链',
     params: [
-      { name: "query", type: "string", label: "查询", required: true },
-      { name: "verbose", type: "boolean", label: "详细输出" },
+      { name: 'query', type: 'string', label: '查询', required: true },
+      { name: 'verbose', type: 'boolean', label: '详细输出' },
     ],
   },
 ];
 
 export default function ScriptRunnerPage() {
-  const [selectedScript, setSelectedScript] = useState("");
+  const [selectedScript, setSelectedScript] = useState('');
   const [params, setParams] = useState<Record<string, any>>({});
   const [isRunning, setIsRunning] = useState(false);
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState('');
 
   const currentScript = scripts.find((s) => s.name === selectedScript) as
     | Script
@@ -144,14 +144,14 @@ export default function ScriptRunnerPage() {
     if (!selectedScript) return;
 
     setIsRunning(true);
-    setOutput("");
-    setError("");
+    setOutput('');
+    setError('');
 
     try {
-      const response = await fetch("/api/admin/scripts", {
-        method: "POST",
+      const response = await fetch('/api/admin/scripts', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           script: selectedScript,
@@ -165,11 +165,11 @@ export default function ScriptRunnerPage() {
       if (response.ok) {
         setOutput(data.output);
       } else {
-        setError(data.error || "执行脚本出错");
-        setOutput(data.output || "");
+        setError(data.error || '执行脚本出错');
+        setOutput(data.output || '');
       }
     } catch (err) {
-      setError("网络请求失败");
+      setError('网络请求失败');
     } finally {
       setIsRunning(false);
     }
@@ -205,7 +205,7 @@ export default function ScriptRunnerPage() {
               {currentScript.params.map((param) => (
                 <div key={param.name} className="grid gap-2">
                   <Label htmlFor={param.name}>{param.label}</Label>
-                  {param.type === "boolean" ? (
+                  {param.type === 'boolean' ? (
                     <input
                       type="checkbox"
                       id={param.name}
@@ -216,7 +216,7 @@ export default function ScriptRunnerPage() {
                     />
                   ) : param.options ? (
                     <Select
-                      value={params[param.name] || ""}
+                      value={params[param.name] || ''}
                       onValueChange={(value) =>
                         handleParamChange(param.name, value)
                       }
@@ -237,11 +237,11 @@ export default function ScriptRunnerPage() {
                       <Input
                         type={param.type}
                         id={param.name}
-                        value={params[param.name] || ""}
+                        value={params[param.name] || ''}
                         onChange={(e) =>
                           handleParamChange(
                             param.name,
-                            param.type === "number"
+                            param.type === 'number'
                               ? Number(e.target.value)
                               : e.target.value,
                           )
@@ -249,7 +249,7 @@ export default function ScriptRunnerPage() {
                         placeholder={
                           param.defaultValue
                             ? `默认: ${param.defaultValue}`
-                            : ""
+                            : ''
                         }
                       />
                     )
@@ -264,7 +264,7 @@ export default function ScriptRunnerPage() {
             onClick={executeScript}
             disabled={isRunning || !selectedScript}
           >
-            {isRunning ? "执行中..." : "执行脚本"}
+            {isRunning ? '执行中...' : '执行脚本'}
           </Button>
 
           {output && (

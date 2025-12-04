@@ -15,12 +15,13 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-    // 1. Generate the tree as text
+  // 1. Generate the tree as text
   const tree = SpelunkerModule.explore(app);
   const root = SpelunkerModule.graph(tree);
   const edges = SpelunkerModule.findGraphEdges(root);
   const mermaidEdges = edges
-    .filter( // I'm just filtering some extra Modules out
+    .filter(
+      // I'm just filtering some extra Modules out
       ({ from, to }) =>
         !(
           from.module.name === 'ConfigHostModule' ||

@@ -1,7 +1,7 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { Maximize2, Minimize2, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+'use client';
+import { Button } from '@/components/ui/button';
+import { Maximize2, Minimize2, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   useState,
   ReactNode,
@@ -9,8 +9,8 @@ import {
   Suspense,
   useEffect,
   useCallback,
-} from "react";
-import SearchPage from "./Search";
+} from 'react';
+import SearchPage from './Search';
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,12 +20,12 @@ import {
   MessageCircle,
   Bot,
   Brain,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { ChevronDown } from "lucide-react";
-import { UserSubscription } from "@/types/anki.types";
-import FSRSPage from "@/components/fsrs/FSRSPage";
-import { QuizSelectPortal } from "@/components/quiz/quizselector/QuizSelectPortal";
+import { ChevronDown } from 'lucide-react';
+import { UserSubscription } from '@/types/anki.types';
+import FSRSPage from '@/components/fsrs/FSRSPage';
+import { QuizSelectPortal } from '@/components/quiz/quizselector/QuizSelectPortal';
 
 interface WikiLayoutProps {
   children: ReactNode;
@@ -33,7 +33,7 @@ interface WikiLayoutProps {
 
 export default function WikiLayout({ children }: WikiLayoutProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [leftSidebarOpen, setLeftSidebarOpen] = useState<boolean>(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState<boolean>(true);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState<number>(256);
@@ -79,19 +79,19 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
   const handleLeftDragEnd = useCallback(() => {
     isDraggingLeftRef.current = false;
     setIsDraggingLeft(false);
-    document.removeEventListener("mousemove", handleLeftDrag);
-    document.removeEventListener("mouseup", handleLeftDragEnd);
-    document.body.style.userSelect = "";
-    document.body.style.cursor = "";
+    document.removeEventListener('mousemove', handleLeftDrag);
+    document.removeEventListener('mouseup', handleLeftDragEnd);
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
   }, [handleLeftDrag]);
 
   const handleRightDragEnd = useCallback(() => {
     isDraggingRightRef.current = false;
     setIsDraggingRight(false);
-    document.removeEventListener("mousemove", handleRightDrag);
-    document.removeEventListener("mouseup", handleRightDragEnd);
-    document.body.style.userSelect = "";
-    document.body.style.cursor = "";
+    document.removeEventListener('mousemove', handleRightDrag);
+    document.removeEventListener('mouseup', handleRightDragEnd);
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
   }, [handleRightDrag]);
 
   const handleLeftDragStart = useCallback(
@@ -101,10 +101,10 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
       setIsDraggingLeft(true);
       startXRef.current = e.clientX;
       startWidthRef.current = leftSidebarWidthRef.current;
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "col-resize";
-      document.addEventListener("mousemove", handleLeftDrag);
-      document.addEventListener("mouseup", handleLeftDragEnd);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      document.addEventListener('mousemove', handleLeftDrag);
+      document.addEventListener('mouseup', handleLeftDragEnd);
     },
     [handleLeftDrag, handleLeftDragEnd],
   );
@@ -116,10 +116,10 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
       setIsDraggingRight(true);
       startXRef.current = e.clientX;
       startWidthRef.current = rightSidebarWidthRef.current;
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "col-resize";
-      document.addEventListener("mousemove", handleRightDrag);
-      document.addEventListener("mouseup", handleRightDragEnd);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      document.addEventListener('mousemove', handleRightDrag);
+      document.addEventListener('mouseup', handleRightDragEnd);
     },
     [handleRightDrag, handleRightDragEnd],
   );
@@ -151,7 +151,7 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
 
   useEffect(() => {
     const fetchCardCollectionStatus = async () => {
-      const response = await fetch("/api/fsrs/collections/subscriptions");
+      const response = await fetch('/api/fsrs/collections/subscriptions');
       if (response.ok) {
         const data = await response.json();
         console.log(data);
@@ -193,8 +193,8 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
       setChatMinimized(true);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const toggleChatFullscreen = (e: React.MouseEvent) => {
@@ -280,15 +280,15 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
         <div
           className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 md:hidden ${
             mobileLeftSidebarOpen
-              ? "opacity-100"
-              : "opacity-0 pointer-events-none"
+              ? 'opacity-100'
+              : 'opacity-0 pointer-events-none'
           }`}
           onClick={() => setMobileLeftSidebarOpen(false)}
         />
 
         <aside
           className={`fixed top-0 left-0 h-full w-80 border-2 bg-background z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-            mobileLeftSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            mobileLeftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
           <div className="flex justify-end p-4 bg-background">
@@ -309,15 +309,15 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
         <div
           className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 md:hidden ${
             mobileRightSidebarOpen
-              ? "opacity-100"
-              : "opacity-0 pointer-events-none"
+              ? 'opacity-100'
+              : 'opacity-0 pointer-events-none'
           }`}
           onClick={() => setMobileRightSidebarOpen(false)}
         />
 
         <aside
           className={`fixed top-0 right-0 h-full w-full bg-background z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-            mobileRightSidebarOpen ? "translate-x-0" : "translate-x-full"
+            mobileRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
           <div className="flex justify-start p-4">
@@ -337,14 +337,14 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
 
         <aside
           className={`hidden md:block border-r bg-background transition-all duration-300 ease-in-out ${
-            leftSidebarOpen ? "" : "w-12"
+            leftSidebarOpen ? '' : 'w-12'
           }`}
           style={{
             width: leftSidebarOpen ? `${leftSidebarWidth}px` : undefined,
           }}
         >
           <div
-            className={`flex ${leftSidebarOpen ? "justify-end" : "justify-center"} p-1`}
+            className={`flex ${leftSidebarOpen ? 'justify-end' : 'justify-center'} p-1`}
           >
             <Button
               variant="ghost"
@@ -363,8 +363,8 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
           <div
             className={`transition-all duration-300 ${
               leftSidebarOpen
-                ? "opacity-100 max-h-full overflow-y-auto"
-                : "opacity-0 max-h-0 overflow-hidden"
+                ? 'opacity-100 max-h-full overflow-y-auto'
+                : 'opacity-0 max-h-0 overflow-hidden'
             }`}
           >
             <Sidebar />
@@ -378,7 +378,7 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
         {(isDraggingLeft || isDraggingRight) && (
           <div
             className="fixed inset-0 z-40 cursor-col-resize"
-            style={{ userSelect: "none" }}
+            style={{ userSelect: 'none' }}
           />
         )}
 
@@ -387,13 +387,13 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
             ref={leftDragHandleRef}
             className={`fixed top-0 h-full w-3 cursor-col-resize z-40 ${
               isDraggingLeft
-                ? "bg-blue-500"
-                : "hover:bg-blue-300 hover:opacity-50"
+                ? 'bg-blue-500'
+                : 'hover:bg-blue-300 hover:opacity-50'
             }`}
             onMouseDown={handleLeftDragStart}
             style={{
               left: `${leftSidebarWidth - 1}px`,
-              transform: "translateX(-50%)",
+              transform: 'translateX(-50%)',
             }}
           />
         )}
@@ -403,27 +403,27 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
             ref={rightDragHandleRef}
             className={`fixed top-0 h-full w-3 cursor-col-resize z-40 ${
               isDraggingRight
-                ? "bg-blue-500"
-                : "hover:bg-blue-300 hover:opacity-50"
+                ? 'bg-blue-500'
+                : 'hover:bg-blue-300 hover:opacity-50'
             }`}
             onMouseDown={handleRightDragStart}
             style={{
               right: `${rightSidebarWidth - 1}px`,
-              transform: "translateX(50%)",
+              transform: 'translateX(50%)',
             }}
           />
         )}
 
         <aside
           className={`hidden md:block border-l bg-background transition-all duration-300 ease-in-out ${
-            rightSidebarOpen ? "" : "w-12"
+            rightSidebarOpen ? '' : 'w-12'
           }`}
           style={{
             width: rightSidebarOpen ? `${rightSidebarWidth}px` : undefined,
           }}
         >
           <div
-            className={`flex ${rightSidebarOpen ? "justify-start" : "justify-center"} p-1`}
+            className={`flex ${rightSidebarOpen ? 'justify-start' : 'justify-center'} p-1`}
           >
             <Button
               variant="ghost"
@@ -442,8 +442,8 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
           <div
             className={`p-3 transition-all duration-300 ${
               rightSidebarOpen
-                ? "opacity-100 max-h-full overflow-y-auto"
-                : "opacity-0 max-h-0 overflow-hidden"
+                ? 'opacity-100 max-h-full overflow-y-auto'
+                : 'opacity-0 max-h-0 overflow-hidden'
             }`}
           >
             <QuizSelectPortal />
@@ -457,7 +457,7 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
         //   reviewOpen ? 'h-0' : 'h-10'
         // }`}
         className={`fixed bottom-0 left-0 w-full bg-white transition-transform duration-300 ease-in-out ${
-          reviewOpen ? "transform translate-y-0" : "transform translate-y-full"
+          reviewOpen ? 'transform translate-y-0' : 'transform translate-y-full'
         }`}
       >
         <FSRSPage />
@@ -483,19 +483,19 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
           ref={chatRef}
           className={`absolute ${
             chatFullscreen
-              ? "-bottom-6 -right-6 w-screen h-screen rounded-none"
-              : "bottom-16 right-0 w-[350px] h-[550px] rounded-lg"
+              ? '-bottom-6 -right-6 w-screen h-screen rounded-none'
+              : 'bottom-16 right-0 w-[350px] h-[550px] rounded-lg'
           } overflow-hidden bg-white border border-border z-[1000] transition-all duration-300 ease-in-out ${
             chatOpen
               ? chatMinimized
-                ? "opacity-0 pointer-events-none transform translate-y-20 scale-90"
-                : "opacity-100 transform translate-y-0 scale-100"
-              : "opacity-0 pointer-events-none transform translate-y-20 scale-90"
+                ? 'opacity-0 pointer-events-none transform translate-y-20 scale-90'
+                : 'opacity-100 transform translate-y-0 scale-100'
+              : 'opacity-0 pointer-events-none transform translate-y-20 scale-90'
           }`}
           style={{
             boxShadow: chatFullscreen
-              ? "none"
-              : "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              ? 'none'
+              : '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           }}
         >
           <div
@@ -541,7 +541,7 @@ export default function WikiLayout({ children }: WikiLayoutProps) {
             </div>
           </div>
           <div
-            className={`${chatFullscreen ? "h-[calc(100%-48px)]" : "h-[calc(100%-48px)]"} bg-white`}
+            className={`${chatFullscreen ? 'h-[calc(100%-48px)]' : 'h-[calc(100%-48px)]'} bg-white`}
           >
             {/* <AssistantSidebar /> */}
           </div>

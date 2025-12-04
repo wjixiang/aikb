@@ -11,14 +11,16 @@ interface AssistantSidebarProps {
   children?: React.ReactNode;
 }
 
-const AssistantSidebar = forwardRef<any, AssistantSidebarProps>(({ children, ...props }, ref) => {
-  return (
-    <div>
-      AssistantSidebar Component - To be implemented
-      {children}
-    </div>
-  );
-});
+const AssistantSidebar = forwardRef<any, AssistantSidebarProps>(
+  ({ children, ...props }, ref) => {
+    return (
+      <div>
+        AssistantSidebar Component - To be implemented
+        {children}
+      </div>
+    );
+  },
+);
 
 AssistantSidebar.displayName = 'AssistantSidebar';
 

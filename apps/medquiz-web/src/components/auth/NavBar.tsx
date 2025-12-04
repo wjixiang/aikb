@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-import ThemeSwitcher from "../ThemeSwitcher";
-import { Home } from "lucide-react";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState, useEffect } from 'react';
+import { Menu, X } from 'lucide-react';
+import ThemeSwitcher from '../ThemeSwitcher';
+import { Home } from 'lucide-react';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const loading = status === "loading";
+  const loading = status === 'loading';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false); // Set to false for testing
 
@@ -29,25 +29,25 @@ export default function Navbar() {
       setIsVisible((prev) => isNearTop || (prev && isInNavbar));
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   // 导航链接列表，便于维护
   const navLinks = [
-    { href: "/", label: "RAG检索增强" },
-    { href: "/quiz", label: "刷题" },
-    { href: "/analysis", label: "分析中心" },
-    { href: "/fsrs/manage", label: "FSRS间歇重复" },
-    { href: "/profile", label: "个人中心" },
-    { href: "/tool/case-ocr", label: "case-OCR" },
+    { href: '/', label: 'RAG检索增强' },
+    { href: '/quiz', label: '刷题' },
+    { href: '/analysis', label: '分析中心' },
+    { href: '/fsrs/manage', label: 'FSRS间歇重复' },
+    { href: '/profile', label: '个人中心' },
+    { href: '/tool/case-ocr', label: 'case-OCR' },
     // 可以添加更多链接
   ];
 
   return (
     <>
       <nav
-        className={`fixed inset-x-0 bg-background/75 backdrop-blur-sm border-b shadow-sm z-50 transition-transform duration-300 ease-in-out ${isVisible ? "translate-y-0" : "-translate-y-full"}`}
+        className={`fixed inset-x-0 bg-background/75 backdrop-blur-sm border-b shadow-sm z-50 transition-transform duration-300 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex justify-between items-center h-8">
@@ -99,14 +99,14 @@ export default function Navbar() {
                       <Avatar className="h-10 w-10">
                         <AvatarImage
                           src={
-                            session.user?.avatar ? `${session.user.avatar}` : ""
+                            session.user?.avatar ? `${session.user.avatar}` : ''
                           }
-                          alt={session.user?.name || "User"}
+                          alt={session.user?.name || 'User'}
                         />
                         <AvatarFallback className="w-full">
                           {session.user?.name?.charAt(0) ||
                             session.user?.email?.charAt(0) ||
-                            "U"}
+                            'U'}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -143,7 +143,7 @@ export default function Navbar() {
                       className="cursor-pointer text-destructive-foreground hover:bg-destructive/90"
                       onSelect={(e) => {
                         e.preventDefault();
-                        signOut({ callbackUrl: "/" });
+                        signOut({ callbackUrl: '/' });
                       }}
                     >
                       退出登录

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   PieChart,
   Pie,
@@ -9,11 +9,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+} from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 interface SourceStats {
   source: string;
@@ -41,20 +41,20 @@ export default function SubjectPieChart() {
   const [data, setData] = useState<SubjectStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [allSubjects] = useState<string[]>([
-    "生理学",
-    "病理学",
-    "内科学",
-    "外科学",
-    "生物化学与分子生物学",
-    "人文精神",
-    "诊断学",
-    "儿科学",
-    "妇产科学",
-    "精神病学",
-    "神经病学",
-    "传染病学",
-    "眼科学",
-    "流行病学",
+    '生理学',
+    '病理学',
+    '内科学',
+    '外科学',
+    '生物化学与分子生物学',
+    '人文精神',
+    '诊断学',
+    '儿科学',
+    '妇产科学',
+    '精神病学',
+    '神经病学',
+    '传染病学',
+    '眼科学',
+    '流行病学',
   ]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
 
@@ -85,7 +85,7 @@ export default function SubjectPieChart() {
         // 构建查询参数
         const params = new URLSearchParams();
         if (selectedSubjects.length > 0) {
-          params.append("subjects", selectedSubjects.join(","));
+          params.append('subjects', selectedSubjects.join(','));
         }
 
         const response = await fetch(
@@ -111,11 +111,11 @@ export default function SubjectPieChart() {
         const result = await response.json();
         setData(result);
       } catch (error) {
-        console.error("Error fetching subject stats:", error);
+        console.error('Error fetching subject stats:', error);
         if (
           retryCount < 3 &&
           (error instanceof Error || error instanceof DOMException) &&
-          error.name !== "AbortError"
+          error.name !== 'AbortError'
         ) {
           // 非超时错误重试
           await new Promise((resolve) =>
@@ -177,29 +177,29 @@ export default function SubjectPieChart() {
   }
 
   const OUTER_COLORS = [
-    "#FF6384",
-    "#36A2EB",
-    "#FFCE56",
-    "#4BC0C0",
-    "#9966FF",
-    "#FF9F40",
-    "#8AC24A",
-    "#F06292",
-    "#7986CB",
-    "#A1887F",
+    '#FF6384',
+    '#36A2EB',
+    '#FFCE56',
+    '#4BC0C0',
+    '#9966FF',
+    '#FF9F40',
+    '#8AC24A',
+    '#F06292',
+    '#7986CB',
+    '#A1887F',
   ];
 
   const INNER_COLORS = [
-    "#FFB6C1",
-    "#87CEFA",
-    "#FFFACD",
-    "#AFEEEE",
-    "#C9A0DC",
-    "#FFD39B",
-    "#C1E1C1",
-    "#F8BBD0",
-    "#B39DDB",
-    "#BCAAA4",
+    '#FFB6C1',
+    '#87CEFA',
+    '#FFFACD',
+    '#AFEEEE',
+    '#C9A0DC',
+    '#FFD39B',
+    '#C1E1C1',
+    '#F8BBD0',
+    '#B39DDB',
+    '#BCAAA4',
   ];
 
   const renderCustomizedLabel = ({
@@ -337,13 +337,13 @@ export default function SubjectPieChart() {
                   <Pie
                     data={[
                       {
-                        name: "已完成",
+                        name: '已完成',
                         value: subjectData.percentage,
                         practiced: subjectData.practiced,
                         total: subjectData.total,
                       },
                       {
-                        name: "未完成",
+                        name: '未完成',
                         value: 100 - subjectData.percentage,
                         practiced: subjectData.total - subjectData.practiced,
                         total: subjectData.total,

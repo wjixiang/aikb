@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect } from "react";
-import { useSimpleChat } from "@/hooks/useSimpleChat";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Trash2, Bot } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useRef, useEffect } from 'react';
+import { useSimpleChat } from '@/hooks/useSimpleChat';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Send, Trash2, Bot } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SimpleChatProps {
   className?: string;
@@ -31,7 +31,7 @@ export function SimpleChat({
     disconnect,
   } = useSimpleChat();
 
-  const [inputMessage, setInputMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-connect when sessionId is provided
@@ -53,11 +53,11 @@ export function SimpleChat({
     if (!inputMessage.trim() || isLoading) return;
 
     await sendMessage(inputMessage.trim());
-    setInputMessage("");
+    setInputMessage('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -71,7 +71,7 @@ export function SimpleChat({
   };
 
   return (
-    <Card className={cn("w-full max-w-2xl mx-auto", className)}>
+    <Card className={cn('w-full max-w-2xl mx-auto', className)}>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Bot className="h-5 w-5" />
@@ -80,12 +80,12 @@ export function SimpleChat({
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              "h-2 w-2 rounded-full",
-              isConnected ? "bg-green-500" : "bg-gray-300",
+              'h-2 w-2 rounded-full',
+              isConnected ? 'bg-green-500' : 'bg-gray-300',
             )}
           />
           <span className="text-sm text-muted-foreground">
-            {isConnected ? "Connected" : "Disconnected"}
+            {isConnected ? 'Connected' : 'Disconnected'}
           </span>
           <Button
             variant="ghost"
@@ -123,20 +123,20 @@ export function SimpleChat({
                     <div
                       key={message.id}
                       className={cn(
-                        "flex gap-3",
-                        message.type === "user"
-                          ? "justify-end"
-                          : "justify-start",
+                        'flex gap-3',
+                        message.type === 'user'
+                          ? 'justify-end'
+                          : 'justify-start',
                       )}
                     >
                       <div
                         className={cn(
-                          "max-w-[70%] rounded-lg px-3 py-2 text-sm",
-                          message.type === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : message.type === "system"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-muted",
+                          'max-w-[70%] rounded-lg px-3 py-2 text-sm',
+                          message.type === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : message.type === 'system'
+                              ? 'bg-destructive/10 text-destructive'
+                              : 'bg-muted',
                         )}
                       >
                         <p className="whitespace-pre-wrap">{message.content}</p>

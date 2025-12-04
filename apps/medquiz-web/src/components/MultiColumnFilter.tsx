@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import * as React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronRight, X } from "lucide-react";
+} from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronRight, X } from 'lucide-react';
 
 export interface FilterOption {
   id: string;

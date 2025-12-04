@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
 import {
   Command,
   CommandDialog,
   CommandEmpty,
   CommandInput,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-} from "@/components/ui/accordion";
+} from '@/components/ui/accordion';
 
 interface SearchResult {
   path: string;
   title: string;
   content?: string;
-  type: "document" | "note";
+  type: 'document' | 'note';
 }
 
 interface DocumentSearchCommandProps {
@@ -34,20 +34,20 @@ export function DocumentSearchCommand({
   onOpenChange,
   onSelectResult,
 }: DocumentSearchCommandProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         onOpenChange(!open);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onOpenChange]);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function DocumentSearchCommand({
           setResults([]);
         }
       } catch (error) {
-        console.error("Search error:", error);
+        console.error('Search error:', error);
         setResults([]);
       } finally {
         setLoading(false);
@@ -84,7 +84,7 @@ export function DocumentSearchCommand({
   const handleSelect = (result: SearchResult) => {
     onSelectResult(result);
     onOpenChange(false);
-    setQuery("");
+    setQuery('');
   };
 
   return (
@@ -98,14 +98,14 @@ export function DocumentSearchCommand({
         <CommandList>
           <CommandEmpty>
             {loading
-              ? "搜索中..."
+              ? '搜索中...'
               : query.trim().length === 0
-                ? "请输入搜索关键词"
+                ? '请输入搜索关键词'
                 : query.trim().length === 1
-                  ? "请至少输入2个字符开始搜索"
+                  ? '请至少输入2个字符开始搜索'
                   : results.length === 0
-                    ? "未找到结果"
-                    : ""}
+                    ? '未找到结果'
+                    : ''}
           </CommandEmpty>
 
           {results.length > 0 && (
@@ -130,7 +130,7 @@ export function DocumentSearchCommand({
                             {result.title}
                           </span>
                           <span className="ml-2 text-xs text-muted-foreground">
-                            {result.type === "note" ? "笔记" : "文档"}
+                            {result.type === 'note' ? '笔记' : '文档'}
                           </span>
                         </div>
                       </div>

@@ -164,7 +164,8 @@ export class VertextStorageService implements IVertexStorage {
   ): Promise<VertexData[]> {
     const { limit = 50, offset = 0 } = options || {};
     const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
-    const parsedOffset = typeof offset === 'string' ? parseInt(offset, 10) : offset;
+    const parsedOffset =
+      typeof offset === 'string' ? parseInt(offset, 10) : offset;
 
     const vertices = await this.prisma.vertex.findMany({
       where: {
@@ -198,7 +199,8 @@ export class VertextStorageService implements IVertexStorage {
   }): Promise<{ vertices: VertexData[]; total: number }> {
     const { limit = 50, offset = 0 } = options || {};
     const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
-    const parsedOffset = typeof offset === 'string' ? parseInt(offset, 10) : offset;
+    const parsedOffset =
+      typeof offset === 'string' ? parseInt(offset, 10) : offset;
 
     const [vertices, total] = await Promise.all([
       this.prisma.vertex.findMany({

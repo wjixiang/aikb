@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
+import { ChangeEvent, useEffect, useMemo, useState, MouseEvent } from 'react';
+import { useSession } from 'next-auth/react';
+import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
+import { OptionType } from '../quiz/SelectBox';
+import { cn } from '@/lib/utils';
+import { MultiSelectCombobox } from './MultiSelectCombobox';
+import ReviewFilter from './ReviewFilter';
+import { quiz, QuizWithUserAnswer } from '../../types/quizData.types';
+import { quizSelector, ReviewMode } from '@/types/quizSelector.types';
+import { Slider } from '@/components/ui/slider';
 import {
-  ChangeEvent,
-  useEffect,
-  useMemo,
-  useState,
-  MouseEvent,
-} from "react";
-import { useSession } from "next-auth/react";
-import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
-import { OptionType } from "../quiz/SelectBox";
-import { cn } from "@/lib/utils";
-import { MultiSelectCombobox } from "./MultiSelectCombobox";
-import ReviewFilter from "./ReviewFilter";
-import { quiz, QuizWithUserAnswer } from "../../types/quizData.types";
-import { quizSelector, ReviewMode } from "@/types/quizSelector.types";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 const sortQuizzesByType = (
@@ -41,13 +41,19 @@ const sortQuizzesByType = (
   });
 };
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TagPresetManager } from "./TagPresetManager";
-import { PublicTagManager } from "./PublicTagManager";
-import { TagPreset } from "@/types/quizSelector.types";
-import { Settings, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TagPresetManager } from './TagPresetManager';
+import { PublicTagManager } from './PublicTagManager';
+import { TagPreset } from '@/types/quizSelector.types';
+import { Settings, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const FilterContainer = styled.div`
   display: flex;
@@ -151,7 +157,7 @@ const QuizFilterPanel = ({
   const [source, setSource] = useState<string[]>([]);
   const [extractedYear, setExtractedYear] = useState<number[]>([]);
   const [onlyHasDone, setOnlyHasDone] = useState(false);
-  const [reviewMode, setReviewMode] = useState<ReviewMode>("normal");
+  const [reviewMode, setReviewMode] = useState<ReviewMode>('normal');
   const [scoringWeights, setScoringWeights] = useState({
     errorRate: 0.6,
     consecutiveWrong: 0.2,
@@ -161,16 +167,22 @@ const QuizFilterPanel = ({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   // 新增：标签相关状态
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [tagFilterMode, setTagFilterMode] = useState<"AND" | "OR">("AND");
-  const [tagTypeFilter, setTagTypeFilter] = useState<"all" | "private" | "public">("all");
+  const [tagFilterMode, setTagFilterMode] = useState<'AND' | 'OR'>('AND');
+  const [tagTypeFilter, setTagTypeFilter] = useState<
+    'all' | 'private' | 'public'
+  >('all');
   // 新增：排除标签相关状态
   const [excludeTags, setExcludeTags] = useState<string[]>([]);
-  const [excludeTagFilterMode, setExcludeTagFilterMode] = useState<"AND" | "OR">("AND");
-  const [excludeTagTypeFilter, setExcludeTagTypeFilter] = useState<"all" | "private" | "public">("all");
+  const [excludeTagFilterMode, setExcludeTagFilterMode] = useState<
+    'AND' | 'OR'
+  >('AND');
+  const [excludeTagTypeFilter, setExcludeTagTypeFilter] = useState<
+    'all' | 'private' | 'public'
+  >('all');
   // 新增：预设管理相关状态
   const [showPresetManager, setShowPresetManager] = useState(false);
   const [currentPreset, setCurrentPreset] = useState<TagPreset | null>(null);
-  const [activeTagTab, setActiveTagTab] = useState("presets");
+  const [activeTagTab, setActiveTagTab] = useState('presets');
 
   const debouncedScoringWeights = useDebounce(scoringWeights, 500);
 
@@ -183,9 +195,9 @@ const QuizFilterPanel = ({
 
   useEffect(() => {
     const updateOptions = async () => {
-      console.log("fetch subject");
+      console.log('fetch subject');
       const newOptions = await fetchOptions();
-      console.log("subject fetched");
+      console.log('subject fetched');
       setClsOptions(newOptions);
     };
 
@@ -196,7 +208,7 @@ const QuizFilterPanel = ({
   // 加载默认预设
   const loadDefaultPreset = async () => {
     try {
-      const response = await fetch("/api/user/tags/presets");
+      const response = await fetch('/api/user/tags/presets');
       if (response.ok) {
         const presets = await response.json();
         const defaultPreset = presets.find((p: TagPreset) => p.isDefault);
@@ -205,17 +217,17 @@ const QuizFilterPanel = ({
         }
       }
     } catch (error) {
-      console.error("Error loading default preset:", error);
+      console.error('Error loading default preset:', error);
     }
   };
 
   const fetchOptions = async () => {
     try {
       // setIsLoadingOptions(true);
-      const response = await fetch("/api/obcors/subject", {
-        method: "POST",
+      const response = await fetch('/api/obcors/subject', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(selector),
       });
@@ -226,7 +238,7 @@ const QuizFilterPanel = ({
         label: value,
       }));
     } catch (error) {
-      console.error("Error fetching options:", error);
+      console.error('Error fetching options:', error);
       return [];
     } finally {
       // setIsLoadingOptions(false);
@@ -246,10 +258,10 @@ const QuizFilterPanel = ({
       onlyHasDone,
       reviewMode,
       scoringWeights:
-        reviewMode === "review" ? debouncedScoringWeights : undefined,
+        reviewMode === 'review' ? debouncedScoringWeights : undefined,
       startDate,
       endDate,
-      email: session?.user?.email || "",
+      email: session?.user?.email || '',
       tags: selectedTags,
       tagFilterMode,
       tagTypeFilter,
@@ -281,17 +293,17 @@ const QuizFilterPanel = ({
 
   const createPage = async (selector: quizSelector) => {
     try {
-      const response = await fetch("/api/obcors/quiz", {
-        method: "POST",
+      const response = await fetch('/api/obcors/quiz', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ selector }),
       });
       const quizdata = await response.json();
       return sortQuizzesByType(quizdata);
     } catch (error) {
-      console.error("Error fetching quizzes:", error);
+      console.error('Error fetching quizzes:', error);
       // 可以添加错误提示
       return [];
     }
@@ -307,14 +319,14 @@ const QuizFilterPanel = ({
       if (createNewTab) {
         // Generate a title based on the selected criteria
         const titleParts = [];
-        if (cls.length > 0) titleParts.push(cls.join(", "));
-        if (unit.length > 0) titleParts.push(unit.join(", "));
-        if (mode.length > 0) titleParts.push(mode.join(", "));
-        if (source.length > 0) titleParts.push(source.join(", "));
+        if (cls.length > 0) titleParts.push(cls.join(', '));
+        if (unit.length > 0) titleParts.push(unit.join(', '));
+        if (mode.length > 0) titleParts.push(mode.join(', '));
+        if (source.length > 0) titleParts.push(source.join(', '));
 
         const title =
           titleParts.length > 0
-            ? `${titleParts.join(" - ")} (${quizNum}题)`
+            ? `${titleParts.join(' - ')} (${quizNum}题)`
             : `新试卷 (${quizNum}题)`;
 
         createNewTab(quizdata, title);
@@ -336,7 +348,7 @@ const QuizFilterPanel = ({
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= 1 && value <= 300) {
       setQuizNum(value);
-    } else if (e.target.value === "") {
+    } else if (e.target.value === '') {
       setQuizNum(0); // Or some other default/empty state
     }
   };
@@ -491,7 +503,10 @@ const QuizFilterPanel = ({
             />
           </div>
           <div onClick={stopPropagation}>
-            <Select value={tagFilterMode} onValueChange={(value: "AND" | "OR") => setTagFilterMode(value)}>
+            <Select
+              value={tagFilterMode}
+              onValueChange={(value: 'AND' | 'OR') => setTagFilterMode(value)}
+            >
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
               </SelectTrigger>
@@ -502,7 +517,12 @@ const QuizFilterPanel = ({
             </Select>
           </div>
           <div onClick={stopPropagation}>
-            <Select value={tagTypeFilter} onValueChange={(value: "all" | "private" | "public") => setTagTypeFilter(value)}>
+            <Select
+              value={tagTypeFilter}
+              onValueChange={(value: 'all' | 'private' | 'public') =>
+                setTagTypeFilter(value)
+              }
+            >
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
               </SelectTrigger>
@@ -528,7 +548,12 @@ const QuizFilterPanel = ({
             />
           </div>
           <div onClick={stopPropagation}>
-            <Select value={excludeTagFilterMode} onValueChange={(value: "AND" | "OR") => setExcludeTagFilterMode(value)}>
+            <Select
+              value={excludeTagFilterMode}
+              onValueChange={(value: 'AND' | 'OR') =>
+                setExcludeTagFilterMode(value)
+              }
+            >
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
               </SelectTrigger>
@@ -539,7 +564,12 @@ const QuizFilterPanel = ({
             </Select>
           </div>
           <div onClick={stopPropagation}>
-            <Select value={excludeTagTypeFilter} onValueChange={(value: "all" | "private" | "public") => setExcludeTagTypeFilter(value)}>
+            <Select
+              value={excludeTagTypeFilter}
+              onValueChange={(value: 'all' | 'private' | 'public') =>
+                setExcludeTagTypeFilter(value)
+              }
+            >
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
               </SelectTrigger>
@@ -558,7 +588,9 @@ const QuizFilterPanel = ({
           <div className="flex items-center gap-2">
             {currentPreset ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{currentPreset.name}</span>
+                <span className="text-sm font-medium">
+                  {currentPreset.name}
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -571,7 +603,10 @@ const QuizFilterPanel = ({
             ) : (
               <span className="text-sm text-muted-foreground">无预设</span>
             )}
-            <Dialog open={showPresetManager} onOpenChange={setShowPresetManager}>
+            <Dialog
+              open={showPresetManager}
+              onOpenChange={setShowPresetManager}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Settings className="w-4 h-4 mr-1" />
@@ -582,15 +617,19 @@ const QuizFilterPanel = ({
                 <DialogHeader>
                   <DialogTitle>标签管理</DialogTitle>
                 </DialogHeader>
-                
-                <Tabs value={activeTagTab} onValueChange={setActiveTagTab} className="w-full">
+
+                <Tabs
+                  value={activeTagTab}
+                  onValueChange={setActiveTagTab}
+                  className="w-full"
+                >
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="presets">预设管理</TabsTrigger>
                     <TabsTrigger value="public">公共标签</TabsTrigger>
                   </TabsList>
-                  
+
                   <div className="mt-4">
-                    {activeTagTab === "presets" && (
+                    {activeTagTab === 'presets' && (
                       <TagPresetManager
                         selectedTags={selectedTags}
                         excludeTags={excludeTags}
@@ -599,8 +638,8 @@ const QuizFilterPanel = ({
                         onPresetSelect={handlePresetSelect}
                       />
                     )}
-                    
-                    {activeTagTab === "public" && (
+
+                    {activeTagTab === 'public' && (
                       <PublicTagManager
                         onTagSelect={(tag) => {
                           // 当选择公共标签时，添加到当前选中的标签

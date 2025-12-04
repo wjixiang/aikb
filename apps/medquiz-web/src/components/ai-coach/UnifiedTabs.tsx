@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -7,21 +7,28 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, FileTextIcon, BookOpenIcon } from "lucide-react";
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { UnifiedTabContent } from "./UnifiedTabContent";
-import { QuizPageImperativeHandle } from "@/components/quiz/QuizPage";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { 
-  UnifiedTabsProps, 
-  UnifiedTabsRef, 
-  UnifiedTab, 
-  TabType 
-} from "./UnifiedTabsTypes";
-import { cn } from "@/lib/utils";
+} from 'react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  PlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  FileTextIcon,
+  BookOpenIcon,
+} from 'lucide-react';
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { UnifiedTabContent } from './UnifiedTabContent';
+import { QuizPageImperativeHandle } from '@/components/quiz/QuizPage';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import {
+  UnifiedTabsProps,
+  UnifiedTabsRef,
+  UnifiedTab,
+  TabType,
+} from './UnifiedTabsTypes';
+import { cn } from '@/lib/utils';
 
 export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
   (
@@ -43,7 +50,10 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     const [showLeftScroll, setShowLeftScroll] = useState(false);
     const [showRightScroll, setShowRightScroll] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const [dropdownPosition, setDropdownPosition] = useState({
+      top: 0,
+      left: 0,
+    });
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -54,21 +64,25 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     // Calculate visible tabs based on container width
     const { visibleTabs, hiddenTabsCount, maxVisibleTabs } = useMemo(() => {
       if (!containerRef.current || tabs.length <= 1) {
-        return { visibleTabs: tabs, hiddenTabsCount: 0, maxVisibleTabs: tabs.length };
+        return {
+          visibleTabs: tabs,
+          hiddenTabsCount: 0,
+          maxVisibleTabs: tabs.length,
+        };
       }
 
       const containerWidth = containerRef.current.offsetWidth;
       const addButtonWidth = 32; // Plus button width
       const availableWidth = containerWidth - addButtonWidth;
-      
+
       // Estimate max tabs that can fit (each tab needs ~100px minimum)
       const estimatedMaxTabs = Math.max(1, Math.floor(availableWidth / 100));
       const maxTabs = Math.min(tabs.length, estimatedMaxTabs);
-      
+
       return {
         visibleTabs: tabs.slice(0, maxTabs),
         hiddenTabsCount: tabs.length - maxTabs,
-        maxVisibleTabs: maxTabs
+        maxVisibleTabs: maxTabs,
       };
     }, [tabs]);
 
@@ -79,26 +93,29 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     }, []);
 
     // Handle dropdown click
-    const handleDropdownClick = useCallback((e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (dropdownRef.current) {
-        const rect = dropdownRef.current.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const dropdownWidth = 200; // Approximate dropdown width
-        
-        // Calculate left position, ensuring dropdown doesn't exceed right boundary
-        let leftPosition = rect.left;
-        if (leftPosition + dropdownWidth > viewportWidth) {
-          leftPosition = viewportWidth - dropdownWidth - 10; // 10px margin from right edge
+    const handleDropdownClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (dropdownRef.current) {
+          const rect = dropdownRef.current.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const dropdownWidth = 200; // Approximate dropdown width
+
+          // Calculate left position, ensuring dropdown doesn't exceed right boundary
+          let leftPosition = rect.left;
+          if (leftPosition + dropdownWidth > viewportWidth) {
+            leftPosition = viewportWidth - dropdownWidth - 10; // 10px margin from right edge
+          }
+
+          setDropdownPosition({
+            top: rect.bottom + 4,
+            left: leftPosition,
+          });
         }
-        
-        setDropdownPosition({
-          top: rect.bottom + 4,
-          left: leftPosition
-        });
-      }
-      setShowDropdown(!showDropdown);
-    }, [showDropdown]);
+        setShowDropdown(!showDropdown);
+      },
+      [showDropdown],
+    );
 
     // Handle tab selection from dropdown
     const handleTabSelect = useCallback((tabId: string) => {
@@ -109,7 +126,10 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     // Close dropdown when clicking outside
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
           setShowDropdown(false);
         }
       };
@@ -134,11 +154,11 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     useEffect(() => {
       const scrollArea = scrollAreaRef.current;
       if (scrollArea) {
-        scrollArea.addEventListener("scroll", checkScrollIndicators);
+        scrollArea.addEventListener('scroll', checkScrollIndicators);
         // Initial check
         checkScrollIndicators();
         return () =>
-          scrollArea.removeEventListener("scroll", checkScrollIndicators);
+          scrollArea.removeEventListener('scroll', checkScrollIndicators);
       }
     }, [checkScrollIndicators]);
 
@@ -146,14 +166,14 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     useEffect(() => {
       const handleResize = () => {
         // Force re-calculation by updating state
-        setTabs(prev => [...prev]);
+        setTabs((prev) => [...prev]);
       };
-      
+
       const resizeObserver = new ResizeObserver(handleResize);
       if (containerRef.current) {
         resizeObserver.observe(containerRef.current);
       }
-      
+
       return () => {
         if (containerRef.current) {
           resizeObserver.unobserve(containerRef.current);
@@ -164,13 +184,13 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     // Scroll functions
     const scrollLeft = () => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollBy({ left: -200, behavior: "smooth" });
+        scrollAreaRef.current.scrollBy({ left: -200, behavior: 'smooth' });
       }
     };
 
     const scrollRight = () => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollBy({ left: 200, behavior: "smooth" });
+        scrollAreaRef.current.scrollBy({ left: 200, behavior: 'smooth' });
       }
     };
 
@@ -178,11 +198,13 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
     const addTab = (type: TabType = TabType.QUIZ) => {
       const newTabId = Date.now().toString();
       let newTab: UnifiedTab;
-      
+
       if (type === TabType.QUIZ) {
         newTab = {
           id: newTabId,
-          title: currentQuizSetId || `试卷 ${tabs.filter(t => t.type === TabType.QUIZ).length + 1}`,
+          title:
+            currentQuizSetId ||
+            `试卷 ${tabs.filter((t) => t.type === TabType.QUIZ).length + 1}`,
           type: TabType.QUIZ,
           isActive: true,
           quizzes: [],
@@ -190,20 +212,20 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
       } else {
         newTab = {
           id: newTabId,
-          title: `文档 ${tabs.filter(t => t.type === TabType.DOCUMENT).length + 1}`,
+          title: `文档 ${tabs.filter((t) => t.type === TabType.DOCUMENT).length + 1}`,
           type: TabType.DOCUMENT,
           isActive: true,
           path: `new-${Date.now()}`,
-          content: "# 新文档\n\n开始编写您的内容...",
+          content: '# 新文档\n\n开始编写您的内容...',
         };
       }
-      
+
       // Create a ref for the new tab's content
       if (type === TabType.QUIZ) {
         quizContentRefs.current[newTabId] =
           React.createRef<QuizPageImperativeHandle>();
       }
-      
+
       setTabs([...tabs, newTab]);
       setActiveTabId(newTabId);
     };
@@ -219,10 +241,10 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
 
     const updateTabQuizzes = (tabId: string, quizzes: QuizWithUserAnswer[]) => {
       setTabs(
-        tabs.map((tab) => 
-          tab.id === tabId && tab.type === TabType.QUIZ 
-            ? { ...tab, quizzes } 
-            : tab
+        tabs.map((tab) =>
+          tab.id === tabId && tab.type === TabType.QUIZ
+            ? { ...tab, quizzes }
+            : tab,
         ),
       );
     };
@@ -252,28 +274,36 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
       const newTabId = Date.now().toString();
       const newTab: UnifiedTab = {
         id: newTabId,
-        title: title || `新试卷 ${tabs.filter(t => t.type === TabType.QUIZ).length + 1}`,
+        title:
+          title ||
+          `新试卷 ${tabs.filter((t) => t.type === TabType.QUIZ).length + 1}`,
         type: TabType.QUIZ,
         isActive: true,
         quizzes: quizzes,
       };
-      
+
       // Create a ref for the new tab's QuizContent
       quizContentRefs.current[newTabId] =
         React.createRef<QuizPageImperativeHandle>();
       setTabs([...tabs, newTab]);
       setActiveTabId(newTabId);
-      
+
       // Only create new quiz set if explicitly requested
       if (quizzes.length > 0 && handleSubmit && createNewSet) {
-        handleSubmit(quizzes, title || `新试卷 ${tabs.filter(t => t.type === TabType.QUIZ).length + 1}`);
+        handleSubmit(
+          quizzes,
+          title ||
+            `新试卷 ${tabs.filter((t) => t.type === TabType.QUIZ).length + 1}`,
+        );
       }
     };
 
     // Create a new tab with a document
     const createTabWithDocument = (path: string, title?: string) => {
       // Check if document is already open
-      const existingTab = tabs.find(tab => tab.type === TabType.DOCUMENT && tab.path === path);
+      const existingTab = tabs.find(
+        (tab) => tab.type === TabType.DOCUMENT && tab.path === path,
+      );
       if (existingTab) {
         setActiveTabId(existingTab.id);
         return;
@@ -282,12 +312,12 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
       const newTabId = Date.now().toString();
       const newTab: UnifiedTab = {
         id: newTabId,
-        title: title || path.split("/").pop() || "未命名文档",
+        title: title || path.split('/').pop() || '未命名文档',
         type: TabType.DOCUMENT,
         isActive: true,
         path,
       };
-      
+
       setTabs([...tabs, newTab]);
       setActiveTabId(newTabId);
     };
@@ -298,7 +328,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
       if (!activeTab || activeTab.type !== TabType.QUIZ) return;
       updateTabQuizzes(activeTab.id, []);
       if (showNotification) {
-        showNotification("已重置当前试卷", "success");
+        showNotification('已重置当前试卷', 'success');
       }
     };
 
@@ -312,7 +342,9 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
       createTabWithDocument,
       getCurrentTabQuizzes: () => {
         const activeTab = getActiveTab();
-        return activeTab && activeTab.type === TabType.QUIZ ? activeTab.quizzes || [] : [];
+        return activeTab && activeTab.type === TabType.QUIZ
+          ? activeTab.quizzes || []
+          : [];
       },
       getCurrentTabId: () => activeTabId,
       getCurrentQuiz: () => {
@@ -334,8 +366,8 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
         const activeTab = getActiveTab();
         if (!activeTab || activeTab.type !== TabType.DOCUMENT) return null;
         return {
-          path: activeTab.path || "",
-          content: activeTab.content || "",
+          path: activeTab.path || '',
+          content: activeTab.content || '',
           title: activeTab.title,
         };
       },
@@ -343,11 +375,14 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
 
     return (
       <Tabs
-        value={activeTabId || ""}
+        value={activeTabId || ''}
         onValueChange={(value) => setActiveTabId(value || null)}
         className="w-full h-full flex flex-col"
       >
-        <div className="flex items-end flex-shrink-0 relative" ref={containerRef}>
+        <div
+          className="flex items-end flex-shrink-0 relative"
+          ref={containerRef}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -368,9 +403,13 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
                     key={tab.id}
                     value={tab.id}
                     className={cn(
-                      "border-b data-[state=active]:border data-[state=active]:border-b-transparent rounded-none bg-background h-full data-[state=active]:shadow-none -mb-[2px] rounded-t max-w-[200px] min-w-[80px] justify-between items-center px-2",
-                      !visibleTabs.some(visibleTab => visibleTab.id === tab.id) ? 'hidden' : '',
-                      tab.type === TabType.DOCUMENT ? 'text-blue-600' : ''
+                      'border-b data-[state=active]:border data-[state=active]:border-b-transparent rounded-none bg-background h-full data-[state=active]:shadow-none -mb-[2px] rounded-t max-w-[200px] min-w-[80px] justify-between items-center px-2',
+                      !visibleTabs.some(
+                        (visibleTab) => visibleTab.id === tab.id,
+                      )
+                        ? 'hidden'
+                        : '',
+                      tab.type === TabType.DOCUMENT ? 'text-blue-600' : '',
                     )}
                   >
                     <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -396,7 +435,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
                     )}
                   </TabsTrigger>
                 ))}
-                
+
                 {/* Overflow indicator */}
                 {hiddenTabsCount > 0 && (
                   <div
@@ -425,8 +464,10 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
                       <div
                         key={tab.id}
                         className={cn(
-                          "px-3 py-2 cursor-pointer hover:bg-muted transition-colors flex items-center",
-                          activeTabId === tab.id ? 'bg-muted border-l-2 border-primary' : ''
+                          'px-3 py-2 cursor-pointer hover:bg-muted transition-colors flex items-center',
+                          activeTabId === tab.id
+                            ? 'bg-muted border-l-2 border-primary'
+                            : '',
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -439,9 +480,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
                           ) : (
                             <BookOpenIcon className="h-3 w-3" />
                           )}
-                          <span className="truncate">
-                            {tab.title}
-                          </span>
+                          <span className="truncate">{tab.title}</span>
                         </div>
                         {activeTabId === tab.id && (
                           <div className="w-2 h-2 rounded-full bg-primary"></div>
@@ -454,7 +493,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
             </div>
           </div>
         </div>
-        
+
         {tabs.map((tab) => (
           <TabsContent
             key={tab.id}
@@ -463,9 +502,19 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
           >
             <UnifiedTabContent
               tab={tab}
-              onAnswerChange={async (quizId, answer, silent, quizzesForQuizSet) => {
+              onAnswerChange={async (
+                quizId,
+                answer,
+                silent,
+                quizzesForQuizSet,
+              ) => {
                 if (onAnswerChange) {
-                  await onAnswerChange(quizId, answer, silent, quizzesForQuizSet);
+                  await onAnswerChange(
+                    quizId,
+                    answer,
+                    silent,
+                    quizzesForQuizSet,
+                  );
                 }
                 // Update the local quiz state with the submitted answer
                 if (tab.type === TabType.QUIZ) {
@@ -481,11 +530,13 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
               }}
               onContentChange={(content) => {
                 // Update document content
-                setTabs(tabs.map(t => 
-                  t.id === tab.id && t.type === TabType.DOCUMENT 
-                    ? { ...t, content, isDirty: true } 
-                    : t
-                ));
+                setTabs(
+                  tabs.map((t) =>
+                    t.id === tab.id && t.type === TabType.DOCUMENT
+                      ? { ...t, content, isDirty: true }
+                      : t,
+                  ),
+                );
               }}
               onTitleChange={(title) => {
                 // Update tab title
@@ -495,7 +546,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
                 if (tab.type === TabType.QUIZ) {
                   updateTabQuizzes(tab.id, []);
                   if (showNotification) {
-                    showNotification("已重置当前试卷", "success");
+                    showNotification('已重置当前试卷', 'success');
                   }
                 }
               }}
@@ -503,7 +554,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
               isQuizFetching={!!loadingOperation}
               setQuizzes={(quizzes) => {
                 if (tab.type === TabType.QUIZ) {
-                  if (typeof quizzes === "function") {
+                  if (typeof quizzes === 'function') {
                     const newQuizzes = quizzes(tab.quizzes || []);
                     updateTabQuizzes(tab.id, newQuizzes);
                   } else {
@@ -520,7 +571,7 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
             />
           </TabsContent>
         ))}
-        
+
         {tabs.length === 0 && (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <p>点击 + 按钮创建新试卷或文档</p>
@@ -531,4 +582,4 @@ export const UnifiedTabs = React.forwardRef<UnifiedTabsRef, UnifiedTabsProps>(
   },
 );
 
-UnifiedTabs.displayName = "UnifiedTabs";
+UnifiedTabs.displayName = 'UnifiedTabs';

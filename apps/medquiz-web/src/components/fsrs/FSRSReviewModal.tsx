@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,14 +10,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Brain, Loader2, Maximize2, Minimize2, X } from "lucide-react";
-import { UserSubscription } from "@/types/anki.types";
-import Page from "../quiz/QuizPage";
-import { note } from "@/types/noteData.types";
+} from '@/components/ui/card';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Brain, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
+import { UserSubscription } from '@/types/anki.types';
+import Page from '../quiz/QuizPage';
+import { note } from '@/types/noteData.types';
 
 interface FSRSReviewModalProps {
   open: boolean;
@@ -82,7 +82,7 @@ export default function FSRSReviewModal({
       );
       if (response.ok) {
         const data = await response.json();
-        console.log("data", data);
+        console.log('data', data);
         setCollectionState(data.CollectionSubscription);
         console.log(collectionState);
         if (
@@ -90,18 +90,18 @@ export default function FSRSReviewModal({
             data.CollectionSubscription.reviewCount ===
           0
         ) {
-          toast.success("太棒了！当前没有需要复习的卡片。");
+          toast.success('太棒了！当前没有需要复习的卡片。');
           setDueCards([]);
         } else {
           fetchDueCards();
         }
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || "获取订阅状态失败");
+        throw new Error(errorData.error || '获取订阅状态失败');
       }
     } catch (error) {
-      console.error("获取订阅状态失败:", error);
-      toast.error("获取订阅状态失败");
+      console.error('获取订阅状态失败:', error);
+      toast.error('获取订阅状态失败');
     }
   }, [collectionId]);
 
@@ -120,8 +120,8 @@ export default function FSRSReviewModal({
         setCurrentCardIndex(0);
       }
     } catch (error) {
-      console.error("获取待复习卡片失败:", error);
-      toast.error("获取待复习卡片失败");
+      console.error('获取待复习卡片失败:', error);
+      toast.error('获取待复习卡片失败');
     } finally {
       setLoading(false);
     }
@@ -141,8 +141,8 @@ export default function FSRSReviewModal({
         return data;
       }
     } catch (error) {
-      console.error("获取待复习卡片失败:", error);
-      toast.error("获取待复习卡片失败");
+      console.error('获取待复习卡片失败:', error);
+      toast.error('获取待复习卡片失败');
     } finally {
       setLoading(false);
     }
@@ -158,13 +158,13 @@ export default function FSRSReviewModal({
         if (data.length > 0) {
           setReviewStartTime(Date.now());
         }
-        console.log("New card data", data);
+        console.log('New card data', data);
         setDueNewCards(data);
         return data;
       }
     } catch (error) {
-      console.error("获取待新学卡片失败:", error);
-      toast.error("获取待新学卡片失败");
+      console.error('获取待新学卡片失败:', error);
+      toast.error('获取待新学卡片失败');
     } finally {
       setLoading(false);
     }
@@ -184,10 +184,10 @@ export default function FSRSReviewModal({
 
     try {
       setReviewing(true);
-      const response = await fetch("/api/fsrs/review", {
-        method: "POST",
+      const response = await fetch('/api/fsrs/review', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           cardOid: currentCard.cardOid,
@@ -201,20 +201,20 @@ export default function FSRSReviewModal({
           setCurrentCardIndex((prev) => prev + 1);
           setReviewStartTime(Date.now());
         } else {
-          toast.success("复习完成", {
-            description: "所有待复习的卡片已复习完成！",
+          toast.success('复习完成', {
+            description: '所有待复习的卡片已复习完成！',
           });
           onOpenChange(false);
           fetchCollectionState(); // 重新获取订阅状态
         }
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || "提交复习失败");
+        throw new Error(errorData.error || '提交复习失败');
       }
     } catch (error) {
-      console.error("提交复习失败:", error);
-      toast.error("提交复习失败", {
-        description: "提交复习结果时发生错误，请重试。",
+      console.error('提交复习失败:', error);
+      toast.error('提交复习失败', {
+        description: '提交复习结果时发生错误，请重试。',
       });
     } finally {
       setReviewing(false);
@@ -228,7 +228,7 @@ export default function FSRSReviewModal({
   // Draggable window handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only start dragging if clicking on the header area (not on buttons)
-    if ((e.target as HTMLElement).closest(".modal-action")) {
+    if ((e.target as HTMLElement).closest('.modal-action')) {
       return;
     }
 
@@ -297,16 +297,16 @@ export default function FSRSReviewModal({
 
     if (isDragging) {
       // 添加全局事件监听器
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
     } else {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     }
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [open, isDragging, handleMouseMove, handleMouseUp]);
 
@@ -319,7 +319,7 @@ export default function FSRSReviewModal({
     setIsFullscreen(!isFullscreen);
   };
 
-  console.log("Modal props:", { open, collectionId });
+  console.log('Modal props:', { open, collectionId });
 
   // 处理 Cards to Quizes
   const [quizzes, setquizzes] = useState([]);
@@ -329,20 +329,20 @@ export default function FSRSReviewModal({
     const noteResponse = await fetch(`/api/note/fetch?title=${title}`);
     const note: note = await noteResponse.json();
     console.log(note);
-    const data = await fetch("/api/obcors/quiz/similar-search-by-desc", {
-      method: "POST",
+    const data = await fetch('/api/obcors/quiz/similar-search-by-desc', {
+      method: 'POST',
       body: JSON.stringify({
         filter: 'cls like \"内科学\"',
         searchStr:
           note.fileName +
-          "\n" +
+          '\n' +
           note.content[note.content.length - 1].fileContent,
       }),
     });
 
     const quizData = await data.json();
 
-    console.log("quizData", data);
+    console.log('quizData', data);
 
     setquizzes(quizData);
   };
@@ -351,10 +351,10 @@ export default function FSRSReviewModal({
   //   fetchQuiz(title)
   // }
 
-  console.log("Modal rendering with:", { open, position, isFullscreen });
+  console.log('Modal rendering with:', { open, position, isFullscreen });
 
   if (!open || !mounted) {
-    console.log("Modal not rendering due to !open or !mounted");
+    console.log('Modal not rendering due to !open or !mounted');
     return null;
   }
 
@@ -362,19 +362,19 @@ export default function FSRSReviewModal({
     <div
       ref={dragRef}
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: isFullscreen ? 0 : position.y, // 直接使用position.y，不要根据isDragging或其他条件重置
         left: isFullscreen ? 0 : position.x, // 直接使用position.x
-        width: isFullscreen ? "100%" : "550px",
+        width: isFullscreen ? '100%' : '550px',
         // maxHeight: isFullscreen ? '100%' : '80vh',
-        backgroundColor: "white",
-        borderRadius: isFullscreen ? 0 : "8px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        backgroundColor: 'white',
+        borderRadius: isFullscreen ? 0 : '8px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         zIndex: 9999, // 增加z-index确保在最上层
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        transition: isDragging ? "none" : "box-shadow 0.2s ease", // 只对阴影添加过渡效果，不要对位置添加
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: isDragging ? 'none' : 'box-shadow 0.2s ease', // 只对阴影添加过渡效果，不要对位置添加
       }}
     >
       {/* Header/Dragable area */}
@@ -448,12 +448,12 @@ export default function FSRSReviewModal({
                   </span>
                   <div className="text-sm text-muted-foreground">
                     <span>
-                      稳定性:{" "}
+                      稳定性:{' '}
                       {dueCards[currentCardIndex].state.stability.toFixed(1)}
                     </span>
                     <span className="mx-2">|</span>
                     <span>
-                      难度:{" "}
+                      难度:{' '}
                       {dueCards[currentCardIndex].state.difficulty.toFixed(1)}
                     </span>
                   </div>
@@ -481,21 +481,21 @@ export default function FSRSReviewModal({
                       onClick={() => handleCardRating(1)}
                       disabled={reviewing}
                     >
-                      困难 (1) - {reviewing ? "计算中..." : "10分钟"}
+                      困难 (1) - {reviewing ? '计算中...' : '10分钟'}
                     </Button>
                     <Button
                       variant="secondary"
                       onClick={() => handleCardRating(2)}
                       disabled={reviewing}
                     >
-                      一般 (2) - {reviewing ? "计算中..." : "1天"}
+                      一般 (2) - {reviewing ? '计算中...' : '1天'}
                     </Button>
                     <Button
                       variant="default"
                       onClick={() => handleCardRating(3)}
                       disabled={reviewing}
                     >
-                      简单 (3) - {reviewing ? "计算中..." : "3天"}
+                      简单 (3) - {reviewing ? '计算中...' : '3天'}
                     </Button>
                     <Button
                       variant="outline"
@@ -503,7 +503,7 @@ export default function FSRSReviewModal({
                       onClick={() => handleCardRating(4)}
                       disabled={reviewing}
                     >
-                      熟悉 (4) - {reviewing ? "计算中..." : "7天"}
+                      熟悉 (4) - {reviewing ? '计算中...' : '7天'}
                     </Button>
                   </div>
                 </div>

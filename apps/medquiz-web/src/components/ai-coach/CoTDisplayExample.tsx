@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useChatRuntime } from "./ChatRuntime";
-import { CoTDisplay } from "./CoTDisplay";
+import React from 'react';
+import { useChatRuntime } from './ChatRuntime';
+import { CoTDisplay } from './CoTDisplay';
 
 /**
  * Example component showing how to use the new CoT and speech streaming features
@@ -16,14 +16,14 @@ export const ChatWithCoTExample: React.FC = () => {
     speechQueue,
     isSpeaking,
     sendMessage,
-  } = useChatRuntime("agent");
+  } = useChatRuntime('agent');
 
-  const [input, setInput] = React.useState("");
+  const [input, setInput] = React.useState('');
 
   const handleSend = async () => {
     if (input.trim()) {
       await sendMessage(input.trim());
-      setInput("");
+      setInput('');
     }
   };
 
@@ -35,13 +35,13 @@ export const ChatWithCoTExample: React.FC = () => {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`mb-4 ${msg.sender === "user" ? "text-right" : "text-left"}`}
+              className={`mb-4 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}
             >
               <div
                 className={`inline-block p-3 rounded-lg max-w-xs ${
-                  msg.sender === "user"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-800"
+                  msg.sender === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-800'
                 }`}
               >
                 {msg.content}
@@ -63,7 +63,7 @@ export const ChatWithCoTExample: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder="输入你的问题..."
             className="w-full p-2 border rounded"
             disabled={loading}
@@ -73,7 +73,7 @@ export const ChatWithCoTExample: React.FC = () => {
             disabled={loading}
             className="mt-2 px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
           >
-            {loading ? "处理中..." : "发送"}
+            {loading ? '处理中...' : '发送'}
           </button>
         </div>
       </div>

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { SearchResult } from "@/types/noteData.types";
-import { Suspense } from "react";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { SearchResult } from '@/types/noteData.types';
+import { Suspense } from 'react';
 
 // shadcn/ui 组件
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -16,18 +16,18 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // 图标
-import { Search, AlertCircle, Loader2, Info, X } from "lucide-react";
+import { Search, AlertCircle, Loader2, Info, X } from 'lucide-react';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
+  const initialQuery = searchParams.get('q') || '';
 
   const [query, setQuery] = useState(initialQuery);
   const [searchInput, setSearchInput] = useState(initialQuery);
@@ -57,8 +57,8 @@ export default function SearchPage() {
       const data = await response.json();
       setResults(data.results || []);
     } catch (error) {
-      console.error("搜索出错:", error);
-      setError(error instanceof Error ? error.message : "搜索过程中发生错误");
+      console.error('搜索出错:', error);
+      setError(error instanceof Error ? error.message : '搜索过程中发生错误');
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function SearchPage() {
     if (!searchQuery.trim()) return text;
 
     const regex = new RegExp(
-      `(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi",
+      `(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+      'gi',
     );
     return text.replace(
       regex,
@@ -96,8 +96,8 @@ export default function SearchPage() {
 
   // 清除搜索
   const clearSearch = () => {
-    setSearchInput("");
-    setQuery("");
+    setSearchInput('');
+    setQuery('');
     setResults([]);
   };
 

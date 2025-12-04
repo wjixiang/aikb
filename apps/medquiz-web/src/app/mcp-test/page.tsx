@@ -1,9 +1,9 @@
-"use client";
-import { useState } from "react";
+'use client';
+import { useState } from 'react';
 
 export default function MCPTestPage() {
-  const [query, setQuery] = useState("");
-  const [collection, setCollection] = useState("note");
+  const [query, setQuery] = useState('');
+  const [collection, setCollection] = useState('note');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -12,21 +12,21 @@ export default function MCPTestPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/mcp", {
-        method: "POST",
+      const response = await fetch('/api/mcp', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "deepseek-v3",
-          messages: [{ role: "user", content: query }],
-          sessionId: "test-session",
-          tool_choice: "notebook_retriever",
+          model: 'deepseek-v3',
+          messages: [{ role: 'user', content: query }],
+          sessionId: 'test-session',
+          tool_choice: 'notebook_retriever',
           tools: [
             {
-              type: "function",
+              type: 'function',
               function: {
-                name: "notebook_retriever",
+                name: 'notebook_retriever',
                 parameters: {
                   query,
                   notebookCollectionName: collection,
@@ -43,11 +43,11 @@ export default function MCPTestPage() {
         const parsedResults = data.tool_results.map((tr: any) =>
           JSON.parse(tr.output),
         );
-        console.log("Full retrieval results:", parsedResults);
+        console.log('Full retrieval results:', parsedResults);
         setResults(parsedResults);
       }
     } catch (error) {
-      console.error("Search failed:", error);
+      console.error('Search failed:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function MCPTestPage() {
           disabled={loading}
           className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
         >
-          {loading ? "Searching..." : "Search"}
+          {loading ? 'Searching...' : 'Search'}
         </button>
       </div>
 
@@ -87,8 +87,8 @@ export default function MCPTestPage() {
           {results.map((result, i) => (
             <div key={i} className="p-4 border rounded bg-gray-50">
               <h3 className="font-medium">
-                Document {i + 1} (Score:{" "}
-                {result.documents[0]?.score?.toFixed(2) || "N/A"})
+                Document {i + 1} (Score:{' '}
+                {result.documents[0]?.score?.toFixed(2) || 'N/A'})
               </h3>
               <p className="mt-2 text-gray-700">
                 {result.documents[0]?.content}

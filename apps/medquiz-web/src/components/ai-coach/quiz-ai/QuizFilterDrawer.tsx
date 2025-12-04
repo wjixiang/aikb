@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerClose,
@@ -10,9 +10,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import QuizFilterPanel from "@/components/filter/QuizFilterPanel";
-import { useQuizAI } from "./useQuizAI";
+} from '@/components/ui/drawer';
+import QuizFilterPanel from '@/components/filter/QuizFilterPanel';
+import { useQuizAI } from './useQuizAI';
 
 interface QuizFilterDrawerProps {
   filterDrawerOpen: boolean;
@@ -51,9 +51,9 @@ export function QuizFilterDrawer({
             <QuizFilterPanel
               setQuizzes={addQuizToPage}
               setIsLoading={(loading) => {
-                setLoadingOperation(loading ? "filter" : null);
+                setLoadingOperation(loading ? 'filter' : null);
               }}
-              isLoading={loadingOperation === "filter"}
+              isLoading={loadingOperation === 'filter'}
               createNewTab={createNewTab}
             />
           </div>

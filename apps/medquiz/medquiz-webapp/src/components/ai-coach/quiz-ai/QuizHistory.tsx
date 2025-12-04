@@ -16,11 +16,7 @@ interface QuizHistoryProps {
 }
 
 const QuizHistory = (props: QuizHistoryProps) => {
-  return (
-    <div>
-      QuizHistory Component - To be implemented
-    </div>
-  );
+  return <div>QuizHistory Component - To be implemented</div>;
 };
 
 export { QuizHistory };

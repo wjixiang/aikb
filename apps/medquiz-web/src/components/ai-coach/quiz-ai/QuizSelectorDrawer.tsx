@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerClose,
@@ -10,9 +10,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { QuizSelector } from "@/components/quiz/quizselector/QuizSelector";
-import { useQuizAI } from "./useQuizAI";
+} from '@/components/ui/drawer';
+import { QuizSelector } from '@/components/quiz/quizselector/QuizSelector';
+import { useQuizAI } from './useQuizAI';
 
 interface QuizSelectorDrawerProps {
   selectorDrawerOpen: boolean;

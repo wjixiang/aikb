@@ -1,6 +1,6 @@
-import React from "react";
-import { WorkSpace } from "./WorkSpace";
-import "./workspace.css";
+import React from 'react';
+import { WorkSpace } from './WorkSpace';
+import './workspace.css';
 
 /**
  * WorkSpace 使用示例
@@ -10,11 +10,11 @@ import "./workspace.css";
  */
 export const WorkSpaceExample: React.FC = () => {
   const handleDocumentOpen = (path: string) => {
-    console.log("文档已打开:", path);
+    console.log('文档已打开:', path);
   };
 
   const handleDocumentClose = (path: string) => {
-    console.log("文档已关闭:", path);
+    console.log('文档已关闭:', path);
   };
 
   return (

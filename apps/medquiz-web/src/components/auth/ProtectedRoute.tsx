@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function ProtectedRoute({
   children,
@@ -11,27 +11,27 @@ export default function ProtectedRoute({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const loading = status === "loading";
+  const loading = status === 'loading';
 
   useEffect(() => {
     if (!loading && !session) {
       // Check if auto-login is still in progress
       const wasLoggedIn =
-        typeof window !== "undefined"
-          ? localStorage.getItem("wasLoggedIn")
+        typeof window !== 'undefined'
+          ? localStorage.getItem('wasLoggedIn')
           : null;
 
-      if (wasLoggedIn === "true") {
+      if (wasLoggedIn === 'true') {
         // Give a bit more time for auto-login to complete
         const timer = setTimeout(() => {
           if (!session) {
-            router.push("/auth/signin");
+            router.push('/auth/signin');
           }
         }, 1000);
 
         return () => clearTimeout(timer);
       } else {
-        router.push("/auth/signin");
+        router.push('/auth/signin');
       }
     }
   }, [loading, session, router]);

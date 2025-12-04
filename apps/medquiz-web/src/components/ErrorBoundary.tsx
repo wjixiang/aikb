@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -22,7 +22,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    console.error('Uncaught error:', error, errorInfo);
     // You can also log the error to an error reporting service
     // logErrorToMyService(error, errorInfo);
   }
@@ -36,7 +36,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <div className="text-red-500 p-4 border border-red-300 rounded-md">
           <h2 className="font-bold">Something went wrong.</h2>
-          <p>{this.state.error?.message || "An unknown error occurred."}</p>
+          <p>{this.state.error?.message || 'An unknown error occurred.'}</p>
           <p className="text-sm text-gray-600">
             Please try refreshing the page or contact support if the issue
             persists.

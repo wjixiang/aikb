@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 
 /**
  * Debug component to show auto-login status
@@ -13,14 +13,14 @@ export function AutoLoginStatus() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("wasLoggedIn");
-      setWasLoggedIn(stored === "true");
+      const stored = localStorage.getItem('wasLoggedIn');
+      setWasLoggedIn(stored === 'true');
     } catch (error) {
       setWasLoggedIn(null);
     }
   }, []);
 
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === 'production') {
     return null; // Don't show in production
   }
 
@@ -32,13 +32,13 @@ export function AutoLoginStatus() {
           Status: <span className="font-mono">{status}</span>
         </div>
         <div>
-          Session:{" "}
-          <span className="font-mono">{session ? "Active" : "None"}</span>
+          Session:{' '}
+          <span className="font-mono">{session ? 'Active' : 'None'}</span>
         </div>
         <div>
-          Was logged in:{" "}
+          Was logged in:{' '}
           <span className="font-mono">
-            {wasLoggedIn === null ? "Unknown" : wasLoggedIn.toString()}
+            {wasLoggedIn === null ? 'Unknown' : wasLoggedIn.toString()}
           </span>
         </div>
       </div>

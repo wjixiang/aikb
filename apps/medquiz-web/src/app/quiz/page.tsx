@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import QuizApp from "@/components/ai-coach/QuizApp";
+import QuizApp from '@/components/ai-coach/QuizApp';
 
 export default function QuizSelectorTestPage() {
   // const [quiz, setQiuz] = useState<quiz[]>([])

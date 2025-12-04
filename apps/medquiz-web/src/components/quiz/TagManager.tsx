@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Edit3, Trash2, Search, Check, X, Lock, Globe } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { QuizTag } from "@/lib/quiz/quizTagger";
+import React, { useState, useEffect } from 'react';
+import { Edit3, Trash2, Search, Check, X, Lock, Globe } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { QuizTag } from '@/lib/quiz/quizTagger';
 
 interface TagManagerProps {
   onTagUpdated?: () => void;
@@ -13,19 +13,19 @@ interface TagManagerProps {
 const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
   const [tags, setTags] = useState<QuizTag[]>([]);
   const [filteredTags, setFilteredTags] = useState<QuizTag[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingTag, setEditingTag] = useState<string | null>(null);
-  const [newTagName, setNewTagName] = useState("");
+  const [newTagName, setNewTagName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-``
+  ``;
   useEffect(() => {
     fetchUserTags();
   }, []);
 
   useEffect(() => {
-    const filtered = tags.filter(tag =>
-      tag.value.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = tags.filter((tag) =>
+      tag.value.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFilteredTags(filtered);
   }, [tags, searchTerm]);
@@ -33,16 +33,16 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
   const fetchUserTags = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/user/tags");
+      const response = await fetch('/api/user/tags');
       if (response.ok) {
         const data = await response.json();
         setTags(data);
       } else {
-        throw new Error("Failed to fetch tags");
+        throw new Error('Failed to fetch tags');
       }
     } catch (error) {
-      console.error("Error fetching tags:", error);
-      toast.error("获取标签列表失败");
+      console.error('Error fetching tags:', error);
+      toast.error('获取标签列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -56,13 +56,13 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
 
     try {
       setIsProcessing(true);
-      const response = await fetch("/api/user/tags/manage", {
-        method: "POST",
+      const response = await fetch('/api/user/tags/manage', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: "rename",
+          action: 'rename',
           oldTagName,
           newTagName: newTagName.trim(),
         }),
@@ -76,30 +76,32 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
         fetchUserTags();
         onTagUpdated?.();
       } else {
-        throw new Error(data.error || "重命名失败");
+        throw new Error(data.error || '重命名失败');
       }
     } catch (error) {
-      console.error("Error renaming tag:", error);
-      toast.error(error instanceof Error ? error.message : "重命名标签失败");
+      console.error('Error renaming tag:', error);
+      toast.error(error instanceof Error ? error.message : '重命名标签失败');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDeleteTag = async (tagName: string) => {
-    if (!confirm(`确定要删除标签 "${tagName}" 及其所有出现吗？此操作不可撤销。`)) {
+    if (
+      !confirm(`确定要删除标签 "${tagName}" 及其所有出现吗？此操作不可撤销。`)
+    ) {
       return;
     }
 
     try {
       setIsProcessing(true);
-      const response = await fetch("/api/user/tags/manage", {
-        method: "POST",
+      const response = await fetch('/api/user/tags/manage', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: "delete",
+          action: 'delete',
           oldTagName: tagName,
         }),
       });
@@ -111,11 +113,11 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
         fetchUserTags();
         onTagUpdated?.();
       } else {
-        throw new Error(data.error || "删除失败");
+        throw new Error(data.error || '删除失败');
       }
     } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast.error(error instanceof Error ? error.message : "删除标签失败");
+      console.error('Error deleting tag:', error);
+      toast.error(error instanceof Error ? error.message : '删除标签失败');
     } finally {
       setIsProcessing(false);
     }
@@ -128,7 +130,7 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
 
   const cancelEditing = () => {
     setEditingTag(null);
-    setNewTagName("");
+    setNewTagName('');
   };
 
   if (isLoading) {
@@ -163,7 +165,7 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
 
           {filteredTags.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? "没有找到匹配的标签" : "暂无标签"}
+              {searchTerm ? '没有找到匹配的标签' : '暂无标签'}
             </div>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -180,9 +182,9 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
                         className="flex-1 h-8 text-sm"
                         autoFocus
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === 'Enter') {
                             handleRenameTag(tag.value, newTagName);
-                          } else if (e.key === "Escape") {
+                          } else if (e.key === 'Escape') {
                             cancelEditing();
                           }
                         }}
@@ -206,13 +208,15 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
                   ) : (
                     <>
                       <div className="flex items-center gap-2">
-                        {tag.type === "private" ? (
+                        {tag.type === 'private' ? (
                           <Lock className="h-4 w-4 text-muted-foreground" />
                         ) : (
                           <Globe className="h-4 w-4 text-muted-foreground" />
                         )}
                         <span className="text-sm font-medium">{tag.value}</span>
-                        <span className="text-xs text-muted-foreground">({tag.type === "private" ? "私有" : "公开"})</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({tag.type === 'private' ? '私有' : '公开'})
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
@@ -240,7 +244,8 @@ const TagManager: React.FC<TagManagerProps> = ({ onTagUpdated }) => {
           )}
 
           <div className="text-xs text-muted-foreground">
-            共 {tags.length} 个标签 {searchTerm && `（筛选出 ${filteredTags.length} 个）`}
+            共 {tags.length} 个标签{' '}
+            {searchTerm && `（筛选出 ${filteredTags.length} 个）`}
           </div>
         </div>
       </CardContent>

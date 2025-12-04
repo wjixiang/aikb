@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2,
   Check,
@@ -11,10 +11,10 @@ import {
   Notebook,
   Languages,
   Heart,
-} from "lucide-react";
-import { toast } from "sonner";
-import MarkdownRenderer from "../wiki/DocumentDisplay";
-import { Skeleton } from "../ui/skeleton";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import MarkdownRenderer from '../wiki/DocumentDisplay';
+import { Skeleton } from '../ui/skeleton';
 
 interface TranslationPracticeProps {
   englishText: string;
@@ -32,12 +32,12 @@ export function TranslationPractice({
   onFavoriteChange,
 }: TranslationPracticeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [translation, setTranslation] = useState("");
-  const [correction, setCorrection] = useState("");
-  const [suggestion, setSuggestion] = useState("");
-  const [full_trans, setFullTrans] = useState("");
-  const [grammar, setGrammar] = useState("");
-  const [score_t, setScore] = useState("");
+  const [translation, setTranslation] = useState('');
+  const [correction, setCorrection] = useState('');
+  const [suggestion, setSuggestion] = useState('');
+  const [full_trans, setFullTrans] = useState('');
+  const [grammar, setGrammar] = useState('');
+  const [score_t, setScore] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
@@ -65,22 +65,22 @@ export function TranslationPractice({
         setIsFavorite(data.isFavorite);
       }
     } catch (error) {
-      console.error("Error checking favorite status:", error);
+      console.error('Error checking favorite status:', error);
     }
   };
 
   const toggleFavorite = async () => {
     if (!documentId || sentenceIndex === undefined) {
-      toast.error("请先保存文档才能收藏句子");
+      toast.error('请先保存文档才能收藏句子');
       return;
     }
 
     setIsTogglingFavorite(true);
     try {
-      const response = await fetch("/api/translation-practice/favorites", {
-        method: "POST",
+      const response = await fetch('/api/translation-practice/favorites', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           documentId,
@@ -92,14 +92,14 @@ export function TranslationPractice({
       const data = await response.json();
       if (data.success) {
         setIsFavorite(!isFavorite);
-        toast.success(isFavorite ? "已取消收藏" : "已收藏");
+        toast.success(isFavorite ? '已取消收藏' : '已收藏');
         onFavoriteChange?.();
       } else {
-        toast.error("操作失败，请重试");
+        toast.error('操作失败，请重试');
       }
     } catch (error) {
-      toast.error("操作失败，请重试");
-      console.error("Error toggling favorite:", error);
+      toast.error('操作失败，请重试');
+      console.error('Error toggling favorite:', error);
     } finally {
       setIsTogglingFavorite(false);
     }
@@ -107,23 +107,23 @@ export function TranslationPractice({
 
   const handleSubmit = async () => {
     if (!translation.trim()) {
-      toast.error("请输入翻译内容");
+      toast.error('请输入翻译内容');
       return;
     }
 
     // Reset all message states when submitting new translation
-    setCorrection("");
-    setSuggestion("");
-    setFullTrans("");
-    setGrammar("");
-    setScore("");
+    setCorrection('');
+    setSuggestion('');
+    setFullTrans('');
+    setGrammar('');
+    setScore('');
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/translation-correction", {
-        method: "POST",
+      const response = await fetch('/api/translation-correction', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           original: englishText,
@@ -135,12 +135,12 @@ export function TranslationPractice({
       });
 
       if (!response.ok) {
-        throw new Error("批改请求失败");
+        throw new Error('批改请求失败');
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
+      let buffer = '';
 
       if (reader) {
         while (true) {
@@ -148,13 +148,13 @@ export function TranslationPractice({
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
+            if (line.startsWith('data: ')) {
               const data = line.substring(6).trim();
-              if (data === "[DONE]") {
+              if (data === '[DONE]') {
                 break;
               }
 
@@ -174,15 +174,15 @@ export function TranslationPractice({
                 if (grammar_teach)
                   setGrammar((prev) => `${prev}${grammar_teach}`);
               } catch (e) {
-                console.error("Error parsing stream data:", e);
+                console.error('Error parsing stream data:', e);
               }
             }
           }
         }
       }
     } catch (error) {
-      toast.error("批改失败，请重试");
-      console.error("Translation correction error:", error);
+      toast.error('批改失败，请重试');
+      console.error('Translation correction error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -192,12 +192,12 @@ export function TranslationPractice({
     <div
       className={
         isExpanded
-          ? "border rounded-lg p-4 mb-4 shadow-sm"
-          : "inline hover:bg-muted"
+          ? 'border rounded-lg p-4 mb-4 shadow-sm'
+          : 'inline hover:bg-muted'
       }
     >
       <div
-        className={`cursor-pointer ${isExpanded ? "mb-2" : "inline"}`}
+        className={`cursor-pointer ${isExpanded ? 'mb-2' : 'inline'}`}
         onClick={toggleExpand}
       >
         {!isExpanded && (
@@ -218,14 +218,14 @@ export function TranslationPractice({
                 className="h-8 w-8 p-0"
               >
                 <Heart
-                  className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`}
+                  className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
                 />
               </Button>
             )}
           </div>
         )}
         <p
-          className={`font-medium ${isExpanded ? "text-base" : "inline"}`}
+          className={`font-medium ${isExpanded ? 'text-base' : 'inline'}`}
           onClick={(e) => isExpanded && e.stopPropagation()}
         >
           {englishText}
@@ -267,9 +267,9 @@ export function TranslationPractice({
                 disabled={isTogglingFavorite}
               >
                 <Heart
-                  className={`mr-2 h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
+                  className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
                 />
-                {isFavorite ? "已收藏" : "收藏"}
+                {isFavorite ? '已收藏' : '收藏'}
               </Button>
             )}
           </div>
@@ -280,7 +280,7 @@ export function TranslationPractice({
             <div className="p-2 rounded-lg space-y-4 gap-2">
               <div className="bg-muted p-2 rounded-md">
                 <h4 className="font-medium mb-2 bg-muted flex text-primary">
-                  {" "}
+                  {' '}
                   <ScrollText /> 批改结果 {score_t}/10分
                 </h4>
                 <MarkdownRenderer content={correction} />
@@ -288,7 +288,7 @@ export function TranslationPractice({
               {suggestion.length > 1 && (
                 <div className="bg-muted p-2 rounded-md">
                   <h4 className="font-medium mb-2 flex text-primary">
-                    {" "}
+                    {' '}
                     <LucideLightbulb /> 修改建议
                   </h4>
                   <MarkdownRenderer content={suggestion} />
@@ -298,7 +298,7 @@ export function TranslationPractice({
               {grammar.length > 1 && (
                 <div className="bg-muted p-2 rounded-md">
                   <h4 className="font-medium mb-2 flex text-primary">
-                    {" "}
+                    {' '}
                     <Notebook /> 语法详解
                   </h4>
                   <MarkdownRenderer content={grammar} />
@@ -308,7 +308,7 @@ export function TranslationPractice({
               {full_trans.length > 1 && (
                 <div className="bg-muted p-2 rounded-md">
                   <h4 className="font-medium mb-2 flex text-primary">
-                    {" "}
+                    {' '}
                     <Languages /> 完整翻译
                   </h4>
                   <MarkdownRenderer content={full_trans} />

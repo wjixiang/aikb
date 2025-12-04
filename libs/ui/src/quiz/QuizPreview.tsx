@@ -1,8 +1,8 @@
-import * as React from "react";
-import styled, { keyframes } from "styled-components";
-import { FaCheck, FaTimes } from "react-icons/fa";
+import * as React from 'react';
+import styled, { keyframes } from 'styled-components';
+import { FaCheck, FaTimes } from 'react-icons/fa';
 
-type status = "todo" | "correct" | "wrong";
+type status = 'todo' | 'correct' | 'wrong';
 
 interface QuizPreviewProps {
   id: number;
@@ -18,22 +18,22 @@ interface QuizPreviewProps {
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = (props) => {
-  const [status, setStatus] = React.useState<status>("todo");
+  const [status, setStatus] = React.useState<status>('todo');
 
   React.useEffect(() => {
     const quizState = props.getquizstate(props.id);
     if (quizState.submitted) {
-      setStatus(quizState.isCorrect ? "correct" : "wrong");
+      setStatus(quizState.isCorrect ? 'correct' : 'wrong');
     } else {
-      setStatus("todo");
+      setStatus('todo');
     }
   }, [props.id, props.getquizstate, props.updateTrigger]);
 
   const renderIcon = () => {
     switch (status) {
-      case "correct":
+      case 'correct':
         return <CorrectIcon />;
-      case "wrong":
+      case 'wrong':
         return <WrongIcon />;
       default:
         return null;
@@ -106,23 +106,23 @@ const PreviewBlock = styled.div<{ $status: status }>`
   border: 2px solid
     ${(props) => {
       switch (props.$status) {
-        case "todo":
-          return "rgba(150,150,150,0.5)";
-        case "correct":
-          return "#42B752";
-        case "wrong":
-          return "#EE222B";
+        case 'todo':
+          return 'rgba(150,150,150,0.5)';
+        case 'correct':
+          return '#42B752';
+        case 'wrong':
+          return '#EE222B';
       }
     }};
   border-radius: 10px;
   background-color: ${(props) => {
     switch (props.$status) {
-      case "todo":
-        return "transparent";
-      case "correct":
-        return "#42B752";
-      case "wrong":
-        return "#EE222B";
+      case 'todo':
+        return 'transparent';
+      case 'correct':
+        return '#42B752';
+      case 'wrong':
+        return '#EE222B';
     }
   }};
   display: flex;
@@ -131,12 +131,12 @@ const PreviewBlock = styled.div<{ $status: status }>`
   transition: all 0.3s ease;
   box-shadow: ${(props) => {
     switch (props.$status) {
-      case "todo":
-        return "none";
-      case "correct":
-        return "0 4px 6px rgba(66, 183, 82, 0.3)";
-      case "wrong":
-        return "0 4px 6px rgba(238, 34, 43, 0.3)";
+      case 'todo':
+        return 'none';
+      case 'correct':
+        return '0 4px 6px rgba(66, 183, 82, 0.3)';
+      case 'wrong':
+        return '0 4px 6px rgba(238, 34, 43, 0.3)';
     }
   }};
 
@@ -144,17 +144,17 @@ const PreviewBlock = styled.div<{ $status: status }>`
   &:hover {
     ${(props) => {
       switch (props.$status) {
-        case "todo":
+        case 'todo':
           return `  
                         border-color: rgba(100,100,100,0.8);  
                         transform: scale(1.05);  
                     `;
-        case "correct":
+        case 'correct':
           return `  
                         transform: scale(1.05);  
                         box-shadow: 0 6px 8px rgba(66, 183, 82, 0.4);  
                     `;
-        case "wrong":
+        case 'wrong':
           return `  
                         transform: scale(1.05);  
                         box-shadow: 0 6px 8px rgba(238, 34, 43, 0.4);  

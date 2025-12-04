@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, ReactNode } from "react";
-import { DocumentTab as Tab } from "./types";
+import React, { createContext, useContext, ReactNode } from 'react';
+import { DocumentTab as Tab } from './types';
 
 interface WorkSpaceContextType {
   tabs: Tab[];
@@ -32,7 +32,7 @@ export function WorkSpaceProvider({ children, value }: WorkSpaceProviderProps) {
 export function useWorkspace() {
   const context = useContext(WorkSpaceContext);
   if (!context) {
-    throw new Error("useWorkspace must be used within a WorkSpaceProvider");
+    throw new Error('useWorkspace must be used within a WorkSpaceProvider');
   }
   return context;
 }

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
-import { WorkSpace } from "@/components/wiki/workspace";
+import React from 'react';
+import { WorkSpace } from '@/components/wiki/workspace';
 
 export default function WikiTestPage() {
   return (

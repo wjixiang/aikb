@@ -1,20 +1,32 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Save, Plus, Loader2 } from "lucide-react";
-import { TagPreset } from "@/types/quizSelector.types";
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Trash2, Save, Plus, Loader2 } from 'lucide-react';
+import { TagPreset } from '@/types/quizSelector.types';
 
 interface TagPresetManagerProps {
   selectedTags: string[];
   excludeTags: string[];
-  tagFilterMode: "AND" | "OR";
-  excludeTagFilterMode: "AND" | "OR";
+  tagFilterMode: 'AND' | 'OR';
+  excludeTagFilterMode: 'AND' | 'OR';
   onPresetSelect: (preset: TagPreset) => void;
   className?: string;
 }
@@ -25,14 +37,14 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
   tagFilterMode,
   excludeTagFilterMode,
   onPresetSelect,
-  className = ""
+  className = '',
 }) => {
   const { data: session } = useSession();
   const [presets, setPresets] = useState<TagPreset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [newPresetName, setNewPresetName] = useState("");
-  const [newPresetDescription, setNewPresetDescription] = useState("");
+  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetDescription, setNewPresetDescription] = useState('');
 
   useEffect(() => {
     loadPresets();
@@ -40,16 +52,16 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
 
   const loadPresets = async () => {
     if (!session?.user?.email) return;
-    
+
     try {
       setIsLoading(true);
-      const response = await fetch("/api/user/tags/presets");
+      const response = await fetch('/api/user/tags/presets');
       if (response.ok) {
         const data = await response.json();
         setPresets(data);
       }
     } catch (error) {
-      console.error("Error loading presets:", error);
+      console.error('Error loading presets:', error);
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +69,7 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
 
   const savePreset = async () => {
     if (!session?.user?.email || !newPresetName.trim()) return;
-    
+
     try {
       setIsSaving(true);
       const presetData = {
@@ -66,24 +78,24 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
         includeTags: selectedTags,
         excludeTags: excludeTags,
         includeTagFilterMode: tagFilterMode,
-        excludeTagFilterMode: excludeTagFilterMode
+        excludeTagFilterMode: excludeTagFilterMode,
       };
 
-      const response = await fetch("/api/user/tags/presets", {
-        method: "POST",
+      const response = await fetch('/api/user/tags/presets', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(presetData),
       });
 
       if (response.ok) {
-        setNewPresetName("");
-        setNewPresetDescription("");
+        setNewPresetName('');
+        setNewPresetDescription('');
         loadPresets(); // 重新加载预设列表
       }
     } catch (error) {
-      console.error("Error saving preset:", error);
+      console.error('Error saving preset:', error);
     } finally {
       setIsSaving(false);
     }
@@ -91,17 +103,17 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
 
   const deletePreset = async (presetId: string) => {
     if (!session?.user?.email) return;
-    
+
     try {
       const response = await fetch(`/api/user/tags/presets?id=${presetId}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (response.ok) {
         loadPresets(); // 重新加载预设列表
       }
     } catch (error) {
-      console.error("Error deleting preset:", error);
+      console.error('Error deleting preset:', error);
     }
   };
 
@@ -123,9 +135,7 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
     <Card className={className}>
       <CardHeader>
         <CardTitle>标签预设管理</CardTitle>
-        <CardDescription>
-          保存和加载常用的标签筛选组合
-        </CardDescription>
+        <CardDescription>保存和加载常用的标签筛选组合</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 保存当前设置 */}
@@ -144,7 +154,11 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
               disabled={!newPresetName.trim() || isSaving}
               size="sm"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
               保存
             </Button>
           </div>
@@ -171,18 +185,22 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{preset.name}</span>
                       {preset.isDefault && (
-                        <span className="text-xs text-muted-foreground">(默认)</span>
+                        <span className="text-xs text-muted-foreground">
+                          (默认)
+                        </span>
                       )}
                     </div>
                     {preset.description && (
-                      <p className="text-sm text-muted-foreground">{preset.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {preset.description}
+                      </p>
                     )}
                     <div className="text-xs text-muted-foreground">
                       {preset.includeTags.length > 0 && (
-                        <span>包含: {preset.includeTags.join(", ")}</span>
+                        <span>包含: {preset.includeTags.join(', ')}</span>
                       )}
                       {preset.excludeTags.length > 0 && (
-                        <span> | 排除: {preset.excludeTags.join(", ")}</span>
+                        <span> | 排除: {preset.excludeTags.join(', ')}</span>
                       )}
                     </div>
                   </div>
@@ -198,7 +216,9 @@ export const TagPresetManager: React.FC<TagPresetManagerProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deletePreset(preset._id?.toString() || "")}
+                        onClick={() =>
+                          deletePreset(preset._id?.toString() || '')
+                        }
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { SimpleChat } from "@/components/SimpleChat";
-import { chatBackendServiceClient } from "@/lib/services/ChatBackendService.client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { SimpleChat } from '@/components/SimpleChat';
+import { chatBackendServiceClient } from '@/lib/services/ChatBackendService.client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 export default function ChatDemoPage() {
-  const [currentSessionId, setCurrentSessionId] = useState<string>("");
-  const [backendMessage, setBackendMessage] = useState("");
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
+  const [backendMessage, setBackendMessage] = useState('');
   const [isBackendSending, setIsBackendSending] = useState(false);
 
   const handleSessionCreate = (sessionId: string) => {
@@ -19,20 +19,20 @@ export default function ChatDemoPage() {
 
   const handleBackendSend = async () => {
     if (!backendMessage.trim() || !currentSessionId) {
-      toast.error("Please enter a message and ensure a chat session is active");
+      toast.error('Please enter a message and ensure a chat session is active');
       return;
     }
 
     setIsBackendSending(true);
     try {
       await chatBackendServiceClient.pushMessage(currentSessionId, {
-        type: "ai",
+        type: 'ai',
         content: backendMessage,
       });
-      setBackendMessage("");
-      toast.success("Message sent from backend");
+      setBackendMessage('');
+      toast.success('Message sent from backend');
     } catch (error) {
-      toast.error("Failed to send message from backend");
+      toast.error('Failed to send message from backend');
     } finally {
       setIsBackendSending(false);
     }
@@ -40,7 +40,7 @@ export default function ChatDemoPage() {
 
   const handleStartConversation = async () => {
     if (!currentSessionId) {
-      toast.error("Please start a chat session first");
+      toast.error('Please start a chat session first');
       return;
     }
 
@@ -55,18 +55,18 @@ export default function ChatDemoPage() {
       setTimeout(async () => {
         await chatBackendServiceClient.continueConversation(
           currentSessionId,
-          "Let me tell you more about what I can do...",
+          'Let me tell you more about what I can do...',
         );
       }, 2000);
 
       setTimeout(async () => {
         await chatBackendServiceClient.completeConversation(
           currentSessionId,
-          "I hope this demonstration was helpful!",
+          'I hope this demonstration was helpful!',
         );
       }, 4000);
     } catch (error) {
-      toast.error("Failed to start conversation");
+      toast.error('Failed to start conversation');
     } finally {
       setIsBackendSending(false);
     }
@@ -100,7 +100,7 @@ export default function ChatDemoPage() {
             <div>
               <label className="text-sm font-medium">Current Session ID:</label>
               <p className="text-sm text-muted-foreground font-mono break-all">
-                {currentSessionId || "No active session"}
+                {currentSessionId || 'No active session'}
               </p>
             </div>
 

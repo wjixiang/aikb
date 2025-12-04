@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -7,13 +7,13 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
-} from "react";
-import debounce from "lodash.debounce";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageItem } from "./MessageItem";
-import { Card } from "@/components/ui/card";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+} from 'react';
+import debounce from 'lodash.debounce';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { MessageItem } from './MessageItem';
+import { Card } from '@/components/ui/card';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
   Loader2,
   Send,
@@ -26,15 +26,15 @@ import {
   Trash2,
   SendHorizonal,
   ChevronRight,
-} from "lucide-react";
-import { toast } from "sonner";
-import { useChatRuntime } from "./ChatRuntime";
-import ChatInterface from "./ChatInterface";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useChatRuntime } from './ChatRuntime';
+import ChatInterface from './ChatInterface';
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from "@/components/ui/resizable";
+} from '@/components/ui/resizable';
 
 interface AssistantSidebarProps {
   children?: React.ReactNode;
@@ -58,7 +58,7 @@ const AssistantSidebarWithRef = forwardRef<
     }: AssistantSidebarProps,
     ref,
   ) => {
-    const [selectedSource] = useState("vault"); // 默认选择
+    const [selectedSource] = useState('vault'); // 默认选择
 
     const [isMobile, setIsMobile] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -77,12 +77,12 @@ const AssistantSidebarWithRef = forwardRef<
 
     // Debounced mobile detection
     useEffect(() => {
-      const mediaQuery = window.matchMedia("(max-width: 900px)");
+      const mediaQuery = window.matchMedia('(max-width: 900px)');
       const handleChange = () => {
         // Only update if the state actually changed
         if (mediaQuery.matches !== isMobile) {
           setIsMobile(mediaQuery.matches);
-          setIsMobileOpen(false)
+          setIsMobileOpen(false);
         }
       };
 
@@ -91,10 +91,10 @@ const AssistantSidebarWithRef = forwardRef<
 
       // Add debounced listener
       const debouncedHandleChange = debounce(handleChange, 200);
-      mediaQuery.addEventListener("change", debouncedHandleChange);
+      mediaQuery.addEventListener('change', debouncedHandleChange);
 
       return () =>
-        mediaQuery.removeEventListener("change", debouncedHandleChange);
+        mediaQuery.removeEventListener('change', debouncedHandleChange);
     }, [isMobile]);
 
     const {
@@ -233,7 +233,7 @@ const AssistantSidebarWithRef = forwardRef<
           <div
             ref={sidebarRef}
             className={`fixed top-0 right-0 h-full w-[90%] transition-transform duration-300 ease-in-out z-50 flex flex-col bg-background border-l ${
-              isMobileOpen ? "translate-x-0" : "translate-x-full"
+              isMobileOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
             onClick={stopPropagation}
             onTouchStart={handleTouchStart}
@@ -279,6 +279,6 @@ const AssistantSidebarWithRef = forwardRef<
   },
 );
 
-AssistantSidebarWithRef.displayName = "AssistantSidebarWithRef";
+AssistantSidebarWithRef.displayName = 'AssistantSidebarWithRef';
 
 export default AssistantSidebarWithRef;

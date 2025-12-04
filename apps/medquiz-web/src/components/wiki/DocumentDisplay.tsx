@@ -1,30 +1,30 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import ReactDOM from "react-dom/client";
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom/client';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import remarkRehype from "remark-rehype";
-import rehypeRaw from "rehype-raw";
-import rehypeHighlight from "rehype-highlight";
-import rehypeStringify from "rehype-stringify";
-import remarkWikiLink from "remark-wiki-link";
-import { visit } from "unist-util-visit";
-import type { Parent } from "unist";
-import { useRouter } from "next/navigation";
-import "./reference-hover-card.css";
-import "./wiki-links.css";
-import rehypeMermaid from "rehype-mermaid";
-import mermaid from "mermaid";
-import rehypeKatex from "rehype-katex";
-import rehypeCallouts from "rehype-callouts";
+} from '@/components/ui/hover-card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkRehype from 'remark-rehype';
+import rehypeRaw from 'rehype-raw';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeStringify from 'rehype-stringify';
+import remarkWikiLink from 'remark-wiki-link';
+import { visit } from 'unist-util-visit';
+import type { Parent } from 'unist';
+import { useRouter } from 'next/navigation';
+import './reference-hover-card.css';
+import './wiki-links.css';
+import rehypeMermaid from 'rehype-mermaid';
+import mermaid from 'mermaid';
+import rehypeKatex from 'rehype-katex';
+import rehypeCallouts from 'rehype-callouts';
 
 export type Reference = {
   title: string;
@@ -46,14 +46,14 @@ interface MarkdownRendererProps {
   fontColor?: string;
 }
 
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   mermaid.initialize({
     startOnLoad: true,
-    theme: "default",
-    securityLevel: "loose",
-    fontFamily: "monospace",
+    theme: 'default',
+    securityLevel: 'loose',
+    fontFamily: 'monospace',
   });
-  mermaid.init(undefined, ".mermaid");
+  mermaid.init(undefined, '.mermaid');
 }
 
 const contentCache = new Map<string, string>();
@@ -64,9 +64,9 @@ function remarkReferences(references: Reference[]) {
   return () => (tree: any) => {
     visit(
       tree,
-      "text",
+      'text',
       (
-        node: { type: "text"; value: string },
+        node: { type: 'text'; value: string },
         index: number | undefined,
         parent: Parent | undefined,
       ) => {
@@ -87,22 +87,22 @@ function remarkReferences(references: Reference[]) {
           if (refMatch) {
             const refId = refMatch[1];
             newNodes.push({
-              type: "element",
-              tagName: "span",
+              type: 'element',
+              tagName: 'span',
               properties: {
-                className: ["reference"],
-                "data-ref-id": String(Number(refId) - 1),
+                className: ['reference'],
+                'data-ref-id': String(Number(refId) - 1),
               },
               children: [
                 {
-                  type: "element",
-                  tagName: "span",
+                  type: 'element',
+                  tagName: 'span',
                   properties: {
-                    className: ["reference-number"],
+                    className: ['reference-number'],
                   },
                   children: [
                     {
-                      type: "text",
+                      type: 'text',
                       value: `[${refId}]`,
                     },
                   ],
@@ -110,7 +110,7 @@ function remarkReferences(references: Reference[]) {
               ],
             });
           } else {
-            newNodes.push({ type: "text", value: parts[i] });
+            newNodes.push({ type: 'text', value: parts[i] });
           }
         }
 
@@ -125,9 +125,9 @@ function remarkReferences(references: Reference[]) {
 
 function remarkEmbeds() {
   return () => (tree: any) => {
-    visit(tree, "text", (node: any, index: any, parent: any) => {
+    visit(tree, 'text', (node: any, index: any, parent: any) => {
       if (
-        typeof node.value !== "string" ||
+        typeof node.value !== 'string' ||
         !parent ||
         !Array.isArray(parent.children)
       ) {
@@ -152,7 +152,7 @@ function remarkEmbeds() {
 
           if (isImage) {
             newNodes.push({
-              type: "html",
+              type: 'html',
               value: `<div class="embed embed-image" data-embed-target="${embedTarget}" data-embed-type="image">
                 <div class="embed-content">
                   <div class="embed-loading">加载图片中...</div>
@@ -161,7 +161,7 @@ function remarkEmbeds() {
             });
           } else {
             newNodes.push({
-              type: "html",
+              type: 'html',
               value: `<div class="embed" data-embed-target="${embedTarget}" data-embed-type="document">
                 
                 <div class="embed-content">
@@ -171,12 +171,12 @@ function remarkEmbeds() {
             });
           }
         } else {
-          newNodes.push({ type: "text", value: parts[i] });
+          newNodes.push({ type: 'text', value: parts[i] });
         }
       }
 
       if (newNodes.length > 0) {
-        if (typeof index === "number" && parent) {
+        if (typeof index === 'number' && parent) {
           parent.children.splice(index, 1, ...newNodes);
           return index + newNodes.length - 1;
         }
@@ -188,9 +188,9 @@ function remarkEmbeds() {
 
 function remarkPDFCallouts() {
   return (tree: any) => {
-    visit(tree, "text", (node: any) => {
-      if (typeof node.value === "string") {
-        node.value = node.value.replace(/\[!PDF(\|[^\]]*)?\]/g, "[!note]");
+    visit(tree, 'text', (node: any) => {
+      if (typeof node.value === 'string') {
+        node.value = node.value.replace(/\[!PDF(\|[^\]]*)?\]/g, '[!note]');
       }
     });
   };
@@ -210,7 +210,7 @@ async function renderMarkdown(
 
   try {
     // Remove YAML frontmatter before processing
-    const cleanContent = content.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, "");
+    const cleanContent = content.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
 
     const result = isRenderRef
       ? await unified()
@@ -220,20 +220,20 @@ async function renderMarkdown(
           .use(remarkPDFCallouts)
           .use(remarkWikiLink, {
             pageResolver: (name: string) => [
-              encodeURIComponent(name.split("|")[0].trim()),
+              encodeURIComponent(name.split('|')[0].trim()),
             ],
             hrefTemplate: (permalink: string) =>
               useWorkspace
                 ? `workspace:${permalink}`
                 : `${basePath}/${permalink}`,
-            aliasDivider: "|",
+            aliasDivider: '|',
           })
           .use(remarkEmbeds())
           .use(remarkRehype, { allowDangerousHtml: true })
           .use(rehypeCallouts, {
             callouts: {
               PDF: {
-                title: "Note",
+                title: 'Note',
                 indicator:
                   '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
               },
@@ -253,20 +253,20 @@ async function renderMarkdown(
           .use(remarkPDFCallouts)
           .use(remarkWikiLink, {
             pageResolver: (name: string) => [
-              encodeURIComponent(name.split("|")[0].trim()),
+              encodeURIComponent(name.split('|')[0].trim()),
             ],
             hrefTemplate: (permalink: string) =>
               useWorkspace
                 ? `workspace:${permalink}`
                 : `${basePath}/${permalink}`,
-            aliasDivider: "|",
+            aliasDivider: '|',
           })
           .use(remarkEmbeds())
           .use(remarkRehype, { allowDangerousHtml: true })
           .use(rehypeCallouts, {
             callouts: {
               PDF: {
-                title: "Note",
+                title: 'Note',
                 indicator:
                   '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
               },
@@ -283,7 +283,7 @@ async function renderMarkdown(
     htmlCache.set(cacheKey, html);
     return html;
   } catch (error) {
-    console.error("渲染Markdown失败:", error);
+    console.error('渲染Markdown失败:', error);
     return `<div class="markdown-error">渲染失败: ${error instanceof Error ? error.message : String(error)}</div>`;
   }
 }
@@ -331,7 +331,7 @@ const YamlMetadata: React.FC<{ tags: string[]; aliases: string[] }> = ({
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
-  basePath = "/wiki",
+  basePath = '/wiki',
   embedDepth = 0,
   references,
   onOpenDocument,
@@ -339,7 +339,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   isRenderRef = true,
   fontColor,
 }) => {
-  const [html, setHtml] = useState<string>("");
+  const [html, setHtml] = useState<string>('');
   const [yamlData, setYamlData] = useState<{
     tags: string[];
     aliases: string[];
@@ -379,7 +379,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         let searchPath = documentPath.trim();
 
         // Remove .md extension if present
-        if (searchPath.endsWith(".md")) {
+        if (searchPath.endsWith('.md')) {
           searchPath = searchPath.slice(0, -3);
         }
 
@@ -387,7 +387,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         const searchPatterns = [
           searchPath, // exact match
           `${searchPath}.md`, // with extension
-          searchPath.split("/").pop() || searchPath, // just filename
+          searchPath.split('/').pop() || searchPath, // just filename
         ];
 
         // Remove duplicates
@@ -410,15 +410,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             const hasExactMatch = data.results.some(
               (doc: { path: string; title?: string }) => {
                 const docPath = doc.path.toLowerCase();
-                const docTitle = (doc.title || "").toLowerCase();
+                const docTitle = (doc.title || '').toLowerCase();
                 const docFilename =
-                  doc.path.split("/").pop()?.toLowerCase() || "";
+                  doc.path.split('/').pop()?.toLowerCase() || '';
 
                 return (
                   docPath.includes(normalizedTarget) ||
                   docTitle.includes(normalizedTarget) ||
-                  docFilename.replace(".md", "") ===
-                    normalizedTarget.replace(".md", "")
+                  docFilename.replace('.md', '') ===
+                    normalizedTarget.replace('.md', '')
                 );
               },
             );
@@ -433,7 +433,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         documentExistenceCache.set(documentPath, false);
         return false;
       } catch (error) {
-        console.error("检查文档存在性失败:", error);
+        console.error('检查文档存在性失败:', error);
         documentExistenceCache.set(documentPath, false);
         return false;
       }
@@ -448,7 +448,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         let searchName = documentName.trim();
 
         // Remove .md extension if present
-        if (searchName.endsWith(".md")) {
+        if (searchName.endsWith('.md')) {
           searchName = searchName.slice(0, -3);
         }
 
@@ -456,7 +456,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         const searchPatterns = [
           searchName,
           `${searchName}.md`,
-          searchName.split("/").pop() || searchName,
+          searchName.split('/').pop() || searchName,
         ];
 
         const uniquePatterns = [...new Set(searchPatterns)];
@@ -479,11 +479,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             const exactMatch = data.results.find(
               (doc: { path: string; title?: string }) => {
                 const docFilename = doc.path
-                  .split("/")
+                  .split('/')
                   .pop()
-                  ?.replace(".md", "")
+                  ?.replace('.md', '')
                   .toLowerCase();
-                return docFilename === normalizedTarget.replace(".md", "");
+                return docFilename === normalizedTarget.replace('.md', '');
               },
             );
 
@@ -498,7 +498,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
         return null;
       } catch (error) {
-        console.error("查找文档key失败:", error);
+        console.error('查找文档key失败:', error);
         return null;
       }
     },
@@ -508,19 +508,19 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const processWikiLinksWithExistence = useCallback(
     async (htmlContent: string): Promise<string> => {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlContent, "text/html");
+      const doc = parser.parseFromString(htmlContent, 'text/html');
       const wikiLinks = doc.querySelectorAll(
         'a[href^="/wiki/"], a[href^="workspace:"]',
       );
 
       const existenceChecks = Array.from(wikiLinks).map(async (link) => {
-        const href = link.getAttribute("href") || "";
-        let documentName = "";
+        const href = link.getAttribute('href') || '';
+        let documentName = '';
 
-        if (href.startsWith("workspace:")) {
-          documentName = href.replace("workspace:", "");
-        } else if (href.startsWith("/wiki/")) {
-          documentName = href.replace("/wiki/", "");
+        if (href.startsWith('workspace:')) {
+          documentName = href.replace('workspace:', '');
+        } else if (href.startsWith('/wiki/')) {
+          documentName = href.replace('/wiki/', '');
         }
 
         if (documentName) {
@@ -528,15 +528,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           const actualKey = await findDocumentKey(documentName);
           const exists = actualKey !== null;
 
-          link.classList.toggle("wiki-link-nonexistent", !exists);
-          link.setAttribute("data-exists", exists.toString());
+          link.classList.toggle('wiki-link-nonexistent', !exists);
+          link.setAttribute('data-exists', exists.toString());
 
           // Update href to use actual S3 key
           if (actualKey) {
-            if (href.startsWith("workspace:")) {
-              link.setAttribute("href", `workspace:${actualKey}`);
+            if (href.startsWith('workspace:')) {
+              link.setAttribute('href', `workspace:${actualKey}`);
             } else {
-              link.setAttribute("href", `/wiki/${actualKey}`);
+              link.setAttribute('href', `/wiki/${actualKey}`);
             }
           }
         }
@@ -570,15 +570,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       const yamlContent = yamlMatch[1];
-      const cleanContent = content.replace(yamlMatch[0], "");
+      const cleanContent = content.replace(yamlMatch[0], '');
 
       // Parse tags
       let tags: string[] = [];
       const tagsArrayMatch = yamlContent.match(/tags:\s*\[([^\]]+)\]/i);
       if (tagsArrayMatch) {
         tags = tagsArrayMatch[1]
-          .split(",")
-          .map((tag) => tag.trim().replace(/["']/g, ""));
+          .split(',')
+          .map((tag) => tag.trim().replace(/["']/g, ''));
       } else {
         const tagsListMatch = yamlContent.match(
           /tags:\s*\n([\s\S]*?)(?=\n\w+:|$)/i,
@@ -587,7 +587,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           const listContent = tagsListMatch[1];
           const tagMatches = listContent.matchAll(/-\s*([^\n]+)/g);
           tags = Array.from(tagMatches, (match) =>
-            match[1].trim().replace(/["']/g, ""),
+            match[1].trim().replace(/["']/g, ''),
           );
         }
       }
@@ -597,8 +597,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       const aliasesArrayMatch = yamlContent.match(/aliases:\s*\[([^\]]+)\]/i);
       if (aliasesArrayMatch) {
         aliases = aliasesArrayMatch[1]
-          .split(",")
-          .map((alias) => alias.trim().replace(/["']/g, ""));
+          .split(',')
+          .map((alias) => alias.trim().replace(/["']/g, ''));
       } else {
         const aliasesListMatch = yamlContent.match(
           /aliases:\s*\n([\s\S]*?)(?=\n\w+:|$)/i,
@@ -607,13 +607,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           const listContent = aliasesListMatch[1];
           const aliasMatches = listContent.matchAll(/-\s*([^\n]+)/g);
           aliases = Array.from(aliasMatches, (match) =>
-            match[1].trim().replace(/["']/g, ""),
+            match[1].trim().replace(/["']/g, ''),
           );
         }
       }
 
       const hasExcalidraw = tags.some(
-        (tag) => tag.toLowerCase() === "excalidraw",
+        (tag) => tag.toLowerCase() === 'excalidraw',
       );
       return {
         hasExcalidraw,
@@ -637,7 +637,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       try {
-        console.log("Fetching embedded content for:", title);
+        console.log('Fetching embedded content for:', title);
 
         // First, find the actual document key
         const actualKey = await findDocumentKey(title);
@@ -675,13 +675,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           let svgFileName = `${actualKey}.svg`;
 
           // Remove .md extension if present in the filename
-          svgFileName = svgFileName.replace(/\.md\.svg$/, ".svg");
+          svgFileName = svgFileName.replace(/\.md\.svg$/, '.svg');
 
           // Remove "Excalidraw/" prefix if present
-          svgFileName = svgFileName.replace(/^Excalidraw\//, "");
+          svgFileName = svgFileName.replace(/^Excalidraw\//, '');
 
           console.log(
-            "Excalidraw document detected, treating as image:",
+            'Excalidraw document detected, treating as image:',
             svgFileName,
           );
 
@@ -694,7 +694,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         // Regular markdown content processing
         const truncatedContent =
           cleanContent.length > 2000
-            ? cleanContent.slice(0, 2000) + "..."
+            ? cleanContent.slice(0, 2000) + '...'
             : cleanContent;
 
         const embeddedHtml = await renderMarkdown(
@@ -706,7 +706,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         );
 
         // Create badges HTML for tags and aliases
-        let badgesHtml = "";
+        let badgesHtml = '';
         if (tags.length > 0 || aliases.length > 0) {
           badgesHtml = '<div class="embedded-yaml-metadata mb-2">';
           if (aliases.length > 0) {
@@ -717,8 +717,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 (alias) =>
                   `<span class="inline-flex items-center justify-center rounded-md border px-1 py-0.5 text-xs font-medium mr-1 mb-1 bg-secondary text-secondary-foreground">${alias}</span>`,
               )
-              .join("");
-            badgesHtml += "</div>";
+              .join('');
+            badgesHtml += '</div>';
           }
           if (tags.length > 0) {
             badgesHtml +=
@@ -728,10 +728,10 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 (tag) =>
                   `<span class="inline-flex items-center justify-center rounded-md border px-1 py-0.5 text-xs font-medium mr-1 mb-1">${tag}</span>`,
               )
-              .join("");
-            badgesHtml += "</div>";
+              .join('');
+            badgesHtml += '</div>';
           }
-          badgesHtml += "</div>";
+          badgesHtml += '</div>';
         }
 
         const wrappedHtml = `
@@ -741,7 +741,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           ${
             cleanContent.length > 2000
               ? `<div class="embed-more-link"><a href="${basePath}/${encodeURIComponent(actualKey)}" class="embed-more">查看完整内容</a></div>`
-              : ""
+              : ''
           }
         </div>
       `;
@@ -749,7 +749,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         contentCache.set(title, wrappedHtml);
         return wrappedHtml;
       } catch (error) {
-        console.error("获取嵌入内容失败:", title, error);
+        console.error('获取嵌入内容失败:', title, error);
         return `<div class="embed-error">加载失败: ${error instanceof Error ? error.message : String(error)}</div>`;
       }
     },
@@ -774,15 +774,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       try {
-        console.log("=== DEBUG: Frontend Image Fetch ===");
-        console.log("Original image path:", imagePath);
+        console.log('=== DEBUG: Frontend Image Fetch ===');
+        console.log('Original image path:', imagePath);
 
         // Special handling for pasted images with exact format
         let cleanImagePath = imagePath.trim();
 
         // Handle pasted image format: "Pasted image 20241004181916.png"
-        if (cleanImagePath.includes("Pasted image")) {
-          console.log("Processing pasted image format");
+        if (cleanImagePath.includes('Pasted image')) {
+          console.log('Processing pasted image format');
 
           // Try exact match first
           const exactPaths = [
@@ -791,18 +791,18 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             `attachments/${cleanImagePath}`,
             cleanImagePath.replace(
               /Pasted image (\d{8})(\d{6})\.png/i,
-              "Pasted_image_$1_$2.png",
+              'Pasted_image_$1_$2.png',
             ),
             cleanImagePath.replace(
               /Pasted image (\d{8})(\d{6})\.png/i,
-              "Pasted-image-$1-$2.png",
+              'Pasted-image-$1-$2.png',
             ),
-            cleanImagePath.replace(/\s+/g, "_"),
-            cleanImagePath.replace(/\s+/g, "-"),
+            cleanImagePath.replace(/\s+/g, '_'),
+            cleanImagePath.replace(/\s+/g, '-'),
           ];
 
           for (const testPath of [...new Set(exactPaths)]) {
-            console.log("Trying image path:", testPath);
+            console.log('Trying image path:', testPath);
 
             try {
               const response = await fetch(
@@ -811,7 +811,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               if (response.ok) {
                 const data = await response.json();
                 if (data.url) {
-                  console.log("✅ Found image at:", testPath);
+                  console.log('✅ Found image at:', testPath);
                   const wrappedHtml = `
                   <div class="embedded-image">
                     <img src="${data.url}" alt="${imagePath}" class="embed-image" style="max-width: 100%; height: auto;" loading="lazy" onerror="this.onerror=null; this.src='/placeholder-image.svg'; console.error('Failed to load image:', '${imagePath}')" />
@@ -821,10 +821,10 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                   return wrappedHtml;
                 }
               } else {
-                console.log("❌ Failed for path:", testPath, response.status);
+                console.log('❌ Failed for path:', testPath, response.status);
               }
             } catch (err) {
-              console.log("❌ Error for path:", testPath, err);
+              console.log('❌ Error for path:', testPath, err);
             }
           }
 
@@ -832,22 +832,22 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           return `<div class="embed-error">
           <strong>图片加载失败: ${imagePath}</strong><br>
           已尝试以下路径:<br>
-          ${exactPaths.map((p) => `• ${p}`).join("<br>")}
+          ${exactPaths.map((p) => `• ${p}`).join('<br>')}
         </div>`;
         }
 
         // Handle regular image paths
-        let cleanPath = cleanImagePath.replace(/^\/+/, "");
+        let cleanPath = cleanImagePath.replace(/^\/+/, '');
 
         // Handle spaces and special characters
         cleanPath = decodeURIComponent(cleanPath);
 
         // Add images prefix if needed
-        if (!cleanPath.includes("/") && !cleanPath.startsWith("images/")) {
+        if (!cleanPath.includes('/') && !cleanPath.startsWith('images/')) {
           cleanPath = `images/${cleanPath}`;
         }
 
-        console.log("Final path for API:", cleanPath);
+        console.log('Final path for API:', cleanPath);
 
         const response = await fetch(
           `/api/knowledge/image?path=${encodeURIComponent(cleanPath)}`,
@@ -856,7 +856,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           const errorData = await response
             .json()
             .catch(() => ({ message: response.statusText }));
-          console.log("API error:", response.status, errorData);
+          console.log('API error:', response.status, errorData);
 
           throw new Error(
             `获取图片URL失败: ${response.status} ${errorData.message || response.statusText}`,
@@ -864,9 +864,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         }
 
         const data = await response.json();
-        console.log("✅ Successfully loaded image:", cleanPath);
+        console.log('✅ Successfully loaded image:', cleanPath);
 
-        const imageUrl = data.url || "/placeholder-image.svg";
+        const imageUrl = data.url || '/placeholder-image.svg';
 
         const wrappedHtml = `
         <div class="embedded-image">
@@ -877,7 +877,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         contentCache.set(imagePath, wrappedHtml);
         return wrappedHtml;
       } catch (error) {
-        console.error("❌ 获取嵌入图片失败:", imagePath, error);
+        console.error('❌ 获取嵌入图片失败:', imagePath, error);
         return `<div class="embed-error">
         <strong>加载图片失败: ${imagePath}</strong><br>
         错误: ${error instanceof Error ? error.message : String(error)}
@@ -888,22 +888,22 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
-    const katexLink = document.createElement("link");
-    katexLink.rel = "stylesheet";
+    const katexLink = document.createElement('link');
+    katexLink.rel = 'stylesheet';
     katexLink.href =
-      "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css";
+      'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
 
-    const highlightLink = document.createElement("link");
-    highlightLink.rel = "stylesheet";
+    const highlightLink = document.createElement('link');
+    highlightLink.rel = 'stylesheet';
     highlightLink.href =
-      "https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.css";
+      'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.css';
 
-    const calloutsLink = document.createElement("link");
-    calloutsLink.rel = "stylesheet";
+    const calloutsLink = document.createElement('link');
+    calloutsLink.rel = 'stylesheet';
     calloutsLink.href =
-      "https://cdn.jsdelivr.net/npm/rehype-callouts@2.0.2/dist/themes/obsidian/index.css";
+      'https://cdn.jsdelivr.net/npm/rehype-callouts@2.0.2/dist/themes/obsidian/index.css';
 
     document.head.appendChild(katexLink);
     document.head.appendChild(highlightLink);
@@ -917,17 +917,17 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !renderedRef.current) return;
+    if (typeof window === 'undefined' || !renderedRef.current) return;
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length) {
           mermaid.run({
-            querySelector: ".mermaid",
+            querySelector: '.mermaid',
             nodes: Array.from(mutation.addedNodes).filter(
               (node): node is HTMLElement =>
                 node.nodeType === 1 && // Node.ELEMENT_NODE
-                (node as HTMLElement).querySelector(".mermaid") !== null,
+                (node as HTMLElement).querySelector('.mermaid') !== null,
             ),
           });
         }
@@ -942,9 +942,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     });
 
     mermaid.run({
-      querySelector: ".mermaid",
+      querySelector: '.mermaid',
       nodes: Array.from(
-        renderedRef.current.querySelectorAll(".mermaid"),
+        renderedRef.current.querySelectorAll('.mermaid'),
       ) as HTMLElement[],
     });
 
@@ -953,7 +953,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
   useEffect(() => {
     if (content.length > 1000000) {
-      setError("内容过大，无法渲染");
+      setError('内容过大，无法渲染');
       return;
     }
 
@@ -983,7 +983,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         setHtml(renderedHtml);
       } catch (err) {
         if (!isMounted) return;
-        console.error("Markdown处理错误:", err);
+        console.error('Markdown处理错误:', err);
         setError(
           `渲染错误: ${err instanceof Error ? err.message : String(err)}`,
         );
@@ -1010,7 +1010,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     if (!renderedRef.current || !html) return;
 
     const loadEmbeds = async () => {
-      const embeds = renderedRef.current?.querySelectorAll(".embed");
+      const embeds = renderedRef.current?.querySelectorAll('.embed');
       if (!embeds || embeds.length === 0) return;
 
       console.log(`Found ${embeds.length} embeds to load`);
@@ -1018,8 +1018,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       const processedEmbeds = new Set();
       const MAX_CONCURRENT = 3;
       const queue = Array.from(embeds).filter((embed) => {
-        const contentEl = embed.querySelector(".embed-content");
-        const hasLoading = contentEl?.querySelector(".embed-loading") !== null;
+        const contentEl = embed.querySelector('.embed-content');
+        const hasLoading = contentEl?.querySelector('.embed-loading') !== null;
         return hasLoading;
       });
 
@@ -1030,9 +1030,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       const processQueue = async () => {
         while (queue.length > 0 && inProgress.size < MAX_CONCURRENT) {
           const embed = queue.shift() as Element;
-          const embedTarget = embed.getAttribute("data-embed-target");
-          const embedType = embed.getAttribute("data-embed-type");
-          const contentEl = embed.querySelector(".embed-content");
+          const embedTarget = embed.getAttribute('data-embed-target');
+          const embedType = embed.getAttribute('data-embed-type');
+          const contentEl = embed.querySelector('.embed-content');
 
           if (embedTarget && contentEl && !processedEmbeds.has(embedTarget)) {
             processedEmbeds.add(embedTarget);
@@ -1042,11 +1042,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               console.log(`Loading ${embedType} embed: ${embedTarget}`);
 
               const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error("加载超时")), 15000);
+                setTimeout(() => reject(new Error('加载超时')), 15000);
               });
 
               let renderedContent;
-              if (embedType === "image") {
+              if (embedType === 'image') {
                 renderedContent = await Promise.race([
                   fetchAndRenderEmbeddedImage(embedTarget),
                   timeoutPromise,
@@ -1062,11 +1062,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 contentEl.innerHTML = renderedContent as string;
 
                 // Process nested embeds
-                const nestedEmbeds = contentEl.querySelectorAll(".embed");
+                const nestedEmbeds = contentEl.querySelectorAll('.embed');
                 if (nestedEmbeds.length > 0 && embedDepth < maxEmbedDepth) {
                   nestedEmbeds.forEach((nestedEmbed) => {
                     const nestedTarget =
-                      nestedEmbed.getAttribute("data-embed-target");
+                      nestedEmbed.getAttribute('data-embed-target');
                     if (nestedTarget && !processedEmbeds.has(nestedTarget)) {
                       queue.push(nestedEmbed);
                     }
@@ -1083,7 +1083,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 error,
               );
               if (renderedRef.current && contentEl) {
-                contentEl.innerHTML = `<div class="embed-error">加载失败: ${error instanceof Error ? error.message : "未知错误"}</div>`;
+                contentEl.innerHTML = `<div class="embed-error">加载失败: ${error instanceof Error ? error.message : '未知错误'}</div>`;
               }
             } finally {
               inProgress.delete(embedTarget);
@@ -1095,13 +1095,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         }
 
         if (queue.length === 0 && inProgress.size === 0) {
-          console.log("All embeds loaded");
+          console.log('All embeds loaded');
         }
       };
 
       // Start processing
       processQueue().catch((error) => {
-        console.error("Embed loading error:", error);
+        console.error('Embed loading error:', error);
       });
     };
 
@@ -1124,11 +1124,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
-      const closestLink = target.closest("a");
+      const closestLink = target.closest('a');
 
       if (closestLink) {
-        const href = closestLink.getAttribute("href") || "";
-        const exists = closestLink.getAttribute("data-exists") !== "false";
+        const href = closestLink.getAttribute('href') || '';
+        const exists = closestLink.getAttribute('data-exists') !== 'false';
 
         // Block clicks on non-existent links
         if (!exists) {
@@ -1138,9 +1138,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         }
 
         // Handle workspace links
-        if (href.startsWith("workspace:")) {
+        if (href.startsWith('workspace:')) {
           e.preventDefault();
-          const documentPath = href.replace("workspace:", "");
+          const documentPath = href.replace('workspace:', '');
           if (onOpenDocument) {
             onOpenDocument(decodeURIComponent(documentPath));
           } else {
@@ -1151,11 +1151,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         }
 
         // Handle regular wiki links
-        if (!href.startsWith("http")) {
+        if (!href.startsWith('http')) {
           e.preventDefault();
           if (useWorkspace && onOpenDocument) {
             // Convert wiki path to workspace path
-            const documentPath = href.replace(basePath + "/", "");
+            const documentPath = href.replace(basePath + '/', '');
             onOpenDocument(decodeURIComponent(documentPath));
           } else {
             router.push(href);
@@ -1163,12 +1163,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         }
       }
 
-      const embedTitle = target.closest(".embed-title");
+      const embedTitle = target.closest('.embed-title');
       if (embedTitle) {
-        const embed = embedTitle.closest(".embed");
+        const embed = embedTitle.closest('.embed');
         if (embed) {
-          const content = embed.querySelector(".embed-content");
-          if (content) content.classList.toggle("collapsed");
+          const content = embed.querySelector('.embed-content');
+          if (content) content.classList.toggle('collapsed');
         }
       }
     },
@@ -1215,7 +1215,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             // This allows clicking the trigger to close the card
             if (
               !e.target ||
-              !(e.target as HTMLElement).closest(".reference-trigger")
+              !(e.target as HTMLElement).closest('.reference-trigger')
             ) {
               e.preventDefault();
             }
@@ -1238,15 +1238,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       roots = []; // Reset roots array
 
       const referencesElements =
-        renderedRef.current!.querySelectorAll(".reference");
+        renderedRef.current!.querySelectorAll('.reference');
       referencesElements.forEach((reference) => {
-        const refId = reference.getAttribute("data-ref-id");
+        const refId = reference.getAttribute('data-ref-id');
         if (refId && references[Number(refId)]) {
           const refContent = references[Number(refId)].content;
-          const triggerSpan = reference.querySelector(".reference-number");
+          const triggerSpan = reference.querySelector('.reference-number');
 
           if (triggerSpan) {
-            const wrapperDiv = document.createElement("span");
+            const wrapperDiv = document.createElement('span');
             triggerSpan.parentNode?.replaceChild(wrapperDiv, triggerSpan);
 
             const root = ReactDOM.createRoot(wrapperDiv); // Store the root
@@ -1271,7 +1271,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       let shouldReRender = false;
       for (const mutation of mutationsList) {
         if (
-          mutation.type === "childList" &&
+          mutation.type === 'childList' &&
           mutation.target === renderedRef.current
         ) {
           shouldReRender = true;
@@ -1319,7 +1319,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
   return (
     <div
-      className={`prose max-w-none ${className || ""}`}
+      className={`prose max-w-none ${className || ''}`}
       style={containerStyle}
       data-font-color={fontColor}
     >

@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { TranslationPractice } from "@/components/ai-coach/TranslationPractice";
-import { Loader2, Save, Heart } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { TranslationPractice } from '@/components/ai-coach/TranslationPractice';
+import { Loader2, Save, Heart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
+} from '@/components/ui/carousel';
 
 interface TranslationDocument {
   id: string;
@@ -41,8 +41,8 @@ interface FavoriteSentence {
 export default function TranslationPracticePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [article, setArticle] = useState("");
-  const [title, setTitle] = useState("");
+  const [article, setArticle] = useState('');
+  const [title, setTitle] = useState('');
   const [sentences, setSentences] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,9 +58,9 @@ export default function TranslationPracticePage() {
 
   // Redirect to signin if not authenticated
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === 'loading') return;
     if (!session) {
-      router.push("/auth/signin");
+      router.push('/auth/signin');
     }
   }, [session, status, router]);
 
@@ -76,27 +76,27 @@ export default function TranslationPracticePage() {
   const fetchDocuments = async () => {
     try {
       const response = await fetch(
-        "/api/translation-practice/upload?scope=private",
+        '/api/translation-practice/upload?scope=private',
       );
       const data = await response.json();
       if (data.success) {
         setSavedDocuments(data.documents);
       }
     } catch (error) {
-      console.error("Error fetching documents:", error);
+      console.error('Error fetching documents:', error);
     }
   };
 
   // Fetch favorite sentences
   const fetchFavoriteSentences = async () => {
     try {
-      const response = await fetch("/api/translation-practice/favorites/all");
+      const response = await fetch('/api/translation-practice/favorites/all');
       const data = await response.json();
       if (data.success) {
         setFavoriteSentences(data.favorites);
       }
     } catch (error) {
-      console.error("Error fetching favorite sentences:", error);
+      console.error('Error fetching favorite sentences:', error);
     }
   };
 
@@ -122,14 +122,14 @@ export default function TranslationPracticePage() {
       );
       const sentences = splitSentences.filter((s) => s.trim().length > 0);
 
-      const response = await fetch("/api/translation-practice/upload", {
-        method: "POST",
+      const response = await fetch('/api/translation-practice/upload', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           text: article,
-          title: title || "Untitled Translation Practice",
+          title: title || 'Untitled Translation Practice',
           isPublic: false, // Always private
           sentences: sentences,
         }),
@@ -138,13 +138,13 @@ export default function TranslationPracticePage() {
       const data = await response.json();
 
       if (data.success) {
-        alert("Translation practice saved successfully!");
+        alert('Translation practice saved successfully!');
         setSentences(sentences);
         // Create a new document object for the selected document
         const newDoc: TranslationDocument = {
           id: data.documentId,
-          userId: session?.user?.id || "",
-          title: title || "Untitled Translation Practice",
+          userId: session?.user?.id || '',
+          title: title || 'Untitled Translation Practice',
           text: article,
           sentences: sentences,
           isPublic: false,
@@ -156,11 +156,11 @@ export default function TranslationPracticePage() {
         // Refresh documents list
         fetchDocuments();
       } else {
-        alert("Error saving translation practice: " + data.error);
+        alert('Error saving translation practice: ' + data.error);
       }
     } catch (error) {
-      console.error("Error saving document:", error);
-      alert("Error saving translation practice");
+      console.error('Error saving document:', error);
+      alert('Error saving translation practice');
     } finally {
       setIsSaving(false);
     }
@@ -173,7 +173,7 @@ export default function TranslationPracticePage() {
     setSelectedDocument(doc);
   };
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="container mx-auto py-8 max-w-4xl">
         <div className="flex justify-center">
@@ -216,7 +216,7 @@ export default function TranslationPracticePage() {
                         {fav.documentTitle}
                       </h3>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {new Date(fav.createdAt).toLocaleDateString("zh-CN")}
+                        {new Date(fav.createdAt).toLocaleDateString('zh-CN')}
                       </p>
                       <p className="text-sm text-gray-700 mb-3 line-clamp-3">
                         {fav.sentence}
@@ -307,7 +307,7 @@ export default function TranslationPracticePage() {
                 onClick={() => setShowFavorites(!showFavorites)}
               >
                 <Heart className="mr-2 h-4 w-4" />
-                {showFavorites ? "隐藏收藏" : "显示收藏"} (
+                {showFavorites ? '隐藏收藏' : '显示收藏'} (
                 {favoriteSentences.length})
               </Button>
             </div>
@@ -316,7 +316,7 @@ export default function TranslationPracticePage() {
                 favorites={favoriteSentences}
                 onLoadSentence={(sentence, documentContent) => {
                   setArticle(documentContent);
-                  setTitle("收藏句子练习");
+                  setTitle('收藏句子练习');
                   setSentences([sentence]);
                   setSelectedDocument(null);
                 }}
@@ -379,7 +379,7 @@ function DocumentCarousel({ documents, onLoad }: DocumentCarouselProps) {
                   <div className="flex-1" onClick={() => onLoad(doc)}>
                     <h3 className="font-semibold text-lg mb-2">{doc.title}</h3>
                     <p className="text-sm text-muted-foreground mb-2">
-                      {new Date(doc.createdAt).toLocaleDateString("zh-CN")} ·{" "}
+                      {new Date(doc.createdAt).toLocaleDateString('zh-CN')} ·{' '}
                       {doc.sentenceCount} 句
                     </p>
                     <p className="text-sm text-gray-700 mb-3 line-clamp-3">

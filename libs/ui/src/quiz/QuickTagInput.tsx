@@ -1,12 +1,12 @@
-import React, { useState, useRef } from "react";
-import { Plus, X, Loader2, Hash } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "ui";
-import { useDebounce } from "./quiz-hooks/useDebounce";
-import { QuizTag } from "quiz-shared";
+import React, { useState, useRef } from 'react';
+import { Plus, X, Loader2, Hash } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from 'ui';
+import { useDebounce } from './quiz-hooks/useDebounce';
+import { QuizTag } from 'quiz-shared';
 
 interface Tag {
   value: string;
-  type?: "private" | "public";
+  type?: 'private' | 'public';
   createdAt?: Date;
   userId?: string;
   quizId?: string;
@@ -26,16 +26,16 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
   onTagAdded,
   onTagRemoved,
   existingTags = [],
-  placeholder = "添加标签...",
-  className = "",
+  placeholder = '添加标签...',
+  className = '',
 }) => {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
-  const [numberedText, setNumberedText] = useState("");
-  const hasFocusedRef = useRef(false)
+  const [numberedText, setNumberedText] = useState('');
+  const hasFocusedRef = useRef(false);
 
   // Debounce input value for suggestions
   const debouncedInputValue = useDebounce(inputValue, 300);
@@ -43,7 +43,7 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
   const handleFocus = () => {
     if (!hasFocusedRef.current) {
       hasFocusedRef.current = true;
-      fetchTagSuggestions(""); // 首次聚焦时获取所有标签建议
+      fetchTagSuggestions(''); // 首次聚焦时获取所有标签建议
     }
   };
 
@@ -54,11 +54,11 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
       if (response.ok) {
         const data: QuizTag[] = await response.json();
         // Extract just the tag values for suggestions
-        setSuggestions(data.map(tag => tag.value));
+        setSuggestions(data.map((tag) => tag.value));
         setShowSuggestions(true);
       }
     } catch (error) {
-      console.error("Error fetching tag suggestions:", error);
+      console.error('Error fetching tag suggestions:', error);
     } finally {
       setIsLoading(false);
     }
@@ -68,23 +68,25 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
     if (!inputValue.trim() || isAddingTag) return;
 
     const tagValue = inputValue.trim();
-    
+
     // Check if tag already exists
-    const tagExists = existingTags.some(tag => tag.value.toLowerCase() === tagValue.toLowerCase());
+    const tagExists = existingTags.some(
+      (tag) => tag.value.toLowerCase() === tagValue.toLowerCase(),
+    );
     if (tagExists) {
       if (onTagRemoved) {
-        onTagRemoved("该标签已存在");
+        onTagRemoved('该标签已存在');
       }
-      setInputValue("");
+      setInputValue('');
       return;
     }
 
     setIsAddingTag(true);
     try {
       const response = await fetch(`/api/quiz/${quizId}/tags`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ tag: tagValue }),
       });
@@ -92,29 +94,28 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
       if (response.ok) {
         const data = await response.json();
         const newTag = data.tag;
-        
+
         if (onTagAdded) {
           onTagAdded(newTag);
         }
-        
-        setInputValue("");
+
+        setInputValue('');
         setShowSuggestions(false);
       } else {
         const errorData = await response.json();
         if (onTagRemoved) {
-          onTagRemoved(errorData.error || "添加标签失败");
+          onTagRemoved(errorData.error || '添加标签失败');
         }
       }
     } catch (error) {
-      console.error("Error adding tag:", error);
+      console.error('Error adding tag:', error);
       if (onTagRemoved) {
-        onTagRemoved("网络错误，请稍后重试");
+        onTagRemoved('网络错误，请稍后重试');
       }
     } finally {
       setIsAddingTag(false);
     }
   };
-
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
@@ -138,20 +139,22 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
   };
 
   const handleClearNumberedText = () => {
-    setNumberedText("");
+    setNumberedText('');
   };
 
   return (
     <Popover open={showSuggestions} onOpenChange={setShowSuggestions}>
       <PopoverTrigger asChild>
         <div className={`flex items-center gap-1 ${className}`}>
-          <div className="relative w-40">   {/* 1. 相对定位容器 */}
-  <input
-    value={inputValue}
-    onChange={(e) => setInputValue(e.target.value)}
-    onFocus={handleFocus}
-    placeholder={placeholder}
-    className="
+          <div className="relative w-40">
+            {' '}
+            {/* 1. 相对定位容器 */}
+            <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={handleFocus}
+              placeholder={placeholder}
+              className="
       w-full            /* 撑满容器 */
       h-8               /* 统一高度，方便计算 */
       pr-8              /* 3. 右侧留 2rem(8*0.25=2rem) 给插槽，保证文字不重叠 */
@@ -164,17 +167,16 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
       transition-all duration-200
       placeholder:text-slate-400 dark:placeholder:text-slate-500
     "
-  />
-
-  {/* 2. 内部右侧插槽 */}
-  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-    {isLoading ? (
-      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-    ) : (
-      <button
-        onClick={handleAddTag}
-        disabled={isAddingTag || !inputValue.trim()}
-        className="
+            />
+            {/* 2. 内部右侧插槽 */}
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              ) : (
+                <button
+                  onClick={handleAddTag}
+                  disabled={isAddingTag || !inputValue.trim()}
+                  className="
           w-6 h-6
           rounded-md
           bg-gradient-to-r from-blue-500 to-blue-600
@@ -184,21 +186,19 @@ const QuickTagInput: React.FC<QuickTagInputProps> = ({
           disabled:opacity-50 disabled:cursor-not-allowed
           flex items-center justify-center
         "
-      >
-        {isAddingTag ? (
-          <Loader2 className="w-3 h-3 animate-spin" />
-        ) : (
-          <Plus className="w-3 h-3" />
-        )}
-      </button>
-    )}
-  </div>
-</div>
-          
-          
+                >
+                  {isAddingTag ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Plus className="w-3 h-3" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </PopoverTrigger>
-      
+
       {showSuggestions && suggestions.length > 0 && (
         <PopoverContent
           className="w-48 p-0 mt-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg shadow-lg"

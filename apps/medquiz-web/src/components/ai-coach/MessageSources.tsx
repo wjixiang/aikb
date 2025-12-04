@@ -1,23 +1,23 @@
-"use client";
-import { useEffect, useState } from "react";
-import { EmbedPDF } from "@simplepdf/react-embed-pdf";
+'use client';
+import { useEffect, useState } from 'react';
+import { EmbedPDF } from '@simplepdf/react-embed-pdf';
 
-import { Badge } from "@/components/ui/badge";
-import { Toggle } from "@/components/ui/toggle";
+import { Badge } from '@/components/ui/badge';
+import { Toggle } from '@/components/ui/toggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "../ui/button";
-import { Fullscreen, Shrink } from "lucide-react";
+} from '@/components/ui/accordion';
+import { Button } from '../ui/button';
+import { Fullscreen, Shrink } from 'lucide-react';
 
 interface MessageSourcesProps {
   sources: Array<{
@@ -58,10 +58,10 @@ export function MessageSources({
     calculateHeight();
 
     // Add resize listener
-    window.addEventListener("resize", calculateHeight);
+    window.addEventListener('resize', calculateHeight);
 
     // Cleanup
-    return () => window.removeEventListener("resize", calculateHeight);
+    return () => window.removeEventListener('resize', calculateHeight);
   }, []);
   // Extract reference indices from content if provided
   const refIndices = content
@@ -83,7 +83,7 @@ export function MessageSources({
           variant="outline"
           size="sm"
         >
-          {showAllSources ? "显示过滤来源" : "显示全部来源"}
+          {showAllSources ? '显示过滤来源' : '显示全部来源'}
         </Toggle>
       </div>
       <Accordion type="multiple" className="w-full">
@@ -122,10 +122,10 @@ export function MessageSources({
                 {/* {source.content} */}
                 {source.presigned_url ? (
                   <div
-                    className={isFullscreen ? "fixed inset-0 z-50" : "relative"}
+                    className={isFullscreen ? 'fixed inset-0 z-50' : 'relative'}
                   >
                     <div
-                      className={`${isFullscreen ? "" : "mt-4"} w-full overflow-hide ${isFullscreen ? "absolute left-0 top-0 w-full h-full bg-background" : ""}`}
+                      className={`${isFullscreen ? '' : 'mt-4'} w-full overflow-hide ${isFullscreen ? 'absolute left-0 top-0 w-full h-full bg-background' : ''}`}
                       onScroll={(e) => e.stopPropagation()}
                     >
                       <Button
@@ -140,8 +140,8 @@ export function MessageSources({
                         companyIdentifier="react-viewer"
                         mode="inline"
                         style={{
-                          width: "100%",
-                          height: isFullscreen ? "100vh" : `${pdfHeight}px`,
+                          width: '100%',
+                          height: isFullscreen ? '100vh' : `${pdfHeight}px`,
                           // maxWidth: isFullscreen ? '100vw' : undefined
                         }}
                         documentURL={source.presigned_url}

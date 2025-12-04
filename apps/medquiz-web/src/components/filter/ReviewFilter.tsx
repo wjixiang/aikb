@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
-import { ReviewMode } from "@/types/quizSelector.types";
-import { Slider } from "@/components/ui/slider";
-import { Calendar } from "@/components/ui/calendar";
+import { useState, useCallback } from 'react';
+import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ReviewMode } from '@/types/quizSelector.types';
+import { Slider } from '@/components/ui/slider';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const FilterRow = styled.div`
   display: flex;
@@ -56,11 +56,13 @@ type ReviewFilterProps = {
     consecutiveWrong: number;
     recency: number;
   };
-  setScoringWeights: React.Dispatch<React.SetStateAction<{
-    errorRate: number;
-    consecutiveWrong: number;
-    recency: number;
-  }>>;
+  setScoringWeights: React.Dispatch<
+    React.SetStateAction<{
+      errorRate: number;
+      consecutiveWrong: number;
+      recency: number;
+    }>
+  >;
   startDate: Date | undefined;
   setStartDate: (date: Date | undefined) => void;
   endDate: Date | undefined;
@@ -81,7 +83,7 @@ const ReviewFilter = ({
   stopPropagation,
 }: ReviewFilterProps) => {
   const updateScoringWeights = useCallback(
-    (key: "errorRate" | "consecutiveWrong" | "recency", newValue: number) => {
+    (key: 'errorRate' | 'consecutiveWrong' | 'recency', newValue: number) => {
       setScoringWeights((prev) => {
         const newWeights = { ...prev, [key]: newValue / 100 }; // Convert to 0-1 range
 
@@ -101,7 +103,7 @@ const ReviewFilter = ({
 
         // Identify the other two weights
         const otherKeys = (
-          ["errorRate", "consecutiveWrong", "recency"] as const
+          ['errorRate', 'consecutiveWrong', 'recency'] as const
         ).filter((k) => k !== key);
         const [key1, key2] = otherKeys;
 
@@ -150,19 +152,19 @@ const ReviewFilter = ({
         return newWeights;
       });
     },
-    [setScoringWeights]
+    [setScoringWeights],
   );
 
   return (
     <AnimatePresence mode="wait">
-      {reviewMode === "review" && (
+      {reviewMode === 'review' && (
         <motion.div
           key="reviewContent"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          style={{ width: "100%" }} // Ensure it takes full width
+          style={{ width: '100%' }} // Ensure it takes full width
         >
           <FilterRow onClick={stopPropagation}>
             <FilterLabel>日期范围</FilterLabel>
@@ -170,21 +172,20 @@ const ReviewFilter = ({
               <PopoverTrigger asChild>
                 <Button
                   id="date"
-                  variant={"outline"}
+                  variant={'outline'}
                   className={cn(
-                    "w-[300px] justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground",
+                    'w-[300px] justify-start text-left font-normal',
+                    !startDate && 'text-muted-foreground',
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {startDate ? (
                     endDate ? (
                       <>
-                        {format(startDate, "PPP")} -{" "}
-                        {format(endDate, "PPP")}
+                        {format(startDate, 'PPP')} - {format(endDate, 'PPP')}
                       </>
                     ) : (
-                      format(startDate, "PPP")
+                      format(startDate, 'PPP')
                     )
                   ) : (
                     <span>选择日期</span>
@@ -227,7 +228,7 @@ const ReviewFilter = ({
               min={0}
               step={1}
               onValueChange={(value) =>
-                updateScoringWeights("errorRate", value[0])
+                updateScoringWeights('errorRate', value[0])
               }
               className="w-[80%]"
             />
@@ -237,7 +238,7 @@ const ReviewFilter = ({
               onChange={(e) => {
                 const value = parseInt(e.target.value);
                 if (!isNaN(value) && value >= 0 && value <= 100) {
-                  updateScoringWeights("errorRate", value);
+                  updateScoringWeights('errorRate', value);
                 }
               }}
               onClick={stopPropagation}
@@ -255,7 +256,7 @@ const ReviewFilter = ({
               min={0}
               step={1}
               onValueChange={(value) =>
-                updateScoringWeights("consecutiveWrong", value[0])
+                updateScoringWeights('consecutiveWrong', value[0])
               }
               className="w-[80%]"
             />
@@ -265,7 +266,7 @@ const ReviewFilter = ({
               onChange={(e) => {
                 const value = parseInt(e.target.value);
                 if (!isNaN(value) && value >= 0 && value <= 100) {
-                  updateScoringWeights("consecutiveWrong", value);
+                  updateScoringWeights('consecutiveWrong', value);
                 }
               }}
               onClick={stopPropagation}
@@ -283,7 +284,7 @@ const ReviewFilter = ({
               min={0}
               step={1}
               onValueChange={(value) =>
-                updateScoringWeights("recency", value[0])
+                updateScoringWeights('recency', value[0])
               }
               className="w-[80%]"
             />
@@ -293,7 +294,7 @@ const ReviewFilter = ({
               onChange={(e) => {
                 const value = parseInt(e.target.value);
                 if (!isNaN(value) && value >= 0 && value <= 100) {
-                  updateScoringWeights("recency", value);
+                  updateScoringWeights('recency', value);
                 }
               }}
               onClick={stopPropagation}

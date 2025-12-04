@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useRef, useState, useEffect } from "react";
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { QuizContent } from "./QuizContent";
-import { Leaf } from "@/components/wiki/workspace/Leaf";
-import { TabContentProps, UnifiedTab, TabType } from "./UnifiedTabsTypes";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useRef, useState, useEffect } from 'react';
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { QuizContent } from './QuizContent';
+import { Leaf } from '@/components/wiki/workspace/Leaf';
+import { TabContentProps, UnifiedTab, TabType } from './UnifiedTabsTypes';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function UnifiedTabContent({
   tab,
@@ -35,7 +35,12 @@ export function UnifiedTabContent({
         <QuizContent
           quizzes={tab.quizzes || []}
           quizSetId={currentQuizSetId}
-          onAnswerChange={async (quizId: string, answer: any, silent?: boolean, quizzesForQuizSet?: QuizWithUserAnswer[]) => {
+          onAnswerChange={async (
+            quizId: string,
+            answer: any,
+            silent?: boolean,
+            quizzesForQuizSet?: QuizWithUserAnswer[],
+          ) => {
             if (onAnswerChange) {
               await onAnswerChange(quizId, answer, silent, quizzesForQuizSet);
             }
@@ -59,10 +64,10 @@ export function UnifiedTabContent({
   // 渲染文档内容
   if (tab.type === TabType.DOCUMENT) {
     return (
-      <div className={cn("h-full flex flex-col")}>
+      <div className={cn('h-full flex flex-col')}>
         <div className="flex-1 overflow-y-auto">
           <Leaf
-            documentPath={tab.path || ""}
+            documentPath={tab.path || ''}
             onContentChange={onContentChange}
             onTitleChange={onTitleChange}
             readOnly={false}
@@ -80,9 +85,7 @@ export function UnifiedTabContent({
         <h2 className="text-2xl font-semibold text-foreground mb-2">
           未知标签页类型
         </h2>
-        <p className="text-muted-foreground">
-          请选择有效的标签页类型
-        </p>
+        <p className="text-muted-foreground">请选择有效的标签页类型</p>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
-import ThemeProvider from "@/app/ThemeProvider";
-import { AuthProviders } from "./AuthProvider";
-import "./globals.css";
-import Navbar from "@/components/auth/NavBar";
-import { Toaster } from "@/components/ui/sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
+import ThemeProvider from '@/app/ThemeProvider';
+import { AuthProviders } from './AuthProvider';
+import './globals.css';
+import Navbar from '@/components/auth/NavBar';
+import { Toaster } from '@/components/ui/sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from '@/components/app-sidebar';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,14 +13,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { MobileSidebarTrigger } from "@/components/ui/mobile-sidebar-trigger";
+} from '@/components/ui/sidebar';
+import { MobileSidebarTrigger } from '@/components/ui/mobile-sidebar-trigger';
 
 export default function RootLayout({
   children,

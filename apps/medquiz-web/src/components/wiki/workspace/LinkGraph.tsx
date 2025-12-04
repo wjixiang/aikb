@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import * as d3 from "d3";
-import { DocumentTab } from "./types";
-import { cn } from "@/lib/utils";
-import "./link-graph.css";
+import React, { useEffect, useRef, useState } from 'react';
+import * as d3 from 'd3';
+import { DocumentTab } from './types';
+import { cn } from '@/lib/utils';
+import './link-graph.css';
 
 interface LinkGraphProps {
   activeTab: DocumentTab | null;
@@ -12,7 +12,7 @@ interface LinkGraphProps {
 interface LinkNode {
   id: string;
   title: string;
-  type: "current" | "forward" | "backward";
+  type: 'current' | 'forward' | 'backward';
   path: string;
   x?: number;
   y?: number;
@@ -23,7 +23,7 @@ interface LinkNode {
 interface LinkEdge {
   source: string;
   target: string;
-  type: "forward" | "backward";
+  type: 'forward' | 'backward';
 }
 
 interface GraphData {
@@ -33,54 +33,54 @@ interface GraphData {
 
 // 使用CSS变量定义的颜色
 const colors = {
-  current: "hsl(var(--primary))",
-  forward: "hsl(var(--h2))",
-  backward: "hsl(var(--h3))",
-  link: "hsl(var(--muted-foreground))",
-  text: "hsl(var(--foreground))",
-  background: "hsl(var(--background))",
-  border: "hsl(var(--border))",
+  current: 'hsl(var(--primary))',
+  forward: 'hsl(var(--h2))',
+  backward: 'hsl(var(--h3))',
+  link: 'hsl(var(--muted-foreground))',
+  text: 'hsl(var(--foreground))',
+  background: 'hsl(var(--background))',
+  border: 'hsl(var(--border))',
 };
 
 // 模拟数据用于测试
 const mockGraphData: GraphData = {
   nodes: [
     {
-      id: "current-doc",
-      title: "当前文档",
-      type: "current",
-      path: "current-doc",
+      id: 'current-doc',
+      title: '当前文档',
+      type: 'current',
+      path: 'current-doc',
     },
     {
-      id: "linked-doc-1",
-      title: "链接文档1",
-      type: "forward",
-      path: "linked-doc-1",
+      id: 'linked-doc-1',
+      title: '链接文档1',
+      type: 'forward',
+      path: 'linked-doc-1',
     },
     {
-      id: "linked-doc-2",
-      title: "链接文档2",
-      type: "forward",
-      path: "linked-doc-2",
+      id: 'linked-doc-2',
+      title: '链接文档2',
+      type: 'forward',
+      path: 'linked-doc-2',
     },
     {
-      id: "backlink-doc-1",
-      title: "引用本文档1",
-      type: "backward",
-      path: "backlink-doc-1",
+      id: 'backlink-doc-1',
+      title: '引用本文档1',
+      type: 'backward',
+      path: 'backlink-doc-1',
     },
     {
-      id: "backlink-doc-2",
-      title: "引用本文档2",
-      type: "backward",
-      path: "backlink-doc-2",
+      id: 'backlink-doc-2',
+      title: '引用本文档2',
+      type: 'backward',
+      path: 'backlink-doc-2',
     },
   ],
   links: [
-    { source: "current-doc", target: "linked-doc-1", type: "forward" },
-    { source: "current-doc", target: "linked-doc-2", type: "forward" },
-    { source: "backlink-doc-1", target: "current-doc", type: "backward" },
-    { source: "backlink-doc-2", target: "current-doc", type: "backward" },
+    { source: 'current-doc', target: 'linked-doc-1', type: 'forward' },
+    { source: 'current-doc', target: 'linked-doc-2', type: 'forward' },
+    { source: 'backlink-doc-1', target: 'current-doc', type: 'backward' },
+    { source: 'backlink-doc-2', target: 'current-doc', type: 'backward' },
   ],
 };
 
@@ -111,19 +111,19 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     };
 
     updateDimensions();
-    window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
   // 切换模拟数据/真实数据
   useEffect(() => {
     const handleToggleMock = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.shiftKey && event.key === "M") {
+      if (event.ctrlKey && event.shiftKey && event.key === 'M') {
         setUseMockData((prev) => !prev);
       }
     };
-    window.addEventListener("keydown", handleToggleMock);
-    return () => window.removeEventListener("keydown", handleToggleMock);
+    window.addEventListener('keydown', handleToggleMock);
+    return () => window.removeEventListener('keydown', handleToggleMock);
   }, []);
 
   // 修复API调用：使用正确的参数名和错误处理
@@ -188,8 +188,8 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
         const backwardData = await backwardResponse.json();
         await processLinkData(forwardData, backwardData, documentId);
       } catch (err) {
-        console.error("获取链接数据失败:", err);
-        setError(err instanceof Error ? err.message : "获取链接数据失败");
+        console.error('获取链接数据失败:', err);
+        setError(err instanceof Error ? err.message : '获取链接数据失败');
 
         // 如果API失败，使用模拟数据
         setTimeout(() => {
@@ -217,7 +217,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
       nodes.push({
         id: documentId,
         title: activeTab.title,
-        type: "current",
+        type: 'current',
         path: documentId,
       });
       processedNodes.add(documentId);
@@ -227,13 +227,13 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
         forwardData.links.forEach((link: any) => {
           const targetId = link.targetId || link.targetPath;
           const targetTitle =
-            link.targetTitle || targetId.split("/").pop() || "Untitled";
+            link.targetTitle || targetId.split('/').pop() || 'Untitled';
 
           if (!processedNodes.has(targetId)) {
             nodes.push({
               id: targetId,
               title: targetTitle,
-              type: "forward",
+              type: 'forward',
               path: targetId,
             });
             processedNodes.add(targetId);
@@ -241,7 +241,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
           links.push({
             source: documentId,
             target: targetId,
-            type: "forward",
+            type: 'forward',
           });
         });
       }
@@ -251,13 +251,13 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
         backwardData.links.forEach((link: any) => {
           const sourceId = link.sourceId || link.sourcePath;
           const sourceTitle =
-            link.sourceTitle || sourceId.split("/").pop() || "Untitled";
+            link.sourceTitle || sourceId.split('/').pop() || 'Untitled';
 
           if (!processedNodes.has(sourceId)) {
             nodes.push({
               id: sourceId,
               title: sourceTitle,
-              type: "backward",
+              type: 'backward',
               path: sourceId,
             });
             processedNodes.add(sourceId);
@@ -265,7 +265,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
           links.push({
             source: sourceId,
             target: documentId,
-            type: "backward",
+            type: 'backward',
           });
         });
       }
@@ -281,19 +281,19 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     if (!svgRef.current || graphData.nodes.length === 0) return;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+    svg.selectAll('*').remove();
 
     const { width, height } = dimensions;
 
     // Create a group for the graph
-    const g = svg.append("g");
+    const g = svg.append('g');
 
     // Create zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 4])
-      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        g.attr("transform", event.transform.toString());
+      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        g.attr('transform', event.transform.toString());
       });
 
     svg.call(zoom);
@@ -302,113 +302,113 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     const simulation = d3
       .forceSimulation<LinkNode>(graphData.nodes)
       .force(
-        "link",
+        'link',
         d3
           .forceLink<LinkNode, LinkEdge>(graphData.links)
           .id((d: LinkNode) => d.id)
           .distance(100)
           .strength(0.5),
       )
-      .force("charge", d3.forceManyBody().strength(-400))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(30));
+      .force('charge', d3.forceManyBody().strength(-400))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(30));
 
     // Create arrow markers
-    const defs = svg.append("defs");
+    const defs = svg.append('defs');
 
     // Forward arrow
     defs
-      .append("marker")
-      .attr("id", "arrow-forward")
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 20)
-      .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", colors.forward);
+      .append('marker')
+      .attr('id', 'arrow-forward')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 20)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', colors.forward);
 
     // Backward arrow
     defs
-      .append("marker")
-      .attr("id", "arrow-backward")
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 20)
-      .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", colors.backward);
+      .append('marker')
+      .attr('id', 'arrow-backward')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 20)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', colors.backward);
 
     // Create links
     const link = g
-      .append("g")
-      .attr("class", "link-graph-links")
-      .selectAll("line")
+      .append('g')
+      .attr('class', 'link-graph-links')
+      .selectAll('line')
       .data(graphData.links)
       .enter()
-      .append("line")
-      .attr("class", "link-graph-link")
-      .attr("stroke", (d: LinkEdge) =>
-        d.type === "forward" ? colors.forward : colors.backward,
+      .append('line')
+      .attr('class', 'link-graph-link')
+      .attr('stroke', (d: LinkEdge) =>
+        d.type === 'forward' ? colors.forward : colors.backward,
       )
-      .attr("stroke-width", 2)
-      .attr("stroke-opacity", 0.7)
-      .attr("marker-end", (d: LinkEdge) => `url(#arrow-${d.type})`);
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.7)
+      .attr('marker-end', (d: LinkEdge) => `url(#arrow-${d.type})`);
 
     // Create nodes
     const node = g
-      .append("g")
-      .attr("class", "link-graph-nodes")
-      .selectAll("g")
+      .append('g')
+      .attr('class', 'link-graph-nodes')
+      .selectAll('g')
       .data(graphData.nodes)
       .enter()
-      .append("g")
-      .attr("class", "link-graph-node");
+      .append('g')
+      .attr('class', 'link-graph-node');
 
     // Add circles to nodes
     node
-      .append("circle")
-      .attr("r", (d: LinkNode) => (d.type === "current" ? 15 : 10))
-      .attr("fill", (d: LinkNode) => {
+      .append('circle')
+      .attr('r', (d: LinkNode) => (d.type === 'current' ? 15 : 10))
+      .attr('fill', (d: LinkNode) => {
         switch (d.type) {
-          case "current":
+          case 'current':
             return colors.current;
-          case "forward":
+          case 'forward':
             return colors.forward;
-          case "backward":
+          case 'backward':
             return colors.backward;
           default:
             return colors.text;
         }
       })
-      .attr("stroke", "hsl(var(--background))")
-      .attr("stroke-width", 2)
-      .attr("stroke-opacity", 0.8);
+      .attr('stroke', 'hsl(var(--background))')
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.8);
 
     // Add labels to nodes
     node
-      .append("text")
-      .attr("class", "link-graph-label")
+      .append('text')
+      .attr('class', 'link-graph-label')
       .text((d: LinkNode) =>
-        d.title.length > 12 ? d.title.substring(0, 12) + "..." : d.title,
+        d.title.length > 12 ? d.title.substring(0, 12) + '...' : d.title,
       )
-      .attr("dy", -20)
-      .attr("fill", "hsl(var(--foreground))")
-      .attr("font-size", "10px")
-      .attr("font-family", "sans-serif")
-      .attr("text-anchor", "middle");
+      .attr('dy', -20)
+      .attr('fill', 'hsl(var(--foreground))')
+      .attr('font-size', '10px')
+      .attr('font-family', 'sans-serif')
+      .attr('text-anchor', 'middle');
 
     // Add drag behavior
     node.call(
       d3
         .drag<SVGGElement, LinkNode>()
         .on(
-          "start",
+          'start',
           (
             event: d3.D3DragEvent<SVGGElement, LinkNode, LinkNode>,
             d: LinkNode,
@@ -419,7 +419,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
           },
         )
         .on(
-          "drag",
+          'drag',
           (
             event: d3.D3DragEvent<SVGGElement, LinkNode, LinkNode>,
             d: LinkNode,
@@ -429,7 +429,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
           },
         )
         .on(
-          "end",
+          'end',
           (
             event: d3.D3DragEvent<SVGGElement, LinkNode, LinkNode>,
             d: LinkNode,
@@ -442,21 +442,21 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     );
 
     // Update positions on simulation tick
-    simulation.on("tick", () => {
+    simulation.on('tick', () => {
       link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
+        .attr('x1', (d: any) => d.source.x)
+        .attr('y1', (d: any) => d.source.y)
+        .attr('x2', (d: any) => d.target.x)
+        .attr('y2', (d: any) => d.target.y);
 
-      node.attr("transform", (d: LinkNode) => `translate(${d.x},${d.y})`);
+      node.attr('transform', (d: LinkNode) => `translate(${d.x},${d.y})`);
     });
 
     // Add click handlers
-    node.on("click", (event: MouseEvent, d: LinkNode) => {
-      if (d.type !== "current") {
+    node.on('click', (event: MouseEvent, d: LinkNode) => {
+      if (d.type !== 'current') {
         // Dispatch custom event for opening document
-        const openEvent = new CustomEvent("openDocument", {
+        const openEvent = new CustomEvent('openDocument', {
           detail: { path: d.path, title: d.title },
         });
         window.dispatchEvent(openEvent);
@@ -466,41 +466,41 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     // Add hover effects
     node
       .on(
-        "mouseover",
+        'mouseover',
         function (this: SVGGElement, event: MouseEvent, d: LinkNode) {
           d3.select(this)
-            .select("circle")
+            .select('circle')
             .transition()
             .duration(200)
-            .attr("r", d.type === "current" ? 18 : 12)
-            .attr("stroke-width", 3);
+            .attr('r', d.type === 'current' ? 18 : 12)
+            .attr('stroke-width', 3);
 
           // Highlight connected links
           link
             .transition()
             .duration(200)
-            .attr("stroke-opacity", (l: LinkEdge) =>
+            .attr('stroke-opacity', (l: LinkEdge) =>
               l.source === d.id || l.target === d.id ? 1 : 0.2,
             );
         },
       )
       .on(
-        "mouseout",
+        'mouseout',
         function (this: SVGGElement, event: MouseEvent, d: LinkNode) {
           d3.select(this)
-            .select("circle")
+            .select('circle')
             .transition()
             .duration(200)
-            .attr("r", d.type === "current" ? 15 : 10)
-            .attr("stroke-width", 2);
+            .attr('r', d.type === 'current' ? 15 : 10)
+            .attr('stroke-width', 2);
 
           // Reset link opacity
-          link.transition().duration(200).attr("stroke-opacity", 0.7);
+          link.transition().duration(200).attr('stroke-opacity', 0.7);
         },
       );
 
     // Add tooltips
-    node.append("title").text((d: LinkNode) => `${d.title}\n${d.path}`);
+    node.append('title').text((d: LinkNode) => `${d.title}\n${d.path}`);
 
     // Initial zoom to fit
     const initialTransform = d3.zoomIdentity
@@ -519,7 +519,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     return (
       <div
         className={cn(
-          "flex items-center justify-center h-full bg-muted/10",
+          'flex items-center justify-center h-full bg-muted/10',
           className,
         )}
       >
@@ -539,7 +539,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
     return (
       <div
         className={cn(
-          "flex items-center justify-center h-full bg-muted/10",
+          'flex items-center justify-center h-full bg-muted/10',
           className,
         )}
       >
@@ -549,7 +549,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col h-full bg-muted/10", className)}>
+    <div className={cn('flex flex-col h-full bg-muted/10', className)}>
       <div className="p-3 border-b bg-background">
         <div className="flex justify-between items-center">
           <div>
@@ -565,7 +565,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
             className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded"
             title="按 Ctrl+Shift+M 切换模拟数据"
           >
-            {useMockData ? "真实数据" : "模拟数据"}
+            {useMockData ? '真实数据' : '模拟数据'}
           </button>
         </div>
       </div>
@@ -574,7 +574,7 @@ export const LinkGraph: React.FC<LinkGraphProps> = ({
         <svg
           ref={svgRef}
           className="w-full h-full link-graph-svg"
-          style={{ cursor: "move" }}
+          style={{ cursor: 'move' }}
         />
 
         {graphData.nodes.length === 1 && (

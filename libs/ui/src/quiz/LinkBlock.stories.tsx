@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { LinkBlock } from "./LinkBlock";
+import { LinkBlock } from './LinkBlock';
 
 const meta = {
   component: LinkBlock,
@@ -13,8 +13,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     index: 1,
-    linkId: "abc",
-    linkName: "ABC",
-    
+    linkId: 'abc',
+    linkName: 'ABC',
   },
 };

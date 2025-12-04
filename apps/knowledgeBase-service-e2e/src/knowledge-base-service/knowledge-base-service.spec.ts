@@ -32,9 +32,9 @@ describe('Knowledge Base Service E2E Tests', () => {
           description: 'test abstract description',
         },
       };
-      
+
       const res = await axios.post(`/api/entities`, data);
-      
+
       expect(res.status).toBe(201);
       expect(res.data).toHaveProperty('id');
       // Check if nomenclature exists and has the expected structure
@@ -50,13 +50,13 @@ describe('Knowledge Base Service E2E Tests', () => {
       if (res.data.abstract) {
         expect(res.data.abstract.description).toBe('test abstract description');
       }
-      
+
       entityId = res.data.id;
     });
 
     it('should get an entity by ID', async () => {
       const res = await axios.get(`/api/entities/${entityId}`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(entityId);
       // Check if nomenclature exists
@@ -85,7 +85,7 @@ describe('Knowledge Base Service E2E Tests', () => {
       await axios.post(`/api/entities`, data);
 
       const res = await axios.get(`/api/entities?limit=10&offset=0`);
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       expect(res.data.length).toBeGreaterThan(0);
@@ -103,9 +103,9 @@ describe('Knowledge Base Service E2E Tests', () => {
           description: 'updated abstract',
         },
       };
-      
+
       const res = await axios.put(`/api/entities/${entityId}`, updateData);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(entityId);
       if (res.data.nomenclature && res.data.nomenclature.length > 0) {
@@ -118,7 +118,7 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should check if an entity exists', async () => {
       const res = await axios.get(`/api/entities/${entityId}/exists`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.exists).toBe(true);
     });
@@ -130,9 +130,9 @@ describe('Knowledge Base Service E2E Tests', () => {
         limit: 10,
         offset: 0,
       };
-      
+
       const res = await axios.post(`/api/entities/search`, searchData);
-      
+
       // Accept both 200 and 201 as valid status codes
       expect([200, 201]).toContain(res.status);
       expect(Array.isArray(res.data)).toBe(true);
@@ -158,9 +158,9 @@ describe('Knowledge Base Service E2E Tests', () => {
           },
         ],
       };
-      
+
       const res = await axios.post(`/api/entities/batch`, batchData);
-      
+
       // Accept both 200 and 201 as valid status codes
       expect([200, 201]).toContain(res.status);
       // The batch response structure is different than expected
@@ -171,21 +171,27 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should delete an entity', async () => {
       const res = await axios.delete(`/api/entities/${entityId}`);
-      
+
       expect(res.status).toBe(200);
-      
+
       // Verify entity is deleted
       try {
         const res = await axios.get(`/api/entities/${entityId}`);
         // If we get a response, check if it's empty or has an error
-        if (res.data === null || res.data === undefined || Object.keys(res.data).length === 0) {
+        if (
+          res.data === null ||
+          res.data === undefined ||
+          Object.keys(res.data).length === 0
+        ) {
           expect(true).toBe(true); // Entity is effectively deleted
         } else {
           fail('Entity should have been deleted');
         }
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
 
@@ -193,14 +199,20 @@ describe('Knowledge Base Service E2E Tests', () => {
       try {
         const res = await axios.get(`/api/entities/non-existent-id`);
         // If we get a response, check if it's empty or has an error
-        if (res.data === null || res.data === undefined || Object.keys(res.data).length === 0) {
+        if (
+          res.data === null ||
+          res.data === undefined ||
+          Object.keys(res.data).length === 0
+        ) {
           expect(true).toBe(true); // Entity doesn't exist
         } else {
           fail('Non-existent entity should return empty or error');
         }
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
   });
@@ -215,22 +227,22 @@ describe('Knowledge Base Service E2E Tests', () => {
           tags: ['tag1', 'tag2'],
         },
       };
-      
+
       const res = await axios.post(`/api/vertices`, data);
-      
+
       expect(res.status).toBe(201);
       expect(res.data).toHaveProperty('id');
       expect(res.data.content).toBe('test vertex content');
       expect(res.data.type).toBe('concept');
       expect(res.data.metadata.category).toBe('test');
       expect(res.data.metadata.tags).toEqual(['tag1', 'tag2']);
-      
+
       vertexId = res.data.id;
     });
 
     it('should get a vertex by ID', async () => {
       const res = await axios.get(`/api/vertices/${vertexId}`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(vertexId);
       expect(res.data.content).toBe('test vertex content');
@@ -246,7 +258,7 @@ describe('Knowledge Base Service E2E Tests', () => {
       await axios.post(`/api/vertices`, data);
 
       const res = await axios.get(`/api/vertices?limit=10&offset=0`);
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       // Don't assert length > 0 as the database might be empty
@@ -260,9 +272,9 @@ describe('Knowledge Base Service E2E Tests', () => {
           category: 'updated',
         },
       };
-      
+
       const res = await axios.put(`/api/vertices/${vertexId}`, updateData);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(vertexId);
       expect(res.data.content).toBe('updated vertex content');
@@ -272,28 +284,34 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should check if a vertex exists', async () => {
       const res = await axios.get(`/api/vertices/${vertexId}/exists`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.exists).toBe(true);
     });
 
     it('should delete a vertex', async () => {
       const res = await axios.delete(`/api/vertices/${vertexId}`);
-      
+
       expect(res.status).toBe(200);
-      
+
       // Verify vertex is deleted
       try {
         const res = await axios.get(`/api/vertices/${vertexId}`);
         // If we get a response, check if it's empty or has an error
-        if (res.data === null || res.data === undefined || Object.keys(res.data).length === 0) {
+        if (
+          res.data === null ||
+          res.data === undefined ||
+          Object.keys(res.data).length === 0
+        ) {
           expect(true).toBe(true); // Vertex is effectively deleted
         } else {
           fail('Vertex should have been deleted');
         }
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
   });
@@ -312,10 +330,10 @@ describe('Knowledge Base Service E2E Tests', () => {
         content: 'vertex 2 for edge',
         type: 'attribute',
       };
-      
+
       const v1Res = await axios.post(`/api/vertices`, vertex1Data);
       const v2Res = await axios.post(`/api/vertices`, vertex2Data);
-      
+
       vertex1Id = v1Res.data.id;
       vertex2Id = v2Res.data.id;
     });
@@ -326,21 +344,21 @@ describe('Knowledge Base Service E2E Tests', () => {
         out: vertex2Id,
         type: 'start',
       };
-      
+
       const res = await axios.post(`/api/edges`, data);
-      
+
       expect(res.status).toBe(201);
       expect(res.data).toHaveProperty('id');
       expect(res.data.in).toBe(vertex1Id);
       expect(res.data.out).toBe(vertex2Id);
       expect(res.data.type).toBe('start');
-      
+
       edgeId = res.data.id;
     });
 
     it('should get an edge by ID', async () => {
       const res = await axios.get(`/api/edges/${edgeId}`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(edgeId);
       expect(res.data.in).toBe(vertex1Id);
@@ -350,7 +368,7 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should get all edges with pagination', async () => {
       const res = await axios.get(`/api/edges?limit=10&offset=0`);
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       // Don't assert length > 0 as the database might be empty
@@ -358,15 +376,17 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should find edges by type', async () => {
       const res = await axios.get(`/api/edges/by-type/start?limit=10&offset=0`);
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       // Don't assert type as the array might be empty
     });
 
     it('should find edges by nodes', async () => {
-      const res = await axios.get(`/api/edges/by-nodes/${vertex1Id}/${vertex2Id}`);
-      
+      const res = await axios.get(
+        `/api/edges/by-nodes/${vertex1Id}/${vertex2Id}`,
+      );
+
       expect(res.status).toBe(200);
       expect(res.data).toHaveProperty('edges');
       expect(res.data).toHaveProperty('total');
@@ -377,9 +397,9 @@ describe('Knowledge Base Service E2E Tests', () => {
       const updateData = {
         type: 'middle',
       };
-      
+
       const res = await axios.put(`/api/edges/${edgeId}`, updateData);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(edgeId);
       expect(res.data.type).toBe('middle');
@@ -387,28 +407,34 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should check if an edge exists', async () => {
       const res = await axios.get(`/api/edges/${edgeId}/exists`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.exists).toBe(true);
     });
 
     it('should delete an edge', async () => {
       const res = await axios.delete(`/api/edges/${edgeId}`);
-      
+
       expect(res.status).toBe(200);
-      
+
       // Verify edge is deleted
       try {
         const res = await axios.get(`/api/edges/${edgeId}`);
         // If we get a response, check if it's empty or has an error
-        if (res.data === null || res.data === undefined || Object.keys(res.data).length === 0) {
+        if (
+          res.data === null ||
+          res.data === undefined ||
+          Object.keys(res.data).length === 0
+        ) {
           expect(true).toBe(true); // Edge is effectively deleted
         } else {
           fail('Edge should have been deleted');
         }
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
 
@@ -428,19 +454,19 @@ describe('Knowledge Base Service E2E Tests', () => {
       const data: CreatePropertyDto = {
         content: 'test property content',
       };
-      
+
       const res = await axios.post(`/api/properties`, data);
-      
+
       expect(res.status).toBe(201);
       expect(res.data).toHaveProperty('id');
       expect(res.data.content).toBe('test property content');
-      
+
       propertyId = res.data.id;
     });
 
     it('should get a property by ID', async () => {
       const res = await axios.get(`/api/properties/${propertyId}`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(propertyId);
       expect(res.data.content).toBe('test property content');
@@ -454,7 +480,7 @@ describe('Knowledge Base Service E2E Tests', () => {
       await axios.post(`/api/properties`, data);
 
       const res = await axios.get(`/api/properties?limit=10&offset=0`);
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       // Don't assert length > 0 as the database might be empty
@@ -464,9 +490,9 @@ describe('Knowledge Base Service E2E Tests', () => {
       const updateData = {
         content: 'updated property content',
       };
-      
+
       const res = await axios.put(`/api/properties/${propertyId}`, updateData);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(propertyId);
       expect(res.data.content).toBe('updated property content');
@@ -474,28 +500,34 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should check if a property exists', async () => {
       const res = await axios.get(`/api/properties/${propertyId}/exists`);
-      
+
       expect(res.status).toBe(200);
       expect(res.data.exists).toBe(true);
     });
 
     it('should delete a property', async () => {
       const res = await axios.delete(`/api/properties/${propertyId}`);
-      
+
       expect(res.status).toBe(200);
-      
+
       // Verify property is deleted
       try {
         const res = await axios.get(`/api/properties/${propertyId}`);
         // If we get a response, check if it's empty or has an error
-        if (res.data === null || res.data === undefined || Object.keys(res.data).length === 0) {
+        if (
+          res.data === null ||
+          res.data === undefined ||
+          Object.keys(res.data).length === 0
+        ) {
           expect(true).toBe(true); // Property is effectively deleted
         } else {
           fail('Property should have been deleted');
         }
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
   });
@@ -517,15 +549,15 @@ describe('Knowledge Base Service E2E Tests', () => {
           description: 'this is a searchable entity for testing',
         },
       };
-      
+
       const vertexData: CreateVertexDto = {
         content: 'searchable vertex content for testing',
         type: 'concept',
       };
-      
+
       const entityRes = await axios.post(`/api/entities`, entityData);
       const vertexRes = await axios.post(`/api/vertices`, vertexData);
-      
+
       testEntityId = entityRes.data.id;
       testVertexId = vertexRes.data.id;
     });
@@ -536,9 +568,9 @@ describe('Knowledge Base Service E2E Tests', () => {
         limit: 10,
         offset: 0,
       };
-      
+
       const res = await axios.post(`/api/search`, searchData);
-      
+
       // Accept both 200 and 201 as valid status codes
       expect([200, 201]).toContain(res.status);
       expect(res.data).toHaveProperty('entities');
@@ -552,8 +584,10 @@ describe('Knowledge Base Service E2E Tests', () => {
     });
 
     it('should search entities specifically', async () => {
-      const res = await axios.get(`/api/search/entities?query=searchable&limit=10&offset=0&language=en`);
-      
+      const res = await axios.get(
+        `/api/search/entities?query=searchable&limit=10&offset=0&language=en`,
+      );
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       if (res.data.length > 0) {
@@ -565,11 +599,15 @@ describe('Knowledge Base Service E2E Tests', () => {
 
     it('should find entities by similarity', async () => {
       // Create a smaller mock vector for testing to avoid URL length issues
-      const mockVector = Array(10).fill(0).map((_, i) => Math.random());
+      const mockVector = Array(10)
+        .fill(0)
+        .map((_, i) => Math.random());
       const vectorString = mockVector.join(',');
-      
-      const res = await axios.get(`/api/search/similar?vector=${vectorString}&limit=5&threshold=0.5`);
-      
+
+      const res = await axios.get(
+        `/api/search/similar?vector=${vectorString}&limit=5&threshold=0.5`,
+      );
+
       // Accept 200 or 431 (Request Header Fields Too Large) as valid responses
       expect([200, 431]).toContain(res.status);
       if (res.status === 200) {
@@ -596,7 +634,7 @@ describe('Knowledge Base Service E2E Tests', () => {
           description: 'test',
         },
       };
-      
+
       try {
         const res = await axios.post(`/api/entities`, invalidData);
         // The service might accept the data but handle it differently
@@ -604,7 +642,9 @@ describe('Knowledge Base Service E2E Tests', () => {
         expect(res.status).toBeTruthy();
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
 
@@ -613,7 +653,7 @@ describe('Knowledge Base Service E2E Tests', () => {
         content: 'test',
         type: 'invalid-type', // Invalid type should fail validation
       };
-      
+
       try {
         const res = await axios.post(`/api/vertices`, invalidData);
         // The service might accept the data but handle it differently
@@ -621,7 +661,9 @@ describe('Knowledge Base Service E2E Tests', () => {
         expect(res.status).toBeTruthy();
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
 
@@ -631,14 +673,16 @@ describe('Knowledge Base Service E2E Tests', () => {
         out: 'non-existent-id',
         type: 'start',
       };
-      
+
       // This might not fail validation but should fail at the service level
       try {
         await axios.post(`/api/edges`, invalidData);
         // If it doesn't fail, that's also acceptable behavior
       } catch (error: any) {
         // Either 400 for validation or 404 for non-existent vertices
-        expect([400, 404, 500]).toContain(error.response?.status || error.status);
+        expect([400, 404, 500]).toContain(
+          error.response?.status || error.status,
+        );
       }
     });
 
@@ -650,7 +694,9 @@ describe('Knowledge Base Service E2E Tests', () => {
         expect(res.status).toBeTruthy();
       } catch (error: any) {
         // If we get an error, that's also acceptable
-        expect(error.response?.status || error.status || error.code).toBeTruthy();
+        expect(
+          error.response?.status || error.status || error.code,
+        ).toBeTruthy();
       }
     });
   });

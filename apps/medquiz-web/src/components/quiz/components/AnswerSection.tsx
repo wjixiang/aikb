@@ -1,9 +1,9 @@
-import React from "react";
-import { Card, CardTitle } from "@/components/ui/card";
-import { QuizAnalysis } from "./QuizAnalysis";
-import { Result } from "../styles/QuizStyles";
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { Check, X as XIcon } from "lucide-react";
+import React from 'react';
+import { Card, CardTitle } from '@/components/ui/card';
+import { QuizAnalysis } from './QuizAnalysis';
+import { Result } from '../styles/QuizStyles';
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { Check, X as XIcon } from 'lucide-react';
 
 interface AnswerSectionProps {
   quiz: QuizWithUserAnswer;
@@ -44,8 +44,8 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
 
   const renderAnswer = () => {
     switch (quiz.type) {
-      case "A1":
-      case "A2":
+      case 'A1':
+      case 'A2':
         // Get correct answer text
         const correctAnswerText = getOptionText(
           quiz.answer as string,
@@ -57,7 +57,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
           : quiz.userAnswer;
         const userAnswerText = userAnswerSingle
           ? getOptionText(userAnswerSingle, getOptionsForQuestion(quiz.options))
-          : "未作答";
+          : '未作答';
         const isAnswerCorrect = userAnswerSingle === quiz.answer;
 
         return (
@@ -70,17 +70,17 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
               <div className="space-y-2 ml-2">
                 <div className="flex items-center p-2 rounded bg-green-50 dark:bg-green-950">
                   <span className="font-medium mr-2">正确答案：</span>
-                  <span>{correctAnswerText.replace(/^[A-E]\.\s*/, "")}</span>
+                  <span>{correctAnswerText.replace(/^[A-E]\.\s*/, '')}</span>
                 </div>
                 <div
                   className={`flex items-center p-2 rounded ${
                     isAnswerCorrect
-                      ? "bg-green-100 dark:bg-green-900"
-                      : "bg-red-100 dark:bg-red-900"
+                      ? 'bg-green-100 dark:bg-green-900'
+                      : 'bg-red-100 dark:bg-red-900'
                   }`}
                 >
                   <span className="font-medium mr-2">你的答案：</span>
-                  <span>{userAnswerText.replace(/^[A-E]\.\s*/, "")}</span>
+                  <span>{userAnswerText.replace(/^[A-E]\.\s*/, '')}</span>
                   {isAnswerCorrect ? (
                     <Check
                       size={16}
@@ -104,7 +104,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
           </div>
         );
 
-      case "X":
+      case 'X':
         // Get correct answer texts
         const correctAnswerTexts = (quiz.answer as string[]).map((id) =>
           getOptionText(id, getOptionsForQuestion(quiz.options)),
@@ -119,7 +119,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
           getOptionText(id, getOptionsForQuestion(quiz.options)),
         );
         const userAnswerTextX =
-          userAnswerTexts.length > 0 ? userAnswerTexts.join("、") : "未作答";
+          userAnswerTexts.length > 0 ? userAnswerTexts.join('、') : '未作答';
 
         // Check if user's answers match correct answers (order doesn't matter)
         const isXAnswerCorrect =
@@ -139,19 +139,19 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
                   <span className="font-medium mr-2">正确答案：</span>
                   <span>
                     {correctAnswerTexts
-                      .map((text) => text.replace(/^[A-E]\.\s*/, ""))
-                      .join("、")}
+                      .map((text) => text.replace(/^[A-E]\.\s*/, ''))
+                      .join('、')}
                   </span>
                 </div>
                 <div
                   className={`flex items-center p-2 rounded ${
                     isXAnswerCorrect
-                      ? "bg-green-100 dark:bg-green-900"
-                      : "bg-red-100 dark:bg-red-900"
+                      ? 'bg-green-100 dark:bg-green-900'
+                      : 'bg-red-100 dark:bg-red-900'
                   }`}
                 >
                   <span className="font-medium mr-2">你的答案：</span>
-                  <span>{userAnswerTextX.replace(/^[A-E]\.\s*/, "")}</span>
+                  <span>{userAnswerTextX.replace(/^[A-E]\.\s*/, '')}</span>
                   {isXAnswerCorrect ? (
                     <Check
                       size={16}
@@ -176,7 +176,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
           </div>
         );
 
-      case "A3":
+      case 'A3':
         return (
           <div className="space-y-4">
             <Card className="bg-background text-foreground p-4 space-y-4">
@@ -206,7 +206,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
                           subQuiz.subQuizId,
                         ),
                       )
-                    : "未作答";
+                    : '未作答';
 
                   return (
                     <div
@@ -222,19 +222,19 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
                         <div className="flex items-center p-2 rounded bg-green-50 dark:bg-green-950">
                           <span className="font-medium mr-2">正确答案：</span>
                           <span>
-                            {correctAnswerText.replace(/^[A-E]\.\s*/, "")}
+                            {correctAnswerText.replace(/^[A-E]\.\s*/, '')}
                           </span>
                         </div>
                         <div
                           className={`flex items-center p-2 rounded ${
                             isSubCorrect
-                              ? "bg-green-100 dark:bg-green-900"
-                              : "bg-red-100 dark:bg-red-900"
+                              ? 'bg-green-100 dark:bg-green-900'
+                              : 'bg-red-100 dark:bg-red-900'
                           }`}
                         >
                           <span className="font-medium mr-2">你的答案：</span>
                           <span>
-                            {userAnswerText.replace(/^[A-E]\.\s*/, "")}
+                            {userAnswerText.replace(/^[A-E]\.\s*/, '')}
                           </span>
                           {isSubCorrect ? (
                             <Check
@@ -264,7 +264,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
           </div>
         );
 
-      case "B":
+      case 'B':
         return (
           <div className="space-y-4">
             <Card className="bg-background text-foreground p-4 space-y-4">
@@ -294,7 +294,7 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
                           question.questionId,
                         ),
                       )
-                    : "未作答";
+                    : '未作答';
 
                   return (
                     <div
@@ -310,19 +310,19 @@ export const AnswerSection: React.FC<AnswerSectionProps> = ({
                         <div className="flex items-center p-2 rounded bg-green-50 dark:bg-green-950">
                           <span className="font-medium mr-2">正确答案：</span>
                           <span>
-                            {correctAnswerText.replace(/^[A-E]\.\s*/, "")}
+                            {correctAnswerText.replace(/^[A-E]\.\s*/, '')}
                           </span>
                         </div>
                         <div
                           className={`flex items-center p-2 rounded ${
                             isSubCorrect
-                              ? "bg-green-100 dark:bg-green-900"
-                              : "bg-red-100 dark:bg-red-900"
+                              ? 'bg-green-100 dark:bg-green-900'
+                              : 'bg-red-100 dark:bg-red-900'
                           }`}
                         >
                           <span className="font-medium mr-2">你的答案：</span>
                           <span>
-                            {userAnswerText.replace(/^[A-E]\.\s*/, "")}
+                            {userAnswerText.replace(/^[A-E]\.\s*/, '')}
                           </span>
                           {isSubCorrect ? (
                             <Check

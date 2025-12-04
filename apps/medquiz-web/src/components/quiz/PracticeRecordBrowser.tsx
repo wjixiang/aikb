@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
-import type { PracticeRecord } from "@/lib/quiz/QuizStorage";
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import type { PracticeRecord } from '@/lib/quiz/QuizStorage';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { DateRange } from "react-day-picker";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/accordion';
+import { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, ArrowUp, ArrowDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import QuizComponent from "./Quiz";
-import React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Toggle } from "@/components/ui/toggle";
-import { RefreshCcw, Eye, EyeClosed } from "lucide-react";
-import { toast } from "sonner";
+} from '@/components/ui/popover';
+import { CalendarIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import QuizComponent from './Quiz';
+import React from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toggle } from '@/components/ui/toggle';
+import { RefreshCcw, Eye, EyeClosed } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PracticeRecordWithQuiz extends PracticeRecord {
   quizData?: any; // Will be populated with quiz data
@@ -57,10 +57,10 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
         if (Array.isArray(selectrecord)) {
           // If it's already an array of option IDs
           optionIds = selectrecord;
-        } else if (typeof selectrecord === "string") {
+        } else if (typeof selectrecord === 'string') {
           // If it's a single option ID string
           optionIds = [selectrecord];
-        } else if (typeof selectrecord === "object" && selectrecord !== null) {
+        } else if (typeof selectrecord === 'object' && selectrecord !== null) {
           // If it's an object (for A3/B type questions)
           optionIds = Object.values(selectrecord);
         } else {
@@ -74,9 +74,9 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
           return option ? option.text : optionId;
         });
 
-        return optionTexts.join(", ");
+        return optionTexts.join(', ');
       } catch (error) {
-        console.error("Error processing selectrecord:", error);
+        console.error('Error processing selectrecord:', error);
         return selectrecord;
       }
     };
@@ -94,9 +94,9 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
         fetchRecords();
       };
 
-      window.addEventListener("quizSubmitted", handleQuizSubmitted);
+      window.addEventListener('quizSubmitted', handleQuizSubmitted);
       return () => {
-        window.removeEventListener("quizSubmitted", handleQuizSubmitted);
+        window.removeEventListener('quizSubmitted', handleQuizSubmitted);
       };
     }, []);
 
@@ -110,8 +110,8 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
       sevenDaysAgo.setDate(today.getDate() - 7);
       return { from: sevenDaysAgo, to: today };
     });
-    const [filter, setFilter] = useState<"all" | "correct" | "wrong">("all");
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc"); // Default to descending
+    const [filter, setFilter] = useState<'all' | 'correct' | 'wrong'>('all');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default to descending
     const [showSubmitted, setShowSubmitted] = useState(false);
     const [needsRefresh, setNeedsRefresh] = useState(false);
 
@@ -145,13 +145,13 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
         recordsWithQuizData = recordsWithQuizData.sort((a, b) => {
           const dateA = new Date(a.timestamp).getTime();
           const dateB = new Date(b.timestamp).getTime();
-          return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+          return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
         });
 
         setRecords(recordsWithQuizData);
       } catch (err) {
-        console.error("Failed to fetch practice records:", err);
-        setError("Failed to load practice records");
+        console.error('Failed to fetch practice records:', err);
+        setError('Failed to load practice records');
       } finally {
         setLoading(false);
       }
@@ -163,21 +163,21 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                variant={"outline"}
+                variant={'outline'}
                 className={cn(
-                  "w-[280px] justify-start text-left font-normal",
-                  !dateRange && "text-muted-foreground",
+                  'w-[280px] justify-start text-left font-normal',
+                  !dateRange && 'text-muted-foreground',
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
+                      {format(dateRange.from, 'LLL dd, y')} -{' '}
+                      {format(dateRange.to, 'LLL dd, y')}
                     </>
                   ) : (
-                    format(dateRange.from, "LLL dd, y")
+                    format(dateRange.from, 'LLL dd, y')
                   )
                 ) : (
                   <span>Pick a date</span>
@@ -200,12 +200,12 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
 
           <Toggle
             aria-label="Toggle sort order"
-            pressed={sortOrder === "desc"}
+            pressed={sortOrder === 'desc'}
             onPressedChange={() => {
-              setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+              setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
             }}
           >
-            {sortOrder === "asc" ? (
+            {sortOrder === 'asc' ? (
               <ArrowUp className="h-4 w-4" />
             ) : (
               <ArrowDown className="h-4 w-4" />
@@ -214,7 +214,7 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
           <Tabs
             value={filter}
             onValueChange={(value) => {
-              setFilter(value as "all" | "correct" | "wrong");
+              setFilter(value as 'all' | 'correct' | 'wrong');
             }}
           >
             <TabsList>
@@ -228,7 +228,7 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
             onPressedChange={(pressed) => {
               setShowSubmitted(pressed);
               toast.info(
-                `Submitted questions are now ${pressed ? "shown" : "hidden"}`,
+                `Submitted questions are now ${pressed ? 'shown' : 'hidden'}`,
               );
             }}
             aria-label="Toggle submitted questions"
@@ -239,16 +239,16 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
           <Button
             onClick={fetchRecords}
             disabled={loading}
-            className={cn("bg-transparent", {
-              "border-2 border-blue-500": needsRefresh,
+            className={cn('bg-transparent', {
+              'border-2 border-blue-500': needsRefresh,
             })}
           >
             {loading ? (
-              "Loading..."
+              'Loading...'
             ) : (
               <RefreshCcw
                 className={cn({
-                  "animate-spin": loading,
+                  'animate-spin': loading,
                 })}
               />
             )}
@@ -260,8 +260,8 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
         <Accordion type="multiple" className="w-full">
           {records
             .filter((record) => {
-              if (filter === "correct") return record.correct;
-              if (filter === "wrong") return !record.correct;
+              if (filter === 'correct') return record.correct;
+              if (filter === 'wrong') return !record.correct;
               return true; // 'all'
             })
             .map((record) => (
@@ -273,13 +273,13 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
                   <div className="flex items-center gap-4">
                     <span
                       className={
-                        record.correct ? "text-green-500" : "text-red-500"
+                        record.correct ? 'text-green-500' : 'text-red-500'
                       }
                     >
-                      {record.correct ? "✓" : "✗"}
+                      {record.correct ? '✓' : '✗'}
                     </span>
-                    <span>{format(record.timestamp, "yyyy-MM-dd HH:mm")}</span>
-                    <span>{record.quizData?.class || "No subject"}</span>
+                    <span>{format(record.timestamp, 'yyyy-MM-dd HH:mm')}</span>
+                    <span>{record.quizData?.class || 'No subject'}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -321,6 +321,6 @@ const PracticeRecordBrowser = forwardRef<PracticeRecordBrowserRef>(
   },
 );
 
-PracticeRecordBrowser.displayName = "PracticeRecordBrowser";
+PracticeRecordBrowser.displayName = 'PracticeRecordBrowser';
 
 export default PracticeRecordBrowser;

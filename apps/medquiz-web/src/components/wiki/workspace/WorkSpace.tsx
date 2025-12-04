@@ -1,20 +1,20 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { PageTabs } from "./PageTabs";
-import { Leaf } from "./Leaf";
-import { SearchCommand } from "./SearchCommand";
-import { LinkGraph } from "./LinkGraph";
+import React, { useState, useCallback, useEffect } from 'react';
+import { PageTabs } from './PageTabs';
+import { Leaf } from './Leaf';
+import { SearchCommand } from './SearchCommand';
+import { LinkGraph } from './LinkGraph';
 import {
   WorkSpaceProps,
   DocumentTab,
   WorkspaceState,
   DocumentCache,
-} from "./types";
-import { v4 as uuidv4 } from "uuid";
-import { cn } from "@/lib/utils";
+} from './types';
+import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
 
 export const WorkSpace: React.FC<WorkSpaceProps> = ({
   initialPath,
-  basePath = "/wiki",
+  basePath = '/wiki',
   onDocumentOpen,
   onDocumentClose,
   className,
@@ -23,7 +23,7 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
     tabs: [],
     activeTabId: null,
     sidebarOpen: false,
-    searchQuery: "",
+    searchQuery: '',
   });
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -38,13 +38,13 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
     };
 
     window.addEventListener(
-      "openDocument",
+      'openDocument',
       handleOpenDocument as EventListener,
     );
 
     return () => {
       window.removeEventListener(
-        "openDocument",
+        'openDocument',
         handleOpenDocument as EventListener,
       );
     };
@@ -59,8 +59,8 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
       // 如果没有初始路径，创建一个欢迎页
       const welcomeTab: DocumentTab = {
         id: uuidv4(),
-        title: "欢迎使用",
-        path: "welcome",
+        title: '欢迎使用',
+        path: 'welcome',
         content:
           '# 欢迎使用文档工作区\n\n这是一个基于 Markdown 的文档浏览和编辑工作区。\n\n## 功能特性\n\n- 📄 多标签页浏览\n- 🔍 快速搜索\n- 📂 文件树导航\n- 📝 Markdown 渲染\n- 🔗 内部链接支持\n- 📊 引用和注释\n- 🕸️ 链接关系图\n\n## 开始使用\n\n1. 点击右上角 "+" 按钮打开新文档\n2. 拖拽标签页重新排序\n3. 点击标签页上的 "×" 关闭文档\n4. 右侧查看当前文档的链接关系图\n\n开始探索吧！',
         isActive: true,
@@ -70,7 +70,7 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
         tabs: [welcomeTab],
         activeTabId: welcomeTab.id,
         sidebarOpen: false,
-        searchQuery: "",
+        searchQuery: '',
       });
 
       setIsInitialized(true);
@@ -102,14 +102,14 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
         const document = await response.json();
 
         if (!document) {
-          throw new Error("文档不存在");
+          throw new Error('文档不存在');
         }
 
         const newTab: DocumentTab = {
           id: uuidv4(),
-          title: document.title || path.split("/").pop() || "未命名文档",
+          title: document.title || path.split('/').pop() || '未命名文档',
           path,
-          content: document.content || "",
+          content: document.content || '',
           isActive: true,
           lastModified: new Date(),
         };
@@ -127,9 +127,9 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
         setDocumentCache((prev) => ({
           ...prev,
           [path]: {
-            content: document.content || "",
+            content: document.content || '',
             lastModified: new Date(),
-            title: document.title || path.split("/").pop() || "未命名文档",
+            title: document.title || path.split('/').pop() || '未命名文档',
           },
         }));
 
@@ -137,7 +137,7 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
           onDocumentOpen(path);
         }
       } catch (error) {
-        console.error("打开文档失败:", error);
+        console.error('打开文档失败:', error);
       }
     },
     [workspaceState.tabs, onDocumentOpen],
@@ -215,9 +215,9 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
   const createNewTab = useCallback(() => {
     const newTab: DocumentTab = {
       id: uuidv4(),
-      title: "新文档",
+      title: '新文档',
       path: `new-${Date.now()}`,
-      content: "# 新文档\n\n开始编写您的内容...",
+      content: '# 新文档\n\n开始编写您的内容...',
       isActive: true,
     };
 
@@ -273,7 +273,7 @@ export const WorkSpace: React.FC<WorkSpaceProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col h-[80vh] bg-background text-foreground",
+        'flex flex-col h-[80vh] bg-background text-foreground',
         className,
       )}
     >

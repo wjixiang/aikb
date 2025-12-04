@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { quizSelector } from "@/types/quizSelector.types";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { quizSelector } from '@/types/quizSelector.types';
 
 interface UnitSelectorProps {
   subject: string;
@@ -18,7 +18,7 @@ export function UnitSelector({
 }: UnitSelectorProps) {
   const [units, setUnits] = useState<string[]>([]);
   const [filteredUnits, setFilteredUnits] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fetchUnits = async () => {
@@ -31,11 +31,11 @@ export function UnitSelector({
         unit: [],
         source: [],
         extractedYear: [],
-        email: "",
+        email: '',
       };
 
-      const response = await fetch("/api/obcors/quiz/get-unit", {
-        method: "POST",
+      const response = await fetch('/api/obcors/quiz/get-unit', {
+        method: 'POST',
         body: JSON.stringify(selector),
       });
       const data = await response.json();
@@ -43,7 +43,7 @@ export function UnitSelector({
       setFilteredUnits(data);
       return data;
     } catch (error) {
-      console.error("Failed to fetch units:", error);
+      console.error('Failed to fetch units:', error);
     } finally {
       setLoading(false);
     }

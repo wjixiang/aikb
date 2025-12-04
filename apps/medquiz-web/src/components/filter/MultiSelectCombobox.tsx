@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import * as React from 'react';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,16 +11,16 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { quizSelector } from "@/types/quizSelector.types";
-import { useEffect, useMemo, useState, useRef } from "react";
-import styled from "styled-components";
-import { ScrollArea } from "../ui/scroll-area";
+} from '@/components/ui/popover';
+import { quizSelector } from '@/types/quizSelector.types';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import styled from 'styled-components';
+import { ScrollArea } from '../ui/scroll-area';
 
 const Tag = styled.div`
   border-radius: 16px;
@@ -75,7 +75,7 @@ export function MultiSelectCombobox({
   // stopPropagation
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(""); // New state for CommandInput
+  const [inputValue, setInputValue] = useState(''); // New state for CommandInput
   const [options, setOptions] = useState<OptionType[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const commandGroupRef = useRef<HTMLDivElement>(null);
@@ -87,16 +87,16 @@ export function MultiSelectCombobox({
   const fetchOptions = async () => {
     try {
       setIsLoadingOptions(true);
-      
-      if (fetchLink === "/api/user/tags") {
+
+      if (fetchLink === '/api/user/tags') {
         // For tags, fetch both user tags and public tags
         const [userTagsResponse, publicTagsResponse] = await Promise.all([
-          fetch("/api/user/tags"),
-          fetch("/api/tags/public")
+          fetch('/api/user/tags'),
+          fetch('/api/tags/public'),
         ]);
-        
+
         let allOptions: OptionType[] = [];
-        
+
         if (userTagsResponse.ok) {
           const userTags = await userTagsResponse.json();
           allOptions = [
@@ -104,10 +104,10 @@ export function MultiSelectCombobox({
             ...userTags.map((tag: any) => ({
               value: tag.value,
               label: `${tag.value} (${tag.type === 'public' ? '公共' : '私有'})`,
-            }))
+            })),
           ];
         }
-        
+
         if (publicTagsResponse.ok) {
           const publicTagsData = await publicTagsResponse.json();
           const publicTags = publicTagsData
@@ -118,14 +118,14 @@ export function MultiSelectCombobox({
             }));
           allOptions = [...allOptions, ...publicTags];
         }
-        
+
         return allOptions;
       } else {
         // For other types, use the original logic
         const response = await fetch(fetchLink, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ requestData: selector }),
         });
@@ -194,7 +194,7 @@ export function MultiSelectCombobox({
             }}
           >
             {cluster && cluster.length > 0
-              ? cluster.join(", ")
+              ? cluster.join(', ')
               : `选择${boxName}...`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -205,7 +205,7 @@ export function MultiSelectCombobox({
           sideOffset={5}
           avoidCollisions={false}
           collisionPadding={10}
-          style={{ pointerEvents: "auto" }}
+          style={{ pointerEvents: 'auto' }}
           onWheel={(e) => e.stopPropagation()} // Add this to stop scroll propagation
         >
           <Command>
@@ -215,15 +215,15 @@ export function MultiSelectCombobox({
               onValueChange={(value) => {
                 // New event listener
                 setInputValue(value);
-                console.log("CommandInput value:", value);
+                console.log('CommandInput value:', value);
               }}
             />
-            <CommandList style={{ maxHeight: "300px" }}>
+            <CommandList style={{ maxHeight: '300px' }}>
               <CommandEmpty>无结果</CommandEmpty>
               <ScrollArea>
                 <CommandGroup
                   ref={commandGroupRef}
-                  style={{ height: "100%", overflow: "auto" }}
+                  style={{ height: '100%', overflow: 'auto' }}
                 >
                   {options.map((option) => (
                     <CommandItem
@@ -239,10 +239,10 @@ export function MultiSelectCombobox({
                     >
                       <Check
                         className={cn(
-                          "ml-auto",
+                          'ml-auto',
                           cluster?.includes(option.value)
-                            ? "opacity-100"
-                            : "opacity-0",
+                            ? 'opacity-100'
+                            : 'opacity-0',
                         )}
                       />
                       {option.label}

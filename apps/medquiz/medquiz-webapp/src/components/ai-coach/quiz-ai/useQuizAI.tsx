@@ -14,11 +14,16 @@ export function useQuizAI() {
   const [history, setHistory] = useState<QuizType.QuizHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [notification, setNotification] = useState<NotificationState>({ message: '', type: 'success' });
+  const [notification, setNotification] = useState<NotificationState>({
+    message: '',
+    type: 'success',
+  });
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isTabsExpanded, setIsTabsExpanded] = useState(false);
-  const [selectedQuizIndex, setSelectedQuizIndex] = useState<number | null>(null);
+  const [selectedQuizIndex, setSelectedQuizIndex] = useState<number | null>(
+    null,
+  );
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectorDrawerOpen, setSelectorDrawerOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
@@ -30,7 +35,10 @@ export function useQuizAI() {
     setTimeout(() => setNotificationVisible(false), 3000);
   };
 
-  const handleSubmit = (quizzes: QuizType.QuizWithUserAnswer[], title: string) => {
+  const handleSubmit = (
+    quizzes: QuizType.QuizWithUserAnswer[],
+    title: string,
+  ) => {
     // Placeholder implementation
     console.log('Submitting quiz set:', title, quizzes);
   };

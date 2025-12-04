@@ -1,6 +1,6 @@
-import * as React from "react";
-import styled from "styled-components";
-import { Check, X } from "lucide-react";
+import * as React from 'react';
+import styled from 'styled-components';
+import { Check, X } from 'lucide-react';
 
 export interface OptionState {
   isSelected: boolean;
@@ -95,15 +95,15 @@ const OptionBox = styled.div<{
 }>`
   padding: 10px;
   margin: 3px;
-  border: 1px solid ${(props) => (props.$isSelected ? "#007bff" : "#D9D9D9")};
+  border: 1px solid ${(props) => (props.$isSelected ? '#007bff' : '#D9D9D9')};
   border-radius: 10px;
   background-color: ${(props) =>
-    props.$isSelected ? "#e6f2ff" : "transparent"};
+    props.$isSelected ? '#e6f2ff' : 'transparent'};
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: ${(props) => (props.$isSelected ? "#e6f2ff" : "#F5F5F5")};
+    background-color: ${(props) => (props.$isSelected ? '#e6f2ff' : '#F5F5F5')};
   }
 `;
 

@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from "react";
-import { QuizWithUserAnswer, A1, A2, A3, B } from "@/types/quizData.types";
+import React, { useEffect, useRef } from 'react';
+import { QuizWithUserAnswer, A1, A2, A3, B } from '@/types/quizData.types';
 import {
   QuestionTitle,
   MainQuestion,
   SubQuestion,
   OptionsList,
-} from "../styles/QuizStyles";
-import { OptionItem } from "./OptionItem";
-import { Check, X as XIcon, Square } from "lucide-react";
+} from '../styles/QuizStyles';
+import { OptionItem } from './OptionItem';
+import { Check, X as XIcon, Square } from 'lucide-react';
 
 interface QuizContentProps {
   quiz: QuizWithUserAnswer;
@@ -35,10 +35,10 @@ export const QuizContent: React.FC<QuizContentProps> = ({
   isKeyboardNavigation = false,
 }) => {
   const isA1A2 = (q: QuizWithUserAnswer): q is A1 | A2 =>
-    q.type === "A1" || q.type === "A2";
-  const isX = (q: QuizWithUserAnswer): q is any => q.type === "X";
-  const isA3 = (q: QuizWithUserAnswer): q is A3 => q.type === "A3";
-  const isB = (q: QuizWithUserAnswer): q is B => q.type === "B";
+    q.type === 'A1' || q.type === 'A2';
+  const isX = (q: QuizWithUserAnswer): q is any => q.type === 'X';
+  const isA3 = (q: QuizWithUserAnswer): q is A3 => q.type === 'A3';
+  const isB = (q: QuizWithUserAnswer): q is B => q.type === 'B';
 
   const renderA1A2Content = (quiz: A1 | A2) => (
     <>
@@ -57,7 +57,7 @@ export const QuizContent: React.FC<QuizContentProps> = ({
               onClick={() => onOptionSelect(item.oid)}
               onDoubleClick={() => onOptionSelect(item.oid, undefined, true)}
             >
-              <span>{item.text.replace(/^[A-E]\.\s*/, "")}</span>
+              <span>{item.text.replace(/^[A-E]\.\s*/, '')}</span>
             </OptionItem>
           );
         })}
@@ -84,12 +84,12 @@ export const QuizContent: React.FC<QuizContentProps> = ({
               onClick={() => onOptionSelect(item.oid)}
               onDoubleClick={() => onOptionSelect(item.oid, undefined, true)}
             >
-              <span>{item.text.replace(/^[A-E]\.\s*/, "")}</span>
+              <span>{item.text.replace(/^[A-E]\.\s*/, '')}</span>
               {!submitted && (
                 <Square
                   size={16}
-                  className={`${isSelected ? "text-blue-500 fill-current" : "text-gray-300"}`}
-                  style={{ borderRadius: "4px" }}
+                  className={`${isSelected ? 'text-blue-500 fill-current' : 'text-gray-300'}`}
+                  style={{ borderRadius: '4px' }}
                 />
               )}
             </OptionItem>
@@ -104,22 +104,22 @@ export const QuizContent: React.FC<QuizContentProps> = ({
   useEffect(() => {
     // Scroll active sub-question into view with better centering
     if (
-      (quiz.type === "A3" || quiz.type === "B") &&
+      (quiz.type === 'A3' || quiz.type === 'B') &&
       activeSubQuestionIndex >= 0
     ) {
       const ref = subQuestionRefs.current[activeSubQuestionIndex];
       if (ref) {
         // Use a more centered scroll position with better viewport positioning
         ref.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest",
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest',
         });
 
         // Add a small delay to ensure the scroll completes, then fine-tune position
         setTimeout(() => {
           const container = ref.closest(
-            ".sub-question-container, .question-container",
+            '.sub-question-container, .question-container',
           ) as HTMLElement;
           if (container) {
             const containerRect = container.getBoundingClientRect();
@@ -137,7 +137,7 @@ export const QuizContent: React.FC<QuizContentProps> = ({
 
             window.scrollTo({
               top: targetScroll,
-              behavior: "smooth",
+              behavior: 'smooth',
             });
           }
         }, 150);
@@ -156,17 +156,17 @@ export const QuizContent: React.FC<QuizContentProps> = ({
           }}
           className={`sub-question-container transition-all duration-300 ${
             activeSubQuestionIndex === index && isKeyboardNavigation
-              ? "border-2 border-primary rounded-lg p-4 bg-primary/5 ring-2 ring-primary/20 shadow-lg my-6"
+              ? 'border-2 border-primary rounded-lg p-4 bg-primary/5 ring-2 ring-primary/20 shadow-lg my-6'
               : submitted
-                ? "p-3 mb-4"
-                : "mb-6 border border-transparent"
+                ? 'p-3 mb-4'
+                : 'mb-6 border border-transparent'
           }`}
         >
           <SubQuestion
             className={
               activeSubQuestionIndex === index && isKeyboardNavigation
-                ? "text-primary font-semibold"
-                : ""
+                ? 'text-primary font-semibold'
+                : ''
             }
           >
             {sub.question}
@@ -196,7 +196,7 @@ export const QuizContent: React.FC<QuizContentProps> = ({
                   }
                 >
                   <span className="mr-2">
-                    {item.text.replace(/^[A-E]\.\s*/, "")}
+                    {item.text.replace(/^[A-E]\.\s*/, '')}
                   </span>
                 </OptionItem>
               );
@@ -217,17 +217,17 @@ export const QuizContent: React.FC<QuizContentProps> = ({
           }}
           className={`question-container transition-all duration-300 ${
             activeSubQuestionIndex === index && isKeyboardNavigation
-              ? "border-2 border-primary rounded-lg p-4 bg-primary/5 ring-2 ring-primary/20 shadow-lg my-6"
+              ? 'border-2 border-primary rounded-lg p-4 bg-primary/5 ring-2 ring-primary/20 shadow-lg my-6'
               : submitted
-                ? "p-3 mb-4"
-                : "mb-6 border border-transparent"
+                ? 'p-3 mb-4'
+                : 'mb-6 border border-transparent'
           }`}
         >
           <SubQuestion
             className={
               activeSubQuestionIndex === index && isKeyboardNavigation
-                ? "text-primary font-semibold"
-                : ""
+                ? 'text-primary font-semibold'
+                : ''
             }
           >
             {q.questionText}
@@ -259,22 +259,22 @@ export const QuizContent: React.FC<QuizContentProps> = ({
                     submitted
                       ? isSubQuestionCorrect
                         ? isSelected
-                          ? "bg-[hsl(var(--quiz-user-correct)/0.2)] border-2 border-[hsl(var(--quiz-user-correct))]"
-                          : "border border-[hsl(var(--quiz-default-incorrect))]"
+                          ? 'bg-[hsl(var(--quiz-user-correct)/0.2)] border-2 border-[hsl(var(--quiz-user-correct))]'
+                          : 'border border-[hsl(var(--quiz-default-incorrect))]'
                         : isSelected
                           ? isCorrect
-                            ? "bg-[hsl(var(--quiz-user-correct)/0.2)] border-2 border-[hsl(var(--quiz-user-correct))]"
-                            : "bg-[hsl(var(--quiz-user-incorrect)/0.2)] border-2 border-[hsl(var(--quiz-user-incorrect))]"
+                            ? 'bg-[hsl(var(--quiz-user-correct)/0.2)] border-2 border-[hsl(var(--quiz-user-correct))]'
+                            : 'bg-[hsl(var(--quiz-user-incorrect)/0.2)] border-2 border-[hsl(var(--quiz-user-incorrect))]'
                           : isCorrect
-                            ? "bg-[hsl(var(--quiz-missed-correct)/0.2)] border border-[hsl(var(--quiz-missed-correct))]"
-                            : "border border-[hsl(var(--quiz-default-incorrect))]"
+                            ? 'bg-[hsl(var(--quiz-missed-correct)/0.2)] border border-[hsl(var(--quiz-missed-correct))]'
+                            : 'border border-[hsl(var(--quiz-default-incorrect))]'
                       : activeSubQuestionIndex === index && isKeyboardNavigation
-                        ? "border-primary/20"
-                        : ""
+                        ? 'border-primary/20'
+                        : ''
                   }`}
                 >
                   <span className="mr-2">
-                    {item.text.replace(/^[A-E]\.\s*/, "")}
+                    {item.text.replace(/^[A-E]\.\s*/, '')}
                   </span>
                   {submitted && (
                     <>

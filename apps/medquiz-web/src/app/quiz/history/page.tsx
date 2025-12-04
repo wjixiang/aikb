@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import PracticeRecordBrowser from "@/components/quiz/PracticeRecordBrowser";
-import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PracticeRecordBrowser from '@/components/quiz/PracticeRecordBrowser';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function QuizHistoryPage() {
   const { data: session, status } = useSession();
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return <div>Loading user session...</div>;
   }
 

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { FormEvent } from "react";
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { FormEvent } from 'react';
 
 export default function SignIn() {
   const router = useRouter();
@@ -11,16 +11,16 @@ export default function SignIn() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const response = await signIn("credentials", {
-      username: formData.get("username"),
-      password: formData.get("password"),
+    const response = await signIn('credentials', {
+      username: formData.get('username'),
+      password: formData.get('password'),
       redirect: false,
     });
 
     console.log(response);
 
     if (response?.ok) {
-      router.push("/"); // 登录成功后跳转
+      router.push('/'); // 登录成功后跳转
       // router.refresh()
     }
   };

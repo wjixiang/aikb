@@ -23,7 +23,10 @@ interface DecisionResult {
 
 // 简化的LLM服务接口
 interface LLMService {
-  decide(input: string, options: string[]): Promise<{
+  decide(
+    input: string,
+    options: string[],
+  ): Promise<{
     token: string;
     confidence: number;
     reasoning: string;
@@ -39,7 +42,7 @@ class DecisionTree {
   constructor(
     rules: DecisionRule[],
     llmService?: LLMService,
-    defaultToken: string = 'default-workflow'
+    defaultToken: string = 'default-workflow',
   ) {
     this.rules = rules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     this.llmService = llmService;
@@ -57,7 +60,7 @@ class DecisionTree {
           token: rule.token,
           confidence: 0.9,
           reasoning: `规则匹配: ${rule.description}`,
-          source: 'rule'
+          source: 'rule',
         };
       }
     }
@@ -65,15 +68,20 @@ class DecisionTree {
     // 2. 如果没有规则匹配，使用LLM决策
     if (this.llmService) {
       console.log(`🤖 规则未匹配，使用LLM决策...`);
-      const availableTokens = this.rules.map(r => r.token);
-      const llmDecision = await this.llmService.decide(context.input, availableTokens);
-      
-      console.log(`🤖 LLM决策结果: ${llmDecision.token} (置信度: ${llmDecision.confidence})`);
+      const availableTokens = this.rules.map((r) => r.token);
+      const llmDecision = await this.llmService.decide(
+        context.input,
+        availableTokens,
+      );
+
+      console.log(
+        `🤖 LLM决策结果: ${llmDecision.token} (置信度: ${llmDecision.confidence})`,
+      );
       return {
         token: llmDecision.token,
         confidence: llmDecision.confidence,
         reasoning: llmDecision.reasoning,
-        source: 'llm'
+        source: 'llm',
       };
     }
 
@@ -83,21 +91,33 @@ class DecisionTree {
       token: this.defaultToken,
       confidence: 0.1,
       reasoning: '无匹配规则，使用默认决策',
-      source: 'default'
+      source: 'default',
     };
   }
 
-  private evaluateCondition(condition: string, context: DecisionContext): boolean {
+  private evaluateCondition(
+    condition: string,
+    context: DecisionContext,
+  ): boolean {
     try {
       // 简单的条件评估器
-      const evaluator = new Function('input', 'metadata', 'variables', `
+      const evaluator = new Function(
+        'input',
+        'metadata',
+        'variables',
+        `
         const contains = (str, substr) => str.toLowerCase().includes(substr.toLowerCase());
         const startsWith = (str, prefix) => str.toLowerCase().startsWith(prefix.toLowerCase());
         const endsWith = (str, suffix) => str.toLowerCase().endsWith(suffix.toLowerCase());
         return ${condition};
-      `);
-      
-      return evaluator(context.input, context.metadata || {}, context.variables || {});
+      `,
+      );
+
+      return evaluator(
+        context.input,
+        context.metadata || {},
+        context.variables || {},
+      );
     } catch (error) {
       console.warn(`条件评估失败: ${condition}`, error);
       return false;
@@ -107,46 +127,61 @@ class DecisionTree {
 
 // 简单的LLM服务实现（用于演示）
 class SimpleLLMService implements LLMService {
-  async decide(input: string, options: string[]): Promise<{
+  async decide(
+    input: string,
+    options: string[],
+  ): Promise<{
     token: string;
     confidence: number;
     reasoning: string;
   }> {
     // 模拟LLM决策逻辑
     const lowerInput = input.toLowerCase();
-    
-    if (lowerInput.includes('查询') || lowerInput.includes('搜索') || lowerInput.includes('找')) {
+
+    if (
+      lowerInput.includes('查询') ||
+      lowerInput.includes('搜索') ||
+      lowerInput.includes('找')
+    ) {
       return {
         token: 'search-workflow',
         confidence: 0.8,
-        reasoning: '用户想要查询或搜索信息'
+        reasoning: '用户想要查询或搜索信息',
       };
     }
-    
-    if (lowerInput.includes('创建') || lowerInput.includes('新建') || lowerInput.includes('添加')) {
+
+    if (
+      lowerInput.includes('创建') ||
+      lowerInput.includes('新建') ||
+      lowerInput.includes('添加')
+    ) {
       return {
         token: 'create-workflow',
         confidence: 0.8,
-        reasoning: '用户想要创建新的内容'
+        reasoning: '用户想要创建新的内容',
       };
     }
-    
-    if (lowerInput.includes('更新') || lowerInput.includes('修改') || lowerInput.includes('编辑')) {
+
+    if (
+      lowerInput.includes('更新') ||
+      lowerInput.includes('修改') ||
+      lowerInput.includes('编辑')
+    ) {
       return {
         token: 'update-workflow',
         confidence: 0.8,
-        reasoning: '用户想要更新现有内容'
+        reasoning: '用户想要更新现有内容',
       };
     }
-    
+
     // 默认返回第一个可用选项
     return {
       token: options[0] || 'default-workflow',
       confidence: 0.5,
-      reasoning: '基于关键词分析的默认决策'
+      reasoning: '基于关键词分析的默认决策',
     };
   }
 }
 
 // 导出接口和类
-export type { DecisionRule, DecisionContext, DecisionResult, LLMService};
+export type { DecisionRule, DecisionContext, DecisionResult, LLMService };

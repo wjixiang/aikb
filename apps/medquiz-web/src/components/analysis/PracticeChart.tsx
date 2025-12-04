@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { Tooltip as ReactTooltip } from "react-tooltip";
+import { useEffect, useState, useRef } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   ComposedChart,
   Bar,
@@ -19,20 +19,20 @@ import {
   ResponsiveContainer,
   Legend,
   CartesianGrid,
-} from "recharts";
-import CalendarHeatmap from "react-calendar-heatmap";
-import "react-calendar-heatmap/dist/styles.css";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+} from 'recharts';
+import CalendarHeatmap from 'react-calendar-heatmap';
+import 'react-calendar-heatmap/dist/styles.css';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export interface PracticeData {
   date: string;
@@ -54,7 +54,7 @@ export function PracticeChart() {
   const [loading, setLoading] = useState(true);
   const [chartWidth, setChartWidth] = useState<number>(100);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
-  const [dateRange, setDateRange] = useState<string>("30"); // Default to 30 days
+  const [dateRange, setDateRange] = useState<string>('30'); // Default to 30 days
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [adaptiveYAxis, setAdaptiveYAxis] = useState<boolean>(true);
@@ -66,10 +66,10 @@ export function PracticeChart() {
   useEffect(() => {
     const fetchPracticeData = async () => {
       try {
-        const practiceResponse = await fetch("/api/analysis/practice-analysis");
+        const practiceResponse = await fetch('/api/analysis/practice-analysis');
 
         if (!practiceResponse.ok)
-          throw new Error("Failed to fetch practice data");
+          throw new Error('Failed to fetch practice data');
         const practiceData = await practiceResponse.json();
 
         // 提取所有可用的科目
@@ -84,7 +84,7 @@ export function PracticeChart() {
         setAvailableSubjects(Array.from(subjects));
 
         // 从数据中获取今日练习科目
-        const today = new Date().toISOString().split("T")[0];
+        const today = new Date().toISOString().split('T')[0];
         const todayData = practiceData.find((item: any) => item.date === today);
         let todaySubjects: string[] = [];
 
@@ -119,9 +119,9 @@ export function PracticeChart() {
         );
 
         setAllData(sortedData);
-        console.log("All fetched and sorted data:", sortedData);
+        console.log('All fetched and sorted data:', sortedData);
       } catch (error) {
-        console.error("Error fetching practice data:", error);
+        console.error('Error fetching practice data:', error);
       } finally {
         setLoading(false);
       }
@@ -149,7 +149,7 @@ export function PracticeChart() {
       }); // Corrected closing parenthesis for filter
 
       setDisplayData(filteredData);
-      console.log("Data after date range filtering:", filteredData);
+      console.log('Data after date range filtering:', filteredData);
     }
   }, [allData, dateRange]);
 
@@ -179,7 +179,7 @@ export function PracticeChart() {
 
       // 收集总体正确率
       chartData.forEach((day) => {
-        if (typeof day.accuracy === "number" && !isNaN(day.accuracy)) {
+        if (typeof day.accuracy === 'number' && !isNaN(day.accuracy)) {
           allAccuracyValues.push(day.accuracy);
         }
       });
@@ -188,7 +188,7 @@ export function PracticeChart() {
       selectedSubjects.forEach((subject) => {
         chartData.forEach((day) => {
           const subjectAccuracy = day[`${subject}_accuracy`];
-          if (typeof subjectAccuracy === "number" && !isNaN(subjectAccuracy)) {
+          if (typeof subjectAccuracy === 'number' && !isNaN(subjectAccuracy)) {
             allAccuracyValues.push(subjectAccuracy);
           }
         });
@@ -219,13 +219,13 @@ export function PracticeChart() {
   // Handle horizontal scrolling
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -200, behavior: "smooth" });
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 200, behavior: "smooth" });
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
@@ -249,18 +249,18 @@ export function PracticeChart() {
 
   // 获取热图颜色对应的CSS类名
   const getHeatmapColorClass = (value: number): string => {
-    if (value === 0) return "color-empty";
-    if (value <= 5) return "color-scale-1";
-    if (value <= 10) return "color-scale-2";
-    if (value <= 20) return "color-scale-3";
-    if (value <= 30) return "color-scale-4";
-    return "color-scale-5";
+    if (value === 0) return 'color-empty';
+    if (value <= 5) return 'color-scale-1';
+    if (value <= 10) return 'color-scale-2';
+    if (value <= 20) return 'color-scale-3';
+    if (value <= 30) return 'color-scale-4';
+    return 'color-scale-5';
   };
 
   // 为图表准备带有科目分类的数据
   const prepareSubjectData = () => {
-    console.log("Display data before preparing for chart:", displayData);
-    console.log("Currently selected subjects:", selectedSubjects);
+    console.log('Display data before preparing for chart:', displayData);
+    console.log('Currently selected subjects:', selectedSubjects);
     if (!displayData.length || !selectedSubjects.length) return [];
 
     return displayData.map((day) => {
@@ -299,7 +299,7 @@ export function PracticeChart() {
         }
       });
 
-      console.log("Prepared data for chart for a day:", result);
+      console.log('Prepared data for chart for a day:', result);
       return result;
     });
   };
@@ -309,14 +309,14 @@ export function PracticeChart() {
     return selectedSubjects.map((subject, index) => {
       // 生成一组独特的颜色
       const colors = [
-        "#8884d8",
-        "#82ca9d",
-        "#ffc658",
-        "#ff8042",
-        "#0088FE",
-        "#00C49F",
-        "#FFBB28",
-        "#FF8042",
+        '#8884d8',
+        '#82ca9d',
+        '#ffc658',
+        '#ff8042',
+        '#0088FE',
+        '#00C49F',
+        '#FFBB28',
+        '#FF8042',
       ];
       return (
         <Bar
@@ -336,14 +336,14 @@ export function PracticeChart() {
     return selectedSubjects.map((subject, index) => {
       // 生成一组独特的颜色，比柱状图颜色更亮些
       const colors = [
-        "#8a2be2",
-        "#00cc66",
-        "#ff8c00",
-        "#ff4500",
-        "#1e90ff",
-        "#00ced1",
-        "#ffd700",
-        "#da70d6",
+        '#8a2be2',
+        '#00cc66',
+        '#ff8c00',
+        '#ff4500',
+        '#1e90ff',
+        '#00ced1',
+        '#ffd700',
+        '#da70d6',
       ];
       return (
         <Line
@@ -376,7 +376,7 @@ export function PracticeChart() {
   }
 
   const chartData = prepareSubjectData();
-  console.log("Final chart data:", chartData);
+  console.log('Final chart data:', chartData);
 
   // Prepare heatmap data
   interface HeatmapValue {
@@ -444,8 +444,8 @@ export function PracticeChart() {
               onClick={() => toggleSubject(subject)}
               className={`px-2 py-1 text-xs rounded-full ${
                 selectedSubjects.includes(subject)
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground'
               }`}
             >
               {subject}
@@ -476,15 +476,15 @@ export function PracticeChart() {
             ref={scrollContainerRef}
             className="overflow-x-auto scrollbar-hide pb-4"
             style={{
-              overscrollBehavior: "contain",
-              WebkitOverflowScrolling: "touch",
+              overscrollBehavior: 'contain',
+              WebkitOverflowScrolling: 'touch',
             }}
           >
-            <div style={{ width: `${chartWidth}%`, minWidth: "100%" }}>
+            <div style={{ width: `${chartWidth}%`, minWidth: '100%' }}>
               {chartData.length > 0 ? (
                 <div className="flex flex-col">
                   {/* 固定高度的图表区域 */}
-                  <div style={{ height: "350px", width: "100%" }}>
+                  <div style={{ height: '350px', width: '100%' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartData}
@@ -502,9 +502,9 @@ export function PracticeChart() {
                           yAxisId="left"
                           orientation="left"
                           label={{
-                            value: "练习次数",
+                            value: '练习次数',
                             angle: -90,
-                            position: "insideLeft",
+                            position: 'insideLeft',
                           }}
                         />
                         <YAxis
@@ -512,22 +512,22 @@ export function PracticeChart() {
                           orientation="right"
                           domain={accuracyDomain}
                           label={{
-                            value: "正确率 (%)",
+                            value: '正确率 (%)',
                             angle: 90,
-                            position: "insideRight",
+                            position: 'insideRight',
                           }}
                         />
                         <Tooltip
                           formatter={(value: number, name: string) => {
                             if (
-                              typeof name === "string" &&
-                              name.includes("练习数")
+                              typeof name === 'string' &&
+                              name.includes('练习数')
                             ) {
                               return [`${value} 次`, name];
                             }
                             if (
-                              typeof name === "string" &&
-                              name.includes("正确率")
+                              typeof name === 'string' &&
+                              name.includes('正确率')
                             ) {
                               return [`${value}%`, name];
                             }
@@ -550,8 +550,8 @@ export function PracticeChart() {
                                       key={`item-${index}`}
                                       style={{ color: entry.color }}
                                     >
-                                      {entry.name || "数据项"}:{" "}
-                                      {entry.name?.includes("正确率")
+                                      {entry.name || '数据项'}:{' '}
+                                      {entry.name?.includes('正确率')
                                         ? `${entry.value}%`
                                         : `${entry.value} 次`}
                                     </p>
@@ -597,14 +597,14 @@ export function PracticeChart() {
                                     >
                                       <div
                                         style={{
-                                          width: item.value.includes("正确率")
-                                            ? "12px"
-                                            : "12px",
-                                          height: item.value.includes("正确率")
-                                            ? "2px"
-                                            : "12px",
+                                          width: item.value.includes('正确率')
+                                            ? '12px'
+                                            : '12px',
+                                          height: item.value.includes('正确率')
+                                            ? '2px'
+                                            : '12px',
                                           backgroundColor: item.color,
-                                          marginRight: "8px",
+                                          marginRight: '8px',
                                         }}
                                       ></div>
                                       <span className="text-sm">
@@ -653,7 +653,7 @@ export function PracticeChart() {
               values={heatmapData}
               classForValue={(value) => {
                 const typedValue = value as HeatmapValue | null | undefined;
-                if (!typedValue || !typedValue.count) return "color-empty";
+                if (!typedValue || !typedValue.count) return 'color-empty';
                 return getHeatmapColorClass(typedValue.count);
               }}
               tooltipDataAttrs={(value): Record<string, string> => {
@@ -661,9 +661,9 @@ export function PracticeChart() {
                 if (!typedValue || !typedValue.date) return {};
                 const dateStr = new Date(typedValue.date).toLocaleDateString();
                 return {
-                  "data-tooltip-id": "heatmap-tooltip",
-                  "data-tooltip-content": `${dateStr}\n练习次数: ${typedValue.count}次`,
-                  "data-tooltip-place": "top",
+                  'data-tooltip-id': 'heatmap-tooltip',
+                  'data-tooltip-content': `${dateStr}\n练习次数: ${typedValue.count}次`,
+                  'data-tooltip-place': 'top',
                 };
               }}
               showWeekdayLabels
@@ -676,9 +676,9 @@ export function PracticeChart() {
                   );
                   if (dateElement && scrollContainerRef.current) {
                     dateElement.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "center",
+                      behavior: 'smooth',
+                      block: 'nearest',
+                      inline: 'center',
                     });
                   }
                 }

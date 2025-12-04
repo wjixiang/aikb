@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckIcon, Copy, Info } from "lucide-react";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import MarkdownRenderer from "../wiki/DocumentDisplay";
-import { useSession } from "next-auth/react";
-import { ChatMessage, Reference } from "@/lib/agents/agent.types";
-import { MessageSources } from "./MessageSources";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CheckIcon, Copy, Info } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import MarkdownRenderer from '../wiki/DocumentDisplay';
+import { useSession } from 'next-auth/react';
+import { ChatMessage, Reference } from '@/lib/agents/agent.types';
+import { MessageSources } from './MessageSources';
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -31,8 +31,8 @@ export function MessageItem({
   const { data: session } = useSession();
   const [showSources, setShowSources] = useState(false); // Local state for sources
   const [showCoTDetails, setShowCoTDetails] = useState(true);
-  const isAi = message.sender === "ai";
-  const isUser = message.sender === "user";
+  const isAi = message.sender === 'ai';
+  const isUser = message.sender === 'user';
   const timestampKey = message.timestamp.toISOString();
 
   const toggleSources = () => {
@@ -45,75 +45,75 @@ export function MessageItem({
 
   const processTextForCopy = (text: string): string => {
     // Remove [ref:<index>] annotations from the text
-    return text.replace(/\[ref:\d+\]/g, "").trim();
+    return text.replace(/\[ref:\d+\]/g, '').trim();
   };
 
   const handleCopy = async () => {
     try {
       const rawText = Array.isArray(message.content)
         ? message.content
-            .filter((part: any) => part.type === "text")
+            .filter((part: any) => part.type === 'text')
             .map((part: any) => part.text)
-            .join(" ")
-        : typeof message.content === "string"
+            .join(' ')
+        : typeof message.content === 'string'
           ? message.content
-          : "";
+          : '';
       const textContent = processTextForCopy(rawText);
       await navigator.clipboard.writeText(textContent);
-      toast.success("复制成功", {
+      toast.success('复制成功', {
         style: {
-          backgroundColor: "#4caf50",
-          color: "white",
+          backgroundColor: '#4caf50',
+          color: 'white',
         },
-        description: "消息内容已复制到剪贴板",
+        description: '消息内容已复制到剪贴板',
         duration: 2000,
       });
     } catch (err) {
       try {
-        const textarea = document.createElement("textarea");
+        const textarea = document.createElement('textarea');
         const rawText = Array.isArray(message.content)
           ? message.content
-              .filter((part: any) => part.type === "text")
+              .filter((part: any) => part.type === 'text')
               .map((part: any) => part.text)
-              .join(" ")
-          : typeof message.content === "string"
+              .join(' ')
+          : typeof message.content === 'string'
             ? message.content
-            : "";
+            : '';
         const textContent = processTextForCopy(rawText);
         textarea.value = textContent;
-        textarea.style.position = "fixed";
+        textarea.style.position = 'fixed';
         document.body.appendChild(textarea);
         textarea.select();
 
-        const success = document.execCommand("copy");
+        const success = document.execCommand('copy');
         document.body.removeChild(textarea);
 
         if (success) {
-          toast.success("复制成功", {
+          toast.success('复制成功', {
             style: {
-              backgroundColor: "#4caf50",
-              color: "white",
+              backgroundColor: '#4caf50',
+              color: 'white',
             },
-            description: "消息内容已复制到剪贴板",
+            description: '消息内容已复制到剪贴板',
             duration: 2000,
           });
         } else {
-          throw new Error("execCommand failed");
+          throw new Error('execCommand failed');
         }
       } catch (fallbackErr) {
-        toast.error("复制失败", {
+        toast.error('复制失败', {
           style: {
-            backgroundColor: "#f44336",
-            color: "white",
+            backgroundColor: '#f44336',
+            color: 'white',
           },
-          description: "无法访问剪贴板",
+          description: '无法访问剪贴板',
           duration: 2000,
         });
       }
     }
   };
 
-  if (message.messageType === "status") {
+  if (message.messageType === 'status') {
     return (
       <div className="my-2">
         <div className="flex items-center text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded">
@@ -125,10 +125,10 @@ export function MessageItem({
   }
 
   return (
-    <div className={`w-full ${isUser ? "mb-4" : "mb-6"}`}>
+    <div className={`w-full ${isUser ? 'mb-4' : 'mb-6'}`}>
       <div className="w-full">
         <div
-          className={`${isUser ? "bg-muted/50" : ""} ${message.isErrorMessage ? "bg-destructive/10" : ""} rounded-sm`}
+          className={`${isUser ? 'bg-muted/50' : ''} ${message.isErrorMessage ? 'bg-destructive/10' : ''} rounded-sm`}
         >
           {/* CoT Display - only for AI messages and when showCoT is true */}
           {isAi && (message.CoT || cotContent) && (
@@ -141,7 +141,7 @@ export function MessageItem({
                   思考过程
                 </span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${showCoTDetails ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 transition-transform ${showCoTDetails ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -158,7 +158,7 @@ export function MessageItem({
                 <div className="px-3 pb-2">
                   <div className="text-xs text-muted p-2 rounded">
                     <MarkdownRenderer
-                      content={message.CoT || cotContent || ""}
+                      content={message.CoT || cotContent || ''}
                       references={[]}
                       basePath="/wiki"
                       fontColor="hsl(var(--muted-foreground))"
@@ -183,7 +183,7 @@ export function MessageItem({
         <div className="flex items-center justify-between mt-1 px-3">
           <div className="flex items-center space-x-2">
             <span className="text-xs text-muted-foreground">
-              {format(message.timestamp, "HH:mm")}
+              {format(message.timestamp, 'HH:mm')}
             </span>
 
             <Button
@@ -237,14 +237,14 @@ export function MessageItem({
         </div>
 
         {isAi &&
-          message.messageType === "content" &&
+          message.messageType === 'content' &&
           message.sources &&
           showSources && (
             <div className="mt-2 px-3">
               <MessageSources
                 sources={message.sources}
                 content={
-                  typeof message.content === "string" ? message.content : ""
+                  typeof message.content === 'string' ? message.content : ''
                 }
               />
             </div>

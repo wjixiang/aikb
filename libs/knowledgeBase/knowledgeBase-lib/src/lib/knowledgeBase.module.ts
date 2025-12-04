@@ -7,14 +7,8 @@ import { EmbeddingModule } from 'EmbeddingModule';
 
 @Module({
   controllers: [],
-  providers: [
-    KnowledgeManagementService, 
-  ],
-  exports: [
-    KnowledgeManagementService,
-    EventsModule,
-    VersionControlModule,
-  ],
+  providers: [KnowledgeManagementService],
+  exports: [KnowledgeManagementService, EventsModule, VersionControlModule],
   imports: [
     KnowledgeBaseStorageModule,
     VersionControlModule,

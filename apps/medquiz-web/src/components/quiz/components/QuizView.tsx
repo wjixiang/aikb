@@ -1,11 +1,11 @@
-import * as React from "react";
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import styled from "styled-components";
-import Quiz, { QuizImperativeHandle } from "../Quiz";
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Grid } from "lucide-react";
+import * as React from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import styled from 'styled-components';
+import Quiz, { QuizImperativeHandle } from '../Quiz';
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, Grid } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -13,7 +13,7 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from "@/components/ui/carousel";
+} from '@/components/ui/carousel';
 
 interface QuizViewProps {
   quizSet: QuizWithUserAnswer[];
@@ -100,12 +100,12 @@ const QuizView: React.FC<QuizViewProps> = ({
     // Initialize scroll state
     updateScrollState();
 
-    api.on("select", handleApiSelect);
-    api.on("reInit", updateScrollState);
+    api.on('select', handleApiSelect);
+    api.on('reInit', updateScrollState);
 
     return () => {
-      api?.off("select", handleApiSelect);
-      api?.off("reInit", updateScrollState);
+      api?.off('select', handleApiSelect);
+      api?.off('reInit', updateScrollState);
     };
   }, [api, setCurrentQuiz, setCurrentQuizIndex]);
 
@@ -126,12 +126,12 @@ const QuizView: React.FC<QuizViewProps> = ({
     if (api) {
       // Set flag to indicate we're switching views
       setIsViewSwitching(true);
-      
+
       // Add a longer delay when the component first mounts or when switching from grid-view
       const timer = setTimeout(() => {
         // When switching from grid-view to quiz-view, use instant scroll
         api.scrollTo(currentQuizIndex);
-        
+
         // Reset the flag after scrolling
         setTimeout(() => setIsViewSwitching(false), 50);
       }, 200); // Longer delay to ensure the carousel is fully initialized
@@ -196,18 +196,18 @@ const QuizView: React.FC<QuizViewProps> = ({
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
+      if (e.key === 'ArrowLeft') {
         e.preventDefault(); // Prevent default browser behavior
         back();
-      } else if (e.key === "ArrowRight") {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault(); // Prevent default browser behavior
         forward();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [back, forward]);
 
@@ -221,17 +221,17 @@ const QuizView: React.FC<QuizViewProps> = ({
         const state = quizRef.current.getCurrentState();
 
         // Handle A3/B type questions differently
-        if (quiz.type === "A3" || quiz.type === "B") {
+        if (quiz.type === 'A3' || quiz.type === 'B') {
           // For A3/B type questions, check if any subquestions have been answered
           if (
             state.selectedOptions &&
-            typeof state.selectedOptions === "object" &&
+            typeof state.selectedOptions === 'object' &&
             !Array.isArray(state.selectedOptions)
           ) {
             // Check if any subquestion has been answered
             const hasAnyAnswer = Object.values(
               state.selectedOptions as Record<number, string>,
-            ).some((answer) => answer && answer !== "");
+            ).some((answer) => answer && answer !== '');
 
             if (hasAnyAnswer) {
               answersToSubmit[quiz._id] = state.selectedOptions;
@@ -240,7 +240,7 @@ const QuizView: React.FC<QuizViewProps> = ({
         } else {
           // For regular questions
           // Only submit if the quiz has been answered
-          if (state.selectedOptions && state.selectedOptions !== "") {
+          if (state.selectedOptions && state.selectedOptions !== '') {
             answersToSubmit[quiz._id] = state.selectedOptions;
           }
         }
@@ -263,7 +263,7 @@ const QuizView: React.FC<QuizViewProps> = ({
       const timer = setTimeout(() => {
         const element = document.getElementById(`quiz-${currentQuizIndex}`);
         if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }, 100);
 
@@ -282,7 +282,7 @@ const QuizView: React.FC<QuizViewProps> = ({
       const state = getQuizState(index);
 
       // Handle A3/B type questions with subquestions
-      if (quiz.type === "A3") {
+      if (quiz.type === 'A3') {
         // For A3 type questions, check subQuizs
         const subquestions = quiz.subQuizs || [];
         totalSubquestions += subquestions.length;
@@ -292,7 +292,7 @@ const QuizView: React.FC<QuizViewProps> = ({
           // Get the answer for this subquestion from the selected object
           const subAnswer =
             state.selectedOptions &&
-            typeof state.selectedOptions === "object" &&
+            typeof state.selectedOptions === 'object' &&
             !Array.isArray(state.selectedOptions)
               ? (state.selectedOptions as Record<number, string>)[
                   subQ.subQuizId
@@ -300,7 +300,7 @@ const QuizView: React.FC<QuizViewProps> = ({
               : undefined;
 
           // Only count if the subquestion has been answered
-          if (subAnswer && subAnswer !== "") {
+          if (subAnswer && subAnswer !== '') {
             submittedCount++;
             // Check if the subquestion answer is correct
             if (subQ.answer === subAnswer) {
@@ -309,7 +309,7 @@ const QuizView: React.FC<QuizViewProps> = ({
             }
           }
         });
-      } else if (quiz.type === "B") {
+      } else if (quiz.type === 'B') {
         // For B type questions, check questions
         const subquestions = quiz.questions || [];
         totalSubquestions += subquestions.length;
@@ -319,7 +319,7 @@ const QuizView: React.FC<QuizViewProps> = ({
           // Get the answer for this subquestion from the selected object
           const subAnswer =
             state.selectedOptions &&
-            typeof state.selectedOptions === "object" &&
+            typeof state.selectedOptions === 'object' &&
             !Array.isArray(state.selectedOptions)
               ? (state.selectedOptions as Record<number, string>)[
                   subQ.questionId
@@ -327,7 +327,7 @@ const QuizView: React.FC<QuizViewProps> = ({
               : undefined;
 
           // Only count if the subquestion has been answered
-          if (subAnswer && subAnswer !== "") {
+          if (subAnswer && subAnswer !== '') {
             submittedCount++;
             // Check if the subquestion answer is correct
             if (subQ.answer === subAnswer) {
@@ -351,11 +351,11 @@ const QuizView: React.FC<QuizViewProps> = ({
     const completionRate =
       totalCount > 0
         ? ((submittedCount / (totalCount + totalSubquestions)) * 100).toFixed(1)
-        : "0";
+        : '0';
     const accuracyRate =
       submittedCount > 0
         ? ((correctCount / submittedCount) * 100).toFixed(1)
-        : "0";
+        : '0';
 
     return {
       completionRate,
@@ -447,7 +447,7 @@ const QuizView: React.FC<QuizViewProps> = ({
             <Carousel
               setApi={setApi}
               opts={{
-                align: "start",
+                align: 'start',
                 loop: false,
                 duration: isViewSwitching ? 0 : 20, // No animation when switching views, shorter animation for regular navigation
               }}

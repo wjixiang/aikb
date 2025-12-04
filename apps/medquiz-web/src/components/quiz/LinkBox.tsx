@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { LinkBlock } from "./LinkBlock";
+import { useState } from 'react';
+import { LinkBlock } from './LinkBlock';
 
 type Props = {
   // fetchLinks: (quizId: string)=>Promise<string[]>;

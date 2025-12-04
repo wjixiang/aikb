@@ -10,11 +10,7 @@ interface QuizSelectorDrawerProps {
 }
 
 const QuizSelectorDrawer = (props: QuizSelectorDrawerProps) => {
-  return (
-    <div>
-      QuizSelectorDrawer Component - To be implemented
-    </div>
-  );
+  return <div>QuizSelectorDrawer Component - To be implemented</div>;
 };
 
 export { QuizSelectorDrawer };

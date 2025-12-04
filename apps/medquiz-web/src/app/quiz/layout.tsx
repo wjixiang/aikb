@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Quiz Selector Test",
-  description: "Test page for quiz selector component",
+  title: 'Quiz Selector Test',
+  description: 'Test page for quiz selector component',
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

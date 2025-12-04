@@ -1,11 +1,11 @@
-"use client";
-import { useState } from "react";
-import { Button } from "ui";
-import { QuizSelector } from "./quizselector/QuizSelector";
-import { QuizType } from "quiz-shared";
-import { useSession } from "next-auth/react";
-import { toast } from "sonner";
-import styled from "styled-components";
+'use client';
+import { useState } from 'react';
+import { Button } from 'ui';
+import { QuizSelector } from './quizselector/QuizSelector';
+import { QuizType } from 'quiz-shared';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
+import styled from 'styled-components';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 const sortQuizzesByType = (
@@ -65,7 +65,7 @@ const QuizTitle = styled.div`
 `;
 
 export const NewQuizPage = () => {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [quizSet, setQuizSet] = useState<QuizType.quiz[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
@@ -80,21 +80,21 @@ export const NewQuizPage = () => {
 
   const handleSubmit = async () => {
     if (!title || quizSet.length === 0) {
-      toast.error("请填写试卷标题并添加题目");
+      toast.error('请填写试卷标题并添加题目');
       return;
     }
 
     if (!session?.user?.email) {
-      toast.error("请先登录");
+      toast.error('请先登录');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/quiz/create", {
-        method: "POST",
+      const response = await fetch('/api/quiz/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title,
@@ -103,16 +103,16 @@ export const NewQuizPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error("保存失败");
+        throw new Error('保存失败');
       }
 
       const result = await response.json();
-      toast.success("试卷创建成功");
-      setTitle("");
+      toast.success('试卷创建成功');
+      setTitle('');
       setQuizSet([]);
     } catch (error) {
       console.error(error);
-      toast.error("保存试卷时出错");
+      toast.error('保存试卷时出错');
     } finally {
       setIsSubmitting(false);
     }
@@ -141,16 +141,16 @@ export const NewQuizPage = () => {
             {quizSet.map((quiz, index) => {
               const getQuizDisplayText = () => {
                 switch (quiz.type) {
-                  case "A1":
-                  case "A2":
-                  case "X":
+                  case 'A1':
+                  case 'A2':
+                  case 'X':
                     return quiz.question;
-                  case "A3":
+                  case 'A3':
                     return quiz.mainQuestion;
-                  case "B":
-                    return quiz.questions?.[0]?.questionText || "B型题";
+                  case 'B':
+                    return quiz.questions?.[0]?.questionText || 'B型题';
                   default:
-                    return "未知题型";
+                    return '未知题型';
                 }
               };
 
@@ -175,7 +175,7 @@ export const NewQuizPage = () => {
         onClick={handleSubmit}
         disabled={isSubmitting || !title || quizSet.length === 0}
       >
-        {isSubmitting ? "保存中..." : "保存试卷"}
+        {isSubmitting ? '保存中...' : '保存试卷'}
       </Button>
     </PageContainer>
   );

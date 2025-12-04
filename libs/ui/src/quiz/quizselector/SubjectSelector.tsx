@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "ui";
-import { Button } from "ui";
-import { Input } from "ui";
-import { ScrollArea } from "ui";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from 'ui';
+import { Button } from 'ui';
+import { Input } from 'ui';
+import { ScrollArea } from 'ui';
 
 interface SubjectSelectorProps {
   onSubjectSelect: (subject: string) => void;
@@ -11,16 +11,16 @@ interface SubjectSelectorProps {
 export function SubjectSelector({ onSubjectSelect }: SubjectSelectorProps) {
   const [subjects, setSubjects] = useState<string[]>([]);
   const [filteredSubjects, setFilteredSubjects] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fetchSubjects = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/obcors/quiz/get-subject", {
-        method: "POST",
+      const response = await fetch('/api/obcors/quiz/get-subject', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ reqestData: {} }),
       });
@@ -28,7 +28,7 @@ export function SubjectSelector({ onSubjectSelect }: SubjectSelectorProps) {
       setSubjects(data);
       setFilteredSubjects(data);
     } catch (error) {
-      console.error("Failed to fetch subjects:", error);
+      console.error('Failed to fetch subjects:', error);
     } finally {
       setLoading(false);
     }

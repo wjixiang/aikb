@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import QuizFilterPanel from "@/components/filter/QuizFilterPanel";
-import { QuizSelector } from "./QuizSelector";
-import { quiz, answerType, QuizWithUserAnswer } from "@/types/quizData.types";
-import { useState, useEffect, useRef, SetStateAction } from "react";
-import Page from "../QuizPage";
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import QuizFilterPanel from '@/components/filter/QuizFilterPanel';
+import { QuizSelector } from './QuizSelector';
+import { quiz, answerType, QuizWithUserAnswer } from '@/types/quizData.types';
+import { useState, useEffect, useRef, SetStateAction } from 'react';
+import Page from '../QuizPage';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 const sortQuizzesByType = (
@@ -49,13 +49,13 @@ export function QuizSelectPortal() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [notification, setNotification] = useState({ message: "", type: "" });
+  const [notification, setNotification] = useState({ message: '', type: '' });
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { data: session } = useSession();
 
-  const showNotification = (message: string, type: "success" | "error") => {
+  const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
     setNotificationVisible(true);
     setTimeout(() => setNotificationVisible(false), 3000);
@@ -70,16 +70,16 @@ export function QuizSelectPortal() {
   };
   const handleSubmit = async () => {
     if (!session?.user?.email) {
-      showNotification("请先登录", "error");
+      showNotification('请先登录', 'error');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/quiz/create", {
-        method: "POST",
+      const response = await fetch('/api/quiz/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title: Date.now().toString(),
@@ -88,15 +88,15 @@ export function QuizSelectPortal() {
       });
 
       if (!response.ok) {
-        throw new Error("保存失败");
+        throw new Error('保存失败');
       }
 
       const result = await response.json();
       setCurrentQuizSetId(result.id);
-      showNotification("试卷创建成功", "success");
+      showNotification('试卷创建成功', 'success');
     } catch (error) {
       console.error(error);
-      showNotification("保存试卷时出错", "error");
+      showNotification('保存试卷时出错', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -108,10 +108,10 @@ export function QuizSelectPortal() {
     }
 
     try {
-      const response = await fetch("/api/quiz/update", {
-        method: "POST",
+      const response = await fetch('/api/quiz/update', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           quizSetId: currentQuizSetId,
@@ -120,12 +120,12 @@ export function QuizSelectPortal() {
       });
 
       if (!response.ok) {
-        throw new Error("更新失败");
+        throw new Error('更新失败');
       }
 
-      console.log("Quiz set updated successfully");
+      console.log('Quiz set updated successfully');
     } catch (error) {
-      console.error("Error updating quiz set:", error);
+      console.error('Error updating quiz set:', error);
     }
   };
 
@@ -155,21 +155,21 @@ export function QuizSelectPortal() {
 
   const loadHistory = async () => {
     if (!session?.user?.email) {
-      showNotification("请先登录", "error");
+      showNotification('请先登录', 'error');
       return;
     }
 
     setIsLoadingHistory(true);
     try {
-      const response = await fetch("/api/quiz/history");
+      const response = await fetch('/api/quiz/history');
       if (!response.ok) {
-        throw new Error("加载历史试卷失败");
+        throw new Error('加载历史试卷失败');
       }
       const result = await response.json();
       setHistory(result.data);
     } catch (error) {
       console.error(error);
-      showNotification("加载历史试卷时出错", "error");
+      showNotification('加载历史试卷时出错', 'error');
     } finally {
       setIsLoadingHistory(false);
     }
@@ -180,7 +180,7 @@ export function QuizSelectPortal() {
     try {
       const response = await fetch(`/api/quiz/create/${quizSetId}`);
       if (!response.ok) {
-        throw new Error("恢复试卷失败");
+        throw new Error('恢复试卷失败');
       }
       const result = await response.json();
       setCurrentQuizSetId(quizSetId);
@@ -191,31 +191,31 @@ export function QuizSelectPortal() {
               ...q.quiz,
               userAnswer: q.answer || null,
             };
-            console.log("Restored quiz:", quizWithAnswer);
+            console.log('Restored quiz:', quizWithAnswer);
             return quizWithAnswer;
           }),
         ),
       );
-      showNotification("试卷恢复成功", "success");
+      showNotification('试卷恢复成功', 'success');
     } catch (error) {
       console.error(error);
-      showNotification("恢复试卷时出错", "error");
+      showNotification('恢复试卷时出错', 'error');
     }
   };
 
   const handleAnswerChange = async (quizId: string, answer: answerType) => {
     if (!session?.user?.email) {
-      showNotification("请先登录", "error");
+      showNotification('请先登录', 'error');
       return;
     }
 
-    console.log("Attempting to save answer:", { quizId, answer });
+    console.log('Attempting to save answer:', { quizId, answer });
 
     try {
-      const response = await fetch("/api/quiz/answer", {
-        method: "POST",
+      const response = await fetch('/api/quiz/answer', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ quizId, answer, quizSetId: currentQuizSetId }),
       });
@@ -223,15 +223,15 @@ export function QuizSelectPortal() {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Answer save failed:", {
+        console.error('Answer save failed:', {
           status: response.status,
           error: result.error,
           code: result.code,
         });
 
-        let errorMessage = "保存答案失败";
-        if (result.code === "QUIZ_NOT_FOUND") {
-          errorMessage = "题目不存在或不属于当前用户";
+        let errorMessage = '保存答案失败';
+        if (result.code === 'QUIZ_NOT_FOUND') {
+          errorMessage = '题目不存在或不属于当前用户';
         } else if (response.status === 400) {
           errorMessage = `无效的题目ID: ${quizId}`;
         }
@@ -246,18 +246,18 @@ export function QuizSelectPortal() {
         ),
       );
 
-      showNotification("答案保存成功", "success");
+      showNotification('答案保存成功', 'success');
     } catch (error) {
-      console.error("保存答案时出错:", {
+      console.error('保存答案时出错:', {
         quizId,
         error,
         user: session.user?.email,
       });
 
       if (error instanceof Error) {
-        showNotification(error.message, "error");
+        showNotification(error.message, 'error');
       } else {
-        showNotification("保存答案时发生未知错误", "error");
+        showNotification('保存答案时发生未知错误', 'error');
       }
     }
   };
@@ -278,7 +278,7 @@ export function QuizSelectPortal() {
           size="sm"
           onClick={() => {
             setQuizzes([]);
-            showNotification("已重置所有题目", "success");
+            showNotification('已重置所有题目', 'success');
           }}
           disabled={quizzes.length === 0}
         >
@@ -291,13 +291,13 @@ export function QuizSelectPortal() {
           onClick={() => setIsTabsExpanded(!isTabsExpanded)}
           className="text-muted-foreground"
         >
-          {isTabsExpanded ? "收起" : "展开"}
+          {isTabsExpanded ? '收起' : '展开'}
         </Button>
       </div>
       <motion.div
         initial={false}
         animate={{
-          height: isTabsExpanded ? "auto" : 0,
+          height: isTabsExpanded ? 'auto' : 0,
           opacity: isTabsExpanded ? 1 : 0,
         }}
         transition={{ duration: 0.2 }}
@@ -328,7 +328,7 @@ export function QuizSelectPortal() {
                   onClick={loadHistory}
                   disabled={isLoadingHistory}
                 >
-                  {isLoadingHistory ? "加载中..." : "刷新"}
+                  {isLoadingHistory ? '加载中...' : '刷新'}
                 </Button>
               </div>
               {isLoadingHistory ? (
@@ -350,7 +350,7 @@ export function QuizSelectPortal() {
                       >
                         <div className="font-medium">{item.title}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(item.createdAt).toLocaleString()} ·{" "}
+                          {new Date(item.createdAt).toLocaleString()} ·{' '}
                           {item.quizCount}题
                         </div>
                       </div>
@@ -368,7 +368,7 @@ export function QuizSelectPortal() {
                         上一页
                       </Button>
                       <span className="text-sm text-muted-foreground">
-                        第 {currentPage} /{" "}
+                        第 {currentPage} /{' '}
                         {Math.ceil(history.length / itemsPerPage)} 页
                       </span>
                       <Button
@@ -414,7 +414,7 @@ export function QuizSelectPortal() {
           setQuizSet={function (
             value: SetStateAction<QuizWithUserAnswer[]>,
           ): void {
-            throw new Error("Function not implemented.");
+            throw new Error('Function not implemented.');
           }}
         />
       </div>
@@ -427,9 +427,9 @@ export function QuizSelectPortal() {
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-md text-sm shadow-md z-50 ${
-              notification.type === "error"
-                ? "bg-red-100 text-red-800"
-                : "bg-green-100 text-green-800"
+              notification.type === 'error'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800'
             }`}
           >
             <div className="flex items-center">

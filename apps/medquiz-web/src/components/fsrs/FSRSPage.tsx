@@ -1,8 +1,8 @@
-import { useState } from "react";
-import dynamic from "next/dynamic";
-import SubscriptionTable from "./SubscriptionTable";
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import SubscriptionTable from './SubscriptionTable';
 
-const FSRSReviewModal = dynamic(() => import("./FSRSReviewModal"), {
+const FSRSReviewModal = dynamic(() => import('./FSRSReviewModal'), {
   ssr: false,
 });
 

@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
-import { SingleValue } from "react-select";
-import { OptionType, SelectComponent } from "../quiz/SelectBox";
-import styled from "styled-components";
+import { useState, useMemo, useEffect } from 'react';
+import { SingleValue } from 'react-select';
+import { OptionType, SelectComponent } from '../quiz/SelectBox';
+import styled from 'styled-components';
 
 const Tag = styled.div`
   background-color: #f0f0f0;
@@ -51,7 +51,7 @@ export const FixedClusterBox = ({
   setCluster,
   options,
 }: FixedClusterBoxProps) => {
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState('');
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   const handleSelectChange = (selected: SingleValue<OptionType>) => {
@@ -61,7 +61,7 @@ export const FixedClusterBox = ({
   };
 
   const appendCluster = () => {
-    if (content.trim() !== "") {
+    if (content.trim() !== '') {
       if (cluster) {
         if (!cluster.includes(content.trim())) {
           setCluster([...cluster, content.trim()]);
@@ -69,7 +69,7 @@ export const FixedClusterBox = ({
       } else {
         setCluster([content.trim()]);
       }
-      setContent("");
+      setContent('');
     }
   };
 
@@ -80,7 +80,7 @@ export const FixedClusterBox = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       appendCluster();
     }
   };

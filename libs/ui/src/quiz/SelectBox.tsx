@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import Select, {
   StylesConfig,
   GroupBase,
@@ -6,7 +6,7 @@ import Select, {
   MultiValue,
   SingleValue,
   OptionsOrGroups,
-} from "react-select";
+} from 'react-select';
 
 // 定义选项类型
 export interface OptionType {
@@ -29,25 +29,25 @@ interface SelectComponentProps {
 const customStyles: StylesConfig<OptionType, boolean, GroupBase<OptionType>> = {
   control: (provided, state) => ({
     ...provided,
-    borderColor: state.isFocused ? "#3182ce" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px #3182ce" : "none",
-    "&:hover": {
-      borderColor: state.isFocused ? "#3182ce" : provided.borderColor,
+    borderColor: state.isFocused ? '#3182ce' : provided.borderColor,
+    boxShadow: state.isFocused ? '0 0 0 1px #3182ce' : 'none',
+    '&:hover': {
+      borderColor: state.isFocused ? '#3182ce' : provided.borderColor,
     },
   }),
   option: (provided, state) => ({
     ...provided,
-    backgroundColor: state.isSelected ? "#3182ce" : "white",
-    color: state.isSelected ? "white" : "black",
-    "&:hover": {
-      backgroundColor: state.isSelected ? "#3182ce" : "#f1f1f1",
+    backgroundColor: state.isSelected ? '#3182ce' : 'white',
+    color: state.isSelected ? 'white' : 'black',
+    '&:hover': {
+      backgroundColor: state.isSelected ? '#3182ce' : '#f1f1f1',
     },
   }),
 };
 
 export const SelectComponent: React.FC<SelectComponentProps> = ({
   options,
-  placeholder = "请选择",
+  placeholder = '请选择',
   isMulti = false,
   onChange,
   defaultValue,
@@ -73,7 +73,7 @@ export const SelectComponent: React.FC<SelectComponentProps> = ({
     }
 
     // 可以根据actionMeta做一些额外的操作
-    console.log("Action:", actionMeta.action);
+    console.log('Action:', actionMeta.action);
   };
 
   return (

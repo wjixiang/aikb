@@ -1,32 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function ProfilePage() {
   const { data: session } = useSession();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError("新密码与确认密码不一致");
+      setError('新密码与确认密码不一致');
       return;
     }
     try {
-      const response = await fetch("/api/auth/change-password", {
-        method: "POST",
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           currentPassword,
@@ -35,16 +35,16 @@ export default function ProfilePage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "修改密码失败");
+        throw new Error(data.message || '修改密码失败');
       }
       // 清空表单
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setError("");
-      alert("密码修改成功");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setError('');
+      alert('密码修改成功');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "修改密码时发生错误");
+      setError(err instanceof Error ? err.message : '修改密码时发生错误');
     }
   };
 
@@ -62,11 +62,11 @@ export default function ProfilePage() {
               <div className="relative group">
                 <Avatar className="h-24 w-24">
                   <AvatarImage
-                    src={session?.user?.avatar || ""}
-                    alt={session?.user?.name || "用户头像"}
+                    src={session?.user?.avatar || ''}
+                    alt={session?.user?.name || '用户头像'}
                   />
                   <AvatarFallback className="text-3xl w-full">
-                    {session?.user?.name?.charAt(0) || "U"}
+                    {session?.user?.name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <label
@@ -83,9 +83,9 @@ export default function ProfilePage() {
                       const file = e.target.files?.[0];
                       if (file) {
                         const formData = new FormData();
-                        formData.append("file", file);
-                        const response = await fetch("/api/avatar", {
-                          method: "POST",
+                        formData.append('file', file);
+                        const response = await fetch('/api/avatar', {
+                          method: 'POST',
                           body: formData,
                         });
                         if (response.ok) {
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                   {session?.user?.createdAt &&
                     format(
                       new Date(session.user.createdAt),
-                      "yyyy年MM月dd日 HH:mm",
+                      'yyyy年MM月dd日 HH:mm',
                       { locale: zhCN },
                     )}
                 </p>

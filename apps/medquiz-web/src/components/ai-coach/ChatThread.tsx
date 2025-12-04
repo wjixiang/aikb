@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useCallback, memo } from "react";
-import { MessageItem } from "./MessageItem";
-import { Loader2, Bot, Info, ArrowDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useStickToBottom } from "use-stick-to-bottom";
+import React, { useRef, useEffect, useCallback, memo } from 'react';
+import { MessageItem } from './MessageItem';
+import { Loader2, Bot, Info, ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useStickToBottom } from 'use-stick-to-bottom';
 
 interface ChatThreadProps {
   messages: any[];
@@ -43,7 +43,7 @@ const HistoryMessages = memo(
     return (
       <>
         {[...messages].map((message, index) => {
-          const isAi = message.sender === "ai";
+          const isAi = message.sender === 'ai';
 
           return (
             <div key={index} className="space-y-2 select-text">
@@ -59,7 +59,7 @@ const HistoryMessages = memo(
                 isRenderRef={true} // Always render references for history messages
               />
 
-              {message.sender === "user" &&
+              {message.sender === 'user' &&
                 statusMessages.length > 0 &&
                 index === messages.length - 1 && (
                   <div className="ml-11 mt-2">
@@ -84,7 +84,7 @@ const HistoryMessages = memo(
   },
 );
 
-HistoryMessages.displayName = "HistoryMessages";
+HistoryMessages.displayName = 'HistoryMessages';
 
 export function ChatThread({
   messages,

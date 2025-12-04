@@ -1,12 +1,23 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Edit3, Trash2, Search, Check, X, Plus, Hash, Loader2, Lock, Globe } from "lucide-react";
-import { Input } from "ui";
-import { Button } from "ui";
-import { Card, CardContent, CardHeader, CardTitle } from "ui";
-import { Badge } from "ui";
-import { toast } from "sonner";
-import { QuizTag } from "quiz-shared";
-import pinyin from "pinyin";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Edit3,
+  Trash2,
+  Search,
+  Check,
+  X,
+  Plus,
+  Hash,
+  Loader2,
+  Lock,
+  Globe,
+} from 'lucide-react';
+import { Input } from 'ui';
+import { Button } from 'ui';
+import { Card, CardContent, CardHeader, CardTitle } from 'ui';
+import { Badge } from 'ui';
+import { toast } from 'sonner';
+import { QuizTag } from 'quiz-shared';
+import pinyin from 'pinyin';
 import {
   Command,
   CommandEmpty,
@@ -14,11 +25,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "ui";
+} from 'ui';
 
 interface Tag {
   value: string;
-  type?: "private" | "public";
+  type?: 'private' | 'public';
   createdAt?: Date;
   userId?: string;
   quizId?: string;
@@ -44,17 +55,17 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
   currentQuizIndex,
   quizIndex,
   existingTags = [],
-  placeholder = "添加标签...",
-  className = "",
+  placeholder = '添加标签...',
+  className = '',
 }) => {
   const [tags, setTags] = useState<QuizTag[]>([]);
   const [currentQuizTags, setCurrentQuizTags] = useState<Tag[]>([]);
   const [filteredTags, setFilteredTags] = useState<QuizTag[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [inputValue, setInputValue] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingTag, setEditingTag] = useState<string | null>(null);
-  const [newTagName, setNewTagName] = useState("");
+  const [newTagName, setNewTagName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -63,7 +74,10 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
 
   // Helper function to convert Chinese text to pinyin
   const getPinyin = useCallback((text: string, style?: any): string => {
-    return pinyin(text, { style: style || pinyin.STYLE_NORMAL, heteronym: false })
+    return pinyin(text, {
+      style: style || pinyin.STYLE_NORMAL,
+      heteronym: false,
+    })
       .flat()
       .join('');
   }, []);
@@ -76,66 +90,71 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
   }, []);
 
   // Helper function to check if a tag matches the search term
-  const tagMatchesSearch = useCallback((tag: QuizTag, searchTerm: string): boolean => {
-    if (!searchTerm.trim()) return true;
-    
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    const tagValue = tag.value.toLowerCase();
-    
-    // Direct match
-    if (tagValue.includes(lowerSearchTerm)) {
-      return true;
-    }
-    
-    // Check if search term is English letters (potential pinyin initials)
-    if (/^[a-zA-Z]+$/.test(searchTerm)) {
-      const tagPinyin = getPinyin(tag.value).toLowerCase();
-      const tagPinyinInitials = getPinyinInitials(tag.value).toLowerCase();
-      
-      // Match full pinyin
-      if (tagPinyin.includes(lowerSearchTerm)) {
+  const tagMatchesSearch = useCallback(
+    (tag: QuizTag, searchTerm: string): boolean => {
+      if (!searchTerm.trim()) return true;
+
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      const tagValue = tag.value.toLowerCase();
+
+      // Direct match
+      if (tagValue.includes(lowerSearchTerm)) {
         return true;
       }
-      
-      // Match pinyin initials
-      if (tagPinyinInitials.includes(lowerSearchTerm)) {
-        return true;
+
+      // Check if search term is English letters (potential pinyin initials)
+      if (/^[a-zA-Z]+$/.test(searchTerm)) {
+        const tagPinyin = getPinyin(tag.value).toLowerCase();
+        const tagPinyinInitials = getPinyinInitials(tag.value).toLowerCase();
+
+        // Match full pinyin
+        if (tagPinyin.includes(lowerSearchTerm)) {
+          return true;
+        }
+
+        // Match pinyin initials
+        if (tagPinyinInitials.includes(lowerSearchTerm)) {
+          return true;
+        }
       }
-    }
-    
-    return false;
-  }, [getPinyin, getPinyinInitials]);
+
+      return false;
+    },
+    [getPinyin, getPinyinInitials],
+  );
 
   // Helper function to sort tags by pinyin and English initials
-  const sortTags = useCallback((tags: QuizTag[]): QuizTag[] => {
-    return [...tags].sort((a, b) => {
-      const aValue = a.value;
-      const bValue = b.value;
-      
-      // Get pinyin for both tags
-      const aPinyin = getPinyin(aValue).toLowerCase();
-      const bPinyin = getPinyin(bValue).toLowerCase();
-      
-      // Compare by pinyin first
-      if (aPinyin < bPinyin) return -1;
-      if (aPinyin > bPinyin) return 1;
-      
-      // If pinyin is the same, compare by original value
-      if (aValue < bValue) return -1;
-      if (aValue > bValue) return 1;
-      
-      return 0;
-    });
-  }, [getPinyin]);
+  const sortTags = useCallback(
+    (tags: QuizTag[]): QuizTag[] => {
+      return [...tags].sort((a, b) => {
+        const aValue = a.value;
+        const bValue = b.value;
+
+        // Get pinyin for both tags
+        const aPinyin = getPinyin(aValue).toLowerCase();
+        const bPinyin = getPinyin(bValue).toLowerCase();
+
+        // Compare by pinyin first
+        if (aPinyin < bPinyin) return -1;
+        if (aPinyin > bPinyin) return 1;
+
+        // If pinyin is the same, compare by original value
+        if (aValue < bValue) return -1;
+        if (aValue > bValue) return 1;
+
+        return 0;
+      });
+    },
+    [getPinyin],
+  );
 
   useEffect(() => {
-    if(currentQuizIndex === quizIndex) {
+    if (currentQuizIndex === quizIndex) {
       fetchUserTags();
       if (quizId) {
         fetchCurrentQuizTags();
       }
     }
-    
   }, [currentQuizIndex]);
 
   const fetchCurrentQuizTags = async () => {
@@ -145,17 +164,17 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
         const data = await response.json();
         setCurrentQuizTags(data.tags || []);
       } else {
-        throw new Error("Failed to fetch current quiz tags");
+        throw new Error('Failed to fetch current quiz tags');
       }
     } catch (error) {
-      console.error("Error fetching current quiz tags:", error);
-      toast.error("获取当前试题标签失败");
+      console.error('Error fetching current quiz tags:', error);
+      toast.error('获取当前试题标签失败');
     }
   };
 
   useEffect(() => {
     // Filter tags using our enhanced matching function
-    const filtered = tags.filter(tag => tagMatchesSearch(tag, searchTerm));
+    const filtered = tags.filter((tag) => tagMatchesSearch(tag, searchTerm));
     // Sort the filtered tags by pinyin
     const sortedFiltered = sortTags(filtered);
     setFilteredTags(sortedFiltered);
@@ -171,17 +190,17 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
       setIsLoading(true);
       // Fetch both user tags and public tags
       const [userTagsResponse, publicTagsResponse] = await Promise.all([
-        fetch("/api/user/tags"),
-        fetch("/api/tags/public")
+        fetch('/api/user/tags'),
+        fetch('/api/tags/public'),
       ]);
-      
+
       let allTags: QuizTag[] = [];
-      
+
       if (userTagsResponse.ok) {
         const userTags = await userTagsResponse.json();
         allTags = [...userTags];
       }
-      
+
       if (publicTagsResponse.ok) {
         const publicTagsData = await publicTagsResponse.json();
         // Convert public tags to QuizTag format
@@ -189,20 +208,20 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
           .filter((tag: any) => tag.isActive)
           .map((tag: any) => ({
             value: tag.name,
-            type: "public" as const,
+            type: 'public' as const,
             createdAt: tag.createdAt,
             userId: tag.createdBy,
-            quizId: ""
+            quizId: '',
           }));
         allTags = [...allTags, ...publicTags];
       }
-      
+
       // Sort all tags by pinyin
       const sortedTags = sortTags(allTags);
       setTags(sortedTags);
     } catch (error) {
-      console.error("Error fetching tags:", error);
-      toast.error("获取标签列表失败");
+      console.error('Error fetching tags:', error);
+      toast.error('获取标签列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -214,16 +233,16 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
       // Fetch both user tags and public tags for suggestions
       const [userTagsResponse, publicTagsResponse] = await Promise.all([
         fetch(`/api/user/tags`),
-        fetch(`/api/tags/public?q=${encodeURIComponent(query)}`)
+        fetch(`/api/tags/public?q=${encodeURIComponent(query)}`),
       ]);
-      
+
       let allTags: QuizTag[] = [];
-      
+
       if (userTagsResponse.ok) {
         const userTags = await userTagsResponse.json();
         allTags = [...userTags];
       }
-      
+
       if (publicTagsResponse.ok) {
         const publicTagsData = await publicTagsResponse.json();
         // Convert public tags to QuizTag format
@@ -231,19 +250,19 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
           .filter((tag: any) => tag.isActive)
           .map((tag: any) => ({
             value: tag.name,
-            type: "public" as const,
+            type: 'public' as const,
             createdAt: tag.createdAt,
             userId: tag.createdBy,
-            quizId: ""
+            quizId: '',
           }));
         allTags = [...allTags, ...publicTags];
       }
-      
+
       // Sort all tags by pinyin
       const sortedTags = sortTags(allTags);
       setTags(sortedTags);
     } catch (error) {
-      console.error("Error fetching tag suggestions:", error);
+      console.error('Error fetching tag suggestions:', error);
     } finally {
       setIsLoading(false);
     }
@@ -253,7 +272,7 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
     setIsInputFocused(true);
     if (!hasFocusedRef.current) {
       hasFocusedRef.current = true;
-      fetchTagSuggestions("");
+      fetchTagSuggestions('');
     }
   };
 
@@ -268,29 +287,31 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
     if (!inputValue.trim() || isAddingTag) return;
 
     const tagValue = inputValue.trim();
-    
+
     // Check if tag already exists
-    const tagExists = existingTags.some(tag => tag.value.toLowerCase() === tagValue.toLowerCase());
+    const tagExists = existingTags.some(
+      (tag) => tag.value.toLowerCase() === tagValue.toLowerCase(),
+    );
     if (tagExists) {
       if (onTagRemoved) {
-        onTagRemoved("该标签已存在");
+        onTagRemoved('该标签已存在');
       }
-      setInputValue("");
+      setInputValue('');
       return;
     }
 
     if (!quizId) {
       // If no quizId provided, just add to user's tag list (for management only)
-      toast.info("请在具体题目页面添加标签");
+      toast.info('请在具体题目页面添加标签');
       return;
     }
 
     setIsAddingTag(true);
     try {
       const response = await fetch(`/api/quiz/${quizId}/tags`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ tag: tagValue }),
       });
@@ -298,12 +319,12 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
       if (response.ok) {
         const data = await response.json();
         const newTag = data.tag;
-        
+
         if (onTagAdded) {
           onTagAdded(newTag);
         }
-        
-        setInputValue("");
+
+        setInputValue('');
         fetchUserTags(); // Refresh the tag list
         if (quizId) {
           fetchCurrentQuizTags(); // Refresh current quiz tags
@@ -313,13 +334,13 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
       } else {
         const errorData = await response.json();
         if (onTagRemoved) {
-          onTagRemoved(errorData.error || "添加标签失败");
+          onTagRemoved(errorData.error || '添加标签失败');
         }
       }
     } catch (error) {
-      console.error("Error adding tag:", error);
+      console.error('Error adding tag:', error);
       if (onTagRemoved) {
-        onTagRemoved("网络错误，请稍后重试");
+        onTagRemoved('网络错误，请稍后重试');
       }
     } finally {
       setIsAddingTag(false);
@@ -338,13 +359,13 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
 
     try {
       setIsProcessing(true);
-      const response = await fetch("/api/user/tags/manage", {
-        method: "POST",
+      const response = await fetch('/api/user/tags/manage', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: "rename",
+          action: 'rename',
           oldTagName,
           newTagName: newTagName.trim(),
         }),
@@ -361,30 +382,32 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
         }
         onTagUpdated?.();
       } else {
-        throw new Error(data.error || "重命名失败");
+        throw new Error(data.error || '重命名失败');
       }
     } catch (error) {
-      console.error("Error renaming tag:", error);
-      toast.error(error instanceof Error ? error.message : "重命名标签失败");
+      console.error('Error renaming tag:', error);
+      toast.error(error instanceof Error ? error.message : '重命名标签失败');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDeleteTag = async (tagName: string) => {
-    if (!confirm(`确定要删除标签 "${tagName}" 及其所有出现吗？此操作不可撤销。`)) {
+    if (
+      !confirm(`确定要删除标签 "${tagName}" 及其所有出现吗？此操作不可撤销。`)
+    ) {
       return;
     }
 
     try {
       setIsProcessing(true);
-      const response = await fetch("/api/user/tags/manage", {
-        method: "POST",
+      const response = await fetch('/api/user/tags/manage', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: "delete",
+          action: 'delete',
           oldTagName: tagName,
         }),
       });
@@ -399,11 +422,11 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
         }
         onTagUpdated?.();
       } else {
-        throw new Error(data.error || "删除失败");
+        throw new Error(data.error || '删除失败');
       }
     } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast.error(error instanceof Error ? error.message : "删除标签失败");
+      console.error('Error deleting tag:', error);
+      toast.error(error instanceof Error ? error.message : '删除标签失败');
     } finally {
       setIsProcessing(false);
     }
@@ -416,7 +439,7 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
 
   const cancelEditing = () => {
     setEditingTag(null);
-    setNewTagName("");
+    setNewTagName('');
   };
 
   const handleRemoveCurrentQuizTag = async (tagValue: string) => {
@@ -425,16 +448,18 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
     try {
       setIsProcessing(true);
       const response = await fetch(`/api/quiz/${quizId}/tags`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ tag: tagValue }),
       });
 
       if (response.ok) {
         // Remove from local state
-        setCurrentQuizTags(prev => prev.filter(tag => tag.value !== tagValue));
+        setCurrentQuizTags((prev) =>
+          prev.filter((tag) => tag.value !== tagValue),
+        );
         if (onTagRemoved) {
           onTagRemoved(tagValue);
         }
@@ -442,11 +467,11 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
         toast.success(`标签 "${tagValue}" 已移除`);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || "移除标签失败");
+        throw new Error(errorData.error || '移除标签失败');
       }
     } catch (error) {
-      console.error("Error removing tag:", error);
-      toast.error(error instanceof Error ? error.message : "移除标签失败");
+      console.error('Error removing tag:', error);
+      toast.error(error instanceof Error ? error.message : '移除标签失败');
     } finally {
       setIsProcessing(false);
     }
@@ -477,10 +502,10 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                 {currentQuizTags.map((tag) => (
                   <Badge
                     key={tag.value}
-                    variant={tag.type === "public" ? "default" : "secondary"}
+                    variant={tag.type === 'public' ? 'default' : 'secondary'}
                     className="group relative pr-6 cursor-pointer hover:bg-secondary/80 transition-colors"
                   >
-                    {tag.type === "public" ? (
+                    {tag.type === 'public' ? (
                       <Globe className="h-3 w-3 mr-1" />
                     ) : (
                       <Lock className="h-3 w-3 mr-1" />
@@ -510,9 +535,9 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                 shouldFilter={true}
                 filter={(value, search) => {
                   // Find the tag that matches this value
-                  const tag = tags.find(t => t.value === value);
+                  const tag = tags.find((t) => t.value === value);
                   if (!tag) return 0;
-                  
+
                   // Use our existing matching function
                   return tagMatchesSearch(tag, search) ? 1 : 0;
                 }}
@@ -520,7 +545,7 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
               >
                 <div className="flex items-center gap-2 w-full">
                   <CommandInput
-                    placeholder={placeholder + " 或搜索标签..."}
+                    placeholder={placeholder + ' 或搜索标签...'}
                     value={inputValue}
                     onValueChange={(value) => {
                       setInputValue(value);
@@ -529,7 +554,10 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                     onFocus={handleFocus}
                     onBlur={(e) => {
                       // Prevent blur when clicking on dropdown items
-                      if (!e.relatedTarget || !e.relatedTarget.closest('[cmdk-item]')) {
+                      if (
+                        !e.relatedTarget ||
+                        !e.relatedTarget.closest('[cmdk-item]')
+                      ) {
                         handleBlur();
                       }
                     }}
@@ -575,7 +603,7 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                     }}
                   >
                     <CommandEmpty>
-                      {searchTerm ? "没有找到匹配的标签" : "暂无标签"}
+                      {searchTerm ? '没有找到匹配的标签' : '暂无标签'}
                     </CommandEmpty>
                     <CommandGroup>
                       {tags.map((tag) => (
@@ -586,7 +614,9 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                             setInputValue(tag.value);
                             // Keep the input focused after selection
                             setTimeout(() => {
-                              const inputElement = document.querySelector('[cmdk-input]') as HTMLInputElement;
+                              const inputElement = document.querySelector(
+                                '[cmdk-input]',
+                              ) as HTMLInputElement;
                               if (inputElement) {
                                 inputElement.focus();
                               }
@@ -594,7 +624,10 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                           }}
                         >
                           {editingTag === tag.value ? (
-                            <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                            <div
+                              className="flex items-center gap-2 flex-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Input
                                 value={newTagName}
                                 onChange={(e) => setNewTagName(e.target.value)}
@@ -602,10 +635,10 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                                 autoFocus
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
+                                  if (e.key === 'Enter') {
                                     e.stopPropagation();
                                     handleRenameTag(tag.value, newTagName);
-                                  } else if (e.key === "Escape") {
+                                  } else if (e.key === 'Escape') {
                                     e.stopPropagation();
                                     cancelEditing();
                                   }
@@ -636,13 +669,17 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                           ) : (
                             <>
                               <div className="flex items-center gap-2 flex-1">
-                                {tag.type === "private" ? (
+                                {tag.type === 'private' ? (
                                   <Lock className="h-4 w-4 text-muted-foreground" />
                                 ) : (
                                   <Globe className="h-4 w-4 text-muted-foreground" />
                                 )}
-                                <span className="text-sm font-medium">{tag.value}</span>
-                                <span className="text-xs text-muted-foreground">({tag.type === "private" ? "私有" : "公开"})</span>
+                                <span className="text-sm font-medium">
+                                  {tag.value}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({tag.type === 'private' ? '私有' : '公开'})
+                                </span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <Button
@@ -674,7 +711,9 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
                       ))}
                     </CommandGroup>
                     <div className="text-xs text-muted-foreground p-2">
-                      共 {tags.length} 个标签 {searchTerm && `（筛选出 ${tags.filter(tag => tagMatchesSearch(tag, searchTerm)).length} 个）`}
+                      共 {tags.length} 个标签{' '}
+                      {searchTerm &&
+                        `（筛选出 ${tags.filter((tag) => tagMatchesSearch(tag, searchTerm)).length} 个）`}
                     </div>
                   </CommandList>
                 )}
@@ -688,4 +727,3 @@ const UnifiedTagManager: React.FC<UnifiedTagManagerProps> = ({
 };
 
 export default UnifiedTagManager;
-

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import DocumentDisplay from "@/components/wiki/DocumentDisplay";
-import { LeafProps } from "./types";
-import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import DocumentDisplay from '@/components/wiki/DocumentDisplay';
+import { LeafProps } from './types';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const Leaf: React.FC<LeafProps> = ({
   documentPath,
@@ -12,12 +12,12 @@ export const Leaf: React.FC<LeafProps> = ({
   readOnly = false,
   onOpenDocument,
 }) => {
-  const [content, setContent] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
+  const [content, setContent] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [references, setReferences] = useState<any[]>([]);
-  const currentPathRef = useRef<string>("");
+  const currentPathRef = useRef<string>('');
 
   const onTitleChangeRef = useRef(onTitleChange);
 
@@ -28,7 +28,7 @@ export const Leaf: React.FC<LeafProps> = ({
 
   const fetchDocument = useCallback(async (path: string) => {
     if (!path) {
-      setError("未提供文档路径");
+      setError('未提供文档路径');
       setLoading(false);
       return;
     }
@@ -54,12 +54,12 @@ export const Leaf: React.FC<LeafProps> = ({
       const document = await response.json();
 
       if (!document) {
-        throw new Error("文档内容为空");
+        throw new Error('文档内容为空');
       }
 
-      const newTitle = document.title || path.split("/").pop() || "未命名文档";
+      const newTitle = document.title || path.split('/').pop() || '未命名文档';
 
-      setContent(document.content || "");
+      setContent(document.content || '');
       setTitle(newTitle);
 
       // 使用ref来调用onTitleChange，避免依赖问题
@@ -72,9 +72,9 @@ export const Leaf: React.FC<LeafProps> = ({
         setReferences(document.references);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "未知错误";
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
       setError(errorMessage);
-      console.error("加载文档失败:", err);
+      console.error('加载文档失败:', err);
     } finally {
       setLoading(false);
     }
@@ -143,7 +143,7 @@ export const Leaf: React.FC<LeafProps> = ({
   }
 
   return (
-    <div className={cn("h-full flex flex-col", readOnly && "read-only")}>
+    <div className={cn('h-full flex flex-col', readOnly && 'read-only')}>
       <div className="flex-1 overflow-y-auto">
         <DocumentDisplay
           content={content}

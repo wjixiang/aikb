@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Card } from "@/components/ui/card";
-import { Volume2 } from "lucide-react";
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { Volume2 } from 'lucide-react';
 
 interface CoTDisplayProps {
   cotMessages: string[];
@@ -15,7 +15,7 @@ export const CoTDisplay: React.FC<CoTDisplayProps> = ({
   speechQueue,
   isSpeaking,
 }) => {
-  const fullCoT = cotMessages.join("");
+  const fullCoT = cotMessages.join('');
 
   return (
     <div className="space-y-4">

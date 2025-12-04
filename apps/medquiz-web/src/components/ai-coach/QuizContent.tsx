@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { QuizWithUserAnswer, answerType } from "@/types/quizData.types";
-import Page, { QuizPageImperativeHandle } from "../quiz/QuizPage";
-import { Skeleton } from "../ui/skeleton";
-import { useRef, forwardRef } from "react";
+import { QuizWithUserAnswer, answerType } from '@/types/quizData.types';
+import Page, { QuizPageImperativeHandle } from '../quiz/QuizPage';
+import { Skeleton } from '../ui/skeleton';
+import { useRef, forwardRef } from 'react';
 
 interface QuizContentProps {
   quizzes: QuizWithUserAnswer[];

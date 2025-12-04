@@ -1,10 +1,10 @@
-"use client";
-import { PracticeChart } from "@/components/analysis/PracticeChart";
-import SubjectPieChart from "@/components/analysis/SubjectPieChart";
-import ChunkMasteryVisualization from "@/components/analysis/ChunkMasteryVisualization";
-import RelatedChunks from "@/components/analysis/RelatedChunks";
-import ErrorBoundary from "@/components/ErrorBoundary"; // Import the ErrorBoundary component
-import { useState } from "react"; // Keep useState if other components use it, otherwise remove
+'use client';
+import { PracticeChart } from '@/components/analysis/PracticeChart';
+import SubjectPieChart from '@/components/analysis/SubjectPieChart';
+import ChunkMasteryVisualization from '@/components/analysis/ChunkMasteryVisualization';
+import RelatedChunks from '@/components/analysis/RelatedChunks';
+import ErrorBoundary from '@/components/ErrorBoundary'; // Import the ErrorBoundary component
+import { useState } from 'react'; // Keep useState if other components use it, otherwise remove
 
 // No longer need ChunkMasteryData import here as it's handled internally by ChunkMasteryVisualization
 // import { ChunkMasteryData } from "@/types/analysis";

@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 import {
   useState,
   useRef,
@@ -6,14 +6,14 @@ import {
   useMemo,
   useCallback,
   useImperativeHandle,
-} from "react";
-import  { QuizImperativeHandle } from "./Quiz";
-import QuizPreview from "./QuizPreview";
-import QuizView from "./quiz-components/QuizView";
-import { QuizType} from "quiz-shared";
-import { Card } from "ui";
-import { Button } from "ui";
-import { Toggle } from "ui";
+} from 'react';
+import { QuizImperativeHandle } from './Quiz';
+import QuizPreview from './QuizPreview';
+import QuizView from './quiz-components/QuizView';
+import { QuizType } from 'quiz-shared';
+import { Card } from 'ui';
+import { Button } from 'ui';
+import { Toggle } from 'ui';
 
 // Remove styled-components import since we're using Tailwind
 // import styled from 'styled-components'
@@ -23,8 +23,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "ui";
-import { useQuizBatchSync } from "./quiz-hooks/useQuizBatchSync";
+} from 'ui';
+import { useQuizBatchSync } from './quiz-hooks/useQuizBatchSync';
 
 // Sorting function to order quizzes by type: A1/A2 -> A3 -> B -> X
 const sortQuizzesByType = (
@@ -51,10 +51,15 @@ const sortQuizzesByType = (
 interface PageProps {
   quizSet: QuizType.QuizWithUserAnswer[];
   quizSetId?: string;
-  onAnswerChange: (quizId: string, answer: QuizType.answerType) => Promise<void>;
+  onAnswerChange: (
+    quizId: string,
+    answer: QuizType.answerType,
+  ) => Promise<void>;
   initialAnswers?: Record<string, QuizType.answerType>;
   setCurrentQuiz?: (index: number) => void;
-  setQuizSet: React.Dispatch<React.SetStateAction<QuizType.QuizWithUserAnswer[]>>;
+  setQuizSet: React.Dispatch<
+    React.SetStateAction<QuizType.QuizWithUserAnswer[]>
+  >;
   isTestMode?: boolean;
   quizStateUpdateTrigger?: number;
 }
@@ -84,8 +89,8 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
     },
     ref,
   ) => {
-    const [currentPage, setCurrentPage] = useState<"grid-view" | "quiz-view">(
-      "grid-view",
+    const [currentPage, setCurrentPage] = useState<'grid-view' | 'quiz-view'>(
+      'grid-view',
     );
     const [viewKey, setViewKey] = useState(0); // Add a key to force re-render when switching views
     const [quizStateUpdateTrigger, setQuizStateUpdateTrigger] = useState(0);
@@ -116,18 +121,18 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         const subQuestionCorrectnessMap: Record<number, boolean> = {};
 
         switch (quizWithAnswer.type) {
-          case "A1":
-          case "A2":
+          case 'A1':
+          case 'A2':
             isCorrect = quizWithAnswer.userAnswer === quizWithAnswer.answer;
             break;
-          case "X":
+          case 'X':
             if (Array.isArray(quizWithAnswer.userAnswer)) {
               isCorrect =
                 JSON.stringify(quizWithAnswer.userAnswer.sort()) ===
                 JSON.stringify(quizWithAnswer.answer.sort());
             }
             break;
-          case "A3":
+          case 'A3':
             isCorrect = (quizWithAnswer as any).subQuizs?.every((sub: any) => {
               const isSubCorrect =
                 (quizWithAnswer.userAnswer as Record<number, string>)[
@@ -137,7 +142,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
               return isSubCorrect;
             });
             break;
-          case "B":
+          case 'B':
             isCorrect = (quizWithAnswer as any).questions?.every((q: any) => {
               const isSubCorrect =
                 (quizWithAnswer.userAnswer as Record<number, string>)[
@@ -154,8 +159,8 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         // Convert selectedOptions to string for compatibility with QuizPreview
         let selectedOptions: string;
         if (Array.isArray(quizWithAnswer.userAnswer)) {
-          selectedOptions = quizWithAnswer.userAnswer.join(",");
-        } else if (typeof quizWithAnswer.userAnswer === "object") {
+          selectedOptions = quizWithAnswer.userAnswer.join(',');
+        } else if (typeof quizWithAnswer.userAnswer === 'object') {
           selectedOptions = JSON.stringify(quizWithAnswer.userAnswer);
         } else {
           selectedOptions = quizWithAnswer.userAnswer as string;
@@ -178,7 +183,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         return {
           submitted: false,
           isCorrect: false,
-          selectedOptions: "A",
+          selectedOptions: 'A',
         };
       }
 
@@ -188,8 +193,8 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         // Convert selectedOptions to string for compatibility with QuizPreview
         let selectedOptions: string;
         if (Array.isArray(quizState.selectedOptions)) {
-          selectedOptions = quizState.selectedOptions.join(",");
-        } else if (typeof quizState.selectedOptions === "object") {
+          selectedOptions = quizState.selectedOptions.join(',');
+        } else if (typeof quizState.selectedOptions === 'object') {
           selectedOptions = JSON.stringify(quizState.selectedOptions);
         } else {
           selectedOptions = quizState.selectedOptions as string;
@@ -204,7 +209,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         return {
           submitted: false,
           isCorrect: false,
-          selectedOptions: "A",
+          selectedOptions: 'A',
         };
       }
     };
@@ -213,7 +218,8 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
       return quizSet.map((quiz) => ({
         ...quiz,
         userAnswer:
-          initialAnswers?.[quiz._id] || (quiz as QuizType.QuizWithUserAnswer).userAnswer,
+          initialAnswers?.[quiz._id] ||
+          (quiz as QuizType.QuizWithUserAnswer).userAnswer,
       }));
     }, [quizSet, initialAnswers]);
     const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -255,7 +261,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
     useEffect(() => {
       // 仅当quizSet长度变化时重置视图
       if (!isTestMode) {
-        setCurrentPage("grid-view");
+        setCurrentPage('grid-view');
       }
       // 只有在quizSet长度变化时才重置索引，避免从quiz-view返回grid-view后再次点击时跳转到第一个quiz
       if (quizSet.length !== quizRefs.current.length) {
@@ -263,7 +269,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
       }
 
       // 调试日志：打印初始答案和quizSet
-      console.log("QuizSet updated:", {
+      console.log('QuizSet updated:', {
         quizSet: quizSet,
         initialAnswers: initialAnswers,
         combined: quizSet.map((quiz) => ({
@@ -315,17 +321,17 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
           const state = quizRef.current.getCurrentState();
 
           // Handle A3/B type questions differently
-          if (quiz.type === "A3" || quiz.type === "B") {
+          if (quiz.type === 'A3' || quiz.type === 'B') {
             // For A3/B type questions, check if any subquestions have been answered
             if (
               state.selectedOptions &&
-              typeof state.selectedOptions === "object" &&
+              typeof state.selectedOptions === 'object' &&
               !Array.isArray(state.selectedOptions)
             ) {
               // Check if any subquestion has been answered
               const hasAnyAnswer = Object.values(
                 state.selectedOptions as Record<number, string>,
-              ).some((answer) => answer && answer !== "");
+              ).some((answer) => answer && answer !== '');
 
               if (hasAnyAnswer) {
                 answersToSubmit[quiz._id] = state.selectedOptions;
@@ -334,7 +340,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
           } else {
             // For regular questions
             // Only submit if the quiz has been answered
-            if (state.selectedOptions && state.selectedOptions !== "") {
+            if (state.selectedOptions && state.selectedOptions !== '') {
               answersToSubmit[quiz._id] = state.selectedOptions;
             }
           }
@@ -361,7 +367,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         const state = getQuizState(index);
 
         // Handle A3/B type questions with subquestions
-        if (quiz.type === "A3") {
+        if (quiz.type === 'A3') {
           // For A3 type questions, check subQuizs
           const subquestions = quiz.subQuizs || [];
           totalSubquestions += subquestions.length;
@@ -371,7 +377,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
             // Get the answer for this subquestion from the selected object
             const subAnswer =
               state.selectedOptions &&
-              typeof state.selectedOptions === "object" &&
+              typeof state.selectedOptions === 'object' &&
               !Array.isArray(state.selectedOptions)
                 ? (state.selectedOptions as Record<number, string>)[
                     subQ.subQuizId
@@ -379,7 +385,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                 : undefined;
 
             // Only count if the subquestion has been answered
-            if (subAnswer && subAnswer !== "") {
+            if (subAnswer && subAnswer !== '') {
               submittedCount++;
               // Check if the subquestion answer is correct
               if (subQ.answer === subAnswer) {
@@ -388,7 +394,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
               }
             }
           });
-        } else if (quiz.type === "B") {
+        } else if (quiz.type === 'B') {
           // For B type questions, check questions
           const subquestions = quiz.questions || [];
           totalSubquestions += subquestions.length;
@@ -398,7 +404,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
             // Get the answer for this subquestion from the selected object
             const subAnswer =
               state.selectedOptions &&
-              typeof state.selectedOptions === "object" &&
+              typeof state.selectedOptions === 'object' &&
               !Array.isArray(state.selectedOptions)
                 ? (state.selectedOptions as Record<number, string>)[
                     subQ.questionId
@@ -406,7 +412,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                 : undefined;
 
             // Only count if the subquestion has been answered
-            if (subAnswer && subAnswer !== "") {
+            if (subAnswer && subAnswer !== '') {
               submittedCount++;
               // Check if the subquestion answer is correct
               if (subQ.answer === subAnswer) {
@@ -450,26 +456,26 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
     };
 
     const [filterMode, setFilterMode] = useState<
-      "all" | "correct" | "incorrect"
-    >("all");
+      'all' | 'correct' | 'incorrect'
+    >('all');
 
     const filteredQuizzes = quizSet.filter((quiz, index) => {
       const state = getQuizState(index);
 
       // Handle A3/B type questions with subquestions
-      if (quiz.type === "A3") {
+      if (quiz.type === 'A3') {
         // For A3 type questions, check if any subquestions match the filter
         const subquestions = quiz.subQuizs || [];
 
         // If showing all, include the quiz
-        if (filterMode === "all") return true;
+        if (filterMode === 'all') return true;
 
         // Check if any subquestions match the filter criteria
         const hasMatchingSubquestion = subquestions.some((subQ: any) => {
           // Get the answer for this subquestion from the selected object
           const subAnswer =
             state.selectedOptions &&
-            typeof state.selectedOptions === "object" &&
+            typeof state.selectedOptions === 'object' &&
             !Array.isArray(state.selectedOptions)
               ? (state.selectedOptions as Record<number, string>)[
                   subQ.subQuizId
@@ -477,31 +483,31 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
               : undefined;
 
           // If no answer, it's not submitted
-          if (!subAnswer || subAnswer === "") {
+          if (!subAnswer || subAnswer === '') {
             return false;
           }
 
           // Check correctness based on filter mode
           const isSubquestionCorrect = subQ.answer === subAnswer;
-          return filterMode === "correct"
+          return filterMode === 'correct'
             ? isSubquestionCorrect
             : !isSubquestionCorrect;
         });
 
         return hasMatchingSubquestion;
-      } else if (quiz.type === "B") {
+      } else if (quiz.type === 'B') {
         // For B type questions, check if any subquestions match the filter
         const subquestions = quiz.questions || [];
 
         // If showing all, include the quiz
-        if (filterMode === "all") return true;
+        if (filterMode === 'all') return true;
 
         // Check if any subquestions match the filter criteria
         const hasMatchingSubquestion = subquestions.some((subQ: any) => {
           // Get the answer for this subquestion from the selected object
           const subAnswer =
             state.selectedOptions &&
-            typeof state.selectedOptions === "object" &&
+            typeof state.selectedOptions === 'object' &&
             !Array.isArray(state.selectedOptions)
               ? (state.selectedOptions as Record<number, string>)[
                   subQ.questionId
@@ -509,13 +515,13 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
               : undefined;
 
           // If no answer, it's not submitted
-          if (!subAnswer || subAnswer === "") {
+          if (!subAnswer || subAnswer === '') {
             return false;
           }
 
           // Check correctness based on filter mode
           const isSubquestionCorrect = subQ.answer === subAnswer;
-          return filterMode === "correct"
+          return filterMode === 'correct'
             ? isSubquestionCorrect
             : !isSubquestionCorrect;
         });
@@ -523,23 +529,23 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         return hasMatchingSubquestion;
       } else {
         // For regular questions
-        if (filterMode === "all") return true;
+        if (filterMode === 'all') return true;
         if (!state.submitted) return false;
-        return filterMode === "correct" ? state.isCorrect : !state.isCorrect;
+        return filterMode === 'correct' ? state.isCorrect : !state.isCorrect;
       }
     });
 
     const handleQuizSelect = (index: number) => {
-      console.log(`selected quiz index: ${index}`)
+      console.log(`selected quiz index: ${index}`);
       setIndex(index);
       if (!isTestMode) {
-        setCurrentPage("quiz-view");
-        setViewKey(prev => prev + 1); // Increment viewKey to force re-render
+        setCurrentPage('quiz-view');
+        setViewKey((prev) => prev + 1); // Increment viewKey to force re-render
       }
     };
 
     const handleBackToGrid = () => {
-      setCurrentPage("grid-view");
+      setCurrentPage('grid-view');
       // Force sync any pending changes before switching views
       batchSync.forceSync();
     };
@@ -569,7 +575,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         <div
           style={{
             display:
-              currentPage === "grid-view" && !isTestMode ? "block" : "none",
+              currentPage === 'grid-view' && !isTestMode ? 'block' : 'none',
           }}
           className="h-full flex flex-col"
         >
@@ -615,7 +621,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                         value={filterMode}
                         onValueChange={(value) =>
                           setFilterMode(
-                            value as "all" | "correct" | "incorrect",
+                            value as 'all' | 'correct' | 'incorrect',
                           )
                         }
                       >
@@ -644,10 +650,10 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                     </div>
                   </div>
                 </div>
-                <div className={"w-full h-full"}>
+                <div className={'w-full h-full'}>
                   <div className="h-full overflow-y-auto pb-32">
                     <div
-                      className={`w-full grid ${isTestMode ? "gap-2 p-2" : "gap-4 p-5"} grid-cols-[repeat(auto-fill,minmax(50px,1fr))]`}
+                      className={`w-full grid ${isTestMode ? 'gap-2 p-2' : 'gap-4 p-5'} grid-cols-[repeat(auto-fill,minmax(50px,1fr))]`}
                     >
                       {filteredQuizzes.map((quiz, index) => {
                         const originalIndex = quizSet.indexOf(quiz);
@@ -678,14 +684,14 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
         <div
           style={{
             display:
-              currentPage === "quiz-view" || isTestMode ? "flex" : "none",
+              currentPage === 'quiz-view' || isTestMode ? 'flex' : 'none',
           }}
           className="flex-grow h-full flex flex-col"
         >
           <div
             style={{
-              maxHeight: isTestMode ? "none" : "none",
-              overflowY: isTestMode ? "auto" : "visible",
+              maxHeight: isTestMode ? 'none' : 'none',
+              overflowY: isTestMode ? 'auto' : 'visible',
             }}
             className="h-full flex flex-col"
           >
@@ -727,7 +733,10 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                   <div className="font-semibold text-foreground">答题进度</div>
                   <div className="text-sm text-muted-foreground">
                     用时: {Math.floor(elapsedTime / 60000)}:
-                    {String(Math.floor((elapsedTime % 60000) / 1000)).padStart(2, "0")}
+                    {String(Math.floor((elapsedTime % 60000) / 1000)).padStart(
+                      2,
+                      '0',
+                    )}
                   </div>
                 </>
               )}
@@ -738,7 +747,10 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                       {calculateStats().completionRate}%
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {Math.floor(elapsedTime / 60000)}:{String(Math.floor((elapsedTime % 60000) / 1000)).padStart(2, "0")}
+                      {Math.floor(elapsedTime / 60000)}:
+                      {String(
+                        Math.floor((elapsedTime % 60000) / 1000),
+                      ).padStart(2, '0')}
                     </div>
                   </div>
                 </div>
@@ -758,11 +770,16 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             </div>
-            
+
             {/* Content - only show when not collapsed */}
             {!isStatusPanelCollapsed && (
               <>
@@ -772,36 +789,36 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                       const state = getQuizState(index);
 
                       // Determine status based on submission state and selection state
-                      let status = "todo";
+                      let status = 'todo';
                       if (state.submitted) {
-                        status = state.isCorrect ? "correct" : "wrong";
+                        status = state.isCorrect ? 'correct' : 'wrong';
                       } else if (
-                        (quiz.type === "X" &&
+                        (quiz.type === 'X' &&
                           Array.isArray(state.selectedOptions) &&
                           state.selectedOptions.length > 0) ||
-                        (quiz.type === "A3" &&
-                          typeof state.selectedOptions === "object" &&
+                        (quiz.type === 'A3' &&
+                          typeof state.selectedOptions === 'object' &&
                           state.selectedOptions !== null &&
                           (quiz as any).subQuizs?.some(
                             (subQuiz: any) =>
                               state.selectedOptions[subQuiz.subQuizId] &&
-                              state.selectedOptions[subQuiz.subQuizId] !== "",
+                              state.selectedOptions[subQuiz.subQuizId] !== '',
                           )) ||
-                        (quiz.type === "B" &&
-                          typeof state.selectedOptions === "object" &&
+                        (quiz.type === 'B' &&
+                          typeof state.selectedOptions === 'object' &&
                           state.selectedOptions !== null &&
                           (quiz as any).questions?.some(
                             (question: any) =>
                               state.selectedOptions[question.questionId] &&
-                              state.selectedOptions[question.questionId] !== "",
+                              state.selectedOptions[question.questionId] !== '',
                           )) ||
-                        (quiz.type !== "X" &&
-                          quiz.type !== "A3" &&
-                          quiz.type !== "B" &&
-                          typeof state.selectedOptions === "string" &&
-                          state.selectedOptions !== "")
+                        (quiz.type !== 'X' &&
+                          quiz.type !== 'A3' &&
+                          quiz.type !== 'B' &&
+                          typeof state.selectedOptions === 'string' &&
+                          state.selectedOptions !== '')
                       ) {
-                        status = "selected";
+                        status = 'selected';
                       }
 
                       return (
@@ -809,14 +826,14 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                           key={index}
                           className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold cursor-pointer border-2 transition-all hover:scale-105 ${
                             index === currentQuizIndex
-                              ? "border-primary ring-2 ring-primary/20"
-                              : status === "correct"
-                                ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                                : status === "wrong"
-                                  ? "border-destructive bg-red-50 dark:bg-red-950/20"
-                                  : status === "selected"
-                                    ? "border-primary bg-primary/10"
-                                    : "border-border bg-card hover:bg-muted"
+                              ? 'border-primary ring-2 ring-primary/20'
+                              : status === 'correct'
+                                ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                                : status === 'wrong'
+                                  ? 'border-destructive bg-red-50 dark:bg-red-950/20'
+                                  : status === 'selected'
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-border bg-card hover:bg-muted'
                           }`}
                           onClick={() => {
                             setCurrentQuizIndex(index);
@@ -831,7 +848,7 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
                     })}
                   </div>
                 </div>
-                
+
                 <div className="p-3 pt-0">
                   <Button onClick={handleUnifiedSubmit} className="w-full">
                     提交所有答案
@@ -846,6 +863,6 @@ const Page = React.forwardRef<QuizPageImperativeHandle, PageProps>(
   },
 );
 
-Page.displayName = "QuizPage";
+Page.displayName = 'QuizPage';
 
 export default Page;

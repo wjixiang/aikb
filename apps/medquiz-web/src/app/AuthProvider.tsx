@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { SessionProvider } from "next-auth/react";
-import { useAutoLogin } from "@/hooks/useAutoLogin";
+import { SessionProvider } from 'next-auth/react';
+import { useAutoLogin } from '@/hooks/useAutoLogin';
 
 function AutoLoginHandler() {
   // Initialize auto-login functionality inside SessionProvider

@@ -1,12 +1,12 @@
-import React from "react";
-import { Card, CardTitle, CardContent } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import MarkdownRenderer from "@/components/wiki/DocumentDisplay";
+} from '@/components/ui/accordion';
+import MarkdownRenderer from '@/components/wiki/DocumentDisplay';
 
 interface RelatedCardsProps {
   submitted: boolean;
@@ -35,7 +35,7 @@ export const RelatedCards: React.FC<RelatedCardsProps> = ({
             {cards.map((card: any, index: number) => (
               <AccordionItem key={index} value={`item-${index}`}>
                 <AccordionTrigger>
-                  {card.content.split("\n")[0].substring(0, 100)}...
+                  {card.content.split('\n')[0].substring(0, 100)}...
                 </AccordionTrigger>
                 <AccordionContent>
                   <MarkdownRenderer content={card.content} />

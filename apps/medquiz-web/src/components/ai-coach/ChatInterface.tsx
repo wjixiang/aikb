@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -6,11 +6,11 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageItem } from "./MessageItem";
-import { CoTDisplay } from "./CoTDisplay";
+} from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { MessageItem } from './MessageItem';
+import { CoTDisplay } from './CoTDisplay';
 import {
   Loader2,
   Send,
@@ -23,10 +23,10 @@ import {
   History,
   Settings,
   Cpu,
-} from "lucide-react";
-import { ChatThread } from "./ChatThread";
-import { useStickToBottom } from "use-stick-to-bottom";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { ChatThread } from './ChatThread';
+import { useStickToBottom } from 'use-stick-to-bottom';
+import { toast } from 'sonner';
 import {
   Menubar,
   MenubarContent,
@@ -34,21 +34,21 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarTrigger,
-} from "@/components/ui/menubar";
-import { ScrollArea } from "../ui/scroll-area";
+} from '@/components/ui/menubar';
+import { ScrollArea } from '../ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   chatClientService,
   type ChatSession,
-} from "@/lib/services/ChatClientService";
-import { useSession } from "next-auth/react";
-import type { SupportedLLM } from "@/lib/LLM/LLMProvider";
+} from '@/lib/services/ChatClientService';
+import { useSession } from 'next-auth/react';
+import type { SupportedLLM } from '@/lib/LLM/LLMProvider';
 
 interface ChatInterfaceProps {
   messages: any[];
@@ -98,12 +98,12 @@ export default function ChatInterface({
   hideHeader = false, // Add this prop
   hideSessionPanel = false, // Add this prop
 }: ChatInterfaceProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [useHyDE, setUseHyDE] = useState(false);
   const [useHybrid, setUseHybrid] = useState(false);
   const [useReasoning, setUseReasoning] = useState(true); // Add useReasoning state
   const [selectedModel, setSelectedModel] =
-    useState<SupportedLLM>("GLM45Flash"); // Default model
+    useState<SupportedLLM>('GLM45Flash'); // Default model
   const [followMode, setFollowMode] = useState(false); // Track if we should follow new messages
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showSessionPanel, setShowSessionPanel] = useState(false);
@@ -160,7 +160,7 @@ export default function ChatInterface({
         setCurrentSessionId(newSessionId);
       }
     } catch (error) {
-      console.error("Failed to pre-create session:", error);
+      console.error('Failed to pre-create session:', error);
       // Silently fail - session will be created on first message if needed
     }
   }, [currentSessionId]);
@@ -172,17 +172,16 @@ export default function ChatInterface({
       await chatClientService.clearSession(currentSessionId);
       onClearChat();
     } catch (error) {
-      console.error("Failed to clear session:", error);
+      console.error('Failed to clear session:', error);
     }
   };
-
 
   // Auto-adjust textarea height
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
+        textareaRef.current.scrollHeight + 'px';
     }
   }, [input]);
 
@@ -195,7 +194,7 @@ export default function ChatInterface({
 
   // Send message
   const sendMessage = useCallback(async () => {
-    if (input.trim() === "" || loading) return;
+    if (input.trim() === '' || loading) return;
 
     try {
       // Ensure we have a session ID (either pre-created or create now)
@@ -205,43 +204,36 @@ export default function ChatInterface({
           activeSessionId = await chatClientService.createSession();
           setCurrentSessionId(activeSessionId);
         } catch (sessionError) {
-          console.error("Failed to create session on demand:", sessionError);
-          toast.error("创建会话失败，请重试");
+          console.error('Failed to create session on demand:', sessionError);
+          toast.error('创建会话失败，请重试');
           return; // Don't proceed with message sending if session creation fails
         }
       }
 
       await onSendMessage(
         input.trim(),
-        "vault", // selectedSource with default value
-        "", // analysisLLMId with default value
-        "", // workerLLMId with default value
+        'vault', // selectedSource with default value
+        '', // analysisLLMId with default value
+        '', // workerLLMId with default value
         useHyDE,
         useHybrid,
         selectedModel,
         useReasoning, // Add useReasoning parameter
       );
-      setInput("");
+      setInput('');
     } catch (error: any) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       // Show error to user with more details
-      let errorMessage = "未知错误";
+      let errorMessage = '未知错误';
       if (error.message) {
         errorMessage = error.message;
-        console.error("Error details:", error.message);
-      } else if (typeof error === "string") {
+        console.error('Error details:', error.message);
+      } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      toast.error("发送消息失败: " + errorMessage);
+      toast.error('发送消息失败: ' + errorMessage);
     }
-  }, [
-    input,
-    loading,
-    onSendMessage,
-    useHyDE,
-    useHybrid,
-    currentSessionId,
-  ]);
+  }, [input, loading, onSendMessage, useHyDE, useHybrid, currentSessionId]);
 
   // Handle keyboard events
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -255,7 +247,7 @@ export default function ChatInterface({
       );
 
     // Only allow Enter submission on non-mobile devices
-    if (e.key === "Enter" && !e.shiftKey && !isMobile) {
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
       e.preventDefault();
       sendMessage();
     }
@@ -276,8 +268,7 @@ export default function ChatInterface({
     <div className="h-[95vh] flex flex-col">
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-h-0">
-
-        <div className={`flex-1 min-h-0 ${hideHeader ? "" : ""}`}>
+        <div className={`flex-1 min-h-0 ${hideHeader ? '' : ''}`}>
           {chatThread}
         </div>
 
@@ -308,7 +299,7 @@ export default function ChatInterface({
                 ) : (
                   <Button
                     onClick={sendMessage}
-                    disabled={input.trim() === ""}
+                    disabled={input.trim() === ''}
                     size="sm"
                     className="h-8 w-8 p-0"
                   >
@@ -327,7 +318,7 @@ export default function ChatInterface({
                       <MenubarItem
                         onClick={() => setShowSessionPanel(!showSessionPanel)}
                       >
-                        {showSessionPanel ? "隐藏历史" : "显示历史"}
+                        {showSessionPanel ? '隐藏历史' : '显示历史'}
                       </MenubarItem>
                     </MenubarContent>
                   </MenubarMenu>
@@ -347,21 +338,21 @@ export default function ChatInterface({
                       <MenubarSeparator />
                       <MenubarItem
                         onClick={() => setUseHyDE(!useHyDE)}
-                        className={useHyDE ? "bg-accent" : ""}
+                        className={useHyDE ? 'bg-accent' : ''}
                       >
-                        {useHyDE ? "✓ " : ""}启用HyDE检索
+                        {useHyDE ? '✓ ' : ''}启用HyDE检索
                       </MenubarItem>
                       <MenubarItem
                         onClick={() => setUseHybrid(!useHybrid)}
-                        className={useHybrid ? "bg-accent" : ""}
+                        className={useHybrid ? 'bg-accent' : ''}
                       >
-                        {useHybrid ? "✓ " : ""}启用混合检索
+                        {useHybrid ? '✓ ' : ''}启用混合检索
                       </MenubarItem>
                       <MenubarItem
                         onClick={() => setUseReasoning(!useReasoning)}
-                        className={useReasoning ? "bg-accent" : ""}
+                        className={useReasoning ? 'bg-accent' : ''}
                       >
-                        {useReasoning ? "✓ " : ""}启用推理模式
+                        {useReasoning ? '✓ ' : ''}启用推理模式
                       </MenubarItem>
                     </MenubarContent>
                   </MenubarMenu>

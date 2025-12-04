@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
-import FsrsReviewModal from "./FSRSReviewModal";
+import FsrsReviewModal from './FSRSReviewModal';
 
 const meta = {
   component: FsrsReviewModal,

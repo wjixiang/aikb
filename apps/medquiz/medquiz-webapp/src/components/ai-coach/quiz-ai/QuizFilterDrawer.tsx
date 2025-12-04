@@ -13,11 +13,7 @@ interface QuizFilterDrawerProps {
 }
 
 const QuizFilterDrawer = (props: QuizFilterDrawerProps) => {
-  return (
-    <div>
-      QuizFilterDrawer Component - To be implemented
-    </div>
-  );
+  return <div>QuizFilterDrawer Component - To be implemented</div>;
 };
 
 export { QuizFilterDrawer };

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableHeader,
@@ -8,9 +8,9 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from "../ui/table";
-import { UserSubscription } from "@/types/anki.types";
-import { toast } from "sonner";
+} from '../ui/table';
+import { UserSubscription } from '@/types/anki.types';
+import { toast } from 'sonner';
 
 interface SubscriptionTableProps {
   onSelectCollection: (collectionId: string) => void;
@@ -30,15 +30,15 @@ export default function SubscriptionTable({
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const response = await fetch("/api/fsrs/collections/subscriptions");
+        const response = await fetch('/api/fsrs/collections/subscriptions');
         if (response.ok) {
           const data = await response.json();
           setUserSubscriptions(data);
         }
       } catch (error) {
-        console.error("Failed to fetch subscriptions:", error);
-        toast.error("获取订阅牌组失败", {
-          description: "无法获取已经订阅设牌组信息，请稍后再试",
+        console.error('Failed to fetch subscriptions:', error);
+        toast.error('获取订阅牌组失败', {
+          description: '无法获取已经订阅设牌组信息，请稍后再试',
         });
       }
     };
@@ -49,7 +49,7 @@ export default function SubscriptionTable({
   return (
     <div
       className={`transition-all duration-300 ease-in-out overflow-hidden 
-      ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+      ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}
     >
       <Card>
         <CardHeader>

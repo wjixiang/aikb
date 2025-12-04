@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import MarkdownRenderer from "@/components/wiki/DocumentDisplay";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import MarkdownRenderer from '@/components/wiki/DocumentDisplay';
 
 export default function WikiPage() {
   const params = useParams();
-  const [markdownContent, setMarkdownContent] = useState("");
-  const [noteTitle, setNoteTitle] = useState("");
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [noteTitle, setNoteTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ export default function WikiPage() {
       try {
         // 使用与上面相同的变量名
         const response = await fetch(`/api/note/fetch?title=${title}`);
-        if (!response.ok) throw new Error("笔记获取失败");
+        if (!response.ok) throw new Error('笔记获取失败');
         const data = await response.json();
         console.log(data);
         const markdownName = data.fileName;
@@ -34,7 +34,7 @@ export default function WikiPage() {
         setMarkdownContent(markdownCotent);
         setNoteTitle(markdownName);
       } catch (error) {
-        console.error("Failed to fetch markdown:", error);
+        console.error('Failed to fetch markdown:', error);
         setError(String(error));
       } finally {
         setIsLoading(false);
@@ -85,7 +85,7 @@ export default function WikiPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">
-        {isLoading ? "Loading..." : noteTitle}
+        {isLoading ? 'Loading...' : noteTitle}
       </h1>
 
       {isLoading ? (

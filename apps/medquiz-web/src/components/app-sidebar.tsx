@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 import {
   BookOpen,
   Bot,
@@ -18,12 +18,12 @@ import {
   Vault,
   History,
   LanguagesIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavSecondary } from '@/components/nav-secondary';
+import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -33,26 +33,26 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+} from '@/components/ui/sidebar';
+import { Avatar, AvatarImage, AvatarFallback } from '@radix-ui/react-avatar';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
-import { session } from "neo4j-driver";
-import { signOut, useSession } from "next-auth/react";
-import { Button } from "./ui/button";
-import Link from "next/dist/client/link";
-import ThemeSwitcher from "./ThemeSwitcher";
+} from '@radix-ui/react-dropdown-menu';
+import { session } from 'neo4j-driver';
+import { signOut, useSession } from 'next-auth/react';
+import { Button } from './ui/button';
+import Link from 'next/dist/client/link';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: 'shadcn',
+    email: 'm@example.com',
+    avatar: '/avatars/shadcn.jpg',
   },
   navMain: [
     // {
@@ -118,60 +118,60 @@ const data = {
     //   ],
     // },
     {
-      title: "Settings",
-      url: "#",
+      title: 'Settings',
+      url: '#',
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: 'General',
+          url: '#',
         },
         {
-          title: "Team",
-          url: "#",
+          title: 'Team',
+          url: '#',
         },
         {
-          title: "Billing",
-          url: "#",
+          title: 'Billing',
+          url: '#',
         },
         {
-          title: "Limits",
-          url: "#",
+          title: 'Limits',
+          url: '#',
         },
       ],
     },
   ],
   navSecondary: [
     {
-      title: "支持",
-      url: "#",
+      title: '支持',
+      url: '#',
       icon: LifeBuoy,
     },
     {
-      title: "反馈",
-      url: "#",
+      title: '反馈',
+      url: '#',
       icon: Send,
     },
   ],
   projects: [
     {
-      name: "分析中心",
-      url: "/analysis",
+      name: '分析中心',
+      url: '/analysis',
       icon: PieChart,
     },
     {
-      name: "练习记录",
-      url: "/quiz/history",
+      name: '练习记录',
+      url: '/quiz/history',
       icon: History,
     },
     {
-      name: "笔记仓库",
-      url: "/wiki",
+      name: '笔记仓库',
+      url: '/wiki',
       icon: Vault,
     },
     {
-      name: "精翻练习",
-      url: "/translation-practice",
+      name: '精翻练习',
+      url: '/translation-practice',
       icon: LanguagesIcon,
     },
   ],
@@ -179,7 +179,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, status } = useSession();
-  const loading = status === "loading";
+  const loading = status === 'loading';
 
   return (
     <Sidebar variant="inset" collapsible="offcanvas" {...props}>
@@ -216,9 +216,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ) : session ? (
           <NavUser
             user={{
-              name: session.user?.name || "",
-              email: session.user?.email || "",
-              avatar: session.user?.avatar || "",
+              name: session.user?.name || '',
+              email: session.user?.email || '',
+              avatar: session.user?.avatar || '',
             }}
           />
         ) : (

@@ -197,7 +197,8 @@ export class EdgeStorageService implements IEdgeStorage {
   }): Promise<{ edges: EdgeData[]; total: number }> {
     const { limit = 50, offset = 0 } = options || {};
     const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
-    const parsedOffset = typeof offset === 'string' ? parseInt(offset, 10) : offset;
+    const parsedOffset =
+      typeof offset === 'string' ? parseInt(offset, 10) : offset;
 
     const [edges, total] = await Promise.all([
       this.prisma.edge.findMany({

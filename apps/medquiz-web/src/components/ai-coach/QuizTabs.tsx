@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -7,14 +7,19 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react";
-import { QuizWithUserAnswer } from "@/types/quizData.types";
-import { QuizContent } from "@/components/ai-coach/QuizContent";
-import { QuizPageImperativeHandle } from "@/components/quiz/QuizPage";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+} from 'react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  PlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+} from 'lucide-react';
+import { QuizWithUserAnswer } from '@/types/quizData.types';
+import { QuizContent } from '@/components/ai-coach/QuizContent';
+import { QuizPageImperativeHandle } from '@/components/quiz/QuizPage';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface Tab {
   id: string;
@@ -29,19 +34,26 @@ interface QuizTabsProps {
     silent?: boolean,
     quizzesForQuizSet?: QuizWithUserAnswer[],
   ) => Promise<void>;
-  showNotification: (message: string, type: "success" | "error") => void;
+  showNotification: (message: string, type: 'success' | 'error') => void;
   currentQuizSetId?: string;
   loadingOperation: string | null;
   setSelectedQuizIndex: (index: number | null) => void;
   isTestMode?: boolean;
   quizStateUpdateTrigger?: number;
-  handleSubmit?: (quizzes: QuizWithUserAnswer[], title?: string) => Promise<void>;
+  handleSubmit?: (
+    quizzes: QuizWithUserAnswer[],
+    title?: string,
+  ) => Promise<void>;
 }
 
 export interface QuizTabsRef {
   addQuizToPage: (quizzesToAdd: QuizWithUserAnswer[]) => void;
   addTab: () => void;
-  createTabWithQuizzes: (quizzes: QuizWithUserAnswer[], title?: string, createNewSet?: boolean) => void;
+  createTabWithQuizzes: (
+    quizzes: QuizWithUserAnswer[],
+    title?: string,
+    createNewSet?: boolean,
+  ) => void;
   getCurrentTabQuizzes: () => QuizWithUserAnswer[];
   getCurrentTabId: () => string | null;
   getCurrentQuiz: () => QuizWithUserAnswer | null;
@@ -66,7 +78,10 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     const [showLeftScroll, setShowLeftScroll] = useState(false);
     const [showRightScroll, setShowRightScroll] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const [dropdownPosition, setDropdownPosition] = useState({
+      top: 0,
+      left: 0,
+    });
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -77,21 +92,25 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     // Calculate visible tabs based on container width
     const { visibleTabs, hiddenTabsCount, maxVisibleTabs } = useMemo(() => {
       if (!containerRef.current || tabs.length <= 1) {
-        return { visibleTabs: tabs, hiddenTabsCount: 0, maxVisibleTabs: tabs.length };
+        return {
+          visibleTabs: tabs,
+          hiddenTabsCount: 0,
+          maxVisibleTabs: tabs.length,
+        };
       }
 
       const containerWidth = containerRef.current.offsetWidth;
       const addButtonWidth = 32; // Plus button width
       const availableWidth = containerWidth - addButtonWidth;
-      
+
       // Estimate max tabs that can fit (each tab needs ~100px minimum)
       const estimatedMaxTabs = Math.max(1, Math.floor(availableWidth / 100));
       const maxTabs = Math.min(tabs.length, estimatedMaxTabs);
-      
+
       return {
         visibleTabs: tabs.slice(0, maxTabs),
         hiddenTabsCount: tabs.length - maxTabs,
-        maxVisibleTabs: maxTabs
+        maxVisibleTabs: maxTabs,
       };
     }, [tabs]);
 
@@ -102,26 +121,29 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     }, []);
 
     // Handle dropdown click
-    const handleDropdownClick = useCallback((e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (dropdownRef.current) {
-        const rect = dropdownRef.current.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const dropdownWidth = 200; // Approximate dropdown width
-        
-        // Calculate left position, ensuring dropdown doesn't exceed right boundary
-        let leftPosition = rect.left;
-        if (leftPosition + dropdownWidth > viewportWidth) {
-          leftPosition = viewportWidth - dropdownWidth - 10; // 10px margin from right edge
+    const handleDropdownClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (dropdownRef.current) {
+          const rect = dropdownRef.current.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const dropdownWidth = 200; // Approximate dropdown width
+
+          // Calculate left position, ensuring dropdown doesn't exceed right boundary
+          let leftPosition = rect.left;
+          if (leftPosition + dropdownWidth > viewportWidth) {
+            leftPosition = viewportWidth - dropdownWidth - 10; // 10px margin from right edge
+          }
+
+          setDropdownPosition({
+            top: rect.bottom + 4,
+            left: leftPosition,
+          });
         }
-        
-        setDropdownPosition({
-          top: rect.bottom + 4,
-          left: leftPosition
-        });
-      }
-      setShowDropdown(!showDropdown);
-    }, [showDropdown]);
+        setShowDropdown(!showDropdown);
+      },
+      [showDropdown],
+    );
 
     // Handle tab selection from dropdown
     const handleTabSelect = useCallback((tabId: string) => {
@@ -132,7 +154,10 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     // Close dropdown when clicking outside
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
           setShowDropdown(false);
         }
       };
@@ -157,11 +182,11 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     useEffect(() => {
       const scrollArea = scrollAreaRef.current;
       if (scrollArea) {
-        scrollArea.addEventListener("scroll", checkScrollIndicators);
+        scrollArea.addEventListener('scroll', checkScrollIndicators);
         // Initial check
         checkScrollIndicators();
         return () =>
-          scrollArea.removeEventListener("scroll", checkScrollIndicators);
+          scrollArea.removeEventListener('scroll', checkScrollIndicators);
       }
     }, [checkScrollIndicators]);
 
@@ -169,14 +194,14 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     useEffect(() => {
       const handleResize = () => {
         // Force re-calculation by updating state
-        setTabs(prev => [...prev]);
+        setTabs((prev) => [...prev]);
       };
-      
+
       const resizeObserver = new ResizeObserver(handleResize);
       if (containerRef.current) {
         resizeObserver.observe(containerRef.current);
       }
-      
+
       return () => {
         if (containerRef.current) {
           resizeObserver.unobserve(containerRef.current);
@@ -187,13 +212,13 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
     // Scroll functions
     const scrollLeft = () => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollBy({ left: -200, behavior: "smooth" });
+        scrollAreaRef.current.scrollBy({ left: -200, behavior: 'smooth' });
       }
     };
 
     const scrollRight = () => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollBy({ left: 200, behavior: "smooth" });
+        scrollAreaRef.current.scrollBy({ left: 200, behavior: 'smooth' });
       }
     };
 
@@ -260,7 +285,7 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
         React.createRef<QuizPageImperativeHandle>();
       setTabs([...tabs, newTab]);
       setActiveTabId(newTabId);
-      
+
       // Only create new quiz set if explicitly requested
       if (quizzes.length > 0 && handleSubmit && createNewSet) {
         handleSubmit(quizzes, title || `新试卷 ${tabs.length + 1}`);
@@ -272,7 +297,7 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
       const activeTab = getActiveTab();
       if (!activeTab) return;
       updateTabQuizzes(activeTab.id, []);
-      showNotification("已重置当前试卷", "success");
+      showNotification('已重置当前试卷', 'success');
     };
 
     // Expose functions via ref
@@ -302,11 +327,14 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
 
     return (
       <Tabs
-        value={activeTabId || ""}
+        value={activeTabId || ''}
         onValueChange={(value) => setActiveTabId(value || null)}
         className="w-full h-full flex flex-col"
       >
-        <div className="flex items-end flex-shrink-0 relative" ref={containerRef}>
+        <div
+          className="flex items-end flex-shrink-0 relative"
+          ref={containerRef}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -327,7 +355,11 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
                     key={tab.id}
                     value={tab.id}
                     className={`border-b data-[state=active]:border data-[state=active]:border-b-transparent rounded-none bg-background h-full data-[state=active]:shadow-none -mb-[2px] rounded-t max-w-[200px] min-w-[80px] truncate justify-between items-center px-2 ${
-                      !visibleTabs.some(visibleTab => visibleTab.id === tab.id) ? 'hidden' : ''
+                      !visibleTabs.some(
+                        (visibleTab) => visibleTab.id === tab.id,
+                      )
+                        ? 'hidden'
+                        : ''
                     }`}
                   >
                     <span className="truncate flex-1 text-ellipsis overflow-hidden whitespace-nowrap">
@@ -346,7 +378,7 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
                     )}
                   </TabsTrigger>
                 ))}
-                
+
                 {/* Overflow indicator */}
                 {hiddenTabsCount > 0 && (
                   <div
@@ -375,16 +407,16 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
                       <div
                         key={tab.id}
                         className={`px-3 py-2 cursor-pointer hover:bg-muted transition-colors flex items-center ${
-                          activeTabId === tab.id ? 'bg-muted border-l-2 border-primary' : ''
+                          activeTabId === tab.id
+                            ? 'bg-muted border-l-2 border-primary'
+                            : ''
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTabSelect(tab.id);
                         }}
                       >
-                        <span className="truncate flex-1">
-                          {tab.title}
-                        </span>
+                        <span className="truncate flex-1">{tab.title}</span>
                         {activeTabId === tab.id && (
                           <div className="w-2 h-2 rounded-full bg-primary"></div>
                         )}
@@ -395,7 +427,6 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
               </TabsList>
             </div>
           </div>
-
         </div>
         {tabs.map((tab) => (
           <TabsContent
@@ -420,12 +451,12 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
               }}
               onReset={() => {
                 updateTabQuizzes(tab.id, []);
-                showNotification("已重置当前试卷", "success");
+                showNotification('已重置当前试卷', 'success');
               }}
               onQuizSelect={setSelectedQuizIndex}
               isQuizFetching={!!loadingOperation}
               setQuizzes={(quizzes) => {
-                if (typeof quizzes === "function") {
+                if (typeof quizzes === 'function') {
                   const newQuizzes = quizzes(tab.quizzes);
                   updateTabQuizzes(tab.id, newQuizzes);
                 } else {
@@ -448,4 +479,4 @@ export const QuizTabs = React.forwardRef<QuizTabsRef, QuizTabsProps>(
   },
 );
 
-QuizTabs.displayName = "QuizTabs";
+QuizTabs.displayName = 'QuizTabs';

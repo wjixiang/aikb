@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
-import QuizFilterPanel from "./QuizFilterPanel";
+import QuizFilterPanel from './QuizFilterPanel';
 
 const meta = {
   component: QuizFilterPanel,
@@ -15,10 +15,10 @@ export const Default: Story = {
     setQuizzes: () => {},
     apiReqest: {
       POST: async (reqestURL: string, requestData) => {
-        return "";
+        return '';
       },
       GET: async (reqestURL: string) => {
-        return "";
+        return '';
       },
     },
   },

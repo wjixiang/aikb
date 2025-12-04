@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -10,42 +10,42 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, User, Mail, Lock } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2, User, Mail, Lock } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 export default function SignUp() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "注册失败");
+        throw new Error(data.message || '注册失败');
       }
 
-      router.push("/auth/signin");
+      router.push('/auth/signin');
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -135,7 +135,7 @@ export default function SignUp() {
                 type="submit"
                 className="w-full h-10 md:h-11 mt-2 transition-all"
                 disabled={isLoading}
-                size={isMobile ? "default" : "lg"}
+                size={isMobile ? 'default' : 'lg'}
               >
                 {isLoading ? (
                   <>
@@ -143,7 +143,7 @@ export default function SignUp() {
                     注册中...
                   </>
                 ) : (
-                  "注册"
+                  '注册'
                 )}
               </Button>
             </form>
@@ -166,7 +166,7 @@ export default function SignUp() {
               </Link>
             </p>
             <div className="text-center text-xs md:text-sm text-muted-foreground">
-              已有账号？{" "}
+              已有账号？{' '}
               <Link
                 href="/auth/signin"
                 className="text-primary font-medium hover:underline transition-colors"

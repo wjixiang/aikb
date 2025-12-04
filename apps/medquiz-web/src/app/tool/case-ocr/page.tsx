@@ -1,11 +1,11 @@
-"use client";
-import { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+'use client';
+import { useState } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ImageItem {
   id: string;
@@ -59,23 +59,23 @@ export default function CaseOCRPage() {
     try {
       const formData = new FormData();
       images.forEach((img) => {
-        formData.append("images", img.file);
+        formData.append('images', img.file);
       });
 
-      const response = await fetch("/api/tool/case-ocr", {
-        method: "POST",
+      const response = await fetch('/api/tool/case-ocr', {
+        method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("OCR processing failed");
+        throw new Error('OCR processing failed');
       }
 
       const data = await response.json();
       setResult(data);
     } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to process image");
+      console.error('Error:', error);
+      alert('Failed to process image');
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +154,7 @@ export default function CaseOCRPage() {
             onClick={handleSubmit}
             disabled={images.length === 0 || isLoading}
           >
-            {isLoading ? "处理中..." : "转换为病历文本"}
+            {isLoading ? '处理中...' : '转换为病历文本'}
           </Button>
 
           {result && (

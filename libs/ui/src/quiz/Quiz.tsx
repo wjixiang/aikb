@@ -1,25 +1,17 @@
-"use client";
+'use client';
 
-import React, {
-  forwardRef,
-  useEffect,
-  useState,
-} from "react";
-import { useSession } from "next-auth/react";
-import { Button } from "ui";
-import { Badge } from "ui";
-import UnifiedTagManager from "./UnifiedTagManager";
-import {
-  TopBar,
-  InfoBar,
-  HideScrollbar,
-} from "./styles/QuizStyles";
-import { QuizType } from "quiz-shared";
-import { useQuizLogic } from "./quiz-hooks/useQuizLogic";
-import { QuizContent } from "./quiz-components/QuizContent";
-import { AnswerSection } from "./quiz-components/AnswerSection";
-import { PracticeHistory } from "./quiz-components/PracticeHistory";
-import { LinkBox } from "./LinkBox";
+import React, { forwardRef, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from 'ui';
+import { Badge } from 'ui';
+import UnifiedTagManager from './UnifiedTagManager';
+import { TopBar, InfoBar, HideScrollbar } from './styles/QuizStyles';
+import { QuizType } from 'quiz-shared';
+import { useQuizLogic } from './quiz-hooks/useQuizLogic';
+import { QuizContent } from './quiz-components/QuizContent';
+import { AnswerSection } from './quiz-components/AnswerSection';
+import { PracticeHistory } from './quiz-components/PracticeHistory';
+import { LinkBox } from './LinkBox';
 
 interface QuizComponentProps {
   quiz: QuizType.QuizWithUserAnswer;
@@ -29,8 +21,13 @@ interface QuizComponentProps {
   thisQuizIndex: number;
   back: () => void;
   forward: () => void;
-  onAnswerChange: (quizId: string, answer: QuizType.answerType) => Promise<void>;
-  onSimilarQuizzesFound: (similarQuizzes: QuizType.QuizWithUserAnswer[]) => void;
+  onAnswerChange: (
+    quizId: string,
+    answer: QuizType.answerType,
+  ) => Promise<void>;
+  onSimilarQuizzesFound: (
+    similarQuizzes: QuizType.QuizWithUserAnswer[],
+  ) => void;
   isTestMode?: boolean;
 }
 
@@ -91,8 +88,8 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
     });
 
     const { data: session, status } = useSession();
-    const isAuthenticated = status === "authenticated";
-    
+    const isAuthenticated = status === 'authenticated';
+
     // State for tracking active sub-question in A3/B type questions
     const [activeSubQuestionIndex, setActiveSubQuestionIndex] = useState(0);
     const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
@@ -101,7 +98,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
     useEffect(() => {
       setActiveSubQuestionIndex(0);
     }, [quiz._id]);
-
 
     // Keyboard event handling
     useEffect(() => {
@@ -114,8 +110,8 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
         // Skip shortcuts when typing in input elements (textarea, input, etc.)
         const target = event.target as HTMLElement;
         if (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
           target.isContentEditable
         ) {
           return;
@@ -128,12 +124,12 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
         }
 
         // Handle Tab navigation for A3/B type questions
-        if (event.key === "Tab" && (quiz.type === "A3" || quiz.type === "B")) {
+        if (event.key === 'Tab' && (quiz.type === 'A3' || quiz.type === 'B')) {
           event.preventDefault();
           setIsKeyboardNavigation(true);
 
           const subQuestions =
-            quiz.type === "A3"
+            quiz.type === 'A3'
               ? (quiz as any).subQuizs
               : (quiz as any).questions;
           if (!subQuestions || subQuestions.length === 0) return;
@@ -153,20 +149,20 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
         }
 
         // Handle option selection shortcuts 1-5 for current sub-question
-        if (event.key >= "1" && event.key <= "5") {
+        if (event.key >= '1' && event.key <= '5') {
           const optionIndex = parseInt(event.key) - 1;
 
-          if (quiz.type === "A1" || quiz.type === "A2") {
+          if (quiz.type === 'A1' || quiz.type === 'A2') {
             const shuffledOptions = getShuffledOptions((quiz as any).options);
             if (shuffledOptions && shuffledOptions[optionIndex]) {
               handleOptionSelect(shuffledOptions[optionIndex].oid);
             }
-          } else if (quiz.type === "X") {
+          } else if (quiz.type === 'X') {
             const shuffledOptions = getShuffledOptions((quiz as any).options);
             if (shuffledOptions && shuffledOptions[optionIndex]) {
               handleOptionSelect(shuffledOptions[optionIndex].oid);
             }
-          } else if (quiz.type === "A3") {
+          } else if (quiz.type === 'A3') {
             // For A3-type questions: each sub-question has its own options
             const subQuestions = (quiz as any).subQuizs;
             if (
@@ -193,7 +189,7 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
                 }
               }
             }
-          } else if (quiz.type === "B") {
+          } else if (quiz.type === 'B') {
             // For B-type questions: all questions share the same options at quiz level
             const questions = (quiz as any).questions;
             if (
@@ -217,13 +213,13 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
           }
         }
         // Handle Enter or Space for submission
-        else if ((event.key === "Enter" || event.key === " ") && !submitted) {
+        else if ((event.key === 'Enter' || event.key === ' ') && !submitted) {
           handleSubmit();
         }
       };
 
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
     }, [
       currentQuizIndex,
       quiz.type,
@@ -241,8 +237,8 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
         setIsKeyboardNavigation(false);
       };
 
-      document.addEventListener("click", handleClick);
-      return () => document.removeEventListener("click", handleClick);
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
     }, []);
 
     // Expose imperative handle
@@ -254,7 +250,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
       [getCurrentState],
     );
 
-
     return (
       <HideScrollbar
         id={`quiz-${thisQuizIndex}`}
@@ -265,7 +260,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
           <Badge variant="outline">{quiz.class}</Badge>
           <Badge variant="outline">{quiz.source}</Badge>
         </InfoBar>
-
 
         <HideScrollbar className="h-full overflow-y-auto">
           <QuizContent
@@ -298,9 +292,11 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
             )}
           </TopBar>
 
-  
-          <UnifiedTagManager quizId={quiz._id} currentQuizIndex={currentQuizIndex} quizIndex={thisQuizIndex}/>
-           
+          <UnifiedTagManager
+            quizId={quiz._id}
+            currentQuizIndex={currentQuizIndex}
+            quizIndex={thisQuizIndex}
+          />
 
           {submitted && (
             <div className="space-y-6">
@@ -317,8 +313,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
                   }
                 }}
               />
-          
-          
 
               <div className="mt-4">
                 <LinkBox isloading={false} links={[]} />
@@ -335,7 +329,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
               </div>
             </div>
           )}
-
 
           {/* {submitted && (
             <Card className="mt-4 pt-4 w-full">
@@ -386,6 +379,6 @@ const QuizComponent = forwardRef<QuizImperativeHandle, QuizComponentProps>(
   },
 );
 
-QuizComponent.displayName = "QuizComponent";
+QuizComponent.displayName = 'QuizComponent';
 
 export default QuizComponent;

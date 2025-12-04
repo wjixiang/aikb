@@ -1,19 +1,64 @@
+'use client';
 
-"use client";
-
-import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit, Plus, Search, Filter, Loader2, MoreHorizontal } from "lucide-react";
-import { PublicTag, CreatePublicTagRequest, UpdatePublicTagRequest } from "@/types/quizSelector.types";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Trash2,
+  Edit,
+  Plus,
+  Search,
+  Filter,
+  Loader2,
+  MoreHorizontal,
+} from 'lucide-react';
+import {
+  PublicTag,
+  CreatePublicTagRequest,
+  UpdatePublicTagRequest,
+} from '@/types/quizSelector.types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface PublicTagManagerProps {
   className?: string;
@@ -21,16 +66,16 @@ interface PublicTagManagerProps {
 }
 
 export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
-  className = "",
-  onTagSelect
+  className = '',
+  onTagSelect,
 }) => {
   const { data: session } = useSession();
   const [tags, setTags] = useState<PublicTag[]>([]);
   const [filteredTags, setFilteredTags] = useState<PublicTag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,22 +83,22 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentTag, setCurrentTag] = useState<PublicTag | null>(null);
-  
+
   // Form state
-  const [tagName, setTagName] = useState("");
-  const [tagDescription, setTagDescription] = useState("");
-  const [tagCategory, setTagCategory] = useState("");
-  const [tagColor, setTagColor] = useState("");
+  const [tagName, setTagName] = useState('');
+  const [tagDescription, setTagDescription] = useState('');
+  const [tagCategory, setTagCategory] = useState('');
+  const [tagColor, setTagColor] = useState('');
   const [tagActive, setTagActive] = useState(true);
 
   // Available categories (could be fetched from API or hardcoded)
   const availableCategories = [
-    "subject",
-    "difficulty",
-    "topic",
-    "type",
-    "source",
-    "custom"
+    'subject',
+    'difficulty',
+    'topic',
+    'type',
+    'source',
+    'custom',
   ];
 
   useEffect(() => {
@@ -66,21 +111,22 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const loadTags = async () => {
     if (!session?.user?.email) return;
-    
+
     try {
       setIsLoading(true);
       const queryParams = new URLSearchParams();
       if (searchQuery) queryParams.append('search', searchQuery);
-      if (categoryFilter !== 'all') queryParams.append('category', categoryFilter);
+      if (categoryFilter !== 'all')
+        queryParams.append('category', categoryFilter);
       if (statusFilter !== 'all') queryParams.append('includeInactive', 'true');
-      
+
       const response = await fetch(`/api/tags/public?${queryParams}`);
       if (response.ok) {
         const data = await response.json();
         setTags(data);
       }
     } catch (error) {
-      console.error("Error loading public tags:", error);
+      console.error('Error loading public tags:', error);
     } finally {
       setIsLoading(false);
     }
@@ -88,34 +134,36 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const filterTags = () => {
     let filtered = [...tags];
-    
+
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(tag => 
-        tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (tag.description && tag.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      filtered = filtered.filter(
+        (tag) =>
+          tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (tag.description &&
+            tag.description.toLowerCase().includes(searchQuery.toLowerCase())),
       );
     }
-    
+
     // Apply category filter
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(tag => tag.category === categoryFilter);
+      filtered = filtered.filter((tag) => tag.category === categoryFilter);
     }
-    
+
     // Apply status filter
     if (statusFilter !== 'all') {
       const activeFilter = statusFilter === 'active';
-      filtered = filtered.filter(tag => tag.isActive === activeFilter);
+      filtered = filtered.filter((tag) => tag.isActive === activeFilter);
     }
-    
+
     setFilteredTags(filtered);
   };
 
   const resetForm = () => {
-    setTagName("");
-    setTagDescription("");
-    setTagCategory("");
-    setTagColor("");
+    setTagName('');
+    setTagDescription('');
+    setTagCategory('');
+    setTagColor('');
     setTagActive(true);
     setCurrentTag(null);
   };
@@ -128,9 +176,9 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
   const openEditDialog = (tag: PublicTag) => {
     setCurrentTag(tag);
     setTagName(tag.name);
-    setTagDescription(tag.description || "");
-    setTagCategory(tag.category || "");
-    setTagColor(tag.color || "");
+    setTagDescription(tag.description || '');
+    setTagCategory(tag.category || '');
+    setTagColor(tag.color || '');
     setTagActive(tag.isActive);
     setEditDialogOpen(true);
   };
@@ -142,20 +190,20 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const handleCreateTag = async () => {
     if (!session?.user?.email || !tagName.trim()) return;
-    
+
     try {
       setIsCreating(true);
       const tagData: CreatePublicTagRequest = {
         name: tagName.trim(),
         description: tagDescription.trim() || undefined,
         category: tagCategory.trim() || undefined,
-        color: tagColor.trim() || undefined
+        color: tagColor.trim() || undefined,
       };
 
-      const response = await fetch("/api/tags/public", {
-        method: "POST",
+      const response = await fetch('/api/tags/public', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(tagData),
       });
@@ -166,10 +214,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         loadTags(); // Reload tags
       } else {
         const errorData = await response.json();
-        console.error("Error creating tag:", errorData.error);
+        console.error('Error creating tag:', errorData.error);
       }
     } catch (error) {
-      console.error("Error creating tag:", error);
+      console.error('Error creating tag:', error);
     } finally {
       setIsCreating(false);
     }
@@ -177,7 +225,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const handleUpdateTag = async () => {
     if (!session?.user?.email || !currentTag?._id || !tagName.trim()) return;
-    
+
     try {
       setIsEditing(true);
       const updateData: UpdatePublicTagRequest = {
@@ -185,13 +233,13 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         description: tagDescription.trim() || undefined,
         category: tagCategory.trim() || undefined,
         color: tagColor.trim() || undefined,
-        isActive: tagActive
+        isActive: tagActive,
       };
 
       const response = await fetch(`/api/tags/public/${currentTag._id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(updateData),
       });
@@ -202,10 +250,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         loadTags(); // Reload tags
       } else {
         const errorData = await response.json();
-        console.error("Error updating tag:", errorData.error);
+        console.error('Error updating tag:', errorData.error);
       }
     } catch (error) {
-      console.error("Error updating tag:", error);
+      console.error('Error updating tag:', error);
     } finally {
       setIsEditing(false);
     }
@@ -213,11 +261,11 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const handleDeleteTag = async () => {
     if (!session?.user?.email || !currentTag?._id) return;
-    
+
     try {
       setIsDeleting(true);
       const response = await fetch(`/api/tags/public/${currentTag._id}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (response.ok) {
@@ -225,10 +273,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         loadTags(); // Reload tags
       } else {
         const errorData = await response.json();
-        console.error("Error deleting tag:", errorData.error);
+        console.error('Error deleting tag:', errorData.error);
       }
     } catch (error) {
-      console.error("Error deleting tag:", error);
+      console.error('Error deleting tag:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -236,19 +284,19 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
 
   const handleBulkDelete = async () => {
     if (!session?.user?.email || selectedTags.length === 0) return;
-    
+
     try {
       setIsDeleting(true);
       // Delete tags one by one (could be optimized with batch API)
-      const deletePromises = selectedTags.map(tagId => 
-        fetch(`/api/tags/public/${tagId}`, { method: "DELETE" })
+      const deletePromises = selectedTags.map((tagId) =>
+        fetch(`/api/tags/public/${tagId}`, { method: 'DELETE' }),
       );
-      
+
       await Promise.all(deletePromises);
       setSelectedTags([]);
       loadTags(); // Reload tags
     } catch (error) {
-      console.error("Error bulk deleting tags:", error);
+      console.error('Error bulk deleting tags:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -261,10 +309,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
   };
 
   const toggleTagSelection = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
+    setSelectedTags((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId],
     );
   };
 
@@ -272,7 +320,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
     if (selectedTags.length === filteredTags.length) {
       setSelectedTags([]);
     } else {
-      setSelectedTags(filteredTags.map(tag => tag._id?.toString() || ""));
+      setSelectedTags(filteredTags.map((tag) => tag._id?.toString() || ''));
     }
   };
 
@@ -286,7 +334,9 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
           <CardDescription>需要管理员权限访问</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">您没有权限访问公共标签管理功能。</p>
+          <p className="text-muted-foreground">
+            您没有权限访问公共标签管理功能。
+          </p>
         </CardContent>
       </Card>
     );
@@ -300,7 +350,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
           <h2 className="text-2xl font-bold">公共标签管理</h2>
           <p className="text-muted-foreground">管理系统范围内的公共标签</p>
         </div>
-        
+
         <div className="flex gap-2">
           {selectedTags.length > 0 && (
             <Button
@@ -309,7 +359,11 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
               onClick={handleBulkDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
               删除选中 ({selectedTags.length})
             </Button>
           )}
@@ -346,7 +400,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">所有分类</SelectItem>
-                  {availableCategories.map(category => (
+                  {availableCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -377,7 +431,8 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         <CardHeader>
           <CardTitle>标签列表</CardTitle>
           <CardDescription>
-            共 {filteredTags.length} 个标签 {searchQuery && `(搜索: "${searchQuery}")`}
+            共 {filteredTags.length} 个标签{' '}
+            {searchQuery && `(搜索: "${searchQuery}")`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -387,9 +442,9 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
             </div>
           ) : filteredTags.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' 
-                ? "没有找到匹配的标签" 
-                : "暂无公共标签"}
+              {searchQuery || categoryFilter !== 'all' || statusFilter !== 'all'
+                ? '没有找到匹配的标签'
+                : '暂无公共标签'}
             </div>
           ) : (
             <Table>
@@ -398,7 +453,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={selectedTags.length === filteredTags.length && filteredTags.length > 0}
+                      checked={
+                        selectedTags.length === filteredTags.length &&
+                        filteredTags.length > 0
+                      }
                       onChange={selectAllTags}
                       className="h-4 w-4 rounded border-gray-300"
                     />
@@ -414,20 +472,27 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
               </TableHeader>
               <TableBody>
                 {filteredTags.map((tag) => (
-                  <TableRow key={tag._id?.toString() || tag.name} className="group">
+                  <TableRow
+                    key={tag._id?.toString() || tag.name}
+                    className="group"
+                  >
                     <TableCell>
                       <input
                         type="checkbox"
-                        checked={selectedTags.includes(tag._id?.toString() || "")}
-                        onChange={() => toggleTagSelection(tag._id?.toString() || "")}
+                        checked={selectedTags.includes(
+                          tag._id?.toString() || '',
+                        )}
+                        onChange={() =>
+                          toggleTagSelection(tag._id?.toString() || '')
+                        }
                         className="h-4 w-4 rounded border-gray-300"
                       />
                     </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {tag.color && (
-                          <div 
-                            className="w-3 h-3 rounded-full" 
+                          <div
+                            className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: tag.color }}
                           />
                         )}
@@ -435,27 +500,31 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
-                      {tag.description || "-"}
+                      {tag.description || '-'}
                     </TableCell>
                     <TableCell>
                       {tag.category ? (
                         <Badge variant="outline">{tag.category}</Badge>
                       ) : (
-                        "-"
+                        '-'
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={tag.usageCount > 0 ? "default" : "secondary"}>
+                      <Badge
+                        variant={tag.usageCount > 0 ? 'default' : 'secondary'}
+                      >
                         {tag.usageCount}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={tag.isActive ? "default" : "secondary"}>
-                        {tag.isActive ? "活跃" : "非活跃"}
+                      <Badge variant={tag.isActive ? 'default' : 'secondary'}>
+                        {tag.isActive ? '活跃' : '非活跃'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {tag.createdAt ? new Date(tag.createdAt).toLocaleDateString() : "-"}
+                      {tag.createdAt
+                        ? new Date(tag.createdAt).toLocaleDateString()
+                        : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -475,7 +544,9 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>操作</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => openEditDialog(tag)}>
+                            <DropdownMenuItem
+                              onClick={() => openEditDialog(tag)}
+                            >
                               <Edit className="w-4 h-4 mr-2" />
                               编辑
                             </DropdownMenuItem>
@@ -504,10 +575,10 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {currentTag ? "编辑公共标签" : "新建公共标签"}
+              {currentTag ? '编辑公共标签' : '新建公共标签'}
             </DialogTitle>
             <DialogDescription>
-              {currentTag ? "修改标签信息" : "创建新的公共标签"}
+              {currentTag ? '修改标签信息' : '创建新的公共标签'}
             </DialogDescription>
           </DialogHeader>
 
@@ -540,7 +611,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">无分类</SelectItem>
-                  {availableCategories.map(category => (
+                  {availableCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -579,10 +650,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               取消
             </Button>
             <Button
@@ -592,7 +660,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
               {(isCreating || isEditing) && (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               )}
-              {currentTag ? "更新" : "创建"}
+              {currentTag ? '更新' : '创建'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -611,7 +679,8 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
           {currentTag && currentTag.usageCount > 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <p className="text-yellow-800 text-sm">
-                警告：此标签已被使用 {currentTag.usageCount} 次，删除可能会影响相关数据。
+                警告：此标签已被使用 {currentTag.usageCount}{' '}
+                次，删除可能会影响相关数据。
               </p>
             </div>
           )}
@@ -628,9 +697,7 @@ export const PublicTagManager: React.FC<PublicTagManagerProps> = ({
               onClick={handleDeleteTag}
               disabled={isDeleting}
             >
-              {isDeleting && (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              )}
+              {isDeleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               删除
             </Button>
           </DialogFooter>

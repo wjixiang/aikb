@@ -1,6 +1,6 @@
-"use client";
-import { useState, useEffect } from "react";
-import QuizApp from "@/components/ai-coach/QuizApp";
+'use client';
+import { useState, useEffect } from 'react';
+import QuizApp from '@/components/ai-coach/QuizApp';
 
 export default function Home() {
   const [hasMounted, setHasMounted] = useState(false);

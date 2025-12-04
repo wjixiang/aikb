@@ -1,6 +1,6 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import MarkdownRenderer from "@/components/wiki/DocumentDisplay";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import MarkdownRenderer from '@/components/wiki/DocumentDisplay';
 
 interface QuizAnalysisProps {
   point?: string | null;
@@ -19,9 +19,7 @@ export const QuizAnalysis: React.FC<QuizAnalysisProps> = ({
     <>
       {point && (
         <div className="space-y-2 mt-4">
-          <h4 className="text-sm font-medium text-muted-foreground">
-            要点
-          </h4>
+          <h4 className="text-sm font-medium text-muted-foreground">要点</h4>
           <CardContent className="p-0 text-foreground">
             <MarkdownRenderer content={point} />
           </CardContent>
@@ -31,9 +29,7 @@ export const QuizAnalysis: React.FC<QuizAnalysisProps> = ({
 
       {discuss && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">
-            解析
-          </h4>
+          <h4 className="text-sm font-medium text-muted-foreground">解析</h4>
           <CardContent className="p-0 text-foreground">
             <MarkdownRenderer content={discuss} />
           </CardContent>

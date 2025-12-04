@@ -1,5 +1,5 @@
-import React from "react";
-import { Check, X as XIcon, Square } from "lucide-react";
+import React from 'react';
+import { Check, X as XIcon, Square } from 'lucide-react';
 
 interface OptionItemProps {
   selected: boolean;
@@ -17,30 +17,30 @@ export const OptionItem: React.FC<OptionItemProps> = ({
   correct,
   onClick,
   onDoubleClick,
-  className = "",
+  className = '',
   children,
 }) => {
   const baseClasses =
-    "flex items-center justify-between p-2 border-1 mb-1 rounded cursor-pointer ";
+    'flex items-center justify-between p-2 border-1 mb-1 rounded cursor-pointer ';
 
-  let conditionalClasses = "";
+  let conditionalClasses = '';
 
   if (submitted) {
     if (selected && correct) {
       conditionalClasses =
-        "bg-[hsl(var(--quiz-user-correct)/0.4)] border-2 border-[hsl(var(--quiz-user-correct))]";
+        'bg-[hsl(var(--quiz-user-correct)/0.4)] border-2 border-[hsl(var(--quiz-user-correct))]';
     } else if (!selected && correct) {
       conditionalClasses =
-        "bg-[hsl(var(--quiz-missed-correct)/0.2)] border border-[hsl(var(--quiz-missed-correct))]";
+        'bg-[hsl(var(--quiz-missed-correct)/0.2)] border border-[hsl(var(--quiz-missed-correct))]';
     } else if (selected && !correct) {
       conditionalClasses =
-        "bg-[hsl(var(--quiz-user-incorrect)/0.2)] border-2 border-[hsl(var(--quiz-user-incorrect))]";
+        'bg-[hsl(var(--quiz-user-incorrect)/0.2)] border-2 border-[hsl(var(--quiz-user-incorrect))]';
     } else {
       conditionalClasses =
-        "bg-[hsl(var(--quiz-default-incorrect)/0.2)] border border-[hsl(var(--quiz-default-incorrect))]";
+        'bg-[hsl(var(--quiz-default-incorrect)/0.2)] border border-[hsl(var(--quiz-default-incorrect))]';
     }
   } else {
-    conditionalClasses = `border ${selected ? "bg-muted border-2 border-blue-500" : ""} hover:bg-muted hover:border-dashed`;
+    conditionalClasses = `border ${selected ? 'bg-muted border-2 border-blue-500' : ''} hover:bg-muted hover:border-dashed`;
   }
 
   return (

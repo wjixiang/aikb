@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerClose,
@@ -10,8 +10,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { QuizHistoryItem } from "@/types/quizSet.types";
+} from '@/components/ui/drawer';
+import { QuizHistoryItem } from '@/types/quizSet.types';
 
 interface QuizHistoryProps {
   history: QuizHistoryItem[];
@@ -42,25 +42,25 @@ export function QuizHistory({
   ) => {
     event.stopPropagation();
 
-    if (!confirm("确定要删除这个试卷吗？此操作不可撤销。")) {
+    if (!confirm('确定要删除这个试卷吗？此操作不可撤销。')) {
       return;
     }
 
     try {
       const response = await fetch(`/api/quiz/delete/${quizSetId}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (!response.ok) {
         const errorResult = await response.json();
-        throw new Error(errorResult.error || "删除试卷失败");
+        throw new Error(errorResult.error || '删除试卷失败');
       }
 
       // Reload history after successful deletion
       await loadHistory();
     } catch (error) {
-      console.error("Error deleting quiz set:", error);
-      alert(error instanceof Error ? error.message : "删除试卷时出错");
+      console.error('Error deleting quiz set:', error);
+      alert(error instanceof Error ? error.message : '删除试卷时出错');
     }
   };
 
@@ -85,7 +85,7 @@ export function QuizHistory({
                     onClick={loadHistory}
                     disabled={isLoadingHistory}
                   >
-                    {isLoadingHistory ? "加载中..." : "刷新"}
+                    {isLoadingHistory ? '加载中...' : '刷新'}
                   </Button>
                 </div>
                 {isLoadingHistory ? (
@@ -107,7 +107,7 @@ export function QuizHistory({
                         >
                           <div className="font-medium">{item.title}</div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(item.createdAt).toLocaleString()} ·{" "}
+                            {new Date(item.createdAt).toLocaleString()} ·{' '}
                             {item.quizCount}题
                           </div>
                           <Button
@@ -133,7 +133,7 @@ export function QuizHistory({
                           上一页
                         </Button>
                         <span className="text-sm text-muted-foreground">
-                          第 {currentPage} /{" "}
+                          第 {currentPage} /{' '}
                           {Math.ceil(history.length / itemsPerPage)} 页
                         </span>
                         <Button

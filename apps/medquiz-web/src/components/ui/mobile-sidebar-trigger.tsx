@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/components/ui/sidebar";
+import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useSidebar } from '@/components/ui/sidebar';
 
 export function MobileSidebarTrigger() {
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
-  
+
   if (!isMobile) return null;
-  
+
   return (
     <Button
       variant="outline"

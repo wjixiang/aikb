@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
-import DocumentDisplay from "./DocumentDisplay";
+import DocumentDisplay from './DocumentDisplay';
 
 const meta = {
   component: DocumentDisplay,
@@ -12,6 +12,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    content: "# hello \n 1. [[link]]",
+    content: '# hello \n 1. [[link]]',
   },
 };

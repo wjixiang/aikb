@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { X, Search, FileText, Circle } from "lucide-react";
-import { DocumentTab } from "./types";
-import { cn } from "@/lib/utils";
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Search, FileText, Circle } from 'lucide-react';
+import { DocumentTab } from './types';
+import { cn } from '@/lib/utils';
 
 interface PageTabsProps {
   tabs: DocumentTab[];
@@ -27,7 +27,7 @@ export const PageTabs: React.FC<PageTabsProps> = ({
 
   const handleDragStart = (e: React.DragEvent, tabId: string) => {
     setDraggedTabId(tabId);
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -67,9 +67,9 @@ export const PageTabs: React.FC<PageTabsProps> = ({
       );
       if (tabElement) {
         tabElement.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
         });
       }
     }
@@ -99,14 +99,14 @@ export const PageTabs: React.FC<PageTabsProps> = ({
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                "group relative flex items-center gap-2 px-3 py-2 min-w-[120px] max-w-[200px] border-r border-border cursor-pointer select-none transition-all duration-200 text-sm font-medium",
+                'group relative flex items-center gap-2 px-3 py-2 min-w-[120px] max-w-[200px] border-r border-border cursor-pointer select-none transition-all duration-200 text-sm font-medium',
                 {
-                  "bg-background border-b-2 border-primary text-primary":
+                  'bg-background border-b-2 border-primary text-primary':
                     tab.id === activeTabId,
-                  "bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground":
+                  'bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground':
                     tab.id !== activeTabId,
-                  "opacity-50": draggedTabId === tab.id,
-                  "border-l-2 border-l-primary": dragOverIndex === index,
+                  'opacity-50': draggedTabId === tab.id,
+                  'border-l-2 border-l-primary': dragOverIndex === index,
                 },
               )}
               onClick={() => onTabClick(tab.id)}

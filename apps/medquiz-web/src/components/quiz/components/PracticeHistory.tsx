@@ -1,6 +1,6 @@
-import React from "react";
-import { Card, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableHeader,
@@ -8,10 +8,10 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from "@/components/ui/table";
-import { Result } from "../styles/QuizStyles";
-import { PracticeRecordData } from "@/lib/quiz/QuizStorage";
-import { QuizWithUserAnswer } from "@/types/quizData.types";
+} from '@/components/ui/table';
+import { Result } from '../styles/QuizStyles';
+import { PracticeRecordData } from '@/lib/quiz/QuizStorage';
+import { QuizWithUserAnswer } from '@/types/quizData.types';
 
 interface PracticeHistoryProps {
   submitted: boolean;
@@ -35,13 +35,13 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
   // Helper function to get option text based on quiz type and option ID
   const getOptionText = (optionId: string, questionKey?: number | string) => {
     // For A1/A2/X type questions
-    if (quiz.type === "A1" || quiz.type === "A2" || quiz.type === "X") {
+    if (quiz.type === 'A1' || quiz.type === 'A2' || quiz.type === 'X') {
       const option = quiz.options.find((opt) => opt.oid === optionId);
       return option ? option.text : optionId;
     }
 
     // For A3 type questions
-    if (quiz.type === "A3" && questionKey !== undefined) {
+    if (quiz.type === 'A3' && questionKey !== undefined) {
       const subQuiz = quiz.subQuizs.find(
         (sq) => sq.subQuizId === Number(questionKey),
       );
@@ -52,7 +52,7 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
     }
 
     // For B type questions
-    if (quiz.type === "B" && questionKey !== undefined) {
+    if (quiz.type === 'B' && questionKey !== undefined) {
       const option = quiz.options.find((opt) => opt.oid === optionId);
       return option ? option.text : optionId;
     }
@@ -67,7 +67,7 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
       <CardTitle className="flex items-center justify-between">
         <div className="w-full">
           <Result $isCorrect={isCorrect}>
-            {isCorrect ? "回答正确" : "回答错误"}
+            {isCorrect ? '回答正确' : '回答错误'}
           </Result>
         </div>
         {onRefresh && (
@@ -78,7 +78,7 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
             disabled={loading}
             className="ml-2 mt-4 border-none"
           >
-            {loading ? "刷新中..." : "刷新"}
+            {loading ? '刷新中...' : '刷新'}
           </Button>
         )}
       </CardTitle>
@@ -105,8 +105,8 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
                     {Array.isArray(record.selectrecord)
                       ? record.selectrecord
                           .map((id) => getOptionText(id))
-                          .join(", ")
-                      : typeof record.selectrecord === "object" &&
+                          .join(', ')
+                      : typeof record.selectrecord === 'object' &&
                           record.selectrecord !== null
                         ? Object.entries(
                             record.selectrecord as Record<string, string>,
@@ -115,9 +115,9 @@ export const PracticeHistory: React.FC<PracticeHistoryProps> = ({
                               ([key, value]) =>
                                 `${Number(key) + 1}: ${getOptionText(value, key)}`,
                             )
-                            .join(", ")
-                        : record.selectrecord === ""
-                          ? ""
+                            .join(', ')
+                        : record.selectrecord === ''
+                          ? ''
                           : getOptionText(record.selectrecord as string)}
                   </TableCell>
                   <TableCell className="text-right">

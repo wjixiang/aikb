@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageItem } from "./MessageItem";
-import { CoTDisplay } from "./CoTDisplay";
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { MessageItem } from './MessageItem';
+import { CoTDisplay } from './CoTDisplay';
 import {
   Loader2,
   Send,
@@ -15,7 +15,7 @@ import {
   History,
   Plus,
   MoreVertical,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Menubar,
   MenubarContent,
@@ -23,20 +23,20 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarTrigger,
-} from "@/components/ui/menubar";
-import { ScrollArea } from "../ui/scroll-area";
+} from '@/components/ui/menubar';
+import { ScrollArea } from '../ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   chatClientService,
   type ChatSession,
-} from "@/lib/services/ChatClientService";
-import { useSession } from "next-auth/react";
+} from '@/lib/services/ChatClientService';
+import { useSession } from 'next-auth/react';
 
 interface EnhancedChatInterfaceProps {
   selectedSource: string;
@@ -53,7 +53,7 @@ export default function EnhancedChatInterface({
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   const [currentAiMessage, setCurrentAiMessage] = useState<any>({});
   const [loading, setLoading] = useState(false);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [useHyDE, setUseHyDE] = useState(false);
   const [useHybrid, setUseHybrid] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -83,7 +83,7 @@ export default function EnhancedChatInterface({
       setStatusMessages([]);
       setCurrentAiMessage({});
     } catch (error) {
-      console.error("Failed to initialize session:", error);
+      console.error('Failed to initialize session:', error);
     }
   };
 
@@ -96,7 +96,7 @@ export default function EnhancedChatInterface({
       setStatusMessages([]);
       setCurrentAiMessage({});
     } catch (error) {
-      console.error("Failed to clear session:", error);
+      console.error('Failed to clear session:', error);
     }
   };
 
@@ -121,7 +121,7 @@ export default function EnhancedChatInterface({
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({
           top: scrollContainerRef.current.scrollHeight,
-          behavior: "smooth",
+          behavior: 'smooth',
         });
         setIsAtBottom(true);
         setShowScrollButton(false);
@@ -144,9 +144,9 @@ export default function EnhancedChatInterface({
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
-      scrollContainer.addEventListener("scroll", handleScroll);
+      scrollContainer.addEventListener('scroll', handleScroll);
       handleScroll();
-      return () => scrollContainer.removeEventListener("scroll", handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
 
@@ -167,22 +167,22 @@ export default function EnhancedChatInterface({
   // Auto-adjust textarea height
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
+        textareaRef.current.scrollHeight + 'px';
     }
   }, [input]);
 
   // Enhanced send message function
   const sendMessage = useCallback(async () => {
-    if (input.trim() === "" || loading || !currentSessionId) return;
+    if (input.trim() === '' || loading || !currentSessionId) return;
 
     try {
       setLoading(true);
 
       // Add user message to local state
       const userMessage = {
-        sender: "user",
+        sender: 'user',
         content: input.trim(),
         timestamp: new Date(),
       };
@@ -193,17 +193,17 @@ export default function EnhancedChatInterface({
       // Simulate AI response (replace with actual API call)
       setTimeout(() => {
         const aiMessage = {
-          sender: "ai",
-          content: "这是AI的回复...",
+          sender: 'ai',
+          content: '这是AI的回复...',
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMessage]);
         setLoading(false);
       }, 1000);
 
-      setInput("");
+      setInput('');
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       setLoading(false);
     }
   }, [input, loading, currentSessionId]);
@@ -216,7 +216,7 @@ export default function EnhancedChatInterface({
         navigator.userAgent,
       );
 
-    if (e.key === "Enter" && !e.shiftKey && !isMobile) {
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
       e.preventDefault();
       sendMessage();
     }
@@ -259,7 +259,7 @@ export default function EnhancedChatInterface({
             ) : (
               <>
                 {messages.map((message, index) => {
-                  const isAi = message.sender === "ai";
+                  const isAi = message.sender === 'ai';
 
                   return (
                     <div key={index} className="space-y-2 select-text">
@@ -269,7 +269,7 @@ export default function EnhancedChatInterface({
                         showCoT={true}
                       />
 
-                      {message.sender === "user" &&
+                      {message.sender === 'user' &&
                         statusMessages.length > 0 &&
                         index === messages.length - 1 && (
                           <div className="ml-11 mt-2">
@@ -359,15 +359,15 @@ export default function EnhancedChatInterface({
                 <MenubarSeparator />
                 <MenubarItem
                   onClick={() => setUseHyDE(!useHyDE)}
-                  className={useHyDE ? "bg-accent" : ""}
+                  className={useHyDE ? 'bg-accent' : ''}
                 >
-                  {useHyDE ? "✓ " : ""}启用HyDE检索
+                  {useHyDE ? '✓ ' : ''}启用HyDE检索
                 </MenubarItem>
                 <MenubarItem
                   onClick={() => setUseHybrid(!useHybrid)}
-                  className={useHybrid ? "bg-accent" : ""}
+                  className={useHybrid ? 'bg-accent' : ''}
                 >
-                  {useHybrid ? "✓ " : ""}启用混合检索
+                  {useHybrid ? '✓ ' : ''}启用混合检索
                 </MenubarItem>
               </MenubarContent>
             </MenubarMenu>
@@ -399,7 +399,7 @@ export default function EnhancedChatInterface({
                   ) : (
                     <Button
                       onClick={sendMessage}
-                      disabled={input.trim() === ""}
+                      disabled={input.trim() === ''}
                       size="sm"
                       className="h-8 w-8 p-0"
                     >
