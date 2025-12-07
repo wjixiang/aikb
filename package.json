@@ -356,5 +356,8 @@
     "onlyBuiltDependencies": [
       "supabase"
     ]
-  }
+  },
+  "workspaces": [
+    "libs/*"
+  ]
 }

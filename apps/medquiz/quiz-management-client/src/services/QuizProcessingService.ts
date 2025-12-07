@@ -265,7 +265,7 @@ export class QuizProcessingService {
     maxRetries: number = 3,
     baseDelay: number = 1000,
   ): Promise<any> {
-    const apiUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    const apiUrl = process.env['QUIZ_SERVICE_ENDPOINT'] || 'http://localhost:3000';
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {

@@ -1,15 +1,90 @@
+type Author {
+    firstName: String!
+    lastName: String!
+    middleName: String
+}
+
+type ItemArchive {
+    fileType: String!
+    fileSize: Int!
+    fileHash: String!
+    addDate: String!
+    s3Key: String!
+    pageCount: Int!
+    wordCount: Int
+}
+
 type LibraryItemMetadata {
     id: ID!
     title: String!
+    authors: [Author!]!
+    abstract: String
+    publicationYear: Int
+    publisher: String
+    isbn: String
+    doi: String
+    url: String
+    tags: [String!]!
+    notes: String
+    collections: [String!]!
+    dateAdded: String!
+    dateModified: String!
+    language: String
+    markdownContent: String
+    markdownUpdatedDate: String
+    archives: [ItemArchive]
+}
+
+type SignedS3UploadResult {
+    uploadUrl: String!
+    s3Key: String!
+    expiresAt: String!
+}
+
+type ChunkEmbedConfig {
+    chunkingConfig: ChunkingConfig!
+    embeddingConfig: EmbeddingConfig!
+}
+
+type ChunkingConfig {
+    strategy: String!
+}
+
+type EmbeddingConfig {
+  model: String!
+  dimension: Int!
+  batchSize: Int!
+  maxRetries: Int!
+  timeout: Int!
+  provider: String!
+}
+
+type ChunkEmbedGroup {
+  id: ID!
+  itemId: String!
+  name: String
+  description: String
+  chunkEmbedConfig: ChunkEmbedConfig!
+  isDefault: Boolean
+  isActive: Boolean
+  createdAt: String
+  updatedAt: String
+  createdBy: String
+}
+
+type ChunkEmbedGroups {
+  groups: [ChunkEmbedGroup!]!
+  total: Int!
 }
 
 type Query {
-    items: [LibraryItemMetadata]
-    upload_url(request: RegisterPdfUploadUrlRequest!): String
+    libraryItems: [LibraryItemMetadata!]!
+    itemArchives(itemId: ID!): [ItemArchive!]!
+    signedUploadUrl(request: RegisterPdfUploadUrlRequest!): SignedS3UploadResult
 }
 
 type Mutation {
-    addItem(title: String!): LibraryItemMetadata
+    createLibraryItem(title: String!): LibraryItemMetadata
 }
 
 input RegisterPdfUploadUrlRequest {
