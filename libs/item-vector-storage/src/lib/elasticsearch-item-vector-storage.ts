@@ -517,6 +517,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   async batchInsertItemChunks(
     group: ChunkEmbedGroupMetadata,
     itemChunks: ItemChunk[],
+    batchSize?: number,
   ): Promise<boolean> {
     try {
       await this.initializeIndices(group.embeddingConfig);

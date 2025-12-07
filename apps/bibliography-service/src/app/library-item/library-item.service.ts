@@ -410,4 +410,46 @@ export class LibraryItemService {
 
     return updatedItem;
   }
+
+  /**
+   * Create a new chunk embed group for a library item
+   * @param input The input data for creating the chunk embed group
+   * @returns The created chunk embed group
+   */
+  async createChunkEmbedGroup(input: any): Promise<any> {
+    try {
+      // Convert the GraphQL input to the format expected by the vector service
+      const request = {
+        itemId: input.itemId,
+        name: input.name || '',
+        description: input.description || '',
+        chunkingConfig: {
+          strategy: input.chunkingConfig.strategy,
+          parameters: {},
+        },
+        embeddingConfig: {
+          provider: input.embeddingConfig.provider,
+          model: input.embeddingConfig.model,
+          dimension: input.embeddingConfig.dimension,
+          parameters: {
+            batchSize: String(input.embeddingConfig.batchSize || 20),
+            maxRetries: String(input.embeddingConfig.maxRetries || 3),
+            timeout: String(input.embeddingConfig.timeout || 20000),
+          },
+        },
+        isDefault: input.isDefault || false,
+        isActive: input.isActive !== undefined ? input.isActive : true,
+        createdBy: input.createdBy || '',
+        tags: [],
+      };
+
+      // Create the chunk embed group using the vector service
+      const createdGroup = await this.vectorService.createChunkEmbedGroup(request);
+      
+      return createdGroup;
+    } catch (error) {
+      this.logger.error('Error creating chunk embed group:', error);
+      throw new Error(`Failed to create chunk embed group: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }

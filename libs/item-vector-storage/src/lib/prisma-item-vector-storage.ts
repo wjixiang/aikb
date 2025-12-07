@@ -217,43 +217,58 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
   async batchInsertItemChunks(
     group: ChunkEmbedGroupMetadata,
     itemChunks: ItemChunk[],
+    batchSize: number = 100,
   ): Promise<boolean> {
     try {
-      // Use a transaction for batch insert with raw SQL
-      // Increase timeout to 30 seconds for serverless database startup time
-      await prisma.$transaction(async (tx) => {
-        for (const chunk of itemChunks) {
-          // Convert embedding array to PostgreSQL vector format
-          const vectorString = `[${chunk.embedding.join(',')}]`;
+      // Process chunks in batches to avoid timeout issues with large datasets
+      const totalChunks = itemChunks.length;
+      let processedChunks = 0;
+      
+      // Process chunks in batches
+      for (let i = 0; i < itemChunks.length; i += batchSize) {
+        const batch = itemChunks.slice(i, i + batchSize);
+        
+        // Use a transaction for each batch insert with raw SQL
+        // Increase timeout to 30 seconds for serverless database startup time
+        await prisma.$transaction(async (tx) => {
+          for (const chunk of batch) {
+            // Convert embedding array to PostgreSQL vector format
+            const vectorString = `[${chunk.embedding.join(',')}]`;
 
-          // Use parameterized query to avoid SQL injection and handle Unsupported type properly
-          await tx.$executeRawUnsafe(
-            `
-                        INSERT INTO item_chunks (
-                            id, item_id, dense_vector_index_group_id, title, content, "index",
-                            embedding, strategy_metadata, metadata, created_at, updated_at
-                        ) VALUES (
-                            $1::uuid, $2::uuid, $3::uuid,
-                            $4, $5, $6,
-                            $7::vector, $8, $9, $10, $11
-                        )
-                    `,
-            chunk.id,
-            chunk.itemId,
-            chunk.denseVectorIndexGroupId,
-            chunk.title,
-            chunk.content,
-            chunk.index,
-            vectorString,
-            JSON.stringify(chunk.strategyMetadata),
-            JSON.stringify(chunk.metadata || {}),
-            chunk.createdAt,
-            chunk.updatedAt,
-          );
-        }
-      }, {
-        timeout: 30000, // 30 seconds timeout
-      });
+            // Use parameterized query to avoid SQL injection and handle Unsupported type properly
+            await tx.$executeRawUnsafe(
+              `
+                          INSERT INTO item_chunks (
+                              id, item_id, dense_vector_index_group_id, title, content, "index",
+                              embedding, strategy_metadata, metadata, created_at, updated_at
+                          ) VALUES (
+                              $1::uuid, $2::uuid, $3::uuid,
+                              $4, $5, $6,
+                              $7::vector, $8, $9, $10, $11
+                          )
+                      `,
+              chunk.id,
+              chunk.itemId,
+              chunk.denseVectorIndexGroupId,
+              chunk.title,
+              chunk.content,
+              chunk.index,
+              vectorString,
+              JSON.stringify(chunk.strategyMetadata),
+              JSON.stringify(chunk.metadata || {}),
+              chunk.createdAt,
+              chunk.updatedAt,
+            );
+          }
+        }, {
+          timeout: 30000, // 30 seconds timeout per batch
+        });
+        
+        processedChunks += batch.length;
+        console.log(`Processed ${processedChunks}/${totalChunks} chunks (${Math.round((processedChunks / totalChunks) * 100)}%)`);
+      }
+      
+      console.log(`Successfully inserted all ${totalChunks} chunks in ${Math.ceil(totalChunks / batchSize)} batches`);
       return true;
     } catch (error) {
       console.error('Error batch inserting item chunks:', error);

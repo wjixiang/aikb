@@ -123,8 +123,7 @@ type Query {
     signedUploadUrl(request: RegisterPdfUploadUrlRequest!): SignedS3UploadResult
     semanticSearch(
         query: String!
-        itemId: ID
-        chunkEmbedGroupId: ID
+        chunkEmbedGroupId: ID!
         topK: Int = 10
         scoreThreshold: Float = 0.0
         filters: SemanticSearchFilters
@@ -133,8 +132,33 @@ type Query {
 
 type Mutation {
     createLibraryItem(title: String!): LibraryItemMetadata
+    createChunkEmbedGroup(input: CreateChunkEmbedGroupInput!): ChunkEmbedGroup
 }
 
 input RegisterPdfUploadUrlRequest {
     fileName: String!
+}
+
+input ChunkingConfigInput {
+    strategy: String!
+}
+
+input EmbeddingConfigInput {
+    model: String!
+    dimension: Int!
+    batchSize: Int!
+    maxRetries: Int!
+    timeout: Int!
+    provider: String!
+}
+
+input CreateChunkEmbedGroupInput {
+    itemId: ID!
+    name: String
+    description: String
+    chunkingConfig: ChunkingConfigInput!
+    embeddingConfig: EmbeddingConfigInput!
+    isDefault: Boolean
+    isActive: Boolean
+    createdBy: String
 }

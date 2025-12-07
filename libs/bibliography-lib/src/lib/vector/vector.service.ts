@@ -60,9 +60,9 @@ export class VectorService {
       provider,
       model,
       dimension: request.embeddingConfig?.dimension || 1536,
-      batchSize: 20,
-      maxRetries: 3,
-      timeout: 20000,
+      batchSize: parseInt(request.embeddingConfig?.parameters?.['batchSize'] || '20'),
+      maxRetries: parseInt(request.embeddingConfig?.parameters?.['maxRetries'] || '3'),
+      timeout: parseInt(request.embeddingConfig?.parameters?.['timeout'] || '20000'),
     };
 
     // Create the chunk embedding group using the storage implementation
@@ -332,7 +332,15 @@ export class VectorService {
   }
 
   async semanticSearchByItemidAndGroupid(
-    request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
+    request: {
+      itemId: string;
+      chunkEmbedGroupId: string;
+      query: string;
+      topK: number;
+      scoreThreshold: number;
+      filter: { [key: string]: string };
+    }
+    
   ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
     try {
       // Validate that the chunk embed group exists and is active

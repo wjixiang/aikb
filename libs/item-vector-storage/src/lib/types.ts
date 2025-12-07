@@ -114,6 +114,7 @@ export interface IItemVectorStorage {
   batchInsertItemChunks: (
     group: ChunkEmbedGroupMetadata,
     ItemChunks: ItemChunk[],
+    batchSize?: number,
   ) => Promise<boolean>;
   createNewChunkEmbedGroupInfo: (
     config: Omit<ChunkEmbedGroupMetadata, 'id'>,

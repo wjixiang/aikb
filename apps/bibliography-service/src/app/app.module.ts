@@ -29,9 +29,9 @@ import {VectorModule} from 'bibliography-lib'
       driver: ApolloDriver,
       playground: true,
       typePaths: ['/workspace/apps/bibliography-service/graphql/**/*.graphql'],
-      definitions: {
-        path: '/workspace/apps/bibliography-service/src/graphql.ts',
-      },
+      // definitions: {
+      //   path: '/workspace/apps/bibliography-service/src/graphql.ts',
+      // },
     }),
     VectorModule
   ],

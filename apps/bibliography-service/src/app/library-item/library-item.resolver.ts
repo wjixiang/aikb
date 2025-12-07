@@ -49,6 +49,19 @@ export class LibraryItemResolver {
   }
 
   private transformChunkEmbedGroup(group: any): graphql.ChunkEmbedGroup {
+    // Handle both Date objects and timestamp numbers
+    const createdAt = group.createdAt instanceof Date
+      ? group.createdAt.toISOString()
+      : (typeof group.createdAt === 'number'
+        ? new Date(group.createdAt).toISOString()
+        : new Date().toISOString());
+    
+    const updatedAt = group.updatedAt instanceof Date
+      ? group.updatedAt.toISOString()
+      : (typeof group.updatedAt === 'number'
+        ? new Date(group.updatedAt).toISOString()
+        : new Date().toISOString());
+
     return {
       id: group.id,
       itemId: group.itemId,
@@ -69,8 +82,8 @@ export class LibraryItemResolver {
       },
       isDefault: group.isDefault,
       isActive: group.isActive,
-      createdAt: group.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: group.updatedAt?.toISOString() || new Date().toISOString(),
+      createdAt,
+      updatedAt,
       createdBy: group.createdBy
     };
   }
@@ -143,8 +156,7 @@ export class LibraryItemResolver {
   @Query('semanticSearch')
   async semanticSearch(
     @Args('query') query: string,
-    @Args('itemId') itemId?: string,
-    @Args('chunkEmbedGroupId') chunkEmbedGroupId?: string,
+    @Args('chunkEmbedGroupId') chunkEmbedGroupId: string,
     @Args('topK') topK?: number,
     @Args('scoreThreshold') scoreThreshold?: number,
     @Args('filters') filters?: graphql.SemanticSearchFilters
@@ -153,11 +165,6 @@ export class LibraryItemResolver {
       // If chunkEmbedGroupId is specified, search in that specific group
       if (chunkEmbedGroupId) {
         return await this.searchInSpecificGroup(chunkEmbedGroupId, query, topK, scoreThreshold);
-      }
-      
-      // If only itemId is specified, search in all groups of that item
-      if (itemId) {
-        return await this.searchInItemGroups(itemId, query, topK, scoreThreshold, filters);
       }
       
       // Global search across all items and groups
@@ -397,6 +404,19 @@ export class LibraryItemResolver {
     } catch (error) {
       console.error('Error creating library item:', error);
       throw new Error(`Failed to create library item: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  @Mutation('createChunkEmbedGroup')
+  async createChunkEmbedGroup(@Args('input') input: graphql.CreateChunkEmbedGroupInput): Promise<graphql.ChunkEmbedGroup> {
+    try {
+      const newGroup = await this.libraryItemService.createChunkEmbedGroup(input);
+      
+      // Return the group in the format expected by the GraphQL schema
+      return this.transformChunkEmbedGroup(newGroup);
+    } catch (error) {
+      console.error('Error creating chunk embed group:', error);
+      throw new Error(`Failed to create chunk embed group: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

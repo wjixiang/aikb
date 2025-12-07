@@ -24,6 +24,30 @@ export class RegisterPdfUploadUrlRequest {
     fileName: string;
 }
 
+export class ChunkingConfigInput {
+    strategy: string;
+}
+
+export class EmbeddingConfigInput {
+    model: string;
+    dimension: number;
+    batchSize: number;
+    maxRetries: number;
+    timeout: number;
+    provider: string;
+}
+
+export class CreateChunkEmbedGroupInput {
+    itemId: string;
+    name?: Nullable<string>;
+    description?: Nullable<string>;
+    chunkingConfig: ChunkingConfigInput;
+    embeddingConfig: EmbeddingConfigInput;
+    isDefault?: Nullable<boolean>;
+    isActive?: Nullable<boolean>;
+    createdBy?: Nullable<string>;
+}
+
 export class Author {
     firstName: string;
     lastName: string;
@@ -138,11 +162,13 @@ export abstract class IQuery {
 
     abstract signedUploadUrl(request: RegisterPdfUploadUrlRequest): Nullable<SignedS3UploadResult> | Promise<Nullable<SignedS3UploadResult>>;
 
-    abstract semanticSearch(query: string, itemId?: Nullable<string>, chunkEmbedGroupId?: Nullable<string>, topK?: Nullable<number>, scoreThreshold?: Nullable<number>, filters?: Nullable<SemanticSearchFilters>): Nullable<SemanticSearchResult> | Promise<Nullable<SemanticSearchResult>>;
+    abstract semanticSearch(query: string, chunkEmbedGroupId: string, topK?: Nullable<number>, scoreThreshold?: Nullable<number>, filters?: Nullable<SemanticSearchFilters>): Nullable<SemanticSearchResult> | Promise<Nullable<SemanticSearchResult>>;
 }
 
 export abstract class IMutation {
     abstract createLibraryItem(title: string): Nullable<LibraryItemMetadata> | Promise<Nullable<LibraryItemMetadata>>;
+
+    abstract createChunkEmbedGroup(input: CreateChunkEmbedGroupInput): Nullable<ChunkEmbedGroup> | Promise<Nullable<ChunkEmbedGroup>>;
 }
 
 type Nullable<T> = T | null;
