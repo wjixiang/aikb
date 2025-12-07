@@ -1,0 +1,17 @@
+type LibraryItemMetadata {
+    id: ID!
+    title: String!
+}
+
+type Query {
+    items: [LibraryItemMetadata]
+    upload_url(request: RegisterPdfUploadUrlRequest!): String
+}
+
+type Mutation {
+    addItem(title: String!): LibraryItemMetadata
+}
+
+input RegisterPdfUploadUrlRequest {
+    fileName: String!
+}

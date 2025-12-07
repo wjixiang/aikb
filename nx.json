@@ -99,7 +99,8 @@
         "apps/auth-service-e2e/**/*",
         "apps/knowledgeBase-service-e2e/**/*",
         "**/*.e2e.test.ts",
-        "**/*.e2e.spec.ts"
+        "**/*.e2e.spec.ts",
+        "apps/medquiz/quiz-service-e2e/**/*"
       ]
     },
     {
@@ -108,7 +109,8 @@
       "options": {
         "targetName": "e2e",
         "ciTargetName": "e2e-ci"
-      }
+      },
+      "exclude": ["apps/medquiz/quiz-service-e2e/**/*"]
     },
     {
       "plugin": "@nx/docker",
@@ -159,5 +161,6 @@
         "style": "tailwind"
       }
     }
-  }
+  },
+  "nxCloudId": "69325827b136a820307b26e8"
 }

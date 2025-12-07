@@ -16,6 +16,7 @@ services:
       - "8000:8000"
     networks:
       - app-network
+      - shared-net
     depends_on:
       - elasticsearch
       - rabbitmq
@@ -68,15 +69,15 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  mongodb:
-    image: mongo:latest
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-    networks:
-      - app-network
+  # mongodb:
+  #   image: mongo:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb-data:/data/db
+  #   networks:
+  #     - app-network
 
   crawl4ai:
     image: unclecode/crawl4ai:latest
@@ -142,3 +143,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  shared-net:
+    external: true

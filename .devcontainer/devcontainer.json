@@ -9,7 +9,6 @@
 		"vscode": {
 			"extensions": [
 				"boundary.baml-extension",
-				"vitest.explorer",
 				"ms-python.vscode-pylance",
 				"rooveterinaryinc.roo-cline",
 				"naveenvignesh5nv.html-live-server",
@@ -17,7 +16,8 @@
 				"zxh404.vscode-proto3",
 				"Prisma.prisma",
 				"bradlc.vscode-tailwindcss",
-				"csstools.postcss"
+				"csstools.postcss",
+				"GraphQL.vscode-graphql-syntax"
 			]
 		}
 	}

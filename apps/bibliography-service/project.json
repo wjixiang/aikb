@@ -76,6 +76,13 @@
       "options": {
         "lintFilePatterns": ["./**/*.ts"]
       }
+    },
+    "gen-type": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx '/workspace/scripts/generate-typings.ts'",
+        "cwd": "apps/bibliography-service"
+      }
     }
   }
 }

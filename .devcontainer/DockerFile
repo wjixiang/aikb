@@ -34,7 +34,7 @@ RUN apt-get update && \
     && pipx install uv \
     && pipx ensurepath
 
-RUN pnpm exec playwright install-deps
+# RUN pnpm exec playwright install-deps
 # Install golang & proto
 RUN apt-get -y install golang protobuf-compiler
 

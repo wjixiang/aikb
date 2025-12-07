@@ -21,11 +21,11 @@ $ pnpm add @boundaryml/baml
 /**
  * If this import fails, you may need to upgrade @boundaryml/baml.
  *
- * Please upgrade @boundaryml/baml to 0.210.0.
+ * Please upgrade @boundaryml/baml to 0.214.0.
  *
- * $ npm install @boundaryml/baml@0.210.0
- * $ yarn add @boundaryml/baml@0.210.0
- * $ pnpm add @boundaryml/baml@0.210.0
+ * $ npm install @boundaryml/baml@0.214.0
+ * $ yarn add @boundaryml/baml@0.214.0
+ * $ pnpm add @boundaryml/baml@0.214.0
  *
  * If nothing else works, please ask for help:
  *
@@ -33,20 +33,19 @@ $ pnpm add @boundaryml/baml
  * https://boundaryml.com/discord
  *
  **/
-import { ThrowIfVersionMismatch } from '@boundaryml/baml';
+import { ThrowIfVersionMismatch } from "@boundaryml/baml";
 
-export const version = '0.210.0';
+export const version = "0.214.0";
 
 ThrowIfVersionMismatch(version);
 
-export { b } from './async_client';
 
-export * from './types';
-export type { partial_types } from './partial_types';
-export * from './tracing';
-export { resetBamlEnvVars } from './globals';
-export {
-  BamlClientHttpError,
-  BamlValidationError,
-  BamlClientFinishReasonError,
-} from '@boundaryml/baml';
+
+export { b } from "./async_client"
+
+export * from "./types"
+export type { partial_types } from "./partial_types"
+export * from "./tracing"
+export * as watchers from "./watchers"
+export { resetBamlEnvVars } from "./globals"
+export { BamlClientHttpError, BamlValidationError, BamlClientFinishReasonError } from "@boundaryml/baml"

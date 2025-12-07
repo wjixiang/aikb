@@ -244,7 +244,7 @@ class SplitText {
 }
 
 function MatchQuestionsAnswers(input: SplitText) -> QuestionAnswerSlice[] {
-  client GLM46
+  client KimiK2Turbo
   prompt #"
     {{_.role("user")}}
     使用分割点标记匹配以下问题和答案。
@@ -306,7 +306,7 @@ function MatchQuestionsAnswers(input: SplitText) -> QuestionAnswerSlice[] {
 }
 
 function MatchQuestionsAnswersWithExplanation(input: SplitText) -> QuestionAnswerWithExplanationSlice[] {
-  client GLM46
+  client KimiK2Turbo
   prompt #"
     {{_.role("user")}}
     使用分割点标记匹配以下问题和答案。

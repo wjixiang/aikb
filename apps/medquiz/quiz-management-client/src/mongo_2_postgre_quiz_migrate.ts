@@ -34,67 +34,78 @@ async function connectToMongoDB(): Promise<{ client: MongoClient; db: Db }> {
 }
 
 /**
- * Transform MongoDB quiz data to Prisma format
+ * Transform MongoDB quiz data to base quizzes table format
  */
-function transformQuizToPrismaFormat(mongoQuiz: WithId<quiz>) {
-  const baseData = {
+function transformBaseQuizData(mongoQuiz: WithId<quiz>) {
+  return {
     id: randomUUID(), // Generate a proper UUID for PostgreSQL
     mongo_id_legacy: mongoQuiz._id.toString(), // Store original MongoDB ObjectId
     type: mongoQuiz.type,
     class: mongoQuiz.class,
     unit: mongoQuiz.unit,
     tags: mongoQuiz.tags || [], // Ensure tags is always an array
-    analysis: mongoQuiz.analysis as any,
     source: mongoQuiz.source || null, // Ensure source is null if undefined
     created_at: new Date(),
     updated_at: new Date(),
   };
+}
 
+/**
+ * Transform MongoDB quiz data to specific type tables
+ */
+function transformSpecificQuizData(mongoQuiz: WithId<quiz>, quizId: string) {
   switch (mongoQuiz.type) {
     case 'A1':
     case 'A2':
       return {
-        ...baseData,
-        question: mongoQuiz.question || null,
+        quiz_id: quizId,
+        question: mongoQuiz.question || '',
         options: mongoQuiz.options as any,
-        answer: mongoQuiz.answer as any,
-        specific_data: null,
+        answer: mongoQuiz.answer as string,
       };
 
     case 'A3':
       return {
-        ...baseData,
-        main_question: mongoQuiz.mainQuestion || null,
-        options: mongoQuiz.subQuizs?.flatMap((sub) => sub.options) as any,
-        answer: mongoQuiz.subQuizs?.map((sub) => sub.answer) as any,
-        specific_data: {
-          subQuizs: mongoQuiz.subQuizs || [],
-        } as any,
+        quiz_id: quizId,
+        main_question: mongoQuiz.mainQuestion || '',
+        sub_quizzes: mongoQuiz.subQuizs || [] as any,
       };
 
     case 'B':
       return {
-        ...baseData,
-        question: null,
+        quiz_id: quizId,
         options: mongoQuiz.options as any,
-        answer: mongoQuiz.questions?.map((q) => q.answer) as any,
-        specific_data: {
-          questions: mongoQuiz.questions || [],
-        } as any,
+        questions: mongoQuiz.questions || [] as any,
       };
 
     case 'X':
       return {
-        ...baseData,
-        question: mongoQuiz.question || null,
+        quiz_id: quizId,
+        question: mongoQuiz.question || '',
         options: mongoQuiz.options as any,
-        answer: mongoQuiz.answer as any,
-        specific_data: null,
+        answers: mongoQuiz.answer as string[],
       };
 
     default:
       throw new Error(`Unknown quiz type: ${(mongoQuiz as any).type}`);
   }
+}
+
+/**
+ * Transform analysis data
+ */
+function transformAnalysisData(mongoQuiz: WithId<quiz>, quizId: string) {
+  if (!mongoQuiz.analysis) return null;
+
+  const analysis = mongoQuiz.analysis as any;
+  return {
+    quiz_id: quizId,
+    reference: analysis.point || null,
+    discuss: analysis.discuss || null,
+    ai_analysis: analysis.ai_analysis || null,
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
 }
 
 /**
@@ -122,16 +133,59 @@ async function migrateSingleQuiz(mongoQuiz: WithId<quiz>): Promise<boolean> {
       return false;
     }
 
-    // Transform data
-    const prismaData = transformQuizToPrismaFormat(mongoQuiz);
+    // Transform base data
+    const baseData = transformBaseQuizData(mongoQuiz);
+    const specificData = transformSpecificQuizData(mongoQuiz, baseData.id);
+    const analysisData = transformAnalysisData(mongoQuiz, baseData.id);
 
-    // Insert into PostgreSQL
-    await prisma.quizzes.create({
-      data: prismaData as any,
+    // Use transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      // Insert base quiz data
+      await tx.quizzes.create({
+        data: baseData,
+      });
+
+      // Insert type-specific data
+      switch (mongoQuiz.type) {
+        case 'A1':
+        case 'A2':
+          await tx.quiz_single_choice.create({
+            data: specificData as any,
+          });
+          break;
+
+        case 'A3':
+          await tx.quiz_share_question.create({
+            data: specificData as any,
+          });
+          break;
+
+        case 'B':
+          await tx.quiz_share_option.create({
+            data: specificData as any,
+          });
+          break;
+
+        case 'X':
+          await tx.quiz_multiple_choice.create({
+            data: specificData as any,
+          });
+          break;
+
+        default:
+          throw new Error(`Unknown quiz type: ${(mongoQuiz as any).type}`);
+      }
+
+      // Insert analysis data if exists
+      if (analysisData) {
+        await tx.quiz_analysis.create({
+          data: analysisData,
+        });
+      }
     });
 
     console.log(
-      `Successfully migrated quiz ${mongoId} -> ${prismaData.id} (${prismaData.type})`,
+      `Successfully migrated quiz ${mongoId} -> ${baseData.id} (${baseData.type})`,
     );
     return true;
   } catch (error) {
@@ -234,4 +288,4 @@ if (require.main === module) {
     });
 }
 
-export { migrateQuizzes, transformQuizToPrismaFormat, migrateSingleQuiz };
+export { migrateQuizzes, transformBaseQuizData, transformSpecificQuizData, transformAnalysisData, migrateSingleQuiz };
