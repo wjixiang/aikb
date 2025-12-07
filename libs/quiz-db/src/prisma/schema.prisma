@@ -7,20 +7,91 @@ datasource db {
   provider = "postgresql"
 }
 
+// 主表 - 存储所有试题类型的共同部分
 model quizzes {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
-  mongo_id_legacy String
-  type          String    @db.VarChar(10)
+  mongo_id_legacy String  @map("mongo_id_legacy")
+  type          String    @db.VarChar(10) // 'A1', 'A2', 'A3', 'B', 'X'
   class         String    @db.VarChar(255)
   unit          String    @db.VarChar(255)
   tags          String[]  @default([])
-  question      String?
-  main_question String?
-  options       Json?
-  answer        Json?
-  analysis      Json?
   source        String?   @db.VarChar(255)
-  specific_data Json?
+  year          Int?
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  // 关系 - 每个quiz只能对应一种类型的具体数据
+  a1_a2         quiz_single_choice?
+  a3            quiz_share_question?
+  b             quiz_share_option?
+  x             quiz_multiple_choice?
+  analysis      quiz_analysis?
+
+  @@map("quizzes")
+}
+
+// A1和A2类型试题 - 单选题
+model quiz_single_choice {
+  quiz_id  String @id @map("quiz_id") @db.Uuid
+  question String
+  options  Json   // [{oid: 'A', text: '选项内容'}, ...]
+  answer   String @db.VarChar(5) // 'A', 'B', 'C', 'D', 'E'
+
+  // 关系
+  quiz     quizzes @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  @@map("quiz_a1_a2")
+}
+
+// A3类型试题 - 复合单选题
+model quiz_share_question {
+  quiz_id      String @id @map("quiz_id") @db.Uuid
+  main_question String @map("main_question")
+  sub_quizzes   Json   // [{subQuizId: 1, question: '子问题', options: [...], answer: 'A'}, ...]
+
+  // 关系
+  quiz         quizzes @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  @@map("quiz_a3")
+}
+
+// B类型试题 - 共享选项的多题组
+model quiz_share_option {
+  quiz_id   String @id @map("quiz_id") @db.Uuid
+  options   Json   // 共享选项 [{oid: 'A', text: '选项内容'}, ...]
+  questions Json   // [{questionId: 1, questionText: '问题', answer: 'A'}, ...]
+
+  // 关系
+  quiz      quizzes @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  @@map("quiz_b")
+}
+
+// X类型试题 - 多选题
+model quiz_multiple_choice {
+  quiz_id  String @id @map("quiz_id") @db.Uuid
+  question String
+  options  Json   // [{oid: 'A', text: '选项内容'}, ...]
+  answers  String[] // ['A', 'C', 'E'] 多个答案
+
+  // 关系
+  quiz     quizzes @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  @@map("quiz_x")
+}
+
+// 试题分析表 - 存储试题的分析内容
+model quiz_analysis {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
+  quiz_id      String    @unique @map("quiz_id") @db.Uuid
+  reference    String?   @db.Text
+  discuss      String?   @db.Text
+  ai_analysis  String?   @db.Text
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  // 关系
+  quiz         quizzes @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  @@map("quiz_analysis")
 }
