@@ -444,4 +444,51 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
       throw error;
     }
   }
+
+  async getChunkById(chunkId: string): Promise<ItemChunk | null> {
+    try {
+      // Use raw query to get the embedding field which is a vector type
+      const result = (await prisma.$queryRawUnsafe(
+        `
+                SELECT
+                    id,
+                    item_id as "itemId",
+                    dense_vector_index_group_id as "denseVectorIndexGroupId",
+                    title,
+                    content,
+                    "index",
+                    embedding,
+                    strategy_metadata as "strategyMetadata",
+                    metadata,
+                    created_at as "createdAt",
+                    updated_at as "updatedAt"
+                FROM item_chunks
+                WHERE id = $1::uuid
+            `,
+        chunkId,
+      )) as any[];
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const chunk = result[0];
+      return {
+        id: chunk.id,
+        itemId: chunk.itemId,
+        denseVectorIndexGroupId: chunk.denseVectorIndexGroupId,
+        title: chunk.title,
+        content: chunk.content,
+        index: chunk.index,
+        embedding: chunk.embedding as number[],
+        strategyMetadata: chunk.strategyMetadata as any,
+        metadata: chunk.metadata as any,
+        createdAt: chunk.createdAt,
+        updatedAt: chunk.updatedAt,
+      };
+    } catch (error) {
+      console.error('Error getting chunk by ID:', error);
+      throw error;
+    }
+  }
 }

@@ -881,6 +881,69 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
     }
   }
 
+  async getChunkById(chunkId: string): Promise<ItemChunk | null> {
+    try {
+      // First, try to find the chunk in the default chunks index
+      let result;
+      try {
+        result = await this.client.get({
+          index: this.chunksIndexName,
+          id: chunkId,
+        });
+      } catch (error) {
+        // If not found in default index, we need to search across all possible indices
+        // Get all indices that match the pattern item_chunks_*
+        const indicesResult = await this.client.cat.indices({
+          index: `${this.chunksIndexName}_*`,
+          format: 'json',
+        }) as any;
+
+        const indices = indicesResult.map((index: any) => index.index);
+
+        // Try each index until we find the chunk
+        for (const index of indices) {
+          try {
+            result = await this.client.get({
+              index,
+              id: chunkId,
+            });
+            break; // Found the chunk, exit the loop
+          } catch (indexError) {
+            // Continue to the next index if not found
+            continue;
+          }
+        }
+
+        // If still not found after checking all indices, return null
+        if (!result) {
+          return null;
+        }
+      }
+
+      if (result.found) {
+        const { _source } = result as any;
+        
+        // Convert date strings back to Date objects
+        return {
+          ..._source,
+          createdAt: new Date(_source.createdAt),
+          updatedAt: new Date(_source.updatedAt),
+          strategyMetadata: {
+            ..._source.strategyMetadata,
+            processingTimestamp: new Date(
+              _source.strategyMetadata.processingTimestamp,
+            ),
+          },
+        } as ItemChunk;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error(`Failed to get chunk by ID ${chunkId}:`, error);
+      throw error;
+    }
+  }
+
   /**
    * Helper method to get embedding for text
    * This should be implemented based on your embedding service

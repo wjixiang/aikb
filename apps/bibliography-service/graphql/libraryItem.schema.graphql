@@ -33,7 +33,7 @@ type LibraryItemMetadata {
     markdownContent: String
     markdownUpdatedDate: String
     archives: [ItemArchive]
-    chunkEmbedGroups: ChunkEmbedGroups
+    # chunkEmbedGroups: ChunkEmbedGroups
 }
 
 type SignedS3UploadResult {
@@ -78,10 +78,57 @@ type ChunkEmbedGroups {
   total: Int!
 }
 
+type SemanticSearchResultChunk {
+    chunkId: ID!
+    itemId: ID!
+    title: String
+    content: String!
+    score: Float!
+    metadata: ChunkMetadata
+    libraryItem: LibraryItemMetadata
+    chunkEmbedGroup: ChunkEmbedGroup
+}
+
+type ChunkMetadata {
+    startPosition: Int
+    endPosition: Int
+    wordCount: Int
+    chunkType: String
+}
+
+input SemanticSearchFilters {
+    tags: [String!]
+    collections: [String!]
+    authors: [String!]
+    publicationYear: IntRange
+}
+
+input IntRange {
+    min: Int
+    max: Int
+}
+
+type SemanticSearchResult {
+    query: String!
+    totalResults: Int!
+    results: [SemanticSearchResultChunk!]!
+}
+
+
 type Query {
     libraryItems: [LibraryItemMetadata!]!
+    libraryItem(id: ID!): LibraryItemMetadata
     itemArchives(itemId: ID!): [ItemArchive!]!
+    chunkEmbedGroups(itemId: ID!): [ChunkEmbedGroups]
     signedUploadUrl(request: RegisterPdfUploadUrlRequest!): SignedS3UploadResult
+    semanticSearch(
+        query: String!
+        itemId: ID
+        chunkEmbedGroupId: ID
+        topK: Int = 10
+        scoreThreshold: Float = 0.0
+        filters: SemanticSearchFilters
+    ): SemanticSearchResult
 }
 
 type Mutation {

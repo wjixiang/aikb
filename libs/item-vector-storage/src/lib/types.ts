@@ -136,6 +136,7 @@ export interface IItemVectorStorage {
     nextPageToken?: string;
     totalSize: number;
   }>;
+  getChunkById: (chunkId: string) => Promise<ItemChunk | null>;
 }
 
 export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id'>;

@@ -8,6 +8,18 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export class SemanticSearchFilters {
+    tags?: Nullable<string[]>;
+    collections?: Nullable<string[]>;
+    authors?: Nullable<string[]>;
+    publicationYear?: Nullable<IntRange>;
+}
+
+export class IntRange {
+    min?: Nullable<number>;
+    max?: Nullable<number>;
+}
+
 export class RegisterPdfUploadUrlRequest {
     fileName: string;
 }
@@ -47,7 +59,6 @@ export class LibraryItemMetadata {
     markdownContent?: Nullable<string>;
     markdownUpdatedDate?: Nullable<string>;
     archives?: Nullable<Nullable<ItemArchive>[]>;
-    chunkEmbedGroups?: Nullable<ChunkEmbedGroups>;
 }
 
 export class SignedS3UploadResult {
@@ -92,12 +103,42 @@ export class ChunkEmbedGroups {
     total: number;
 }
 
+export class SemanticSearchResultChunk {
+    chunkId: string;
+    itemId: string;
+    title?: Nullable<string>;
+    content: string;
+    score: number;
+    metadata?: Nullable<ChunkMetadata>;
+    libraryItem?: Nullable<LibraryItemMetadata>;
+    chunkEmbedGroup?: Nullable<ChunkEmbedGroup>;
+}
+
+export class ChunkMetadata {
+    startPosition?: Nullable<number>;
+    endPosition?: Nullable<number>;
+    wordCount?: Nullable<number>;
+    chunkType?: Nullable<string>;
+}
+
+export class SemanticSearchResult {
+    query: string;
+    totalResults: number;
+    results: SemanticSearchResultChunk[];
+}
+
 export abstract class IQuery {
     abstract libraryItems(): LibraryItemMetadata[] | Promise<LibraryItemMetadata[]>;
 
+    abstract libraryItem(id: string): Nullable<LibraryItemMetadata> | Promise<Nullable<LibraryItemMetadata>>;
+
     abstract itemArchives(itemId: string): ItemArchive[] | Promise<ItemArchive[]>;
 
+    abstract chunkEmbedGroups(itemId: string): Nullable<Nullable<ChunkEmbedGroups>[]> | Promise<Nullable<Nullable<ChunkEmbedGroups>[]>>;
+
     abstract signedUploadUrl(request: RegisterPdfUploadUrlRequest): Nullable<SignedS3UploadResult> | Promise<Nullable<SignedS3UploadResult>>;
+
+    abstract semanticSearch(query: string, itemId?: Nullable<string>, chunkEmbedGroupId?: Nullable<string>, topK?: Nullable<number>, scoreThreshold?: Nullable<number>, filters?: Nullable<SemanticSearchFilters>): Nullable<SemanticSearchResult> | Promise<Nullable<SemanticSearchResult>>;
 }
 
 export abstract class IMutation {

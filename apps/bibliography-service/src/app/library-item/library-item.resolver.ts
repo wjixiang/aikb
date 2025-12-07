@@ -1,12 +1,17 @@
 import { Resolver, Query, Mutation, Args, ResolveField } from '@nestjs/graphql';
 import { LibraryItemService } from './library-item.service';
+import { VectorService } from 'bibliography-lib';
+import { libraryItemVectorProto } from 'proto-ts';
 import * as graphql from '../../graphql';
 import { CreateLibraryItemDto } from 'library-shared';
 import { LibraryItem } from '@/libs/bibliography/src';
 
 @Resolver()
 export class LibraryItemResolver {
-  constructor(private readonly libraryItemService: LibraryItemService) {}
+  constructor(
+    private readonly libraryItemService: LibraryItemService,
+    private readonly vectorService: VectorService
+  ) {}
 
   private transformLibraryItemToMetadata(item: LibraryItem): graphql.LibraryItemMetadata {
     return {
@@ -43,6 +48,51 @@ export class LibraryItemResolver {
     };
   }
 
+  private transformChunkEmbedGroup(group: any): graphql.ChunkEmbedGroup {
+    return {
+      id: group.id,
+      itemId: group.itemId,
+      name: group.name,
+      description: group.description,
+      chunkEmbedConfig: {
+        chunkingConfig: {
+          strategy: group.chunkingConfig?.strategy || 'paragraph'
+        },
+        embeddingConfig: {
+          model: group.embeddingConfig?.model || '',
+          dimension: group.embeddingConfig?.dimension || 0,
+          batchSize: group.embeddingConfig?.batchSize || 20,
+          maxRetries: group.embeddingConfig?.maxRetries || 3,
+          timeout: group.embeddingConfig?.timeout || 20000,
+          provider: group.embeddingConfig?.provider || ''
+        }
+      },
+      isDefault: group.isDefault,
+      isActive: group.isActive,
+      createdAt: group.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: group.updatedAt?.toISOString() || new Date().toISOString(),
+      createdBy: group.createdBy
+    };
+  }
+
+  private transformSemanticSearchResultChunk(result: any): graphql.SemanticSearchResultChunk {
+    return {
+      chunkId: result.chunkId,
+      itemId: result.itemId,
+      title: result.title,
+      content: result.content,
+      score: result.score,
+      metadata: {
+        startPosition: result.metadata?.startPosition,
+        endPosition: result.metadata?.endPosition,
+        wordCount: result.metadata?.wordCount,
+        chunkType: result.metadata?.chunkType
+      },
+      libraryItem: null, // Will be resolved separately
+      chunkEmbedGroup: null // Will be resolved separately
+    };
+  }
+
   @Query('libraryItems')
   async getLibraryItems(): Promise<graphql.LibraryItemMetadata[]> {
     try {
@@ -53,6 +103,237 @@ export class LibraryItemResolver {
     } catch (error) {
       console.error('Error fetching library items:', error);
       return [];
+    }
+  }
+
+  @Query('libraryItem')
+  async getLibraryItemsById(@Args('id') id: string): Promise<graphql.LibraryItemMetadata> {
+    try {
+      const item = await this.libraryItemService.getLibraryItem(id)
+      if(!item) throw new Error(`LibraryItem unfounded ${id}`)
+      // Transform LibraryItem objects to match GraphQL schema
+      return this.transformLibraryItemToMetadata(item)
+    } catch (error) {
+      console.error('Error fetching library items:', error);
+      throw error
+    }
+  }
+
+  @Query('chunkEmbedGroups')
+  async getChunkEmbedGroups(@Args('itemId') itemId: string): Promise<graphql.ChunkEmbedGroups[]> {
+    try {
+      const result = await this.vectorService.listChunkEmbedGroupMetadata({
+        itemId,
+        pageSize: 100,
+        pageToken: '',
+        filter: '',
+        orderBy: ''
+      });
+      
+      return [{
+        groups: result.groups.map(group => this.transformChunkEmbedGroup(group)),
+        total: result.totalSize
+      }];
+    } catch (error) {
+      console.error(`Error fetching chunk embed groups for item ${itemId}:`, error);
+      throw new Error(`Failed to fetch chunk embed groups: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  @Query('semanticSearch')
+  async semanticSearch(
+    @Args('query') query: string,
+    @Args('itemId') itemId?: string,
+    @Args('chunkEmbedGroupId') chunkEmbedGroupId?: string,
+    @Args('topK') topK?: number,
+    @Args('scoreThreshold') scoreThreshold?: number,
+    @Args('filters') filters?: graphql.SemanticSearchFilters
+  ): Promise<graphql.SemanticSearchResult> {
+    try {
+      // If chunkEmbedGroupId is specified, search in that specific group
+      if (chunkEmbedGroupId) {
+        return await this.searchInSpecificGroup(chunkEmbedGroupId, query, topK, scoreThreshold);
+      }
+      
+      // If only itemId is specified, search in all groups of that item
+      if (itemId) {
+        return await this.searchInItemGroups(itemId, query, topK, scoreThreshold, filters);
+      }
+      
+      // Global search across all items and groups
+      return await this.globalSemanticSearch(query, topK, scoreThreshold, filters);
+    } catch (error) {
+      console.error('Error performing semantic search:', error);
+      throw new Error(`Failed to perform semantic search: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async searchInSpecificGroup(
+    chunkEmbedGroupId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number
+  ): Promise<graphql.SemanticSearchResult> {
+    // Get the chunk embed group to get the itemId
+    const groups = await this.vectorService.listChunkEmbedGroupMetadata({
+      itemId: '', // We'll get this from the group itself
+      pageSize: 1000,
+      pageToken: '',
+      filter: '',
+      orderBy: ''
+    });
+    
+    const targetGroup = groups.groups.find(g => g.id === chunkEmbedGroupId);
+    if (!targetGroup) {
+      throw new Error(`Chunk embed group ${chunkEmbedGroupId} not found`);
+    }
+
+    const result = await this.vectorService.semanticSearchByItemidAndGroupid({
+      itemId: targetGroup.itemId,
+      chunkEmbedGroupId,
+      query,
+      topK: topK || 10,
+      scoreThreshold: scoreThreshold || 0.0,
+      filter: {}
+    });
+
+    return {
+      query,
+      totalResults: result.results.length,
+      results: result.results.map(r => this.transformSemanticSearchResultChunk(r))
+    };
+  }
+
+  private async searchInItemGroups(
+    itemId: string,
+    query: string,
+    topK?: number,
+    scoreThreshold?: number,
+    filters?: graphql.SemanticSearchFilters
+  ): Promise<graphql.SemanticSearchResult> {
+    // Get all active groups for this item
+    const groupsResult = await this.vectorService.listChunkEmbedGroupMetadata({
+      itemId,
+      pageSize: 100,
+      pageToken: '',
+      filter: '',
+      orderBy: ''
+    });
+    
+    const activeGroups = groupsResult.groups.filter(g => g.isActive);
+    const allResults: any[] = [];
+
+    // Search in each active group
+    for (const group of activeGroups) {
+      const result = await this.vectorService.semanticSearchByItemidAndGroupid({
+        itemId,
+        chunkEmbedGroupId: group.id,
+        query,
+        topK: topK || 10,
+        scoreThreshold: scoreThreshold || 0.0,
+        filter: {}
+      });
+      
+      allResults.push(...result.results);
+    }
+
+    // Sort by score and take topK results
+    allResults.sort((a, b) => b.score - a.score);
+    const finalResults = allResults.slice(0, topK || 10);
+
+    return {
+      query,
+      totalResults: finalResults.length,
+      results: finalResults.map(r => this.transformSemanticSearchResultChunk(r))
+    };
+  }
+
+  private async globalSemanticSearch(
+    query: string,
+    topK?: number,
+    scoreThreshold?: number,
+    filters?: graphql.SemanticSearchFilters
+  ): Promise<graphql.SemanticSearchResult> {
+    // For global search, we would need to implement a cross-item search
+    // For now, we'll search across all library items and their active groups
+    const items = await this.libraryItemService.searchLibraryItems();
+    const allResults: any[] = [];
+
+    for (const item of items) {
+      try {
+        const itemResult = await this.searchInItemGroups(
+          item.getItemId(),
+          query,
+          topK,
+          scoreThreshold,
+          filters
+        );
+        allResults.push(...itemResult.results);
+      } catch (error) {
+        console.error(`Error searching in item ${item.getItemId()}:`, error);
+        // Continue with other items
+      }
+    }
+
+    // Sort by score and take topK results
+    allResults.sort((a, b) => b.score - a.score);
+    const finalResults = allResults.slice(0, topK || 10);
+
+    return {
+      query,
+      totalResults: finalResults.length,
+      results: finalResults.map(r => this.transformSemanticSearchResultChunk(r))
+    };
+  }
+
+  @ResolveField('chunkEmbedGroups', () => [graphql.ChunkEmbedGroup], { nullable: true })
+  async getChunkEmbedGroupsForLibraryItem(parent: graphql.LibraryItemMetadata): Promise<graphql.ChunkEmbedGroup[]> {
+    try {
+      const result = await this.vectorService.listChunkEmbedGroupMetadata({
+        itemId: parent.id,
+        pageSize: 100,
+        pageToken: '',
+        filter: '',
+        orderBy: ''
+      });
+      
+      return result.groups.map(group => this.transformChunkEmbedGroup(group));
+    } catch (error) {
+      console.error(`Error fetching chunk embed groups for item ${parent.id}:`, error);
+      return [];
+    }
+  }
+
+  @ResolveField('libraryItem', () => graphql.LibraryItemMetadata, { nullable: true })
+  async getLibraryItemForChunk(parent: graphql.SemanticSearchResultChunk): Promise<graphql.LibraryItemMetadata | null> {
+    try {
+      const item = await this.libraryItemService.getLibraryItem(parent.itemId);
+      if (!item) return null;
+      
+      return this.transformLibraryItemToMetadata(item);
+    } catch (error) {
+      console.error(`Error fetching library item for chunk ${parent.chunkId}:`, error);
+      return null;
+    }
+  }
+
+  @ResolveField('chunkEmbedGroup', () => graphql.ChunkEmbedGroup, { nullable: true })
+  async getChunkEmbedGroupForChunk(parent: graphql.SemanticSearchResultChunk): Promise<graphql.ChunkEmbedGroup | null> {
+    try {
+      this.vectorService.listChunkEmbedGroupMetadata({
+        itemId: '',
+        pageSize: 0,
+        pageToken: '',
+        filter: '',
+        orderBy: ''
+      })
+      // We need to find which group this chunk belongs to
+      // This would require additional implementation to track chunk-to-group mapping
+      // For now, we'll return null
+      return null;
+    } catch (error) {
+      console.error(`Error fetching chunk embed group for chunk ${parent.chunkId}:`, error);
+      return null;
     }
   }
 

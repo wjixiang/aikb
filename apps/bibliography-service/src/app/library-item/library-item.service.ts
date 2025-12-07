@@ -22,6 +22,7 @@ import { S3Utils } from 'utils';
 import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyDBPrismaService } from 'bibliography-db';
+import { VectorService } from 'bibliography-lib';
 
 @Injectable()
 export class LibraryItemService {
@@ -32,6 +33,7 @@ export class LibraryItemService {
     private amqpConnection: AmqpConnection,
     @Inject('S3_SERVICE') private s3Service: S3Service,
     private bibliographyDBPrismaService: BibliographyDBPrismaService,
+    private vectorService: VectorService,
   ) {
     // Initialize the storage and library
     // const elasticsearchUrl =
