@@ -24,7 +24,8 @@
         "apps/knowledgeBase/knowledgeBase-lib/*",
         "libs/knowledgeBase/knowledgeBase-lib/*",
         "libs/meSH-client/*",
-        "libs/EmbeddingModule/*"
+        "libs/EmbeddingModule/*",
+        "libs/bibliography-lib/*"
       ]
     },
     {
@@ -81,7 +82,8 @@
         "apps/knowledgeBase/knowledgeBase-lib/*",
         "libs/knowledgeBase/knowledgeBase-lib/*",
         "libs/meSH-client/*",
-        "libs/EmbeddingModule/*"
+        "libs/EmbeddingModule/*",
+        "libs/bibliography-lib/*"
       ],
       "options": {
         "typecheck": {

@@ -1,27 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppGrpcController } from './app.grpc.controller';
-import { AppService } from './app.service';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { ChunkEmbedModule } from '../chunkEmbed/chunkEmbed.module';
+import { BibliographyLibModule } from 'bibliography-lib';
 
 @Module({
   imports: [
-    RabbitMQModule.forRoot({
-      exchanges: [
-        {
-          name: 'library',
-          type: 'topic',
-        },
-      ],
-      uri: `amqp://${process.env['RABBITMQ_USERNAME']}:${process.env['RABBITMQ_PASSWORD']}@${process.env['RABBITMQ_HOSTNAME']}:${process.env['RABBITMQ_AMQP_PORT']}/${process.env['RABBITMQ_VHOST']}`,
-      connectionInitOptions: {
-        timeout: 30000,
-      },
-      enableControllerDiscovery: true,
-    }),
-    ChunkEmbedModule,
+    BibliographyLibModule,
   ],
   controllers: [AppGrpcController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

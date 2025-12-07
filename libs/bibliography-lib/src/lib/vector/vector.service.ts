@@ -14,7 +14,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ChunkEmbedItemDto } from 'library-shared';
 
 @Injectable()
-export class AppService {
+export class VectorService {
   private readonly itemVectorStorage: PrismaItemVectorStorage;
 
   constructor(private amqpConnection: AmqpConnection) {
@@ -251,7 +251,7 @@ export class AppService {
     } catch (error) {
       return {
         success: false,
-        message: `Error embedding chunks: ${error.message}`,
+        message: `Error embedding chunks: ${error instanceof Error ? error.message : String(error)}`,
         chunkIds: [],
       };
     }
@@ -316,14 +316,14 @@ export class AppService {
         case 'startPosition':
         case 'endPosition':
         case 'wordCount':
-          metadata[key] = parseInt(value, 10);
+          (metadata as any)[key] = parseInt(value, 10);
           break;
         case 'chunkType':
-          metadata[key] = value;
+          (metadata as any)[key] = value;
           break;
         default:
           // Keep as string for unknown keys
-          metadata[key] = value;
+          (metadata as any)[key] = value;
           break;
       }
     }
@@ -391,7 +391,7 @@ export class AppService {
     } catch (error) {
       return {
         success: false,
-        message: `Error performing semantic search: ${error.message}`,
+        message: `Error performing semantic search: ${error instanceof Error ? error.message : String(error)}`,
         results: [],
       };
     }

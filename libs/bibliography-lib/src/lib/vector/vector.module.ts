@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ChunkEmbedController } from './chunkEmbed.controller';
-import { ChunkEmbedService } from './chunkEmbed.service';
+import { VectorService } from './vector.service';
+import { ChunkEmbedService } from './chunk-embed.service';
+import { ChunkEmbedController } from './chunk-embed.controller';
+import { VectorGrpcController } from './vector.grpc.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyGrpcClient } from 'proto-ts';
 
@@ -20,7 +22,8 @@ import { BibliographyGrpcClient } from 'proto-ts';
       enableControllerDiscovery: true,
     }),
   ],
-  controllers: [ChunkEmbedController],
-  providers: [ChunkEmbedService, BibliographyGrpcClient],
+  controllers: [ChunkEmbedController, VectorGrpcController],
+  providers: [VectorService, ChunkEmbedService, BibliographyGrpcClient],
+  exports: [VectorService, ChunkEmbedService],
 })
-export class ChunkEmbedModule {}
+export class VectorModule {}

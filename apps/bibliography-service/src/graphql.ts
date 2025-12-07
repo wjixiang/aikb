@@ -8,17 +8,17 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export interface RegisterPdfUploadUrlRequest {
+export class RegisterPdfUploadUrlRequest {
     fileName: string;
 }
 
-export interface Author {
+export class Author {
     firstName: string;
     lastName: string;
     middleName?: Nullable<string>;
 }
 
-export interface ItemArchive {
+export class ItemArchive {
     fileType: string;
     fileSize: number;
     fileHash: string;
@@ -28,7 +28,7 @@ export interface ItemArchive {
     wordCount?: Nullable<number>;
 }
 
-export interface LibraryItemMetadata {
+export class LibraryItemMetadata {
     id: string;
     title: string;
     authors: Author[];
@@ -47,24 +47,25 @@ export interface LibraryItemMetadata {
     markdownContent?: Nullable<string>;
     markdownUpdatedDate?: Nullable<string>;
     archives?: Nullable<Nullable<ItemArchive>[]>;
+    chunkEmbedGroups?: Nullable<ChunkEmbedGroups>;
 }
 
-export interface SignedS3UploadResult {
+export class SignedS3UploadResult {
     uploadUrl: string;
     s3Key: string;
     expiresAt: string;
 }
 
-export interface ChunkEmbedConfig {
+export class ChunkEmbedConfig {
     chunkingConfig: ChunkingConfig;
     embeddingConfig: EmbeddingConfig;
 }
 
-export interface ChunkingConfig {
+export class ChunkingConfig {
     strategy: string;
 }
 
-export interface EmbeddingConfig {
+export class EmbeddingConfig {
     model: string;
     dimension: number;
     batchSize: number;
@@ -73,7 +74,7 @@ export interface EmbeddingConfig {
     provider: string;
 }
 
-export interface ChunkEmbedGroup {
+export class ChunkEmbedGroup {
     id: string;
     itemId: string;
     name?: Nullable<string>;
@@ -86,19 +87,21 @@ export interface ChunkEmbedGroup {
     createdBy?: Nullable<string>;
 }
 
-export interface ChunkEmbedGroups {
+export class ChunkEmbedGroups {
     groups: ChunkEmbedGroup[];
     total: number;
 }
 
-export interface IQuery {
-    libraryItems(): LibraryItemMetadata[] | Promise<LibraryItemMetadata[]>;
-    itemArchives(itemId: string): ItemArchive[] | Promise<ItemArchive[]>;
-    signedUploadUrl(request: RegisterPdfUploadUrlRequest): Nullable<SignedS3UploadResult> | Promise<Nullable<SignedS3UploadResult>>;
+export abstract class IQuery {
+    abstract libraryItems(): LibraryItemMetadata[] | Promise<LibraryItemMetadata[]>;
+
+    abstract itemArchives(itemId: string): ItemArchive[] | Promise<ItemArchive[]>;
+
+    abstract signedUploadUrl(request: RegisterPdfUploadUrlRequest): Nullable<SignedS3UploadResult> | Promise<Nullable<SignedS3UploadResult>>;
 }
 
-export interface IMutation {
-    createLibraryItem(title: string): Nullable<LibraryItemMetadata> | Promise<Nullable<LibraryItemMetadata>>;
+export abstract class IMutation {
+    abstract createLibraryItem(title: string): Nullable<LibraryItemMetadata> | Promise<Nullable<LibraryItemMetadata>>;
 }
 
 type Nullable<T> = T | null;

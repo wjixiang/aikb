@@ -177,7 +177,7 @@ export class ChunkEmbedService {
       );
       return {
         success: false,
-        message: `Error processing chunk embed request: ${error.message}`,
+        message: `Error processing chunk embed request: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -253,7 +253,7 @@ export class ChunkEmbedService {
       }));
     } catch (error) {
       this.logger.error('Error chunking content:', error);
-      throw new Error(`Failed to chunk content: ${error.message}`);
+      throw new Error(`Failed to chunk content: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

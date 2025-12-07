@@ -33,6 +33,7 @@ type LibraryItemMetadata {
     markdownContent: String
     markdownUpdatedDate: String
     archives: [ItemArchive]
+    chunkEmbedGroups: ChunkEmbedGroups
 }
 
 type SignedS3UploadResult {

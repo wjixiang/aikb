@@ -1,15 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { libraryItemVectorProto } from 'proto-ts';
-import { VectorService } from 'bibliography-lib';
+import { VectorService } from './vector.service';
 import { Observable } from 'rxjs';
 
 @Controller()
 @libraryItemVectorProto.LibraryItemVectorServiceControllerMethods()
-export class AppGrpcController
+export class VectorGrpcController
   implements libraryItemVectorProto.LibraryItemVectorServiceController
 {
   constructor(private readonly vectorService: VectorService) {}
+
   @GrpcMethod('ListChunkEmbedGroupMetadata')
   async listChunkEmbedGroupMetadata(
     request: libraryItemVectorProto.ListItemChunkEmbedGroupMetadataRequest,
