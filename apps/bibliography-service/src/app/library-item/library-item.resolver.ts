@@ -181,22 +181,8 @@ export class LibraryItemResolver {
     topK?: number,
     scoreThreshold?: number
   ): Promise<graphql.SemanticSearchResult> {
-    // Get the chunk embed group to get the itemId
-    const groups = await this.vectorService.listChunkEmbedGroupMetadata({
-      itemId: '', // We'll get this from the group itself
-      pageSize: 1000,
-      pageToken: '',
-      filter: '',
-      orderBy: ''
-    });
-    
-    const targetGroup = groups.groups.find(g => g.id === chunkEmbedGroupId);
-    if (!targetGroup) {
-      throw new Error(`Chunk embed group ${chunkEmbedGroupId} not found`);
-    }
-
+    // No need to get itemId since it's now optional in the service
     const result = await this.vectorService.semanticSearchByItemidAndGroupid({
-      itemId: targetGroup.itemId,
       chunkEmbedGroupId,
       query,
       topK: topK || 10,
@@ -233,7 +219,7 @@ export class LibraryItemResolver {
     // Search in each active group
     for (const group of activeGroups) {
       const result = await this.vectorService.semanticSearchByItemidAndGroupid({
-        itemId,
+        itemId, // Still pass itemId when searching within specific item groups
         chunkEmbedGroupId: group.id,
         query,
         topK: topK || 10,

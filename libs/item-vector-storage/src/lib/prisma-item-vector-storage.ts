@@ -109,26 +109,32 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
   }
 
   async semanticSearchByItemidAndGroupid(
-    itemId: string,
     groupId: string,
     searchVector: number[],
     topK: number,
     scoreThreshold: number,
     filter?: { [key: string]: string },
+    itemId?: string,
   ): Promise<Array<Omit<ItemChunk, 'embedding'> & { similarity: number }>> {
     try {
       const vectorString = `[${searchVector.join(',')}]`;
 
       // Build parameterized query to avoid SQL injection with UUID casting
       let whereClause = `
-                item_id = $2::uuid
-                AND dense_vector_index_group_id = $3::uuid
-                AND 1 - (embedding <=> $1::vector) >= $4
+                dense_vector_index_group_id = $2::uuid
+                AND 1 - (embedding <=> $1::vector) >= $3
             `;
 
       // Add JSON filtering if provided
-      const params: any[] = [vectorString, itemId, groupId, scoreThreshold];
-      let paramIndex = 5;
+      const params: any[] = [vectorString, groupId, scoreThreshold];
+      let paramIndex = 4;
+
+      // Add itemId filter if provided
+      if (itemId) {
+        whereClause += ` AND item_id = $${paramIndex}::uuid`;
+        params.push(itemId);
+        paramIndex++;
+      }
 
       if (filter && Object.keys(filter).length > 0) {
         Object.entries(filter).forEach(([key, value]) => {

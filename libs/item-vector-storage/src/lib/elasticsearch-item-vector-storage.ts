@@ -340,12 +340,12 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
   }
 
   async semanticSearchByItemidAndGroupid(
-    itemId: string,
     groupId: string,
     searchVector: number[],
     topK: number,
     scoreThreshold: number,
     filter?: { [key: string]: string },
+    itemId?: string,
   ): Promise<Array<Omit<ItemChunk, 'embedding'> & { similarity: number }>> {
     try {
       // Get the group info to determine the correct index
@@ -356,24 +356,31 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
         group.embeddingConfig,
       );
 
+      // Build the must conditions
+      const mustConditions: any[] = [
+        {
+          term: {
+            denseVectorIndexGroupId: groupId,
+          },
+        },
+      ];
+
+      // Add itemId filter if provided
+      if (itemId) {
+        mustConditions.push({
+          term: {
+            itemId: itemId,
+          },
+        });
+      }
+
       // Build the search query
       const searchQuery: any = {
         index: chunksIndexName,
         body: {
           query: {
             bool: {
-              must: [
-                {
-                  term: {
-                    itemId: itemId,
-                  },
-                },
-                {
-                  term: {
-                    denseVectorIndexGroupId: groupId,
-                  },
-                },
-              ],
+              must: mustConditions,
               should: [
                 {
                   script_score: {
@@ -445,7 +452,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       // Fallback to the basic semantic search method if the enhanced search fails
       try {
         const basicResult = await this.semanticSearch({
-          itemId: [itemId],
+          itemId: itemId ? [itemId] : [], // Only include itemId if provided
           groupId: groupId,
           searchVector: searchVector,
           resultNum: topK,

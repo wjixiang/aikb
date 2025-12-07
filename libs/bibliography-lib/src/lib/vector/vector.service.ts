@@ -333,7 +333,7 @@ export class VectorService {
 
   async semanticSearchByItemidAndGroupid(
     request: {
-      itemId: string;
+      itemId?: string;
       chunkEmbedGroupId: string;
       query: string;
       topK: number;
@@ -373,12 +373,12 @@ export class VectorService {
       // Perform semantic search using the storage layer's new method
       const searchResults =
         await this.itemVectorStorage.semanticSearchByItemidAndGroupid(
-          request.itemId,
           request.chunkEmbedGroupId,
           queryEmbedding,
           request.topK || 10,
           request.scoreThreshold || 0.0,
           request.filter || {},
+          request.itemId,
         );
 
       // Convert internal results to protobuf format

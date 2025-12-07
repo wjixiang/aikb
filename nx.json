@@ -102,7 +102,8 @@
         "apps/knowledgeBase-service-e2e/**/*",
         "**/*.e2e.test.ts",
         "**/*.e2e.spec.ts",
-        "apps/medquiz/quiz-service-e2e/**/*"
+        "apps/medquiz/quiz-service-e2e/**/*",
+        "apps/library-chatbot-service-e2e/**/*"
       ]
     },
     {
@@ -112,7 +113,10 @@
         "targetName": "e2e",
         "ciTargetName": "e2e-ci"
       },
-      "exclude": ["apps/medquiz/quiz-service-e2e/**/*"]
+      "exclude": [
+        "apps/medquiz/quiz-service-e2e/**/*",
+        "apps/library-chatbot-service-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/docker",
