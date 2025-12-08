@@ -12,8 +12,9 @@ export function App() {
   } = useChat();
 
   return (
-    <div>
+    <div className="w-screen h-screen">
       <Chat
+        className="h-full"
         messages={messages}
         input={input}
         handleInputChange={handleInputChange}

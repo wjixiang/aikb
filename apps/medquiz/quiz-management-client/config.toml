@@ -1,7 +1,7 @@
 # Quiz Parser Configuration
 
 [quiz]
-source = "2026天四(1)"
+source = "2026王强预测(2)"
 tags = ["2026"]
 extractedYear = "2026"
 withExp =  true

@@ -1,6 +1,6 @@
 {
   "name": "quiz-management-client",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/quiz-management-client/src",
   "projectType": "library",
   "tags": [],
