@@ -298,7 +298,34 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
         chunkingConfig.strategy?.toString() || defaultChunkingConfig.strategy?.toString() || 'h1',
         embeddingConfig.model.toString(),
         embeddingConfig.dimension
-      )
+      );
+
+      // Check if a group with the same token already exists
+      const existingGroup = await prisma.chunk_embed_groups.findFirst({
+        where: { token: token },
+      });
+
+      if (existingGroup) {
+        // Return the existing group if found
+        return {
+          id: existingGroup.id,
+          token: existingGroup.token,
+          itemId: existingGroup.item_id,
+          name: existingGroup.name,
+          description: existingGroup.description || undefined,
+          chunkingConfig: existingGroup.chunking_config as any,
+          embeddingConfig: existingGroup.embedding_config as any,
+          isDefault: existingGroup.is_default,
+          isActive: existingGroup.is_active,
+          createdAt: existingGroup.created_at,
+          updatedAt: existingGroup.updated_at,
+          createdBy: existingGroup.created_by || undefined,
+          tags: existingGroup.tags,
+          status: existingGroup.status as ChunkEmbedGroupStatus,
+        };
+      }
+
+      // Create new group if no existing one found
       const newGroup = await prisma.chunk_embed_groups.create({
         data: {
           item_id: config.itemId,
