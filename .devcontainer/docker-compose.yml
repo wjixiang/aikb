@@ -13,6 +13,7 @@ services:
     command: sleep infinity
     ports:
       - "3000:3000"
+      - "3002-3010:3002-3010"
       - "8000:8000"
     networks:
       - app-network

@@ -19,7 +19,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const httpPort = process.env.PORT || 3000;
+  const httpPort = 3003;
 
   // Create gRPC microservice
   const grpcPort = process.env.GRPC_PORT || 50051;

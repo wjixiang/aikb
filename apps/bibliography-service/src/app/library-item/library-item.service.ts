@@ -23,6 +23,7 @@ import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyDBPrismaService } from 'bibliography-db';
 import { VectorService } from 'bibliography-lib';
+import { ChunkEmbedGroupMetadata } from '@/libs/item-vector-storage/src';
 
 @Injectable()
 export class LibraryItemService {
@@ -416,7 +417,7 @@ export class LibraryItemService {
    * @param input The input data for creating the chunk embed group
    * @returns The created chunk embed group
    */
-  async createChunkEmbedGroup(input: any): Promise<any> {
+  async createChunkEmbedGroup(input: any): Promise<ChunkEmbedGroupMetadata> {
     try {
       // Convert the GraphQL input to the format expected by the vector service
       const request = {
@@ -431,11 +432,10 @@ export class LibraryItemService {
           provider: input.embeddingConfig.provider,
           model: input.embeddingConfig.model,
           dimension: input.embeddingConfig.dimension,
-          parameters: {
-            batchSize: String(input.embeddingConfig.batchSize || 20),
-            maxRetries: String(input.embeddingConfig.maxRetries || 3),
-            timeout: String(input.embeddingConfig.timeout || 20000),
-          },
+          batchSize: input.embeddingConfig.batchSize || 20,
+          maxRetries: input.embeddingConfig.maxRetries || 3,
+          timeout: input.embeddingConfig.timeout || 20000,
+          parameters: {},
         },
         isDefault: input.isDefault || false,
         isActive: input.isActive !== undefined ? input.isActive : true,

@@ -1,17 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ItemChunk, PrismaItemVectorStorage } from 'item-vector-storage';
-import { ChunkingStrategy } from 'chunking';
+import { ChunkEmbedGroupMetadata, ItemChunk, PrismaItemVectorStorage } from 'item-vector-storage';
+import { ChunkingStrategy, defaultChunkingConfig } from 'chunking';
 import {
   EmbeddingProvider,
   OpenAIModel,
   AlibabaModel,
   OnnxModel,
   EmbeddingConfig,
+  EmbeddingModel,
+  defaultEmbeddingConfig,
 } from 'embedding';
 import { libraryItemVectorProto } from 'proto-ts';
 import { IdUtils } from 'utils';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ChunkEmbedItemDto } from 'library-shared';
+import { CreateChunkEmbedGroupRequest } from './types';
 
 @Injectable()
 export class VectorService {
@@ -22,61 +25,33 @@ export class VectorService {
   }
 
   async createChunkEmbedGroup(
-    request: libraryItemVectorProto.CreateChunkEmbedGroupRequest,
-  ): Promise<libraryItemVectorProto.ChunkEmbedGroupMetadata> {
+    request: CreateChunkEmbedGroupRequest,
+  ): Promise<ChunkEmbedGroupMetadata> {
     // Convert protobuf types to internal types
     const chunkingConfig = {
-      strategy: (request.chunkingConfig?.strategy ||
-        'paragraph') as ChunkingStrategy,
-      parameters: request.chunkingConfig?.parameters || {},
+      strategy: (request.chunkingConfig?.strategy || defaultChunkingConfig.strategy) ,
     };
 
-    // Convert string provider to enum
-    let provider: EmbeddingProvider;
-    let model: OpenAIModel | AlibabaModel | OnnxModel;
-
-    switch (request.embeddingConfig?.provider) {
-      case 'openai':
-        provider = EmbeddingProvider.OPENAI;
-        model = (request.embeddingConfig?.model ||
-          'text-embedding-ada-002') as OpenAIModel;
-        break;
-      case 'alibaba':
-        provider = EmbeddingProvider.ALIBABA;
-        model = (request.embeddingConfig?.model ||
-          'text-embedding-v3') as AlibabaModel;
-        break;
-      case 'onnx':
-        provider = EmbeddingProvider.ONNX;
-        model = (request.embeddingConfig?.model ||
-          'default') as unknown as OnnxModel;
-        break;
-      default:
-        provider = EmbeddingProvider.ALIBABA;
-        model = AlibabaModel.TEXT_EMBEDDING_V3;
-    }
-
     const embeddingConfig = {
-      provider,
-      model,
-      dimension: request.embeddingConfig?.dimension || 1536,
-      batchSize: parseInt(request.embeddingConfig?.parameters?.['batchSize'] || '20'),
-      maxRetries: parseInt(request.embeddingConfig?.parameters?.['maxRetries'] || '3'),
-      timeout: parseInt(request.embeddingConfig?.parameters?.['timeout'] || '20000'),
+      provider: request.embeddingConfig?.provider || defaultEmbeddingConfig.provider,
+      model: request.embeddingConfig?.model || defaultEmbeddingConfig.model,
+      dimension: request.embeddingConfig?.dimension || defaultEmbeddingConfig.dimension,
+      batchSize: request.embeddingConfig?.batchSize || defaultEmbeddingConfig.batchSize,
+      maxRetries: request.embeddingConfig?.maxRetries || defaultEmbeddingConfig.maxRetries,
+      timeout: request.embeddingConfig?.timeout || defaultEmbeddingConfig.timeout,
     };
 
     // Create the chunk embedding group using the storage implementation
     const now = new Date();
     const groupConfig = {
       itemId: request.itemId,
-      name: request.name,
-      description: request.description,
+      name: request.name || '',
+      description: request.description || '',
       chunkingConfig,
       embeddingConfig,
-      isDefault: request.isDefault,
-      isActive: request.isActive,
-      createdBy: request.createdBy,
-      tags: request.tags,
+      isDefault: request.isDefault || false,
+      isActive: request.isActive || false,
+      createdBy: request.createdBy || '',
       createdAt: now,
       updatedAt: now,
     };
@@ -103,19 +78,20 @@ export class VectorService {
       name: createdGroup.name,
       description: createdGroup.description || '',
       chunkingConfig: {
-        strategy: createdGroup.chunkingConfig.strategy || 'paragraph',
-        parameters: {},
+        strategy: createdGroup.chunkingConfig.strategy 
       },
       embeddingConfig: {
         provider: createdGroup.embeddingConfig.provider,
-        model: createdGroup.embeddingConfig.model as string,
+        model: createdGroup.embeddingConfig.model,
         dimension: createdGroup.embeddingConfig.dimension,
-        parameters: {},
+        batchSize: 30,
+        maxRetries: 5,
+        timeout: 30000
       },
       isDefault: createdGroup.isDefault,
       isActive: createdGroup.isActive,
-      createdAt: createdGroup.createdAt.getTime(),
-      updatedAt: createdGroup.updatedAt.getTime(),
+      createdAt: createdGroup.createdAt,
+      updatedAt: createdGroup.updatedAt,
       createdBy: createdGroup.createdBy || '',
       tags: createdGroup.tags || [],
     };
