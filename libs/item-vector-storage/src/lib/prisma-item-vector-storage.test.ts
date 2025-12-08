@@ -6,7 +6,7 @@ import {
   ChunkEmbedGroupStatus,
   ItemVectorStorageStatus,
 } from './types.js';
-import { prisma } from 'bibliography-db';
+import { prisma } from 'postgre-vector-db';
 import { ChunkingStrategy } from 'chunking';
 import { EmbeddingProvider, AlibabaModel } from 'embedding';
 import { v4 as uuidv4 } from 'uuid';

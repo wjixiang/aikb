@@ -51,14 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  authors: 'authors',
-  citations: 'citations',
-  collections: 'collections',
-  item_archives: 'item_archives',
-  item_authors: 'item_authors',
-  item_collections: 'item_collections',
-  items: 'items',
-  markdowns: 'markdowns'
+  chunk_embed_groups: 'chunk_embed_groups',
+  item_chunks: 'item_chunks'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -77,102 +71,40 @@ export const TransactionIsolationLevel = {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const AuthorsScalarFieldEnum = {
+export const Chunk_embed_groupsScalarFieldEnum = {
   id: 'id',
-  first_name: 'first_name',
-  last_name: 'last_name',
-  middle_name: 'middle_name'
-} as const
-
-export type AuthorsScalarFieldEnum = (typeof AuthorsScalarFieldEnum)[keyof typeof AuthorsScalarFieldEnum]
-
-
-export const CitationsScalarFieldEnum = {
-  id: 'id',
+  token: 'token',
   item_id: 'item_id',
-  citation_style: 'citation_style',
-  citation_text: 'citation_text',
-  date_generated: 'date_generated'
-} as const
-
-export type CitationsScalarFieldEnum = (typeof CitationsScalarFieldEnum)[keyof typeof CitationsScalarFieldEnum]
-
-
-export const CollectionsScalarFieldEnum = {
-  id: 'id',
   name: 'name',
   description: 'description',
-  parent_collection_id: 'parent_collection_id',
-  date_added: 'date_added',
-  date_modified: 'date_modified'
-} as const
-
-export type CollectionsScalarFieldEnum = (typeof CollectionsScalarFieldEnum)[keyof typeof CollectionsScalarFieldEnum]
-
-
-export const Item_archivesScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  file_type: 'file_type',
-  file_size: 'file_size',
-  file_hash: 'file_hash',
-  add_date: 'add_date',
-  s3_key: 's3_key',
-  page_count: 'page_count',
-  word_count: 'word_count'
-} as const
-
-export type Item_archivesScalarFieldEnum = (typeof Item_archivesScalarFieldEnum)[keyof typeof Item_archivesScalarFieldEnum]
-
-
-export const Item_authorsScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  author_id: 'author_id'
-} as const
-
-export type Item_authorsScalarFieldEnum = (typeof Item_authorsScalarFieldEnum)[keyof typeof Item_authorsScalarFieldEnum]
-
-
-export const Item_collectionsScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  collection_id: 'collection_id'
-} as const
-
-export type Item_collectionsScalarFieldEnum = (typeof Item_collectionsScalarFieldEnum)[keyof typeof Item_collectionsScalarFieldEnum]
-
-
-export const ItemsScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  abstract: 'abstract',
-  publication_year: 'publication_year',
-  publisher: 'publisher',
-  isbn: 'isbn',
-  doi: 'doi',
-  url: 'url',
+  chunking_config: 'chunking_config',
+  embedding_config: 'embedding_config',
+  is_default: 'is_default',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  created_by: 'created_by',
   tags: 'tags',
-  notes: 'notes',
-  date_added: 'date_added',
-  date_modified: 'date_modified',
-  language: 'language',
-  markdown_content: 'markdown_content',
-  markdown_updated_date: 'markdown_updated_date'
+  status: 'status'
 } as const
 
-export type ItemsScalarFieldEnum = (typeof ItemsScalarFieldEnum)[keyof typeof ItemsScalarFieldEnum]
+export type Chunk_embed_groupsScalarFieldEnum = (typeof Chunk_embed_groupsScalarFieldEnum)[keyof typeof Chunk_embed_groupsScalarFieldEnum]
 
 
-export const MarkdownsScalarFieldEnum = {
+export const Item_chunksScalarFieldEnum = {
   id: 'id',
   item_id: 'item_id',
+  dense_vector_index_group_id: 'dense_vector_index_group_id',
+  title: 'title',
   content: 'content',
-  date_created: 'date_created',
-  date_modified: 'date_modified'
+  index: 'index',
+  strategy_metadata: 'strategy_metadata',
+  metadata: 'metadata',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
 } as const
 
-export type MarkdownsScalarFieldEnum = (typeof MarkdownsScalarFieldEnum)[keyof typeof MarkdownsScalarFieldEnum]
+export type Item_chunksScalarFieldEnum = (typeof Item_chunksScalarFieldEnum)[keyof typeof Item_chunksScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -183,12 +115,36 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: 'JsonNull'
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull'
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull',
+  AnyNull: 'AnyNull'
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 export const NullsOrder = {

@@ -9,6 +9,7 @@ import {
   ChunkEmbedGroupMetadata,
   ChunkEmbedGroupConfig,
 } from './types.js';
+import { generateChunkEmbedGroupToken } from 'utils';
 
 /**
  * Elasticsearch implementation of IItemVectorStorage
@@ -580,9 +581,17 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       const id = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      // Generate token using the chunking strategy, embedding model, and dimension
+      const token = generateChunkEmbedGroupToken(
+        config.chunkingConfig.strategy || 'paragraph', // Default to 'paragraph' if not specified
+        config.embeddingConfig.model.toString(), // Convert enum to string
+        config.embeddingConfig.dimension
+      );
+
       const groupInfo: ChunkEmbedGroupMetadata = {
         ...config,
         id,
+        token,
         createdAt: now,
         updatedAt: now,
       };

@@ -18,42 +18,12 @@ export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
 /**
- * Model authors
+ * Model chunk_embed_groups
  * 
  */
-export type authors = Prisma.authorsModel
+export type chunk_embed_groups = Prisma.chunk_embed_groupsModel
 /**
- * Model citations
+ * Model item_chunks
  * 
  */
-export type citations = Prisma.citationsModel
-/**
- * Model collections
- * 
- */
-export type collections = Prisma.collectionsModel
-/**
- * Model item_archives
- * 
- */
-export type item_archives = Prisma.item_archivesModel
-/**
- * Model item_authors
- * 
- */
-export type item_authors = Prisma.item_authorsModel
-/**
- * Model item_collections
- * 
- */
-export type item_collections = Prisma.item_collectionsModel
-/**
- * Model items
- * 
- */
-export type items = Prisma.itemsModel
-/**
- * Model markdowns
- * 
- */
-export type markdowns = Prisma.markdownsModel
+export type item_chunks = Prisma.item_chunksModel

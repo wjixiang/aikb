@@ -26,6 +26,7 @@ export type AggregateChunk_embed_groups = {
 
 export type Chunk_embed_groupsMinAggregateOutputType = {
   id: string | null
+  token: string | null
   item_id: string | null
   name: string | null
   description: string | null
@@ -39,6 +40,7 @@ export type Chunk_embed_groupsMinAggregateOutputType = {
 
 export type Chunk_embed_groupsMaxAggregateOutputType = {
   id: string | null
+  token: string | null
   item_id: string | null
   name: string | null
   description: string | null
@@ -52,6 +54,7 @@ export type Chunk_embed_groupsMaxAggregateOutputType = {
 
 export type Chunk_embed_groupsCountAggregateOutputType = {
   id: number
+  token: number
   item_id: number
   name: number
   description: number
@@ -70,6 +73,7 @@ export type Chunk_embed_groupsCountAggregateOutputType = {
 
 export type Chunk_embed_groupsMinAggregateInputType = {
   id?: true
+  token?: true
   item_id?: true
   name?: true
   description?: true
@@ -83,6 +87,7 @@ export type Chunk_embed_groupsMinAggregateInputType = {
 
 export type Chunk_embed_groupsMaxAggregateInputType = {
   id?: true
+  token?: true
   item_id?: true
   name?: true
   description?: true
@@ -96,6 +101,7 @@ export type Chunk_embed_groupsMaxAggregateInputType = {
 
 export type Chunk_embed_groupsCountAggregateInputType = {
   id?: true
+  token?: true
   item_id?: true
   name?: true
   description?: true
@@ -185,6 +191,7 @@ export type chunk_embed_groupsGroupByArgs<ExtArgs extends runtime.Types.Extensio
 
 export type Chunk_embed_groupsGroupByOutputType = {
   id: string
+  token: string
   item_id: string
   name: string
   description: string | null
@@ -222,6 +229,7 @@ export type chunk_embed_groupsWhereInput = {
   OR?: Prisma.chunk_embed_groupsWhereInput[]
   NOT?: Prisma.chunk_embed_groupsWhereInput | Prisma.chunk_embed_groupsWhereInput[]
   id?: Prisma.UuidFilter<"chunk_embed_groups"> | string
+  token?: Prisma.StringFilter<"chunk_embed_groups"> | string
   item_id?: Prisma.UuidFilter<"chunk_embed_groups"> | string
   name?: Prisma.StringFilter<"chunk_embed_groups"> | string
   description?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
@@ -234,12 +242,12 @@ export type chunk_embed_groupsWhereInput = {
   created_by?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
   tags?: Prisma.StringNullableListFilter<"chunk_embed_groups">
   status?: Prisma.StringFilter<"chunk_embed_groups"> | string
-  items?: Prisma.XOR<Prisma.ItemsScalarRelationFilter, Prisma.itemsWhereInput>
   item_chunks?: Prisma.Item_chunksListRelationFilter
 }
 
 export type chunk_embed_groupsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  token?: Prisma.SortOrder
   item_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -252,7 +260,6 @@ export type chunk_embed_groupsOrderByWithRelationInput = {
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   tags?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  items?: Prisma.itemsOrderByWithRelationInput
   item_chunks?: Prisma.item_chunksOrderByRelationAggregateInput
 }
 
@@ -261,6 +268,7 @@ export type chunk_embed_groupsWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.chunk_embed_groupsWhereInput | Prisma.chunk_embed_groupsWhereInput[]
   OR?: Prisma.chunk_embed_groupsWhereInput[]
   NOT?: Prisma.chunk_embed_groupsWhereInput | Prisma.chunk_embed_groupsWhereInput[]
+  token?: Prisma.StringFilter<"chunk_embed_groups"> | string
   item_id?: Prisma.UuidFilter<"chunk_embed_groups"> | string
   name?: Prisma.StringFilter<"chunk_embed_groups"> | string
   description?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
@@ -273,12 +281,12 @@ export type chunk_embed_groupsWhereUniqueInput = Prisma.AtLeast<{
   created_by?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
   tags?: Prisma.StringNullableListFilter<"chunk_embed_groups">
   status?: Prisma.StringFilter<"chunk_embed_groups"> | string
-  items?: Prisma.XOR<Prisma.ItemsScalarRelationFilter, Prisma.itemsWhereInput>
   item_chunks?: Prisma.Item_chunksListRelationFilter
 }, "id">
 
 export type chunk_embed_groupsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  token?: Prisma.SortOrder
   item_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -301,6 +309,7 @@ export type chunk_embed_groupsScalarWhereWithAggregatesInput = {
   OR?: Prisma.chunk_embed_groupsScalarWhereWithAggregatesInput[]
   NOT?: Prisma.chunk_embed_groupsScalarWhereWithAggregatesInput | Prisma.chunk_embed_groupsScalarWhereWithAggregatesInput[]
   id?: Prisma.UuidWithAggregatesFilter<"chunk_embed_groups"> | string
+  token?: Prisma.StringWithAggregatesFilter<"chunk_embed_groups"> | string
   item_id?: Prisma.UuidWithAggregatesFilter<"chunk_embed_groups"> | string
   name?: Prisma.StringWithAggregatesFilter<"chunk_embed_groups"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"chunk_embed_groups"> | string | null
@@ -317,6 +326,8 @@ export type chunk_embed_groupsScalarWhereWithAggregatesInput = {
 
 export type chunk_embed_groupsCreateInput = {
   id?: string
+  token: string
+  item_id: string
   name: string
   description?: string | null
   chunking_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -328,12 +339,12 @@ export type chunk_embed_groupsCreateInput = {
   created_by?: string | null
   tags?: Prisma.chunk_embed_groupsCreatetagsInput | string[]
   status?: string
-  items: Prisma.itemsCreateNestedOneWithoutChunk_embed_groupsInput
   item_chunks?: Prisma.item_chunksCreateNestedManyWithoutChunk_embed_groupsInput
 }
 
 export type chunk_embed_groupsUncheckedCreateInput = {
   id?: string
+  token: string
   item_id: string
   name: string
   description?: string | null
@@ -351,6 +362,8 @@ export type chunk_embed_groupsUncheckedCreateInput = {
 
 export type chunk_embed_groupsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -362,12 +375,12 @@ export type chunk_embed_groupsUpdateInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tags?: Prisma.chunk_embed_groupsUpdatetagsInput | string[]
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  items?: Prisma.itemsUpdateOneRequiredWithoutChunk_embed_groupsNestedInput
   item_chunks?: Prisma.item_chunksUpdateManyWithoutChunk_embed_groupsNestedInput
 }
 
 export type chunk_embed_groupsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
   item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -385,6 +398,7 @@ export type chunk_embed_groupsUncheckedUpdateInput = {
 
 export type chunk_embed_groupsCreateManyInput = {
   id?: string
+  token: string
   item_id: string
   name: string
   description?: string | null
@@ -401,6 +415,8 @@ export type chunk_embed_groupsCreateManyInput = {
 
 export type chunk_embed_groupsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -416,6 +432,7 @@ export type chunk_embed_groupsUpdateManyMutationInput = {
 
 export type chunk_embed_groupsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
   item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -430,18 +447,17 @@ export type chunk_embed_groupsUncheckedUpdateManyInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
-export type Chunk_embed_groupsListRelationFilter = {
-  every?: Prisma.chunk_embed_groupsWhereInput
-  some?: Prisma.chunk_embed_groupsWhereInput
-  none?: Prisma.chunk_embed_groupsWhereInput
-}
-
-export type chunk_embed_groupsOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type chunk_embed_groupsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  token?: Prisma.SortOrder
   item_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -458,6 +474,7 @@ export type chunk_embed_groupsCountOrderByAggregateInput = {
 
 export type chunk_embed_groupsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  token?: Prisma.SortOrder
   item_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -471,6 +488,7 @@ export type chunk_embed_groupsMaxOrderByAggregateInput = {
 
 export type chunk_embed_groupsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  token?: Prisma.SortOrder
   item_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -487,54 +505,24 @@ export type Chunk_embed_groupsScalarRelationFilter = {
   isNot?: Prisma.chunk_embed_groupsWhereInput
 }
 
-export type chunk_embed_groupsCreateNestedManyWithoutItemsInput = {
-  create?: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput> | Prisma.chunk_embed_groupsCreateWithoutItemsInput[] | Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput | Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput[]
-  createMany?: Prisma.chunk_embed_groupsCreateManyItemsInputEnvelope
-  connect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-}
-
-export type chunk_embed_groupsUncheckedCreateNestedManyWithoutItemsInput = {
-  create?: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput> | Prisma.chunk_embed_groupsCreateWithoutItemsInput[] | Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput | Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput[]
-  createMany?: Prisma.chunk_embed_groupsCreateManyItemsInputEnvelope
-  connect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-}
-
-export type chunk_embed_groupsUpdateManyWithoutItemsNestedInput = {
-  create?: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput> | Prisma.chunk_embed_groupsCreateWithoutItemsInput[] | Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput | Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput[]
-  upsert?: Prisma.chunk_embed_groupsUpsertWithWhereUniqueWithoutItemsInput | Prisma.chunk_embed_groupsUpsertWithWhereUniqueWithoutItemsInput[]
-  createMany?: Prisma.chunk_embed_groupsCreateManyItemsInputEnvelope
-  set?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  disconnect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  delete?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  connect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  update?: Prisma.chunk_embed_groupsUpdateWithWhereUniqueWithoutItemsInput | Prisma.chunk_embed_groupsUpdateWithWhereUniqueWithoutItemsInput[]
-  updateMany?: Prisma.chunk_embed_groupsUpdateManyWithWhereWithoutItemsInput | Prisma.chunk_embed_groupsUpdateManyWithWhereWithoutItemsInput[]
-  deleteMany?: Prisma.chunk_embed_groupsScalarWhereInput | Prisma.chunk_embed_groupsScalarWhereInput[]
-}
-
-export type chunk_embed_groupsUncheckedUpdateManyWithoutItemsNestedInput = {
-  create?: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput> | Prisma.chunk_embed_groupsCreateWithoutItemsInput[] | Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput | Prisma.chunk_embed_groupsCreateOrConnectWithoutItemsInput[]
-  upsert?: Prisma.chunk_embed_groupsUpsertWithWhereUniqueWithoutItemsInput | Prisma.chunk_embed_groupsUpsertWithWhereUniqueWithoutItemsInput[]
-  createMany?: Prisma.chunk_embed_groupsCreateManyItemsInputEnvelope
-  set?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  disconnect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  delete?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  connect?: Prisma.chunk_embed_groupsWhereUniqueInput | Prisma.chunk_embed_groupsWhereUniqueInput[]
-  update?: Prisma.chunk_embed_groupsUpdateWithWhereUniqueWithoutItemsInput | Prisma.chunk_embed_groupsUpdateWithWhereUniqueWithoutItemsInput[]
-  updateMany?: Prisma.chunk_embed_groupsUpdateManyWithWhereWithoutItemsInput | Prisma.chunk_embed_groupsUpdateManyWithWhereWithoutItemsInput[]
-  deleteMany?: Prisma.chunk_embed_groupsScalarWhereInput | Prisma.chunk_embed_groupsScalarWhereInput[]
-}
-
 export type chunk_embed_groupsCreatetagsInput = {
   set: string[]
 }
 
+export type StringFieldUpdateOperationsInput = {
+  set?: string
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
+}
+
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
 }
 
 export type chunk_embed_groupsUpdatetagsInput = {
@@ -556,85 +544,10 @@ export type chunk_embed_groupsUpdateOneRequiredWithoutItem_chunksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.chunk_embed_groupsUpdateToOneWithWhereWithoutItem_chunksInput, Prisma.chunk_embed_groupsUpdateWithoutItem_chunksInput>, Prisma.chunk_embed_groupsUncheckedUpdateWithoutItem_chunksInput>
 }
 
-export type chunk_embed_groupsCreateWithoutItemsInput = {
-  id?: string
-  name: string
-  description?: string | null
-  chunking_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: boolean
-  is_active?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-  created_by?: string | null
-  tags?: Prisma.chunk_embed_groupsCreatetagsInput | string[]
-  status?: string
-  item_chunks?: Prisma.item_chunksCreateNestedManyWithoutChunk_embed_groupsInput
-}
-
-export type chunk_embed_groupsUncheckedCreateWithoutItemsInput = {
-  id?: string
-  name: string
-  description?: string | null
-  chunking_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: boolean
-  is_active?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-  created_by?: string | null
-  tags?: Prisma.chunk_embed_groupsCreatetagsInput | string[]
-  status?: string
-  item_chunks?: Prisma.item_chunksUncheckedCreateNestedManyWithoutChunk_embed_groupsInput
-}
-
-export type chunk_embed_groupsCreateOrConnectWithoutItemsInput = {
-  where: Prisma.chunk_embed_groupsWhereUniqueInput
-  create: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput>
-}
-
-export type chunk_embed_groupsCreateManyItemsInputEnvelope = {
-  data: Prisma.chunk_embed_groupsCreateManyItemsInput | Prisma.chunk_embed_groupsCreateManyItemsInput[]
-  skipDuplicates?: boolean
-}
-
-export type chunk_embed_groupsUpsertWithWhereUniqueWithoutItemsInput = {
-  where: Prisma.chunk_embed_groupsWhereUniqueInput
-  update: Prisma.XOR<Prisma.chunk_embed_groupsUpdateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedUpdateWithoutItemsInput>
-  create: Prisma.XOR<Prisma.chunk_embed_groupsCreateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedCreateWithoutItemsInput>
-}
-
-export type chunk_embed_groupsUpdateWithWhereUniqueWithoutItemsInput = {
-  where: Prisma.chunk_embed_groupsWhereUniqueInput
-  data: Prisma.XOR<Prisma.chunk_embed_groupsUpdateWithoutItemsInput, Prisma.chunk_embed_groupsUncheckedUpdateWithoutItemsInput>
-}
-
-export type chunk_embed_groupsUpdateManyWithWhereWithoutItemsInput = {
-  where: Prisma.chunk_embed_groupsScalarWhereInput
-  data: Prisma.XOR<Prisma.chunk_embed_groupsUpdateManyMutationInput, Prisma.chunk_embed_groupsUncheckedUpdateManyWithoutItemsInput>
-}
-
-export type chunk_embed_groupsScalarWhereInput = {
-  AND?: Prisma.chunk_embed_groupsScalarWhereInput | Prisma.chunk_embed_groupsScalarWhereInput[]
-  OR?: Prisma.chunk_embed_groupsScalarWhereInput[]
-  NOT?: Prisma.chunk_embed_groupsScalarWhereInput | Prisma.chunk_embed_groupsScalarWhereInput[]
-  id?: Prisma.UuidFilter<"chunk_embed_groups"> | string
-  item_id?: Prisma.UuidFilter<"chunk_embed_groups"> | string
-  name?: Prisma.StringFilter<"chunk_embed_groups"> | string
-  description?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
-  chunking_config?: Prisma.JsonFilter<"chunk_embed_groups">
-  embedding_config?: Prisma.JsonFilter<"chunk_embed_groups">
-  is_default?: Prisma.BoolFilter<"chunk_embed_groups"> | boolean
-  is_active?: Prisma.BoolFilter<"chunk_embed_groups"> | boolean
-  created_at?: Prisma.DateTimeFilter<"chunk_embed_groups"> | Date | string
-  updated_at?: Prisma.DateTimeFilter<"chunk_embed_groups"> | Date | string
-  created_by?: Prisma.StringNullableFilter<"chunk_embed_groups"> | string | null
-  tags?: Prisma.StringNullableListFilter<"chunk_embed_groups">
-  status?: Prisma.StringFilter<"chunk_embed_groups"> | string
-}
-
 export type chunk_embed_groupsCreateWithoutItem_chunksInput = {
   id?: string
+  token: string
+  item_id: string
   name: string
   description?: string | null
   chunking_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -646,11 +559,11 @@ export type chunk_embed_groupsCreateWithoutItem_chunksInput = {
   created_by?: string | null
   tags?: Prisma.chunk_embed_groupsCreatetagsInput | string[]
   status?: string
-  items: Prisma.itemsCreateNestedOneWithoutChunk_embed_groupsInput
 }
 
 export type chunk_embed_groupsUncheckedCreateWithoutItem_chunksInput = {
   id?: string
+  token: string
   item_id: string
   name: string
   description?: string | null
@@ -683,22 +596,7 @@ export type chunk_embed_groupsUpdateToOneWithWhereWithoutItem_chunksInput = {
 
 export type chunk_embed_groupsUpdateWithoutItem_chunksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tags?: Prisma.chunk_embed_groupsUpdatetagsInput | string[]
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  items?: Prisma.itemsUpdateOneRequiredWithoutChunk_embed_groupsNestedInput
-}
-
-export type chunk_embed_groupsUncheckedUpdateWithoutItem_chunksInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
   item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -713,55 +611,10 @@ export type chunk_embed_groupsUncheckedUpdateWithoutItem_chunksInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
-export type chunk_embed_groupsCreateManyItemsInput = {
-  id?: string
-  name: string
-  description?: string | null
-  chunking_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: boolean
-  is_active?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-  created_by?: string | null
-  tags?: Prisma.chunk_embed_groupsCreatetagsInput | string[]
-  status?: string
-}
-
-export type chunk_embed_groupsUpdateWithoutItemsInput = {
+export type chunk_embed_groupsUncheckedUpdateWithoutItem_chunksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tags?: Prisma.chunk_embed_groupsUpdatetagsInput | string[]
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  item_chunks?: Prisma.item_chunksUpdateManyWithoutChunk_embed_groupsNestedInput
-}
-
-export type chunk_embed_groupsUncheckedUpdateWithoutItemsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  embedding_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  is_default?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tags?: Prisma.chunk_embed_groupsUpdatetagsInput | string[]
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  item_chunks?: Prisma.item_chunksUncheckedUpdateManyWithoutChunk_embed_groupsNestedInput
-}
-
-export type chunk_embed_groupsUncheckedUpdateManyWithoutItemsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
+  token?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunking_config?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -808,6 +661,7 @@ export type Chunk_embed_groupsCountOutputTypeCountItem_chunksArgs<ExtArgs extend
 
 export type chunk_embed_groupsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  token?: boolean
   item_id?: boolean
   name?: boolean
   description?: boolean
@@ -820,13 +674,13 @@ export type chunk_embed_groupsSelect<ExtArgs extends runtime.Types.Extensions.In
   created_by?: boolean
   tags?: boolean
   status?: boolean
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
   item_chunks?: boolean | Prisma.chunk_embed_groups$item_chunksArgs<ExtArgs>
   _count?: boolean | Prisma.Chunk_embed_groupsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chunk_embed_groups"]>
 
 export type chunk_embed_groupsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  token?: boolean
   item_id?: boolean
   name?: boolean
   description?: boolean
@@ -839,11 +693,11 @@ export type chunk_embed_groupsSelectCreateManyAndReturn<ExtArgs extends runtime.
   created_by?: boolean
   tags?: boolean
   status?: boolean
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chunk_embed_groups"]>
 
 export type chunk_embed_groupsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  token?: boolean
   item_id?: boolean
   name?: boolean
   description?: boolean
@@ -856,11 +710,11 @@ export type chunk_embed_groupsSelectUpdateManyAndReturn<ExtArgs extends runtime.
   created_by?: boolean
   tags?: boolean
   status?: boolean
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chunk_embed_groups"]>
 
 export type chunk_embed_groupsSelectScalar = {
   id?: boolean
+  token?: boolean
   item_id?: boolean
   name?: boolean
   description?: boolean
@@ -875,27 +729,22 @@ export type chunk_embed_groupsSelectScalar = {
   status?: boolean
 }
 
-export type chunk_embed_groupsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "item_id" | "name" | "description" | "chunking_config" | "embedding_config" | "is_default" | "is_active" | "created_at" | "updated_at" | "created_by" | "tags" | "status", ExtArgs["result"]["chunk_embed_groups"]>
+export type chunk_embed_groupsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "token" | "item_id" | "name" | "description" | "chunking_config" | "embedding_config" | "is_default" | "is_active" | "created_at" | "updated_at" | "created_by" | "tags" | "status", ExtArgs["result"]["chunk_embed_groups"]>
 export type chunk_embed_groupsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
   item_chunks?: boolean | Prisma.chunk_embed_groups$item_chunksArgs<ExtArgs>
   _count?: boolean | Prisma.Chunk_embed_groupsCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type chunk_embed_groupsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
-}
-export type chunk_embed_groupsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
-}
+export type chunk_embed_groupsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type chunk_embed_groupsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $chunk_embed_groupsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "chunk_embed_groups"
   objects: {
-    items: Prisma.$itemsPayload<ExtArgs>
     item_chunks: Prisma.$item_chunksPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    token: string
     item_id: string
     name: string
     description: string | null
@@ -1302,7 +1151,6 @@ readonly fields: chunk_embed_groupsFieldRefs;
  */
 export interface Prisma__chunk_embed_groupsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  items<T extends Prisma.itemsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.itemsDefaultArgs<ExtArgs>>): Prisma.Prisma__itemsClient<runtime.Types.Result.GetResult<Prisma.$itemsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   item_chunks<T extends Prisma.chunk_embed_groups$item_chunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.chunk_embed_groups$item_chunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_chunksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1334,6 +1182,7 @@ export interface Prisma__chunk_embed_groupsClient<T, Null = never, ExtArgs exten
  */
 export interface chunk_embed_groupsFieldRefs {
   readonly id: Prisma.FieldRef<"chunk_embed_groups", 'String'>
+  readonly token: Prisma.FieldRef<"chunk_embed_groups", 'String'>
   readonly item_id: Prisma.FieldRef<"chunk_embed_groups", 'String'>
   readonly name: Prisma.FieldRef<"chunk_embed_groups", 'String'>
   readonly description: Prisma.FieldRef<"chunk_embed_groups", 'String'>
@@ -1595,10 +1444,6 @@ export type chunk_embed_groupsCreateManyAndReturnArgs<ExtArgs extends runtime.Ty
    */
   data: Prisma.chunk_embed_groupsCreateManyInput | Prisma.chunk_embed_groupsCreateManyInput[]
   skipDuplicates?: boolean
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.chunk_embed_groupsIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1669,10 +1514,6 @@ export type chunk_embed_groupsUpdateManyAndReturnArgs<ExtArgs extends runtime.Ty
    * Limit how many chunk_embed_groups to update.
    */
   limit?: number
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.chunk_embed_groupsIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**

@@ -62,6 +62,7 @@
       "ui/libs/*": ["libs/ui/src/lib/*"],
       "libs/lib/utils": ["libs/ui/src/lib/utils"],
       "quiz-db": ["libs/quiz-db/src/index.ts"],
+      "postgre-vector-db": ["libs/postgre-vector-db/src/index.ts"],
       "knowledgeBase-lib": [
         "libs/knowledgeBase/knowledgeBase-lib/src/index.ts"
       ],

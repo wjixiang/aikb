@@ -391,9 +391,7 @@ export const ModelName = {
   item_authors: 'item_authors',
   item_collections: 'item_collections',
   items: 'items',
-  markdowns: 'markdowns',
-  chunk_embed_groups: 'chunk_embed_groups',
-  item_chunks: 'item_chunks'
+  markdowns: 'markdowns'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -409,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "authors" | "citations" | "collections" | "item_archives" | "item_authors" | "item_collections" | "items" | "markdowns" | "chunk_embed_groups" | "item_chunks"
+    modelProps: "authors" | "citations" | "collections" | "item_archives" | "item_authors" | "item_collections" | "items" | "markdowns"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1005,154 +1003,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    chunk_embed_groups: {
-      payload: Prisma.$chunk_embed_groupsPayload<ExtArgs>
-      fields: Prisma.chunk_embed_groupsFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.chunk_embed_groupsFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.chunk_embed_groupsFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        findFirst: {
-          args: Prisma.chunk_embed_groupsFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.chunk_embed_groupsFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        findMany: {
-          args: Prisma.chunk_embed_groupsFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>[]
-        }
-        create: {
-          args: Prisma.chunk_embed_groupsCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        createMany: {
-          args: Prisma.chunk_embed_groupsCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.chunk_embed_groupsCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>[]
-        }
-        delete: {
-          args: Prisma.chunk_embed_groupsDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        update: {
-          args: Prisma.chunk_embed_groupsUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        deleteMany: {
-          args: Prisma.chunk_embed_groupsDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.chunk_embed_groupsUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.chunk_embed_groupsUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>[]
-        }
-        upsert: {
-          args: Prisma.chunk_embed_groupsUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$chunk_embed_groupsPayload>
-        }
-        aggregate: {
-          args: Prisma.Chunk_embed_groupsAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateChunk_embed_groups>
-        }
-        groupBy: {
-          args: Prisma.chunk_embed_groupsGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Chunk_embed_groupsGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.chunk_embed_groupsCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Chunk_embed_groupsCountAggregateOutputType> | number
-        }
-      }
-    }
-    item_chunks: {
-      payload: Prisma.$item_chunksPayload<ExtArgs>
-      fields: Prisma.item_chunksFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.item_chunksFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.item_chunksFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        findFirst: {
-          args: Prisma.item_chunksFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.item_chunksFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        findMany: {
-          args: Prisma.item_chunksFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>[]
-        }
-        create: {
-          args: Prisma.item_chunksCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        createMany: {
-          args: Prisma.item_chunksCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.item_chunksCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>[]
-        }
-        delete: {
-          args: Prisma.item_chunksDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        update: {
-          args: Prisma.item_chunksUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        deleteMany: {
-          args: Prisma.item_chunksDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.item_chunksUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.item_chunksUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>[]
-        }
-        upsert: {
-          args: Prisma.item_chunksUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$item_chunksPayload>
-        }
-        aggregate: {
-          args: Prisma.Item_chunksAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateItem_chunks>
-        }
-        groupBy: {
-          args: Prisma.item_chunksGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Item_chunksGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.item_chunksCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Item_chunksCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -1290,62 +1140,12 @@ export const MarkdownsScalarFieldEnum = {
 export type MarkdownsScalarFieldEnum = (typeof MarkdownsScalarFieldEnum)[keyof typeof MarkdownsScalarFieldEnum]
 
 
-export const Chunk_embed_groupsScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  name: 'name',
-  description: 'description',
-  chunking_config: 'chunking_config',
-  embedding_config: 'embedding_config',
-  is_default: 'is_default',
-  is_active: 'is_active',
-  created_at: 'created_at',
-  updated_at: 'updated_at',
-  created_by: 'created_by',
-  tags: 'tags',
-  status: 'status'
-} as const
-
-export type Chunk_embed_groupsScalarFieldEnum = (typeof Chunk_embed_groupsScalarFieldEnum)[keyof typeof Chunk_embed_groupsScalarFieldEnum]
-
-
-export const Item_chunksScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  dense_vector_index_group_id: 'dense_vector_index_group_id',
-  title: 'title',
-  content: 'content',
-  index: 'index',
-  strategy_metadata: 'strategy_metadata',
-  metadata: 'metadata',
-  created_at: 'created_at',
-  updated_at: 'updated_at'
-} as const
-
-export type Item_chunksScalarFieldEnum = (typeof Item_chunksScalarFieldEnum)[keyof typeof Item_chunksScalarFieldEnum]
-
-
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
-
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
-export const NullableJsonNullValueInput = {
-  DbNull: DbNull,
-  JsonNull: JsonNull
-} as const
-
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1362,15 +1162,6 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
-export const JsonNullValueFilter = {
-  DbNull: DbNull,
-  JsonNull: JsonNull,
-  AnyNull: AnyNull
-} as const
-
-export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1418,27 +1209,6 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1542,8 +1312,6 @@ export type GlobalOmitConfig = {
   item_collections?: Prisma.item_collectionsOmit
   items?: Prisma.itemsOmit
   markdowns?: Prisma.markdownsOmit
-  chunk_embed_groups?: Prisma.chunk_embed_groupsOmit
-  item_chunks?: Prisma.item_chunksOmit
 }
 
 /* Types for Logging */

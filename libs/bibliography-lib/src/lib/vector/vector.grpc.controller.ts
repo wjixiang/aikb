@@ -35,7 +35,7 @@ export class VectorGrpcController
       isDefault: protoRequest.isDefault,
       isActive: protoRequest.isActive,
       createdBy: protoRequest.createdBy,
-      tags: protoRequest.tags,
+      // tags: protoRequest.tags,
       itemId: protoRequest.itemId,
     };
   }

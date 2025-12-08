@@ -62,3 +62,7 @@ export class S3Utils {
     return `library/pdfs/${year}/${month}/${date}/${timestamp}-${fileName}`;
   }
 }
+
+export function generateChunkEmbedGroupToken(chunkStrategy: string, modelName: string, dimension: number) {
+  return `${chunkStrategy}-${modelName}-${dimension}`
+}

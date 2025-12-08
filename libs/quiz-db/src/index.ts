@@ -1,2 +1,2 @@
-import { prisma } from './prisma';
-export { prisma };
+import { prisma, PostgreQuizDbPrismaService } from './prisma';
+export { prisma, PostgreQuizDbPrismaService };

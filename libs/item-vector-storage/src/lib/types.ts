@@ -68,6 +68,7 @@ export interface ItemChunkSemanticSearchQuery {
 
 export interface ChunkEmbedGroupMetadata {
   id: string; // Unique identifier for this group
+  token: string;
   itemId: string; // Reference to the parent item
   name: string; // Human-readable name
   description?: string;
@@ -140,4 +141,4 @@ export interface IItemVectorStorage {
   getChunkById: (chunkId: string) => Promise<ItemChunk | null>;
 }
 
-export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id'>;
+export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id' | 'token'>;

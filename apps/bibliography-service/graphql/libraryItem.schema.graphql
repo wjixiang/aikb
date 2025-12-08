@@ -156,8 +156,8 @@ input CreateChunkEmbedGroupInput {
     itemId: ID!
     name: String
     description: String
-    chunkingConfig: ChunkingConfigInput!
-    embeddingConfig: EmbeddingConfigInput!
+    chunkingConfig: ChunkingConfigInput
+    embeddingConfig: EmbeddingConfigInput
     isDefault: Boolean
     isActive: Boolean
     createdBy: String

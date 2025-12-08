@@ -8,6 +8,6 @@ export default defineConfig({
     path: './src/prisma/migrations',
   },
   datasource: {
-    url: env('QUIZ_DATABASE_URL'),
+    url: env('VECTOR_DATABASE_URL'),
   },
 });

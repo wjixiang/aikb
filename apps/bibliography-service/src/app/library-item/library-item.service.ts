@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  S3ElasticSearchLibraryStorage,
   PrismaLibraryStorage,
   LibraryItem,
   Library,
@@ -14,6 +13,7 @@ import {
   PdfUploadUrlDto,
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
+  CreateChunkEmbedGroupDto,
 } from 'library-shared';
 import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from 'log-management';
@@ -24,6 +24,10 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyDBPrismaService } from 'bibliography-db';
 import { VectorService } from 'bibliography-lib';
 import { ChunkEmbedGroupMetadata } from '@/libs/item-vector-storage/src';
+import { defaultChunkingConfig } from 'chunking';
+import {
+  defaultEmbeddingConfig
+} from 'embedding';
 
 @Injectable()
 export class LibraryItemService {
@@ -417,18 +421,18 @@ export class LibraryItemService {
    * @param input The input data for creating the chunk embed group
    * @returns The created chunk embed group
    */
-  async createChunkEmbedGroup(input: any): Promise<ChunkEmbedGroupMetadata> {
+  async createChunkEmbedGroup(input: CreateChunkEmbedGroupDto): Promise<ChunkEmbedGroupMetadata> {
     try {
       // Convert the GraphQL input to the format expected by the vector service
       const request = {
         itemId: input.itemId,
         name: input.name || '',
         description: input.description || '',
-        chunkingConfig: {
+        chunkingConfig: input.chunkingConfig ? {
           strategy: input.chunkingConfig.strategy,
           parameters: {},
-        },
-        embeddingConfig: {
+        } : defaultChunkingConfig,
+        embeddingConfig: input.embeddingConfig ? {
           provider: input.embeddingConfig.provider,
           model: input.embeddingConfig.model,
           dimension: input.embeddingConfig.dimension,
@@ -436,7 +440,7 @@ export class LibraryItemService {
           maxRetries: input.embeddingConfig.maxRetries || 3,
           timeout: input.embeddingConfig.timeout || 20000,
           parameters: {},
-        },
+        } : defaultEmbeddingConfig,
         isDefault: input.isDefault || false,
         isActive: input.isActive !== undefined ? input.isActive : true,
         createdBy: input.createdBy || '',

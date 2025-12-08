@@ -249,7 +249,6 @@ export type item_chunksWhereInput = {
   created_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
   chunk_embed_groups?: Prisma.XOR<Prisma.Chunk_embed_groupsScalarRelationFilter, Prisma.chunk_embed_groupsWhereInput>
-  items?: Prisma.XOR<Prisma.ItemsScalarRelationFilter, Prisma.itemsWhereInput>
 }
 
 export type item_chunksOrderByWithRelationInput = {
@@ -264,7 +263,6 @@ export type item_chunksOrderByWithRelationInput = {
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   chunk_embed_groups?: Prisma.chunk_embed_groupsOrderByWithRelationInput
-  items?: Prisma.itemsOrderByWithRelationInput
 }
 
 export type item_chunksWhereUniqueInput = Prisma.AtLeast<{
@@ -282,7 +280,6 @@ export type item_chunksWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
   chunk_embed_groups?: Prisma.XOR<Prisma.Chunk_embed_groupsScalarRelationFilter, Prisma.chunk_embed_groupsWhereInput>
-  items?: Prisma.XOR<Prisma.ItemsScalarRelationFilter, Prisma.itemsWhereInput>
 }, "id">
 
 export type item_chunksOrderByWithAggregationInput = {
@@ -321,6 +318,7 @@ export type item_chunksScalarWhereWithAggregatesInput = {
 
 export type item_chunksCreateInput = {
   id?: string
+  item_id: string
   title: string
   content: string
   index: number
@@ -329,7 +327,6 @@ export type item_chunksCreateInput = {
   created_at?: Date | string
   updated_at?: Date | string
   chunk_embed_groups: Prisma.chunk_embed_groupsCreateNestedOneWithoutItem_chunksInput
-  items: Prisma.itemsCreateNestedOneWithoutItem_chunksInput
 }
 
 export type item_chunksUncheckedCreateInput = {
@@ -347,6 +344,7 @@ export type item_chunksUncheckedCreateInput = {
 
 export type item_chunksUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   index?: Prisma.IntFieldUpdateOperationsInput | number
@@ -355,7 +353,6 @@ export type item_chunksUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateOneRequiredWithoutItem_chunksNestedInput
-  items?: Prisma.itemsUpdateOneRequiredWithoutItem_chunksNestedInput
 }
 
 export type item_chunksUncheckedUpdateInput = {
@@ -386,6 +383,7 @@ export type item_chunksCreateManyInput = {
 
 export type item_chunksUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   index?: Prisma.IntFieldUpdateOperationsInput | number
@@ -461,48 +459,6 @@ export type item_chunksSumOrderByAggregateInput = {
   index?: Prisma.SortOrder
 }
 
-export type item_chunksCreateNestedManyWithoutItemsInput = {
-  create?: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput> | Prisma.item_chunksCreateWithoutItemsInput[] | Prisma.item_chunksUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.item_chunksCreateOrConnectWithoutItemsInput | Prisma.item_chunksCreateOrConnectWithoutItemsInput[]
-  createMany?: Prisma.item_chunksCreateManyItemsInputEnvelope
-  connect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-}
-
-export type item_chunksUncheckedCreateNestedManyWithoutItemsInput = {
-  create?: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput> | Prisma.item_chunksCreateWithoutItemsInput[] | Prisma.item_chunksUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.item_chunksCreateOrConnectWithoutItemsInput | Prisma.item_chunksCreateOrConnectWithoutItemsInput[]
-  createMany?: Prisma.item_chunksCreateManyItemsInputEnvelope
-  connect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-}
-
-export type item_chunksUpdateManyWithoutItemsNestedInput = {
-  create?: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput> | Prisma.item_chunksCreateWithoutItemsInput[] | Prisma.item_chunksUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.item_chunksCreateOrConnectWithoutItemsInput | Prisma.item_chunksCreateOrConnectWithoutItemsInput[]
-  upsert?: Prisma.item_chunksUpsertWithWhereUniqueWithoutItemsInput | Prisma.item_chunksUpsertWithWhereUniqueWithoutItemsInput[]
-  createMany?: Prisma.item_chunksCreateManyItemsInputEnvelope
-  set?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  disconnect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  delete?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  connect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  update?: Prisma.item_chunksUpdateWithWhereUniqueWithoutItemsInput | Prisma.item_chunksUpdateWithWhereUniqueWithoutItemsInput[]
-  updateMany?: Prisma.item_chunksUpdateManyWithWhereWithoutItemsInput | Prisma.item_chunksUpdateManyWithWhereWithoutItemsInput[]
-  deleteMany?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
-}
-
-export type item_chunksUncheckedUpdateManyWithoutItemsNestedInput = {
-  create?: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput> | Prisma.item_chunksCreateWithoutItemsInput[] | Prisma.item_chunksUncheckedCreateWithoutItemsInput[]
-  connectOrCreate?: Prisma.item_chunksCreateOrConnectWithoutItemsInput | Prisma.item_chunksCreateOrConnectWithoutItemsInput[]
-  upsert?: Prisma.item_chunksUpsertWithWhereUniqueWithoutItemsInput | Prisma.item_chunksUpsertWithWhereUniqueWithoutItemsInput[]
-  createMany?: Prisma.item_chunksCreateManyItemsInputEnvelope
-  set?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  disconnect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  delete?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  connect?: Prisma.item_chunksWhereUniqueInput | Prisma.item_chunksWhereUniqueInput[]
-  update?: Prisma.item_chunksUpdateWithWhereUniqueWithoutItemsInput | Prisma.item_chunksUpdateWithWhereUniqueWithoutItemsInput[]
-  updateMany?: Prisma.item_chunksUpdateManyWithWhereWithoutItemsInput | Prisma.item_chunksUpdateManyWithWhereWithoutItemsInput[]
-  deleteMany?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
-}
-
 export type item_chunksCreateNestedManyWithoutChunk_embed_groupsInput = {
   create?: Prisma.XOR<Prisma.item_chunksCreateWithoutChunk_embed_groupsInput, Prisma.item_chunksUncheckedCreateWithoutChunk_embed_groupsInput> | Prisma.item_chunksCreateWithoutChunk_embed_groupsInput[] | Prisma.item_chunksUncheckedCreateWithoutChunk_embed_groupsInput[]
   connectOrCreate?: Prisma.item_chunksCreateOrConnectWithoutChunk_embed_groupsInput | Prisma.item_chunksCreateOrConnectWithoutChunk_embed_groupsInput[]
@@ -545,74 +501,17 @@ export type item_chunksUncheckedUpdateManyWithoutChunk_embed_groupsNestedInput =
   deleteMany?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
 }
 
-export type item_chunksCreateWithoutItemsInput = {
-  id?: string
-  title: string
-  content: string
-  index: number
-  strategy_metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Date | string
-  updated_at?: Date | string
-  chunk_embed_groups: Prisma.chunk_embed_groupsCreateNestedOneWithoutItem_chunksInput
-}
-
-export type item_chunksUncheckedCreateWithoutItemsInput = {
-  id?: string
-  dense_vector_index_group_id: string
-  title: string
-  content: string
-  index: number
-  strategy_metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Date | string
-  updated_at?: Date | string
-}
-
-export type item_chunksCreateOrConnectWithoutItemsInput = {
-  where: Prisma.item_chunksWhereUniqueInput
-  create: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput>
-}
-
-export type item_chunksCreateManyItemsInputEnvelope = {
-  data: Prisma.item_chunksCreateManyItemsInput | Prisma.item_chunksCreateManyItemsInput[]
-  skipDuplicates?: boolean
-}
-
-export type item_chunksUpsertWithWhereUniqueWithoutItemsInput = {
-  where: Prisma.item_chunksWhereUniqueInput
-  update: Prisma.XOR<Prisma.item_chunksUpdateWithoutItemsInput, Prisma.item_chunksUncheckedUpdateWithoutItemsInput>
-  create: Prisma.XOR<Prisma.item_chunksCreateWithoutItemsInput, Prisma.item_chunksUncheckedCreateWithoutItemsInput>
-}
-
-export type item_chunksUpdateWithWhereUniqueWithoutItemsInput = {
-  where: Prisma.item_chunksWhereUniqueInput
-  data: Prisma.XOR<Prisma.item_chunksUpdateWithoutItemsInput, Prisma.item_chunksUncheckedUpdateWithoutItemsInput>
-}
-
-export type item_chunksUpdateManyWithWhereWithoutItemsInput = {
-  where: Prisma.item_chunksScalarWhereInput
-  data: Prisma.XOR<Prisma.item_chunksUpdateManyMutationInput, Prisma.item_chunksUncheckedUpdateManyWithoutItemsInput>
-}
-
-export type item_chunksScalarWhereInput = {
-  AND?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
-  OR?: Prisma.item_chunksScalarWhereInput[]
-  NOT?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
-  id?: Prisma.UuidFilter<"item_chunks"> | string
-  item_id?: Prisma.UuidFilter<"item_chunks"> | string
-  dense_vector_index_group_id?: Prisma.UuidFilter<"item_chunks"> | string
-  title?: Prisma.StringFilter<"item_chunks"> | string
-  content?: Prisma.StringFilter<"item_chunks"> | string
-  index?: Prisma.IntFilter<"item_chunks"> | number
-  strategy_metadata?: Prisma.JsonFilter<"item_chunks">
-  metadata?: Prisma.JsonNullableFilter<"item_chunks">
-  created_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
-  updated_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type item_chunksCreateWithoutChunk_embed_groupsInput = {
   id?: string
+  item_id: string
   title: string
   content: string
   index: number
@@ -620,7 +519,6 @@ export type item_chunksCreateWithoutChunk_embed_groupsInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   created_at?: Date | string
   updated_at?: Date | string
-  items: Prisma.itemsCreateNestedOneWithoutItem_chunksInput
 }
 
 export type item_chunksUncheckedCreateWithoutChunk_embed_groupsInput = {
@@ -661,52 +559,20 @@ export type item_chunksUpdateManyWithWhereWithoutChunk_embed_groupsInput = {
   data: Prisma.XOR<Prisma.item_chunksUpdateManyMutationInput, Prisma.item_chunksUncheckedUpdateManyWithoutChunk_embed_groupsInput>
 }
 
-export type item_chunksCreateManyItemsInput = {
-  id?: string
-  dense_vector_index_group_id: string
-  title: string
-  content: string
-  index: number
-  strategy_metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Date | string
-  updated_at?: Date | string
-}
-
-export type item_chunksUpdateWithoutItemsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  index?: Prisma.IntFieldUpdateOperationsInput | number
-  strategy_metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  chunk_embed_groups?: Prisma.chunk_embed_groupsUpdateOneRequiredWithoutItem_chunksNestedInput
-}
-
-export type item_chunksUncheckedUpdateWithoutItemsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  dense_vector_index_group_id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  index?: Prisma.IntFieldUpdateOperationsInput | number
-  strategy_metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type item_chunksUncheckedUpdateManyWithoutItemsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  dense_vector_index_group_id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  index?: Prisma.IntFieldUpdateOperationsInput | number
-  strategy_metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+export type item_chunksScalarWhereInput = {
+  AND?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
+  OR?: Prisma.item_chunksScalarWhereInput[]
+  NOT?: Prisma.item_chunksScalarWhereInput | Prisma.item_chunksScalarWhereInput[]
+  id?: Prisma.UuidFilter<"item_chunks"> | string
+  item_id?: Prisma.UuidFilter<"item_chunks"> | string
+  dense_vector_index_group_id?: Prisma.UuidFilter<"item_chunks"> | string
+  title?: Prisma.StringFilter<"item_chunks"> | string
+  content?: Prisma.StringFilter<"item_chunks"> | string
+  index?: Prisma.IntFilter<"item_chunks"> | number
+  strategy_metadata?: Prisma.JsonFilter<"item_chunks">
+  metadata?: Prisma.JsonNullableFilter<"item_chunks">
+  created_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
+  updated_at?: Prisma.DateTimeFilter<"item_chunks"> | Date | string
 }
 
 export type item_chunksCreateManyChunk_embed_groupsInput = {
@@ -723,6 +589,7 @@ export type item_chunksCreateManyChunk_embed_groupsInput = {
 
 export type item_chunksUpdateWithoutChunk_embed_groupsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   index?: Prisma.IntFieldUpdateOperationsInput | number
@@ -730,7 +597,6 @@ export type item_chunksUpdateWithoutChunk_embed_groupsInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  items?: Prisma.itemsUpdateOneRequiredWithoutItem_chunksNestedInput
 }
 
 export type item_chunksUncheckedUpdateWithoutChunk_embed_groupsInput = {
@@ -771,7 +637,6 @@ export type item_chunksSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   created_at?: boolean
   updated_at?: boolean
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item_chunks"]>
 
 export type item_chunksSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -786,7 +651,6 @@ export type item_chunksSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   created_at?: boolean
   updated_at?: boolean
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item_chunks"]>
 
 export type item_chunksSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -801,7 +665,6 @@ export type item_chunksSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   created_at?: boolean
   updated_at?: boolean
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item_chunks"]>
 
 export type item_chunksSelectScalar = {
@@ -820,22 +683,18 @@ export type item_chunksSelectScalar = {
 export type item_chunksOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "item_id" | "dense_vector_index_group_id" | "title" | "content" | "index" | "strategy_metadata" | "metadata" | "created_at" | "updated_at", ExtArgs["result"]["item_chunks"]>
 export type item_chunksInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }
 export type item_chunksIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }
 export type item_chunksIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chunk_embed_groups?: boolean | Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>
-  items?: boolean | Prisma.itemsDefaultArgs<ExtArgs>
 }
 
 export type $item_chunksPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "item_chunks"
   objects: {
     chunk_embed_groups: Prisma.$chunk_embed_groupsPayload<ExtArgs>
-    items: Prisma.$itemsPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1243,7 +1102,6 @@ readonly fields: item_chunksFieldRefs;
 export interface Prisma__item_chunksClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   chunk_embed_groups<T extends Prisma.chunk_embed_groupsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.chunk_embed_groupsDefaultArgs<ExtArgs>>): Prisma.Prisma__chunk_embed_groupsClient<runtime.Types.Result.GetResult<Prisma.$chunk_embed_groupsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  items<T extends Prisma.itemsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.itemsDefaultArgs<ExtArgs>>): Prisma.Prisma__itemsClient<runtime.Types.Result.GetResult<Prisma.$itemsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

@@ -1,9 +1,8 @@
 import { Resolver, Query, Mutation, Args, ResolveField } from '@nestjs/graphql';
 import { LibraryItemService } from './library-item.service';
 import { VectorService } from 'bibliography-lib';
-import { libraryItemVectorProto } from 'proto-ts';
 import * as graphql from '../../graphql';
-import { CreateLibraryItemDto } from 'library-shared';
+import { CreateLibraryItemDto, CreateChunkEmbedGroupDto } from 'library-shared';
 import { LibraryItem } from '@/libs/bibliography/src';
 
 @Resolver()
@@ -396,7 +395,28 @@ export class LibraryItemResolver {
   @Mutation('createChunkEmbedGroup')
   async createChunkEmbedGroup(@Args('input') input: graphql.CreateChunkEmbedGroupInput): Promise<graphql.ChunkEmbedGroup> {
     try {
-      const newGroup = await this.libraryItemService.createChunkEmbedGroup(input);
+      // Convert GraphQL input to DTO format
+      const dto: CreateChunkEmbedGroupDto = {
+        itemId: input.itemId,
+        name: input.name || undefined,
+        description: input.description || undefined,
+        chunkingConfig: input.chunkingConfig ? {
+          strategy: input.chunkingConfig.strategy as any,
+        } : undefined,
+        embeddingConfig: input.embeddingConfig ? {
+          provider: input.embeddingConfig.provider as any,
+          model: input.embeddingConfig.model as any,
+          dimension: input.embeddingConfig.dimension,
+          batchSize: input.embeddingConfig.batchSize,
+          maxRetries: input.embeddingConfig.maxRetries,
+          timeout: input.embeddingConfig.timeout,
+        } : undefined,
+        isDefault: input.isDefault ?? undefined,
+        isActive: input.isActive ?? undefined,
+        createdBy: input.createdBy || undefined,
+      };
+      
+      const newGroup = await this.libraryItemService.createChunkEmbedGroup(dto);
       
       // Return the group in the format expected by the GraphQL schema
       return this.transformChunkEmbedGroup(newGroup);

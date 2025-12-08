@@ -1,3 +1,4 @@
+import { defaultChunkingConfig } from 'chunking';
 import {
   ChunkEmbedGroupMetadata,
   IItemVectorStorage,
@@ -5,8 +6,11 @@ import {
   ItemChunkSemanticSearchQuery,
   ItemVectorStorageStatus,
   ChunkEmbedGroupStatus,
+  ChunkEmbedGroupConfig,
 } from './types.js';
-import { prisma, PrismaClient, Prisma } from 'bibliography-db';
+import { prisma } from 'postgre-vector-db';
+import {generateChunkEmbedGroupToken} from 'utils'
+import { defaultEmbeddingConfig } from 'embedding';
 
 export class PrismaItemVectorStorage implements IItemVectorStorage {
   constructor() {
@@ -283,16 +287,26 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
   }
 
   async createNewChunkEmbedGroupInfo(
-    config: Omit<ChunkEmbedGroupMetadata, 'id'>,
+    config: ChunkEmbedGroupConfig,
   ): Promise<ChunkEmbedGroupMetadata> {
     try {
+      // Use default configurations if not provided
+      const chunkingConfig = config.chunkingConfig || defaultChunkingConfig;
+      const embeddingConfig = config.embeddingConfig || defaultEmbeddingConfig;
+      
+      const token = generateChunkEmbedGroupToken(
+        chunkingConfig.strategy?.toString() || defaultChunkingConfig.strategy?.toString() || 'h1',
+        embeddingConfig.model.toString(),
+        embeddingConfig.dimension
+      )
       const newGroup = await prisma.chunk_embed_groups.create({
         data: {
           item_id: config.itemId,
+          token: token,
           name: config.name,
           description: config.description,
-          chunking_config: config.chunkingConfig as any,
-          embedding_config: config.embeddingConfig as any,
+          chunking_config: chunkingConfig as any,
+          embedding_config: embeddingConfig as any,
           is_default: config.isDefault,
           is_active: config.isActive,
           created_at: config.createdAt,
@@ -305,6 +319,7 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
 
       return {
         id: newGroup.id,
+        token: newGroup.token,
         itemId: newGroup.item_id,
         name: newGroup.name,
         description: newGroup.description || undefined,
@@ -338,6 +353,7 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
 
       return {
         id: group.id,
+        token: group.token,
         itemId: group.item_id,
         name: group.name,
         description: group.description || undefined,
@@ -437,6 +453,7 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
       // Transform to the expected format
       const transformedGroups = groups.map((group) => ({
         id: group.id,
+        token: group.token,
         itemId: group.item_id,
         name: group.name,
         description: group.description || undefined,
@@ -473,6 +490,7 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
         `
                 SELECT
                     id,
+                    token,
                     item_id as "itemId",
                     dense_vector_index_group_id as "denseVectorIndexGroupId",
                     title,

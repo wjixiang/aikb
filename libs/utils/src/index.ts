@@ -1,1 +1,1 @@
-export { IdUtils, S3Utils } from './lib/utils.js';
+export { IdUtils, S3Utils, generateChunkEmbedGroupToken } from './lib/utils.js';

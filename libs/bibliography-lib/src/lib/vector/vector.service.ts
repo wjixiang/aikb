@@ -15,6 +15,7 @@ import { IdUtils } from 'utils';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ChunkEmbedItemDto } from 'library-shared';
 import { CreateChunkEmbedGroupRequest } from './types';
+import { generateChunkEmbedGroupToken } from 'utils';
 
 @Injectable()
 export class VectorService {
@@ -29,7 +30,7 @@ export class VectorService {
   ): Promise<ChunkEmbedGroupMetadata> {
     // Convert protobuf types to internal types
     const chunkingConfig = {
-      strategy: (request.chunkingConfig?.strategy || defaultChunkingConfig.strategy) ,
+      strategy: request.chunkingConfig?.strategy ?? defaultChunkingConfig.strategy,
     };
 
     const embeddingConfig = {
@@ -43,8 +44,15 @@ export class VectorService {
 
     // Create the chunk embedding group using the storage implementation
     const now = new Date();
+    const token = generateChunkEmbedGroupToken(
+      chunkingConfig.strategy as string,
+      String(embeddingConfig.model),
+      embeddingConfig.dimension
+    );
+    
     const groupConfig = {
       itemId: request.itemId,
+      token,
       name: request.name || '',
       description: request.description || '',
       chunkingConfig,
@@ -78,7 +86,7 @@ export class VectorService {
       name: createdGroup.name,
       description: createdGroup.description || '',
       chunkingConfig: {
-        strategy: createdGroup.chunkingConfig.strategy 
+        strategy: createdGroup.chunkingConfig.strategy
       },
       embeddingConfig: {
         provider: createdGroup.embeddingConfig.provider,
@@ -94,6 +102,7 @@ export class VectorService {
       updatedAt: createdGroup.updatedAt,
       createdBy: createdGroup.createdBy || '',
       tags: createdGroup.tags || [],
+      token, // Add the missing token property
     };
   }
 

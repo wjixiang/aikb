@@ -85,11 +85,9 @@ model items {
   language              String?              @db.VarChar(10)
   markdown_content      String?
   markdown_updated_date DateTime?            @db.Timestamptz(6)
-  chunk_embed_groups    chunk_embed_groups[]
   citations             citations[]
   item_archives         item_archives[]
   item_authors          item_authors[]
-  item_chunks           item_chunks[]
   item_collections      item_collections[]
   markdowns             markdowns?
 }
@@ -101,46 +99,4 @@ model markdowns {
   date_created  DateTime @default(now()) @db.Timestamptz(6)
   date_modified DateTime @default(now()) @db.Timestamptz(6)
   items         items    @relation(fields: [item_id], references: [id], onDelete: Cascade)
-}
-
-model chunk_embed_groups {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  item_id          String        @db.Uuid
-  name             String        @db.VarChar(255)
-  description      String?
-  chunking_config  Json
-  embedding_config Json
-  is_default       Boolean       @default(false)
-  is_active        Boolean       @default(true)
-  created_at       DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime      @default(now()) @db.Timestamptz(6)
-  created_by       String?       @db.VarChar(255)
-  tags             String[]      @default([])
-  status           String        @default("WAIT_FOR_CHUNK_EMBED") @db.VarChar(50)
-  items            items         @relation(fields: [item_id], references: [id], onDelete: Cascade)
-  item_chunks      item_chunks[]
-
-  @@index([item_id])
-  @@index([status])
-  @@index([is_active])
-}
-
-model item_chunks {
-  id                          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  item_id                     String             @db.Uuid
-  dense_vector_index_group_id String             @db.Uuid
-  title                       String             @db.VarChar(500)
-  content                     String
-  index                       Int
-  embedding                   Unsupported("VECTOR")?
-  strategy_metadata           Json
-  metadata                    Json?
-  created_at                  DateTime           @default(now()) @db.Timestamptz(6)
-  updated_at                  DateTime           @default(now()) @db.Timestamptz(6)
-  chunk_embed_groups          chunk_embed_groups @relation(fields: [dense_vector_index_group_id], references: [id], onDelete: Cascade)
-  items                       items              @relation(fields: [item_id], references: [id], onDelete: Cascade)
-
-  @@index([item_id])
-  @@index([dense_vector_index_group_id])
-  @@index([index])
 }

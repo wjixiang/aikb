@@ -8,7 +8,7 @@ import {
 import { ChunkEmbedItemDto } from 'library-shared';
 import { chunkTextWithEnum, ChunkingStrategy } from 'chunking';
 import { embeddingService, EmbeddingProvider } from 'embedding';
-import { IdUtils } from 'utils';
+import { generateChunkEmbedGroupToken, IdUtils } from 'utils';
 import { BibliographyGrpcClient } from 'proto-ts';
 import { firstValueFrom } from 'rxjs';
 

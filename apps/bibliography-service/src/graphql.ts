@@ -41,8 +41,8 @@ export class CreateChunkEmbedGroupInput {
     itemId: string;
     name?: Nullable<string>;
     description?: Nullable<string>;
-    chunkingConfig: ChunkingConfigInput;
-    embeddingConfig: EmbeddingConfigInput;
+    chunkingConfig?: Nullable<ChunkingConfigInput>;
+    embeddingConfig?: Nullable<EmbeddingConfigInput>;
     isDefault?: Nullable<boolean>;
     isActive?: Nullable<boolean>;
     createdBy?: Nullable<string>;

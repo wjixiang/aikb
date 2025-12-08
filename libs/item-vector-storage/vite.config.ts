@@ -44,7 +44,7 @@ export default defineConfig(() => ({
       external: [
         'fs',
         '@prisma/client',
-        'bibliography-db',
+        'postgre-vector-db',
         'path',
         'url',
         'module',

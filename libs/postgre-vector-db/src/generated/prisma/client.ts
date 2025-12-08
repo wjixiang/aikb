@@ -29,8 +29,8 @@ export * from "./enums.js"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Authors
- * const authors = await prisma.authors.findMany()
+ * // Fetch zero or more Chunk_embed_groups
+ * const chunk_embed_groups = await prisma.chunk_embed_groups.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -40,42 +40,12 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model authors
+ * Model chunk_embed_groups
  * 
  */
-export type authors = Prisma.authorsModel
+export type chunk_embed_groups = Prisma.chunk_embed_groupsModel
 /**
- * Model citations
+ * Model item_chunks
  * 
  */
-export type citations = Prisma.citationsModel
-/**
- * Model collections
- * 
- */
-export type collections = Prisma.collectionsModel
-/**
- * Model item_archives
- * 
- */
-export type item_archives = Prisma.item_archivesModel
-/**
- * Model item_authors
- * 
- */
-export type item_authors = Prisma.item_authorsModel
-/**
- * Model item_collections
- * 
- */
-export type item_collections = Prisma.item_collectionsModel
-/**
- * Model items
- * 
- */
-export type items = Prisma.itemsModel
-/**
- * Model markdowns
- * 
- */
-export type markdowns = Prisma.markdownsModel
+export type item_chunks = Prisma.item_chunksModel
