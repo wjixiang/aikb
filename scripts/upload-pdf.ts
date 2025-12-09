@@ -106,7 +106,7 @@ async function uploadFileToS3(
  */
 async function createLibraryItem(metadata: any): Promise<any> {
   const apiUrl =
-    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
+    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3003';
 
   const response = await fetch(`${apiUrl}/api/library-items`, {
     method: 'POST',
@@ -134,7 +134,7 @@ async function addArchiveToItem(
   archiveData: any,
 ): Promise<any> {
   const apiUrl =
-    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
+    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3003';
 
   const response = await fetch(
     `${apiUrl}/api/library-items/${itemId}/archives`,
@@ -165,7 +165,7 @@ async function getPdfUploadUrl(
   expiresIn: number = 3600,
 ): Promise<any> {
   const apiUrl =
-    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3000';
+    process.env.BIBLIOGRAPHY_SERVICE_URL || 'http://localhost:3003';
 
   const response = await fetch(`${apiUrl}/api/library-items/upload-url`, {
     method: 'POST',

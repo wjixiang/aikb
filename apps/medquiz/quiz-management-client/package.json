@@ -5,6 +5,6 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
-    "quiz:cli": "npx tsx src/QuizParserCLI.ts"
+    "quiz:cli": "tsx src/QuizParserCLI.ts"
   }
 }
