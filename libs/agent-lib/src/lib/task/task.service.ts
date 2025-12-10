@@ -17,7 +17,7 @@ export class TaskService {
   private tasks = new Map<string, Task>();
 
   createTask(taskId: string): Task {
-    const task = new Task(taskId);
+    const task = new Task(taskId, {} as any);
     this.tasks.set(taskId, task);
     this.eventEmitter.emit('task.created', { taskId });
     return task;
