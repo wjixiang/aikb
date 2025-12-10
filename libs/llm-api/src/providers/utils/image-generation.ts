@@ -1,4 +1,4 @@
-import { t } from '../../../i18n';
+import { t } from 'i18n';
 
 // Image generation types
 interface ImageGenerationResponse {
@@ -207,15 +207,15 @@ export async function generateImageWithImagesApi(
 
     // Add optional parameters
     if (options.size) {
-      requestBody.size = options.size;
+      requestBody['size'] = options.size;
     }
     if (options.quality) {
-      requestBody.quality = options.quality;
+      requestBody['quality'] = options.quality;
     }
 
     // For BFL (Black Forest Labs) models like flux-pro-1.1, use providerOptions
     if (model.startsWith('bfl/')) {
-      requestBody.providerOptions = {
+      requestBody['providerOptions'] = {
         blackForestLabs: {
           outputFormat: outputFormat,
           // inputImage: Base64 encoded image or URL of image to use as reference
@@ -224,7 +224,8 @@ export async function generateImageWithImagesApi(
       };
     } else {
       // For other models, use standard output_format parameter
-      requestBody.output_format = outputFormat;
+      // For other models, use standard output_format parameter
+      requestBody['output_format'] = outputFormat;
     }
 
     const fetchOptions: RequestInit = {

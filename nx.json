@@ -141,6 +141,13 @@
         "buildDepsTargetName": "storybook:build-deps",
         "watchDepsTargetName": "storybook:watch-deps"
       }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "vitest:test",
+        "ciTargetName": "test-ci"
+      }
     }
   ],
   "targetDefaults": {
