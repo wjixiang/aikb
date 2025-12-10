@@ -26,7 +26,8 @@
         "libs/meSH-client/*",
         "libs/EmbeddingModule/*",
         "libs/bibliography-lib/*",
-        "libs/agent-lib/*"
+        "libs/agent-lib/*",
+        "libs/test-nest/*"
       ]
     },
     {
@@ -85,7 +86,8 @@
         "libs/meSH-client/*",
         "libs/EmbeddingModule/*",
         "libs/bibliography-lib/*",
-        "libs/agent-lib/*"
+        "libs/agent-lib/*",
+        "libs/test-nest/*"
       ],
       "options": {
         "typecheck": {
@@ -145,6 +147,10 @@
     "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],
+      "inputs": ["default", "^default"]
+    },
+    "@nx/vitest:test": {
+      "cache": true,
       "inputs": ["default", "^default"]
     }
   },

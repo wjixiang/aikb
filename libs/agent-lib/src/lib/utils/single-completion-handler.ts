@@ -1,6 +1,6 @@
 import type { ProviderSettings } from 'agent-lib/types';
 
-import { buildApiHandler, SingleCompletionHandler } from '../api';
+import { buildApiHandler, type SingleCompletionHandler } from 'llm-api';
 
 /**
  * Enhances a prompt using the configured API without creating a full Cline instance or task history.

@@ -1,4 +1,4 @@
-import { ApiHandler, buildApiHandler } from '../api';
+import { ApiHandler, buildApiHandler, type ApiStream } from 'llm-api';
 import {
   DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ProviderSettings,
@@ -10,7 +10,6 @@ import {
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from '../utils/resolveToolProtocol';
 import { formatResponse } from './simplified-dependencies/formatResponse';
-import { ApiStream } from '../api/transform/stream';
 import { AssistantMessageContent, ToolUse } from './simplified-dependencies/assistantMessageTypes';
 import { NativeToolCallParser } from './simplified-dependencies/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';

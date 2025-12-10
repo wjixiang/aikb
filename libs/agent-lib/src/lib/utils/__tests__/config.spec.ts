@@ -17,7 +17,7 @@ describe('injectEnv', () => {
   });
 
   it('should replace env variables in a string', async () => {
-    process.env.TEST_VAR = 'testValue';
+    process.env['TEST_VAR'] = 'testValue';
     const configString = 'Hello ${env:TEST_VAR}';
     const expectedString = 'Hello testValue';
     const result = await injectEnv(configString);
@@ -25,8 +25,8 @@ describe('injectEnv', () => {
   });
 
   it('should replace env variables in an object', async () => {
-    process.env.API_KEY = '12345';
-    process.env.ENDPOINT = 'https://example.com';
+    process.env['API_KEY'] = '12345';
+    process.env['ENDPOINT'] = 'https://example.com';
     const configObject = {
       key: '${env:API_KEY}',
       url: '${env:ENDPOINT}',
@@ -79,7 +79,7 @@ describe('injectEnv', () => {
     const consoleWarnSpy = vitest
       .spyOn(console, 'warn')
       .mockImplementation(() => {});
-    process.env.EXISTING_VAR = 'exists';
+    process.env['EXISTING_VAR'] = 'exists';
     const configString =
       'Value: ${env:EXISTING_VAR}, Missing: ${env:MISSING_VAR}';
     const expectedString = 'Value: exists, Missing: NOT_FOUND';
@@ -118,7 +118,7 @@ describe('injectEnv', () => {
   });
 
   it('should not mutate the original object', async () => {
-    process.env.MUTATE_TEST = 'mutated';
+    process.env['MUTATE_TEST'] = 'mutated';
     const originalObject = { value: '${env:MUTATE_TEST}' };
     const copyOfOriginal = { ...originalObject }; // Shallow copy for comparison
     await injectEnv(originalObject);

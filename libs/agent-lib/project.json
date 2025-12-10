@@ -4,6 +4,13 @@
   "sourceRoot": "libs/agent-lib/src",
   "projectType": "library",
   "tags": [],
-  "// targets": "to see all targets run: nx show project agent-lib --web",
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/agent-lib"
+      }
+    }
+  }
 }

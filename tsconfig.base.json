@@ -80,7 +80,8 @@
       ],
       "bibliography-lib": ["libs/bibliography-lib/src/index.ts"],
       "agent-lib": ["libs/agent-lib/src/index.ts"],
-      "agent-lib/types": ["libs/agent-lib/src/lib/types/index.ts"]
+      "agent-lib/types": ["libs/agent-lib/src/lib/types/index.ts"],
+      "llm-api": ["libs/llm-api/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

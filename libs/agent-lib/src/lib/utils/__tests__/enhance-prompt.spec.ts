@@ -3,11 +3,11 @@
 import type { ProviderSettings } from 'agent-lib/types';
 
 import { singleCompletionHandler } from '../single-completion-handler';
-import { buildApiHandler, SingleCompletionHandler } from '../../api';
+import { buildApiHandler, type SingleCompletionHandler } from 'llm-api';
 import { supportPrompt } from '../../shared/support-prompt';
 
 // Mock the API handler
-vi.mock('../../api', () => ({
+vi.mock('llm-api', () => ({
   buildApiHandler: vi.fn(),
 }));
 
