@@ -8,28 +8,31 @@ export const ChatInterface: React.FC = () => {
   const { messages, sendMessage } = useConversation();
   const { isConnected } = useWebSocket();
   const [input, setInput] = useState('');
-  const [conversationId, setConversationId] = useState(() => 
-    `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const [conversationId, setConversationId] = useState(
+    () => `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   );
 
-  const handleSubmit = useCallback(async (content: string) => {
-    if (!content.trim() || !isConnected) return;
+  const handleSubmit = useCallback(
+    async (content: string) => {
+      if (!content.trim() || !isConnected) return;
 
-    await sendMessage({
-      type: 'user_input',
-      conversationId,
-      content: content.trim()
-    });
-    
-    setInput('');
-  }, [conversationId, sendMessage, isConnected]);
+      await sendMessage({
+        type: 'user_input',
+        conversationId,
+        content: content.trim(),
+      });
+
+      setInput('');
+    },
+    [conversationId, sendMessage, isConnected],
+  );
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <div className="flex-1 overflow-hidden">
         <MessageList messages={messages} />
       </div>
-      
+
       <div className="border-t border-gray-200 p-4">
         <MessageInput
           value={input}

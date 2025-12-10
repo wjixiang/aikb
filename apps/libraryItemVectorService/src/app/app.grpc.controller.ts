@@ -15,9 +15,7 @@ export class AppGrpcController
     request: libraryItemVectorProto.ListItemChunkEmbedGroupMetadataRequest,
   ): Promise<libraryItemVectorProto.ListItemChunkEmbedGroupMetadataResponse> {
     try {
-      return await this.vectorService.listChunkEmbedGroupMetadata(
-        request,
-      );
+      return await this.vectorService.listChunkEmbedGroupMetadata(request);
     } catch (error) {
       throw new Error(
         `Failed to list chunk embedding group metadata: ${error instanceof Error ? error.message : String(error)}`,
@@ -30,8 +28,7 @@ export class AppGrpcController
     request: libraryItemVectorProto.CreateChunkEmbedGroupRequest,
   ): Promise<libraryItemVectorProto.CreateChunkEmbedGroupResponse> {
     try {
-      const group =
-        await this.vectorService.createChunkEmbedGroup(request);
+      const group = await this.vectorService.createChunkEmbedGroup(request);
       return { group };
     } catch (error) {
       throw new Error(
@@ -47,7 +44,9 @@ export class AppGrpcController
     try {
       return await this.vectorService.embedChunks(request);
     } catch (error) {
-      throw new Error(`Failed to embed chunks: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to embed chunks: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -56,11 +55,11 @@ export class AppGrpcController
     request: libraryItemVectorProto.SemanticSearchByItemidAndGroupidRequest,
   ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
     try {
-      return await this.vectorService.semanticSearchByItemidAndGroupid(
-        request,
-      );
+      return await this.vectorService.semanticSearchByItemidAndGroupid(request);
     } catch (error) {
-      throw new Error(`Failed to perform semantic search: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to perform semantic search: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }

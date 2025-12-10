@@ -19,8 +19,18 @@ interface ToolState {
 }
 
 interface ToolActions {
-  startExecution: (toolName: string, parameters: Record<string, any>, toolCallId: string, conversationId: string) => void;
-  updateExecution: (toolCallId: string, status: ToolExecution['status'], result?: any, error?: string) => void;
+  startExecution: (
+    toolName: string,
+    parameters: Record<string, any>,
+    toolCallId: string,
+    conversationId: string,
+  ) => void;
+  updateExecution: (
+    toolCallId: string,
+    status: ToolExecution['status'],
+    result?: any,
+    error?: string,
+  ) => void;
   completeExecution: (toolCallId: string, result: any) => void;
   failExecution: (toolCallId: string, error: string) => void;
   clearExecutions: () => void;
@@ -48,21 +58,21 @@ export const useToolStore = create<ToolState & ToolActions>((set, get) => ({
       parameters,
       status: 'pending',
       timestamp: Date.now(),
-      conversationId
+      conversationId,
     };
 
     set((state) => ({
-      executions: [...state.executions, execution]
+      executions: [...state.executions, execution],
     }));
   },
 
   updateExecution: (toolCallId, status, result, error) => {
     set((state) => ({
-      executions: state.executions.map(execution =>
+      executions: state.executions.map((execution) =>
         execution.id === toolCallId
           ? { ...execution, status, result, error }
-          : execution
-      )
+          : execution,
+      ),
     }));
   },
 
@@ -80,7 +90,9 @@ export const useToolStore = create<ToolState & ToolActions>((set, get) => ({
 
   clearExecutionsForConversation: (conversationId) => {
     set((state) => ({
-      executions: state.executions.filter(execution => execution.conversationId !== conversationId)
+      executions: state.executions.filter(
+        (execution) => execution.conversationId !== conversationId,
+      ),
     }));
   },
 
@@ -97,16 +109,19 @@ export const useToolStore = create<ToolState & ToolActions>((set, get) => ({
   },
 
   getExecutionById: (toolCallId) => {
-    return get().executions.find(execution => execution.id === toolCallId);
+    return get().executions.find((execution) => execution.id === toolCallId);
   },
 
   getExecutionsForConversation: (conversationId) => {
-    return get().executions.filter(execution => execution.conversationId === conversationId);
+    return get().executions.filter(
+      (execution) => execution.conversationId === conversationId,
+    );
   },
 
   getActiveExecutions: () => {
-    return get().executions.filter(execution => 
-      execution.status === 'pending' || execution.status === 'executing'
+    return get().executions.filter(
+      (execution) =>
+        execution.status === 'pending' || execution.status === 'executing',
     );
-  }
+  },
 }));

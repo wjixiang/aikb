@@ -3,9 +3,7 @@ import { AppGrpcController } from './app.grpc.controller';
 import { BibliographyLibModule } from 'bibliography-lib';
 
 @Module({
-  imports: [
-    BibliographyLibModule,
-  ],
+  imports: [BibliographyLibModule],
   controllers: [AppGrpcController],
   providers: [],
 })

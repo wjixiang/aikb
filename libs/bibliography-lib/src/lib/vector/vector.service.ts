@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ChunkEmbedGroupMetadata, ItemChunk, PrismaItemVectorStorage } from 'item-vector-storage';
+import {
+  ChunkEmbedGroupMetadata,
+  ItemChunk,
+  PrismaItemVectorStorage,
+} from 'item-vector-storage';
 import { ChunkingStrategy, defaultChunkingConfig } from 'chunking';
 import {
   EmbeddingProvider,
@@ -30,16 +34,23 @@ export class VectorService {
   ): Promise<ChunkEmbedGroupMetadata> {
     // Convert protobuf types to internal types
     const chunkingConfig = {
-      strategy: request.chunkingConfig?.strategy ?? defaultChunkingConfig.strategy,
+      strategy:
+        request.chunkingConfig?.strategy ?? defaultChunkingConfig.strategy,
     };
 
     const embeddingConfig = {
-      provider: request.embeddingConfig?.provider || defaultEmbeddingConfig.provider,
+      provider:
+        request.embeddingConfig?.provider || defaultEmbeddingConfig.provider,
       model: request.embeddingConfig?.model || defaultEmbeddingConfig.model,
-      dimension: request.embeddingConfig?.dimension || defaultEmbeddingConfig.dimension,
-      batchSize: request.embeddingConfig?.batchSize || defaultEmbeddingConfig.batchSize,
-      maxRetries: request.embeddingConfig?.maxRetries || defaultEmbeddingConfig.maxRetries,
-      timeout: request.embeddingConfig?.timeout || defaultEmbeddingConfig.timeout,
+      dimension:
+        request.embeddingConfig?.dimension || defaultEmbeddingConfig.dimension,
+      batchSize:
+        request.embeddingConfig?.batchSize || defaultEmbeddingConfig.batchSize,
+      maxRetries:
+        request.embeddingConfig?.maxRetries ||
+        defaultEmbeddingConfig.maxRetries,
+      timeout:
+        request.embeddingConfig?.timeout || defaultEmbeddingConfig.timeout,
     };
 
     // Create the chunk embedding group using the storage implementation
@@ -47,9 +58,9 @@ export class VectorService {
     const token = generateChunkEmbedGroupToken(
       chunkingConfig.strategy as string,
       String(embeddingConfig.model),
-      embeddingConfig.dimension
+      embeddingConfig.dimension,
     );
-    
+
     const groupConfig = {
       itemId: request.itemId,
       token,
@@ -86,7 +97,7 @@ export class VectorService {
       name: createdGroup.name,
       description: createdGroup.description || '',
       chunkingConfig: {
-        strategy: createdGroup.chunkingConfig.strategy
+        strategy: createdGroup.chunkingConfig.strategy,
       },
       embeddingConfig: {
         provider: createdGroup.embeddingConfig.provider,
@@ -94,7 +105,7 @@ export class VectorService {
         dimension: createdGroup.embeddingConfig.dimension,
         batchSize: 30,
         maxRetries: 5,
-        timeout: 30000
+        timeout: 30000,
       },
       isDefault: createdGroup.isDefault,
       isActive: createdGroup.isActive,
@@ -316,17 +327,14 @@ export class VectorService {
     return metadata;
   }
 
-  async semanticSearchByItemidAndGroupid(
-    request: {
-      itemId?: string;
-      chunkEmbedGroupId: string;
-      query: string;
-      topK: number;
-      scoreThreshold: number;
-      filter: { [key: string]: string };
-    }
-    
-  ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
+  async semanticSearchByItemidAndGroupid(request: {
+    itemId?: string;
+    chunkEmbedGroupId: string;
+    query: string;
+    topK: number;
+    scoreThreshold: number;
+    filter: { [key: string]: string };
+  }): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
     try {
       // Validate that the chunk embed group exists and is active
       const group = await this.itemVectorStorage.getChunkEmbedGroupInfoById(

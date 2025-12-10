@@ -141,4 +141,7 @@ export interface IItemVectorStorage {
   getChunkById: (chunkId: string) => Promise<ItemChunk | null>;
 }
 
-export type ChunkEmbedGroupConfig = Omit<ChunkEmbedGroupMetadata, 'id' | 'token'>;
+export type ChunkEmbedGroupConfig = Omit<
+  ChunkEmbedGroupMetadata,
+  'id' | 'token'
+>;

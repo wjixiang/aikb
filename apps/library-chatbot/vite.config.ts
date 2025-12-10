@@ -20,30 +20,38 @@ export default defineConfig(() => ({
         configure: (proxy, options) => {
           // Log proxy requests for debugging
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, (options.target || '') + proxyReq.path);
+            console.log(
+              'Sending Request to the Target:',
+              req.method,
+              (options.target || '') + proxyReq.path,
+            );
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Receiving Response from the Target:', req.method, (options.target || '') + (req.url || ''));
+            console.log(
+              'Receiving Response from the Target:',
+              req.method,
+              (options.target || '') + (req.url || ''),
+            );
           });
           proxy.on('error', (err, req, res) => {
             console.log('Proxy Error:', err);
           });
-        }
+        },
       },
       // WebSocket proxy for real-time communication
       '/socket.io': {
         target: 'ws://192.168.123.98:3000',
         ws: true,
         changeOrigin: true,
-        secure: false
-      }
-    }
+        secure: false,
+      },
+    },
   },
   preview: {
     host: true,
   },
   watch: {
-    usePolling: true
+    usePolling: true,
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.

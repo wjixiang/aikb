@@ -3,16 +3,12 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from 'ui/components/resizable';
-import {
-    MarkdownRenderer
-} from 'ui/libs/markdownRender'
+import { MarkdownRenderer } from 'ui/libs/markdownRender';
 
 function WorkspacePc() {
   return (
     <>
-      <div className="bg-background w-full h-full">
-        
-      </div>
+      <div className="bg-background w-full h-full"></div>
     </>
   );
 }

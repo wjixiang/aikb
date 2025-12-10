@@ -63,6 +63,10 @@ export class S3Utils {
   }
 }
 
-export function generateChunkEmbedGroupToken(chunkStrategy: string, modelName: string, dimension: number) {
-  return `${chunkStrategy}-${modelName}-${dimension}`
+export function generateChunkEmbedGroupToken(
+  chunkStrategy: string,
+  modelName: string,
+  dimension: number,
+) {
+  return `${chunkStrategy}-${modelName}-${dimension}`;
 }

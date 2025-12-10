@@ -12,7 +12,9 @@ export interface UseChatInputReturn {
   hasValidInput: boolean;
 }
 
-export function useChatInput({ initialValue = '' }: UseChatInputOptions = {}): UseChatInputReturn {
+export function useChatInput({
+  initialValue = '',
+}: UseChatInputOptions = {}): UseChatInputReturn {
   const [input, setInputState] = useState(initialValue);
 
   const setInput = useCallback((newInput: string) => {
@@ -23,7 +25,7 @@ export function useChatInput({ initialValue = '' }: UseChatInputOptions = {}): U
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInput(e.target.value);
     },
-    [setInput]
+    [setInput],
   );
 
   const clearInput = useCallback(() => {

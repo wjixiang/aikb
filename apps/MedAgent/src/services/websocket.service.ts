@@ -16,7 +16,7 @@ export class WebSocketService {
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.url);
-        
+
         this.ws.onopen = () => {
           console.log('WebSocket connected');
           this.reconnectAttempts = 0;
@@ -78,9 +78,9 @@ export class WebSocketService {
     try {
       const message: ServerMessage = JSON.parse(data);
       const handlers = this.messageHandlers.get(message.type);
-      
+
       if (handlers) {
-        handlers.forEach(handler => {
+        handlers.forEach((handler) => {
           try {
             handler(message);
           } catch (error) {
@@ -96,10 +96,12 @@ export class WebSocketService {
   private handleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      
+      console.log(
+        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`,
+      );
+
       setTimeout(() => {
-        this.connect().catch(error => {
+        this.connect().catch((error) => {
           console.error('Reconnection failed:', error);
         });
       }, this.reconnectDelay * this.reconnectAttempts);
@@ -114,7 +116,7 @@ export class WebSocketService {
 
   getConnectionState(): string {
     if (!this.ws) return 'DISCONNECTED';
-    
+
     switch (this.ws.readyState) {
       case WebSocket.CONNECTING:
         return 'CONNECTING';

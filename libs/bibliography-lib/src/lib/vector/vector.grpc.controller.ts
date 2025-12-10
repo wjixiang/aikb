@@ -21,17 +21,30 @@ export class VectorGrpcController
     return {
       name: protoRequest.name,
       description: protoRequest.description,
-      chunkingConfig: protoRequest.chunkingConfig ? {
-        strategy: protoRequest.chunkingConfig.strategy as any,
-      } : undefined,
-      embeddingConfig: protoRequest.embeddingConfig ? {
-        provider: protoRequest.embeddingConfig.provider as any,
-        model: protoRequest.embeddingConfig.model as any,
-        dimension: protoRequest.embeddingConfig.dimension,
-        batchSize: parseInt(protoRequest.embeddingConfig.parameters?.['batchSize'] || '20', 10),
-        maxRetries: parseInt(protoRequest.embeddingConfig.parameters?.['maxRetries'] || '3', 10),
-        timeout: parseInt(protoRequest.embeddingConfig.parameters?.['timeout'] || '20000', 10),
-      } : undefined,
+      chunkingConfig: protoRequest.chunkingConfig
+        ? {
+            strategy: protoRequest.chunkingConfig.strategy as any,
+          }
+        : undefined,
+      embeddingConfig: protoRequest.embeddingConfig
+        ? {
+            provider: protoRequest.embeddingConfig.provider as any,
+            model: protoRequest.embeddingConfig.model as any,
+            dimension: protoRequest.embeddingConfig.dimension,
+            batchSize: parseInt(
+              protoRequest.embeddingConfig.parameters?.['batchSize'] || '20',
+              10,
+            ),
+            maxRetries: parseInt(
+              protoRequest.embeddingConfig.parameters?.['maxRetries'] || '3',
+              10,
+            ),
+            timeout: parseInt(
+              protoRequest.embeddingConfig.parameters?.['timeout'] || '20000',
+              10,
+            ),
+          }
+        : undefined,
       isDefault: protoRequest.isDefault,
       isActive: protoRequest.isActive,
       createdBy: protoRequest.createdBy,
@@ -53,7 +66,7 @@ export class VectorGrpcController
       description: group.description || '',
       chunkingConfig: {
         strategy: group.chunkingConfig.strategy || 'paragraph',
-        parameters: {}
+        parameters: {},
       },
       embeddingConfig: {
         provider: group.embeddingConfig.provider,
@@ -62,15 +75,15 @@ export class VectorGrpcController
         parameters: {
           batchSize: group.embeddingConfig.batchSize?.toString() || '30',
           maxRetries: group.embeddingConfig.maxRetries?.toString() || '5',
-          timeout: group.embeddingConfig.timeout?.toString() || '30000'
-        }
+          timeout: group.embeddingConfig.timeout?.toString() || '30000',
+        },
       },
       isDefault: group.isDefault,
       isActive: group.isActive,
       createdAt: group.createdAt.getTime(),
       updatedAt: group.updatedAt.getTime(),
       createdBy: group.createdBy || '',
-      tags: group.tags || []
+      tags: group.tags || [],
     };
   }
 
@@ -110,13 +123,15 @@ export class VectorGrpcController
   ): Promise<libraryItemVectorProto.CreateChunkEmbedGroupResponse> {
     try {
       // Convert protobuf request to internal format
-      const internalRequest = this.convertCreateChunkEmbedGroupRequestFromProto(request);
-      
-      const group = await this.vectorService.createChunkEmbedGroup(internalRequest);
-      
+      const internalRequest =
+        this.convertCreateChunkEmbedGroupRequestFromProto(request);
+
+      const group =
+        await this.vectorService.createChunkEmbedGroup(internalRequest);
+
       // Convert the group to the expected protobuf format
       const protobufGroup = this.convertChunkEmbedGroupMetadataToProto(group);
-      
+
       return { group: protobufGroup };
     } catch (error) {
       throw new Error(
@@ -133,7 +148,9 @@ export class VectorGrpcController
       // The service already handles the conversion from protobuf to internal types
       return await this.vectorService.embedChunks(request);
     } catch (error) {
-      throw new Error(`Failed to embed chunks: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to embed chunks: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -143,11 +160,16 @@ export class VectorGrpcController
   ): Promise<libraryItemVectorProto.SemanticSearchByItemidAndGroupidResponse> {
     try {
       // Convert protobuf request to internal format
-      const internalRequest = this.convertSemanticSearchRequestFromProto(request);
-      
-      return await this.vectorService.semanticSearchByItemidAndGroupid(internalRequest);
+      const internalRequest =
+        this.convertSemanticSearchRequestFromProto(request);
+
+      return await this.vectorService.semanticSearchByItemidAndGroupid(
+        internalRequest,
+      );
     } catch (error) {
-      throw new Error(`Failed to perform semantic search: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to perform semantic search: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }

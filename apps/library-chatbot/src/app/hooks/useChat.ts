@@ -6,7 +6,7 @@ import { useChatInput } from './useChatInput';
 import {
   makeApiRequest,
   processStreamResponse,
-  type StreamProcessorCallbacks
+  type StreamProcessorCallbacks,
 } from './utils/apiUtils';
 
 interface UseChatOptions {
@@ -37,33 +37,29 @@ export function useChat({
     reloadLastMessage,
   } = useMessages({ initialMessages });
 
-  const {
-    input,
-    setInput,
-    handleInputChange,
-    clearInput,
-    hasValidInput,
-  } = useChatInput();
+  const { input, setInput, handleInputChange, clearInput, hasValidInput } =
+    useChatInput();
 
-  const {
-    isLoading,
-    error,
-    sendMessage,
-    stop,
-  } = useChatApi({
+  const { isLoading, error, sendMessage, stop } = useChatApi({
     api,
     onResponse,
     onError,
   });
 
   const handleSubmit = useCallback(
-    async (e?: { preventDefault?: () => void }, options?: { experimental_attachments?: FileList }) => {
+    async (
+      e?: { preventDefault?: () => void },
+      options?: { experimental_attachments?: FileList },
+    ) => {
       e?.preventDefault?.();
-      
+
       if (!hasValidInput && !options?.experimental_attachments?.length) return;
-      
+
       // Add user message
-      const userMessage = addUserMessage(input, options?.experimental_attachments);
+      const userMessage = addUserMessage(
+        input,
+        options?.experimental_attachments,
+      );
       clearInput();
 
       // Add empty assistant message for streaming
@@ -99,12 +95,16 @@ export function useChat({
           await processStreamResponse(response, assistantMessage, callbacks);
         } else {
           // Handle regular response
-          const assistantMessage = await sendMessage([...messages, userMessage], userMessage.experimental_attachments);
+          const assistantMessage = await sendMessage(
+            [...messages, userMessage],
+            userMessage.experimental_attachments,
+          );
           addAssistantMessage(assistantMessage.content);
           onFinish?.(assistantMessage);
         }
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error occurred');
+        const error =
+          err instanceof Error ? err : new Error('Unknown error occurred');
         addErrorMessage(error);
         onError?.(error);
       }
@@ -124,31 +124,34 @@ export function useChat({
       updateLastMessage,
       clearInput,
       sendMessage,
-    ]
+    ],
   );
 
   const append = useCallback(
     (message: { role: 'user'; content: string }) => {
       addUserMessage(message.content);
     },
-    [addUserMessage]
+    [addUserMessage],
   );
 
   const reload = useCallback(async () => {
     const lastUserMessage = reloadLastMessage();
     if (!lastUserMessage) return;
-    
+
     setInput(lastUserMessage.content);
-    
+
     // Use setTimeout to ensure input is set before submitting
     setTimeout(() => {
       handleSubmit();
     }, 0);
   }, [reloadLastMessage, setInput, handleSubmit]);
 
-  const setMessagesCallback = useCallback((newMessages: Message[]) => {
-    setMessages(newMessages);
-  }, [setMessages]);
+  const setMessagesCallback = useCallback(
+    (newMessages: Message[]) => {
+      setMessages(newMessages);
+    },
+    [setMessages],
+  );
 
   return {
     messages,

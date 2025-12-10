@@ -9,7 +9,7 @@ import {
   ChunkEmbedGroupConfig,
 } from './types.js';
 import { prisma } from 'postgre-vector-db';
-import {generateChunkEmbedGroupToken} from 'utils'
+import { generateChunkEmbedGroupToken } from 'utils';
 import { defaultEmbeddingConfig } from 'embedding';
 
 export class PrismaItemVectorStorage implements IItemVectorStorage {
@@ -233,21 +233,22 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
       // Process chunks in batches to avoid timeout issues with large datasets
       const totalChunks = itemChunks.length;
       let processedChunks = 0;
-      
+
       // Process chunks in batches
       for (let i = 0; i < itemChunks.length; i += batchSize) {
         const batch = itemChunks.slice(i, i + batchSize);
-        
+
         // Use a transaction for each batch insert with raw SQL
         // Increase timeout to 30 seconds for serverless database startup time
-        await prisma.$transaction(async (tx) => {
-          for (const chunk of batch) {
-            // Convert embedding array to PostgreSQL vector format
-            const vectorString = `[${chunk.embedding.join(',')}]`;
+        await prisma.$transaction(
+          async (tx) => {
+            for (const chunk of batch) {
+              // Convert embedding array to PostgreSQL vector format
+              const vectorString = `[${chunk.embedding.join(',')}]`;
 
-            // Use parameterized query to avoid SQL injection and handle Unsupported type properly
-            await tx.$executeRawUnsafe(
-              `
+              // Use parameterized query to avoid SQL injection and handle Unsupported type properly
+              await tx.$executeRawUnsafe(
+                `
                           INSERT INTO item_chunks (
                               id, item_id, dense_vector_index_group_id, title, content, "index",
                               embedding, strategy_metadata, metadata, created_at, updated_at
@@ -257,28 +258,34 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
                               $7::vector, $8, $9, $10, $11
                           )
                       `,
-              chunk.id,
-              chunk.itemId,
-              chunk.denseVectorIndexGroupId,
-              chunk.title,
-              chunk.content,
-              chunk.index,
-              vectorString,
-              JSON.stringify(chunk.strategyMetadata),
-              JSON.stringify(chunk.metadata || {}),
-              chunk.createdAt,
-              chunk.updatedAt,
-            );
-          }
-        }, {
-          timeout: 30000, // 30 seconds timeout per batch
-        });
-        
+                chunk.id,
+                chunk.itemId,
+                chunk.denseVectorIndexGroupId,
+                chunk.title,
+                chunk.content,
+                chunk.index,
+                vectorString,
+                JSON.stringify(chunk.strategyMetadata),
+                JSON.stringify(chunk.metadata || {}),
+                chunk.createdAt,
+                chunk.updatedAt,
+              );
+            }
+          },
+          {
+            timeout: 30000, // 30 seconds timeout per batch
+          },
+        );
+
         processedChunks += batch.length;
-        console.log(`Processed ${processedChunks}/${totalChunks} chunks (${Math.round((processedChunks / totalChunks) * 100)}%)`);
+        console.log(
+          `Processed ${processedChunks}/${totalChunks} chunks (${Math.round((processedChunks / totalChunks) * 100)}%)`,
+        );
       }
-      
-      console.log(`Successfully inserted all ${totalChunks} chunks in ${Math.ceil(totalChunks / batchSize)} batches`);
+
+      console.log(
+        `Successfully inserted all ${totalChunks} chunks in ${Math.ceil(totalChunks / batchSize)} batches`,
+      );
       return true;
     } catch (error) {
       console.error('Error batch inserting item chunks:', error);
@@ -293,11 +300,13 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
       // Use default configurations if not provided
       const chunkingConfig = config.chunkingConfig || defaultChunkingConfig;
       const embeddingConfig = config.embeddingConfig || defaultEmbeddingConfig;
-      
+
       const token = generateChunkEmbedGroupToken(
-        chunkingConfig.strategy?.toString() || defaultChunkingConfig.strategy?.toString() || 'h1',
+        chunkingConfig.strategy?.toString() ||
+          defaultChunkingConfig.strategy?.toString() ||
+          'h1',
         embeddingConfig.model.toString(),
-        embeddingConfig.dimension
+        embeddingConfig.dimension,
       );
 
       // Check if a group with the same token already exists

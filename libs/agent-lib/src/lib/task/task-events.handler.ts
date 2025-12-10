@@ -12,7 +12,7 @@ export class TaskEventsHandler {
   @OnEvent('task.created')
   handleTaskCreated(payload: { taskId: string }) {
     // Start task immediately after created
-    this.taskService.startTask(payload.taskId)
+    this.taskService.startTask(payload.taskId);
     console.log(`Start Task: ${payload.taskId} `);
   }
 
@@ -22,10 +22,10 @@ export class TaskEventsHandler {
   }
 
   @OnEvent('task.completed')
-  handleTaskCompleted(payload: { 
-    taskId: string; 
-    tokenUsage: TokenUsage; 
-    toolUsage: ToolUsage 
+  handleTaskCompleted(payload: {
+    taskId: string;
+    tokenUsage: TokenUsage;
+    toolUsage: ToolUsage;
   }) {
     console.log(`Task ${payload.taskId} completed`);
   }

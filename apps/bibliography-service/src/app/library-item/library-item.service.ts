@@ -25,9 +25,7 @@ import { BibliographyDBPrismaService } from 'bibliography-db';
 import { VectorService } from 'bibliography-lib';
 import { ChunkEmbedGroupMetadata } from '@/libs/item-vector-storage/src';
 import { defaultChunkingConfig } from 'chunking';
-import {
-  defaultEmbeddingConfig
-} from 'embedding';
+import { defaultEmbeddingConfig } from 'embedding';
 
 @Injectable()
 export class LibraryItemService {
@@ -421,26 +419,32 @@ export class LibraryItemService {
    * @param input The input data for creating the chunk embed group
    * @returns The created chunk embed group
    */
-  async createChunkEmbedGroup(input: CreateChunkEmbedGroupDto): Promise<ChunkEmbedGroupMetadata> {
+  async createChunkEmbedGroup(
+    input: CreateChunkEmbedGroupDto,
+  ): Promise<ChunkEmbedGroupMetadata> {
     try {
       // Convert the GraphQL input to the format expected by the vector service
       const request = {
         itemId: input.itemId,
         name: input.name || '',
         description: input.description || '',
-        chunkingConfig: input.chunkingConfig ? {
-          strategy: input.chunkingConfig.strategy,
-          parameters: {},
-        } : defaultChunkingConfig,
-        embeddingConfig: input.embeddingConfig ? {
-          provider: input.embeddingConfig.provider,
-          model: input.embeddingConfig.model,
-          dimension: input.embeddingConfig.dimension,
-          batchSize: input.embeddingConfig.batchSize || 20,
-          maxRetries: input.embeddingConfig.maxRetries || 3,
-          timeout: input.embeddingConfig.timeout || 20000,
-          parameters: {},
-        } : defaultEmbeddingConfig,
+        chunkingConfig: input.chunkingConfig
+          ? {
+              strategy: input.chunkingConfig.strategy,
+              parameters: {},
+            }
+          : defaultChunkingConfig,
+        embeddingConfig: input.embeddingConfig
+          ? {
+              provider: input.embeddingConfig.provider,
+              model: input.embeddingConfig.model,
+              dimension: input.embeddingConfig.dimension,
+              batchSize: input.embeddingConfig.batchSize || 20,
+              maxRetries: input.embeddingConfig.maxRetries || 3,
+              timeout: input.embeddingConfig.timeout || 20000,
+              parameters: {},
+            }
+          : defaultEmbeddingConfig,
         isDefault: input.isDefault || false,
         isActive: input.isActive !== undefined ? input.isActive : true,
         createdBy: input.createdBy || '',
@@ -448,12 +452,15 @@ export class LibraryItemService {
       };
 
       // Create the chunk embed group using the vector service
-      const createdGroup = await this.vectorService.createChunkEmbedGroup(request);
-      
+      const createdGroup =
+        await this.vectorService.createChunkEmbedGroup(request);
+
       return createdGroup;
     } catch (error) {
       this.logger.error('Error creating chunk embed group:', error);
-      throw new Error(`Failed to create chunk embed group: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to create chunk embed group: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ClientMessage, ServerMessage } from '../types/conversation.types';
 
-const WS_URL = process.env.NODE_ENV === 'production' 
-  ? 'wss://your-domain.com/ws' 
-  : 'ws://localhost:3001/ws';
+const WS_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'wss://your-domain.com/ws'
+    : 'ws://localhost:3001/ws';
 
 export const useWebSocket = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -11,7 +12,7 @@ export const useWebSocket = () => {
 
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
-    
+
     ws.onopen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
@@ -33,13 +34,16 @@ export const useWebSocket = () => {
     };
   }, []);
 
-  const sendMessage = useCallback((message: ClientMessage) => {
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(message));
-    } else {
-      console.warn('WebSocket not ready, message not sent:', message);
-    }
-  }, [socket]);
+  const sendMessage = useCallback(
+    (message: ClientMessage) => {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(message));
+      } else {
+        console.warn('WebSocket not ready, message not sent:', message);
+      }
+    },
+    [socket],
+  );
 
   return { socket, isConnected, sendMessage };
 };

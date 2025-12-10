@@ -1,19 +1,23 @@
-"use client"
+'use client';
 
-import React from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { AlertTriangle, X } from "lucide-react"
+import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertTriangle, X } from 'lucide-react';
 
-import { cn } from "ui/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from 'ui/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface InterruptPromptProps {
-  isOpen: boolean
-  close: () => void
-  onConfirm?: () => void
+  isOpen: boolean;
+  close: () => void;
+  onConfirm?: () => void;
 }
 
-export function InterruptPrompt({ isOpen, close, onConfirm }: InterruptPromptProps) {
+export function InterruptPrompt({
+  isOpen,
+  close,
+  onConfirm,
+}: InterruptPromptProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -27,7 +31,7 @@ export function InterruptPrompt({ isOpen, close, onConfirm }: InterruptPromptPro
           />
           <motion.div
             className={cn(
-              "fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg"
+              'fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg',
             )}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -41,7 +45,8 @@ export function InterruptPrompt({ isOpen, close, onConfirm }: InterruptPromptPro
               <div className="flex-1">
                 <h3 className="text-lg font-semibold">Interrupt generation?</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Are you sure you want to stop the current generation and start a new one?
+                  Are you sure you want to stop the current generation and start
+                  a new one?
                 </p>
               </div>
               <Button
@@ -61,8 +66,8 @@ export function InterruptPrompt({ isOpen, close, onConfirm }: InterruptPromptPro
               <Button
                 variant="default"
                 onClick={() => {
-                  onConfirm?.()
-                  close()
+                  onConfirm?.();
+                  close();
                 }}
               >
                 Interrupt
@@ -72,5 +77,5 @@ export function InterruptPrompt({ isOpen, close, onConfirm }: InterruptPromptPro
         </>
       )}
     </AnimatePresence>
-  )
+  );
 }

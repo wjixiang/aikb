@@ -13,63 +13,69 @@ interface ToolExecution {
 export const useToolExecution = () => {
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
-  const startToolExecution = useCallback((
-    toolName: string,
-    parameters: Record<string, any>,
-    toolCallId: string
-  ) => {
-    const execution: ToolExecution = {
-      id: toolCallId,
-      toolName,
-      parameters,
-      status: 'pending',
-      timestamp: Date.now()
-    };
+  const startToolExecution = useCallback(
+    (toolName: string, parameters: Record<string, any>, toolCallId: string) => {
+      const execution: ToolExecution = {
+        id: toolCallId,
+        toolName,
+        parameters,
+        status: 'pending',
+        timestamp: Date.now(),
+      };
 
-    setToolExecutions(prev => [...prev, execution]);
-    return execution.id;
-  }, []);
+      setToolExecutions((prev) => [...prev, execution]);
+      return execution.id;
+    },
+    [],
+  );
 
-  const updateToolStatus = useCallback((
-    toolCallId: string,
-    status: ToolExecution['status'],
-    result?: any,
-    error?: string
-  ) => {
-    setToolExecutions(prev => 
-      prev.map(execution => 
-        execution.id === toolCallId
-          ? { ...execution, status, result, error }
-          : execution
-      )
-    );
-  }, []);
+  const updateToolStatus = useCallback(
+    (
+      toolCallId: string,
+      status: ToolExecution['status'],
+      result?: any,
+      error?: string,
+    ) => {
+      setToolExecutions((prev) =>
+        prev.map((execution) =>
+          execution.id === toolCallId
+            ? { ...execution, status, result, error }
+            : execution,
+        ),
+      );
+    },
+    [],
+  );
 
-  const completeToolExecution = useCallback((
-    toolCallId: string,
-    result: any
-  ) => {
-    updateToolStatus(toolCallId, 'completed', result);
-  }, [updateToolStatus]);
+  const completeToolExecution = useCallback(
+    (toolCallId: string, result: any) => {
+      updateToolStatus(toolCallId, 'completed', result);
+    },
+    [updateToolStatus],
+  );
 
-  const failToolExecution = useCallback((
-    toolCallId: string,
-    error: string
-  ) => {
-    updateToolStatus(toolCallId, 'error', undefined, error);
-  }, [updateToolStatus]);
+  const failToolExecution = useCallback(
+    (toolCallId: string, error: string) => {
+      updateToolStatus(toolCallId, 'error', undefined, error);
+    },
+    [updateToolStatus],
+  );
 
   const clearExecutions = useCallback(() => {
     setToolExecutions([]);
   }, []);
 
-  const getExecutionById = useCallback((toolCallId: string) => {
-    return toolExecutions.find(execution => execution.id === toolCallId);
-  }, [toolExecutions]);
+  const getExecutionById = useCallback(
+    (toolCallId: string) => {
+      return toolExecutions.find((execution) => execution.id === toolCallId);
+    },
+    [toolExecutions],
+  );
 
   const getActiveExecutions = useCallback(() => {
-    return toolExecutions.filter(execution => 
-      execution.status === 'pending' || execution.status === 'executing'
+    return toolExecutions.filter(
+      (execution) =>
+        execution.status === 'pending' || execution.status === 'executing',
     );
   }, [toolExecutions]);
 
@@ -81,6 +87,6 @@ export const useToolExecution = () => {
     updateToolStatus,
     clearExecutions,
     getExecutionById,
-    getActiveExecutions
+    getActiveExecutions,
   };
 };

@@ -28,8 +28,15 @@ interface ConversationActions {
   createConversation: (title?: string) => string;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string | null) => void;
-  addMessage: (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
-  updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
+  addMessage: (
+    conversationId: string,
+    message: Omit<Message, 'id' | 'timestamp'>,
+  ) => void;
+  updateMessage: (
+    conversationId: string,
+    messageId: string,
+    updates: Partial<Message>,
+  ) => void;
   deleteMessage: (conversationId: string, messageId: string) => void;
   clearConversation: (conversationId: string) => void;
   updateConversationTitle: (conversationId: string, title: string) => void;
@@ -40,7 +47,9 @@ interface ConversationActions {
   getCurrentMessages: () => Message[];
 }
 
-export const useConversationStore = create<ConversationState & ConversationActions>()(
+export const useConversationStore = create<
+  ConversationState & ConversationActions
+>()(
   persist(
     (set, get) => ({
       // Initial state
@@ -57,12 +66,12 @@ export const useConversationStore = create<ConversationState & ConversationActio
           title,
           messages: [],
           createdAt: Date.now(),
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
         };
 
         set((state) => ({
           conversations: [...state.conversations, newConversation],
-          currentConversationId: id
+          currentConversationId: id,
         }));
 
         return id;
@@ -70,8 +79,11 @@ export const useConversationStore = create<ConversationState & ConversationActio
 
       deleteConversation: (id) => {
         set((state) => ({
-          conversations: state.conversations.filter(conv => conv.id !== id),
-          currentConversationId: state.currentConversationId === id ? null : state.currentConversationId
+          conversations: state.conversations.filter((conv) => conv.id !== id),
+          currentConversationId:
+            state.currentConversationId === id
+              ? null
+              : state.currentConversationId,
         }));
       },
 
@@ -83,77 +95,77 @@ export const useConversationStore = create<ConversationState & ConversationActio
         const newMessage: Message = {
           ...message,
           id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         set((state) => ({
-          conversations: state.conversations.map(conv =>
+          conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? {
                   ...conv,
                   messages: [...conv.messages, newMessage],
-                  updatedAt: Date.now()
+                  updatedAt: Date.now(),
                 }
-              : conv
-          )
+              : conv,
+          ),
         }));
       },
 
       updateMessage: (conversationId, messageId, updates) => {
         set((state) => ({
-          conversations: state.conversations.map(conv =>
+          conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? {
                   ...conv,
-                  messages: conv.messages.map(msg =>
-                    msg.id === messageId ? { ...msg, ...updates } : msg
+                  messages: conv.messages.map((msg) =>
+                    msg.id === messageId ? { ...msg, ...updates } : msg,
                   ),
-                  updatedAt: Date.now()
+                  updatedAt: Date.now(),
                 }
-              : conv
-          )
+              : conv,
+          ),
         }));
       },
 
       deleteMessage: (conversationId, messageId) => {
         set((state) => ({
-          conversations: state.conversations.map(conv =>
+          conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? {
                   ...conv,
-                  messages: conv.messages.filter(msg => msg.id !== messageId),
-                  updatedAt: Date.now()
+                  messages: conv.messages.filter((msg) => msg.id !== messageId),
+                  updatedAt: Date.now(),
                 }
-              : conv
-          )
+              : conv,
+          ),
         }));
       },
 
       clearConversation: (conversationId) => {
         set((state) => ({
-          conversations: state.conversations.map(conv =>
+          conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? {
                   ...conv,
                   messages: [],
-                  updatedAt: Date.now()
+                  updatedAt: Date.now(),
                 }
-              : conv
-          )
+              : conv,
+          ),
         }));
       },
 
       updateConversationTitle: (conversationId, title) => {
         set((state) => ({
-          conversations: state.conversations.map(conv =>
+          conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? {
                   ...conv,
                   title,
-                  updatedAt: Date.now()
+                  updatedAt: Date.now(),
                 }
-              : conv
-          )
+              : conv,
+          ),
         }));
       },
 
@@ -166,27 +178,27 @@ export const useConversationStore = create<ConversationState & ConversationActio
       },
 
       getConversation: (id) => {
-        return get().conversations.find(conv => conv.id === id);
+        return get().conversations.find((conv) => conv.id === id);
       },
 
       getCurrentConversation: () => {
         const { currentConversationId, conversations } = get();
-        return currentConversationId 
-          ? conversations.find(conv => conv.id === currentConversationId)
+        return currentConversationId
+          ? conversations.find((conv) => conv.id === currentConversationId)
           : undefined;
       },
 
       getCurrentMessages: () => {
         const currentConversation = get().getCurrentConversation();
         return currentConversation ? currentConversation.messages : [];
-      }
+      },
     }),
     {
       name: 'conversation-storage',
       partialize: (state) => ({
         conversations: state.conversations,
-        currentConversationId: state.currentConversationId
-      })
-    }
-  )
+        currentConversationId: state.currentConversationId,
+      }),
+    },
+  ),
 );

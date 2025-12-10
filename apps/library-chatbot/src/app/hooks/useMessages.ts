@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
 import { type Message } from 'ui/components/chat-message';
-import { 
-  createUserMessage, 
-  createAssistantMessage, 
+import {
+  createUserMessage,
+  createAssistantMessage,
   createErrorMessage,
-  findLastUserMessage 
+  findLastUserMessage,
 } from './utils/messageUtils';
 
 export interface UseMessagesOptions {
@@ -23,33 +23,44 @@ export interface UseMessagesReturn {
   reloadLastMessage: () => Message | null;
 }
 
-export function useMessages({ initialMessages = [] }: UseMessagesOptions = {}): UseMessagesReturn {
+export function useMessages({
+  initialMessages = [],
+}: UseMessagesOptions = {}): UseMessagesReturn {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
 
   const addMessage = useCallback((message: Message) => {
-    setMessages(prev => [...prev, message]);
+    setMessages((prev) => [...prev, message]);
   }, []);
 
-  const addUserMessage = useCallback((content: string, attachments?: FileList) => {
-    const message = createUserMessage(content, attachments);
-    addMessage(message);
-    return message;
-  }, [addMessage]);
+  const addUserMessage = useCallback(
+    (content: string, attachments?: FileList) => {
+      const message = createUserMessage(content, attachments);
+      addMessage(message);
+      return message;
+    },
+    [addMessage],
+  );
 
-  const addAssistantMessage = useCallback((content?: string) => {
-    const message = createAssistantMessage(content);
-    addMessage(message);
-    return message;
-  }, [addMessage]);
+  const addAssistantMessage = useCallback(
+    (content?: string) => {
+      const message = createAssistantMessage(content);
+      addMessage(message);
+      return message;
+    },
+    [addMessage],
+  );
 
-  const addErrorMessage = useCallback((error: Error | string) => {
-    const message = createErrorMessage(error);
-    addMessage(message);
-    return message;
-  }, [addMessage]);
+  const addErrorMessage = useCallback(
+    (error: Error | string) => {
+      const message = createErrorMessage(error);
+      addMessage(message);
+      return message;
+    },
+    [addMessage],
+  );
 
   const updateLastMessage = useCallback((content: string) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       const newMessages = [...prev];
       const lastMessage = newMessages[newMessages.length - 1];
       if (lastMessage && lastMessage.role === 'assistant') {
@@ -60,7 +71,7 @@ export function useMessages({ initialMessages = [] }: UseMessagesOptions = {}): 
   }, []);
 
   const removeLastMessage = useCallback(() => {
-    setMessages(prev => {
+    setMessages((prev) => {
       if (prev.length === 0) return prev;
       const lastMessage = prev[prev.length - 1];
       if (lastMessage.role === 'assistant') {
@@ -73,10 +84,10 @@ export function useMessages({ initialMessages = [] }: UseMessagesOptions = {}): 
   const reloadLastMessage = useCallback((): Message | null => {
     const lastUserMessage = findLastUserMessage(messages);
     if (!lastUserMessage) return null;
-    
+
     // Remove the last assistant message if it exists
     removeLastMessage();
-    
+
     return lastUserMessage;
   }, [messages, removeLastMessage]);
 

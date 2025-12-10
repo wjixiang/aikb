@@ -13,7 +13,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onChange,
   onSubmit,
   disabled = false,
-  placeholder = "Type your message..."
+  placeholder = 'Type your message...',
 }) => {
   const [isComposing, setIsComposing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

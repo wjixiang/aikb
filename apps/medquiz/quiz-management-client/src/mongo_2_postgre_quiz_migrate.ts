@@ -68,14 +68,14 @@ function transformSpecificQuizData(mongoQuiz: WithId<quiz>, quizId: string) {
       return {
         quiz_id: quizId,
         main_question: mongoQuiz.mainQuestion || '',
-        sub_quizzes: mongoQuiz.subQuizs || [] as any,
+        sub_quizzes: mongoQuiz.subQuizs || ([] as any),
       };
 
     case 'B':
       return {
         quiz_id: quizId,
         options: mongoQuiz.options as any,
-        questions: mongoQuiz.questions || [] as any,
+        questions: mongoQuiz.questions || ([] as any),
       };
 
     case 'X':
@@ -288,4 +288,10 @@ if (require.main === module) {
     });
 }
 
-export { migrateQuizzes, transformBaseQuizData, transformSpecificQuizData, transformAnalysisData, migrateSingleQuiz };
+export {
+  migrateQuizzes,
+  transformBaseQuizData,
+  transformSpecificQuizData,
+  transformAnalysisData,
+  migrateSingleQuiz,
+};

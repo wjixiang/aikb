@@ -27,7 +27,11 @@ export class TaskService {
     this.eventEmitter.emit(event, data);
   }
 
-  completeTask(taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage): void {
+  completeTask(
+    taskId: string,
+    tokenUsage: TokenUsage,
+    toolUsage: ToolUsage,
+  ): void {
     const task = this.tasks.get(taskId);
     if (!task) return;
     const { event, data } = task.complete(tokenUsage, toolUsage);
@@ -40,6 +44,4 @@ export class TaskService {
     const { event, data } = task.abort();
     this.eventEmitter.emit(event, data);
   }
-
-
 }

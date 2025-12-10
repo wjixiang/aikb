@@ -12,9 +12,8 @@ const prisma = new PrismaClient({
   transactionOptions: {
     timeout: 30000, // 30 seconds
     maxWait: 35000, // Slightly longer than timeout
-  }
+  },
 });
-
 
 @Injectable()
 class PostgreQuizDbPrismaService extends PrismaClient {
@@ -26,7 +25,7 @@ class PostgreQuizDbPrismaService extends PrismaClient {
       transactionOptions: {
         timeout: 30000, // 30 seconds
         maxWait: 35000, // Slightly longer than timeout
-      }
+      },
     });
   }
 }

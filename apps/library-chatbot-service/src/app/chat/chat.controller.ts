@@ -25,20 +25,20 @@ export class ChatController {
   async chatStream(
     @Body() request: ChatRequest,
     @Res() res: Response,
-    @Headers() headers: Record<string, string>
+    @Headers() headers: Record<string, string>,
   ): Promise<void> {
     // Set headers for Server-Sent Events
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': 'Cache-Control',
     });
 
     try {
       const stream$ = this.chatService.generateStreamResponse(request.messages);
-      
+
       stream$.subscribe({
         next: (chunk: StreamChunk) => {
           if (chunk.error) {
@@ -48,7 +48,7 @@ export class ChatController {
             const contentData = JSON.stringify({ content: chunk.content });
             res.write(`data: ${contentData}\n\n`);
           }
-          
+
           if (chunk.done) {
             const doneData = JSON.stringify({ done: true });
             res.write(`data: ${doneData}\n\n`);
@@ -63,11 +63,13 @@ export class ChatController {
         },
         complete: () => {
           res.end();
-        }
+        },
       });
     } catch (error) {
       console.error('Controller error:', error);
-      res.write(`data: ${JSON.stringify({ error: 'Failed to start stream' })}\n\n`);
+      res.write(
+        `data: ${JSON.stringify({ error: 'Failed to start stream' })}\n\n`,
+      );
       res.end();
     }
   }

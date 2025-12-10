@@ -17,10 +17,12 @@ export interface StreamProcessorCallbacks {
 /**
  * Make API request to chat endpoint
  */
-export async function makeApiRequest(options: ApiRequestOptions): Promise<Response> {
+export async function makeApiRequest(
+  options: ApiRequestOptions,
+): Promise<Response> {
   const { messages, attachments, api, stream } = options;
   const apiUrl = stream ? `${api}/stream` : api;
-  
+
   return fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -39,10 +41,10 @@ export async function makeApiRequest(options: ApiRequestOptions): Promise<Respon
 export async function processStreamResponse(
   response: Response,
   assistantMessage: Message,
-  callbacks: StreamProcessorCallbacks
+  callbacks: StreamProcessorCallbacks,
 ): Promise<void> {
   const { onResponse, onFinish, onContentUpdate } = callbacks;
-  
+
   onResponse?.(response);
 
   if (!response.ok) {
@@ -57,11 +59,11 @@ export async function processStreamResponse(
   }
 
   let accumulatedContent = '';
-  
+
   try {
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) break;
 
       const chunk = decoder.decode(value);
@@ -71,22 +73,28 @@ export async function processStreamResponse(
         if (line.startsWith('data: ')) {
           try {
             const dataStr = line.slice(6).trim();
-            
+
             if (!dataStr) continue;
-            
+
             const data = JSON.parse(dataStr);
-            
+
             if (data.error) {
-              const errorStr = typeof data.error === 'string' ? data.error : String(data.error);
+              const errorStr =
+                typeof data.error === 'string'
+                  ? data.error
+                  : String(data.error);
               throw new Error(errorStr);
             }
-            
+
             if (data.content) {
-              const contentStr = typeof data.content === 'string' ? data.content : String(data.content);
+              const contentStr =
+                typeof data.content === 'string'
+                  ? data.content
+                  : String(data.content);
               accumulatedContent += contentStr;
               onContentUpdate?.(accumulatedContent);
             }
-            
+
             if (data.done) {
               onFinish?.(assistantMessage);
               return;
@@ -107,10 +115,10 @@ export async function processStreamResponse(
  */
 export async function processRegularResponse(
   response: Response,
-  callbacks: StreamProcessorCallbacks
+  callbacks: StreamProcessorCallbacks,
 ): Promise<Message> {
   const { onResponse } = callbacks;
-  
+
   onResponse?.(response);
 
   if (!response.ok) {
@@ -118,9 +126,11 @@ export async function processRegularResponse(
   }
 
   const data = await response.json();
-  
+
   return {
-    id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+    id:
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15),
     role: 'assistant',
     content: data.content || '',
     createdAt: new Date(),

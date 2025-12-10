@@ -11,7 +11,7 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
   text,
   speed = 30,
   onComplete,
-  className = ''
+  className = '',
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
@@ -20,7 +20,7 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
   useEffect(() => {
     setDisplayedText('');
     setIsComplete(false);
-    
+
     if (!text) {
       setIsComplete(true);
       onComplete?.();
@@ -28,7 +28,7 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
     }
 
     let currentIndex = 0;
-    
+
     const typeNextChar = () => {
       if (currentIndex < text.length) {
         setDisplayedText(text.substring(0, currentIndex + 1));

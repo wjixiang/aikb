@@ -253,7 +253,9 @@ export class ChunkEmbedService {
       }));
     } catch (error) {
       this.logger.error('Error chunking content:', error);
-      throw new Error(`Failed to chunk content: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to chunk content: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

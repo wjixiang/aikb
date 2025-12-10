@@ -9,7 +9,7 @@ import { BibliographyDBPrismaService } from 'bibliography-db';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-import {VectorModule} from 'bibliography-lib'
+import { VectorModule } from 'bibliography-lib';
 
 @Module({
   imports: [
@@ -33,9 +33,14 @@ import {VectorModule} from 'bibliography-lib'
       //   path: '/workspace/apps/bibliography-service/src/graphql.ts',
       // },
     }),
-    VectorModule
+    VectorModule,
   ],
   controllers: [LibraryItemController, BibliographyGrpcController],
-  providers: [LibraryItemService, LibraryItemResolver, S3ServiceProvider,BibliographyDBPrismaService],
+  providers: [
+    LibraryItemService,
+    LibraryItemResolver,
+    S3ServiceProvider,
+    BibliographyDBPrismaService,
+  ],
 })
 export class AppModule {}

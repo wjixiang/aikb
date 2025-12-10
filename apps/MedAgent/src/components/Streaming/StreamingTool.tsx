@@ -19,7 +19,7 @@ export const StreamingTool: React.FC<StreamingToolProps> = ({
   status,
   result,
   error,
-  timestamp
+  timestamp,
 }) => {
   const [currentStatus, setCurrentStatus] = useState(status);
 
@@ -38,7 +38,7 @@ export const StreamingTool: React.FC<StreamingToolProps> = ({
         timestamp={timestamp}
         status={currentStatus}
       />
-      
+
       {showResult && (
         <ToolResult
           toolName={toolName}

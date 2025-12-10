@@ -13,7 +13,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({
   parameters,
   toolCallId,
   timestamp,
-  status = 'pending'
+  status = 'pending',
 }) => {
   const getStatusColor = () => {
     switch (status) {
@@ -52,18 +52,22 @@ export const ToolCall: React.FC<ToolCallProps> = ({
           <span className="text-lg">{getStatusIcon()}</span>
           <span className="font-medium text-sm">Tool: {toolName}</span>
         </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
+        <div
+          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}
+        >
           {status}
         </div>
       </div>
-      
+
       <div className="text-xs text-gray-600 mb-2">
         ID: {toolCallId} • {new Date(timestamp).toLocaleTimeString()}
       </div>
-      
+
       {Object.keys(parameters).length > 0 && (
         <div className="bg-gray-50 rounded p-2">
-          <div className="text-xs font-medium text-gray-700 mb-1">Parameters:</div>
+          <div className="text-xs font-medium text-gray-700 mb-1">
+            Parameters:
+          </div>
           <pre className="text-xs text-gray-600 overflow-x-auto">
             {JSON.stringify(parameters, null, 2)}
           </pre>

@@ -53,7 +53,7 @@ export class AgentService {
       type: 'user_input',
       conversationId: input.conversationId,
       content: input.content,
-      clientId: input.clientId
+      clientId: input.clientId,
     };
 
     this.wsService.send(message);
@@ -61,10 +61,10 @@ export class AgentService {
 
   createNewConversation(): string {
     const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const message: ClientMessage = {
       type: 'new_conversation',
-      conversationId
+      conversationId,
     };
 
     this.wsService.send(message);
@@ -74,13 +74,15 @@ export class AgentService {
   getConversationHistory(conversationId: string): void {
     const message: ClientMessage = {
       type: 'conversation_history',
-      conversationId
+      conversationId,
     };
 
     this.wsService.send(message);
   }
 
-  onStreamChunk(handler: (chunk: StreamChunk, conversationId?: string) => void): void {
+  onStreamChunk(
+    handler: (chunk: StreamChunk, conversationId?: string) => void,
+  ): void {
     this.wsService.onMessage('stream_chunk', (message: ServerMessage) => {
       if (message.chunk) {
         handler(message.chunk, message.conversationId);
@@ -89,11 +91,14 @@ export class AgentService {
   }
 
   onConversationUpdate(handler: (conversationId: string) => void): void {
-    this.wsService.onMessage('conversation_update', (message: ServerMessage) => {
-      if (message.conversationId) {
-        handler(message.conversationId);
-      }
-    });
+    this.wsService.onMessage(
+      'conversation_update',
+      (message: ServerMessage) => {
+        if (message.conversationId) {
+          handler(message.conversationId);
+        }
+      },
+    );
   }
 
   onError(handler: (error: string) => void): void {
@@ -104,7 +109,9 @@ export class AgentService {
     });
   }
 
-  offStreamChunk(handler: (chunk: StreamChunk, conversationId?: string) => void): void {
+  offStreamChunk(
+    handler: (chunk: StreamChunk, conversationId?: string) => void,
+  ): void {
     this.wsService.offMessage('stream_chunk', handler);
   }
 
@@ -140,7 +147,9 @@ export class AgentService {
 
   async getConversation(conversationId: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}`);
+      const response = await fetch(
+        `${this.baseUrl}/api/conversations/${conversationId}`,
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -153,9 +162,12 @@ export class AgentService {
 
   async deleteConversation(conversationId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/conversations/${conversationId}`,
+        {
+          method: 'DELETE',
+        },
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -1,75 +1,82 @@
-import { z } from "zod"
+import { z } from 'zod';
 
 /**
  * ToolGroup
  */
 
-export const toolGroups = ["read", "edit", "browser", "command", "mcp", "modes"] as const
+export const toolGroups = [
+  'read',
+  'edit',
+  'browser',
+  'command',
+  'mcp',
+  'modes',
+] as const;
 
-export const toolGroupsSchema = z.enum(toolGroups)
+export const toolGroupsSchema = z.enum(toolGroups);
 
-export type ToolGroup = z.infer<typeof toolGroupsSchema>
+export type ToolGroup = z.infer<typeof toolGroupsSchema>;
 
 /**
  * ToolName
  */
 
 export const toolNames = [
-	"execute_command",
-	"read_file",
-	"write_to_file",
-	"apply_diff",
-	"search_and_replace",
-	"search_replace",
-	"apply_patch",
-	"search_files",
-	"list_files",
-	"list_code_definition_names",
-	"browser_action",
-	"use_mcp_tool",
-	"access_mcp_resource",
-	"ask_followup_question",
-	"attempt_completion",
-	"switch_mode",
-	"new_task",
-	"fetch_instructions",
-	"codebase_search",
-	"update_todo_list",
-	"run_slash_command",
-	"generate_image",
-] as const
+  'execute_command',
+  'read_file',
+  'write_to_file',
+  'apply_diff',
+  'search_and_replace',
+  'search_replace',
+  'apply_patch',
+  'search_files',
+  'list_files',
+  'list_code_definition_names',
+  'browser_action',
+  'use_mcp_tool',
+  'access_mcp_resource',
+  'ask_followup_question',
+  'attempt_completion',
+  'switch_mode',
+  'new_task',
+  'fetch_instructions',
+  'codebase_search',
+  'update_todo_list',
+  'run_slash_command',
+  'generate_image',
+] as const;
 
-export const toolNamesSchema = z.enum(toolNames)
+export const toolNamesSchema = z.enum(toolNames);
 
-export type ToolName = z.infer<typeof toolNamesSchema>
+export type ToolName = z.infer<typeof toolNamesSchema>;
 
 /**
  * ToolUsage
  */
 
 export const toolUsageSchema = z.record(
-	toolNamesSchema,
-	z.object({
-		attempts: z.number(),
-		failures: z.number(),
-	}),
-)
+  toolNamesSchema,
+  z.object({
+    attempts: z.number(),
+    failures: z.number(),
+  }),
+);
 
-export type ToolUsage = z.infer<typeof toolUsageSchema>
+export type ToolUsage = z.infer<typeof toolUsageSchema>;
 
 /**
  * Tool protocol constants
  */
 export const TOOL_PROTOCOL = {
-	XML: "xml",
-	NATIVE: "native",
-} as const
+  XML: 'xml',
+  NATIVE: 'native',
+} as const;
 
 /**
  * Tool protocol type for system prompt generation
  * Derived from TOOL_PROTOCOL constants to ensure type safety
  */
-export type ToolProtocol = (typeof TOOL_PROTOCOL)[keyof typeof TOOL_PROTOCOL]
+export type ToolProtocol = (typeof TOOL_PROTOCOL)[keyof typeof TOOL_PROTOCOL];
 
 /**
  * Checks if the protocol is native (non-XML).
@@ -78,7 +85,7 @@ export type ToolProtocol = (typeof TOOL_PROTOCOL)[keyof typeof TOOL_PROTOCOL]
  * @returns True if protocol is native
  */
 export function isNativeProtocol(protocol: ToolProtocol): boolean {
-	return protocol === TOOL_PROTOCOL.NATIVE
+  return protocol === TOOL_PROTOCOL.NATIVE;
 }
 
 /**
@@ -88,6 +95,8 @@ export function isNativeProtocol(protocol: ToolProtocol): boolean {
  * @param toolProtocol - Optional tool protocol from settings
  * @returns The effective tool protocol (defaults to "xml")
  */
-export function getEffectiveProtocol(toolProtocol?: ToolProtocol): ToolProtocol {
-	return toolProtocol || TOOL_PROTOCOL.XML
+export function getEffectiveProtocol(
+  toolProtocol?: ToolProtocol,
+): ToolProtocol {
+  return toolProtocol || TOOL_PROTOCOL.XML;
 }

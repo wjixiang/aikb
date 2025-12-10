@@ -14,7 +14,7 @@ export class BibliographyDBPrismaService extends PrismaClient {
       transactionOptions: {
         timeout: 30000, // 30 seconds
         maxWait: 35000, // Slightly longer than timeout
-      }
+      },
     });
   }
 }
@@ -28,7 +28,7 @@ const prisma = new PrismaClient({
   transactionOptions: {
     timeout: 30000, // 30 seconds
     maxWait: 35000, // Slightly longer than timeout
-  }
+  },
 });
 
 export { prisma };

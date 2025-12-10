@@ -1,15 +1,9 @@
-import {Chat} from "ui/components/chat"
+import { Chat } from 'ui/components/chat';
 import { useChat } from './hooks/useChat';
 
 export function App() {
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    stop,
-  } = useChat();
+  const { messages, input, handleInputChange, handleSubmit, isLoading, stop } =
+    useChat();
 
   return (
     <div className="w-screen h-screen">

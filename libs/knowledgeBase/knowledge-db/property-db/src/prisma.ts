@@ -14,7 +14,7 @@ export class PropertyDBPrismaService extends PrismaClient {
       transactionOptions: {
         timeout: 30000, // 30 seconds
         maxWait: 35000, // Slightly longer than timeout
-      }
+      },
     });
   }
 }

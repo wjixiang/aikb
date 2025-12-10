@@ -15,7 +15,7 @@ export const ToolResult: React.FC<ToolResultProps> = ({
   toolCallId,
   timestamp,
   success,
-  error
+  error,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -35,9 +35,11 @@ export const ToolResult: React.FC<ToolResultProps> = ({
   };
 
   return (
-    <div className={`border rounded-lg p-3 mb-2 ${
-      success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-    }`}>
+    <div
+      className={`border rounded-lg p-3 mb-2 ${
+        success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+      }`}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <span className="text-lg">{success ? '✅' : '❌'}</span>
@@ -45,17 +47,19 @@ export const ToolResult: React.FC<ToolResultProps> = ({
             {success ? 'Tool Result' : 'Tool Error'}: {toolName}
           </span>
         </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-          success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
           {success ? 'Success' : 'Failed'}
         </div>
       </div>
-      
+
       <div className="text-xs text-gray-600 mb-2">
         ID: {toolCallId} • {new Date(timestamp).toLocaleTimeString()}
       </div>
-      
+
       {error ? (
         <div className="bg-red-100 border border-red-200 rounded p-2 mb-2">
           <div className="text-xs font-medium text-red-700 mb-1">Error:</div>
@@ -74,9 +78,11 @@ export const ToolResult: React.FC<ToolResultProps> = ({
               </button>
             )}
           </div>
-          <pre className={`text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap ${
-            isExpanded ? '' : 'max-h-20 overflow-hidden'
-          }`}>
+          <pre
+            className={`text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap ${
+              isExpanded ? '' : 'max-h-20 overflow-hidden'
+            }`}
+          >
             {isExpanded ? formatResult(result) : getResultPreview(result)}
           </pre>
         </div>

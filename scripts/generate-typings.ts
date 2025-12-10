@@ -1,4 +1,3 @@
-
 import { GraphQLDefinitionsFactory } from '@nestjs/graphql';
 import { join } from 'node:path';
 

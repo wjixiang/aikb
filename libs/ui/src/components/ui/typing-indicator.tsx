@@ -1,5 +1,5 @@
-import { Dot } from "lucide-react"
- 
+import { Dot } from 'lucide-react';
+
 export function TypingIndicator() {
   return (
     <div className="justify-left flex space-x-1">
@@ -11,5 +11,5 @@ export function TypingIndicator() {
         </div>
       </div>
     </div>
-  )
+  );
 }

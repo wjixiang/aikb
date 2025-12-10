@@ -4,7 +4,10 @@ import { type Message } from 'ui/components/chat-message';
  * Generate a unique ID for messages
  */
 export function generateId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
 }
 
 /**
@@ -12,7 +15,7 @@ export function generateId(): string {
  */
 export function createUserMessage(
   content: string,
-  attachments?: FileList
+  attachments?: FileList,
 ): Message {
   const userMessage: Message = {
     id: generateId(),
@@ -23,7 +26,7 @@ export function createUserMessage(
 
   // Add attachments if provided
   if (attachments?.length) {
-    const attachmentData = Array.from(attachments).map(file => ({
+    const attachmentData = Array.from(attachments).map((file) => ({
       name: file.name,
       contentType: file.type,
       url: URL.createObjectURL(file),
@@ -63,7 +66,7 @@ export function createErrorMessage(error: Error | string): Message {
  * Find the last user message in an array of messages
  */
 export function findLastUserMessage(messages: Message[]): Message | undefined {
-  return messages.findLast(m => m.role === 'user');
+  return messages.findLast((m) => m.role === 'user');
 }
 
 /**
@@ -82,13 +85,15 @@ export function processApiResponse(data: unknown): Message {
     toolInvocations?: Message['toolInvocations'];
     parts?: Message['parts'];
   };
-  
+
   return {
     id: generateId(),
     role: 'assistant',
     content: responseData.content || '',
     createdAt: new Date(),
-    ...(responseData.toolInvocations && { toolInvocations: responseData.toolInvocations }),
+    ...(responseData.toolInvocations && {
+      toolInvocations: responseData.toolInvocations,
+    }),
     ...(responseData.parts && { parts: responseData.parts }),
   };
 }

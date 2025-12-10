@@ -585,7 +585,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       const token = generateChunkEmbedGroupToken(
         config.chunkingConfig.strategy || 'paragraph', // Default to 'paragraph' if not specified
         config.embeddingConfig.model.toString(), // Convert enum to string
-        config.embeddingConfig.dimension
+        config.embeddingConfig.dimension,
       );
 
       const groupInfo: ChunkEmbedGroupMetadata = {
@@ -910,10 +910,10 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
       } catch (error) {
         // If not found in default index, we need to search across all possible indices
         // Get all indices that match the pattern item_chunks_*
-        const indicesResult = await this.client.cat.indices({
+        const indicesResult = (await this.client.cat.indices({
           index: `${this.chunksIndexName}_*`,
           format: 'json',
-        }) as any;
+        })) as any;
 
         const indices = indicesResult.map((index: any) => index.index);
 
@@ -939,7 +939,7 @@ export class ElasticsearchItemVectorStorage implements IItemVectorStorage {
 
       if (result.found) {
         const { _source } = result as any;
-        
+
         // Convert date strings back to Date objects
         return {
           ..._source,

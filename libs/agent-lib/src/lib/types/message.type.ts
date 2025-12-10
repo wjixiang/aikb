@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from 'zod';
 
 /**
  * ClineAsk
@@ -26,23 +26,23 @@ import { z } from "zod"
  * - `auto_approval_max_req_reached`: Auto-approval limit has been reached, manual approval required
  */
 export const clineAsks = [
-	"followup",
-	"command",
-	"command_output",
-	"completion_result",
-	"tool",
-	"api_req_failed",
-	"resume_task",
-	"resume_completed_task",
-	"mistake_limit_reached",
-	"browser_action_launch",
-	"use_mcp_server",
-	"auto_approval_max_req_reached",
-] as const
+  'followup',
+  'command',
+  'command_output',
+  'completion_result',
+  'tool',
+  'api_req_failed',
+  'resume_task',
+  'resume_completed_task',
+  'mistake_limit_reached',
+  'browser_action_launch',
+  'use_mcp_server',
+  'auto_approval_max_req_reached',
+] as const;
 
-export const clineAskSchema = z.enum(clineAsks)
+export const clineAskSchema = z.enum(clineAsks);
 
-export type ClineAsk = z.infer<typeof clineAskSchema>
+export type ClineAsk = z.infer<typeof clineAskSchema>;
 /**
  * IdleAsk
  *
@@ -50,17 +50,17 @@ export type ClineAsk = z.infer<typeof clineAskSchema>
  */
 
 export const idleAsks = [
-	"completion_result",
-	"api_req_failed",
-	"resume_completed_task",
-	"mistake_limit_reached",
-	"auto_approval_max_req_reached",
-] as const satisfies readonly ClineAsk[]
+  'completion_result',
+  'api_req_failed',
+  'resume_completed_task',
+  'mistake_limit_reached',
+  'auto_approval_max_req_reached',
+] as const satisfies readonly ClineAsk[];
 
-export type IdleAsk = (typeof idleAsks)[number]
+export type IdleAsk = (typeof idleAsks)[number];
 
 export function isIdleAsk(ask: ClineAsk): ask is IdleAsk {
-	return (idleAsks as readonly ClineAsk[]).includes(ask)
+  return (idleAsks as readonly ClineAsk[]).includes(ask);
 }
 
 /**
@@ -69,12 +69,14 @@ export function isIdleAsk(ask: ClineAsk): ask is IdleAsk {
  * Asks that put the task into an "resumable" state.
  */
 
-export const resumableAsks = ["resume_task"] as const satisfies readonly ClineAsk[]
+export const resumableAsks = [
+  'resume_task',
+] as const satisfies readonly ClineAsk[];
 
-export type ResumableAsk = (typeof resumableAsks)[number]
+export type ResumableAsk = (typeof resumableAsks)[number];
 
 export function isResumableAsk(ask: ClineAsk): ask is ResumableAsk {
-	return (resumableAsks as readonly ClineAsk[]).includes(ask)
+  return (resumableAsks as readonly ClineAsk[]).includes(ask);
 }
 
 /**
@@ -84,17 +86,17 @@ export function isResumableAsk(ask: ClineAsk): ask is ResumableAsk {
  */
 
 export const interactiveAsks = [
-	"followup",
-	"command",
-	"tool",
-	"browser_action_launch",
-	"use_mcp_server",
-] as const satisfies readonly ClineAsk[]
+  'followup',
+  'command',
+  'tool',
+  'browser_action_launch',
+  'use_mcp_server',
+] as const satisfies readonly ClineAsk[];
 
-export type InteractiveAsk = (typeof interactiveAsks)[number]
+export type InteractiveAsk = (typeof interactiveAsks)[number];
 
 export function isInteractiveAsk(ask: ClineAsk): ask is InteractiveAsk {
-	return (interactiveAsks as readonly ClineAsk[]).includes(ask)
+  return (interactiveAsks as readonly ClineAsk[]).includes(ask);
 }
 
 /**
@@ -104,12 +106,14 @@ export function isInteractiveAsk(ask: ClineAsk): ask is InteractiveAsk {
  * to update chat messages.
  */
 
-export const nonBlockingAsks = ["command_output"] as const satisfies readonly ClineAsk[]
+export const nonBlockingAsks = [
+  'command_output',
+] as const satisfies readonly ClineAsk[];
 
-export type NonBlockingAsk = (typeof nonBlockingAsks)[number]
+export type NonBlockingAsk = (typeof nonBlockingAsks)[number];
 
 export function isNonBlockingAsk(ask: ClineAsk): ask is NonBlockingAsk {
-	return (nonBlockingAsks as readonly ClineAsk[]).includes(ask)
+  return (nonBlockingAsks as readonly ClineAsk[]).includes(ask);
 }
 
 /**
@@ -150,50 +154,50 @@ export function isNonBlockingAsk(ask: ClineAsk): ask is NonBlockingAsk {
  * - `codebase_search_result`: Results from searching the codebase
  */
 export const clineSays = [
-	"error",
-	"api_req_started",
-	"api_req_finished",
-	"api_req_retried",
-	"api_req_retry_delayed",
-	"api_req_deleted",
-	"text",
-	"image",
-	"reasoning",
-	"completion_result",
-	"user_feedback",
-	"user_feedback_diff",
-	"command_output",
-	"shell_integration_warning",
-	"browser_action",
-	"browser_action_result",
-	"browser_session_status",
-	"mcp_server_request_started",
-	"mcp_server_response",
-	"subtask_result",
-	"checkpoint_saved",
-	"rooignore_error",
-	"diff_error",
-	"condense_context",
-	"condense_context_error",
-	"sliding_window_truncation",
-	"codebase_search_result",
-	"user_edit_todos",
-] as const
+  'error',
+  'api_req_started',
+  'api_req_finished',
+  'api_req_retried',
+  'api_req_retry_delayed',
+  'api_req_deleted',
+  'text',
+  'image',
+  'reasoning',
+  'completion_result',
+  'user_feedback',
+  'user_feedback_diff',
+  'command_output',
+  'shell_integration_warning',
+  'browser_action',
+  'browser_action_result',
+  'browser_session_status',
+  'mcp_server_request_started',
+  'mcp_server_response',
+  'subtask_result',
+  'checkpoint_saved',
+  'rooignore_error',
+  'diff_error',
+  'condense_context',
+  'condense_context_error',
+  'sliding_window_truncation',
+  'codebase_search_result',
+  'user_edit_todos',
+] as const;
 
-export const clineSaySchema = z.enum(clineSays)
+export const clineSaySchema = z.enum(clineSays);
 
-export type ClineSay = z.infer<typeof clineSaySchema>
+export type ClineSay = z.infer<typeof clineSaySchema>;
 
 /**
  * ToolProgressStatus
  */
 
 export const toolProgressStatusSchema = z.object({
-	icon: z.string().optional(),
-	text: z.string().optional(),
-})
+  icon: z.string().optional(),
+  text: z.string().optional(),
+});
 
-export type ToolProgressStatus = z.infer<typeof toolProgressStatusSchema>
+export type ToolProgressStatus = z.infer<typeof toolProgressStatusSchema>;
 
 /**
  * ContextCondense
@@ -209,14 +213,14 @@ export type ToolProgressStatus = z.infer<typeof toolProgressStatusSchema>
  * @property condenseId - Optional unique identifier for this condensation operation
  */
 export const contextCondenseSchema = z.object({
-	cost: z.number(),
-	prevContextTokens: z.number(),
-	newContextTokens: z.number(),
-	summary: z.string(),
-	condenseId: z.string().optional(),
-})
+  cost: z.number(),
+  prevContextTokens: z.number(),
+  newContextTokens: z.number(),
+  summary: z.string(),
+  condenseId: z.string().optional(),
+});
 
-export type ContextCondense = z.infer<typeof contextCondenseSchema>
+export type ContextCondense = z.infer<typeof contextCondenseSchema>;
 
 /**
  * ContextTruncation
@@ -234,13 +238,13 @@ export type ContextCondense = z.infer<typeof contextCondenseSchema>
  * @property newContextTokens - Token count after truncation occurred
  */
 export const contextTruncationSchema = z.object({
-	truncationId: z.string(),
-	messagesRemoved: z.number(),
-	prevContextTokens: z.number(),
-	newContextTokens: z.number(),
-})
+  truncationId: z.string(),
+  messagesRemoved: z.number(),
+  prevContextTokens: z.number(),
+  newContextTokens: z.number(),
+});
 
-export type ContextTruncation = z.infer<typeof contextTruncationSchema>
+export type ContextTruncation = z.infer<typeof contextTruncationSchema>;
 
 /**
  * ClineMessage
@@ -255,58 +259,60 @@ export type ContextTruncation = z.infer<typeof contextTruncationSchema>
  * Note: These fields are mutually exclusive - a message will have at most one of them.
  */
 export const clineMessageSchema = z.object({
-	ts: z.number(),
-	type: z.union([z.literal("ask"), z.literal("say")]),
-	ask: clineAskSchema.optional(),
-	say: clineSaySchema.optional(),
-	text: z.string().optional(),
-	images: z.array(z.string()).optional(),
-	partial: z.boolean().optional(),
-	reasoning: z.string().optional(),
-	conversationHistoryIndex: z.number().optional(),
-	checkpoint: z.record(z.string(), z.unknown()).optional(),
-	progressStatus: toolProgressStatusSchema.optional(),
-	/**
-	 * Data for successful context condensation.
-	 * Present when `say: "condense_context"` and `partial: false`.
-	 */
-	contextCondense: contextCondenseSchema.optional(),
-	/**
-	 * Data for sliding window truncation.
-	 * Present when `say: "sliding_window_truncation"`.
-	 */
-	contextTruncation: contextTruncationSchema.optional(),
-	isProtected: z.boolean().optional(),
-	apiProtocol: z.union([z.literal("openai"), z.literal("anthropic")]).optional(),
-	isAnswered: z.boolean().optional(),
-})
+  ts: z.number(),
+  type: z.union([z.literal('ask'), z.literal('say')]),
+  ask: clineAskSchema.optional(),
+  say: clineSaySchema.optional(),
+  text: z.string().optional(),
+  images: z.array(z.string()).optional(),
+  partial: z.boolean().optional(),
+  reasoning: z.string().optional(),
+  conversationHistoryIndex: z.number().optional(),
+  checkpoint: z.record(z.string(), z.unknown()).optional(),
+  progressStatus: toolProgressStatusSchema.optional(),
+  /**
+   * Data for successful context condensation.
+   * Present when `say: "condense_context"` and `partial: false`.
+   */
+  contextCondense: contextCondenseSchema.optional(),
+  /**
+   * Data for sliding window truncation.
+   * Present when `say: "sliding_window_truncation"`.
+   */
+  contextTruncation: contextTruncationSchema.optional(),
+  isProtected: z.boolean().optional(),
+  apiProtocol: z
+    .union([z.literal('openai'), z.literal('anthropic')])
+    .optional(),
+  isAnswered: z.boolean().optional(),
+});
 
-export type ClineMessage = z.infer<typeof clineMessageSchema>
+export type ClineMessage = z.infer<typeof clineMessageSchema>;
 
 /**
  * TokenUsage
  */
 
 export const tokenUsageSchema = z.object({
-	totalTokensIn: z.number(),
-	totalTokensOut: z.number(),
-	totalCacheWrites: z.number().optional(),
-	totalCacheReads: z.number().optional(),
-	totalCost: z.number(),
-	contextTokens: z.number(),
-})
+  totalTokensIn: z.number(),
+  totalTokensOut: z.number(),
+  totalCacheWrites: z.number().optional(),
+  totalCacheReads: z.number().optional(),
+  totalCost: z.number(),
+  contextTokens: z.number(),
+});
 
-export type TokenUsage = z.infer<typeof tokenUsageSchema>
+export type TokenUsage = z.infer<typeof tokenUsageSchema>;
 
 /**
  * QueuedMessage
  */
 
 export const queuedMessageSchema = z.object({
-	timestamp: z.number(),
-	id: z.string(),
-	text: z.string(),
-	images: z.array(z.string()).optional(),
-})
+  timestamp: z.number(),
+  id: z.string(),
+  text: z.string(),
+  images: z.array(z.string()).optional(),
+});
 
-export type QueuedMessage = z.infer<typeof queuedMessageSchema>
+export type QueuedMessage = z.infer<typeof queuedMessageSchema>;
