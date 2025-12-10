@@ -6,6 +6,9 @@ import { TokenUsage } from '../types/message.type';
 import { ToolUsage } from '../types/tool.type';
 import Anthropic from '@anthropic-ai/sdk';
 import { RooCodeEventName } from '../types/event.type';
+import { ApiHandler } from '../api';
+import { resolveToolProtocol } from '../utils/resolveToolProtocol';
+import { ProviderSettings } from '../types';
 
 @Injectable()
 export class TaskService {

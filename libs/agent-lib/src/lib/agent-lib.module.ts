@@ -6,6 +6,7 @@ import { ConversationService } from './conversation/conversation.service';
 import { TaskService } from './task/task.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TaskModule } from './task/task.module';
+import { ApiService } from './api/api.service';
 
 @Module({
   imports: [EventEmitterModule.forRoot(), TaskModule],
@@ -16,6 +17,7 @@ import { TaskModule } from './task/task.module';
     MessageManagerService,
     ConversationService,
     TaskService,
+    ApiService,
   ],
   exports: [],
 })

@@ -79,7 +79,8 @@
         "libs/VersionControl-db/src/generated/prisma/models.ts"
       ],
       "bibliography-lib": ["libs/bibliography-lib/src/index.ts"],
-      "agent-lib": ["libs/agent-lib/src/index.ts"]
+      "agent-lib": ["libs/agent-lib/src/index.ts"],
+      "agent-lib/types": ["libs/agent-lib/src/lib/types/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

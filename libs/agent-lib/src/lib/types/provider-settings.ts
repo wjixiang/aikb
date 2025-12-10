@@ -29,7 +29,7 @@ import {
   xaiModels,
   internationalZAiModels,
   minimaxModels,
-} from '../providers/index';
+} from './providers/index';
 
 /**
  * constants
