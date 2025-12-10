@@ -105,7 +105,8 @@
         "**/*.e2e.test.ts",
         "**/*.e2e.spec.ts",
         "apps/medquiz/quiz-service-e2e/**/*",
-        "apps/library-chatbot-service-e2e/**/*"
+        "apps/library-chatbot-service-e2e/**/*",
+        "apps/MedAgent-service-e2e/**/*"
       ]
     },
     {
@@ -117,7 +118,8 @@
       },
       "exclude": [
         "apps/medquiz/quiz-service-e2e/**/*",
-        "apps/library-chatbot-service-e2e/**/*"
+        "apps/library-chatbot-service-e2e/**/*",
+        "apps/MedAgent-service-e2e/**/*"
       ]
     },
     {
