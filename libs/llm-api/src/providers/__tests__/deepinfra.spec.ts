@@ -1,29 +1,26 @@
 // npx vitest api/providers/__tests__/deepinfra.spec.ts
 
-import {
-  deepInfraDefaultModelId,
-  deepInfraDefaultModelInfo,
-} from 'llm-types';
+import { deepInfraDefaultModelId, deepInfraDefaultModelInfo } from 'llm-types';
 
 const mockCreate = vi.fn();
 const mockWithResponse = vi.fn();
 
-vi.mock('openai', () => {
-  const mockConstructor = vi.fn();
-
-  return {
-    __esModule: true,
-    default: mockConstructor.mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate.mockImplementation(() => ({
-            withResponse: mockWithResponse,
-          })),
-        },
+vi.mock('openai', () => ({
+  __esModule: true,
+  default: class MockOpenAI {
+    chat = {
+      completions: {
+        create: mockCreate.mockImplementation(() => ({
+          withResponse: mockWithResponse,
+        })),
       },
-    })),
-  };
-});
+    };
+
+    constructor(options) {
+      Object.assign(this, options);
+    }
+  },
+}));
 
 vi.mock('../fetchers/modelCache', () => ({
   getModels: vi.fn().mockResolvedValue({
@@ -46,10 +43,9 @@ describe('DeepInfraHandler', () => {
   });
 
   it('should use the correct DeepInfra base URL', () => {
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({
-        baseURL: 'https://api.deepinfra.com/v1/openai',
-      }),
+    const handler = new DeepInfraHandler({});
+    expect((handler as any).client.baseURL).toBe(
+      'https://api.deepinfra.com/v1/openai',
     );
   });
 
@@ -57,13 +53,9 @@ describe('DeepInfraHandler', () => {
     vi.clearAllMocks();
 
     const deepInfraApiKey = 'test-api-key';
-    new DeepInfraHandler({ deepInfraApiKey });
+    const handler = new DeepInfraHandler({ deepInfraApiKey });
 
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({
-        apiKey: deepInfraApiKey,
-      }),
-    );
+    expect((handler as any).client.apiKey).toBe(deepInfraApiKey);
   });
 
   it('should return default model when no model is specified', () => {

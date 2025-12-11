@@ -5,14 +5,18 @@ import { AwsBedrockHandler } from '../bedrock';
 import { ApiHandlerOptions } from 'llm-shared/api';
 
 // Mock AWS SDK
-vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
-  BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-    send: vi.fn(),
-    config: { region: 'us-east-1' },
-  })),
-  ConverseCommand: vi.fn(),
-  ConverseStreamCommand: vi.fn(),
-}));
+vi.mock('@aws-sdk/client-bedrock-runtime', () => {
+  class MockBedrockRuntimeClient {
+    send = vi.fn();
+    config = { region: 'us-east-1' };
+  }
+
+  return {
+    BedrockRuntimeClient: MockBedrockRuntimeClient,
+    ConverseCommand: vi.fn(),
+    ConverseStreamCommand: vi.fn(),
+  };
+});
 
 describe('Amazon Bedrock Inference Profiles', () => {
   // Helper function to create a handler with specific options

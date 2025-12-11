@@ -1,4 +1,8 @@
-import { AssistantMessageContent, TextContent, ToolUse } from '../task/simplified-dependencies/assistantMessageTypes';
+import {
+  AssistantMessageContent,
+  TextContent,
+  ToolUse,
+} from './assistantMessageTypes';
 
 /**
  * Simplified Assistant Message Parser
@@ -101,13 +105,33 @@ export class AssistantMessageParser {
 
       // No currentToolUse.
       let didStartToolUse = false;
-      const possibleToolUseOpeningTags = ['<read_file>', '<attempt_completion>', '<execute_command>', '<write_to_file>', '<ask_followup_question>', '<apply_diff>', '<browser_action>', '<codebase_search>', '<fetch_instructions>', '<generate_image>', '<list_code_definition_names>', '<run_slash_command>', '<search_files>', '<switch_mode>', '<update_todo_list>', '<use_mcp_tool>', '<apply_patch>', '<search_replace>', '<access_mcp_resource>'];
+      const possibleToolUseOpeningTags = [
+        '<read_file>',
+        '<attempt_completion>',
+        '<execute_command>',
+        '<write_to_file>',
+        '<ask_followup_question>',
+        '<apply_diff>',
+        '<browser_action>',
+        '<codebase_search>',
+        '<fetch_instructions>',
+        '<generate_image>',
+        '<list_code_definition_names>',
+        '<run_slash_command>',
+        '<search_files>',
+        '<switch_mode>',
+        '<update_todo_list>',
+        '<use_mcp_tool>',
+        '<apply_patch>',
+        '<search_replace>',
+        '<access_mcp_resource>',
+      ];
 
       for (const toolUseOpeningTag of possibleToolUseOpeningTags) {
         if (this.accumulator.endsWith(toolUseOpeningTag)) {
           // Extract and validate the tool name
           const extractedToolName = toolUseOpeningTag.slice(1, -1);
-          
+
           // Start of a new tool use.
           this.currentToolUse = {
             type: 'tool_use',

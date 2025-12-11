@@ -1,4 +1,11 @@
-import { ToolName, toolNames, FileEntry, NativeToolArgs, ToolParamName, toolParamNames } from '../task/simplified-dependencies/assistantMessageTypes';
+import {
+  ToolName,
+  toolNames,
+  FileEntry,
+  NativeToolArgs,
+  ToolParamName,
+  toolParamNames,
+} from './assistantMessageTypes';
 // Simplified JSON parser for our standalone version
 function parseJSON(jsonString: string): any {
   try {
@@ -182,10 +189,7 @@ export class NativeToolCallParser {
   /**
    * Process a chunk of JSON arguments for a streaming tool call.
    */
-  public static processStreamingChunk(
-    id: string,
-    chunk: string,
-  ): any | null {
+  public static processStreamingChunk(id: string, chunk: string): any | null {
     const toolCall = this.streamingToolCalls.get(id);
     if (!toolCall) {
       console.warn(
@@ -223,9 +227,7 @@ export class NativeToolCallParser {
   /**
    * Finalize a streaming tool call.
    */
-  public static finalizeStreamingToolCall(
-    id: string,
-  ): any | null {
+  public static finalizeStreamingToolCall(id: string): any | null {
     const toolCall = this.streamingToolCalls.get(id);
     if (!toolCall) {
       console.warn(
@@ -325,10 +327,7 @@ export class NativeToolCallParser {
           break;
 
         case 'ask_followup_question':
-          if (
-            args.question !== undefined ||
-            args.follow_up !== undefined
-          ) {
+          if (args.question !== undefined || args.follow_up !== undefined) {
             nativeArgs = {
               question: args.question,
               follow_up: Array.isArray(args.follow_up)
@@ -377,10 +376,7 @@ export class NativeToolCallParser {
           break;
 
         case 'generate_image':
-          if (
-            args.prompt !== undefined ||
-            args.path !== undefined
-          ) {
+          if (args.prompt !== undefined || args.path !== undefined) {
             nativeArgs = {
               prompt: args.prompt,
               path: args.path,
@@ -417,10 +413,7 @@ export class NativeToolCallParser {
           break;
 
         case 'switch_mode':
-          if (
-            args.mode_slug !== undefined ||
-            args.reason !== undefined
-          ) {
+          if (args.mode_slug !== undefined || args.reason !== undefined) {
             nativeArgs = {
               mode_slug: args.mode_slug,
               reason: args.reason,
@@ -437,10 +430,7 @@ export class NativeToolCallParser {
           break;
 
         case 'use_mcp_tool':
-          if (
-            args.server_name !== undefined ||
-            args.tool_name !== undefined
-          ) {
+          if (args.server_name !== undefined || args.tool_name !== undefined) {
             nativeArgs = {
               server_name: args.server_name,
               tool_name: args.tool_name,
@@ -596,7 +586,10 @@ export class NativeToolCallParser {
         break;
 
       case 'apply_diff':
-        if (partialArgs['path'] !== undefined || partialArgs['diff'] !== undefined) {
+        if (
+          partialArgs['path'] !== undefined ||
+          partialArgs['diff'] !== undefined
+        ) {
           nativeArgs = {
             path: partialArgs['path'],
             diff: partialArgs['diff'],
@@ -664,7 +657,10 @@ export class NativeToolCallParser {
         break;
 
       case 'search_files':
-        if (partialArgs['path'] !== undefined || partialArgs['regex'] !== undefined) {
+        if (
+          partialArgs['path'] !== undefined ||
+          partialArgs['regex'] !== undefined
+        ) {
           nativeArgs = {
             path: partialArgs['path'],
             regex: partialArgs['regex'],

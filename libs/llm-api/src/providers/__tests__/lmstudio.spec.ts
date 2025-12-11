@@ -3,8 +3,8 @@ const mockCreate = vi.fn();
 vi.mock('openai', () => {
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
+    default: class MockOpenAI {
+      chat = {
         completions: {
           create: mockCreate.mockImplementation(async (options) => {
             if (!options.stream) {
@@ -53,8 +53,12 @@ vi.mock('openai', () => {
             };
           }),
         },
-      },
-    })),
+      };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
   };
 });
 

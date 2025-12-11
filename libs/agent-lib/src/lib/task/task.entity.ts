@@ -10,7 +10,10 @@ import {
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
 import { formatResponse } from './simplified-dependencies/formatResponse';
-import { AssistantMessageContent, ToolUse } from './simplified-dependencies/assistantMessageTypes';
+import {
+  AssistantMessageContent,
+  ToolUse,
+} from '../assistant-message/assistantMessageTypes';
 import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
@@ -62,26 +65,33 @@ export class Task {
   isPaused: boolean = false;
 
   // Streaming
-	isStreaming = false;
-	currentStreamingContentIndex = 0;
-	currentStreamingDidCheckpoint = false;
-	assistantMessageContent: AssistantMessageContent[] = [];
-	presentAssistantMessageLocked = false;
-	presentAssistantMessageHasPendingUpdates = false;
-	userMessageContent: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolResultBlockParam)[] = [];
-	userMessageContentReady = false;
-	didRejectTool = false;
-	didAlreadyUseTool = false;
-	didToolFailInCurrentTurn = false;
-	didCompleteReadingStream = false;
-	assistantMessageParser?: AssistantMessageParser;
-	private providerProfileChangeListener?: (config: { name: string; provider?: string }) => void;
+  isStreaming = false;
+  currentStreamingContentIndex = 0;
+  currentStreamingDidCheckpoint = false;
+  assistantMessageContent: AssistantMessageContent[] = [];
+  presentAssistantMessageLocked = false;
+  presentAssistantMessageHasPendingUpdates = false;
+  userMessageContent: (
+    | Anthropic.TextBlockParam
+    | Anthropic.ImageBlockParam
+    | Anthropic.ToolResultBlockParam
+  )[] = [];
+  userMessageContentReady = false;
+  didRejectTool = false;
+  didAlreadyUseTool = false;
+  didToolFailInCurrentTurn = false;
+  didCompleteReadingStream = false;
+  assistantMessageParser?: AssistantMessageParser;
+  private providerProfileChangeListener?: (config: {
+    name: string;
+    provider?: string;
+  }) => void;
 
   // Native tool call streaming state (track which index each tool is at)
-	private streamingToolCallIndices: Map<string, number> = new Map();
+  private streamingToolCallIndices: Map<string, number> = new Map();
 
   // Cached model info for current streaming session
-	cachedStreamingModel?: { id: string; info: ModelInfo };
+  cachedStreamingModel?: { id: string; info: ModelInfo };
 
   constructor(
     taskId: string,
@@ -161,17 +171,19 @@ export class Task {
       );
 
       const parsedUserContent = await processUserContentMentions({
-        userContent: currentUserContent
+        userContent: currentUserContent,
       });
 
-      let finalUserContent: Anthropic.Messages.ContentBlockParam[] = [...parsedUserContent];
+      let finalUserContent: Anthropic.Messages.ContentBlockParam[] = [
+        ...parsedUserContent,
+      ];
 
       // Add user message to conversation history if needed
       const isEmptyUserContent = currentUserContent.length === 0;
       const shouldAddUserMessage =
         ((currentItem.retryAttempt ?? 0) === 0 && !isEmptyUserContent) ||
         currentItem.userMessageWasRemoved;
-      
+
       if (shouldAddUserMessage) {
         await this.addToApiConversationHistory({
           role: 'user',
@@ -197,7 +209,7 @@ export class Task {
         // Cache model info once per API request
         this.cachedStreamingModel = this.api.getModel();
         const streamModelInfo = this.cachedStreamingModel.info;
-        
+
         const streamProtocol = resolveToolProtocol(
           this.apiConfiguration,
           streamModelInfo,
@@ -216,7 +228,7 @@ export class Task {
           while (!item.done) {
             const chunk = item.value;
             item = await iterator.next();
-            
+
             if (!chunk) {
               continue;
             }
@@ -262,10 +274,13 @@ export class Task {
                       );
 
                     if (partialToolUse) {
-                      const toolUseIndex = this.streamingToolCallIndices.get(event.id);
+                      const toolUseIndex = this.streamingToolCallIndices.get(
+                        event.id,
+                      );
                       if (toolUseIndex !== undefined) {
                         (partialToolUse as any).id = event.id;
-                        this.assistantMessageContent[toolUseIndex] = partialToolUse;
+                        this.assistantMessageContent[toolUseIndex] =
+                          partialToolUse;
                       }
                       this.userMessageContentReady = false;
                     }
@@ -274,10 +289,13 @@ export class Task {
                       NativeToolCallParser.finalizeStreamingToolCall(event.id);
 
                     if (finalToolUse) {
-                      const toolUseIndex = this.streamingToolCallIndices.get(event.id);
+                      const toolUseIndex = this.streamingToolCallIndices.get(
+                        event.id,
+                      );
                       if (toolUseIndex !== undefined) {
                         (finalToolUse as any).id = event.id;
-                        this.assistantMessageContent[toolUseIndex] = finalToolUse;
+                        this.assistantMessageContent[toolUseIndex] =
+                          finalToolUse;
                       }
                       this.streamingToolCallIndices.delete(event.id);
                       this.userMessageContentReady = false;
@@ -336,7 +354,10 @@ export class Task {
               }
             }
 
-            if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+            if (
+              (this._status as 'running' | 'completed' | 'aborted') ===
+              'aborted'
+            ) {
               break;
             }
 
@@ -360,7 +381,9 @@ export class Task {
                 NativeToolCallParser.finalizeStreamingToolCall(event.id);
 
               if (finalToolUse) {
-                const toolUseIndex = this.streamingToolCallIndices.get(event.id);
+                const toolUseIndex = this.streamingToolCallIndices.get(
+                  event.id,
+                );
                 if (toolUseIndex !== undefined) {
                   (finalToolUse as any).id = event.id;
                   this.assistantMessageContent[toolUseIndex] = finalToolUse;
@@ -370,7 +393,6 @@ export class Task {
               }
             }
           }
-
         } finally {
           this.isStreaming = false;
         }
@@ -426,12 +448,10 @@ export class Task {
             }
           }
 
-          await this.addToApiConversationHistory(
-            {
-              role: 'assistant',
-              content: assistantContent,
-            },
-          );
+          await this.addToApiConversationHistory({
+            role: 'assistant',
+            content: assistantContent,
+          });
 
           // Wait for user message content to be ready
           await this.waitForUserMessageContentReady();
@@ -462,7 +482,7 @@ export class Task {
         } else {
           // No assistant response - this is an error case
           console.error('No assistant response received from API');
-          
+
           // Push the same content back onto the stack to retry
           stack.push({
             userContent: currentUserContent,
@@ -488,17 +508,23 @@ export class Task {
     const maxWaitTime = 30000; // 30 seconds max
     const pollInterval = 100; // 100ms intervals
     const startTime = Date.now();
-    
-    while (!this.userMessageContentReady && (Date.now() - startTime) < maxWaitTime) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+    while (
+      !this.userMessageContentReady &&
+      Date.now() - startTime < maxWaitTime
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
-    
+
     if (!this.userMessageContentReady) {
       console.warn('Timeout waiting for user message content to be ready');
     }
   }
 
-  private async addToApiConversationHistory(message: Anthropic.MessageParam, reasoning?: string) {
+  private async addToApiConversationHistory(
+    message: Anthropic.MessageParam,
+    reasoning?: string,
+  ) {
     const messageWithTs: any = {
       ...message,
       ts: Date.now(),
@@ -522,9 +548,11 @@ export class Task {
 
   private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
     const systemPrompt = await this.getSystemPrompt();
-    
+
     // Build clean conversation history
-    const cleanConversationHistory = this.buildCleanConversationHistory(this.apiConversationHistory);
+    const cleanConversationHistory = this.buildCleanConversationHistory(
+      this.apiConversationHistory,
+    );
 
     const metadata = {
       taskId: this.taskId,
@@ -543,12 +571,14 @@ export class Task {
     return SYSTEM_PROMPT();
   }
 
-  private buildCleanConversationHistory(messages: any[]): Anthropic.MessageParam[] {
-    return messages.map(msg => {
+  private buildCleanConversationHistory(
+    messages: any[],
+  ): Anthropic.MessageParam[] {
+    return messages.map((msg) => {
       if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-        const filteredContent = msg.content.filter((block: any) =>
-          block.type !== 'thinking' &&
-          block.type !== 'redacted_thinking'
+        const filteredContent = msg.content.filter(
+          (block: any) =>
+            block.type !== 'thinking' && block.type !== 'redacted_thinking',
         );
         return {
           ...msg,

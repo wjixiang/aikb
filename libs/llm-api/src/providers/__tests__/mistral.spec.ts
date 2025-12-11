@@ -2,9 +2,8 @@
 const mockCreate = vi.fn();
 const mockComplete = vi.fn();
 vi.mock('@mistralai/mistralai', () => {
-  const mockConstructor = vi.fn();
-  const mockMistral = mockConstructor.mockImplementation(() => ({
-    chat: {
+  class MockMistral {
+    chat = {
       stream: mockCreate.mockImplementation(async (_options) => {
         const stream = {
           [Symbol.asyncIterator]: async function* () {
@@ -33,10 +32,46 @@ vi.mock('@mistralai/mistralai', () => {
           ],
         };
       }),
-    },
-  }));
+    };
+  }
+
   return {
-    Mistral: mockMistral,
+    Mistral: class {
+      constructor(options) {
+        Object.assign(this, options);
+      }
+
+      chat = {
+        stream: mockCreate.mockImplementation(async (_options) => {
+          const stream = {
+            [Symbol.asyncIterator]: async function* () {
+              yield {
+                data: {
+                  choices: [
+                    {
+                      delta: { content: 'Test response' },
+                      index: 0,
+                    },
+                  ],
+                },
+              };
+            },
+          };
+          return stream;
+        }),
+        complete: mockComplete.mockImplementation(async (_options) => {
+          return {
+            choices: [
+              {
+                message: {
+                  content: 'Test response',
+                },
+              },
+            ],
+          };
+        }),
+      };
+    },
   };
 });
 

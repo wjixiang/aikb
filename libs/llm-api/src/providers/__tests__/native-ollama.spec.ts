@@ -10,7 +10,7 @@ const mockChat = vi.fn();
 vitest.mock('ollama', () => {
   return {
     Ollama: class {
-      chat= mockChat
+      chat = mockChat;
     },
     Message: vi.fn(),
   };

@@ -36,7 +36,13 @@ export interface NativeToolArgs {
   write_to_file?: { path: string; content: string };
   ask_followup_question?: { question: string; follow_up?: string[] };
   apply_diff?: { path: string; diff: string };
-  browser_action?: { action: string; url?: string; coordinate?: string; size?: string; text?: string };
+  browser_action?: {
+    action: string;
+    url?: string;
+    coordinate?: string;
+    size?: string;
+    text?: string;
+  };
   codebase_search?: { query: string; path?: string };
   fetch_instructions?: { task: string };
   generate_image?: { prompt: string; path?: string; image?: string };
@@ -47,11 +53,15 @@ export interface NativeToolArgs {
   update_todo_list?: { todos: any };
   use_mcp_tool?: { server_name: string; tool_name: string; arguments?: any };
   apply_patch?: { patch: string };
-  search_replace?: { file_path: string; old_string?: string; new_string?: string };
+  search_replace?: {
+    file_path: string;
+    old_string?: string;
+    new_string?: string;
+  };
   access_mcp_resource?: { server_name: string; uri?: string };
 }
 
-export type ToolName = 
+export type ToolName =
   | 'read_file'
   | 'attempt_completion'
   | 'execute_command'
@@ -72,7 +82,7 @@ export type ToolName =
   | 'search_replace'
   | 'access_mcp_resource';
 
-export type ToolParamName = 
+export type ToolParamName =
   | 'path'
   | 'query'
   | 'files'

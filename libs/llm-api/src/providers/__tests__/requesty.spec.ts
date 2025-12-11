@@ -212,7 +212,9 @@ describe('RequestyHandler', () => {
       mockCreate.mockRejectedValue(mockError);
 
       const generator = handler.createMessage('test', []);
-      await expect(generator.next()).rejects.toThrow('Requesty completion error: API Error');
+      await expect(generator.next()).rejects.toThrow(
+        'Requesty completion error: API Error',
+      );
     });
 
     describe('native tool support', () => {

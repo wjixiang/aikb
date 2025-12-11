@@ -4,11 +4,11 @@ import { LmStudioHandler } from '../lm-studio';
 import { ApiHandlerOptions } from 'llm-shared/api';
 
 // Mock the timeout config utility
-vitest.mock('./utils/timeout-config', () => ({
+vitest.mock('../utils/timeout-config', () => ({
   getApiRequestTimeout: vi.fn(),
 }));
 
-import { getApiRequestTimeout } from './utils/timeout-config';
+import { getApiRequestTimeout } from '../utils/timeout-config';
 
 // Mock OpenAI
 const mockOpenAIConstructor = vi.fn();

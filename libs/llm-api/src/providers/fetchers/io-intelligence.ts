@@ -1,10 +1,7 @@
 import axios from 'axios';
 import { z } from 'zod';
 
-import {
-  type ModelInfo,
-  IO_INTELLIGENCE_CACHE_DURATION,
-} from 'llm-types';
+import { type ModelInfo, IO_INTELLIGENCE_CACHE_DURATION } from 'llm-types';
 
 import type { ModelRecord } from 'llm-shared/api';
 

@@ -15,12 +15,14 @@ vi.mock('node-cache', () => {
   const mockSet = vi.fn();
   const mockDel = vi.fn();
 
-  return vi.fn().mockImplementation(() => ({
-    get: mockGet,
-    set: mockSet,
-    del: mockDel,
-  }));
-})
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      get: mockGet,
+      set: mockSet,
+      del: mockDel,
+    })),
+  };
+});
 // Mock fs/promises to avoid file system operations
 vi.mock('fs/promises', () => ({
   writeFile: vi.fn().mockResolvedValue(undefined),

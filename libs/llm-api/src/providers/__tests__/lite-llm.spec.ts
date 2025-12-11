@@ -3,10 +3,7 @@ import { Anthropic } from '@anthropic-ai/sdk';
 
 import { LiteLLMHandler } from '../lite-llm';
 import { ApiHandlerOptions } from 'llm-shared/api';
-import {
-  litellmDefaultModelId,
-  litellmDefaultModelInfo,
-} from 'llm-types';
+import { litellmDefaultModelId, litellmDefaultModelInfo } from 'llm-types';
 
 // Mock vscode first to avoid import errors
 vi.mock('vscode', () => ({}));
@@ -16,13 +13,13 @@ const mockCreate = vi.fn();
 
 vi.mock('openai', () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
-      },
-    })),
+    default: class MockOpenAI {
+      chat = { completions: { create: mockCreate } };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
   };
 });
 
@@ -96,7 +93,7 @@ describe('LiteLLMHandler', () => {
       });
 
       const generator = handler.createMessage(systemPrompt, messages);
-      const results = [];
+      const results: any[] = [];
       for await (const chunk of generator) {
         results.push(chunk);
       }
@@ -194,7 +191,7 @@ describe('LiteLLMHandler', () => {
       });
 
       const generator = handler.createMessage(systemPrompt, messages);
-      const results = [];
+      const results: any[] = [];
       for await (const chunk of generator) {
         results.push(chunk);
       }

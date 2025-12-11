@@ -79,8 +79,6 @@ vitest.mock('../../transform/caching/vercel-ai-gateway', () => ({
   addCacheBreakpoints: vi.fn(),
 }));
 
-
-
 describe('VercelAiGatewayHandler', () => {
   const mockOptions: ApiHandlerOptions = {
     vercelAiGatewayApiKey: 'test-key',

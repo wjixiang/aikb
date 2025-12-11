@@ -58,13 +58,10 @@ Otherwise, if you have not completed the task and do not need additional informa
     return `Missing value for required parameter '${paramName}'. Please retry with complete response.\n\n${instructions}`;
   },
 
-  toolResult: (
-    text: string,
-    images?: string[],
-  ): string | Array<any> => {
+  toolResult: (text: string, images?: string[]): string | Array<any> => {
     if (images && images.length > 0) {
       const textBlock = { type: 'text', text };
-      const imageBlocks = images.map(dataUrl => {
+      const imageBlocks = images.map((dataUrl) => {
         // data:image/png;base64,base64string
         const [rest, base64] = dataUrl.split(',');
         const mimeType = rest.split(':')[1].split(';')[0];

@@ -15,7 +15,6 @@ const { mockCreate, mockOpenAI } = vi.hoisted(() => {
   return { mockCreate, mockOpenAI };
 });
 
-
 vitest.mock('openai', () => {
   // Create a proper constructor function using the hoisted mock
   function MockOpenAI(this: any, options: any) {
@@ -83,7 +82,7 @@ vitest.mock('openai', () => {
   const MockAzureOpenAI = vi.fn().mockImplementation((options: any) => {
     return MockOpenAI.call({}, options);
   });
-  
+
   return {
     __esModule: true,
     default: MockOpenAI,

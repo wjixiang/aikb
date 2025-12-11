@@ -1,8 +1,4 @@
-import {
-  type GroqModelId,
-  groqDefaultModelId,
-  groqModels,
-} from 'llm-types';
+import { type GroqModelId, groqDefaultModelId, groqModels } from 'llm-types';
 
 import type { ApiHandlerOptions } from 'llm-shared/api';
 

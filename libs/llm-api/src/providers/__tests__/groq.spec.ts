@@ -3,11 +3,7 @@
 import OpenAI from 'openai';
 import { Anthropic } from '@anthropic-ai/sdk';
 
-import {
-  type GroqModelId,
-  groqDefaultModelId,
-  groqModels,
-} from 'llm-types';
+import { type GroqModelId, groqDefaultModelId, groqModels } from 'llm-types';
 
 import { GroqHandler } from '../groq';
 
@@ -15,9 +11,13 @@ const mockCreate = vi.fn();
 
 vi.mock('openai', () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: { completions: { create: mockCreate } },
-    })),
+    default: class MockOpenAI {
+      chat = { completions: { create: mockCreate } };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
   };
 });
 
@@ -31,18 +31,16 @@ describe('GroqHandler', () => {
   });
 
   it('should use the correct Groq base URL', () => {
-    new GroqHandler({ groqApiKey: 'test-groq-api-key' });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://api.groq.com/openai/v1' }),
+    const handler = new GroqHandler({ groqApiKey: 'test-groq-api-key' });
+    expect((handler as any).client.baseURL).toBe(
+      'https://api.groq.com/openai/v1',
     );
   });
 
   it('should use the provided API key', () => {
     const groqApiKey = 'test-groq-api-key';
-    new GroqHandler({ groqApiKey });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: groqApiKey }),
-    );
+    const handler = new GroqHandler({ groqApiKey });
+    expect((handler as any).client.apiKey).toBe(groqApiKey);
   });
 
   it('should return default model when no model is specified', () => {

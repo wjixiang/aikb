@@ -6,7 +6,14 @@ import Anthropic from '@anthropic-ai/sdk';
  */
 export interface ApiMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolUseBlockParam | Anthropic.ToolResultBlockParam>;
+  content:
+    | string
+    | Array<
+        | Anthropic.TextBlockParam
+        | Anthropic.ImageBlockParam
+        | Anthropic.ToolUseBlockParam
+        | Anthropic.ToolResultBlockParam
+      >;
   ts?: number;
 }
 
@@ -43,10 +50,7 @@ export function readTaskMessages(taskId: string): ApiMessage[] {
   return [];
 }
 
-export function saveTaskMetadata(
-  taskId: string,
-  metadata: TaskMetadata,
-): void {
+export function saveTaskMetadata(taskId: string, metadata: TaskMetadata): void {
   // Simplified implementation - in a real scenario this would save to disk
   // For our simplified version, we just log to console
   console.log(`Task ${taskId}: Saving metadata`, metadata);

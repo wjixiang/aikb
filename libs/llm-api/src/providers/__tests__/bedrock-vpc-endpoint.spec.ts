@@ -12,22 +12,21 @@ vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   const mockSend = vi.fn().mockResolvedValue({
     stream: [],
   });
-  const mockBedrockRuntimeClient = vi.fn().mockImplementation(() => ({
-    send: mockSend,
-  }));
 
   return {
-    BedrockRuntimeClient: mockBedrockRuntimeClient,
+    BedrockRuntimeClient: class MockBedrockRuntimeClient {
+      send = mockSend;
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
     ConverseStreamCommand: vi.fn(),
     ConverseCommand: vi.fn(),
   };
 });
 
 import { AwsBedrockHandler } from '../bedrock';
-import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
-
-// Get access to the mocked functions
-const mockBedrockRuntimeClient = vi.mocked(BedrockRuntimeClient);
 
 describe('Amazon Bedrock VPC Endpoint Functionality', () => {
   beforeEach(() => {
@@ -39,7 +38,7 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
   describe('VPC Endpoint URL Validation', () => {
     it('should configure client with endpoint URL when both URL and enabled flag are provided', () => {
       // Create handler with endpoint URL and enabled flag
-      new AwsBedrockHandler({
+      const handler = new AwsBedrockHandler({
         apiModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsAccessKey: 'test-access-key',
         awsSecretKey: 'test-secret-key',
@@ -49,17 +48,15 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
       });
 
       // Verify the client was created with the correct endpoint
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-          endpoint: 'https://bedrock-vpc.example.com',
-        }),
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBe(
+        'https://bedrock-vpc.example.com',
       );
     });
 
     it('should not configure client with endpoint URL when URL is provided but enabled flag is false', () => {
       // Create handler with endpoint URL but disabled flag
-      new AwsBedrockHandler({
+      const handler = new AwsBedrockHandler({
         apiModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsAccessKey: 'test-access-key',
         awsSecretKey: 'test-secret-key',
@@ -69,15 +66,8 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
       });
 
       // Verify the client was created without the endpoint
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-        }),
-      );
-
-      // Verify the endpoint property is not present
-      const clientConfig = mockBedrockRuntimeClient.mock.calls[0][0];
-      expect(clientConfig).not.toHaveProperty('endpoint');
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBeUndefined();
     });
   });
 
@@ -85,7 +75,7 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
   describe('Edge Cases', () => {
     it('should handle empty endpoint URL gracefully', () => {
       // Create handler with empty endpoint URL but enabled flag
-      new AwsBedrockHandler({
+      const handler = new AwsBedrockHandler({
         apiModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsAccessKey: 'test-access-key',
         awsSecretKey: 'test-secret-key',
@@ -95,20 +85,13 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
       });
 
       // Verify the client was created without the endpoint (since it's empty)
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-        }),
-      );
-
-      // Verify the endpoint property is not present
-      const clientConfig = mockBedrockRuntimeClient.mock.calls[0][0];
-      expect(clientConfig).not.toHaveProperty('endpoint');
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBeUndefined();
     });
 
     it('should handle undefined endpoint URL gracefully', () => {
       // Create handler with undefined endpoint URL but enabled flag
-      new AwsBedrockHandler({
+      const handler = new AwsBedrockHandler({
         apiModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsAccessKey: 'test-access-key',
         awsSecretKey: 'test-secret-key',
@@ -118,15 +101,8 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
       });
 
       // Verify the client was created without the endpoint
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-        }),
-      );
-
-      // Verify the endpoint property is not present
-      const clientConfig = mockBedrockRuntimeClient.mock.calls[0][0];
-      expect(clientConfig).not.toHaveProperty('endpoint');
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBeUndefined();
     });
   });
 
@@ -134,7 +110,7 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
   describe('Error Handling', () => {
     it('should handle invalid endpoint URLs by passing them directly to AWS SDK', () => {
       // Create handler with an invalid URL format
-      new AwsBedrockHandler({
+      const handler = new AwsBedrockHandler({
         apiModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsAccessKey: 'test-access-key',
         awsSecretKey: 'test-secret-key',
@@ -145,12 +121,8 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
 
       // Verify the client was created with the invalid endpoint
       // (AWS SDK will handle the validation/errors)
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-          endpoint: 'invalid-url-format',
-        }),
-      );
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBe('invalid-url-format');
     });
   });
 
@@ -168,11 +140,9 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
       });
 
       // Verify the client was configured with the endpoint
-      expect(mockBedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-          endpoint: 'https://bedrock-vpc.example.com',
-        }),
+      expect((handler as any).client.region).toBe('us-east-1');
+      expect((handler as any).client.endpoint).toBe(
+        'https://bedrock-vpc.example.com',
       );
 
       // Make a request to ensure the endpoint configuration persists
@@ -182,8 +152,11 @@ describe('Amazon Bedrock VPC Endpoint Functionality', () => {
         // Ignore errors, we're just testing the client configuration persistence
       }
 
-      // Verify the client instance was created and used
-      expect(mockBedrockRuntimeClient).toHaveBeenCalled();
+      // Verify the client instance exists and has the correct configuration
+      expect((handler as any).client).toBeDefined();
+      expect((handler as any).client.endpoint).toBe(
+        'https://bedrock-vpc.example.com',
+      );
     });
   });
 });

@@ -8,7 +8,7 @@ vi.mock('openai', () => {
         // Store constructor arguments for testing
         (this as any).__constructorArgs = options;
       }
-      
+
       chat = {
         completions: {
           create: mockCreate.mockImplementation(async (options) => {

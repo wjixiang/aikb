@@ -157,7 +157,7 @@ export type {
   ApiStreamToolCallDeltaChunk,
   ApiStreamToolCallEndChunk,
   ApiStreamToolCallPartialChunk,
-  ApiStreamError
+  ApiStreamError,
 } from './transform/stream';
 
 import {

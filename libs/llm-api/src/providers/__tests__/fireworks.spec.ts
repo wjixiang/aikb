@@ -15,15 +15,33 @@ import { FireworksHandler } from '../fireworks';
 const mockCreate = vi.fn();
 
 // Mock OpenAI module
-vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    chat: {
+vi.mock('openai', () => {
+  class MockOpenAI {
+    constructor(options) {
+      Object.assign(this, options);
+    }
+
+    chat = {
       completions: {
         create: mockCreate,
       },
+    };
+  }
+
+  return {
+    default: class {
+      constructor(options) {
+        Object.assign(this, options);
+      }
+
+      chat = {
+        completions: {
+          create: mockCreate,
+        },
+      };
     },
-  })),
-}));
+  };
+});
 
 describe('FireworksHandler', () => {
   let handler: FireworksHandler;
@@ -65,20 +83,18 @@ describe('FireworksHandler', () => {
   });
 
   it('should use the correct Fireworks base URL', () => {
-    new FireworksHandler({ fireworksApiKey: 'test-fireworks-api-key' });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({
-        baseURL: 'https://api.fireworks.ai/inference/v1',
-      }),
+    const handler = new FireworksHandler({
+      fireworksApiKey: 'test-fireworks-api-key',
+    });
+    expect((handler as any).client.baseURL).toBe(
+      'https://api.fireworks.ai/inference/v1',
     );
   });
 
   it('should use the provided API key', () => {
     const fireworksApiKey = 'test-fireworks-api-key';
-    new FireworksHandler({ fireworksApiKey });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: fireworksApiKey }),
-    );
+    const handler = new FireworksHandler({ fireworksApiKey });
+    expect((handler as any).client.apiKey).toBe(fireworksApiKey);
   });
 
   it('should throw error when API key is not provided', () => {
@@ -555,7 +571,7 @@ describe('FireworksHandler', () => {
     const stream = handler.createMessage(systemPrompt, messages);
     const chunks = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(chunk as never);
     }
 
     expect(chunks[0]).toEqual({ type: 'text', text: 'Hello' });

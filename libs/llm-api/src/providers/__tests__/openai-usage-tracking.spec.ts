@@ -7,7 +7,7 @@ import { OpenAiHandler } from '../openai';
 
 const { mockCreate } = vi.hoisted(() => {
   const mockCreate = vi.fn();
-  
+
   // Set up the default implementation for mockCreate
   mockCreate.mockImplementation(async (options) => {
     if (!options.stream) {
@@ -91,7 +91,7 @@ vitest.mock('openai', () => {
     constructor() {
       // Empty constructor
     }
-    
+
     chat = {
       completions: {
         create: mockCreate,

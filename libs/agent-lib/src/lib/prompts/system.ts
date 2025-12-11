@@ -275,8 +275,8 @@
 //   );
 // };
 
-export const SYSTEM_PROMPT = async() => {
+export const SYSTEM_PROMPT = async () => {
   return `
     
-  `
-}
+  `;
+};

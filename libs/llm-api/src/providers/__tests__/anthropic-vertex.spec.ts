@@ -7,9 +7,9 @@ import { ApiStreamChunk } from '../../transform/stream';
 
 import { AnthropicVertexHandler } from '../anthropic-vertex';
 
-vitest.mock('@anthropic-ai/vertex-sdk', () => ({
-  AnthropicVertex: vi.fn().mockImplementation(() => ({
-    messages: {
+vitest.mock('@anthropic-ai/vertex-sdk', () => {
+  class MockAnthropicVertex {
+    messages = {
       create: vi.fn().mockImplementation(async (options) => {
         if (!options.stream) {
           return {
@@ -44,9 +44,54 @@ vitest.mock('@anthropic-ai/vertex-sdk', () => ({
           },
         };
       }),
+    };
+  }
+
+  return {
+    AnthropicVertex: class {
+      constructor(options) {
+        Object.assign(this, options);
+      }
+
+      messages = {
+        create: vi.fn().mockImplementation(async (options) => {
+          if (!options.stream) {
+            return {
+              id: 'test-completion',
+              content: [{ type: 'text', text: 'Test response' }],
+              role: 'assistant',
+              model: options.model,
+              usage: {
+                input_tokens: 10,
+                output_tokens: 5,
+              },
+            };
+          }
+          return {
+            async *[Symbol.asyncIterator]() {
+              yield {
+                type: 'message_start',
+                message: {
+                  usage: {
+                    input_tokens: 10,
+                    output_tokens: 5,
+                  },
+                },
+              };
+              yield {
+                type: 'content_block_start',
+                content_block: {
+                  type: 'text',
+                  text: 'Test response',
+                },
+              };
+            },
+          };
+        }),
+      };
     },
-  })),
-}));
+  };
+});
 
 describe('VertexHandler', () => {
   let handler: AnthropicVertexHandler;
@@ -59,10 +104,8 @@ describe('VertexHandler', () => {
         vertexRegion: 'us-central1',
       });
 
-      expect(AnthropicVertex).toHaveBeenCalledWith({
-        projectId: 'test-project',
-        region: 'us-central1',
-      });
+      expect((handler as any).client.projectId).toBe('test-project');
+      expect((handler as any).client.region).toBe('us-central1');
     });
   });
 

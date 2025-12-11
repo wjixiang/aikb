@@ -12,13 +12,17 @@ const mockCreate = vi.fn();
 
 // Mock OpenAI module
 vi.mock('openai', () => ({
-  default: vi.fn(() => ({
-    chat: {
+  default: class MockOpenAI {
+    chat = {
       completions: {
         create: mockCreate,
       },
-    },
-  })),
+    };
+
+    constructor(options) {
+      Object.assign(this, options);
+    }
+  },
 }));
 
 // Create a concrete test implementation of the abstract base class
@@ -90,7 +94,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // XmlMatcher yields chunks as they're processed
@@ -135,7 +139,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // When a complete tag arrives in one chunk, XmlMatcher may not parse it
@@ -166,7 +170,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // XmlMatcher should handle incomplete tags and flush remaining content
@@ -206,7 +210,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       expect(chunks).toEqual([
@@ -245,7 +249,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       expect(chunks).toEqual([
@@ -289,7 +293,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // Should only have the regular content, not the whitespace-only reasoning
@@ -330,7 +334,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // Should only yield the non-empty reasoning content
@@ -362,7 +366,7 @@ describe('BaseOpenAiCompatibleProvider', () => {
       const stream = handler.createMessage('system prompt', []);
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       // Should yield reasoning with spaces (only pure whitespace is filtered)

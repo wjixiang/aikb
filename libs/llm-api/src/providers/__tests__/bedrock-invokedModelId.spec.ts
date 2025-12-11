@@ -43,30 +43,44 @@ const mockSend = vi.fn().mockImplementation(async () => {
 // Mock AWS SDK modules
 vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   return {
-    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-      send: mockSend,
-      config: { region: 'us-east-1' },
-      middlewareStack: {
+    BedrockRuntimeClient: class MockBedrockRuntimeClient {
+      send = mockSend;
+      config = { region: 'us-east-1' };
+      middlewareStack = {
         clone: () => ({ resolve: () => {} }),
         use: () => {},
-      },
-    })),
-    ConverseStreamCommand: vi.fn((params) => ({
-      ...params,
-      input: params,
-      middlewareStack: {
-        clone: () => ({ resolve: () => {} }),
-        use: () => {},
-      },
-    })),
-    ConverseCommand: vitest.fn((params) => ({
-      ...params,
-      input: params,
-      middlewareStack: {
-        clone: () => ({ resolve: () => {} }),
-        use: () => {},
-      },
-    })),
+      };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
+    ConverseStreamCommand: class MockConverseStreamCommand {
+      input: any;
+      middlewareStack: any;
+
+      constructor(params) {
+        Object.assign(this, params);
+        this.input = params;
+        this.middlewareStack = {
+          clone: () => ({ resolve: () => {} }),
+          use: () => {},
+        };
+      }
+    },
+    ConverseCommand: class MockConverseCommand {
+      input: any;
+      middlewareStack: any;
+
+      constructor(params) {
+        Object.assign(this, params);
+        this.input = params;
+        this.middlewareStack = {
+          clone: () => ({ resolve: () => {} }),
+          use: () => {},
+        };
+      }
+    },
   };
 });
 

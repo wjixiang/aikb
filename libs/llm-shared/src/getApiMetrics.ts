@@ -1,9 +1,4 @@
-import type {
-  TokenUsage,
-  ToolUsage,
-  ToolName,
-  ClineMessage,
-} from 'llm-types';
+import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from 'llm-types';
 
 export type ParsedApiReqStartedTextType = {
   tokensIn: number;

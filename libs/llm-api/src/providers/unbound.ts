@@ -1,10 +1,7 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import {
-  unboundDefaultModelId,
-  unboundDefaultModelInfo,
-} from 'llm-types';
+import { unboundDefaultModelId, unboundDefaultModelInfo } from 'llm-types';
 
 import type { ApiHandlerOptions } from 'llm-shared/api';
 

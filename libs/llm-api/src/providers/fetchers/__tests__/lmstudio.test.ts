@@ -15,7 +15,9 @@ const mockListLoaded = vi.fn();
 const mockListDownloadedModels = vi.fn();
 
 vi.mock('@lmstudio/sdk', () => {
-  const MockedLMStudioClient = vi.fn().mockImplementation(function(options: any) {
+  const MockedLMStudioClient = vi.fn().mockImplementation(function (
+    options: any,
+  ) {
     return {
       llm: {
         listLoaded: mockListLoaded,
@@ -25,7 +27,7 @@ vi.mock('@lmstudio/sdk', () => {
       },
     };
   });
-  
+
   return {
     LMStudioClient: MockedLMStudioClient,
   };

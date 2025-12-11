@@ -3,8 +3,8 @@ const mockCreate = vi.fn();
 vi.mock('openai', () => {
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
+    default: class MockOpenAI {
+      chat = {
         completions: {
           create: mockCreate.mockImplementation(async (options) => {
             if (!options.stream) {
@@ -66,8 +66,12 @@ vi.mock('openai', () => {
             };
           }),
         },
-      },
-    })),
+      };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
   };
 });
 
@@ -124,10 +128,8 @@ describe('DeepSeekHandler', () => {
       });
       expect(handlerWithoutBaseUrl).toBeInstanceOf(DeepSeekHandler);
       // The base URL is passed to OpenAI client internally
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({
-          baseURL: 'https://api.deepseek.com',
-        }),
+      expect((handlerWithoutBaseUrl as any).client.baseURL).toBe(
+        'https://api.deepseek.com',
       );
     });
 
@@ -139,19 +141,13 @@ describe('DeepSeekHandler', () => {
       });
       expect(handlerWithCustomUrl).toBeInstanceOf(DeepSeekHandler);
       // The custom base URL is passed to OpenAI client
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({
-          baseURL: customBaseUrl,
-        }),
-      );
+      expect((handlerWithCustomUrl as any).client.baseURL).toBe(customBaseUrl);
     });
 
     it('should set includeMaxTokens to true', () => {
       // Create a new handler and verify OpenAI client was called with includeMaxTokens
       const _handler = new DeepSeekHandler(mockOptions);
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({ apiKey: mockOptions.deepSeekApiKey }),
-      );
+      expect((_handler as any).client.apiKey).toBe(mockOptions.deepSeekApiKey);
     });
   });
 

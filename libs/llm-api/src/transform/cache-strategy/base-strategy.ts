@@ -5,7 +5,11 @@ import {
   Message,
   ConversationRole,
 } from '@aws-sdk/client-bedrock-runtime';
-import { CacheStrategyConfig, CacheResult, CachePointPlacement } from 'llm-types';
+import {
+  CacheStrategyConfig,
+  CacheResult,
+  CachePointPlacement,
+} from 'llm-types';
 
 export abstract class CacheStrategy {
   /**

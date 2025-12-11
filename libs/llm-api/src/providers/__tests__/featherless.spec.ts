@@ -18,13 +18,17 @@ const mockCreate = vi.fn();
 
 // Mock OpenAI module
 vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    chat: {
+  default: class MockOpenAI {
+    chat = {
       completions: {
         create: mockCreate,
       },
-    },
-  })),
+    };
+
+    constructor(options) {
+      Object.assign(this, options);
+    }
+  },
 }));
 
 describe('FeatherlessHandler', () => {
@@ -67,18 +71,18 @@ describe('FeatherlessHandler', () => {
   });
 
   it('should use the correct Featherless base URL', () => {
-    new FeatherlessHandler({ featherlessApiKey: 'test-featherless-api-key' });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://api.featherless.ai/v1' }),
+    const handler = new FeatherlessHandler({
+      featherlessApiKey: 'test-featherless-api-key',
+    });
+    expect((handler as any).client.baseURL).toBe(
+      'https://api.featherless.ai/v1',
     );
   });
 
   it('should use the provided API key', () => {
     const featherlessApiKey = 'test-featherless-api-key';
-    new FeatherlessHandler({ featherlessApiKey });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: featherlessApiKey }),
-    );
+    const handler = new FeatherlessHandler({ featherlessApiKey });
+    expect((handler as any).client.apiKey).toBe(featherlessApiKey);
   });
 
   it('should handle DeepSeek R1 reasoning format', async () => {

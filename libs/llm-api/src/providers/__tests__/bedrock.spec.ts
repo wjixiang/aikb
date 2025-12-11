@@ -14,10 +14,10 @@ vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   });
   const mockConverseStreamCommand = vi.fn();
 
-  // Create a mock constructor function
-  const MockBedrockRuntimeClient = vi.fn().mockImplementation(() => ({
-    send: mockSend,
-  }));
+  // Create a proper class-based mock
+  class MockBedrockRuntimeClient {
+    send = mockSend;
+  }
 
   return {
     BedrockRuntimeClient: MockBedrockRuntimeClient,

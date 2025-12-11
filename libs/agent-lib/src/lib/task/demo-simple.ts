@@ -16,7 +16,7 @@ class MockApiHandler {
         outputPrice: 0.075,
         cacheWritesPrice: 0.000375,
         cacheReadsPrice: 0.0000375,
-      }
+      },
     };
   }
 
@@ -50,7 +50,10 @@ class Task {
   readonly instanceId: string;
   private api: any;
 
-  constructor(taskId: string, private apiConfiguration: any) {
+  constructor(
+    taskId: string,
+    private apiConfiguration: any,
+  ) {
     this.taskId = taskId;
     this.instanceId = crypto.randomUUID().slice(0, 8);
     this.api = buildApiHandler(apiConfiguration);
@@ -79,18 +82,20 @@ class Task {
     includeFileDetails: boolean = false,
   ): Promise<boolean> {
     console.log('🔄 Making recursive API requests...');
-    console.log(`   Status: ${(this._status as 'running' | 'completed' | 'aborted')}`);
+    console.log(
+      `   Status: ${this._status as 'running' | 'completed' | 'aborted'}`,
+    );
     console.log(`   User content length: ${userContent.length}`);
     console.log(`   Include file details: ${includeFileDetails}`);
-    
+
     // Mock core logic
     try {
       const stream = this.api.createMessage('system prompt', [], {});
-      
+
       for await (const chunk of stream) {
         console.log(`   Received chunk: ${chunk.type}`);
       }
-      
+
       console.log('✅ Recursive requests completed successfully');
       return true;
     } catch (error) {
@@ -102,45 +107,45 @@ class Task {
 
 async function demoSimpleTask() {
   console.log('🚀 Starting Simple Task Demo');
-  
+
   try {
     // Create a new task
     const task = new Task('demo-task-123', {
       apiProvider: 'anthropic',
       apiKey: 'test-key',
-      modelId: 'claude-3-5-sonnet-20241022'
+      modelId: 'claude-3-5-sonnet-20241022',
     });
-    
+
     console.log('✅ Task created successfully');
     console.log(`   Task ID: ${task.taskId}`);
     console.log(`   Instance ID: ${task.instanceId}`);
     console.log(`   Initial status: ${(task as any)._status}`);
-    
+
     // Test status management
     const startEvent = task.start();
     console.log('✅ Task started:', startEvent);
-    
+
     // Test core recursivelyMakeClineRequests method
     const result = await task.recursivelyMakeClineRequests([
-      { type: 'text', text: 'Hello, can you help me with a task?' }
+      { type: 'text', text: 'Hello, can you help me with a task?' },
     ]);
     console.log('✅ Core method executed:', result);
-    
+
     const completeEvent = task.complete(
-      { inputTokens: 100, outputTokens: 200 }, 
-      { read_file: { attempts: 1, failures: 0 } }
+      { inputTokens: 100, outputTokens: 200 },
+      { read_file: { attempts: 1, failures: 0 } },
     );
     console.log('✅ Task completed:', completeEvent);
-    
+
     // Create another task for testing
     const task2 = new Task('demo-task-456', {
       apiProvider: 'anthropic',
       apiKey: 'test-key',
-      modelId: 'claude-3-5-sonnet-20241022'
+      modelId: 'claude-3-5-sonnet-20241022',
     });
     const abortEvent = task2.abort();
     console.log('✅ Task aborted:', abortEvent);
-    
+
     console.log('🎉 Demo completed successfully!');
     console.log('');
     console.log('📋 Summary of what was demonstrated:');
@@ -149,7 +154,6 @@ async function demoSimpleTask() {
     console.log('   ✅ Core recursivelyMakeClineRequests method');
     console.log('   ✅ Simplified dependencies (no external modules)');
     console.log('   ✅ Standalone functionality (no core dependencies)');
-    
   } catch (error) {
     console.error('❌ Demo failed:', error);
   }

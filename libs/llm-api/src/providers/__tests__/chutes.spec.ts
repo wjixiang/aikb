@@ -17,13 +17,17 @@ const mockFetchModel = vi.fn();
 
 // Mock OpenAI module
 vi.mock('openai', () => ({
-  default: vi.fn(() => ({
-    chat: {
+  default: class MockOpenAI {
+    chat = {
       completions: {
         create: mockCreate,
       },
-    },
-  })),
+    };
+
+    constructor(options) {
+      Object.assign(this, options);
+    }
+  },
 }));
 
 describe('ChutesHandler', () => {
@@ -72,18 +76,14 @@ describe('ChutesHandler', () => {
   });
 
   it('should use the correct Chutes base URL', () => {
-    new ChutesHandler({ chutesApiKey: 'test-chutes-api-key' });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://llm.chutes.ai/v1' }),
-    );
+    const handler = new ChutesHandler({ chutesApiKey: 'test-chutes-api-key' });
+    expect((handler as any).client.baseURL).toBe('https://llm.chutes.ai/v1');
   });
 
   it('should use the provided API key', () => {
     const chutesApiKey = 'test-chutes-api-key';
-    new ChutesHandler({ chutesApiKey });
-    expect(OpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: chutesApiKey }),
-    );
+    const handler = new ChutesHandler({ chutesApiKey });
+    expect((handler as any).client.apiKey).toBe(chutesApiKey);
   });
 
   it('should handle DeepSeek R1 reasoning format', async () => {
@@ -132,7 +132,7 @@ describe('ChutesHandler', () => {
     const stream = handler.createMessage(systemPrompt, messages);
     const chunks = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(chunk as never);
     }
 
     expect(chunks).toEqual([
@@ -156,7 +156,7 @@ describe('ChutesHandler', () => {
     const stream = handler.createMessage(systemPrompt, messages);
     const chunks = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(chunk as never);
     }
 
     expect(chunks).toEqual([

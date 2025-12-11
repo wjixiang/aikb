@@ -1,7 +1,7 @@
 # Quiz Parser Configuration
 
 [quiz]
-source = "2026亮三(3)"
+source = "2026天四(3)"
 tags = ["2026"]
 extractedYear = "2026"
 withExp =  true

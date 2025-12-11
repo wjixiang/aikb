@@ -1,19 +1,17 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import workerpool from 'workerpool';
 import { tiktoken } from './tiktoken';
-import { z } from "zod"
+import { z } from 'zod';
 
-export const countTokensResultSchema = z.discriminatedUnion("success", [
-	z.object({
-		success: z.literal(true),
-		count: z.number(),
-	}),
-	z.object({ success: z.literal(false), error: z.string() }),
-])
+export const countTokensResultSchema = z.discriminatedUnion('success', [
+  z.object({
+    success: z.literal(true),
+    count: z.number(),
+  }),
+  z.object({ success: z.literal(false), error: z.string() }),
+]);
 
-export type CountTokensResult = z.infer<typeof countTokensResultSchema>
-
-
+export type CountTokensResult = z.infer<typeof countTokensResultSchema>;
 
 let pool: workerpool.Pool | null | undefined = undefined;
 

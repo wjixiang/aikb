@@ -41,8 +41,8 @@ const mockWithResponse = vi.fn();
 vitest.mock('openai', () => {
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
+    default: class MockOpenAI {
+      chat = {
         completions: {
           create: (...args: any[]) => {
             const stream = {
@@ -84,8 +84,12 @@ vitest.mock('openai', () => {
             return result;
           },
         },
-      },
-    })),
+      };
+
+      constructor(options) {
+        Object.assign(this, options);
+      }
+    },
   };
 });
 

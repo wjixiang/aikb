@@ -9,18 +9,41 @@ import { logger } from 'llm-utils/logging';
 import { ApiStreamChunk } from '../../transform/stream';
 
 // Mock the AWS SDK
+// Store command payload for verification
+let capturedPayload: any = null;
+
+// Store the mock send function for test access
+let mockSendFunction: ReturnType<typeof vi.fn>;
+
 vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
-  BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-    send: vi.fn(),
-    config: { region: 'us-east-1' },
-  })),
-  ConverseStreamCommand: vi.fn(),
-  ConverseCommand: vi.fn(),
+  BedrockRuntimeClient: class MockBedrockRuntimeClient {
+    send = mockSendFunction;
+    config = { region: 'us-east-1' };
+
+    constructor(options) {
+      Object.assign(this, options);
+    }
+  },
+  ConverseStreamCommand: class MockConverseStreamCommand {
+    input: any;
+
+    constructor(params) {
+      Object.assign(this, params);
+      this.input = params;
+      // Capture the payload for test verification
+      capturedPayload = params;
+    }
+  },
+  ConverseCommand: class MockConverseCommand {
+    input: any;
+
+    constructor(params) {
+      Object.assign(this, params);
+      this.input = params;
+    }
+  },
 }));
 vi.mock('llm-utils/logging');
-
-// Store the command payload for verification
-let capturedPayload: any = null;
 
 describe('AwsBedrockHandler - Extended Thinking', () => {
   let handler: AwsBedrockHandler;
@@ -29,22 +52,9 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
   beforeEach(() => {
     capturedPayload = null;
     mockSend = vi.fn();
+    mockSendFunction = mockSend;
 
-    // Mock ConverseStreamCommand to capture the payload
-    (
-      ConverseStreamCommand as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation((payload) => {
-      capturedPayload = payload;
-      return {
-        input: payload,
-      };
-    });
-    (
-      BedrockRuntimeClient as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => ({
-      send: mockSend,
-      config: { region: 'us-east-1' },
-    }));
+    // Reset the captured payload
     (logger.info as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       () => {},
     );
@@ -121,7 +131,8 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
 
       // Verify reasoning chunks were yielded
       const reasoningChunks = chunks.filter(
-        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> => c.type === 'reasoning'
+        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> =>
+          c.type === 'reasoning',
       );
       expect(reasoningChunks).toHaveLength(2);
       expect(reasoningChunks[0].text).toBe('Let me think...');
@@ -301,7 +312,8 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
 
       // Verify reasoning chunks were yielded
       const reasoningChunks = chunks.filter(
-        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> => c.type === 'reasoning'
+        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> =>
+          c.type === 'reasoning',
       );
       expect(reasoningChunks).toHaveLength(2);
       expect(reasoningChunks[0].text).toBe('Let me think...');
@@ -339,18 +351,19 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       }
 
       // Verify the client was created with API key token
-      expect(BedrockRuntimeClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          region: 'us-east-1',
-          token: { token: 'test-api-key-token' },
-          authSchemePreference: ['httpBearerAuth'],
-        }),
-      );
+      expect((handler as any).client.config.region).toBe('us-east-1');
+      expect((handler as any).client.token).toEqual({
+        token: 'test-api-key-token',
+      });
+      expect((handler as any).client.authSchemePreference).toEqual([
+        'httpBearerAuth',
+      ]);
 
       // Verify the stream worked correctly
       expect(mockSend).toHaveBeenCalledTimes(1);
       const textChunks = chunks.filter(
-        (c): c is Extract<ApiStreamChunk, { type: 'text' }> => c.type === 'text'
+        (c): c is Extract<ApiStreamChunk, { type: 'text' }> =>
+          c.type === 'text',
       );
       expect(textChunks).toHaveLength(1);
       expect(textChunks[0].text).toBe('Hello from API key auth');

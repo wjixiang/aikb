@@ -38,7 +38,8 @@ const inFlightRefresh = new Map<RouterName, Promise<ModelRecord>>();
 
 async function writeModels(router: RouterName, data: ModelRecord) {
   const filename = `${router}_models.json`;
-  const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
+  const globalStoragePath =
+    process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
   const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   await safeWriteJson(path.join(cacheDir, filename), data);
 }
@@ -47,7 +48,8 @@ async function readModels(
   router: RouterName,
 ): Promise<ModelRecord | undefined> {
   const filename = `${router}_models.json`;
-  const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
+  const globalStoragePath =
+    process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
   const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   const filePath = path.join(cacheDir, filename);
   const exists = await fileExistsAtPath(filePath);
@@ -160,7 +162,9 @@ export const getModels = async (
       );
     } else {
       // Placeholder for telemetry - would normally send event about empty model cache response
-      console.log(`[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in getModels context`);
+      console.log(
+        `[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in getModels context`,
+      );
     }
 
     return models;
@@ -212,7 +216,9 @@ export const refreshModels = async (
 
       if (modelCount === 0) {
         // Placeholder for telemetry - would normally send event about empty model cache response
-        console.log(`[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in refreshModels context, existing cache size: ${existingCount}`);
+        console.log(
+          `[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in refreshModels context, existing cache size: ${existingCount}`,
+        );
         if (existingCount > 0) {
           return existingCache!;
         } else {
@@ -373,7 +379,8 @@ export function getModelsFromCache(
  */
 function getCacheDirectoryPathSync(): string | undefined {
   try {
-    const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
+    const globalStoragePath =
+      process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
     if (!globalStoragePath) {
       return undefined;
     }

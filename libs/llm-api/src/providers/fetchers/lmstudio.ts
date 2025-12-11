@@ -30,7 +30,11 @@ export const forceFullModelDetailsLoad = async (
     // Mark this model as having full details loaded.
     modelsWithLoadedDetails.add(modelId);
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ECONNREFUSED') {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ECONNREFUSED'
+    ) {
       console.warn(`Error connecting to LMStudio at ${baseUrl}`);
     } else {
       console.error(
@@ -135,7 +139,11 @@ export async function getLMStudioModels(
       modelsWithLoadedDetails.add(lmstudioModel.modelKey);
     }
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ECONNREFUSED') {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ECONNREFUSED'
+    ) {
       console.warn(`Error connecting to LMStudio at ${baseUrl}`);
     } else {
       console.error(

@@ -1,10 +1,7 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import {
-  deepInfraDefaultModelId,
-  deepInfraDefaultModelInfo,
-} from 'llm-types';
+import { deepInfraDefaultModelId, deepInfraDefaultModelInfo } from 'llm-types';
 
 import type { ApiHandlerOptions } from 'llm-shared/api';
 import { calculateApiCostOpenAI } from 'llm-shared/cost';

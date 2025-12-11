@@ -1,5 +1,9 @@
 import { Task } from './task.entity';
-import { type ApiHandler, type ApiStream, type ApiStreamTextChunk } from 'llm-api';
+import {
+  type ApiHandler,
+  type ApiStream,
+  type ApiStreamTextChunk,
+} from 'llm-api';
 import { ProviderSettings, ModelInfo } from 'llm-types';
 import { vi, type Mocked } from 'vitest';
 
@@ -74,7 +78,7 @@ describe('Task', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockApiConfiguration = {
       apiProvider: 'openai-native',
       openAiNativeApiKey: 'test-key',
@@ -105,23 +109,25 @@ describe('Task', () => {
     it('should handle a simple text response without tools', async () => {
       // Mock the entire recursivelyMakeClineRequests method to avoid complex stream logic
       const originalMethod = task.recursivelyMakeClineRequests;
-      task.recursivelyMakeClineRequests = vi.fn().mockImplementation(async (userContent) => {
-        // Simulate adding user message to history
-        if (userContent.length > 0) {
+      task.recursivelyMakeClineRequests = vi
+        .fn()
+        .mockImplementation(async (userContent) => {
+          // Simulate adding user message to history
+          if (userContent.length > 0) {
+            await task['addToApiConversationHistory']({
+              role: 'user',
+              content: userContent,
+            });
+          }
+
+          // Simulate adding assistant message to history
           await task['addToApiConversationHistory']({
-            role: 'user',
-            content: userContent,
+            role: 'assistant',
+            content: [{ type: 'text', text: 'Hello, world!' }],
           });
-        }
-        
-        // Simulate adding assistant message to history
-        await task['addToApiConversationHistory']({
-          role: 'assistant',
-          content: [{ type: 'text', text: 'Hello, world!' }],
+
+          return true;
         });
-        
-        return true;
-      });
 
       // Call the method with a simple text message
       const result = await task.recursivelyMakeClineRequests([
@@ -154,15 +160,17 @@ describe('Task', () => {
     it('should handle empty user content', async () => {
       // Mock the entire recursivelyMakeClineRequests method to avoid complex stream logic
       const originalMethod = task.recursivelyMakeClineRequests;
-      task.recursivelyMakeClineRequests = vi.fn().mockImplementation(async (userContent) => {
-        // Simulate adding only assistant message to history (no user message for empty content)
-        await task['addToApiConversationHistory']({
-          role: 'assistant',
-          content: [{ type: 'text', text: 'Response to empty content' }],
+      task.recursivelyMakeClineRequests = vi
+        .fn()
+        .mockImplementation(async (userContent) => {
+          // Simulate adding only assistant message to history (no user message for empty content)
+          await task['addToApiConversationHistory']({
+            role: 'assistant',
+            content: [{ type: 'text', text: 'Response to empty content' }],
+          });
+
+          return true;
         });
-        
-        return true;
-      });
 
       // Call the method with empty content
       const result = await task.recursivelyMakeClineRequests([]);
@@ -181,6 +189,19 @@ describe('Task', () => {
 
       // Restore original method
       task.recursivelyMakeClineRequests = originalMethod;
+    });
+  });
+
+  describe('integrated', () => {
+    const testApiConfig: ProviderSettings = {
+      apiProvider: 'zai',
+      apiKey: process.env['GLM_API_KEY'],
+      apiModelId: 'glm-4.6',
+    };
+
+    it('should create a new task successfully', async () => {
+      const newTask = new Task('test_task_id_1', testApiConfig);
+      expect(newTask.taskId).toBe('test_task_id_1');
     });
   });
 });
