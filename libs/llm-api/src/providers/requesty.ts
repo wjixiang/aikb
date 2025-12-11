@@ -6,11 +6,11 @@ import {
   requestyDefaultModelId,
   requestyDefaultModelInfo,
   TOOL_PROTOCOL,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions, ModelRecord } from '../../shared/api';
-import { resolveToolProtocol } from '../../utils/resolveToolProtocol';
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import type { ApiHandlerOptions, ModelRecord } from 'llm-shared/api';
+import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
@@ -24,7 +24,7 @@ import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
 } from '../index';
-import { toRequestyServiceUrl } from '../../shared/utils/requesty';
+import { toRequestyServiceUrl } from 'llm-shared/requesty';
 import { handleOpenAIError } from './utils/openai-error-handler';
 
 // Requesty usage includes an extra field for Anthropic use cases.

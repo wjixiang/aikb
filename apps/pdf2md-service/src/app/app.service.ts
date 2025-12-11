@@ -3,7 +3,7 @@ import {
   Pdf2MArkdownDto,
   UpdateMarkdownDto,
   CreateGroupAndChunkEmbedDto,
-} from 'library-shared';
+} from 'llm-shared/';
 import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';

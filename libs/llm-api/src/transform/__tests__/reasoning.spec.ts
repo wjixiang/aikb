@@ -4,7 +4,7 @@ import type {
   ModelInfo,
   ProviderSettings,
   ReasoningEffortWithMinimal,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import {
   getOpenRouterReasoning,

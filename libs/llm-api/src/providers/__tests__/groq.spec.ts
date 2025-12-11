@@ -7,26 +7,26 @@ import {
   type GroqModelId,
   groqDefaultModelId,
   groqModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { GroqHandler } from '../groq';
 
-vitest.mock('openai', () => {
-  const createMock = vitest.fn();
+const mockCreate = vi.fn();
+
+vi.mock('openai', () => {
   return {
-    default: vitest.fn(() => ({
-      chat: { completions: { create: createMock } },
+    default: vi.fn().mockImplementation(() => ({
+      chat: { completions: { create: mockCreate } },
     })),
   };
 });
 
 describe('GroqHandler', () => {
   let handler: GroqHandler;
-  let mockCreate: any;
 
   beforeEach(() => {
-    vitest.clearAllMocks();
-    mockCreate = (OpenAI as unknown as any)().chat.completions.create;
+    vi.clearAllMocks();
+    mockCreate.mockClear();
     handler = new GroqHandler({ groqApiKey: 'test-groq-api-key' });
   });
 

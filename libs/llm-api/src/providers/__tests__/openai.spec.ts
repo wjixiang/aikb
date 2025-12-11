@@ -1,20 +1,27 @@
 // npx vitest run api/providers/__tests__/openai.spec.ts
 
 import { OpenAiHandler, getOpenAiModels } from '../openai';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { openAiModelInfoSaneDefaults } from 'agent-lib/types';
-import { Package } from '../../../shared/package';
+import { openAiModelInfoSaneDefaults } from 'llm-types';
+import { Package } from 'llm-shared/package';
 import axios from 'axios';
 
-const mockCreate = vitest.fn();
+// Use vi.hoisted to properly handle the mock initialization
+const { mockCreate, mockOpenAI } = vi.hoisted(() => {
+  const mockCreate = vi.fn();
+  const mockOpenAI = vi.fn();
+  return { mockCreate, mockOpenAI };
+});
+
 
 vitest.mock('openai', () => {
-  const mockConstructor = vitest.fn();
-  return {
-    __esModule: true,
-    default: mockConstructor.mockImplementation(() => ({
+  // Create a proper constructor function using the hoisted mock
+  function MockOpenAI(this: any, options: any) {
+    // Track the call to the constructor
+    mockOpenAI(options);
+    return {
       chat: {
         completions: {
           create: mockCreate.mockImplementation(async (options) => {
@@ -69,14 +76,26 @@ vitest.mock('openai', () => {
           }),
         },
       },
-    })),
+    };
+  }
+
+  // Also create a mock for AzureOpenAI
+  const MockAzureOpenAI = vi.fn().mockImplementation((options: any) => {
+    return MockOpenAI.call({}, options);
+  });
+  
+  return {
+    __esModule: true,
+    default: MockOpenAI,
+    OpenAI: MockOpenAI,
+    AzureOpenAI: MockAzureOpenAI,
   };
 });
 
 // Mock axios for getOpenAiModels tests
 vitest.mock('axios', () => ({
   default: {
-    get: vitest.fn(),
+    get: vi.fn(),
   },
 }));
 
@@ -111,7 +130,8 @@ describe('OpenAiHandler', () => {
 
     it('should set default headers correctly', () => {
       // Check that the OpenAI constructor was called with correct parameters
-      expect(vi.mocked(OpenAI)).toHaveBeenCalledWith({
+      // Use the mockOpenAI from our hoisted section
+      expect(mockOpenAI).toHaveBeenCalledWith({
         baseURL: expect.any(String),
         apiKey: expect.any(String),
         defaultHeaders: {

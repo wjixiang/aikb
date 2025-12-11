@@ -1,4 +1,4 @@
-import { t } from 'i18n';
+import {t} from 'i18n'
 
 // Image generation types
 interface ImageGenerationResponse {
@@ -139,7 +139,7 @@ export async function generateImageWithProvider(
     if (!images || images.length === 0) {
       return {
         success: false,
-        error: t('tools:generateImage.noImageGenerated'),
+        error: "Error: 'tools:generateImage.noImageGenerated'",
       };
     }
 
@@ -147,7 +147,7 @@ export async function generateImageWithProvider(
     if (!imageData) {
       return {
         success: false,
-        error: t('tools:generateImage.invalidImageData'),
+        error: "Error: 'tools:generateImage.invalidImageData'",
       };
     }
 
@@ -158,7 +158,7 @@ export async function generateImageWithProvider(
     if (!base64Match) {
       return {
         success: false,
-        error: t('tools:generateImage.invalidImageFormat'),
+        error: "Error: 'tools:generateImage.invalidImageFormat'",
       };
     }
 
@@ -173,7 +173,7 @@ export async function generateImageWithProvider(
       error:
         error instanceof Error
           ? error.message
-          : t('tools:generateImage.unknownError'),
+          : "Error: 'tools:generateImage.unknownError'",
     };
   }
 }
@@ -280,7 +280,7 @@ export async function generateImageWithImagesApi(
     if (!images || images.length === 0) {
       return {
         success: false,
-        error: t('tools:generateImage.noImageGenerated'),
+        error: "Error: 'tools:generateImage.noImageGenerated'",
       };
     }
 
@@ -319,7 +319,7 @@ export async function generateImageWithImagesApi(
 
     return {
       success: false,
-      error: t('tools:generateImage.invalidImageData'),
+      error: "Error: 'tools:generateImage.invalidImageData'",
     };
   } catch (error) {
     return {
@@ -327,7 +327,7 @@ export async function generateImageWithImagesApi(
       error:
         error instanceof Error
           ? error.message
-          : t('tools:generateImage.unknownError'),
+          : "Error: 'tools:generateImage.unknownError'",
     };
   }
 }

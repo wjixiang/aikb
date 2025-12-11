@@ -4,7 +4,7 @@ import {
   makeApiRequest,
   processRegularResponse,
   type ApiRequestOptions,
-} from './utils/apiUtils';
+} from llm-utils/apiUtils';
 
 export interface UseChatApiOptions {
   api?: string;

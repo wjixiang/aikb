@@ -7,15 +7,15 @@ import {
   OPENROUTER_DEFAULT_PROVIDER_NAME,
   OPEN_ROUTER_PROMPT_CACHING_MODELS,
   DEEP_SEEK_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { NativeToolCallParser } from '../../core/assistant-message/NativeToolCallParser';
+import { NativeToolCallParser } from 'agent-lib/assistant-message/NativeToolCallParser';
 
-import type { ApiHandlerOptions, ModelRecord } from '../../shared/api';
+import type { ApiHandlerOptions, ModelRecord } from 'llm-shared/api';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
-import { resolveToolProtocol } from '../../utils/resolveToolProtocol';
-import { TOOL_PROTOCOL } from 'agent-lib/types';
+import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
+import { TOOL_PROTOCOL } from 'llm-types';
 import { ApiStreamChunk } from '../transform/stream';
 import { convertToR1Format } from '../transform/r1-format';
 import { addCacheBreakpoints as addAnthropicCacheBreakpoints } from '../transform/caching/anthropic';

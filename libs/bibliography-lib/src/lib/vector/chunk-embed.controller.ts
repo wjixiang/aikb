@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { ChunkEmbedService } from './chunk-embed.service';
 import { RabbitRPC } from '@golevelup/nestjs-rabbitmq';
-import { ChunkEmbedItemDto, CreateGroupAndChunkEmbedDto } from 'library-shared';
+import { ChunkEmbedItemDto, CreateGroupAndChunkEmbedDto } from 'llm-shared/';
 import { ChunkEmbedGroupConfig } from 'item-vector-storage';
 import { ChunkingStrategy } from 'chunking';
 import { EmbeddingProvider, OpenAIModel } from 'embedding';

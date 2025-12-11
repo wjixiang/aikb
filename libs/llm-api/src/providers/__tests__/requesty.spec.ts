@@ -3,36 +3,37 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import { TOOL_PROTOCOL } from 'agent-lib/types';
+import { TOOL_PROTOCOL } from 'llm-types';
 
 import { RequestyHandler } from '../requesty';
-import { ApiHandlerOptions } from '../../../shared/api';
-import { Package } from '../../../shared/package';
+import { ApiHandlerOptions } from 'llm-shared/api';
+import { Package } from 'llm-shared/package';
 import { ApiHandlerCreateMessageMetadata } from '../../index';
 
-const mockCreate = vitest.fn();
-const mockResolveToolProtocol = vitest.fn();
+const mockResolveToolProtocol = vi.fn();
+const mockCreate = vi.fn();
 
 vitest.mock('openai', () => {
+  function MockOpenAI(options?: any) {
+    return {
+      chat: { completions: { create: mockCreate } },
+    };
+  }
+
   return {
-    default: vitest.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
-      },
-    })),
+    __esModule: true,
+    default: vi.fn().mockImplementation(MockOpenAI),
   };
 });
 
 vitest.mock('delay', () => ({ default: vitest.fn(() => Promise.resolve()) }));
 
-vitest.mock('../../../utils/resolveToolProtocol', () => ({
+vitest.mock('llm-utils/resolveToolProtocol', () => ({
   resolveToolProtocol: (...args: any[]) => mockResolveToolProtocol(...args),
 }));
 
 vitest.mock('../fetchers/modelCache', () => ({
-  getModels: vitest.fn().mockImplementation(() => {
+  getModels: vi.fn().mockImplementation(() => {
     return Promise.resolve({
       'coding/claude-4-sonnet': {
         maxTokens: 8192,
@@ -165,7 +166,7 @@ describe('RequestyHandler', () => {
       ];
 
       const generator = handler.createMessage(systemPrompt, messages);
-      const chunks = [];
+      const chunks: any[] = [];
 
       for await (const chunk of generator) {
         chunks.push(chunk);
@@ -211,7 +212,7 @@ describe('RequestyHandler', () => {
       mockCreate.mockRejectedValue(mockError);
 
       const generator = handler.createMessage('test', []);
-      await expect(generator.next()).rejects.toThrow('API Error');
+      await expect(generator.next()).rejects.toThrow('Requesty completion error: API Error');
     });
 
     describe('native tool support', () => {
@@ -363,7 +364,7 @@ describe('RequestyHandler', () => {
         };
 
         const handler = new RequestyHandler(mockOptions);
-        const chunks = [];
+        const chunks: any[] = [];
         for await (const chunk of handler.createMessage(
           systemPrompt,
           messages,
@@ -424,7 +425,7 @@ describe('RequestyHandler', () => {
       mockCreate.mockRejectedValue(mockError);
 
       await expect(handler.completePrompt('test prompt')).rejects.toThrow(
-        'API Error',
+        'Requesty completion error: API Error',
       );
     });
 
@@ -433,7 +434,7 @@ describe('RequestyHandler', () => {
       mockCreate.mockRejectedValue(new Error('Unexpected error'));
 
       await expect(handler.completePrompt('test prompt')).rejects.toThrow(
-        'Unexpected error',
+        'Requesty completion error: Unexpected error',
       );
     });
   });

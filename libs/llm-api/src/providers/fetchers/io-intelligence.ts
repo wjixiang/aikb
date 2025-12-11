@@ -4,9 +4,9 @@ import { z } from 'zod';
 import {
   type ModelInfo,
   IO_INTELLIGENCE_CACHE_DURATION,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ModelRecord } from '../../../shared/api';
+import type { ModelRecord } from 'llm-shared/api';
 
 const ioIntelligenceModelSchema = z.object({
   id: z.string(),

@@ -14,8 +14,8 @@ import {
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
   CreateChunkEmbedGroupDto,
-} from 'library-shared';
-import { Pdf2MArkdownDto } from 'library-shared';
+} from 'llm-shared/';
+import { Pdf2MArkdownDto } from 'llm-shared/';
 import { createLoggerWithPrefix } from 'log-management';
 import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';

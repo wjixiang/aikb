@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
 export async function getUnboundModels(
   apiKey?: string | null,

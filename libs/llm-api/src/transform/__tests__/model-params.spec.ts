@@ -1,12 +1,12 @@
 // npx vitest run api/transform/__tests__/model-params.spec.ts
 
-import { type ModelInfo, ANTHROPIC_DEFAULT_MAX_TOKENS } from 'agent-lib/types';
+import { type ModelInfo, ANTHROPIC_DEFAULT_MAX_TOKENS } from 'llm-types';
 
 import { getModelParams } from '../model-params';
 import {
   DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS,
   DEFAULT_HYBRID_REASONING_MODEL_THINKING_TOKENS,
-} from '../../../shared/api';
+} from 'llm-shared/api';
 
 describe('getModelParams', () => {
   const baseModel: ModelInfo = {

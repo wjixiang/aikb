@@ -1,14 +1,14 @@
 import axios from 'axios';
 import { z } from 'zod';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 import {
   VERCEL_AI_GATEWAY_VISION_ONLY_MODELS,
   VERCEL_AI_GATEWAY_VISION_AND_TOOLS_MODELS,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../../shared/api';
-import { parseApiPrice } from '../../../shared/cost';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { parseApiPrice } from 'llm-shared/cost';
 
 /**
  * VercelAiGatewayPricing

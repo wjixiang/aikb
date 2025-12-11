@@ -3,9 +3,9 @@ import {
   type VertexModelId,
   vertexDefaultModelId,
   vertexModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { getModelParams } from '../transform/model-params';
 

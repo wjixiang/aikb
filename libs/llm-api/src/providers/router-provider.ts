@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
-import { ApiHandlerOptions, RouterName, ModelRecord } from '../../shared/api';
+import { ApiHandlerOptions, RouterName, ModelRecord } from 'llm-shared/api';
 
 import { BaseProvider } from './base-provider';
 import { getModels } from './fetchers/modelCache';

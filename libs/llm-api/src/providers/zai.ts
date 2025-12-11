@@ -6,9 +6,9 @@ import {
   type ModelInfo,
   ZAI_DEFAULT_TEMPERATURE,
   zaiApiLineConfigs,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { BaseOpenAiCompatibleProvider } from './base-openai-compatible-provider';
 

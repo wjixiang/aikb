@@ -7,14 +7,15 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 import { OpenRouterHandler } from '../openrouter';
-import { ApiHandlerOptions } from '../../../shared/api';
-import { Package } from '../../../shared/package';
+import { ApiHandlerOptions } from 'llm-shared/api';
+import { Package } from 'llm-shared/package';
+import { ApiStreamChunk } from '../../transform/stream';
 
 // Mock dependencies
 vitest.mock('openai');
 vitest.mock('delay', () => ({ default: vitest.fn(() => Promise.resolve()) }));
 vitest.mock('../fetchers/modelCache', () => ({
-  getModels: vitest.fn().mockImplementation(() => {
+  getModels: vi.fn().mockImplementation(() => {
     return Promise.resolve({
       'anthropic/claude-sonnet-4': {
         maxTokens: 8192,
@@ -150,7 +151,7 @@ describe('OpenRouterHandler', () => {
       };
 
       // Mock OpenAI chat.completions.create
-      const mockCreate = vitest.fn().mockResolvedValue(mockStream);
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
 
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
@@ -162,7 +163,7 @@ describe('OpenRouterHandler', () => {
       ];
 
       const generator = handler.createMessage(systemPrompt, messages);
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
 
       for await (const chunk of generator) {
         chunks.push(chunk);
@@ -233,7 +234,7 @@ describe('OpenRouterHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockStream);
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;
@@ -265,7 +266,7 @@ describe('OpenRouterHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockStream);
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;
@@ -307,7 +308,7 @@ describe('OpenRouterHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockStream);
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;
@@ -321,7 +322,7 @@ describe('OpenRouterHandler', () => {
     it('yields tool_call_end events when finish_reason is tool_calls', async () => {
       // Import NativeToolCallParser to set up state
       const { NativeToolCallParser } = await import(
-        '../../../core/assistant-message/NativeToolCallParser'
+        '../../../../agent-lib/src/lib/assistant-message/NativeToolCallParser.js'
       );
 
       // Clear any previous state
@@ -369,13 +370,13 @@ describe('OpenRouterHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockStream);
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;
 
       const generator = handler.createMessage('test', []);
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
 
       for await (const chunk of generator) {
         // Simulate what Task.ts does: when we receive tool_call_partial,
@@ -412,7 +413,7 @@ describe('OpenRouterHandler', () => {
         choices: [{ message: { content: 'test completion' } }],
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockResponse);
+      const mockCreate = vi.fn().mockResolvedValue(mockResponse);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;
@@ -446,7 +447,7 @@ describe('OpenRouterHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(mockError);
+      const mockCreate = vi.fn().mockResolvedValue(mockError);
       (OpenAI as any).prototype.chat = {
         completions: { create: mockCreate },
       } as any;

@@ -6,11 +6,11 @@ import {
   type ModelInfo,
   openAiModelInfoSaneDefaults,
   LMSTUDIO_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
-import { XmlMatcher } from '../../utils/xml-matcher';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { ApiStream } from '../transform/stream';

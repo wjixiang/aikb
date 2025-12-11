@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OpenAiNativeHandler } from '../openai-native';
-import { openAiNativeModels } from 'agent-lib/types';
+import { openAiNativeModels } from 'llm-types';
 
 describe('OpenAiNativeHandler - normalizeUsage', () => {
   let handler: OpenAiNativeHandler;

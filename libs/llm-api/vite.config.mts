@@ -15,12 +15,18 @@ export default defineConfig(() => ({
     name: 'llm-api',
     watch: false,
     globals: true,
-    environment: 'jsdom',
+    environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/libs/llm-api',
-      provider: 'v8' as const,
+      provider: 'v8',
+    },
+    resolve: {
+      alias: {
+        fs: 'node:fs',
+        'fs/promises': 'node:fs/promises',
+      },
     },
   },
 }));

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
-import { parseApiPrice } from '../../../shared/cost';
+import { parseApiPrice } from 'llm-shared/cost';
 
 export async function getGlamaModels(): Promise<Record<string, ModelInfo>> {
   const models: Record<string, ModelInfo> = {};

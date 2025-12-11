@@ -7,7 +7,7 @@ import {
   type FireworksModelId,
   fireworksDefaultModelId,
   fireworksModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { FireworksHandler } from '../fireworks';
 
@@ -16,7 +16,7 @@ const mockCreate = vi.fn();
 
 // Mock OpenAI module
 vi.mock('openai', () => ({
-  default: vi.fn(() => ({
+  default: vi.fn().mockImplementation(() => ({
     chat: {
       completions: {
         create: mockCreate,

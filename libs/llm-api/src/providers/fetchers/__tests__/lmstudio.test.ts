@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { LMStudioClient, LLMInstanceInfo, LLMInfo } from '@lmstudio/sdk';
 
-import { ModelInfo, lMStudioDefaultModelInfo } from 'agent-lib/types';
+import { ModelInfo, lMStudioDefaultModelInfo } from 'llm-types';
 
 import { getLMStudioModels, parseLMStudioModel } from '../lmstudio';
 
@@ -13,24 +13,27 @@ const mockedAxios = axios as any;
 const mockGetModelInfo = vi.fn();
 const mockListLoaded = vi.fn();
 const mockListDownloadedModels = vi.fn();
+
 vi.mock('@lmstudio/sdk', () => {
-  return {
-    LMStudioClient: vi.fn().mockImplementation(() => ({
+  const MockedLMStudioClient = vi.fn().mockImplementation(function(options: any) {
+    return {
       llm: {
         listLoaded: mockListLoaded,
       },
       system: {
         listDownloadedModels: mockListDownloadedModels,
       },
-    })),
+    };
+  });
+  
+  return {
+    LMStudioClient: MockedLMStudioClient,
   };
 });
-const MockedLMStudioClientConstructor = LMStudioClient as any;
 
 describe('LMStudio Fetcher', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    MockedLMStudioClientConstructor.mockClear();
     mockListLoaded.mockClear();
     mockGetModelInfo.mockClear();
     mockListDownloadedModels.mockClear();
@@ -114,8 +117,8 @@ describe('LMStudio Fetcher', () => {
 
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
       expect(mockedAxios.get).toHaveBeenCalledWith(`${baseUrl}/v1/models`);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledTimes(1);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledWith({
+      expect(LMStudioClient).toHaveBeenCalledTimes(1);
+      expect(LMStudioClient).toHaveBeenCalledWith({
         baseUrl: lmsUrl,
       });
       expect(mockListDownloadedModels).toHaveBeenCalledTimes(1);
@@ -140,8 +143,8 @@ describe('LMStudio Fetcher', () => {
 
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
       expect(mockedAxios.get).toHaveBeenCalledWith(`${baseUrl}/v1/models`);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledTimes(1);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledWith({
+      expect(LMStudioClient).toHaveBeenCalledTimes(1);
+      expect(LMStudioClient).toHaveBeenCalledWith({
         baseUrl: lmsUrl,
       });
       expect(mockListDownloadedModels).toHaveBeenCalledTimes(1);
@@ -392,7 +395,7 @@ describe('LMStudio Fetcher', () => {
       expect(mockedAxios.get).toHaveBeenCalledWith(
         `${defaultBaseUrl}/v1/models`,
       );
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledWith({
+      expect(LMStudioClient).toHaveBeenCalledWith({
         baseUrl: defaultLmsUrl,
       });
     });
@@ -406,7 +409,7 @@ describe('LMStudio Fetcher', () => {
       await getLMStudioModels(httpsBaseUrl);
 
       expect(mockedAxios.get).toHaveBeenCalledWith(`${httpsBaseUrl}/v1/models`);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledWith({
+      expect(LMStudioClient).toHaveBeenCalledWith({
         baseUrl: wssLmsUrl,
       });
     });
@@ -418,7 +421,7 @@ describe('LMStudio Fetcher', () => {
 
       expect(result).toEqual({});
       expect(mockedAxios.get).not.toHaveBeenCalled();
-      expect(MockedLMStudioClientConstructor).not.toHaveBeenCalled();
+      expect(LMStudioClient).not.toHaveBeenCalled();
     });
 
     it('should return an empty object and log error if axios.get fails with a generic error', async () => {
@@ -432,7 +435,7 @@ describe('LMStudio Fetcher', () => {
 
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
       expect(mockedAxios.get).toHaveBeenCalledWith(`${baseUrl}/v1/models`);
-      expect(MockedLMStudioClientConstructor).not.toHaveBeenCalled();
+      expect(LMStudioClient).not.toHaveBeenCalled();
       expect(mockListLoaded).not.toHaveBeenCalled();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         `Error fetching LMStudio models: ${JSON.stringify(networkError, Object.getOwnPropertyNames(networkError), 2)}`,
@@ -453,7 +456,7 @@ describe('LMStudio Fetcher', () => {
 
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
       expect(mockedAxios.get).toHaveBeenCalledWith(`${baseUrl}/v1/models`);
-      expect(MockedLMStudioClientConstructor).not.toHaveBeenCalled();
+      expect(LMStudioClient).not.toHaveBeenCalled();
       expect(mockListLoaded).not.toHaveBeenCalled();
       expect(consoleInfoSpy).toHaveBeenCalledWith(
         `Error connecting to LMStudio at ${baseUrl}`,
@@ -474,8 +477,8 @@ describe('LMStudio Fetcher', () => {
       const result = await getLMStudioModels(baseUrl);
 
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledTimes(1);
-      expect(MockedLMStudioClientConstructor).toHaveBeenCalledWith({
+      expect(LMStudioClient).toHaveBeenCalledTimes(1);
+      expect(LMStudioClient).toHaveBeenCalledWith({
         baseUrl: lmsUrl,
       });
       expect(mockListLoaded).toHaveBeenCalledTimes(1);

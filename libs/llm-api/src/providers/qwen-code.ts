@@ -9,9 +9,9 @@ import {
   type QwenCodeModelId,
   qwenCodeModels,
   qwenCodeDefaultModelId,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { ApiStream } from '../transform/stream';

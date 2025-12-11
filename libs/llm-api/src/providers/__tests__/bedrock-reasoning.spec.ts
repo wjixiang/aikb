@@ -5,11 +5,19 @@ import {
   BedrockRuntimeClient,
   ConverseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
-import { logger } from '../../../utils/logging';
+import { logger } from 'llm-utils/logging';
+import { ApiStreamChunk } from '../../transform/stream';
 
 // Mock the AWS SDK
-vi.mock('@aws-sdk/client-bedrock-runtime');
-vi.mock('../../../utils/logging');
+vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
+  BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
+    send: vi.fn(),
+    config: { region: 'us-east-1' },
+  })),
+  ConverseStreamCommand: vi.fn(),
+  ConverseCommand: vi.fn(),
+}));
+vi.mock('llm-utils/logging');
 
 // Store the command payload for verification
 let capturedPayload: any = null;
@@ -97,7 +105,7 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       const messages = [{ role: 'user' as const, content: 'Test message' }];
       const stream = handler.createMessage('System prompt', messages);
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -112,7 +120,9 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       });
 
       // Verify reasoning chunks were yielded
-      const reasoningChunks = chunks.filter((c) => c.type === 'reasoning');
+      const reasoningChunks = chunks.filter(
+        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> => c.type === 'reasoning'
+      );
       expect(reasoningChunks).toHaveLength(2);
       expect(reasoningChunks[0].text).toBe('Let me think...');
       expect(reasoningChunks[1].text).toBe(' about this problem.');
@@ -146,7 +156,7 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       };
 
       const stream = handler.createMessage('System prompt', messages, metadata);
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -225,7 +235,7 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       const messages = [{ role: 'user' as const, content: 'Test message' }];
       const stream = handler.createMessage('System prompt', messages);
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -272,7 +282,7 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       const messages = [{ role: 'user' as const, content: 'Test message' }];
       const stream = handler.createMessage('System prompt', messages);
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -290,7 +300,9 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       expect(capturedPayload.inferenceConfig).not.toHaveProperty('topP');
 
       // Verify reasoning chunks were yielded
-      const reasoningChunks = chunks.filter((c) => c.type === 'reasoning');
+      const reasoningChunks = chunks.filter(
+        (c): c is Extract<ApiStreamChunk, { type: 'reasoning' }> => c.type === 'reasoning'
+      );
       expect(reasoningChunks).toHaveLength(2);
       expect(reasoningChunks[0].text).toBe('Let me think...');
       expect(reasoningChunks[1].text).toBe(' about this problem.');
@@ -321,7 +333,7 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
       const messages = [{ role: 'user' as const, content: 'Test message' }];
       const stream = handler.createMessage('System prompt', messages);
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -337,7 +349,9 @@ describe('AwsBedrockHandler - Extended Thinking', () => {
 
       // Verify the stream worked correctly
       expect(mockSend).toHaveBeenCalledTimes(1);
-      const textChunks = chunks.filter((c) => c.type === 'text');
+      const textChunks = chunks.filter(
+        (c): c is Extract<ApiStreamChunk, { type: 'text' }> => c.type === 'text'
+      );
       expect(textChunks).toHaveLength(1);
       expect(textChunks[0].text).toBe('Hello from API key auth');
     });

@@ -8,11 +8,11 @@ import {
   openAiModelInfoSaneDefaults,
   DEEP_SEEK_DEFAULT_TEMPERATURE,
   OPENAI_AZURE_AI_INFERENCE_PATH,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
-import { XmlMatcher } from '../../utils/xml-matcher';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { convertToR1Format } from '../transform/r1-format';

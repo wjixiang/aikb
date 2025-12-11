@@ -6,9 +6,9 @@ import {
   vercelAiGatewayDefaultModelInfo,
   VERCEL_AI_GATEWAY_DEFAULT_TEMPERATURE,
   VERCEL_AI_GATEWAY_PROMPT_CACHING_MODELS,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { ApiHandlerOptions } from '../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

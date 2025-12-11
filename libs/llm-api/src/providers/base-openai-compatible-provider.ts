@@ -1,13 +1,13 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
 import {
   type ApiHandlerOptions,
   getModelMaxOutputTokens,
-} from '../../shared/api';
-import { XmlMatcher } from '../../utils/xml-matcher';
+} from 'llm-shared/api';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';
 
@@ -18,7 +18,7 @@ import type {
 import { DEFAULT_HEADERS } from './constants';
 import { BaseProvider } from './base-provider';
 import { handleOpenAIError } from './utils/openai-error-handler';
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 import { getApiRequestTimeout } from './utils/timeout-config';
 
 type BaseOpenAiCompatibleProviderOptions<ModelName extends string> =

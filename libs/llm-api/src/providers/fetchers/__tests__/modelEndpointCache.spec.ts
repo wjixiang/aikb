@@ -69,9 +69,9 @@ describe('modelEndpointCache', () => {
       });
 
       // Verify capabilities were copied from parent to ALL endpoints
-      expect(result.anthropic.supportsNativeTools).toBe(true);
-      expect(result.anthropic.supportsReasoningEffort).toBe(true);
-      expect(result.anthropic.supportedParameters).toEqual([
+      expect(result['anthropic'].supportsNativeTools).toBe(true);
+      expect(result['anthropic'].supportsReasoningEffort).toBe(true);
+      expect(result['anthropic'].supportedParameters).toEqual([
         'max_tokens',
         'temperature',
         'reasoning',
@@ -156,8 +156,8 @@ describe('modelEndpointCache', () => {
       });
 
       // Should not crash, but capabilities will be undefined
-      expect(result.anthropic).toBeDefined();
-      expect(result.anthropic.supportsNativeTools).toBeUndefined();
+      expect(result['anthropic']).toBeDefined();
+      expect(result['anthropic'].supportsNativeTools).toBeUndefined();
     });
 
     it('should return empty object for non-openrouter providers', async () => {

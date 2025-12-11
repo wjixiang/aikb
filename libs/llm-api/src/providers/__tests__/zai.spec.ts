@@ -1,6 +1,6 @@
 // npx vitest run src/api/providers/__tests__/zai.spec.ts
 
-import OpenAI from 'openai';
+import { vi, vitest } from 'vitest';
 import { Anthropic } from '@anthropic-ai/sdk';
 
 import {
@@ -11,26 +11,38 @@ import {
   internationalZAiModels,
   mainlandZAiModels,
   ZAI_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { ZAiHandler } from '../zai';
 
-vitest.mock('openai', () => {
-  const createMock = vitest.fn();
-  return {
-    default: vitest.fn(() => ({
-      chat: { completions: { create: createMock } },
-    })),
-  };
+// Use vi.hoisted to properly handle the mock initialization
+const { mockCreate, mockOpenAI } = vi.hoisted(() => {
+  const mockCreate = vi.fn();
+  const mockOpenAI = vi.fn();
+  return { mockCreate, mockOpenAI };
 });
+
+// Mock the OpenAI module using the hoisted mocks
+vitest.mock('openai', () => {
+  class MockOpenAI {
+    constructor(options: any) {
+      mockOpenAI(options);
+      return {
+        chat: { completions: { create: mockCreate } },
+      };
+    }
+  }
+  return { default: MockOpenAI };
+});
+
+// Import the mocked OpenAI
+import OpenAI from 'openai';
 
 describe('ZAiHandler', () => {
   let handler: ZAiHandler;
-  let mockCreate: any;
-
   beforeEach(() => {
+    mockCreate.mockClear();
     vitest.clearAllMocks();
-    mockCreate = (OpenAI as unknown as any)().chat.completions.create;
   });
 
   describe('International Z AI', () => {
@@ -46,7 +58,7 @@ describe('ZAiHandler', () => {
         zaiApiKey: 'test-zai-api-key',
         zaiApiLine: 'international_coding',
       });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.z.ai/api/coding/paas/v4',
         }),
@@ -56,7 +68,7 @@ describe('ZAiHandler', () => {
     it('should use the provided API key for international', () => {
       const zaiApiKey = 'test-zai-api-key';
       new ZAiHandler({ zaiApiKey, zaiApiLine: 'international_coding' });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({ apiKey: zaiApiKey }),
       );
     });
@@ -123,7 +135,7 @@ describe('ZAiHandler', () => {
         zaiApiKey: 'test-zai-api-key',
         zaiApiLine: 'china_coding',
       });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://open.bigmodel.cn/api/coding/paas/v4',
         }),
@@ -133,7 +145,7 @@ describe('ZAiHandler', () => {
     it('should use the provided API key for China', () => {
       const zaiApiKey = 'test-zai-api-key';
       new ZAiHandler({ zaiApiKey, zaiApiLine: 'china_coding' });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({ apiKey: zaiApiKey }),
       );
     });
@@ -188,7 +200,7 @@ describe('ZAiHandler', () => {
   describe('Default behavior', () => {
     it('should default to international when no zaiApiLine is specified', () => {
       const handlerDefault = new ZAiHandler({ zaiApiKey: 'test-zai-api-key' });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.z.ai/api/coding/paas/v4',
         }),
@@ -203,7 +215,7 @@ describe('ZAiHandler', () => {
 
     it("should use 'not-provided' as default API key when none is specified", () => {
       new ZAiHandler({ zaiApiLine: 'international_coding' });
-      expect(OpenAI).toHaveBeenCalledWith(
+      expect(mockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({ apiKey: 'not-provided' }),
       );
     });

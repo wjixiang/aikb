@@ -10,12 +10,12 @@ import {
   ModelInfo,
   openAiModelInfoSaneDefaults,
   DEEP_SEEK_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 import { ApiStream } from '../transform/stream';
 import { BaseProvider } from './base-provider';
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 import { getOllamaModels } from './fetchers/ollama';
-import { XmlMatcher } from '../../utils/xml-matcher';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,

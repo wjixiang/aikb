@@ -5,16 +5,13 @@ import * as fsSync from 'fs';
 import NodeCache from 'node-cache';
 import { z } from 'zod';
 
-import type { ProviderName } from 'agent-lib/types';
-import { modelInfoSchema, TelemetryEventName } from 'agent-lib/types';
-import { TelemetryService } from '@roo-code/telemetry';
+import type { ProviderName } from 'llm-types';
+import { modelInfoSchema } from 'llm-types';
 
-import { safeWriteJson } from '../../../utils/safeWriteJson';
-
-import { ContextProxy } from '../../../core/config/ContextProxy';
-import { getCacheDirectoryPath } from '../../../utils/storage';
-import type { RouterName, ModelRecord } from '../../../shared/api';
-import { fileExistsAtPath } from '../../../utils/fs';
+import { safeWriteJson } from 'llm-utils/safeWriteJson';
+import { getCacheDirectoryPath } from 'llm-utils/storage';
+import type { RouterName, ModelRecord } from 'llm-shared/api';
+import { fileExistsAtPath } from 'llm-utils/fs';
 
 import { getOpenRouterModels } from './openrouter';
 import { getVercelAiGatewayModels } from './vercel-ai-gateway';
@@ -22,13 +19,12 @@ import { getRequestyModels } from './requesty';
 import { getGlamaModels } from './glama';
 import { getUnboundModels } from './unbound';
 import { getLiteLLMModels } from './litellm';
-import { GetModelsOptions } from '../../../shared/api';
+import { GetModelsOptions } from 'llm-shared/api';
 import { getOllamaModels } from './ollama';
 import { getLMStudioModels } from './lmstudio';
 import { getIOIntelligenceModels } from './io-intelligence';
 import { getDeepInfraModels } from './deepinfra';
 import { getHuggingFaceModels } from './huggingface';
-import { getRooModels } from './roo';
 import { getChutesModels } from './chutes';
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 });
@@ -42,9 +38,8 @@ const inFlightRefresh = new Map<RouterName, Promise<ModelRecord>>();
 
 async function writeModels(router: RouterName, data: ModelRecord) {
   const filename = `${router}_models.json`;
-  const cacheDir = await getCacheDirectoryPath(
-    ContextProxy.instance.globalStorageUri.fsPath,
-  );
+  const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
+  const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   await safeWriteJson(path.join(cacheDir, filename), data);
 }
 
@@ -52,9 +47,8 @@ async function readModels(
   router: RouterName,
 ): Promise<ModelRecord | undefined> {
   const filename = `${router}_models.json`;
-  const cacheDir = await getCacheDirectoryPath(
-    ContextProxy.instance.globalStorageUri.fsPath,
-  );
+  const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
+  const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   const filePath = path.join(cacheDir, filename);
   const exists = await fileExistsAtPath(filePath);
   return exists ? JSON.parse(await fs.readFile(filePath, 'utf8')) : undefined;
@@ -111,18 +105,12 @@ async function fetchModelsFromProvider(
     case 'huggingface':
       models = await getHuggingFaceModels();
       break;
-    case 'roo': {
-      // Roo Code Cloud provider requires baseUrl and optional apiKey
-      const rooBaseUrl =
-        options.baseUrl ??
-        process.env.ROO_CODE_PROVIDER_URL ??
-        'https://api.roocode.com/proxy';
-      models = await getRooModels(rooBaseUrl, options.apiKey);
-      break;
-    }
     case 'chutes':
       models = await getChutesModels(options.apiKey);
       break;
+    case 'roo':
+      // Roo provider is not yet implemented
+      throw new Error('Roo provider is not yet implemented');
     default: {
       // Ensures router is exhaustively checked if RouterName is a strict union.
       const exhaustiveCheck: never = provider;
@@ -171,14 +159,8 @@ export const getModels = async (
         ),
       );
     } else {
-      TelemetryService.instance.captureEvent(
-        TelemetryEventName.MODEL_CACHE_EMPTY_RESPONSE,
-        {
-          provider,
-          context: 'getModels',
-          hasExistingCache: false,
-        },
-      );
+      // Placeholder for telemetry - would normally send event about empty model cache response
+      console.log(`[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in getModels context`);
     }
 
     return models;
@@ -229,15 +211,8 @@ export const refreshModels = async (
         : 0;
 
       if (modelCount === 0) {
-        TelemetryService.instance.captureEvent(
-          TelemetryEventName.MODEL_CACHE_EMPTY_RESPONSE,
-          {
-            provider,
-            context: 'refreshModels',
-            hasExistingCache: existingCount > 0,
-            existingCacheSize: existingCount,
-          },
-        );
+        // Placeholder for telemetry - would normally send event about empty model cache response
+        console.log(`[TELEMETRY_PLACEHOLDER] Model cache empty response for ${provider} in refreshModels context, existing cache size: ${existingCount}`);
         if (existingCount > 0) {
           return existingCache!;
         } else {
@@ -398,7 +373,7 @@ export function getModelsFromCache(
  */
 function getCacheDirectoryPathSync(): string | undefined {
   try {
-    const globalStoragePath = ContextProxy.instance?.globalStorageUri?.fsPath;
+    const globalStoragePath = process.env['LLM_GLOBAL_STORAGE_PATH'] || './storage';
     if (!globalStoragePath) {
       return undefined;
     }

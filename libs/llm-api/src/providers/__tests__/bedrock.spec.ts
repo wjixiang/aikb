@@ -14,10 +14,13 @@ vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   });
   const mockConverseStreamCommand = vi.fn();
 
+  // Create a mock constructor function
+  const MockBedrockRuntimeClient = vi.fn().mockImplementation(() => ({
+    send: mockSend,
+  }));
+
   return {
-    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-      send: mockSend,
-    })),
+    BedrockRuntimeClient: MockBedrockRuntimeClient,
     ConverseStreamCommand: mockConverseStreamCommand,
     ConverseCommand: vi.fn(),
   };
@@ -28,7 +31,7 @@ import {
   ConverseStreamCommand,
   BedrockRuntimeClient,
 } from '@aws-sdk/client-bedrock-runtime';
-import { BEDROCK_1M_CONTEXT_MODEL_IDS } from 'agent-lib/types';
+import { BEDROCK_1M_CONTEXT_MODEL_IDS } from 'llm-types';
 
 import type { Anthropic } from '@anthropic-ai/sdk';
 

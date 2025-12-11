@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { z } from 'zod';
 
-import { type ModelInfo } from 'agent-lib/types';
+import { type ModelInfo } from 'llm-types';
 
 import { DEFAULT_HEADERS } from '../constants';
 

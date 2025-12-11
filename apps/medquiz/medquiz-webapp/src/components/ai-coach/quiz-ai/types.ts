@@ -1,4 +1,4 @@
-import { QuizType } from 'quiz-shared';
+import { QuizType } from 'llm-shared/';
 
 export interface NotificationState {
   message: string;

@@ -3,7 +3,7 @@
  * Transforms technical errors into user-friendly messages
  */
 
-import i18n from '../../../i18n/setup';
+// import i18n removed - VSCode specific
 
 /**
  * Handles OpenAI client errors and transforms them into user-friendly messages
@@ -24,7 +24,7 @@ export function handleOpenAIError(error: unknown, providerName: string): Error {
 
     // Invalid character/ByteString conversion error in API key
     if (msg.includes('Cannot convert argument to a ByteString')) {
-      return new Error(i18n.t('common:errors.api.invalidKeyInvalidChars'));
+      return new Error("Error: 'common:errors.api.invalidKeyInvalidChars')");
     }
 
     // For other Error instances, wrap with provider-specific prefix

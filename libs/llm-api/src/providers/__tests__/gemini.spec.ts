@@ -2,7 +2,7 @@
 
 import { Anthropic } from '@anthropic-ai/sdk';
 
-import { type ModelInfo, geminiDefaultModelId } from 'agent-lib/types';
+import { type ModelInfo, geminiDefaultModelId } from 'llm-types';
 
 import { t } from 'i18next';
 import { GeminiHandler } from '../gemini';
@@ -14,9 +14,9 @@ describe('GeminiHandler', () => {
 
   beforeEach(() => {
     // Create mock functions
-    const mockGenerateContentStream = vitest.fn();
-    const mockGenerateContent = vitest.fn();
-    const mockGetGenerativeModel = vitest.fn();
+    const mockGenerateContentStream = vi.fn();
+    const mockGenerateContent = vi.fn();
+    const mockGetGenerativeModel = vi.fn();
 
     handler = new GeminiHandler({
       apiKey: 'test-key',

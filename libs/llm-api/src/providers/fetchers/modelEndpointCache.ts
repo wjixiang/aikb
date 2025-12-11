@@ -1,14 +1,14 @@
 import * as path from 'path';
 import fs from 'fs/promises';
+import * as os from 'os';
 
 import NodeCache from 'node-cache';
-import { safeWriteJson } from '../../../utils/safeWriteJson';
+import { safeWriteJson } from 'llm-utils/safeWriteJson';
 import sanitize from 'sanitize-filename';
 
-import { ContextProxy } from '../../../core/config/ContextProxy';
-import { getCacheDirectoryPath } from '../../../utils/storage';
-import { RouterName, ModelRecord } from '../../../shared/api';
-import { fileExistsAtPath } from '../../../utils/fs';
+import { getCacheDirectoryPath } from 'llm-utils/storage';
+import { RouterName, ModelRecord } from 'llm-shared/api';
+import { fileExistsAtPath } from 'llm-utils/fs';
 
 import { getOpenRouterModelEndpoints } from './openrouter';
 import { getModels } from './modelCache';
@@ -18,11 +18,15 @@ const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 });
 const getCacheKey = (router: RouterName, modelId: string) =>
   sanitize(`${router}_${modelId}`);
 
+// Get the default cache directory path for NestJS environment
+function getDefaultCacheDirectoryPath(): string {
+  return path.join(os.tmpdir(), 'llm-api-cache');
+}
+
 async function writeModelEndpoints(key: string, data: ModelRecord) {
   const filename = `${key}_endpoints.json`;
-  const cacheDir = await getCacheDirectoryPath(
-    ContextProxy.instance.globalStorageUri.fsPath,
-  );
+  const defaultCachePath = getDefaultCacheDirectoryPath();
+  const cacheDir = await getCacheDirectoryPath(defaultCachePath);
   await safeWriteJson(path.join(cacheDir, filename), data);
 }
 
@@ -30,9 +34,8 @@ async function readModelEndpoints(
   key: string,
 ): Promise<ModelRecord | undefined> {
   const filename = `${key}_endpoints.json`;
-  const cacheDir = await getCacheDirectoryPath(
-    ContextProxy.instance.globalStorageUri.fsPath,
-  );
+  const defaultCachePath = getDefaultCacheDirectoryPath();
+  const cacheDir = await getCacheDirectoryPath(defaultCachePath);
   const filePath = path.join(cacheDir, filename);
   const exists = await fileExistsAtPath(filePath);
   return exists ? JSON.parse(await fs.readFile(filePath, 'utf8')) : undefined;

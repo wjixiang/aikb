@@ -2,9 +2,9 @@ import {
   ioIntelligenceDefaultModelId,
   ioIntelligenceModels,
   type IOIntelligenceModelId,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 import { BaseOpenAiCompatibleProvider } from './base-openai-compatible-provider';
 
 export class IOIntelligenceHandler extends BaseOpenAiCompatibleProvider<IOIntelligenceModelId> {

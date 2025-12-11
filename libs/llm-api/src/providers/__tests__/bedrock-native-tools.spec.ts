@@ -10,12 +10,15 @@ vi.mock('@aws-sdk/credential-providers', () => {
 // Mock BedrockRuntimeClient and ConverseStreamCommand
 const mockSend = vi.fn();
 
+// Create a mock constructor function
+const MockBedrockRuntimeClient = vi.fn().mockImplementation(() => ({
+  send: mockSend,
+  config: { region: 'us-east-1' },
+}));
+
 vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   return {
-    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-      send: mockSend,
-      config: { region: 'us-east-1' },
-    })),
+    BedrockRuntimeClient: MockBedrockRuntimeClient,
     ConverseStreamCommand: vi.fn((params) => ({
       ...params,
       input: params,

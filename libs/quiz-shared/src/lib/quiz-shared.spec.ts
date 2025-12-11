@@ -1,7 +1,7 @@
-import { quizShared } from './quiz-shared';
+import { quizShared } from 'llm-shared/';
 
-describe('quizShared', () => {
+describe('llm-shared/', () => {
   it('should work', () => {
-    expect(quizShared()).toEqual('quiz-shared');
+    expect(quizShared()).toEqual('llm-shared/');
   });
 });

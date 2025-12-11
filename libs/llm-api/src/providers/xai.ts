@@ -1,10 +1,10 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import { type XAIModelId, xaiDefaultModelId, xaiModels } from 'agent-lib/types';
+import { type XAIModelId, xaiDefaultModelId, xaiModels } from 'llm-types';
 
-import { NativeToolCallParser } from '../../core/assistant-message/NativeToolCallParser';
-import type { ApiHandlerOptions } from '../../shared/api';
+import { NativeToolCallParser } from 'agent-lib/assistant-message/NativeToolCallParser';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

@@ -7,17 +7,36 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 import { VercelAiGatewayHandler } from '../vercel-ai-gateway';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 import {
   vercelAiGatewayDefaultModelId,
   VERCEL_AI_GATEWAY_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 // Mock dependencies
-vitest.mock('openai');
+// Define mockCreate at module level so it's accessible
+const mockCreate = vi.fn();
+
+vitest.mock('openai', () => {
+  class MockOpenAI {
+    constructor() {
+      return {
+        chat: {
+          completions: {
+            create: mockCreate,
+          },
+        },
+      };
+    }
+  }
+  return {
+    __esModule: true,
+    default: vi.fn(MockOpenAI),
+  };
+});
 vitest.mock('delay', () => ({ default: vitest.fn(() => Promise.resolve()) }));
 vitest.mock('../fetchers/modelCache', () => ({
-  getModels: vitest.fn().mockImplementation(() => {
+  getModels: vi.fn().mockImplementation(() => {
     return Promise.resolve({
       'anthropic/claude-sonnet-4': {
         maxTokens: 64000,
@@ -57,26 +76,10 @@ vitest.mock('../fetchers/modelCache', () => ({
 }));
 
 vitest.mock('../../transform/caching/vercel-ai-gateway', () => ({
-  addCacheBreakpoints: vitest.fn(),
+  addCacheBreakpoints: vi.fn(),
 }));
 
-const mockCreate = vitest.fn();
-const mockConstructor = vitest.fn();
 
-(OpenAI as any).mockImplementation(() => ({
-  chat: {
-    completions: {
-      create: mockCreate,
-    },
-  },
-}));
-(OpenAI as any).mockImplementation = mockConstructor.mockReturnValue({
-  chat: {
-    completions: {
-      create: mockCreate,
-    },
-  },
-});
 
 describe('VercelAiGatewayHandler', () => {
   const mockOptions: ApiHandlerOptions = {
@@ -86,8 +89,7 @@ describe('VercelAiGatewayHandler', () => {
 
   beforeEach(() => {
     vitest.clearAllMocks();
-    mockCreate.mockClear();
-    mockConstructor.mockClear();
+    if (mockCreate) mockCreate.mockClear();
   });
 
   it('initializes with correct options', () => {
@@ -176,7 +178,7 @@ describe('VercelAiGatewayHandler', () => {
       ];
 
       const stream = handler.createMessage(systemPrompt, messages);
-      const chunks = [];
+      const chunks: any[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -236,7 +238,7 @@ describe('VercelAiGatewayHandler', () => {
 
     it('adds cache breakpoints for supported models', async () => {
       const { addCacheBreakpoints } = await import(
-        '../../transform/caching/vercel-ai-gateway'
+        '../../transform/caching/vercel-ai-gateway.js'
       );
       const handler = new VercelAiGatewayHandler({
         ...mockOptions,
@@ -278,7 +280,7 @@ describe('VercelAiGatewayHandler', () => {
       ];
 
       const stream = handler.createMessage(systemPrompt, messages);
-      const chunks = [];
+      const chunks: any[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -466,7 +468,7 @@ describe('VercelAiGatewayHandler', () => {
           toolProtocol: 'native',
         });
 
-        const chunks = [];
+        const chunks: any[] = [];
         for await (const chunk of stream) {
           chunks.push(chunk);
         }

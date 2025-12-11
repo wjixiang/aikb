@@ -2,93 +2,106 @@
 
 import { Anthropic } from '@anthropic-ai/sdk';
 
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 import { OpenAiHandler } from '../openai';
 
-const mockCreate = vitest.fn();
+const { mockCreate } = vi.hoisted(() => {
+  const mockCreate = vi.fn();
+  
+  // Set up the default implementation for mockCreate
+  mockCreate.mockImplementation(async (options) => {
+    if (!options.stream) {
+      return {
+        id: 'test-completion',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'Test response',
+              refusal: null,
+            },
+            finish_reason: 'stop',
+            index: 0,
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 5,
+          total_tokens: 15,
+        },
+      };
+    }
+
+    // Return a stream with multiple chunks that include usage metrics
+    return {
+      [Symbol.asyncIterator]: async function* () {
+        // First chunk with partial usage
+        yield {
+          choices: [
+            {
+              delta: { content: 'Test ' },
+              index: 0,
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 2,
+            total_tokens: 12,
+          },
+        };
+
+        // Second chunk with updated usage
+        yield {
+          choices: [
+            {
+              delta: { content: 'response' },
+              index: 0,
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 4,
+            total_tokens: 14,
+          },
+        };
+
+        // Final chunk with complete usage
+        yield {
+          choices: [
+            {
+              delta: {},
+              index: 0,
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 5,
+            total_tokens: 15,
+          },
+        };
+      },
+    };
+  });
+
+  return { mockCreate };
+});
 
 vitest.mock('openai', () => {
+  class MockOpenAI {
+    constructor() {
+      // Empty constructor
+    }
+    
+    chat = {
+      completions: {
+        create: mockCreate,
+      },
+    };
+  }
+
   return {
     __esModule: true,
-    default: vitest.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate.mockImplementation(async (options) => {
-            if (!options.stream) {
-              return {
-                id: 'test-completion',
-                choices: [
-                  {
-                    message: {
-                      role: 'assistant',
-                      content: 'Test response',
-                      refusal: null,
-                    },
-                    finish_reason: 'stop',
-                    index: 0,
-                  },
-                ],
-                usage: {
-                  prompt_tokens: 10,
-                  completion_tokens: 5,
-                  total_tokens: 15,
-                },
-              };
-            }
-
-            // Return a stream with multiple chunks that include usage metrics
-            return {
-              [Symbol.asyncIterator]: async function* () {
-                // First chunk with partial usage
-                yield {
-                  choices: [
-                    {
-                      delta: { content: 'Test ' },
-                      index: 0,
-                    },
-                  ],
-                  usage: {
-                    prompt_tokens: 10,
-                    completion_tokens: 2,
-                    total_tokens: 12,
-                  },
-                };
-
-                // Second chunk with updated usage
-                yield {
-                  choices: [
-                    {
-                      delta: { content: 'response' },
-                      index: 0,
-                    },
-                  ],
-                  usage: {
-                    prompt_tokens: 10,
-                    completion_tokens: 4,
-                    total_tokens: 14,
-                  },
-                };
-
-                // Final chunk with complete usage
-                yield {
-                  choices: [
-                    {
-                      delta: {},
-                      index: 0,
-                    },
-                  ],
-                  usage: {
-                    prompt_tokens: 10,
-                    completion_tokens: 5,
-                    total_tokens: 15,
-                  },
-                };
-              },
-            };
-          }),
-        },
-      },
-    })),
+    default: MockOpenAI,
   };
 });
 

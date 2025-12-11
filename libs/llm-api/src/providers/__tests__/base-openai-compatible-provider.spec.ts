@@ -3,7 +3,7 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
 import { BaseOpenAiCompatibleProvider } from '../base-openai-compatible-provider';
 

@@ -7,9 +7,9 @@ import {
   mistralDefaultModelId,
   mistralModels,
   MISTRAL_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { ApiHandlerOptions } from '../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { convertToMistralMessages } from '../transform/mistral-format';
 import { ApiStream } from '../transform/stream';

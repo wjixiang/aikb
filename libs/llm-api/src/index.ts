@@ -11,11 +11,11 @@ import {
   CLAUDE_CODE_DEFAULT_MAX_OUTPUT_TOKENS,
   isDynamicProvider,
   isLocalProvider,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { ApiStream } from './transform/stream';
 
-// Constants and functions moved from agent-lib/shared/api
+// Constants and functions moved from agent-lllm-shared/api
 export const DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS = 16_384;
 export const DEFAULT_HYBRID_REASONING_MODEL_THINKING_TOKENS = 8_192;
 export const GEMINI_25_PRO_MIN_THINKING_TOKENS = 128;
@@ -174,7 +174,6 @@ import {
   DeepSeekHandler,
   MoonshotHandler,
   MistralHandler,
-  VsCodeLmHandler,
   UnboundHandler,
   RequestyHandler,
   HumanRelayHandler,
@@ -184,14 +183,12 @@ import {
   HuggingFaceHandler,
   ChutesHandler,
   LiteLLMHandler,
-  ClaudeCodeHandler,
   QwenCodeHandler,
   SambaNovaHandler,
   IOIntelligenceHandler,
   DoubaoHandler,
   ZAiHandler,
   FireworksHandler,
-  RooHandler,
   FeatherlessHandler,
   VercelAiGatewayHandler,
   DeepInfraHandler,
@@ -280,8 +277,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
   switch (apiProvider) {
     case 'anthropic':
       return new AnthropicHandler(options);
-    case 'claude-code':
-      return new ClaudeCodeHandler(options);
     case 'glama':
       return new GlamaHandler(options);
     case 'openrouter':
@@ -306,8 +301,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
       return new QwenCodeHandler(options);
     case 'moonshot':
       return new MoonshotHandler(options);
-    case 'vscode-lm':
-      return new VsCodeLmHandler(options);
     case 'mistral':
       return new MistralHandler(options);
     case 'unbound':
@@ -340,10 +333,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
       return new FireworksHandler(options);
     case 'io-intelligence':
       return new IOIntelligenceHandler(options);
-    case 'roo':
-      // Never throw exceptions from provider constructors
-      // The provider-proxy server will handle authentication and return appropriate error codes
-      return new RooHandler(options);
     case 'featherless':
       return new FeatherlessHandler(options);
     case 'vercel-ai-gateway':

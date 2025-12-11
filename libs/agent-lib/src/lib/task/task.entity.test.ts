@@ -1,6 +1,6 @@
 import { Task } from './task.entity';
 import { type ApiHandler, type ApiStream, type ApiStreamTextChunk } from 'llm-api';
-import { ProviderSettings, ModelInfo } from '../types';
+import { ProviderSettings, ModelInfo } from 'llm-types';
 import { vi, type Mocked } from 'vitest';
 
 // Mock the API handler
@@ -53,13 +53,13 @@ vi.mock('./simplified-dependencies/systemPrompt', () => ({
 }));
 
 // Mock the resolveToolProtocol
-vi.mock('../utils/resolveToolProtocol', () => ({
+vi.mock('llm-utils/resolveToolProtocol', () => ({
   resolveToolProtocol: vi.fn(() => 'native'),
 }));
 
 // Mock the getModelId and getApiProtocol
-vi.mock('../types', async () => {
-  const actual = await vi.importActual('../types');
+vi.mock('llm-types', async () => {
+  const actual = await vi.importActual('llm-types');
   return {
     ...actual,
     getModelId: vi.fn(() => 'test-model'),

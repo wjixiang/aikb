@@ -1,23 +1,24 @@
 // npx vitest run api/providers/__tests__/native-ollama.spec.ts
 
 import { NativeOllamaHandler } from '../native-ollama';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 import { getOllamaModels } from '../fetchers/ollama';
+import { ApiStreamChunk } from '../../transform/stream';
 
 // Mock the ollama package
-const mockChat = vitest.fn();
+const mockChat = vi.fn();
 vitest.mock('ollama', () => {
   return {
-    Ollama: vitest.fn().mockImplementation(() => ({
-      chat: mockChat,
-    })),
-    Message: vitest.fn(),
+    Ollama: class {
+      chat= mockChat
+    },
+    Message: vi.fn(),
   };
 });
 
 // Mock the getOllamaModels function
 vitest.mock('../fetchers/ollama', () => ({
-  getOllamaModels: vitest.fn(),
+  getOllamaModels: vi.fn(),
 }));
 
 const mockGetOllamaModels = vitest.mocked(getOllamaModels);
@@ -67,7 +68,7 @@ describe('NativeOllamaHandler', () => {
       const messages = [{ role: 'user' as const, content: 'Hi there' }];
 
       const stream = handler.createMessage(systemPrompt, messages);
-      const results = [];
+      const results: ApiStreamChunk[] = [];
 
       for await (const chunk of stream) {
         results.push(chunk);
@@ -161,7 +162,7 @@ describe('NativeOllamaHandler', () => {
       const stream = handler.createMessage('System', [
         { role: 'user' as const, content: 'Question?' },
       ]);
-      const results = [];
+      const results: ApiStreamChunk[] = [];
 
       for await (const chunk of stream) {
         results.push(chunk);
@@ -524,7 +525,7 @@ describe('NativeOllamaHandler', () => {
         { taskId: 'test', tools },
       );
 
-      const results = [];
+      const results: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         results.push(chunk);
       }

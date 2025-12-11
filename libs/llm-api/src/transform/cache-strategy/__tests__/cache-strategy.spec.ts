@@ -6,8 +6,9 @@ import {
 import { Anthropic } from '@anthropic-ai/sdk';
 
 import { MultiPointStrategy } from '../multi-point-strategy';
-import { CacheStrategyConfig, ModelInfo, CachePointPlacement } from '../types';
+import { CacheStrategyConfig, ModelInfo, CachePointPlacement } from 'llm-types';
 import { AwsBedrockHandler } from '../../../providers/bedrock';
+import { ApiStreamChunk } from '../../../transform/stream';
 import { beforeEach, describe, expect, it, vitest } from 'vitest';
 
 // Common test utilities
@@ -322,7 +323,7 @@ describe('Cache Strategy', () => {
       });
 
       // Mock the client.send method
-      const mockInvoke = vitest.fn().mockResolvedValue({
+      const mockInvoke = vi.fn().mockResolvedValue({
         stream: {
           [Symbol.asyncIterator]: async function* () {
             yield {
@@ -470,7 +471,7 @@ describe('Cache Strategy', () => {
       });
 
       // Mock the client.send method
-      const mockInvoke = vitest.fn().mockResolvedValue({
+      const mockInvoke = vi.fn().mockResolvedValue({
         stream: {
           [Symbol.asyncIterator]: async function* () {
             yield {
@@ -562,7 +563,7 @@ describe('Cache Strategy', () => {
       });
 
       // Create a spy for the client.send method
-      const mockSend = vitest.fn().mockResolvedValue({
+      const mockSend = vi.fn().mockResolvedValue({
         stream: {
           [Symbol.asyncIterator]: async function* () {
             yield {
@@ -641,7 +642,7 @@ describe('Cache Strategy', () => {
         },
       };
 
-      const mockSend = vitest.fn().mockImplementation(() => {
+      const mockSend = vi.fn().mockImplementation(() => {
         return Promise.resolve({
           stream: mockStream,
         });
@@ -654,7 +655,7 @@ describe('Cache Strategy', () => {
 
       // Call the method that uses convertToBedrockConverseMessages
       const stream = handler.createMessage(systemPrompt, mockMessages);
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1127,7 +1128,7 @@ describe('Cache Strategy', () => {
 
         // Create a spy on console.log to capture the actual values
         const originalConsoleLog = console.log;
-        const mockConsoleLog = vitest.fn();
+        const mockConsoleLog = vi.fn();
         console.log = mockConsoleLog;
 
         try {

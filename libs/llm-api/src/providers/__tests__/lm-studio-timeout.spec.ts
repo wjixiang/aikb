@@ -1,26 +1,26 @@
 // npx vitest run api/providers/__tests__/lm-studio-timeout.spec.ts
 
 import { LmStudioHandler } from '../lm-studio';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 // Mock the timeout config utility
-vitest.mock('../utils/timeout-config', () => ({
-  getApiRequestTimeout: vitest.fn(),
+vitest.mock('./utils/timeout-config', () => ({
+  getApiRequestTimeout: vi.fn(),
 }));
 
-import { getApiRequestTimeout } from '../utils/timeout-config';
+import { getApiRequestTimeout } from './utils/timeout-config';
 
 // Mock OpenAI
-const mockOpenAIConstructor = vitest.fn();
+const mockOpenAIConstructor = vi.fn();
 vitest.mock('openai', () => {
   return {
     __esModule: true,
-    default: vitest.fn().mockImplementation((config) => {
+    default: vi.fn().mockImplementation((config) => {
       mockOpenAIConstructor(config);
       return {
         chat: {
           completions: {
-            create: vitest.fn(),
+            create: vi.fn(),
           },
         },
       };

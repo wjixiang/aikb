@@ -5,7 +5,7 @@ import {
   createAssistantMessage,
   createErrorMessage,
   findLastUserMessage,
-} from './utils/messageUtils';
+} from llm-utils/messageUtils';
 
 export interface UseMessagesOptions {
   initialMessages?: Message[];

@@ -6,10 +6,10 @@ import {
   glamaDefaultModelId,
   glamaDefaultModelInfo,
   GLAMA_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { Package } from '../../shared/package';
-import { ApiHandlerOptions } from '../../shared/api';
+import { Package } from 'llm-shared/package';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

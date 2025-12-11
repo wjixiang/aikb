@@ -1,5 +1,5 @@
 import { prisma } from 'quiz-db';
-import { QuizType } from 'quiz-shared';
+import { QuizType } from 'llm-shared/';
 import { MongoClient, Db, Collection, WithId } from 'mongodb';
 import { randomUUID } from 'crypto';
 import * as dotenv from 'dotenv';

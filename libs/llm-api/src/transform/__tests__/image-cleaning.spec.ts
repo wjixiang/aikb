@@ -1,6 +1,6 @@
 // npx vitest run api/transform/__tests__/image-cleaning.spec.ts
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
 import { ApiHandler } from '../../index';
 import { ApiMessage } from '../../../core/task-persistence/apiMessages';
@@ -10,14 +10,14 @@ describe('maybeRemoveImageBlocks', () => {
   // Mock ApiHandler factory function
   const createMockApiHandler = (supportsImages: boolean): ApiHandler => {
     return {
-      getModel: vitest.fn().mockReturnValue({
+      getModel: vi.fn().mockReturnValue({
         id: 'test-model',
         info: {
           supportsImages,
         } as ModelInfo,
       }),
-      createMessage: vitest.fn(),
-      countTokens: vitest.fn(),
+      createMessage: vi.fn(),
+      countTokens: vi.fn(),
     };
   };
 

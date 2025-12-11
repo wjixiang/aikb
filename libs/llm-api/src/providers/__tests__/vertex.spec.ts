@@ -15,9 +15,9 @@ describe('VertexHandler', () => {
 
   beforeEach(() => {
     // Create mock functions
-    const mockGenerateContentStream = vitest.fn();
-    const mockGenerateContent = vitest.fn();
-    const mockGetGenerativeModel = vitest.fn();
+    const mockGenerateContentStream = vi.fn();
+    const mockGenerateContent = vi.fn();
+    const mockGetGenerativeModel = vi.fn();
 
     handler = new VertexHandler({
       apiModelId: 'gemini-1.5-pro-001',

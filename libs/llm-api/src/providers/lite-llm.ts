@@ -5,11 +5,11 @@ import {
   litellmDefaultModelId,
   litellmDefaultModelInfo,
   TOOL_PROTOCOL,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 
-import { ApiHandlerOptions } from '../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

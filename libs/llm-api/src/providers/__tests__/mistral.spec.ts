@@ -2,46 +2,48 @@
 const mockCreate = vi.fn();
 const mockComplete = vi.fn();
 vi.mock('@mistralai/mistralai', () => {
-  return {
-    Mistral: vi.fn().mockImplementation(() => ({
-      chat: {
-        stream: mockCreate.mockImplementation(async (_options) => {
-          const stream = {
-            [Symbol.asyncIterator]: async function* () {
-              yield {
-                data: {
-                  choices: [
-                    {
-                      delta: { content: 'Test response' },
-                      index: 0,
-                    },
-                  ],
-                },
-              };
-            },
-          };
-          return stream;
-        }),
-        complete: mockComplete.mockImplementation(async (_options) => {
-          return {
-            choices: [
-              {
-                message: {
-                  content: 'Test response',
-                },
+  const mockConstructor = vi.fn();
+  const mockMistral = mockConstructor.mockImplementation(() => ({
+    chat: {
+      stream: mockCreate.mockImplementation(async (_options) => {
+        const stream = {
+          [Symbol.asyncIterator]: async function* () {
+            yield {
+              data: {
+                choices: [
+                  {
+                    delta: { content: 'Test response' },
+                    index: 0,
+                  },
+                ],
               },
-            ],
-          };
-        }),
-      },
-    })),
+            };
+          },
+        };
+        return stream;
+      }),
+      complete: mockComplete.mockImplementation(async (_options) => {
+        return {
+          choices: [
+            {
+              message: {
+                content: 'Test response',
+              },
+            },
+          ],
+        };
+      }),
+    },
+  }));
+  return {
+    Mistral: mockMistral,
   };
 });
 
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type OpenAI from 'openai';
 import { MistralHandler } from '../mistral';
-import type { ApiHandlerOptions } from '../../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 import type { ApiHandlerCreateMessageMetadata } from '../../index';
 import type {
   ApiStreamTextChunk,

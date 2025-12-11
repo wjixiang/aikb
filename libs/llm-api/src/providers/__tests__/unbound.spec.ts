@@ -2,13 +2,13 @@
 
 import { Anthropic } from '@anthropic-ai/sdk';
 
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { UnboundHandler } from '../unbound';
 
 // Mock dependencies
 vitest.mock('../fetchers/modelCache', () => ({
-  getModels: vitest.fn().mockImplementation(() => {
+  getModels: vi.fn().mockImplementation(() => {
     return Promise.resolve({
       'anthropic/claude-3-5-sonnet-20241022': {
         maxTokens: 8192,
@@ -74,62 +74,73 @@ vitest.mock('../fetchers/modelCache', () => ({
 }));
 
 // Mock OpenAI client
-const mockCreate = vitest.fn();
-const mockWithResponse = vitest.fn();
+const mockCreate = vi.fn();
+const mockWithResponse = vi.fn();
 
 vitest.mock('openai', () => {
-  return {
-    __esModule: true,
-    default: vitest.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: (...args: any[]) => {
-            const stream = {
-              [Symbol.asyncIterator]: async function* () {
-                // First chunk with content
-                yield {
-                  choices: [{ delta: { content: 'Test response' }, index: 0 }],
-                };
-                // Second chunk with usage data
-                yield {
-                  choices: [{ delta: {}, index: 0 }],
-                  usage: {
-                    prompt_tokens: 10,
-                    completion_tokens: 5,
-                    total_tokens: 15,
-                  },
-                };
-                // Third chunk with cache usage data
-                yield {
-                  choices: [{ delta: {}, index: 0 }],
-                  usage: {
-                    prompt_tokens: 8,
-                    completion_tokens: 4,
-                    total_tokens: 12,
-                    cache_creation_input_tokens: 3,
-                    cache_read_input_tokens: 2,
-                  },
-                };
-              },
-            };
+  class MockOpenAI {
+    constructor(options: any) {
+      // Store constructor options if needed
+      this.apiKey = options.apiKey;
+      this.baseURL = options.baseURL;
+    }
 
-            const result = mockCreate(...args);
+    apiKey: string;
+    baseURL: string;
 
-            if (args[0].stream) {
-              mockWithResponse.mockReturnValue(
-                Promise.resolve({
-                  data: stream,
-                  response: { headers: new Map() },
-                }),
-              );
-              result.withResponse = mockWithResponse;
-            }
+    chat = {
+      completions: {
+        create: (...args: any[]) => {
+          const stream = {
+            [Symbol.asyncIterator]: async function* () {
+              // First chunk with content
+              yield {
+                choices: [{ delta: { content: 'Test response' }, index: 0 }],
+              };
+              // Second chunk with usage data
+              yield {
+                choices: [{ delta: {}, index: 0 }],
+                usage: {
+                  prompt_tokens: 10,
+                  completion_tokens: 5,
+                  total_tokens: 15,
+                },
+              };
+              // Third chunk with cache usage data
+              yield {
+                choices: [{ delta: {}, index: 0 }],
+                usage: {
+                  prompt_tokens: 8,
+                  completion_tokens: 4,
+                  total_tokens: 12,
+                  cache_creation_input_tokens: 3,
+                  cache_read_input_tokens: 2,
+                },
+              };
+            },
+          };
 
-            return result;
-          },
+          const result = mockCreate(...args);
+
+          if (args[0].stream) {
+            mockWithResponse.mockReturnValue(
+              Promise.resolve({
+                data: stream,
+                response: { headers: new Map() },
+              }),
+            );
+            result.withResponse = mockWithResponse;
+          }
+
+          return result;
         },
       },
-    })),
+    };
+  }
+
+  return {
+    __esModule: true,
+    default: MockOpenAI,
   };
 });
 
@@ -226,7 +237,7 @@ describe('UnboundHandler', () => {
       });
 
       const stream = handler.createMessage(systemPrompt, messages);
-      const chunks = [];
+      const chunks: any[] = [];
 
       try {
         for await (const chunk of stream) {
@@ -236,7 +247,7 @@ describe('UnboundHandler', () => {
         expect.fail('Expected error to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBe('API Error');
+        expect((error as Error).message).toBe('API Error');
       }
     });
   });
@@ -516,7 +527,7 @@ describe('UnboundHandler', () => {
         toolProtocol: 'native',
       });
 
-      const chunks = [];
+      const chunks: any[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }

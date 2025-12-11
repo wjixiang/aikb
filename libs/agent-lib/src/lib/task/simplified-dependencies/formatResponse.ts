@@ -1,4 +1,4 @@
-import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from '../../types';
+import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from 'llm-types';
 
 /**
  * Simplified response formatting utilities

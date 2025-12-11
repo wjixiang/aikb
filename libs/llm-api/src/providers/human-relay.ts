@@ -1,9 +1,9 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import * as vscode from 'vscode';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
-import { getCommand } from '../../utils/commands';
+import { getCommand } from 'llm-utils/commands';
 import { ApiStream } from '../transform/stream';
 
 import type {

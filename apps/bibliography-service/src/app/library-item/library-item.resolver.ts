@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Args, ResolveField } from '@nestjs/graphql';
 import { LibraryItemService } from './library-item.service';
 import { VectorService } from 'bibliography-lib';
 import * as graphql from '../../graphql';
-import { CreateLibraryItemDto, CreateChunkEmbedGroupDto } from 'library-shared';
+import { CreateLibraryItemDto, CreateChunkEmbedGroupDto } from 'llm-shared/';
 import { LibraryItem } from '@/libs/bibliography/src';
 
 @Resolver()

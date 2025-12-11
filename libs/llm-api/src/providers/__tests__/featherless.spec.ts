@@ -8,16 +8,17 @@ import {
   featherlessDefaultModelId,
   featherlessModels,
   DEEP_SEEK_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { FeatherlessHandler } from '../featherless';
+import type { ApiStreamChunk } from '../../transform/stream';
 
 // Create mock functions
 const mockCreate = vi.fn();
 
 // Mock OpenAI module
 vi.mock('openai', () => ({
-  default: vi.fn(() => ({
+  default: vi.fn().mockImplementation(() => ({
     chat: {
       completions: {
         create: mockCreate,
@@ -124,7 +125,7 @@ describe('FeatherlessHandler', () => {
     } as any);
 
     const stream = handler.createMessage(systemPrompt, messages);
-    const chunks = [];
+    const chunks: ApiStreamChunk[] = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
     }
@@ -150,7 +151,7 @@ describe('FeatherlessHandler', () => {
     } as any);
 
     const stream = handler.createMessage(systemPrompt, messages);
-    const chunks = [];
+    const chunks: ApiStreamChunk[] = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
     }

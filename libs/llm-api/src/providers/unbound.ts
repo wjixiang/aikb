@@ -4,9 +4,9 @@ import OpenAI from 'openai';
 import {
   unboundDefaultModelId,
   unboundDefaultModelInfo,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

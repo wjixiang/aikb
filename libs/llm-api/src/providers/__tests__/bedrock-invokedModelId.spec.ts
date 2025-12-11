@@ -1,24 +1,25 @@
 // npx vitest run src/api/providers/__tests__/bedrock-invokedModelId.spec.ts
 
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 import { AwsBedrockHandler, StreamEvent } from '../bedrock';
+import { ApiStream, ApiStreamChunk } from '../../transform/stream';
 
 // Mock AWS SDK credential providers and Bedrock client
-vitest.mock('@aws-sdk/credential-providers', () => ({
-  fromIni: vitest.fn().mockReturnValue({
+vi.mock('@aws-sdk/credential-providers', () => ({
+  fromIni: vi.fn().mockReturnValue({
     accessKeyId: 'profile-access-key',
     secretAccessKey: 'profile-secret-key',
   }),
 }));
 
 // Mock Smithy client
-vitest.mock('@smithy/smithy-client', () => ({
-  throwDefaultError: vitest.fn(),
+vi.mock('@smithy/smithy-client', () => ({
+  throwDefaultError: vi.fn(),
 }));
 
 // Create a mock send function that we can reference
-const mockSend = vitest.fn().mockImplementation(async () => {
+const mockSend = vi.fn().mockImplementation(async () => {
   return {
     $metadata: {
       httpStatusCode: 200,
@@ -40,9 +41,9 @@ const mockSend = vitest.fn().mockImplementation(async () => {
 });
 
 // Mock AWS SDK modules
-vitest.mock('@aws-sdk/client-bedrock-runtime', () => {
+vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   return {
-    BedrockRuntimeClient: vitest.fn().mockImplementation(() => ({
+    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
       send: mockSend,
       config: { region: 'us-east-1' },
       middlewareStack: {
@@ -50,7 +51,7 @@ vitest.mock('@aws-sdk/client-bedrock-runtime', () => {
         use: () => {},
       },
     })),
-    ConverseStreamCommand: vitest.fn((params) => ({
+    ConverseStreamCommand: vi.fn((params) => ({
       ...params,
       input: params,
       middlewareStack: {
@@ -159,7 +160,7 @@ describe('AwsBedrockHandler with invokedModelId', () => {
     ]);
 
     // Collect all yielded events to verify usage events
-    const events = [];
+    const events: ApiStreamChunk[] = [];
     for await (const event of messageGenerator) {
       events.push(event);
     }

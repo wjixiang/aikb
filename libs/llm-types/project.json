@@ -1,0 +1,19 @@
+{
+  "name": "llm-types",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/llm-types/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/llm-types",
+        "main": "libs/llm-types/src/index.ts",
+        "tsConfig": "libs/llm-types/tsconfig.lib.json",
+        "assets": ["libs/llm-types/*.md"]
+      }
+    }
+  }
+}

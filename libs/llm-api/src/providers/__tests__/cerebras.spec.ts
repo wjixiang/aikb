@@ -19,7 +19,7 @@ vi.mock('../constants', () => ({
 }));
 
 import { CerebrasHandler } from '../cerebras';
-import { cerebrasModels, type CerebrasModelId } from 'agent-lib/types';
+import { cerebrasModels, type CerebrasModelId } from 'llm-types';
 
 // Mock fetch globally
 global.fetch = vi.fn();

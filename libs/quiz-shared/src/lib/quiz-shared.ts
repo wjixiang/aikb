@@ -1,3 +1,3 @@
 export function quizShared(): string {
-  return 'quiz-shared';
+  return 'llm-shared/';
 }

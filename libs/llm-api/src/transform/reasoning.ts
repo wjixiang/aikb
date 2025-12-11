@@ -6,12 +6,12 @@ import type {
   ModelInfo,
   ProviderSettings,
   ReasoningEffortExtended,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import {
   shouldUseReasoningBudget,
   shouldUseReasoningEffort,
-} from '../../shared/api';
+} from 'llm-shared/api';
 
 export type OpenRouterReasoningParams = {
   effort?: ReasoningEffortExtended;

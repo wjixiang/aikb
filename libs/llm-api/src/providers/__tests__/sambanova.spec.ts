@@ -7,26 +7,31 @@ import {
   type SambaNovaModelId,
   sambaNovaDefaultModelId,
   sambaNovaModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { SambaNovaHandler } from '../sambanova';
 
+const mockCreate = vi.fn();
+
 vitest.mock('openai', () => {
-  const createMock = vitest.fn();
+  function MockOpenAI(options?: any) {
+    return {
+      chat: { completions: { create: mockCreate } },
+    };
+  }
+
   return {
-    default: vitest.fn(() => ({
-      chat: { completions: { create: createMock } },
-    })),
+    __esModule: true,
+    default: vi.fn().mockImplementation(MockOpenAI),
   };
 });
 
 describe('SambaNovaHandler', () => {
   let handler: SambaNovaHandler;
-  let mockCreate: any;
 
   beforeEach(() => {
     vitest.clearAllMocks();
-    mockCreate = (OpenAI as unknown as any)().chat.completions.create;
+    // mockCreate is already defined above
     handler = new SambaNovaHandler({
       sambaNovaApiKey: 'test-sambanova-api-key',
     });

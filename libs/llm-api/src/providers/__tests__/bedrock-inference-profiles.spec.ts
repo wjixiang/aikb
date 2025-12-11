@@ -1,20 +1,18 @@
 // npx vitest run src/api/providers/__tests__/bedrock-inference-profiles.spec.ts
 
-import { AWS_INFERENCE_PROFILE_MAPPING } from 'agent-lib/types';
+import { AWS_INFERENCE_PROFILE_MAPPING } from 'llm-types';
 import { AwsBedrockHandler } from '../bedrock';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 // Mock AWS SDK
-vitest.mock('@aws-sdk/client-bedrock-runtime', () => {
-  return {
-    BedrockRuntimeClient: vitest.fn().mockImplementation(() => ({
-      send: vitest.fn(),
-      config: { region: 'us-east-1' },
-    })),
-    ConverseCommand: vitest.fn(),
-    ConverseStreamCommand: vitest.fn(),
-  };
-});
+vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
+  BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
+    send: vi.fn(),
+    config: { region: 'us-east-1' },
+  })),
+  ConverseCommand: vi.fn(),
+  ConverseStreamCommand: vi.fn(),
+}));
 
 describe('Amazon Bedrock Inference Profiles', () => {
   // Helper function to create a handler with specific options

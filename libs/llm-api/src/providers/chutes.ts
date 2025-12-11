@@ -2,13 +2,13 @@ import {
   DEEP_SEEK_DEFAULT_TEMPERATURE,
   chutesDefaultModelId,
   chutesDefaultModelInfo,
-} from 'agent-lib/types';
+} from 'llm-types';
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import type { ApiHandlerOptions } from '../../shared/api';
-import { getModelMaxOutputTokens } from '../../shared/api';
-import { XmlMatcher } from '../../utils/xml-matcher';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { getModelMaxOutputTokens } from 'llm-shared/api';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 import { convertToR1Format } from '../transform/r1-format';
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { ApiStream } from '../transform/stream';

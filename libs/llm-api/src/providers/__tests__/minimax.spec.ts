@@ -2,8 +2,8 @@
 
 vitest.mock('vscode', () => ({
   workspace: {
-    getConfiguration: vitest.fn().mockReturnValue({
-      get: vitest.fn().mockReturnValue(600), // Default timeout in seconds
+    getConfiguration: vi.fn().mockReturnValue({
+      get: vi.fn().mockReturnValue(600), // Default timeout in seconds
     }),
   },
 }));
@@ -14,12 +14,12 @@ import {
   type MinimaxModelId,
   minimaxDefaultModelId,
   minimaxModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { MiniMaxHandler } from '../minimax';
 
 vitest.mock('@anthropic-ai/sdk', () => {
-  const mockCreate = vitest.fn();
+  const mockCreate = vi.fn();
   return {
     Anthropic: vitest.fn(() => ({
       messages: {

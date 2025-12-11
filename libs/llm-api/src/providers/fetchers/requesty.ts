@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
-import { parseApiPrice } from '../../../shared/cost';
-import { toRequestyServiceUrl } from '../../../shared/utils/requesty';
+import { parseApiPrice } from 'llm-shared/cost';
+import { toRequestyServiceUrl } from 'llm-shared/requesty';
 
 export async function getRequestyModels(
   baseUrl?: string,

@@ -8,10 +8,10 @@ import {
   vertexDefaultModelId,
   vertexModels,
   ANTHROPIC_DEFAULT_MAX_TOKENS,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import { ApiHandlerOptions } from '../../shared/api';
-import { safeJsonParse } from '../../shared/safeJsonParse';
+import { ApiHandlerOptions } from 'llm-shared/api';
+import { safeJsonParse } from 'llm-shared/safeJsonParse';
 
 import { ApiStream } from '../transform/stream';
 import { addCacheBreakpoints } from '../transform/caching/vertex';

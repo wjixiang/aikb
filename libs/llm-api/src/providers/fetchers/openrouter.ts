@@ -7,10 +7,10 @@ import {
   OPEN_ROUTER_REASONING_BUDGET_MODELS,
   OPEN_ROUTER_REQUIRED_REASONING_BUDGET_MODELS,
   anthropicModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../../shared/api';
-import { parseApiPrice } from '../../../shared/cost';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { parseApiPrice } from 'llm-shared/cost';
 
 /**
  * OpenRouterBaseModel

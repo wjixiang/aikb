@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { LLM, LLMInfo, LLMInstanceInfo, LMStudioClient } from '@lmstudio/sdk';
 
-import { type ModelInfo, lMStudioDefaultModelInfo } from 'agent-lib/types';
+import { type ModelInfo, lMStudioDefaultModelInfo } from 'llm-types';
 
 import { flushModels, getModels } from './modelCache';
 
@@ -30,7 +30,7 @@ export const forceFullModelDetailsLoad = async (
     // Mark this model as having full details loaded.
     modelsWithLoadedDetails.add(modelId);
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
+    if (error instanceof Error && 'code' in error && error.code === 'ECONNREFUSED') {
       console.warn(`Error connecting to LMStudio at ${baseUrl}`);
     } else {
       console.error(
@@ -135,7 +135,7 @@ export async function getLMStudioModels(
       modelsWithLoadedDetails.add(lmstudioModel.modelKey);
     }
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
+    if (error instanceof Error && 'code' in error && error.code === 'ECONNREFUSED') {
       console.warn(`Error connecting to LMStudio at ${baseUrl}`);
     } else {
       console.error(

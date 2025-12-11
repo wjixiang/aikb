@@ -15,15 +15,12 @@ vi.mock('node-cache', () => {
   const mockSet = vi.fn();
   const mockDel = vi.fn();
 
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      get: mockGet,
-      set: mockSet,
-      del: mockDel,
-    })),
-  };
-});
-
+  return vi.fn().mockImplementation(() => ({
+    get: mockGet,
+    set: mockSet,
+    del: mockDel,
+  }));
+})
 // Mock fs/promises to avoid file system operations
 vi.mock('fs/promises', () => ({
   writeFile: vi.fn().mockResolvedValue(undefined),
@@ -32,7 +29,7 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock fs (synchronous) for disk cache fallback
-vi.mock('fs', () => ({
+vi.mock('node:fs', () => ({
   existsSync: vi.fn().mockReturnValue(false),
   readFileSync: vi.fn().mockReturnValue('{}'),
 }));
@@ -58,9 +55,9 @@ vi.mock('../../../core/config/ContextProxy', () => ({
 
 // Then imports
 import type { Mock } from 'vitest';
-import * as fsSync from 'fs';
+import { existsSync, readFileSync } from 'node:fs';
 import NodeCache from 'node-cache';
-import { getModels, getModelsFromCache } from '../modelCache';
+import { getModels, getModelsFromCache } from '../modelCache.js';
 import { getLiteLLMModels } from '../litellm';
 import { getOpenRouterModels } from '../openrouter';
 import { getRequestyModels } from '../requesty';
@@ -248,12 +245,12 @@ describe('getModelsFromCache disk fallback', () => {
     // Reset memory cache to always miss
     mockCache.get.mockReturnValue(undefined);
     // Reset fs mocks
-    vi.mocked(fsSync.existsSync).mockReturnValue(false);
-    vi.mocked(fsSync.readFileSync).mockReturnValue('{}');
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(readFileSync).mockReturnValue('{}');
   });
 
   it('returns undefined when both memory and disk cache miss', () => {
-    vi.mocked(fsSync.existsSync).mockReturnValue(false);
+    vi.mocked(existsSync).mockReturnValue(false);
 
     const result = getModelsFromCache('openrouter');
 
@@ -275,7 +272,7 @@ describe('getModelsFromCache disk fallback', () => {
 
     expect(result).toEqual(memoryModels);
     // Disk should not be checked when memory cache hits
-    expect(fsSync.existsSync).not.toHaveBeenCalled();
+    expect(existsSync).not.toHaveBeenCalled();
   });
 
   it('returns disk cache data when memory cache misses and context is available', () => {
@@ -291,8 +288,8 @@ describe('getModelsFromCache disk fallback', () => {
       },
     };
 
-    vi.mocked(fsSync.existsSync).mockReturnValue(true);
-    vi.mocked(fsSync.readFileSync).mockReturnValue(JSON.stringify(diskModels));
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(diskModels));
 
     const result = getModelsFromCache('openrouter');
 
@@ -302,8 +299,8 @@ describe('getModelsFromCache disk fallback', () => {
   });
 
   it('handles disk read errors gracefully', () => {
-    vi.mocked(fsSync.existsSync).mockReturnValue(true);
-    vi.mocked(fsSync.readFileSync).mockImplementation(() => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockImplementation(() => {
       throw new Error('Disk read failed');
     });
 
@@ -320,8 +317,8 @@ describe('getModelsFromCache disk fallback', () => {
   });
 
   it('handles invalid JSON in disk cache gracefully', () => {
-    vi.mocked(fsSync.existsSync).mockReturnValue(true);
-    vi.mocked(fsSync.readFileSync).mockReturnValue('invalid json{');
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue('invalid json{');
 
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
@@ -398,7 +395,7 @@ describe('empty cache protection', () => {
       // API returns empty (failure)
       mockGetOpenRouterModels.mockResolvedValue({});
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
       const result = await refreshModels({ provider: 'openrouter' });
 
       // Should return existing cache, not empty
@@ -428,7 +425,7 @@ describe('empty cache protection', () => {
       mockGet.mockReturnValue(existingModels);
       mockGetOpenRouterModels.mockResolvedValue(newModels);
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
       const result = await refreshModels({ provider: 'openrouter' });
 
       // Should return new models
@@ -450,7 +447,7 @@ describe('empty cache protection', () => {
       mockGet.mockReturnValue(existingModels);
       mockGetOpenRouterModels.mockRejectedValue(new Error('API error'));
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
       const result = await refreshModels({ provider: 'openrouter' });
 
       // Should return existing cache on error
@@ -461,7 +458,7 @@ describe('empty cache protection', () => {
       mockGet.mockReturnValue(undefined);
       mockGetOpenRouterModels.mockRejectedValue(new Error('API error'));
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
       const result = await refreshModels({ provider: 'openrouter' });
 
       // Should return empty when no cache and API fails
@@ -474,7 +471,7 @@ describe('empty cache protection', () => {
       // API returns empty (failure/rate limit)
       mockGetOpenRouterModels.mockResolvedValue({});
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
       const result = await refreshModels({ provider: 'openrouter' });
 
       // Should return empty but NOT cache it
@@ -500,7 +497,7 @@ describe('empty cache protection', () => {
       mockGetOpenRouterModels.mockReturnValue(delayedPromise);
       mockGet.mockReturnValue(undefined);
 
-      const { refreshModels } = await import('../modelCache');
+      const { refreshModels } = await import('../modelCache.js');
 
       // Start two concurrent refresh calls
       const promise1 = refreshModels({ provider: 'openrouter' });

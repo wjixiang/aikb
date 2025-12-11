@@ -2,9 +2,9 @@ import {
   type GroqModelId,
   groqDefaultModelId,
   groqModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { BaseOpenAiCompatibleProvider } from './base-openai-compatible-provider';
 

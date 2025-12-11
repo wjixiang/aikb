@@ -7,7 +7,7 @@ import {
   chutesDefaultModelId,
   chutesDefaultModelInfo,
   DEEP_SEEK_DEFAULT_TEMPERATURE,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { ChutesHandler } from '../chutes';
 

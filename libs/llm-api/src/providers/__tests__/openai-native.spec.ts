@@ -3,19 +3,25 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 
 import { OpenAiNativeHandler } from '../openai-native';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
 // Mock OpenAI client - now everything uses Responses API
-const mockResponsesCreate = vitest.fn();
+const mockResponsesCreate = vi.fn();
 
 vitest.mock('openai', () => {
+  class MockOpenAI {
+    constructor(options: any) {
+      
+      
+    }
+    chat =  { completions: { create: vi.fn()} }
+    responses = { create: mockResponsesCreate }
+  }
+  
   return {
     __esModule: true,
-    default: vitest.fn().mockImplementation(() => ({
-      responses: {
-        create: mockResponsesCreate,
-      },
-    })),
+    default: MockOpenAI,
+    OpenAI: MockOpenAI
   };
 });
 
@@ -68,7 +74,7 @@ describe('OpenAiNativeHandler', () => {
   describe('createMessage', () => {
     it('should handle streaming responses via Responses API', async () => {
       // Mock fetch for Responses API fallback
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -112,7 +118,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle API errors', async () => {
       // Mock fetch to return error
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
         text: async () => 'Internal Server Error',
@@ -217,7 +223,7 @@ describe('OpenAiNativeHandler', () => {
   describe('GPT-5 models', () => {
     it('should handle GPT-5 model with Responses API', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -303,7 +309,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle GPT-5-mini model with Responses API', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -344,7 +350,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle GPT-5-nano model with Responses API', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -385,7 +391,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should support verbosity control for GPT-5', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -428,7 +434,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should support minimal reasoning effort for GPT-5', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -470,7 +476,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should support xhigh reasoning effort for GPT-5.1 Codex Max', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -510,7 +516,7 @@ describe('OpenAiNativeHandler', () => {
 
     it("should omit reasoning when selection is 'disable'", async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -548,7 +554,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should support low reasoning effort for GPT-5', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -599,7 +605,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should support both verbosity and reasoning effort together for GPT-5', async () => {
       // Mock fetch for Responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -651,7 +657,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle actual GPT-5 Responses API format', async () => {
       // Mock fetch with actual response format from GPT-5
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -737,7 +743,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle Responses API with no content gracefully', async () => {
       // Mock fetch with empty response
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -777,7 +783,7 @@ describe('OpenAiNativeHandler', () => {
 
     it('should handle unhandled stream events gracefully', async () => {
       // Mock fetch for the fallback SSE path
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -831,7 +837,7 @@ describe('OpenAiNativeHandler', () => {
     });
 
     it('should format full conversation correctly', async () => {
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -882,7 +888,7 @@ describe('OpenAiNativeHandler', () => {
 
       for (const { status, expectedMessage } of testCases) {
         // Mock fetch with error response
-        const mockFetch = vitest.fn().mockResolvedValue({
+        const mockFetch = vi.fn().mockResolvedValue({
           ok: false,
           status,
           statusText: 'Error',
@@ -923,7 +929,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
   });
 
   it('should handle reasoning delta events for GPT-5', async () => {
-    const mockFetch = vitest.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       body: new ReadableStream({
         start(controller) {
@@ -973,7 +979,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
   });
 
   it('should handle refusal delta events for GPT-5 and prefix output', async () => {
-    const mockFetch = vitest.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       body: new ReadableStream({
         start(controller) {
@@ -1016,7 +1022,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
   });
 
   it('should ignore malformed JSON lines in SSE stream', async () => {
-    const mockFetch = vitest.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       body: new ReadableStream({
         start(controller) {
@@ -1077,7 +1083,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
 
     it('should handle codex-mini-latest streaming response', async () => {
       // Mock fetch for Codex Mini responses API
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -1224,7 +1230,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
 
     it('should handle codex-mini-latest API errors', async () => {
       // Mock fetch with error response
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 429,
         statusText: 'Too Many Requests',
@@ -1257,7 +1263,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
 
     it('should handle codex-mini-latest with multiple user messages', async () => {
       // Mock fetch for streaming response
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -1320,7 +1326,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
 
     it('should handle codex-mini-latest stream error events', async () => {
       // Mock fetch with error event in stream
-      const mockFetch = vitest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         body: new ReadableStream({
           start(controller) {
@@ -1358,7 +1364,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
 
       // Should throw an error when encountering error event
       await expect(async () => {
-        const chunks = [];
+        const chunks: any[] = [];
         for await (const chunk of stream) {
           chunks.push(chunk);
         }
@@ -1368,7 +1374,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
     // New tests: ensure text.verbosity is omitted for models without supportsVerbosity
     describe('Verbosity gating for non-GPT-5 models', () => {
       it('should omit text.verbosity for gpt-4.1', async () => {
-        const mockFetch = vitest.fn().mockResolvedValue({
+        const mockFetch = vi.fn().mockResolvedValue({
           ok: true,
           body: new ReadableStream({
             start(controller) {
@@ -1411,7 +1417,7 @@ describe('GPT-5 streaming event coverage (additional)', () => {
       });
 
       it('should omit text.verbosity for gpt-4o', async () => {
-        const mockFetch = vitest.fn().mockResolvedValue({
+        const mockFetch = vi.fn().mockResolvedValue({
           ok: true,
           body: new ReadableStream({
             start(controller) {

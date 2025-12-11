@@ -11,11 +11,11 @@ import {
   type VerbosityLevel,
   type ReasoningEffortExtended,
   type ServiceTier,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { getModelParams } from '../transform/model-params';

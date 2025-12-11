@@ -2,10 +2,10 @@
 vi.mock('axios');
 
 import type { Mock } from 'vitest';
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 import axios from 'axios';
 import { getChutesModels } from '../chutes';
-import { chutesModels } from 'agent-lib/types';
+import { chutesModels } from 'llm-types';
 
 const mockedAxios = axios as typeof axios & {
   get: Mock;

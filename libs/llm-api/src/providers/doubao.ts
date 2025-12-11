@@ -1,10 +1,10 @@
 import { OpenAiHandler } from './openai';
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 import {
   DOUBAO_API_BASE_URL,
   doubaoDefaultModelId,
   doubaoModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 import { getModelParams } from '../transform/model-params';
 import { ApiStreamUsageChunk } from '../transform/stream';
 

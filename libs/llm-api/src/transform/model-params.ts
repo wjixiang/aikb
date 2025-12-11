@@ -4,7 +4,7 @@ import {
   type VerbosityLevel,
   type ReasoningEffortExtended,
   ANTHROPIC_DEFAULT_MAX_TOKENS,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import {
   DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS,
@@ -13,7 +13,7 @@ import {
   shouldUseReasoningBudget,
   shouldUseReasoningEffort,
   getModelMaxOutputTokens,
-} from '../../shared/api';
+} from 'llm-shared/api';
 
 import {
   type AnthropicReasoningParams,

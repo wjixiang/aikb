@@ -8,9 +8,9 @@ import { ApiStreamChunk } from '../../transform/stream';
 import { AnthropicVertexHandler } from '../anthropic-vertex';
 
 vitest.mock('@anthropic-ai/vertex-sdk', () => ({
-  AnthropicVertex: vitest.fn().mockImplementation(() => ({
+  AnthropicVertex: vi.fn().mockImplementation(() => ({
     messages: {
-      create: vitest.fn().mockImplementation(async (options) => {
+      create: vi.fn().mockImplementation(async (options) => {
         if (!options.stream) {
           return {
             id: 'test-completion',
@@ -129,7 +129,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -224,7 +224,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -257,7 +257,7 @@ describe('VertexHandler', () => {
       });
 
       const mockError = new Error('Vertex API error');
-      const mockCreate = vitest.fn().mockRejectedValue(mockError);
+      const mockCreate = vi.fn().mockRejectedValue(mockError);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -319,7 +319,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, [
@@ -441,7 +441,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -520,7 +520,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -579,7 +579,7 @@ describe('VertexHandler', () => {
         },
       };
 
-      const mockCreate = vitest.fn().mockResolvedValue(asyncIterator);
+      const mockCreate = vi.fn().mockResolvedValue(asyncIterator);
       (handler['client'].messages as any).create = mockCreate;
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
@@ -611,7 +611,7 @@ describe('VertexHandler', () => {
         vertexRegion: 'us-central1',
       });
 
-      const mockCreate = vitest.fn().mockImplementation(async (options) => {
+      const mockCreate = vi.fn().mockImplementation(async (options) => {
         return {
           async *[Symbol.asyncIterator]() {
             yield {
@@ -699,7 +699,7 @@ describe('VertexHandler', () => {
         vertexRegion: 'us-central1',
       });
 
-      const mockCreate = vitest.fn().mockImplementation(async (options) => {
+      const mockCreate = vi.fn().mockImplementation(async (options) => {
         return {
           async *[Symbol.asyncIterator]() {
             yield {
@@ -792,7 +792,7 @@ describe('VertexHandler', () => {
       });
 
       const mockError = new Error('Vertex API error');
-      const mockCreate = vitest.fn().mockRejectedValue(mockError);
+      const mockCreate = vi.fn().mockRejectedValue(mockError);
       (handler['client'].messages as any).create = mockCreate;
 
       await expect(handler.completePrompt('Test prompt')).rejects.toThrow(
@@ -807,7 +807,7 @@ describe('VertexHandler', () => {
         vertexRegion: 'us-central1',
       });
 
-      const mockCreate = vitest.fn().mockResolvedValue({
+      const mockCreate = vi.fn().mockResolvedValue({
         content: [{ type: 'image' }],
       });
       (handler['client'].messages as any).create = mockCreate;
@@ -823,7 +823,7 @@ describe('VertexHandler', () => {
         vertexRegion: 'us-central1',
       });
 
-      const mockCreate = vitest.fn().mockResolvedValue({
+      const mockCreate = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '' }],
       });
       (handler['client'].messages as any).create = mockCreate;
@@ -936,7 +936,7 @@ describe('VertexHandler', () => {
         modelMaxThinkingTokens: 4096,
       });
 
-      const mockCreate = vitest.fn().mockImplementation(async (options) => {
+      const mockCreate = vi.fn().mockImplementation(async (options) => {
         if (!options.stream) {
           return {
             id: 'test-completion',

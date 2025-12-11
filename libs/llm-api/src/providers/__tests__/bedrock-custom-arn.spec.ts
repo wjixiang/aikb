@@ -1,23 +1,23 @@
 // npx vitest run src/api/providers/__tests__/bedrock-custom-arn.spec.ts
 
 import { AwsBedrockHandler } from '../bedrock';
-import { ApiHandlerOptions } from '../../../shared/api';
-import { logger } from '../../../utils/logging';
+import { ApiHandlerOptions } from 'llm-shared/api';
+import { logger } from 'llm-utils/logging';
 
 // Mock the logger
-vitest.mock('../../../utils/logging', () => ({
+vitest.mock('llm-utils/logging', () => ({
   logger: {
-    debug: vitest.fn(),
-    info: vitest.fn(),
-    warn: vitest.fn(),
-    error: vitest.fn(),
-    fatal: vitest.fn(),
-    child: vitest.fn().mockReturnValue({
-      debug: vitest.fn(),
-      info: vitest.fn(),
-      warn: vitest.fn(),
-      error: vitest.fn(),
-      fatal: vitest.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
     }),
   },
 }));
@@ -26,7 +26,7 @@ vitest.mock('../../../utils/logging', () => ({
 vitest.mock('@aws-sdk/client-bedrock-runtime', () => {
   const mockModule = {
     lastCommandInput: null as Record<string, any> | null,
-    mockSend: vitest.fn().mockImplementation(async function () {
+    mockSend: vi.fn().mockImplementation(async function () {
       return {
         output: new TextEncoder().encode(
           JSON.stringify({ content: 'Test response' }),
@@ -51,7 +51,7 @@ vitest.mock('@aws-sdk/client-bedrock-runtime', () => {
   return {
     BedrockRuntimeClient: mockModule.MockBedrockRuntimeClient,
     ConverseCommand: mockModule.mockConverseCommand,
-    ConverseStreamCommand: vitest.fn(),
+    ConverseStreamCommand: vi.fn(),
     __mock: mockModule, // Expose mock internals for testing
   };
 });

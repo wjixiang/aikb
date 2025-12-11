@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ModelInfo, ollamaDefaultModelInfo } from 'agent-lib/types';
+import { ModelInfo, ollamaDefaultModelInfo } from 'llm-types';
 import { z } from 'zod';
 
 const OllamaModelDetailsSchema = z.object({

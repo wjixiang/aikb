@@ -1,6 +1,6 @@
-import { deepSeekModels, deepSeekDefaultModelId } from 'agent-lib/types';
+import { deepSeekModels, deepSeekDefaultModelId } from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import type { ApiStreamUsageChunk } from '../transform/stream';
 import { getModelParams } from '../transform/model-params';

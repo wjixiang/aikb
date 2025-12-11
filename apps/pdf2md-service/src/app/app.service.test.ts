@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppService } from './app.service';
-import { Pdf2MArkdownDto } from 'library-shared';
+import { Pdf2MArkdownDto } from 'llm-shared/';
 import { ClientProxy } from '@nestjs/microservices';
 import { MinerUClient } from 'mineru-client';
 import { readFileSync } from 'fs';

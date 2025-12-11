@@ -2,11 +2,11 @@ import OpenAI from 'openai';
 import { Anthropic } from '@anthropic-ai/sdk';
 
 import { LiteLLMHandler } from '../lite-llm';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 import {
   litellmDefaultModelId,
   litellmDefaultModelInfo,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 // Mock vscode first to avoid import errors
 vi.mock('vscode', () => ({}));

@@ -6,15 +6,15 @@ import {
   getApiProtocol,
   getModelId,
   ModelInfo,
-} from '../types';
+} from 'llm-types';
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveToolProtocol } from '../utils/resolveToolProtocol';
+import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
 import { formatResponse } from './simplified-dependencies/formatResponse';
 import { AssistantMessageContent, ToolUse } from './simplified-dependencies/assistantMessageTypes';
-import { NativeToolCallParser } from './simplified-dependencies/NativeToolCallParser';
+import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
-import { AssistantMessageParser } from './simplified-dependencies/AssistantMessageParser';
+import { AssistantMessageParser } from '../assistant-message/AssistantMessageParser';
 import { SYSTEM_PROMPT } from './simplified-dependencies/systemPrompt';
 
 /**

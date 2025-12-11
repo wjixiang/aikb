@@ -74,9 +74,9 @@ vi.mock('openai', () => {
 import OpenAI from 'openai';
 import type { Anthropic } from '@anthropic-ai/sdk';
 
-import { deepSeekDefaultModelId } from 'agent-lib/types';
+import { deepSeekDefaultModelId } from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { DeepSeekHandler } from '../deepseek';
 

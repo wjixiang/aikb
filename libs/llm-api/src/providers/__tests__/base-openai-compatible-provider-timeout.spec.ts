@@ -1,28 +1,28 @@
 // npx vitest run api/providers/__tests__/base-openai-compatible-provider-timeout.spec.ts
 
-import type { ModelInfo } from 'agent-lib/types';
+import type { ModelInfo } from 'llm-types';
 
 import { BaseOpenAiCompatibleProvider } from '../base-openai-compatible-provider';
 
 // Mock the timeout config utility
-vitest.mock('../utils/timeout-config', () => ({
-  getApiRequestTimeout: vitest.fn(),
+vitest.mock('./utils/timeout-config', () => ({
+  getApiRequestTimeout: vi.fn(),
 }));
 
-import { getApiRequestTimeout } from '../utils/timeout-config';
+import { getApiRequestTimeout } from './utils/timeout-config';
 
 // Mock OpenAI and capture constructor calls
-const mockOpenAIConstructor = vitest.fn();
+const mockOpenAIConstructor = vi.fn();
 
 vitest.mock('openai', () => {
   return {
     __esModule: true,
-    default: vitest.fn().mockImplementation((config) => {
+    default: vi.fn().mockImplementation((config) => {
       mockOpenAIConstructor(config);
       return {
         chat: {
           completions: {
-            create: vitest.fn(),
+            create: vi.fn(),
           },
         },
       };

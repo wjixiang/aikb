@@ -14,10 +14,10 @@ import {
   type GeminiModelId,
   geminiDefaultModelId,
   geminiModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
-import { safeJsonParse } from '../../shared/safeJsonParse';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { safeJsonParse } from 'llm-shared/safeJsonParse';
 
 import { convertAnthropicMessageToGemini } from '../transform/gemini-format';
 import { t } from 'i18next';

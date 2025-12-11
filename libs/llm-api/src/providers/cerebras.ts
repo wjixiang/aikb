@@ -4,13 +4,13 @@ import {
   type CerebrasModelId,
   cerebrasDefaultModelId,
   cerebrasModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 import { ApiStream } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';
-import { XmlMatcher } from '../../utils/xml-matcher';
+import { XmlMatcher } from 'llm-utils/xml-matcher';
 
 import type {
   ApiHandlerCreateMessageMetadata,

@@ -3,13 +3,13 @@
 import {
   deepInfraDefaultModelId,
   deepInfraDefaultModelInfo,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-const mockCreate = vitest.fn();
-const mockWithResponse = vitest.fn();
+const mockCreate = vi.fn();
+const mockWithResponse = vi.fn();
 
-vitest.mock('openai', () => {
-  const mockConstructor = vitest.fn();
+vi.mock('openai', () => {
+  const mockConstructor = vi.fn();
 
   return {
     __esModule: true,
@@ -25,8 +25,8 @@ vitest.mock('openai', () => {
   };
 });
 
-vitest.mock('../fetchers/modelCache', () => ({
-  getModels: vitest.fn().mockResolvedValue({
+vi.mock('../fetchers/modelCache', () => ({
+  getModels: vi.fn().mockResolvedValue({
     [deepInfraDefaultModelId]: deepInfraDefaultModelInfo,
   }),
 }));
@@ -329,7 +329,7 @@ describe('DeepInfraHandler', () => {
 
       const chunks = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as never);
       }
 
       expect(chunks).toContainEqual({

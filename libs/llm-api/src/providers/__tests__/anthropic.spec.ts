@@ -1,12 +1,12 @@
 // npx vitest run src/api/providers/__tests__/anthropic.spec.ts
 
 import { AnthropicHandler } from '../anthropic';
-import { ApiHandlerOptions } from '../../../shared/api';
+import { ApiHandlerOptions } from 'llm-shared/api';
 
-const mockCreate = vitest.fn();
+const mockCreate = vi.fn();
 
 vitest.mock('@anthropic-ai/sdk', () => {
-  const mockAnthropicConstructor = vitest.fn().mockImplementation(() => ({
+  const mockAnthropicConstructor = vi.fn().mockImplementation(() => ({
     messages: {
       create: mockCreate.mockImplementation(async (options) => {
         if (!options.stream) {

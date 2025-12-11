@@ -4,10 +4,10 @@ import OpenAI from 'openai';
 import {
   deepInfraDefaultModelId,
   deepInfraDefaultModelInfo,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
-import { calculateApiCostOpenAI } from '../../shared/cost';
+import type { ApiHandlerOptions } from 'llm-shared/api';
+import { calculateApiCostOpenAI } from 'llm-shared/cost';
 
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';

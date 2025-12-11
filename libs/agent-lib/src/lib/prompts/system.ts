@@ -3,9 +3,9 @@
 //   PromptComponent,
 //   CustomModePrompts,
 //   TodoItem,
-// } from 'agent-lib/types';
+// } from 'llm-types';
 
-// import type { SystemPromptSettings } from './types';
+// import type { SystemPromptSettings } from 'llm-types';
 
 // import {
 //   Mode,
@@ -14,10 +14,10 @@
 //   getModeBySlug,
 //   getGroupName,
 //   getModeSelection,
-// } from '../../shared/modes';
-// import { DiffStrategy } from '../../shared/tools';
-// import { formatLanguage } from '../../shared/language';
-// import { isEmpty } from '../../utils/object';
+// } from 'llm-shared/modes';
+// import { DiffStrategy } from 'llm-shared/tools';
+// import { formatLanguage } from 'llm-shared/language';
+// import { isEmpty } from 'llm-utils/object';
 
 // import { McpHub } from '../../services/mcp/McpHub';
 // import { CodeIndexManager } from '../../services/code-index/manager';
@@ -28,7 +28,7 @@
 // } from './sections/custom-system-prompt';
 
 // import { getToolDescriptionsForMode } from './tools';
-// import { getEffectiveProtocol, isNativeProtocol } from 'agent-lib/types';
+// import { getEffectiveProtocol, isNativeProtocol } from 'llm-types';
 // import {
 //   getRulesSection,
 //   getSystemInfoSection,

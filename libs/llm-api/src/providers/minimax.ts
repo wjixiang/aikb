@@ -7,9 +7,9 @@ import {
   type MinimaxModelId,
   minimaxDefaultModelId,
   minimaxModels,
-} from 'agent-lib/types';
+} from 'llm-types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream } from '../transform/stream';
 import { getModelParams } from '../transform/model-params';
@@ -19,7 +19,7 @@ import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
 } from '../index';
-import { calculateApiCostAnthropic } from '../../shared/cost';
+import { calculateApiCostAnthropic } from 'llm-shared/cost';
 import { convertOpenAIToolsToAnthropic } from '../../core/prompts/tools/native-tools/converters';
 
 /**

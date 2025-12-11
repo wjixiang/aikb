@@ -1,24 +1,27 @@
 // npx vitest api/providers/__tests__/xai.spec.ts
 
-const mockCreate = vitest.fn();
+const mockCreate = vi.fn();
 
 vitest.mock('openai', () => {
-  const mockConstructor = vitest.fn();
+  function MockOpenAI(options?: any) {
+    return {
+      chat: { completions: { create: mockCreate } },
+    };
+  }
 
   return {
     __esModule: true,
-    default: mockConstructor.mockImplementation(() => ({
-      chat: { completions: { create: mockCreate } },
-    })),
+    default: vi.fn().mockImplementation(MockOpenAI),
   };
 });
 
 import OpenAI from 'openai';
 import type { Anthropic } from '@anthropic-ai/sdk';
 
-import { xaiDefaultModelId, xaiModels } from 'agent-lib/types';
+import { xaiDefaultModelId, xaiModels } from 'llm-types';
 
 import { XAIHandler } from '../xai';
+import type { ApiStreamChunk } from '../../transform/stream';
 
 describe('XAIHandler', () => {
   let handler: XAIHandler;
@@ -475,7 +478,7 @@ describe('XAIHandler', () => {
         toolProtocol: 'native',
       });
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
@@ -532,7 +535,7 @@ describe('XAIHandler', () => {
     it('should yield tool_call_end events when finish_reason is tool_calls', async () => {
       // Import NativeToolCallParser to set up state
       const { NativeToolCallParser } = await import(
-        '../../../core/assistant-message/NativeToolCallParser'
+        'agent-lib/assistant-message/NativeToolCallParser.js'
       );
 
       // Clear any previous state
@@ -593,7 +596,7 @@ describe('XAIHandler', () => {
         toolProtocol: 'native',
       });
 
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
       for await (const chunk of stream) {
         // Simulate what Task.ts does: when we receive tool_call_partial,
         // process it through NativeToolCallParser to populate rawChunkTracker

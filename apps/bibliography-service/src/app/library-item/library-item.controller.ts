@@ -20,7 +20,7 @@ import {
   PdfUploadUrlDto,
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
-} from 'library-shared';
+} from 'llm-shared/';
 import { LibraryItem } from 'bibliography';
 
 @Controller('library-items')

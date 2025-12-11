@@ -7,7 +7,7 @@ import {
   makeApiRequest,
   processStreamResponse,
   type StreamProcessorCallbacks,
-} from './utils/apiUtils';
+} from llm-utils/apiUtils';
 
 interface UseChatOptions {
   initialMessages?: Message[];

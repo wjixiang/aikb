@@ -27,17 +27,17 @@ import {
   AWS_INFERENCE_PROFILE_MAPPING,
   BEDROCK_1M_CONTEXT_MODEL_IDS,
   BEDROCK_GLOBAL_INFERENCE_MODEL_IDS,
-} from 'agent-lib/types';
+} from 'llm-types';
 
 import { ApiStream } from '../transform/stream';
 import { BaseProvider } from './base-provider';
-import { logger } from '../../utils/logging';
-import { Package } from '../../shared/package';
+import { logger } from 'llm-utils/logging';
+import { Package } from 'llm-shared/package';
 import { MultiPointStrategy } from '../transform/cache-strategy/multi-point-strategy';
-import { ModelInfo as CacheModelInfo } from '../transform/cache-strategy/types';
+import { ModelInfo as CacheModelInfo } from 'llm-types';
 import { convertToBedrockConverseMessages as sharedConverter } from '../transform/bedrock-converse-format';
 import { getModelParams } from '../transform/model-params';
-import { shouldUseReasoningBudget } from '../../shared/api';
+import { shouldUseReasoningBudget } from 'llm-shared/api';
 import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,

@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RabbitRPC } from '@golevelup/nestjs-rabbitmq';
-import { Pdf2MArkdownDto } from 'library-shared';
+import { Pdf2MArkdownDto } from 'llm-shared/';
 
 @Controller()
 export class AppController {

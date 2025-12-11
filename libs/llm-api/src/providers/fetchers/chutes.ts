@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { z } from 'zod';
 
-import { type ModelInfo, chutesModels } from 'agent-lib/types';
+import { type ModelInfo, chutesModels } from 'llm-types';
 
 import { DEFAULT_HEADERS } from '../constants';
 

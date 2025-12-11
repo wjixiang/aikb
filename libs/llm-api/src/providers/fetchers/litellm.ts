@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import type { ModelRecord } from '../../../shared/api';
+import type { ModelRecord } from 'llm-shared/api';
 
 import { DEFAULT_HEADERS } from '../constants';
 /**
