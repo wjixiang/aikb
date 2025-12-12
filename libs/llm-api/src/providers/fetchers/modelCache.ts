@@ -1,7 +1,4 @@
 import * as path from 'path';
-import fs from 'fs/promises';
-import * as fsSync from 'fs';
-
 import NodeCache from 'node-cache';
 import { z } from 'zod';
 
@@ -12,6 +9,15 @@ import { safeWriteJson } from 'llm-utils/safeWriteJson';
 import { getCacheDirectoryPath } from 'llm-utils/storage';
 import type { RouterName, ModelRecord } from 'llm-shared/api';
 import { fileExistsAtPath } from 'llm-utils/fs';
+
+// Conditional imports for Node.js environment
+let fs: any;
+let fsSync: any;
+
+if (typeof window === 'undefined') {
+  fs = require('fs/promises');
+  fsSync = require('fs');
+}
 
 import { getOpenRouterModels } from './openrouter';
 import { getVercelAiGatewayModels } from './vercel-ai-gateway';
@@ -53,7 +59,7 @@ async function readModels(
   const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   const filePath = path.join(cacheDir, filename);
   const exists = await fileExistsAtPath(filePath);
-  return exists ? JSON.parse(await fs.readFile(filePath, 'utf8')) : undefined;
+  return exists && fs ? JSON.parse(await fs.readFile(filePath, 'utf8')) : undefined;
 }
 
 /**
@@ -270,14 +276,14 @@ export async function initializeModelCacheRefresh(): Promise<void> {
       provider: RouterName;
       options: GetModelsOptions;
     }> = [
-      { provider: 'openrouter', options: { provider: 'openrouter' } },
-      { provider: 'glama', options: { provider: 'glama' } },
-      {
-        provider: 'vercel-ai-gateway',
-        options: { provider: 'vercel-ai-gateway' },
-      },
-      { provider: 'chutes', options: { provider: 'chutes' } },
-    ];
+        { provider: 'openrouter', options: { provider: 'openrouter' } },
+        { provider: 'glama', options: { provider: 'glama' } },
+        {
+          provider: 'vercel-ai-gateway',
+          options: { provider: 'vercel-ai-gateway' },
+        },
+        { provider: 'chutes', options: { provider: 'chutes' } },
+      ];
 
     // Refresh each provider in background (fire and forget)
     for (const { options } of publicProviders) {
@@ -343,7 +349,7 @@ export function getModelsFromCache(
     const filePath = path.join(cacheDir, filename);
 
     // Use synchronous fs to avoid async complexity in getModel() callers
-    if (fsSync.existsSync(filePath)) {
+    if (fsSync && fsSync.existsSync(filePath)) {
       const data = fsSync.readFileSync(filePath, 'utf8');
       const models = JSON.parse(data);
 

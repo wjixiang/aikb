@@ -23,12 +23,11 @@ import type {
   ApiHandlerCreateMessageMetadata,
 } from '../index';
 import { calculateApiCostAnthropic } from 'llm-shared/cost';
-import { convertOpenAIToolsToAnthropic } from '../../core/prompts/tools/native-tools/converters';
+import { convertOpenAIToolsToAnthropic } from 'llm-core/prompts/tools/native-tools/converters';
 
 export class AnthropicHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   private options: ApiHandlerOptions;
   private client: Anthropic;
 
@@ -84,12 +83,12 @@ export class AnthropicHandler
 
     const nativeToolParams = shouldIncludeNativeTools
       ? {
-          tools: convertOpenAIToolsToAnthropic(metadata.tools!),
-          tool_choice: this.convertOpenAIToolChoice(
-            metadata.tool_choice,
-            metadata.parallelToolCalls,
-          ),
-        }
+        tools: convertOpenAIToolsToAnthropic(metadata.tools!),
+        tool_choice: this.convertOpenAIToolChoice(
+          metadata.tool_choice,
+          metadata.parallelToolCalls,
+        ),
+      }
       : {};
 
     switch (modelId) {
@@ -144,17 +143,17 @@ export class AnthropicHandler
                   content:
                     typeof message.content === 'string'
                       ? [
-                          {
-                            type: 'text',
-                            text: message.content,
-                            cache_control: cacheControl,
-                          },
-                        ]
+                        {
+                          type: 'text',
+                          text: message.content,
+                          cache_control: cacheControl,
+                        },
+                      ]
                       : message.content.map((content, contentIndex) =>
-                          contentIndex === message.content.length - 1
-                            ? { ...content, cache_control: cacheControl }
-                            : content,
-                        ),
+                        contentIndex === message.content.length - 1
+                          ? { ...content, cache_control: cacheControl }
+                          : content,
+                      ),
                 };
               }
               return message;

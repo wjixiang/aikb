@@ -78,7 +78,12 @@ function convertToOllamaMessages(
                     }
                     return '(see following user message for image)';
                   }
-                  return part.text;
+                  // Only access text property if it exists on the part
+                  if ('text' in part) {
+                    return part.text;
+                  }
+                  // Handle other block types that might not have text
+                  return '';
                 })
                 .join('\n') ?? '';
           }
@@ -94,7 +99,12 @@ function convertToOllamaMessages(
           // Separate text and images for Ollama
           const textContent = nonToolMessages
             .filter((part) => part.type === 'text')
-            .map((part) => part.text)
+            .map((part) => {
+              if ('text' in part) {
+                return part.text;
+              }
+              return '';
+            })
             .join('\n');
 
           const imageData: string[] = [];
@@ -143,7 +153,12 @@ function convertToOllamaMessages(
               if (part.type === 'image') {
                 return ''; // impossible as the assistant cannot send images
               }
-              return part.text;
+              // Only access text property if it exists on the part
+              if ('text' in part) {
+                return part.text;
+              }
+              // Handle other block types that might not have text
+              return '';
             })
             .join('\n');
         }
@@ -152,11 +167,11 @@ function convertToOllamaMessages(
         const toolCalls =
           toolMessages.length > 0
             ? toolMessages.map((tool) => ({
-                function: {
-                  name: tool.name,
-                  arguments: tool.input as Record<string, unknown>,
-                },
-              }))
+              function: {
+                name: tool.name,
+                arguments: tool.input as Record<string, unknown>,
+              },
+            }))
             : undefined;
 
         ollamaMessages.push({
@@ -173,8 +188,7 @@ function convertToOllamaMessages(
 
 export class NativeOllamaHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
   private client: Ollama | undefined;
   protected models: Record<string, ModelInfo> = {};

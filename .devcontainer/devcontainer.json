@@ -17,7 +17,8 @@
 				"Prisma.prisma",
 				"bradlc.vscode-tailwindcss",
 				"csstools.postcss",
-				"GraphQL.vscode-graphql-syntax"
+				"GraphQL.vscode-graphql-syntax",
+				"esbenp.prettier-vscode"
 			]
 		}
 	}

@@ -1,14 +1,11 @@
 {
-  "name": "llm-api",
+  "name": "llm-core",
   "version": "0.0.1",
   "private": true,
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
-    "@lmstudio/sdk": "^1.5.0",
-    "openai": "^5.10.1",
     "tslib": "^2.3.0"
   }
 }

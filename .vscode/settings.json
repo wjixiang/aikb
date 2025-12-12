@@ -3,5 +3,7 @@
     "python.analysis.extraPaths": [
         ".venv/lib/python3.12/site-packages"
     ],
-    "vitest.disableWorkspaceWarning": true
+    "vitest.disableWorkspaceWarning": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true
 }

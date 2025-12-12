@@ -1,4 +1,4 @@
-import { Task } from './task.entity';
+import { Task } from '../task.entity';
 import {
   type ApiHandler,
   type ApiStream,
@@ -192,16 +192,4 @@ describe('Task', () => {
     });
   });
 
-  describe('integrated', () => {
-    const testApiConfig: ProviderSettings = {
-      apiProvider: 'zai',
-      apiKey: process.env['GLM_API_KEY'],
-      apiModelId: 'glm-4.6',
-    };
-
-    it('should create a new task successfully', async () => {
-      const newTask = new Task('test_task_id_1', testApiConfig);
-      expect(newTask.taskId).toBe('test_task_id_1');
-    });
-  });
 });

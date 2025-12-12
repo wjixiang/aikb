@@ -1,9 +1,16 @@
-import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
 import * as path from 'path';
 import * as lockfile from 'proper-lockfile';
 import Disassembler from 'stream-json/Disassembler';
 import Stringer from 'stream-json/Stringer';
+
+// Conditional imports for Node.js environment
+let fs: any;
+let fsSync: any;
+
+if (typeof window === 'undefined') {
+  fs = require('fs/promises');
+  fsSync = require('fs');
+}
 
 /**
  * Safely writes JSON data to a file.
@@ -20,7 +27,7 @@ import Stringer from 'stream-json/Stringer';
 
 async function safeWriteJson(filePath: string, data: any): Promise<void> {
   const absoluteFilePath = path.resolve(filePath);
-  let releaseLock = async () => {}; // Initialized to a no-op
+  let releaseLock = async () => { }; // Initialized to a no-op
 
   // For directory creation
   const dirPath = path.dirname(absoluteFilePath);
@@ -28,10 +35,12 @@ async function safeWriteJson(filePath: string, data: any): Promise<void> {
   // Ensure directory structure exists with improved reliability
   try {
     // Create directory with recursive option
-    await fs.mkdir(dirPath, { recursive: true });
+    if (fs) {
+      await fs.mkdir(dirPath, { recursive: true });
 
-    // Verify directory exists after creation attempt
-    await fs.access(dirPath);
+      // Verify directory exists after creation attempt
+      await fs.access(dirPath);
+    }
   } catch (dirError: any) {
     console.error(
       `Failed to create or access directory for ${absoluteFilePath}:`,
@@ -101,7 +110,9 @@ async function safeWriteJson(filePath: string, data: any): Promise<void> {
 
     // Step 3: Rename the new temporary file to the target file path.
     // This is the main "commit" step.
-    await fs.rename(actualTempNewFilePath, absoluteFilePath);
+    if (fs) {
+      await fs.rename(actualTempNewFilePath, absoluteFilePath);
+    }
 
     // If we reach here, the new file is successfully in place.
     // The original actualTempNewFilePath is now the main file, so we shouldn't try to clean it up as "temp".
@@ -111,7 +122,9 @@ async function safeWriteJson(filePath: string, data: any): Promise<void> {
     // Step 4: If a backup was created, attempt to delete it.
     if (actualTempBackupFilePath) {
       try {
-        await fs.unlink(actualTempBackupFilePath);
+        if (fs) {
+          await fs.unlink(actualTempBackupFilePath);
+        }
         // Mark backup as handled
         actualTempBackupFilePath = null;
       } catch (unlinkBackupError) {
@@ -135,10 +148,12 @@ async function safeWriteJson(filePath: string, data: any): Promise<void> {
     // Attempt rollback if a backup was made
     if (backupFileToRollbackOrCleanupWithinCatch) {
       try {
-        await fs.rename(
-          backupFileToRollbackOrCleanupWithinCatch,
-          absoluteFilePath,
-        );
+        if (fs) {
+          await fs.rename(
+            backupFileToRollbackOrCleanupWithinCatch,
+            absoluteFilePath,
+          );
+        }
         // Mark as handled, prevent later unlink of this path
         actualTempBackupFilePath = null;
       } catch (rollbackError) {
@@ -198,9 +213,9 @@ async function safeWriteJson(filePath: string, data: any): Promise<void> {
  */
 async function _streamDataToFile(targetPath: string, data: any): Promise<void> {
   // Stream data to avoid high memory usage for large JSON objects.
-  const fileWriteStream = fsSync.createWriteStream(targetPath, {
+  const fileWriteStream = fsSync ? fsSync.createWriteStream(targetPath, {
     encoding: 'utf8',
-  });
+  }) : null;
   const disassembler = Disassembler.disassembler();
   // Output will be compact JSON as standard Stringer is used.
   const stringer = Stringer.stringer();
@@ -219,20 +234,26 @@ async function _streamDataToFile(targetPath: string, data: any): Promise<void> {
 
     disassembler.on('error', handleError('Disassembler'));
     stringer.on('error', handleError('Stringer'));
-    fileWriteStream.on('error', (err: Error) => {
-      if (!errorOccurred) {
-        errorOccurred = true;
-        reject(err);
-      }
-    });
 
-    fileWriteStream.on('finish', () => {
-      if (!errorOccurred) {
-        resolve();
-      }
-    });
+    if (fileWriteStream) {
+      fileWriteStream.on('error', (err: Error) => {
+        if (!errorOccurred) {
+          errorOccurred = true;
+          reject(err);
+        }
+      });
 
-    disassembler.pipe(stringer).pipe(fileWriteStream);
+      fileWriteStream.on('finish', () => {
+        if (!errorOccurred) {
+          resolve();
+        }
+      });
+
+      disassembler.pipe(stringer).pipe(fileWriteStream);
+    } else {
+      // If no file stream is available, resolve immediately
+      resolve();
+    }
 
     // stream-json's Disassembler might error if `data` is undefined.
     // JSON.stringify(undefined) would produce the string "undefined" if it's the root value.

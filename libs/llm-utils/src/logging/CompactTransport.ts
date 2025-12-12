@@ -10,7 +10,7 @@ import {
   CompactLogEntry,
   LogLevel,
   LOG_LEVELS,
-} from 'llm-types';
+} from './types';
 
 /**
  * Default configuration for the transport

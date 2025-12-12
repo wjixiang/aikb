@@ -93,6 +93,10 @@ export class Task {
   // Cached model info for current streaming session
   cachedStreamingModel?: { id: string; info: ModelInfo };
 
+  // Retry configuration
+  private readonly maxRetryAttempts: number = 3;
+  private readonly apiRequestTimeout: number = 60000; // 60 seconds
+
   constructor(
     taskId: string,
     private apiConfiguration: ProviderSettings,
@@ -218,8 +222,13 @@ export class Task {
 
         // Create the API request stream
         const stream = this.attemptApiRequest();
+        let reasoningMessage = '';
         let assistantMessage = '';
         this.isStreaming = true;
+
+        // Variables for tracking stream status
+        let chunkCount = 0;
+        let hasReceivedContent = false;
 
         try {
           const iterator = stream[Symbol.asyncIterator]();
@@ -233,6 +242,13 @@ export class Task {
               continue;
             }
 
+            chunkCount++;
+            console.log(`Received chunk ${chunkCount}:`, chunk);
+
+            // Track if we've received any meaningful content
+            if (chunk.type === 'text' || chunk.type === 'reasoning' || chunk.type === 'tool_call' || chunk.type === 'tool_call_partial') {
+              hasReceivedContent = true;
+            }
             switch (chunk.type) {
               case 'usage':
                 // Handle usage tracking (simplified)
@@ -318,6 +334,11 @@ export class Task {
                 }
                 break;
               }
+              case 'reasoning': {
+                reasoningMessage += chunk.text;
+                console.log('推理块:', chunk.text);
+                break;
+              }
               case 'text': {
                 assistantMessage += chunk.text;
 
@@ -334,7 +355,7 @@ export class Task {
                   // Native protocol: Text chunks are plain text
                   const lastBlock =
                     this.assistantMessageContent[
-                      this.assistantMessageContent.length - 1
+                    this.assistantMessageContent.length - 1
                     ];
 
                   if (lastBlock?.type === 'text' && lastBlock.partial) {
@@ -395,6 +416,15 @@ export class Task {
           }
         } finally {
           this.isStreaming = false;
+
+          // Log streaming completion status
+          if (chunkCount === 0) {
+            console.warn('No chunks received from API stream');
+          } else if (!hasReceivedContent) {
+            console.warn(`Received ${chunkCount} chunks but no meaningful content`);
+          } else {
+            console.log(`Stream completed successfully with ${chunkCount} chunks`);
+          }
         }
 
         this.didCompleteReadingStream = true;
@@ -414,11 +444,12 @@ export class Task {
 
         // Add to apiConversationHistory
         const hasTextContent = assistantMessage.length > 0;
+        const HasReasoningContent = reasoningMessage.length > 0;
         const hasToolUses = this.assistantMessageContent.some(
           (block) => block.type === 'tool_use',
         );
 
-        if (hasTextContent || hasToolUses) {
+        if (hasTextContent || hasToolUses || HasReasoningContent) {
           // Build the assistant message content array
           const assistantContent: Array<
             Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
@@ -481,18 +512,40 @@ export class Task {
           }
         } else {
           // No assistant response - this is an error case
-          console.error('No assistant response received from API');
+          const currentRetryAttempt = currentItem.retryAttempt ?? 0;
+          console.error(`No assistant response received from API (attempt ${currentRetryAttempt + 1})`);
+
+          // Check if we've exceeded the maximum retry attempts
+          if (currentRetryAttempt >= this.maxRetryAttempts) {
+            console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded. Aborting.`);
+            throw new Error(`Failed to get response from API after ${this.maxRetryAttempts} attempts`);
+          }
 
           // Push the same content back onto the stack to retry
+          console.log(`Retrying API request (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
           stack.push({
             userContent: currentUserContent,
             includeFileDetails: false,
-            retryAttempt: (currentItem.retryAttempt ?? 0) + 1,
+            retryAttempt: currentRetryAttempt + 1,
           });
         }
       } catch (error) {
-        console.error('Error in recursivelyMakeClineRequests:', error);
-        return true;
+        const currentRetryAttempt = currentItem.retryAttempt ?? 0;
+        console.error(`Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`, error);
+
+        // Check if we've exceeded the maximum retry attempts
+        if (currentRetryAttempt >= this.maxRetryAttempts) {
+          console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded due to errors. Aborting.`);
+          throw new Error(`Failed to process request after ${this.maxRetryAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`);
+        }
+
+        // Push the same content back onto the stack to retry
+        console.log(`Retrying after error (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
+        stack.push({
+          userContent: currentUserContent,
+          includeFileDetails: false,
+          retryAttempt: currentRetryAttempt + 1,
+        });
       }
 
       if (didEndLoop) {
@@ -547,24 +600,46 @@ export class Task {
   }
 
   private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
-    const systemPrompt = await this.getSystemPrompt();
+    try {
+      console.log(`Starting API request attempt ${retryAttempt + 1}`);
 
-    // Build clean conversation history
-    const cleanConversationHistory = this.buildCleanConversationHistory(
-      this.apiConversationHistory,
-    );
+      const systemPrompt = await this.getSystemPrompt();
 
-    const metadata = {
-      taskId: this.taskId,
-    };
+      // Build clean conversation history
+      const cleanConversationHistory = this.buildCleanConversationHistory(
+        this.apiConversationHistory,
+      );
 
-    const stream = this.api.createMessage(
-      systemPrompt,
-      cleanConversationHistory as unknown as Anthropic.MessageParam[],
-      metadata,
-    );
+      const metadata = {
+        taskId: this.taskId,
+      };
 
-    return stream;
+      // Create the stream with timeout
+      const streamPromise = this.api.createMessage(
+        systemPrompt,
+        cleanConversationHistory as unknown as Anthropic.MessageParam[],
+        metadata,
+      );
+
+      const stream = await Promise.race([
+        streamPromise,
+        this.createTimeoutPromise(this.apiRequestTimeout)
+      ]);
+
+      console.log(`API request attempt ${retryAttempt + 1} successful`);
+      yield* stream;
+    } catch (error) {
+      console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
+      throw error;
+    }
+  }
+
+  private createTimeoutPromise(timeoutMs: number): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`API request timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
   }
 
   private async getSystemPrompt(): Promise<string> {

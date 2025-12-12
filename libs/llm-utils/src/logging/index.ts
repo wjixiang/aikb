@@ -3,24 +3,37 @@
  * Provides a default logger instance with Jest environment detection
  */
 
-import { CompactLogger } from './CompactLogger';
-
 /**
  * No-operation logger implementation for production environments
  */
 const noopLogger = {
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
+  debug: () => { },
+  info: () => { },
+  warn: () => { },
+  error: () => { },
+  fatal: () => { },
   child: () => noopLogger,
-  close: () => {},
+  close: () => { },
 };
 
 /**
  * Default logger instance
- * Uses CompactLogger for normal operation, switches to noop logger in Jest test environment
+ * Uses CompactLogger for normal operation, switches to noop logger in Jest test environment or jsdom
  */
-export const logger =
-  process.env['NODE_ENV'] === 'test' ? new CompactLogger() : noopLogger;
+let loggerInstance: typeof noopLogger;
+
+// Only create actual logger in Node.js environment (not in browser/jsdom)
+if (process.env['NODE_ENV'] === 'test' && typeof window === 'undefined') {
+  // Use require to avoid ES module import issues in browser environments
+  try {
+    const { CompactLogger } = require('./CompactLogger');
+    loggerInstance = new CompactLogger();
+  } catch (error) {
+    // Fallback to noop logger if import fails
+    loggerInstance = noopLogger;
+  }
+} else {
+  loggerInstance = noopLogger;
+}
+
+export const logger = loggerInstance;

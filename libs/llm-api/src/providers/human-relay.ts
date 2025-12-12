@@ -1,9 +1,6 @@
 import { Anthropic } from '@anthropic-ai/sdk';
-import * as vscode from 'vscode';
 
 import type { ModelInfo } from 'llm-types';
-
-import { getCommand } from 'llm-utils/commands';
 import { ApiStream } from '../transform/stream';
 
 import type {
@@ -49,11 +46,13 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
       promptText = getMessageContent(latestMessage);
     }
 
-    // Copy to clipboard
-    await vscode.env.clipboard.writeText(promptText);
+    // Display the prompt text for manual copying
+    console.log('=== Human Relay Prompt ===');
+    console.log(promptText);
+    console.log('========================');
 
-    // A dialog box pops up to request user action
-    const response = await showHumanRelayDialog(promptText);
+    // Wait for user to manually provide response
+    const response = await waitForUserInput();
 
     if (!response) {
       // The user canceled the operation
@@ -88,11 +87,13 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
    * @param prompt Prompt content
    */
   async completePrompt(prompt: string): Promise<string> {
-    // Copy to clipboard
-    await vscode.env.clipboard.writeText(prompt);
+    // Display the prompt text for manual copying
+    console.log('=== Human Relay Prompt ===');
+    console.log(prompt);
+    console.log('========================');
 
-    // A dialog box pops up to request user action
-    const response = await showHumanRelayDialog(prompt);
+    // Wait for user to manually provide response
+    const response = await waitForUserInput();
 
     if (!response) {
       throw new Error('Human relay operation cancelled');
@@ -118,28 +119,35 @@ function getMessageContent(message: Anthropic.Messages.MessageParam): string {
   return '';
 }
 /**
- * Displays the human relay dialog and waits for user response.
- * @param promptText The prompt text that needs to be copied.
+ * Waits for user input from stdin.
  * @returns The user's input response or undefined (if canceled).
  */
-async function showHumanRelayDialog(
-  promptText: string,
-): Promise<string | undefined> {
+async function waitForUserInput(): Promise<string | undefined> {
   return new Promise<string | undefined>((resolve) => {
-    // Create a unique request ID.
-    const requestId = Date.now().toString();
+    // In a non-VSCode environment, we'll use stdin for input
+    if (typeof process !== 'undefined' && process.stdin) {
+      console.log('Please enter your response (or press Enter to cancel):');
 
-    // Register a global callback function.
-    vscode.commands.executeCommand(
-      getCommand('registerHumanRelayCallback'),
-      requestId,
-      (response: string | undefined) => resolve(response),
-    );
+      process.stdin.setEncoding('utf8');
+      process.stdin.resume();
 
-    // Open the dialog box directly using the current panel.
-    vscode.commands.executeCommand(getCommand('showHumanRelayDialog'), {
-      requestId,
-      promptText,
-    });
+      let input = '';
+
+      process.stdin.on('data', (data) => {
+        input += data;
+        if (data.includes('\n')) {
+          process.stdin.pause();
+          const response = input.trim();
+          resolve(response === '' ? undefined : response);
+        }
+      });
+
+      process.stdin.on('error', () => {
+        resolve(undefined);
+      });
+    } else {
+      // Fallback for environments without stdin
+      resolve(undefined);
+    }
   });
 }

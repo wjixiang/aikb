@@ -23,12 +23,15 @@ export class ZAiHandler extends BaseOpenAiCompatibleProvider<string> {
       isChina ? mainlandZAiDefaultModelId : internationalZAiDefaultModelId
     ) as string;
 
+    const apiLine = options.zaiApiLine ?? 'international_coding';
+    const config = zaiApiLineConfigs[apiLine];
+    const finalApiKey = options.zaiApiKey ?? options.apiKey ?? 'not-provided';
+
     super({
       ...options,
       providerName: 'Z.ai',
-      baseURL:
-        zaiApiLineConfigs[options.zaiApiLine ?? 'international_coding'].baseUrl,
-      apiKey: options.zaiApiKey ?? 'not-provided',
+      baseURL: config.baseUrl,
+      apiKey: finalApiKey,
       defaultProviderModelId: defaultModelId,
       providerModels: models,
       defaultTemperature: ZAI_DEFAULT_TEMPERATURE,

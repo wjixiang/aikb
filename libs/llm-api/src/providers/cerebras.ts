@@ -18,7 +18,7 @@ import type {
 } from '../index';
 import { BaseProvider } from './base-provider';
 import { DEFAULT_HEADERS } from './constants';
-import { t } from '../../i18n';
+import { t } from 'i18n';
 
 const CEREBRAS_BASE_URL = 'https://api.cerebras.ai/v1';
 const CEREBRAS_DEFAULT_TEMPERATURE = 0;
@@ -28,8 +28,7 @@ const CEREBRAS_INTEGRATION_NAME = 'roocode';
 
 export class CerebrasHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   private apiKey: string;
   private providerModels: typeof cerebrasModels;
   private defaultProviderModelId: CerebrasModelId;
@@ -145,10 +144,10 @@ export class CerebrasHandler
         : {}),
       // Clamp temperature to Cerebras range (0 to 1.5)
       ...(temperature !== undefined &&
-      temperature !== CEREBRAS_DEFAULT_TEMPERATURE
+        temperature !== CEREBRAS_DEFAULT_TEMPERATURE
         ? {
-            temperature: Math.max(0, Math.min(1.5, temperature)),
-          }
+          temperature: Math.max(0, Math.min(1.5, temperature)),
+        }
         : {}),
       // Native tool calling support
       ...(useNativeTools && {
