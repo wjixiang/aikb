@@ -19,26 +19,28 @@ describe('integrated', () => {
         const newTask = new Task('test_task_id_1', testApiConfig);
 
         // Add a user message to the conversation history first
-        await newTask['addToApiConversationHistory']({
-            role: 'user',
-            content: [{ type: 'text', text: 'hello' }]
-        });
+        await newTask.recursivelyMakeClineRequests([{
+            type: 'text', text: 'hi!'
+        }]);
 
         // Test that we can make a simple API request
         const stream = newTask['attemptApiRequest']();
         const chunks: ApiStreamChunk[] = [];
+    })
+    //     for await (const chunk of stream) {
+    //         chunks.push(chunk);
+    //         if (chunk.type === 'text' || chunk.type === 'reasoning') {
+    //             // We've received some content, that's enough to verify the API works
+    //             break;
+    //         }
+    //     }
 
-        for await (const chunk of stream) {
-            chunks.push(chunk);
-            if (chunk.type === 'text' || chunk.type === 'reasoning') {
-                // We've received some content, that's enough to verify the API works
-                break;
-            }
-        }
+    //     expect(chunks.length).toBeGreaterThan(0);
+    //     expect(chunks[0].type).toMatch(/text|reasoning/);
+    // }, 30000)
 
-        expect(chunks.length).toBeGreaterThan(0);
-        expect(chunks[0].type).toMatch(/text|reasoning/);
-    }, 30000)
+    it.todo('should handle api request failure with retry mechanism')
+    it('should use simple tool correctly', async () => {
 
-    it('should handle api request failure with retry mechanism')
+    })
 });

@@ -30,9 +30,18 @@ RUN apt-get update && \
     python3-dev \
     wget \
     curl \
+    rsync \
     && npm install -g pnpm tsx pm2@latest nx\
     && pipx install uv \
     && pipx ensurepath
+
+# # Install Neovim using AppImage method
+# RUN curl -o /tmp/nvim -L https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage \
+#   && chmod a+x /tmp/nvim \
+#   && cd /tmp \
+#   && ./nvim --appimage-extract \
+#   && mv /tmp/squashfs-root/usr/* /usr/ \
+#   && rm -rf /tmp/nvim /tmp/squashfs-root
 
 # RUN pnpm exec playwright install-deps
 # Install golang & proto

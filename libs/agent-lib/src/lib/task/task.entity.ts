@@ -13,12 +13,12 @@ import { formatResponse } from './simplified-dependencies/formatResponse';
 import {
   AssistantMessageContent,
   ToolUse,
-} from '../assistant-message/assistantMessageTypes';
-import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
+} from 'llm-core/assistant-message/assistantMessageTypes';
+import { NativeToolCallParser } from 'llm-core/assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
-import { AssistantMessageParser } from '../assistant-message/AssistantMessageParser';
-import { SYSTEM_PROMPT } from './simplified-dependencies/systemPrompt';
+import { AssistantMessageParser } from 'llm-core/assistant-message/AssistantMessageParser';
+import { SYSTEM_PROMPT } from 'llm-core/prompts/system';
 
 /**
  * Simplified Task entity with no core dependencies
@@ -252,6 +252,7 @@ export class Task {
             switch (chunk.type) {
               case 'usage':
                 // Handle usage tracking (simplified)
+                // Will be emitted as event for further process
                 break;
               case 'tool_call_partial': {
                 // Process raw tool call chunk through NativeToolCallParser
@@ -341,7 +342,7 @@ export class Task {
               }
               case 'text': {
                 assistantMessage += chunk.text;
-
+                console.log(chunk.text)
                 if (shouldUseXmlParser && this.assistantMessageParser) {
                   // XML protocol: Parse raw assistant message chunk into content blocks
                   const prevLength = this.assistantMessageContent.length;

@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { RooCodeEventName } from './event.type';
 import type { RooCodeSettings } from './global-settings';
 import type { ClineMessage, QueuedMessage, TokenUsage } from './message.type';
-import type { ToolUsage, ToolName } from './tool.type';
-import type { TodoItem } from './todo.type';
+import type { ToolUsage, ToolName } from './tool';
+import type { TodoItem } from './todo';
 
 /**
  * TaskProviderLike

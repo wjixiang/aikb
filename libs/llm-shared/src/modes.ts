@@ -1,17 +1,14 @@
-import * as vscode from 'vscode';
-
 import {
   type GroupOptions,
   type GroupEntry,
   type ModeConfig,
   type CustomModePrompts,
-  type ExperimentId,
   type ToolGroup,
   type PromptComponent,
   DEFAULT_MODES,
 } from 'llm-types';
 
-import { addCustomInstructions } from '../core/prompts/sections/custom-instructions';
+// import { addCustomInstructions } from 'llm-core/prompts/sections/custom-instructions';
 
 import { EXPERIMENT_IDS } from './experiments';
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from './tools';
@@ -60,7 +57,9 @@ export function getToolsForMode(groups: readonly GroupEntry[]): string[] {
   return Array.from(tools);
 }
 
-// Main modes configuration as an ordered array
+/**
+ * Main modes configuration as an ordered array
+ */
 export const modes = DEFAULT_MODES;
 
 // Export the default mode slug
@@ -72,10 +71,10 @@ export function getModeBySlug(
   customModes?: ModeConfig[],
 ): ModeConfig | undefined {
   // Check custom modes first
-  const customMode = customModes?.find((mode) => mode.slug === slug);
-  if (customMode) {
-    return customMode;
-  }
+  // const customMode = customModes?.find((mode) => mode.slug === slug);
+  // if (customMode) {
+  //   return customMode;
+  // }
   // Then check built-in modes
   return modes.find((mode) => mode.slug === slug);
 }
@@ -204,7 +203,6 @@ export function isToolAllowedForMode(
   customModes: ModeConfig[],
   toolRequirements?: Record<string, boolean>,
   toolParams?: Record<string, any>, // All tool parameters
-  experiments?: Record<string, boolean>,
   includedTools?: string[], // Opt-in tools explicitly included (e.g., from modelInfo)
 ): boolean {
   // Always allow these tools
@@ -215,14 +213,7 @@ export function isToolAllowedForMode(
   // Check if this is a dynamic MCP tool (mcp_serverName_toolName)
   // These should be allowed if the mcp group is allowed for the mode
   const isDynamicMcpTool = tool.startsWith('mcp_');
-  if (
-    experiments &&
-    Object.values(EXPERIMENT_IDS).includes(tool as ExperimentId)
-  ) {
-    if (!experiments[tool]) {
-      return false;
-    }
-  }
+
 
   // Check tool requirements if any exist
   if (toolRequirements && typeof toolRequirements === 'object') {
@@ -271,7 +262,7 @@ export function isToolAllowedForMode(
 
     // For the edit group, check file regex if specified
     if (groupName === 'edit' && options.fileRegex) {
-      const filePath = toolParams?.path;
+      const filePath = toolParams?.['path'];
       // Check if this is an actual edit operation (not just path-only for streaming)
       const isEditOperation = EDIT_OPERATION_PARAMS.some(
         (param) => toolParams?.[param],
@@ -293,10 +284,10 @@ export function isToolAllowedForMode(
       }
 
       // Handle XML args parameter (used by MULTI_FILE_APPLY_DIFF experiment)
-      if (toolParams?.args && typeof toolParams.args === 'string') {
+      if (toolParams?.['args'] && typeof toolParams['args'] === 'string') {
         // Extract file paths from XML args with improved validation
         try {
-          const filePathMatches = toolParams.args.match(
+          const filePathMatches = toolParams['args'].match(
             /<path>([^<]+)<\/path>/g,
           );
           if (filePathMatches) {
@@ -360,13 +351,16 @@ export const defaultPrompts: Readonly<CustomModePrompts> = Object.freeze(
 
 // Helper function to get all modes with their prompt overrides from extension state
 export async function getAllModesWithPrompts(
-  context: vscode.ExtensionContext,
+
 ): Promise<ModeConfig[]> {
-  const customModes =
-    (await context.globalState.get<ModeConfig[]>('customModes')) || [];
-  const customModePrompts =
-    (await context.globalState.get<CustomModePrompts>('customModePrompts')) ||
-    {};
+  // const customModes =
+  //   (await context.globalState.get<ModeConfig[]>('customModes')) || [];
+  // const customModePrompts =
+  //   (await context.globalState.get<CustomModePrompts>('customModePrompts')) ||
+  //   {};
+
+  const customModes = []
+  const customModePrompts = {}
 
   const allModes = getAllModes(customModes);
   return allModes.map((mode) => ({
@@ -398,36 +392,38 @@ export async function getFullModeDetails(
     modes.find((m) => m.slug === modeSlug) ||
     modes[0];
 
-  // Check for any prompt component overrides
-  const promptComponent = customModePrompts?.[modeSlug];
+  // // Check for any prompt component overrides
+  // const promptComponent = customModePrompts?.[modeSlug];
 
-  // Get the base custom instructions
-  const baseCustomInstructions =
-    promptComponent?.customInstructions || baseMode.customInstructions || '';
-  const baseWhenToUse = promptComponent?.whenToUse || baseMode.whenToUse || '';
-  const baseDescription =
-    promptComponent?.description || baseMode.description || '';
+  // Remove custom instructions
+  // // Get the base custom instructions
+  // const baseCustomInstructions =
+  //   promptComponent?.customInstructions || baseMode.customInstructions || '';
+  // const baseWhenToUse = promptComponent?.whenToUse || baseMode.whenToUse || '';
+  // const baseDescription =
+  //   promptComponent?.description || baseMode.description || '';
 
-  // If we have cwd, load and combine all custom instructions
-  let fullCustomInstructions = baseCustomInstructions;
-  if (options?.cwd) {
-    fullCustomInstructions = await addCustomInstructions(
-      baseCustomInstructions,
-      options.globalCustomInstructions || '',
-      options.cwd,
-      modeSlug,
-      { language: options.language },
-    );
-  }
+  // // If we have cwd, load and combine all custom instructions
+  // let fullCustomInstructions = baseCustomInstructions;
+  // if (options?.cwd) {
+  //   fullCustomInstructions = await addCustomInstructions(
+  //     baseCustomInstructions,
+  //     options.globalCustomInstructions || '',
+  //     options.cwd,
+  //     modeSlug,
+  //     { language: options.language },
+  //   );
+  // }
 
   // Return mode with any overrides applied
-  return {
-    ...baseMode,
-    roleDefinition: promptComponent?.roleDefinition || baseMode.roleDefinition,
-    whenToUse: baseWhenToUse,
-    description: baseDescription,
-    customInstructions: fullCustomInstructions,
-  };
+  // return {
+  //   ...baseMode,
+  //   roleDefinition: promptComponent?.roleDefinition || baseMode.roleDefinition,
+  //   whenToUse: baseWhenToUse,
+  //   description: baseDescription,
+  //   customInstructions: fullCustomInstructions,
+  // };
+  return baseMode
 }
 
 // Helper function to safely get role definition
