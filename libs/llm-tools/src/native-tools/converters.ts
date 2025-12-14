@@ -26,16 +26,16 @@ import type Anthropic from "@anthropic-ai/sdk"
  * ```
  */
 export function convertOpenAIToolToAnthropic(tool: OpenAI.Chat.ChatCompletionTool): Anthropic.Tool {
-  // Handle both ChatCompletionFunctionTool and ChatCompletionCustomTool
-  if (tool.type !== "function") {
-    throw new Error(`Unsupported tool type: ${tool.type}`)
-  }
+    // Handle both ChatCompletionFunctionTool and ChatCompletionCustomTool
+    if (tool.type !== "function") {
+        throw new Error(`Unsupported tool type: ${tool.type}`)
+    }
 
-  return {
-    name: tool.function.name,
-    description: tool.function.description || "",
-    input_schema: tool.function.parameters as Anthropic.Tool.InputSchema,
-  }
+    return {
+        name: tool.function.name,
+        description: tool.function.description || "",
+        input_schema: tool.function.parameters as Anthropic.Tool.InputSchema,
+    }
 }
 
 /**
@@ -45,5 +45,5 @@ export function convertOpenAIToolToAnthropic(tool: OpenAI.Chat.ChatCompletionToo
  * @returns Array of Anthropic Tool definitions
  */
 export function convertOpenAIToolsToAnthropic(tools: OpenAI.Chat.ChatCompletionTool[]): Anthropic.Tool[] {
-  return tools.map(convertOpenAIToolToAnthropic)
+    return tools.map(convertOpenAIToolToAnthropic)
 }

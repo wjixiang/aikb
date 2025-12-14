@@ -81,9 +81,9 @@ export function getModeBySlug(
 
 export function getModeConfig(
   slug: string,
-  customModes?: ModeConfig[],
+  // customModes?: ModeConfig[],
 ): ModeConfig {
-  const mode = getModeBySlug(slug, customModes);
+  const mode = getModeBySlug(slug);
   if (!mode) {
     throw new Error(`No mode found for slug: ${slug}`);
   }
@@ -137,23 +137,24 @@ export function findModeBySlug(
  * If a custom mode is found, it takes precedence over the built-in modes.
  * If no custom mode is found, the built-in mode is used with partial merging from promptComponent.
  * If neither is found, the default mode is used.
+ * Migration: disable custom modes
  */
 export function getModeSelection(
   mode: string,
   promptComponent?: PromptComponent,
-  customModes?: ModeConfig[],
+  // customModes?: ModeConfig[],
 ) {
-  const customMode = findModeBySlug(mode, customModes);
+  // const customMode = findModeBySlug(mode, customModes);
   const builtInMode = findModeBySlug(mode, modes);
 
-  // If we have a custom mode, use it entirely
-  if (customMode) {
-    return {
-      roleDefinition: customMode.roleDefinition || '',
-      baseInstructions: customMode.customInstructions || '',
-      description: customMode.description || '',
-    };
-  }
+  // // If we have a custom mode, use it entirely
+  // if (customMode) {
+  //   return {
+  //     roleDefinition: customMode.roleDefinition || '',
+  //     baseInstructions: customMode.customInstructions || '',
+  //     description: customMode.description || '',
+  //   };
+  // }
 
   // Otherwise, use built-in mode as base and merge with promptComponent
   const baseMode = builtInMode || modes[0]; // fallback to default mode
@@ -200,7 +201,6 @@ export class FileRestrictionError extends Error {
 export function isToolAllowedForMode(
   tool: string,
   modeSlug: string,
-  customModes: ModeConfig[],
   toolRequirements?: Record<string, boolean>,
   toolParams?: Record<string, any>, // All tool parameters
   includedTools?: string[], // Opt-in tools explicitly included (e.g., from modelInfo)
@@ -225,7 +225,7 @@ export function isToolAllowedForMode(
     return false;
   }
 
-  const mode = getModeBySlug(modeSlug, customModes);
+  const mode = getModeBySlug(modeSlug);
   if (!mode) {
     return false;
   }
@@ -349,7 +349,10 @@ export const defaultPrompts: Readonly<CustomModePrompts> = Object.freeze(
   ),
 );
 
-// Helper function to get all modes with their prompt overrides from extension state
+/**
+ * Helper function to get all modes with their prompt overrides from extension state
+ * @returns 
+ */
 export async function getAllModesWithPrompts(
 
 ): Promise<ModeConfig[]> {
