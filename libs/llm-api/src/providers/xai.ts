@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 
 import { type XAIModelId, xaiDefaultModelId, xaiModels } from 'llm-types';
 
-import { NativeToolCallParser } from 'agent-lib/assistant-message/NativeToolCallParser';
+import { NativeToolCallParser } from 'llm-core/assistant-message/NativeToolCallParser';
 import type { ApiHandlerOptions } from 'llm-shared/api';
 
 import { ApiStream } from '../transform/stream';
@@ -22,8 +22,7 @@ const XAI_DEFAULT_TEMPERATURE = 0;
 
 export class XAIHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
   private client: OpenAI;
   private readonly providerName = 'xAI';

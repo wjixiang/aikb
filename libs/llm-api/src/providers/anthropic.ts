@@ -23,7 +23,7 @@ import type {
   ApiHandlerCreateMessageMetadata,
 } from '../index';
 import { calculateApiCostAnthropic } from 'llm-shared/cost';
-import { convertOpenAIToolsToAnthropic } from 'llm-core/prompts/tools/native-tools/converters';
+import { convertOpenAIToolsToAnthropic } from 'llm-tools';
 
 export class AnthropicHandler
   extends BaseProvider

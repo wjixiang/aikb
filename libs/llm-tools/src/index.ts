@@ -7,6 +7,7 @@ import { ToolArgs } from "./types"
 import { getSemanticSearchDescription } from "./semantic-search"
 import attempt_completion from "./native-tools/attempt_completion"
 import { getAttemptCompletionDescription } from "./attempt-completion"
+import { convertOpenAIToolToAnthropic } from "./native-tools"
 
 
 // Map of tool names to their description functions
@@ -74,3 +75,4 @@ export function getToolDescriptionsForMode(
 
 // Export native tool definitions (JSON schema format for OpenAI-compatible APIs)
 export { nativeTools } from "./native-tools"
+export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from './native-tools/converters'

@@ -9,7 +9,7 @@ import {
   DEEP_SEEK_DEFAULT_TEMPERATURE,
 } from 'llm-types';
 
-import { NativeToolCallParser } from 'agent-lib/assistant-message/NativeToolCallParser';
+import { NativeToolCallParser } from 'llm-core/assistant-message/NativeToolCallParser';
 
 import type { ApiHandlerOptions, ModelRecord } from 'llm-shared/api';
 
@@ -67,8 +67,7 @@ interface CompletionUsage {
 
 export class OpenRouterHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
   private client: OpenAI;
   protected models: ModelRecord = {};
@@ -239,13 +238,13 @@ export class OpenRouterHandler
       // Only include provider if openRouterSpecificProvider is not "[default]".
       ...(this.options.openRouterSpecificProvider &&
         this.options.openRouterSpecificProvider !==
-          OPENROUTER_DEFAULT_PROVIDER_NAME && {
-          provider: {
-            order: [this.options.openRouterSpecificProvider],
-            only: [this.options.openRouterSpecificProvider],
-            allow_fallbacks: false,
-          },
-        }),
+        OPENROUTER_DEFAULT_PROVIDER_NAME && {
+        provider: {
+          order: [this.options.openRouterSpecificProvider],
+          only: [this.options.openRouterSpecificProvider],
+          allow_fallbacks: false,
+        },
+      }),
       ...(transforms && { transforms }),
       ...(reasoning && { reasoning }),
       ...(metadata?.tools && {
@@ -257,10 +256,10 @@ export class OpenRouterHandler
     // Add Anthropic beta header for fine-grained tool streaming when using Anthropic models
     const requestOptions = modelId.startsWith('anthropic/')
       ? {
-          headers: {
-            'x-anthropic-beta': 'fine-grained-tool-streaming-2025-05-14',
-          },
-        }
+        headers: {
+          'x-anthropic-beta': 'fine-grained-tool-streaming-2025-05-14',
+        },
+      }
       : undefined;
 
     let stream;
@@ -503,23 +502,23 @@ export class OpenRouterHandler
       // Only include provider if openRouterSpecificProvider is not "[default]".
       ...(this.options.openRouterSpecificProvider &&
         this.options.openRouterSpecificProvider !==
-          OPENROUTER_DEFAULT_PROVIDER_NAME && {
-          provider: {
-            order: [this.options.openRouterSpecificProvider],
-            only: [this.options.openRouterSpecificProvider],
-            allow_fallbacks: false,
-          },
-        }),
+        OPENROUTER_DEFAULT_PROVIDER_NAME && {
+        provider: {
+          order: [this.options.openRouterSpecificProvider],
+          only: [this.options.openRouterSpecificProvider],
+          allow_fallbacks: false,
+        },
+      }),
       ...(reasoning && { reasoning }),
     };
 
     // Add Anthropic beta header for fine-grained tool streaming when using Anthropic models
     const requestOptions = modelId.startsWith('anthropic/')
       ? {
-          headers: {
-            'x-anthropic-beta': 'fine-grained-tool-streaming-2025-05-14',
-          },
-        }
+        headers: {
+          'x-anthropic-beta': 'fine-grained-tool-streaming-2025-05-14',
+        },
+      }
       : undefined;
 
     let response;

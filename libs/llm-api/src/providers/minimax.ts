@@ -20,7 +20,7 @@ import type {
   ApiHandlerCreateMessageMetadata,
 } from '../index';
 import { calculateApiCostAnthropic } from 'llm-shared/cost';
-import { convertOpenAIToolsToAnthropic } from 'llm-core/prompts/tools/native-tools/converters';
+import { convertOpenAIToolsToAnthropic } from 'llm-tools';
 
 /**
  * Converts OpenAI tool_choice to Anthropic ToolChoice format
