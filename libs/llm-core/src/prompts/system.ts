@@ -23,6 +23,7 @@ async function generatePrompt(
 
     // Determine the effective protocol (defaults to 'xml')
     const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol)
+    console.log(effectiveProtocol)
 
     const modesSection = await getModesSection()
 
@@ -34,6 +35,7 @@ async function generatePrompt(
             modelId,
         )}`
 
+    console.log(toolsCatalog)
     const basePrompt = `${roleDefinition}
 
 ${markdownFormattingSection()}

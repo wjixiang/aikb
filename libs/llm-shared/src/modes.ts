@@ -210,11 +210,6 @@ export function isToolAllowedForMode(
     return true;
   }
 
-  // Check if this is a dynamic MCP tool (mcp_serverName_toolName)
-  // These should be allowed if the mcp group is allowed for the mode
-  const isDynamicMcpTool = tool.startsWith('mcp_');
-
-
   // Check tool requirements if any exist
   if (toolRequirements && typeof toolRequirements === 'object') {
     if (tool in toolRequirements && !toolRequirements[tool]) {
@@ -237,11 +232,6 @@ export function isToolAllowedForMode(
 
     const groupConfig = TOOL_GROUPS[groupName];
 
-    // Check if this is a dynamic MCP tool and the mcp group is allowed
-    if (isDynamicMcpTool && groupName === 'mcp') {
-      // Dynamic MCP tools are allowed if the mcp group is in the mode's groups
-      return true;
-    }
 
     // Check if the tool is in the group's regular tools
     const isRegularTool = groupConfig.tools.includes(tool);
@@ -260,73 +250,6 @@ export function isToolAllowedForMode(
       return true;
     }
 
-    // For the edit group, check file regex if specified
-    if (groupName === 'edit' && options.fileRegex) {
-      const filePath = toolParams?.['path'];
-      // Check if this is an actual edit operation (not just path-only for streaming)
-      const isEditOperation = EDIT_OPERATION_PARAMS.some(
-        (param) => toolParams?.[param],
-      );
-
-      // Handle single file path validation
-      if (
-        filePath &&
-        isEditOperation &&
-        !doesFileMatchRegex(filePath, options.fileRegex)
-      ) {
-        throw new FileRestrictionError(
-          mode.name,
-          options.fileRegex,
-          options.description,
-          filePath,
-          tool,
-        );
-      }
-
-      // Handle XML args parameter (used by MULTI_FILE_APPLY_DIFF experiment)
-      if (toolParams?.['args'] && typeof toolParams['args'] === 'string') {
-        // Extract file paths from XML args with improved validation
-        try {
-          const filePathMatches = toolParams['args'].match(
-            /<path>([^<]+)<\/path>/g,
-          );
-          if (filePathMatches) {
-            for (const match of filePathMatches) {
-              // More robust path extraction with validation
-              const pathMatch = match.match(/<path>([^<]+)<\/path>/);
-              if (pathMatch && pathMatch[1]) {
-                const extractedPath = pathMatch[1].trim();
-                // Validate that the path is not empty and doesn't contain invalid characters
-                if (
-                  extractedPath &&
-                  !extractedPath.includes('<') &&
-                  !extractedPath.includes('>')
-                ) {
-                  if (!doesFileMatchRegex(extractedPath, options.fileRegex)) {
-                    throw new FileRestrictionError(
-                      mode.name,
-                      options.fileRegex,
-                      options.description,
-                      extractedPath,
-                      tool,
-                    );
-                  }
-                }
-              }
-            }
-          }
-        } catch (error) {
-          // Re-throw FileRestrictionError as it's an expected validation error
-          if (error instanceof FileRestrictionError) {
-            throw error;
-          }
-          // If XML parsing fails, log the error but don't block the operation
-          console.warn(
-            `Failed to parse XML args for file restriction validation: ${error}`,
-          );
-        }
-      }
-    }
 
     return true;
   }

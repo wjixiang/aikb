@@ -5,12 +5,7 @@ import { z } from 'zod';
  */
 
 export const toolGroups = [
-  'read',
-  'edit',
-  'browser',
-  'command',
-  'mcp',
-  'modes',
+  'search'
 ] as const;
 
 export const toolGroupsSchema = z.enum(toolGroups);
@@ -44,6 +39,7 @@ export const toolNames = [
   'update_todo_list',
   'run_slash_command',
   'generate_image',
+  'semantic_search'
 ] as const;
 
 export const toolNamesSchema = z.enum(toolNames);

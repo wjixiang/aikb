@@ -5,9 +5,6 @@ import type {
   ToolProgressStatus,
   ToolGroup,
   ToolName,
-  FileEntry,
-  BrowserActionParams,
-  GenerateImageParams,
 } from 'llm-types';
 
 export type ToolResponse =
@@ -89,7 +86,6 @@ export type ToolProtocol = 'xml' | 'native';
  */
 export type NativeToolArgs = {
   access_mcp_resource: { server_name: string; uri: string };
-  read_file: { files: FileEntry[] };
   attempt_completion: { result: string };
   execute_command: { command: string; cwd?: string };
   apply_diff: { path: string; diff: string };
@@ -103,10 +99,8 @@ export type NativeToolArgs = {
     question: string;
     follow_up: Array<{ text: string; mode?: string }>;
   };
-  browser_action: BrowserActionParams;
   codebase_search: { query: string; path?: string };
   fetch_instructions: { task: string };
-  generate_image: GenerateImageParams;
   list_code_definition_names: { path: string };
   run_slash_command: { command: string; args?: string };
   search_files: { path: string; regex: string; file_pattern?: string | null };
@@ -135,8 +129,8 @@ export interface ToolUse<TName extends ToolName = ToolName> {
   partial: boolean;
   // nativeArgs is properly typed based on TName if it's in NativeToolArgs, otherwise never
   nativeArgs?: TName extends keyof NativeToolArgs
-    ? NativeToolArgs[TName]
-    : never;
+  ? NativeToolArgs[TName]
+  : never;
 }
 
 /**
@@ -303,37 +297,16 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
   update_todo_list: 'update todo list',
   run_slash_command: 'run slash command',
   generate_image: 'generate images',
+  semantic_search: 'semantic search'
 } as const;
 
 // Define available tool groups.
 export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
-  read: {
+  search: {
     tools: [
-      'read_file',
-      'fetch_instructions',
-      'search_files',
-      'list_files',
-      'list_code_definition_names',
-      'codebase_search',
-    ],
-  },
-  edit: {
-    tools: ['apply_diff', 'write_to_file', 'generate_image'],
-    customTools: ['search_and_replace', 'search_replace', 'apply_patch'],
-  },
-  browser: {
-    tools: ['browser_action'],
-  },
-  command: {
-    tools: ['execute_command'],
-  },
-  mcp: {
-    tools: ['use_mcp_tool', 'access_mcp_resource'],
-  },
-  modes: {
-    tools: ['switch_mode', 'new_task'],
-    alwaysAvailable: true,
-  },
+      'semantic_search'
+    ]
+  }
 };
 
 // Tools that are always available to all modes.
@@ -349,17 +322,17 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 export type DiffResult =
   | { success: true; content: string; failParts?: DiffResult[] }
   | ({
-      success: false;
-      error?: string;
-      details?: {
-        similarity?: number;
-        threshold?: number;
-        matchedRange?: { start: number; end: number };
-        searchContent?: string;
-        bestMatch?: string;
-      };
-      failParts?: DiffResult[];
-    } & ({ error: string } | { failParts: DiffResult[] }));
+    success: false;
+    error?: string;
+    details?: {
+      similarity?: number;
+      threshold?: number;
+      matchedRange?: { start: number; end: number };
+      searchContent?: string;
+      bestMatch?: string;
+    };
+    failParts?: DiffResult[];
+  } & ({ error: string } | { failParts: DiffResult[] }));
 
 export interface DiffItem {
   content: string;

@@ -86,7 +86,7 @@ export function getToolUseGuidelinesSection(protocol: ToolProtocol = TOOL_PROTOC
 
 By waiting for and carefully considering the user's response after each research tool use, you can react accordingly and make informed decisions about how to proceed with the medical investigation. This iterative process helps ensure the overall success and scientific validity of your medical research.`
 
-    return `# Medical Research Tool Use Guidelines
+    return `# Tool Use Guidelines
 
 ${guidelinesList.join("\n")}${footer}`
 }

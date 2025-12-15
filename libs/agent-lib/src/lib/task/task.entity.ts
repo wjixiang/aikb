@@ -218,7 +218,10 @@ export class Task {
           this.apiConfiguration,
           streamModelInfo,
         );
-        const shouldUseXmlParser = streamProtocol === 'xml';
+
+        // const shouldUseXmlParser = streamProtocol === 'xml';
+        // Force using XML parse
+        const shouldUseXmlParser = true
 
         // Create the API request stream
         const stream = this.attemptApiRequest();
@@ -281,6 +284,8 @@ export class Task {
                       id: event.id,
                     };
 
+                    console.debug(`partial_tool_use`, partialToolUse)
+
                     this.assistantMessageContent.push(partialToolUse);
                     this.userMessageContentReady = false;
                   } else if (event.type === 'tool_call_delta') {
@@ -342,12 +347,14 @@ export class Task {
               }
               case 'text': {
                 assistantMessage += chunk.text;
-                console.log(chunk.text)
+
                 if (shouldUseXmlParser && this.assistantMessageParser) {
                   // XML protocol: Parse raw assistant message chunk into content blocks
                   const prevLength = this.assistantMessageContent.length;
                   this.assistantMessageContent =
                     this.assistantMessageParser.processChunk(chunk.text);
+
+                  // console.debug(`assistantMessage:`, this.assistantMessageContent)
 
                   if (this.assistantMessageContent.length > prevLength) {
                     this.userMessageContentReady = false;
@@ -605,6 +612,7 @@ export class Task {
       console.log(`Starting API request attempt ${retryAttempt + 1}`);
 
       const systemPrompt = await this.getSystemPrompt();
+      console.debug(`system prompt: ${systemPrompt}`)
 
       // Build clean conversation history
       const cleanConversationHistory = this.buildCleanConversationHistory(

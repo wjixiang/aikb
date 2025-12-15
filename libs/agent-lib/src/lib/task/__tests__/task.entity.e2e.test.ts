@@ -20,13 +20,14 @@ describe('integrated', () => {
 
         // Add a user message to the conversation history first
         await newTask.recursivelyMakeClineRequests([{
-            type: 'text', text: '高血压的治疗'
+            type: 'text', text: '请你使用搜索工具告诉我糖尿病的诊断标准'
         }]);
 
         // Test that we can make a simple API request
         const stream = newTask['attemptApiRequest']();
         const chunks: ApiStreamChunk[] = [];
-    }, 60000)
+        console.log(newTask.assistantMessageContent)
+    }, 600000)
 
 
     it.todo('should handle api request failure with retry mechanism')
