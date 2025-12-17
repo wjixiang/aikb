@@ -1,12 +1,12 @@
 [quiz]
-source = "26西医考研蓝基因考前模拟一"
+source = "2026小亮补充题"
 tags = [ "2026" ]
 extractedYear = "2026"
 withExp = true
 
 
 [exam_paper]
-name = "2026yanda万人模考四"
+name = "2026小亮补充题"
 subject = "综合"
 year = "2026"
 

@@ -40,7 +40,7 @@ describe('AssistantMessageParser', () => {
         });
     });
 
-    describe.only('processChunk - Text Content', () => {
+    describe('processChunk - Text Content', () => {
         it('should process simple text content', () => {
             const result = parser.processChunk('Hello world');
             console.log(result)
@@ -62,7 +62,7 @@ describe('AssistantMessageParser', () => {
         });
 
         it('should handle semantic_search tool', () => {
-            const result = parser.processChunk('semantic_search');
+            const result = parser.processChunk('<semantic_search>');
 
             expect((result[1] as ToolUse).name).toBe('semantic_search');
         });
@@ -92,5 +92,15 @@ describe('AssistantMessageParser', () => {
             expect(toolUse.params['cwd']).toBe('/workspace');
             expect(toolUse.partial).toBe(false);
         });
+
+        it('should handle splited tool calling', () => {
+            parser.processChunk('abc');
+            parser.processChunk('\ndef');
+            parser.processChunk('<semantic_');
+            const result = parser.processChunk('search>');
+            console.log(result)
+
+            expect((result[1] as ToolUse).name).toBe('semantic_search');
+        })
     })
 })

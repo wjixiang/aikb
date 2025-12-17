@@ -6,6 +6,7 @@ import {
   getApiProtocol,
   getModelId,
   ModelInfo,
+  ClineMessage
 } from 'llm-types';
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
@@ -19,6 +20,119 @@ import { processUserContentMentions } from './simplified-dependencies/processUse
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
 import { AssistantMessageParser } from 'llm-core/assistant-message/AssistantMessageParser';
 import { SYSTEM_PROMPT } from 'llm-core/prompts/system';
+import { error } from 'console';
+
+/**
+ * Base error class for Task-related errors
+ */
+export abstract class TaskError extends Error {
+  abstract readonly code: string;
+  abstract readonly retryable: boolean;
+
+  constructor(message: string, public readonly cause?: Error) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+/**
+ * Error thrown when task is aborted
+ */
+export class TaskAbortedError extends TaskError {
+  readonly code = 'TASK_ABORTED';
+  readonly retryable = false;
+
+  constructor(taskId: string, cause?: Error) {
+    super(`Task ${taskId} was aborted`, cause);
+  }
+}
+
+/**
+ * Error thrown when consecutive mistake limit is reached
+ */
+export class ConsecutiveMistakeError extends TaskError {
+  readonly code = 'CONSECUTIVE_MISTAKE_LIMIT';
+  readonly retryable = false;
+
+  constructor(limit: number, cause?: Error) {
+    super(`Consecutive mistake limit of ${limit} reached`, cause);
+  }
+}
+
+/**
+ * Error thrown when API request times out
+ */
+export class ApiTimeoutError extends TaskError {
+  readonly code = 'API_TIMEOUT';
+  readonly retryable = true;
+
+  constructor(timeoutMs: number, cause?: Error) {
+    super(`API request timed out after ${timeoutMs}ms`, cause);
+  }
+}
+
+/**
+ * Error thrown when API request fails
+ */
+export class ApiRequestError extends TaskError {
+  readonly code = 'API_REQUEST_FAILED';
+  readonly retryable = true;
+
+  constructor(message: string, public readonly statusCode?: number, cause?: Error) {
+    super(`API request failed: ${message}`, cause);
+  }
+}
+
+/**
+ * Error thrown when no response is received from API
+ */
+export class NoApiResponseError extends TaskError {
+  readonly code = 'NO_API_RESPONSE';
+  readonly retryable = true;
+
+  constructor(attempt: number, cause?: Error) {
+    super(`No response received from API (attempt ${attempt})`, cause);
+  }
+}
+
+/**
+ * Error thrown when LLM doesn't use any tools
+ */
+export class NoToolsUsedError extends TaskError {
+  readonly code = 'NO_TOOLS_USED';
+  readonly retryable = true;
+
+  constructor(cause?: Error) {
+    super('LLM did not use any tools', cause);
+  }
+}
+
+/**
+ * Error thrown when streaming fails
+ */
+export class StreamingError extends TaskError {
+  readonly code = 'STREAMING_FAILED';
+  readonly retryable = true;
+
+  constructor(message: string, cause?: Error) {
+    super(`Streaming failed: ${message}`, cause);
+  }
+}
+
+/**
+ * Error thrown when maximum retry attempts are exceeded
+ */
+export class MaxRetryExceededError extends TaskError {
+  readonly code = 'MAX_RETRY_EXCEEDED';
+  readonly retryable = false;
+
+  readonly errors: TaskError[];
+
+  constructor(maxAttempts: number, errors: TaskError[], cause?: Error) {
+    super(`Maximum retry attempts (${maxAttempts}) exceeded. Collected ${errors.length} errors.`, cause);
+    this.errors = errors;
+  }
+}
 
 /**
  * Simplified Task entity with no core dependencies
@@ -45,7 +159,7 @@ export class Task {
 
   // LLM Messages & Chat Messages
   apiConversationHistory: ApiMessage[] = [];
-  clineMessages: any[] = [];
+
 
   // Ask
   private askResponse?: any;
@@ -97,6 +211,9 @@ export class Task {
   private readonly maxRetryAttempts: number = 3;
   private readonly apiRequestTimeout: number = 60000; // 60 seconds
 
+  // Error collection for retry attempts
+  private collectedErrors: TaskError[] = [];
+
   constructor(
     taskId: string,
     private apiConfiguration: ProviderSettings,
@@ -107,6 +224,20 @@ export class Task {
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
     this.assistantMessageParser = new AssistantMessageParser();
+  }
+
+  /**
+   * Get all collected errors for debugging purposes
+   */
+  public getCollectedErrors(): TaskError[] {
+    return [...this.collectedErrors];
+  }
+
+  /**
+   * Reset collected errors (useful for starting a new operation)
+   */
+  public resetCollectedErrors(): void {
+    this.collectedErrors = [];
   }
 
   start() {
@@ -135,6 +266,9 @@ export class Task {
     userContent: Anthropic.Messages.ContentBlockParam[],
     includeFileDetails: boolean = false,
   ): Promise<boolean> {
+    // Reset collected errors for this new operation
+    this.resetCollectedErrors();
+
     interface StackItem {
       userContent: Anthropic.Messages.ContentBlockParam[];
       includeFileDetails: boolean;
@@ -162,9 +296,9 @@ export class Task {
         this.consecutiveMistakeCount > 0 &&
         this.consecutiveMistakeCount >= this.consecutiveMistakeLimit
       ) {
-        // Simplified error handling - just reset count and continue
-        console.warn('Consecutive mistake limit reached, resetting count');
+        console.error('Consecutive mistake limit reached');
         this.consecutiveMistakeCount = 0;
+        throw new Error(`Consecutive mistake limit reached`)
       }
 
       // Determine API protocol based on provider and model
@@ -219,9 +353,7 @@ export class Task {
           streamModelInfo,
         );
 
-        // const shouldUseXmlParser = streamProtocol === 'xml';
-        // Force using XML parse
-        const shouldUseXmlParser = true
+        const shouldUseXmlParser = streamProtocol === 'xml';
 
         // Create the API request stream
         const stream = this.attemptApiRequest();
@@ -451,7 +583,9 @@ export class Task {
         }
 
         // Add to apiConversationHistory
-        const hasTextContent = assistantMessage.length > 0;
+        const hasTextContent = assistantMessage.length > 0 || this.assistantMessageContent.some(
+          (block) => block.type === 'text',
+        );
         const HasReasoningContent = reasoningMessage.length > 0;
         const hasToolUses = this.assistantMessageContent.some(
           (block) => block.type === 'tool_use',
@@ -492,8 +626,8 @@ export class Task {
             content: assistantContent,
           });
 
-          // Wait for user message content to be ready
-          await this.waitForUserMessageContentReady();
+          // Set user message content as ready since we've processed the stream
+          this.userMessageContentReady = true;
 
           const didToolUse = hasToolUses;
 
@@ -508,6 +642,7 @@ export class Task {
               text: formatResponse.noToolsUsed(toolProtocol),
             });
             this.consecutiveMistakeCount++;
+            throw new NoToolsUsedError()
           }
 
           if (this.userMessageContent.length > 0) {
@@ -521,12 +656,14 @@ export class Task {
         } else {
           // No assistant response - this is an error case
           const currentRetryAttempt = currentItem.retryAttempt ?? 0;
-          console.error(`No assistant response received from API (attempt ${currentRetryAttempt + 1})`);
+          const error = new NoApiResponseError(currentRetryAttempt + 1);
+          this.collectedErrors.push(error);
+          console.error(error.message);
 
           // Check if we've exceeded the maximum retry attempts
           if (currentRetryAttempt >= this.maxRetryAttempts) {
             console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded. Aborting.`);
-            throw new Error(`Failed to get response from API after ${this.maxRetryAttempts} attempts`);
+            throw new MaxRetryExceededError(this.maxRetryAttempts, this.collectedErrors);
           }
 
           // Push the same content back onto the stack to retry
@@ -539,12 +676,35 @@ export class Task {
         }
       } catch (error) {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
-        console.error(`Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`, error);
+
+        // Convert to TaskError if it's not already one
+        let taskError: TaskError;
+        if (error instanceof TaskError) {
+          taskError = error;
+        } else if (error instanceof Error) {
+          // Check for timeout errors
+          if (error.message.includes('timed out')) {
+            taskError = new ApiTimeoutError(this.apiRequestTimeout, error);
+          } else {
+            taskError = new ApiRequestError(error.message, undefined, error);
+          }
+        } else {
+          taskError = new ApiRequestError(String(error));
+        }
+
+        this.collectedErrors.push(taskError);
+        console.error(`Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`, taskError);
+
+        // Don't retry non-retryable errors
+        if (!taskError.retryable) {
+          console.error(`Non-retryable error encountered: ${taskError.code}. Aborting.`);
+          throw taskError;
+        }
 
         // Check if we've exceeded the maximum retry attempts
         if (currentRetryAttempt >= this.maxRetryAttempts) {
           console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded due to errors. Aborting.`);
-          throw new Error(`Failed to process request after ${this.maxRetryAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`);
+          throw new MaxRetryExceededError(this.maxRetryAttempts, this.collectedErrors);
         }
 
         // Push the same content back onto the stack to retry
@@ -562,24 +722,6 @@ export class Task {
     }
 
     return false;
-  }
-
-  private async waitForUserMessageContentReady(): Promise<void> {
-    // Simple polling implementation
-    const maxWaitTime = 30000; // 30 seconds max
-    const pollInterval = 100; // 100ms intervals
-    const startTime = Date.now();
-
-    while (
-      !this.userMessageContentReady &&
-      Date.now() - startTime < maxWaitTime
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    }
-
-    if (!this.userMessageContentReady) {
-      console.warn('Timeout waiting for user message content to be ready');
-    }
   }
 
   private async addToApiConversationHistory(
@@ -630,23 +772,38 @@ export class Task {
         metadata,
       );
 
-      const stream = await Promise.race([
-        streamPromise,
-        this.createTimeoutPromise(this.apiRequestTimeout)
-      ]);
+      try {
+        const stream = await Promise.race([
+          streamPromise,
+          this.createTimeoutPromise(this.apiRequestTimeout)
+        ]);
 
-      console.log(`API request attempt ${retryAttempt + 1} successful`);
-      yield* stream;
+        console.log(`API request attempt ${retryAttempt + 1} successful`);
+        yield* stream;
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('timed out')) {
+          throw new ApiTimeoutError(this.apiRequestTimeout, error);
+        }
+        throw error;
+      }
     } catch (error) {
       console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
-      throw error;
+
+      // Convert to TaskError if it's not already one
+      if (error instanceof TaskError) {
+        throw error;
+      } else if (error instanceof Error) {
+        throw new ApiRequestError(error.message, undefined, error);
+      } else {
+        throw new ApiRequestError(String(error));
+      }
     }
   }
 
   private createTimeoutPromise(timeoutMs: number): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`API request timed out after ${timeoutMs}ms`));
+        reject(new ApiTimeoutError(timeoutMs));
       }, timeoutMs);
     });
   }

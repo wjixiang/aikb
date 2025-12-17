@@ -11,6 +11,7 @@ function parseJSON(jsonString: string): any {
   try {
     return JSON.parse(jsonString);
   } catch (error) {
+    console.warn(`JSON parse error: ${error} for input: ${jsonString}`);
     return null;
   }
 }
