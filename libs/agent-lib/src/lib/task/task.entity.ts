@@ -6,7 +6,8 @@ import {
   getApiProtocol,
   getModelId,
   ModelInfo,
-  ClineMessage
+  ClineMessage,
+  ToolName
 } from 'llm-types';
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
@@ -31,6 +32,8 @@ import {
   StreamingError,
   MaxRetryExceededError
 } from './task.errors';
+import { ToolCallingHandler } from 'llm-tools'
+import { randomUUID } from 'node:crypto';
 
 /**
  * Simplified Task entity with no core dependencies
@@ -54,6 +57,7 @@ export class Task {
   consecutiveMistakeLimit: number = DEFAULT_CONSECUTIVE_MISTAKE_LIMIT;
   consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
   toolUsage: ToolUsage = {};
+  toolCallHandler = new ToolCallingHandler()
 
   // LLM Messages & Chat Messages
   apiConversationHistory: ApiMessage[] = [];
@@ -93,6 +97,7 @@ export class Task {
   didAlreadyUseTool = false;
   didToolFailInCurrentTurn = false;
   didCompleteReadingStream = false;
+  didAttemptCompletion = false;
   assistantMessageParser?: AssistantMessageParser;
   private providerProfileChangeListener?: (config: {
     name: string;
@@ -235,6 +240,7 @@ export class Task {
         this.didRejectTool = false;
         this.didAlreadyUseTool = false;
         this.didToolFailInCurrentTurn = false;
+        this.didAttemptCompletion = false;
         this.assistantMessageParser?.reset();
         this.streamingToolCallIndices.clear();
         NativeToolCallParser.clearAllStreamingToolCalls();
@@ -504,17 +510,73 @@ export class Task {
             (block) => block.type === 'tool_use',
           );
           for (const block of toolUseBlocks) {
+            console.log(`detect tool calling: ${JSON.stringify(block)}`)
             const toolUse = block as ToolUse;
-            const toolCallId = toolUse.id;
-            if (toolCallId) {
-              const input = toolUse.nativeArgs || toolUse.params;
-              assistantContent.push({
-                type: 'tool_use' as const,
-                id: toolCallId,
-                name: toolUse.name,
-                input,
-              });
+            const toolCallId = randomUUID();
+
+            const input = toolUse.nativeArgs || toolUse.params;
+            assistantContent.push({
+              type: 'tool_use' as const,
+              id: toolCallId,
+              name: toolUse.name,
+              input,
+            });
+
+            // Handle tool calling
+            const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input)
+            console.log(`toolCallRes:${JSON.stringify(toolCallRes)}`)
+            // Process tool call result and add to user message content
+            if (toolCallRes) {
+              // Convert tool result to text format for user message
+              let resultText = '';
+
+              if (typeof toolCallRes === 'string') {
+                resultText = toolCallRes;
+              } else if (toolCallRes && typeof toolCallRes === 'object') {
+                // Handle structured tool responses
+                if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
+                  // Handle McpToolCallResponse - it has a content array
+                  resultText = toolCallRes.content.map(block => {
+                    if (block.type === 'text') {
+                      return block.text;
+                    }
+                    return `[${block.type} content]`;
+                  }).join('\n');
+                } else if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
+                  // Handle simple object with type and content
+                  resultText = toolCallRes.content;
+                } else if (Array.isArray(toolCallRes)) {
+                  // Handle array of content blocks
+                  resultText = toolCallRes.map(block => {
+                    if (block.type === 'text') {
+                      return block.text;
+                    }
+                    return `[${block.type} content]`;
+                  }).join('\n');
+                } else {
+                  // Fallback for other object types
+                  resultText = JSON.stringify(toolCallRes);
+                }
+              }
+
+              // Add tool result to user message content
+              if (resultText) {
+                this.userMessageContent.push({
+                  type: 'tool_result' as const,
+                  tool_use_id: toolCallId,
+                  content: resultText,
+                });
+
+                // Check if this is an attempt_completion tool call
+                if (toolUse.name === 'attempt_completion') {
+                  // For attempt_completion, don't push to stack for further processing
+                  console.log('Tool call completed with attempt_completion, ending recursion');
+                  this.didAttemptCompletion = true;
+                }
+              }
             }
+
+
           }
 
           await this.addToApiConversationHistory({
@@ -542,15 +604,13 @@ export class Task {
             throw new NoToolsUsedError()
           }
 
-          // Handle senario: user input new message
-          if (this.userMessageContent.length > 0) {
+          // Handle scenario: user input new message
+          // Only push to stack if not attempting completion
+          if (this.userMessageContent.length > 0 && !this.didAttemptCompletion) {
             stack.push({
               userContent: [...this.userMessageContent],
             });
           }
-
-          // Handle tool calling
-
 
           didEndLoop = true
 
@@ -614,6 +674,8 @@ export class Task {
           retryAttempt: currentRetryAttempt + 1,
         });
       }
+
+      console.log('stack:\n', JSON.stringify(stack))
 
       if (didEndLoop) {
         return true;

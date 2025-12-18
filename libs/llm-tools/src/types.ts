@@ -30,7 +30,7 @@ export interface Tool {
     };
 
     // 增强resolve函数，支持MCP标准响应
-    resolve: (args: any) => Promise<ToolResponse> | ToolResponse;
+    resolve: (args: any) => Promise<ToolResponse>;
 
     // 新增：工具元数据
     metadata?: {

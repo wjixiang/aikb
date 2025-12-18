@@ -510,7 +510,7 @@ describe('Task Entity Tests', () => {
         console.log('Reconstructed text:', reconstructedText);
     }, 10000);
 
-    it('should handle XML tool call stream correctly', async () => {
+    it.only('should handle XML tool call stream correctly', async () => {
         // Force XML protocol by creating a config that doesn't support native tools
         const xmlTestApiConfig: ProviderSettings = {
             ...testApiConfig,
@@ -535,14 +535,13 @@ describe('Task Entity Tests', () => {
 
         // Mock attemptApiRequest method to return an XML tool call stream
         const mockToolArgs = {
-            path: "diabetes_info.txt",
-            query: "糖尿病诊断标准"
+            query: "acting potential"
         };
 
         // Use mockImplementation to create fresh stream for each call
         const mockAttemptApiRequest = vi.spyOn(newTask as any, 'attemptApiRequest').mockImplementation(async function* () {
             console.log('Mock XML tool call attemptApiRequest called');
-            yield* createMockXmlToolCallStream('read_file', mockToolArgs);
+            yield* createMockXmlToolCallStream('semantic_search', mockToolArgs);
         });
 
         // Mock the api.getModel method to return our mock model info

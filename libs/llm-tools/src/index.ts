@@ -9,6 +9,17 @@ import attempt_completion from "./native-tools/attempt_completion"
 import { getAttemptCompletionDescription } from "./attempt-completion"
 import { convertOpenAIToolToAnthropic } from "./native-tools"
 
+import { Tool } from './types'
+import { semantic_search_tool } from './tools/semantic_search'
+import { ToolCallingHandler } from "./toolCallingHandler"
+
+export const toolSet = new Map<ToolName, Tool>()
+
+function registerTools() {
+    toolSet.set('semantic_search', semantic_search_tool)
+}
+registerTools()
+
 
 // Map of tool names to their description functions
 const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined> = {
@@ -72,6 +83,8 @@ export function getToolDescriptionsForMode(
     return `# Tools\n\n${descriptions.filter(Boolean).join("\n\n")}`
 }
 
+
+export { ToolCallingHandler }
 
 // Export native tool definitions (JSON schema format for OpenAI-compatible APIs)
 export { nativeTools } from "./native-tools"

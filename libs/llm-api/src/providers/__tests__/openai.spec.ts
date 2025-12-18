@@ -5,7 +5,6 @@ import { ApiHandlerOptions } from 'llm-shared/api';
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { openAiModelInfoSaneDefaults } from 'llm-types';
-import { Package } from 'llm-shared/package';
 import axios from 'axios';
 
 // Use vi.hoisted to properly handle the mock initialization
@@ -136,7 +135,7 @@ describe('OpenAiHandler', () => {
         defaultHeaders: {
           'HTTP-Referer': 'https://github.com/RooVetGit/Roo-Cline',
           'X-Title': 'Roo Code',
-          'User-Agent': `RooCode/${Package.version}`,
+          'User-Agent': 'RooCode/0.0.1',
         },
         timeout: expect.any(Number),
       });

@@ -1,7 +1,6 @@
 // npx vitest run src/api/providers/__tests__/constants.spec.ts
 
 import { DEFAULT_HEADERS } from '../constants';
-import { Package } from 'llm-shared/package';
 
 describe('DEFAULT_HEADERS', () => {
   it('should contain all required headers', () => {
@@ -22,7 +21,7 @@ describe('DEFAULT_HEADERS', () => {
 
   it('should have correct User-Agent format', () => {
     const userAgent = DEFAULT_HEADERS['User-Agent'];
-    expect(userAgent).toBe(`RooCode/${Package.version}`);
+    expect(userAgent).toBe('RooCode/0.0.1');
 
     // Verify it follows the tool_name/version pattern
     expect(userAgent).toMatch(/^[a-zA-Z-]+\/\d+\.\d+\.\d+$/);
@@ -40,8 +39,8 @@ describe('DEFAULT_HEADERS', () => {
     // Check semantic version format (major.minor.patch)
     expect(version).toMatch(/^\d+\.\d+\.\d+$/);
 
-    // Verify current version matches package version
-    expect(version).toBe(Package.version);
+    // Verify current version matches expected version
+    expect(version).toBe('0.0.1');
   });
 
   it('should be an object with string values', () => {

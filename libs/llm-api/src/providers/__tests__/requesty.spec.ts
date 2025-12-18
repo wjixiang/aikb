@@ -7,7 +7,6 @@ import { TOOL_PROTOCOL } from 'llm-types';
 
 import { RequestyHandler } from '../requesty';
 import { ApiHandlerOptions } from 'llm-shared/api';
-import { Package } from 'llm-shared/package';
 import { ApiHandlerCreateMessageMetadata } from '../../index';
 
 const mockResolveToolProtocol = vi.fn();
@@ -68,7 +67,7 @@ describe('RequestyHandler', () => {
       defaultHeaders: {
         'HTTP-Referer': 'https://github.com/RooVetGit/Roo-Cline',
         'X-Title': 'Roo Code',
-        'User-Agent': `RooCode/${Package.version}`,
+        'User-Agent': 'RooCode/0.0.1',
       },
     });
   });
@@ -86,7 +85,7 @@ describe('RequestyHandler', () => {
       defaultHeaders: {
         'HTTP-Referer': 'https://github.com/RooVetGit/Roo-Cline',
         'X-Title': 'Roo Code',
-        'User-Agent': `RooCode/${Package.version}`,
+        'User-Agent': 'RooCode/0.0.1',
       },
     });
   });

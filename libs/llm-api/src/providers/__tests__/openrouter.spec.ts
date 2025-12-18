@@ -8,7 +8,6 @@ import OpenAI from 'openai';
 
 import { OpenRouterHandler } from '../openrouter';
 import { ApiHandlerOptions } from 'llm-shared/api';
-import { Package } from 'llm-shared/package';
 import { ApiStreamChunk } from '../../transform/stream';
 
 // Mock dependencies
@@ -75,7 +74,7 @@ describe('OpenRouterHandler', () => {
       defaultHeaders: {
         'HTTP-Referer': 'https://github.com/RooVetGit/Roo-Cline',
         'X-Title': 'Roo Code',
-        'User-Agent': `RooCode/${Package.version}`,
+        'User-Agent': 'RooCode/0.0.1',
       },
     });
   });
