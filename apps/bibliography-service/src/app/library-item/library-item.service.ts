@@ -14,8 +14,8 @@ import {
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
   CreateChunkEmbedGroupDto,
-} from 'llm-shared/';
-import { Pdf2MArkdownDto } from 'llm-shared/';
+} from 'library-shared';
+import { Pdf2MArkdownDto } from 'library-shared';
 import { createLoggerWithPrefix } from 'log-management';
 import { S3Service } from '@aikb/s3-service';
 import { S3Utils } from 'utils';
@@ -430,20 +430,20 @@ export class LibraryItemService {
         description: input.description || '',
         chunkingConfig: input.chunkingConfig
           ? {
-              strategy: input.chunkingConfig.strategy,
-              parameters: {},
-            }
+            strategy: input.chunkingConfig.strategy,
+            parameters: {},
+          }
           : defaultChunkingConfig,
         embeddingConfig: input.embeddingConfig
           ? {
-              provider: input.embeddingConfig.provider,
-              model: input.embeddingConfig.model,
-              dimension: input.embeddingConfig.dimension,
-              batchSize: input.embeddingConfig.batchSize || 20,
-              maxRetries: input.embeddingConfig.maxRetries || 3,
-              timeout: input.embeddingConfig.timeout || 20000,
-              parameters: {},
-            }
+            provider: input.embeddingConfig.provider,
+            model: input.embeddingConfig.model,
+            dimension: input.embeddingConfig.dimension,
+            batchSize: input.embeddingConfig.batchSize || 20,
+            maxRetries: input.embeddingConfig.maxRetries || 3,
+            timeout: input.embeddingConfig.timeout || 20000,
+            parameters: {},
+          }
           : defaultEmbeddingConfig,
         isDefault: input.isDefault || false,
         isActive: input.isActive !== undefined ? input.isActive : true,

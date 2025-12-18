@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from './library-item.service';
-import { AddItemArchiveDto } from 'llm-shared/';
+import { AddItemArchiveDto } from 'library-shared';
 import { vi } from 'vitest';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Library, LibraryItem } from 'bibliography';

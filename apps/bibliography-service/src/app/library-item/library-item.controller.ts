@@ -20,12 +20,12 @@ import {
   PdfUploadUrlDto,
   PdfUploadUrlResponseDto,
   AddItemArchiveDto,
-} from 'llm-shared/';
+} from 'library-shared';
 import { LibraryItem } from 'bibliography';
 
 @Controller('library-items')
 export class LibraryItemController {
-  constructor(private readonly libraryItemService: LibraryItemService) {}
+  constructor(private readonly libraryItemService: LibraryItemService) { }
 
   /**
    * Create a new library item

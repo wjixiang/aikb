@@ -1,7 +1,7 @@
 import OpenAI from "openai"
 
 const SEMANTIC_SEARCH_DESCRIPTION = `
-Perform semantic search on a vector index to find relevant documents or content based on a query.
+Perform semantic search on a vector index to find relevant chunks based on a query from several highly authoritative medical textbooks.
 This tool searches through indexed documents using vector similarity to find the most relevant matches.
 `
 

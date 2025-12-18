@@ -24,7 +24,7 @@ export default defineConfig({
         '../../libs/log-management/src/index.ts',
       ),
       '@aikb/rabbitmq': resolve(__dirname, '../../libs/rabbitmq/src/index.ts'),
-      'llm-shared/': resolve(
+      'library-shared': resolve(
         __dirname,
         '../../libs/library-shared/src/index.ts',
       ),

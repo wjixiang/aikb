@@ -3,7 +3,7 @@ import {
   Pdf2MArkdownDto,
   UpdateMarkdownDto,
   CreateGroupAndChunkEmbedDto,
-} from 'llm-shared/';
+} from 'library-shared';
 import { get, post, put } from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import { uploadFile, type S3ServiceConfig } from '@aikb/s3-service';
@@ -826,10 +826,10 @@ export class AppService {
       );
 
       const updateRequest: bibliographyProto.UpdateLibraryItemMarkdownRequest =
-        {
-          id: itemId,
-          markdownContent,
-        };
+      {
+        id: itemId,
+        markdownContent,
+      };
 
       this.logger.debug(
         `[DEBUG] Sending gRPC request: ${JSON.stringify(updateRequest)}`,

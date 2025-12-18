@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from '../../../bibliography-service/src/app/library-item.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CreateLibraryItemWithPdfDto, Pdf2MArkdownDto } from 'llm-shared/';
+import { CreateLibraryItemWithPdfDto, Pdf2MArkdownDto } from 'library-shared';
 import { ItemArchive } from 'bibliography';
 import * as amqp from 'amqplib';
 import { vi } from 'vitest';
@@ -52,7 +52,7 @@ describe('LibraryItemService - End to End', () => {
     try {
       connection = await amqp.connect(
         process.env.RABBITMQ_URL ||
-          'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+        'amqp://admin:admin123@rabbitmq:5672/my_vhost',
       );
       channel = await connection.createChannel();
 
@@ -100,7 +100,7 @@ describe('LibraryItemService - End to End', () => {
             options: {
               urls: [
                 process.env.RABBITMQ_URL ||
-                  'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+                'amqp://admin:admin123@rabbitmq:5672/my_vhost',
               ],
               queue: uniqueServiceQueueName,
               // Add connection options for better debugging

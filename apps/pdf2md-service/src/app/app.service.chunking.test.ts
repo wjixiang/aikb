@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppService } from './app.service';
-import { Pdf2MArkdownDto } from 'llm-shared/';
+import { Pdf2MArkdownDto } from 'library-shared';
 import { ClientProxy } from '@nestjs/microservices';
 import * as fs from 'fs';
 

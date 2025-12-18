@@ -17,7 +17,7 @@ import {
 import { libraryItemVectorProto } from 'proto-ts';
 import { IdUtils } from 'utils';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ChunkEmbedItemDto } from 'llm-shared/';
+import { ChunkEmbedItemDto } from 'library-shared';
 import { CreateChunkEmbedGroupRequest } from './types';
 import { generateChunkEmbedGroupToken } from 'utils';
 

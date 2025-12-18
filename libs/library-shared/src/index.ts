@@ -1,2 +1,2 @@
-export * from 'llm-shared/';
+export * from 'library-shared';
 export * from './dto';

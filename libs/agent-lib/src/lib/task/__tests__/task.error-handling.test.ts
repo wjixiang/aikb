@@ -9,7 +9,7 @@ import {
     NoToolsUsedError,
     StreamingError,
     MaxRetryExceededError
-} from '../task.entity';
+} from '../task.errors';
 
 // Mock dependencies
 vi.mock('llm-api', () => ({

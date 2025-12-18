@@ -5,7 +5,7 @@ import {
   ChunkEmbedGroupMetadata,
   ChunkEmbedGroupConfig,
 } from 'item-vector-storage';
-import { ChunkEmbedItemDto } from 'llm-shared/';
+import { ChunkEmbedItemDto } from 'library-shared';
 import { chunkTextWithEnum, ChunkingStrategy } from 'chunking';
 import { embeddingService, EmbeddingProvider } from 'embedding';
 import { generateChunkEmbedGroupToken, IdUtils } from 'utils';

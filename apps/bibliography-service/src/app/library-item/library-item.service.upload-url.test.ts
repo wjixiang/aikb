@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryItemService } from './library-item.service';
-import { PdfUploadUrlDto, PdfUploadUrlResponseDto } from 'llm-shared/';
+import { PdfUploadUrlDto, PdfUploadUrlResponseDto } from 'library-shared';
 import { vi } from 'vitest';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { S3Service } from '@aikb/s3-service';

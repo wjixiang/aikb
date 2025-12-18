@@ -20,119 +20,17 @@ import { processUserContentMentions } from './simplified-dependencies/processUse
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
 import { AssistantMessageParser } from 'llm-core/assistant-message/AssistantMessageParser';
 import { SYSTEM_PROMPT } from 'llm-core/prompts/system';
-import { error } from 'console';
-
-/**
- * Base error class for Task-related errors
- */
-export abstract class TaskError extends Error {
-  abstract readonly code: string;
-  abstract readonly retryable: boolean;
-
-  constructor(message: string, public readonly cause?: Error) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
-
-/**
- * Error thrown when task is aborted
- */
-export class TaskAbortedError extends TaskError {
-  readonly code = 'TASK_ABORTED';
-  readonly retryable = false;
-
-  constructor(taskId: string, cause?: Error) {
-    super(`Task ${taskId} was aborted`, cause);
-  }
-}
-
-/**
- * Error thrown when consecutive mistake limit is reached
- */
-export class ConsecutiveMistakeError extends TaskError {
-  readonly code = 'CONSECUTIVE_MISTAKE_LIMIT';
-  readonly retryable = false;
-
-  constructor(limit: number, cause?: Error) {
-    super(`Consecutive mistake limit of ${limit} reached`, cause);
-  }
-}
-
-/**
- * Error thrown when API request times out
- */
-export class ApiTimeoutError extends TaskError {
-  readonly code = 'API_TIMEOUT';
-  readonly retryable = true;
-
-  constructor(timeoutMs: number, cause?: Error) {
-    super(`API request timed out after ${timeoutMs}ms`, cause);
-  }
-}
-
-/**
- * Error thrown when API request fails
- */
-export class ApiRequestError extends TaskError {
-  readonly code = 'API_REQUEST_FAILED';
-  readonly retryable = true;
-
-  constructor(message: string, public readonly statusCode?: number, cause?: Error) {
-    super(`API request failed: ${message}`, cause);
-  }
-}
-
-/**
- * Error thrown when no response is received from API
- */
-export class NoApiResponseError extends TaskError {
-  readonly code = 'NO_API_RESPONSE';
-  readonly retryable = true;
-
-  constructor(attempt: number, cause?: Error) {
-    super(`No response received from API (attempt ${attempt})`, cause);
-  }
-}
-
-/**
- * Error thrown when LLM doesn't use any tools
- */
-export class NoToolsUsedError extends TaskError {
-  readonly code = 'NO_TOOLS_USED';
-  readonly retryable = true;
-
-  constructor(cause?: Error) {
-    super('LLM did not use any tools', cause);
-  }
-}
-
-/**
- * Error thrown when streaming fails
- */
-export class StreamingError extends TaskError {
-  readonly code = 'STREAMING_FAILED';
-  readonly retryable = true;
-
-  constructor(message: string, cause?: Error) {
-    super(`Streaming failed: ${message}`, cause);
-  }
-}
-
-/**
- * Error thrown when maximum retry attempts are exceeded
- */
-export class MaxRetryExceededError extends TaskError {
-  readonly code = 'MAX_RETRY_EXCEEDED';
-  readonly retryable = false;
-
-  readonly errors: TaskError[];
-
-  constructor(maxAttempts: number, errors: TaskError[], cause?: Error) {
-    super(`Maximum retry attempts (${maxAttempts}) exceeded. Collected ${errors.length} errors.`, cause);
-    this.errors = errors;
-  }
-}
+import {
+  TaskError,
+  TaskAbortedError,
+  ConsecutiveMistakeError,
+  ApiTimeoutError,
+  ApiRequestError,
+  NoApiResponseError,
+  NoToolsUsedError,
+  StreamingError,
+  MaxRetryExceededError
+} from './task.errors';
 
 /**
  * Simplified Task entity with no core dependencies
@@ -271,19 +169,17 @@ export class Task {
 
     interface StackItem {
       userContent: Anthropic.Messages.ContentBlockParam[];
-      includeFileDetails: boolean;
       retryAttempt?: number;
       userMessageWasRemoved?: boolean;
     }
 
     const stack: StackItem[] = [
-      { userContent, includeFileDetails, retryAttempt: 0 },
+      { userContent, retryAttempt: 0 },
     ];
 
     while (stack.length > 0) {
       const currentItem = stack.pop()!;
       const currentUserContent = currentItem.userContent;
-      const currentIncludeFileDetails = currentItem.includeFileDetails;
       let didEndLoop = false;
 
       if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
@@ -474,7 +370,7 @@ export class Task {
               }
               case 'reasoning': {
                 reasoningMessage += chunk.text;
-                console.log('推理块:', chunk.text);
+                console.log('reasoning:', chunk.text);
                 break;
               }
               case 'text': {
@@ -631,6 +527,7 @@ export class Task {
 
           const didToolUse = hasToolUses;
 
+          // Handle senario: LLM didn't use any tools
           if (!didToolUse) {
             const modelInfo = this.api.getModel().info;
             const toolProtocol = resolveToolProtocol(
@@ -645,14 +542,18 @@ export class Task {
             throw new NoToolsUsedError()
           }
 
+          // Handle senario: user input new message
           if (this.userMessageContent.length > 0) {
             stack.push({
               userContent: [...this.userMessageContent],
-              includeFileDetails: false,
             });
-          } else {
-            didEndLoop = true;
           }
+
+          // Handle tool calling
+
+
+          didEndLoop = true
+
         } else {
           // No assistant response - this is an error case
           const currentRetryAttempt = currentItem.retryAttempt ?? 0;
@@ -670,7 +571,6 @@ export class Task {
           console.log(`Retrying API request (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
           stack.push({
             userContent: currentUserContent,
-            includeFileDetails: false,
             retryAttempt: currentRetryAttempt + 1,
           });
         }
@@ -711,7 +611,6 @@ export class Task {
         console.log(`Retrying after error (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
         stack.push({
           userContent: currentUserContent,
-          includeFileDetails: false,
           retryAttempt: currentRetryAttempt + 1,
         });
       }

@@ -8,9 +8,6 @@ import {
   DEFAULT_MODES,
 } from 'llm-types';
 
-// import { addCustomInstructions } from 'llm-core/prompts/sections/custom-instructions';
-
-import { EXPERIMENT_IDS } from './experiments';
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from './tools';
 
 export type Mode = string;
