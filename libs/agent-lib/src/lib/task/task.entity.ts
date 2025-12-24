@@ -1,4 +1,4 @@
-import { ApiHandler, buildApiHandler, type ApiStream } from 'llm-api';
+import { ApiHandler, ApiStreamChunk, buildApiHandler, type ApiStream } from 'llm-api';
 import {
   DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ProviderSettings,
@@ -34,6 +34,18 @@ import {
 } from './task.errors';
 import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
+
+/**
+ * Interface for token usage tracking
+ */
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheWriteTokens?: number;
+  cacheReadTokens?: number;
+  reasoningTokens?: number;
+  totalCost?: number;
+}
 
 /**
  * Interface to encapsulate message processing state
@@ -73,6 +85,16 @@ export class Task {
   consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
   toolUsage: ToolUsage = {};
   toolCallHandler = new ToolCallingHandler()
+
+  // Token Usage
+  tokenUsage: TokenUsage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheWriteTokens: 0,
+    cacheReadTokens: 0,
+    reasoningTokens: 0,
+    totalCost: 0,
+  };
 
   // LLM Messages & Chat Messages
   apiConversationHistory: ApiMessage[] = [];
@@ -141,6 +163,13 @@ export class Task {
   }
 
   /**
+   * Getter for task status (for testing purposes)
+   */
+  public get status(): 'running' | 'completed' | 'aborted' {
+    return this._status;
+  }
+
+  /**
    * Get all collected errors for debugging purposes
    */
   public getCollectedErrors(): TaskError[] {
@@ -154,22 +183,41 @@ export class Task {
     this.collectedErrors = [];
   }
 
-  start() {
-    (this._status as 'running' | 'completed' | 'aborted') = 'running';
-    return { event: 'task.started', data: { taskId: this.taskId } };
+  // Lifecycle
+  // Start / Resume / Abort / Dispose / Complete
+
+  async start(task?: string, images?: string[]): Promise<void> {
+    this._status = 'running';
+
+    const result = await this.recursivelyMakeClineRequests([
+      {
+        type: 'text',
+        text: `<task>${task}</task>`
+      }
+    ])
+
+    if (result) {
+      // this.complete()
+    }
+
   }
 
-  complete(tokenUsage: any, toolUsage: ToolUsage) {
-    (this._status as 'running' | 'completed' | 'aborted') = 'completed';
-    return {
-      event: 'task.completed',
-      data: { taskId: this.taskId, tokenUsage, toolUsage },
-    };
+  complete(tokenUsage?: any, toolUsage?: ToolUsage) {
+    this._status = 'completed';
+    // return {
+    //   event: 'task.completed',
+    //   data: {
+    //     taskId: this.taskId,
+    //     tokenUsage: tokenUsage || this.tokenUsage,
+    //     toolUsage: toolUsage || this.toolUsage
+    //   },
+    // };
   }
 
-  abort() {
-    (this._status as 'running' | 'completed' | 'aborted') = 'aborted';
-    return { event: 'task.aborted', data: { taskId: this.taskId } };
+  abort(abortReason?: any) {
+    this._status = 'aborted';
+    this.abortReason = abortReason;
+    // return { event: 'task.aborted', data: { taskId: this.taskId } };
   }
 
   /**
@@ -199,9 +247,11 @@ export class Task {
       let didEndLoop = false;
 
       if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
-        throw new Error(
-          `[Task#recursivelyMakeClineRequests] task ${this.taskId} aborted`,
-        );
+        console.log(`Task ${this.taskId} was aborted, exiting loop`);
+        // Clear the stack to ensure the while loop terminates
+        stack.length = 0;
+        // Return false to indicate the task was aborted
+        return false;
       }
 
       if (
@@ -294,7 +344,8 @@ export class Task {
           });
         }
 
-        didEndLoop = true;
+        // For debugging: avoid stuck in loop for some tests
+        // didEndLoop = true;
 
       } catch (error) {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
@@ -336,9 +387,7 @@ export class Task {
           retryAttempt: currentRetryAttempt + 1,
         });
       }
-
-      console.log('stack:\n', JSON.stringify(stack))
-
+      console.log(`stack length: ${stack.length}`)
       if (didEndLoop) {
         return true;
       }
@@ -350,15 +399,21 @@ export class Task {
   /**
    * Collect complete response from stream without processing chunks individually
    */
-  private async collectCompleteResponse(): Promise<any[]> {
+  private async collectCompleteResponse(): Promise<ApiStreamChunk[]> {
     const stream = this.attemptApiRequest();
-    const chunks: any[] = [];
+    const chunks = [];
 
     try {
       const iterator = stream[Symbol.asyncIterator]();
       let item = await iterator.next();
 
       while (!item.done) {
+        // Check for abort status during stream processing
+        if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+          console.log(`Task ${this.taskId} was aborted during stream collection`);
+          return chunks; // Return whatever chunks we have collected so far
+        }
+
         const chunk = item.value;
         if (chunk) {
           chunks.push(chunk);
@@ -377,7 +432,7 @@ export class Task {
   /**
    * Process complete response collected from stream
    */
-  private async processCompleteResponse(chunks: any[], shouldUseXmlParser: boolean): Promise<void> {
+  private async processCompleteResponse(chunks: ApiStreamChunk[], shouldUseXmlParser: boolean): Promise<void> {
     let reasoningMessage = '';
     let assistantMessage = '';
 
@@ -385,7 +440,8 @@ export class Task {
     for (const chunk of chunks) {
       switch (chunk.type) {
         case 'usage':
-          // Handle usage tracking (simplified)
+          // Accumulate token usage information
+          this.accumulateTokenUsage(chunk);
           break;
         case 'tool_call': {
           // Handle complete tool calls
@@ -429,10 +485,85 @@ export class Task {
   }
 
   /**
+   * Parse tool call response into text format
+   */
+  private parseToolCallResponse(toolCallRes: any): string {
+    if (typeof toolCallRes === 'string') {
+      return toolCallRes;
+    }
+
+    if (!toolCallRes || typeof toolCallRes !== 'object') {
+      return '';
+    }
+
+    // Handle structured tool responses
+    if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
+      // Handle McpToolCallResponse - it has a content array
+      return toolCallRes.content.map((block: any) => {
+        if (block.type === 'text') {
+          return block.text;
+        }
+        return `[${block.type} content]`;
+      }).join('\n');
+    }
+
+    if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
+      // Handle simple object with type and content
+      return toolCallRes.content;
+    }
+
+    if (Array.isArray(toolCallRes)) {
+      // Handle array of content blocks
+      return toolCallRes.map((block: any) => {
+        if (block.type === 'text') {
+          return block.text;
+        }
+        return `[${block.type} content]`;
+      }).join('\n');
+    }
+
+    // Fallback for other object types
+    return JSON.stringify(toolCallRes);
+  }
+
+  /**
+   * Accumulate token usage information from usage chunks
+   */
+  private accumulateTokenUsage(usageChunk: any): void {
+    if (!usageChunk) return;
+
+    // Initialize tokenUsage structure if needed
+    if (!this.tokenUsage) {
+      this.tokenUsage = {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheWriteTokens: 0,
+        cacheReadTokens: 0,
+        reasoningTokens: 0,
+        totalCost: 0,
+      };
+    }
+
+    // Accumulate values from the usage chunk
+    this.tokenUsage.inputTokens += usageChunk.inputTokens || 0;
+    this.tokenUsage.outputTokens += usageChunk.outputTokens || 0;
+    this.tokenUsage.cacheWriteTokens += usageChunk.cacheWriteTokens || 0;
+    this.tokenUsage.cacheReadTokens += usageChunk.cacheReadTokens || 0;
+    this.tokenUsage.reasoningTokens += usageChunk.reasoningTokens || 0;
+    this.tokenUsage.totalCost += usageChunk.totalCost || 0;
+  }
+
+  /**
    * Execute tool calls and build user message content
    */
   private async executeToolCalls(toolUseBlocks: AssistantMessageContent[]): Promise<void> {
     for (const block of toolUseBlocks) {
+      // Check for abort status before executing each tool
+      if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+        console.log(`Task ${this.taskId} was aborted during tool execution`);
+        return;
+      }
+
       console.log(`detect tool calling: ${JSON.stringify(block)}`);
       const toolUse = block as ToolUse;
       const toolCallId = randomUUID();
@@ -441,41 +572,17 @@ export class Task {
 
       // Handle tool calling
       const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input);
-      console.log(`toolCallRes:${JSON.stringify(toolCallRes)}`);
+
+      // Check for abort status after tool execution
+      if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+        console.log(`Task ${this.taskId} was aborted after tool execution`);
+        return;
+      }
 
       // Process tool call result and add to user message content
       if (toolCallRes) {
         // Convert tool result to text format for user message
-        let resultText = '';
-
-        if (typeof toolCallRes === 'string') {
-          resultText = toolCallRes;
-        } else if (toolCallRes && typeof toolCallRes === 'object') {
-          // Handle structured tool responses
-          if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
-            // Handle McpToolCallResponse - it has a content array
-            resultText = toolCallRes.content.map((block: any) => {
-              if (block.type === 'text') {
-                return block.text;
-              }
-              return `[${block.type} content]`;
-            }).join('\n');
-          } else if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
-            // Handle simple object with type and content
-            resultText = toolCallRes.content;
-          } else if (Array.isArray(toolCallRes)) {
-            // Handle array of content blocks
-            resultText = toolCallRes.map((block: any) => {
-              if (block.type === 'text') {
-                return block.text;
-              }
-              return `[${block.type} content]`;
-            }).join('\n');
-          } else {
-            // Fallback for other object types
-            resultText = JSON.stringify(toolCallRes);
-          }
-        }
+        const resultText = this.parseToolCallResponse(toolCallRes);
 
         // Add tool result to user message content
         if (resultText) {
@@ -490,6 +597,8 @@ export class Task {
             // For attempt_completion, don't push to stack for further processing
             console.log('Tool call completed with attempt_completion, ending recursion');
             this.messageState.didAttemptCompletion = true;
+            // Clear user message content to prevent further recursion
+            this.messageState.userMessageContent = [];
           }
         }
       }

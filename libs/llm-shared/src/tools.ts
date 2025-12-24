@@ -153,89 +153,6 @@ export interface McpToolUse {
   partial: boolean;
 }
 
-export interface ExecuteCommandToolUse extends ToolUse<'execute_command'> {
-  name: 'execute_command';
-  // Pick<Record<ToolParamName, string>, "command"> makes "command" required, but Partial<> makes it optional
-  params: Partial<Pick<Record<ToolParamName, string>, 'command' | 'cwd'>>;
-}
-
-export interface ReadFileToolUse extends ToolUse<'read_file'> {
-  name: 'read_file';
-  params: Partial<
-    Pick<
-      Record<ToolParamName, string>,
-      'args' | 'path' | 'start_line' | 'end_line' | 'files'
-    >
-  >;
-}
-
-export interface FetchInstructionsToolUse
-  extends ToolUse<'fetch_instructions'> {
-  name: 'fetch_instructions';
-  params: Partial<Pick<Record<ToolParamName, string>, 'task'>>;
-}
-
-export interface WriteToFileToolUse extends ToolUse<'write_to_file'> {
-  name: 'write_to_file';
-  params: Partial<Pick<Record<ToolParamName, string>, 'path' | 'content'>>;
-}
-
-export interface CodebaseSearchToolUse extends ToolUse<'codebase_search'> {
-  name: 'codebase_search';
-  params: Partial<Pick<Record<ToolParamName, string>, 'query' | 'path'>>;
-}
-
-export interface SearchFilesToolUse extends ToolUse<'search_files'> {
-  name: 'search_files';
-  params: Partial<
-    Pick<Record<ToolParamName, string>, 'path' | 'regex' | 'file_pattern'>
-  >;
-}
-
-export interface ListFilesToolUse extends ToolUse<'list_files'> {
-  name: 'list_files';
-  params: Partial<Pick<Record<ToolParamName, string>, 'path' | 'recursive'>>;
-}
-
-export interface ListCodeDefinitionNamesToolUse
-  extends ToolUse<'list_code_definition_names'> {
-  name: 'list_code_definition_names';
-  params: Partial<Pick<Record<ToolParamName, string>, 'path'>>;
-}
-
-export interface BrowserActionToolUse extends ToolUse<'browser_action'> {
-  name: 'browser_action';
-  params: Partial<
-    Pick<
-      Record<ToolParamName, string>,
-      'action' | 'url' | 'coordinate' | 'text' | 'size'
-    >
-  >;
-}
-
-export interface UseMcpToolToolUse extends ToolUse<'use_mcp_tool'> {
-  name: 'use_mcp_tool';
-  params: Partial<
-    Pick<
-      Record<ToolParamName, string>,
-      'server_name' | 'tool_name' | 'arguments'
-    >
-  >;
-}
-
-export interface AccessMcpResourceToolUse
-  extends ToolUse<'access_mcp_resource'> {
-  name: 'access_mcp_resource';
-  params: Partial<Pick<Record<ToolParamName, string>, 'server_name' | 'uri'>>;
-}
-
-export interface AskFollowupQuestionToolUse
-  extends ToolUse<'ask_followup_question'> {
-  name: 'ask_followup_question';
-  params: Partial<
-    Pick<Record<ToolParamName, string>, 'question' | 'follow_up'>
-  >;
-}
 
 export interface AttemptCompletionToolUse
   extends ToolUse<'attempt_completion'> {
@@ -243,29 +160,6 @@ export interface AttemptCompletionToolUse
   params: Partial<Pick<Record<ToolParamName, string>, 'result'>>;
 }
 
-export interface SwitchModeToolUse extends ToolUse<'switch_mode'> {
-  name: 'switch_mode';
-  params: Partial<Pick<Record<ToolParamName, string>, 'mode_slug' | 'reason'>>;
-}
-
-export interface NewTaskToolUse extends ToolUse<'new_task'> {
-  name: 'new_task';
-  params: Partial<
-    Pick<Record<ToolParamName, string>, 'mode' | 'message' | 'todos'>
-  >;
-}
-
-export interface RunSlashCommandToolUse extends ToolUse<'run_slash_command'> {
-  name: 'run_slash_command';
-  params: Partial<Pick<Record<ToolParamName, string>, 'command' | 'args'>>;
-}
-
-export interface GenerateImageToolUse extends ToolUse<'generate_image'> {
-  name: 'generate_image';
-  params: Partial<
-    Pick<Record<ToolParamName, string>, 'prompt' | 'path' | 'image'>
-  >;
-}
 
 // Define tool group configuration
 export type ToolGroupConfig = {
@@ -275,28 +169,7 @@ export type ToolGroupConfig = {
 };
 
 export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
-  execute_command: 'run commands',
-  read_file: 'read files',
-  fetch_instructions: 'fetch instructions',
-  write_to_file: 'write files',
-  apply_diff: 'apply changes',
-  search_and_replace: 'apply changes using search and replace',
-  search_replace: 'apply single search and replace',
-  apply_patch: 'apply patches using codex format',
-  search_files: 'search files',
-  list_files: 'list files',
-  list_code_definition_names: 'list definitions',
-  browser_action: 'use a browser',
-  use_mcp_tool: 'use mcp tools',
-  access_mcp_resource: 'access mcp resources',
-  ask_followup_question: 'ask questions',
   attempt_completion: 'complete tasks',
-  switch_mode: 'switch modes',
-  new_task: 'create new task',
-  codebase_search: 'codebase search',
-  update_todo_list: 'update todo list',
-  run_slash_command: 'run slash command',
-  generate_image: 'generate images',
   semantic_search: 'semantic search'
 } as const;
 
@@ -311,12 +184,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 
 // Tools that are always available to all modes.
 export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
-  'ask_followup_question',
   'attempt_completion',
-  'switch_mode',
-  'new_task',
-  'update_todo_list',
-  'run_slash_command',
 ] as const;
 
 export type DiffResult =

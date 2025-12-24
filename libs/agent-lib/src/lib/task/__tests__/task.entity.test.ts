@@ -183,6 +183,12 @@ function createMockXmlToolCallStream(toolName: string, toolArgs: Record<string, 
             outputTokens: xmlToolCall.length + 30,
             totalCost: 0.0003
         } as ApiStreamChunk;
+
+        // Add attempt_completion to end the loop
+        yield {
+            type: 'text',
+            text: '\n<attempt_completion>\n</attempt_completion>'
+        } as ApiStreamChunk;
     })();
 }
 
@@ -510,7 +516,7 @@ describe('Task Entity Tests', () => {
         console.log('Reconstructed text:', reconstructedText);
     }, 10000);
 
-    it.only('should handle XML tool call stream correctly', async () => {
+    it('should handle XML tool call stream correctly', async () => {
         // Force XML protocol by creating a config that doesn't support native tools
         const xmlTestApiConfig: ProviderSettings = {
             ...testApiConfig,
@@ -712,4 +718,72 @@ describe('Task Entity Tests', () => {
     it.skip('should use simple tool correctly', async () => {
 
     })
+
+    it('should handle task abort correctly', async () => {
+        const newTask = new Task('test_task_id_abort', testApiConfig, 100);
+
+        // Mock the attemptApiRequest method to return a stream that takes time
+        const mockAttemptApiRequest = vi.spyOn(newTask as any, 'attemptApiRequest').mockImplementation(async function* () {
+            console.log('Mock abort test attemptApiRequest called');
+            // Simulate a long-running stream
+            yield {
+                type: 'text',
+                text: 'Starting long operation...'
+            };
+
+            // Add a delay to simulate processing time
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Check if task was aborted during processing
+            if ((newTask as any)._status === 'aborted') {
+                console.log('Task was aborted, stopping stream generation');
+                return;
+            }
+
+            yield {
+                type: 'text',
+                text: 'Still processing...'
+            };
+
+            yield {
+                type: 'usage',
+                inputTokens: 20,
+                outputTokens: 30,
+                totalCost: 0.0001
+            };
+        });
+
+        // Mock methods to avoid timeout issues
+        newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
+        newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+        newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
+        newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
+
+        try {
+            // Start the task in the background
+            const taskPromise = newTask.recursivelyMakeClineRequests([{
+                type: 'text',
+                text: '请执行一个长时间运行的任务'
+            }]);
+
+            // Abort the task after a short delay
+            setTimeout(() => {
+                console.log('Calling abort...');
+                newTask.abort('Test abort');
+            }, 50);
+
+            // Wait for the task to complete/abort
+            const result = await taskPromise;
+
+            // Verify the task was aborted
+            expect(newTask.status).toBe('aborted');
+            expect(result).toBe(false); // Should return false when aborted
+            expect(newTask.abortReason).toBe('Test abort');
+
+            console.log('Abort test completed successfully');
+        } finally {
+            // Restore the original method
+            mockAttemptApiRequest.mockRestore();
+        }
+    }, 10000);
 });

@@ -17,6 +17,16 @@ export const toolSet = new Map<ToolName, Tool>()
 
 function registerTools() {
     toolSet.set('semantic_search', semantic_search_tool)
+    toolSet.set('attempt_completion', {
+        desc: {
+            native: attempt_completion,
+            xml: (args) => getAttemptCompletionDescription(args),
+        },
+        resolve: async (args: any) => {
+            // For attempt_completion, just return a success message
+            return "Task completed successfully";
+        },
+    })
 }
 registerTools()
 
