@@ -36,6 +36,32 @@ import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
 
 /**
+ * Interface to encapsulate all streaming-related state variables
+ */
+interface StreamingState {
+  isStreaming: boolean;
+  currentStreamingContentIndex: number;
+  currentStreamingDidCheckpoint: boolean;
+  assistantMessageContent: AssistantMessageContent[];
+  presentAssistantMessageLocked: boolean;
+  presentAssistantMessageHasPendingUpdates: boolean;
+  userMessageContent: (
+    | Anthropic.TextBlockParam
+    | Anthropic.ImageBlockParam
+    | Anthropic.ToolResultBlockParam
+  )[];
+  userMessageContentReady: boolean;
+  didRejectTool: boolean;
+  didAlreadyUseTool: boolean;
+  didToolFailInCurrentTurn: boolean;
+  didCompleteReadingStream: boolean;
+  didAttemptCompletion: boolean;
+  assistantMessageParser?: AssistantMessageParser;
+  streamingToolCallIndices: Map<string, number>;
+  cachedStreamingModel?: { id: string; info: ModelInfo };
+}
+
+/**
  * Simplified Task entity with no core dependencies
  * Only essential functionality for recursivelyMakeClineRequests
  * All UI, frontend, persistence, and event emission features removed
@@ -80,35 +106,25 @@ export class Task {
   isInitialized = false;
   isPaused: boolean = false;
 
-  // Streaming
-  isStreaming = false;
-  currentStreamingContentIndex = 0;
-  currentStreamingDidCheckpoint = false;
-  assistantMessageContent: AssistantMessageContent[] = [];
-  presentAssistantMessageLocked = false;
-  presentAssistantMessageHasPendingUpdates = false;
-  userMessageContent: (
-    | Anthropic.TextBlockParam
-    | Anthropic.ImageBlockParam
-    | Anthropic.ToolResultBlockParam
-  )[] = [];
-  userMessageContentReady = false;
-  didRejectTool = false;
-  didAlreadyUseTool = false;
-  didToolFailInCurrentTurn = false;
-  didCompleteReadingStream = false;
-  didAttemptCompletion = false;
-  assistantMessageParser?: AssistantMessageParser;
-  private providerProfileChangeListener?: (config: {
-    name: string;
-    provider?: string;
-  }) => void;
-
-  // Native tool call streaming state (track which index each tool is at)
-  private streamingToolCallIndices: Map<string, number> = new Map();
-
-  // Cached model info for current streaming session
-  cachedStreamingModel?: { id: string; info: ModelInfo };
+  // Streaming state encapsulated in a single object
+  private streamingState: StreamingState = {
+    isStreaming: false,
+    currentStreamingContentIndex: 0,
+    currentStreamingDidCheckpoint: false,
+    assistantMessageContent: [],
+    presentAssistantMessageLocked: false,
+    presentAssistantMessageHasPendingUpdates: false,
+    userMessageContent: [],
+    userMessageContentReady: false,
+    didRejectTool: false,
+    didAlreadyUseTool: false,
+    didToolFailInCurrentTurn: false,
+    didCompleteReadingStream: false,
+    didAttemptCompletion: false,
+    assistantMessageParser: undefined,
+    streamingToolCallIndices: new Map(),
+    cachedStreamingModel: undefined,
+  };
 
   // Retry configuration
   private readonly maxRetryAttempts: number = 3;
@@ -126,7 +142,33 @@ export class Task {
     this.instanceId = crypto.randomUUID().slice(0, 8);
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
-    this.assistantMessageParser = new AssistantMessageParser();
+    this.streamingState.assistantMessageParser = new AssistantMessageParser();
+  }
+
+  /**
+   * Reset streaming state for each new API request
+   */
+  private resetStreamingState(): void {
+    this.streamingState.currentStreamingContentIndex = 0;
+    this.streamingState.assistantMessageContent = [];
+    this.streamingState.didCompleteReadingStream = false;
+    this.streamingState.userMessageContent = [];
+    this.streamingState.userMessageContentReady = false;
+    this.streamingState.didRejectTool = false;
+    this.streamingState.didAlreadyUseTool = false;
+    this.streamingState.didToolFailInCurrentTurn = false;
+    this.streamingState.didAttemptCompletion = false;
+    this.streamingState.assistantMessageParser?.reset();
+    this.streamingState.streamingToolCallIndices.clear();
+    NativeToolCallParser.clearAllStreamingToolCalls();
+    NativeToolCallParser.clearRawChunkState();
+  }
+
+  /**
+   * Getter for assistantMessageContent (for testing purposes)
+   */
+  public get assistantMessageContent(): AssistantMessageContent[] {
+    return this.streamingState.assistantMessageContent;
   }
 
   /**
@@ -232,23 +274,11 @@ export class Task {
 
       try {
         // Reset streaming state for each new API request
-        this.currentStreamingContentIndex = 0;
-        this.assistantMessageContent = [];
-        this.didCompleteReadingStream = false;
-        this.userMessageContent = [];
-        this.userMessageContentReady = false;
-        this.didRejectTool = false;
-        this.didAlreadyUseTool = false;
-        this.didToolFailInCurrentTurn = false;
-        this.didAttemptCompletion = false;
-        this.assistantMessageParser?.reset();
-        this.streamingToolCallIndices.clear();
-        NativeToolCallParser.clearAllStreamingToolCalls();
-        NativeToolCallParser.clearRawChunkState();
+        this.resetStreamingState();
 
         // Cache model info once per API request
-        this.cachedStreamingModel = this.api.getModel();
-        const streamModelInfo = this.cachedStreamingModel.info;
+        this.streamingState.cachedStreamingModel = this.api.getModel();
+        const streamModelInfo = this.streamingState.cachedStreamingModel.info;
 
         const streamProtocol = resolveToolProtocol(
           this.apiConfiguration,
@@ -261,7 +291,7 @@ export class Task {
         const stream = this.attemptApiRequest();
         let reasoningMessage = '';
         let assistantMessage = '';
-        this.isStreaming = true;
+        this.streamingState.isStreaming = true;
 
         // Variables for tracking stream status
         let chunkCount = 0;
@@ -307,8 +337,8 @@ export class Task {
                       event.name as any,
                     );
 
-                    const toolUseIndex = this.assistantMessageContent.length;
-                    this.streamingToolCallIndices.set(event.id, toolUseIndex);
+                    const toolUseIndex = this.streamingState.assistantMessageContent.length;
+                    this.streamingState.streamingToolCallIndices.set(event.id, toolUseIndex);
 
                     const partialToolUse: ToolUse = {
                       type: 'tool_use',
@@ -320,8 +350,8 @@ export class Task {
 
                     console.debug(`partial_tool_use`, partialToolUse)
 
-                    this.assistantMessageContent.push(partialToolUse);
-                    this.userMessageContentReady = false;
+                    this.streamingState.assistantMessageContent.push(partialToolUse);
+                    this.streamingState.userMessageContentReady = false;
                   } else if (event.type === 'tool_call_delta') {
                     const partialToolUse =
                       NativeToolCallParser.processStreamingChunk(
@@ -330,31 +360,31 @@ export class Task {
                       );
 
                     if (partialToolUse) {
-                      const toolUseIndex = this.streamingToolCallIndices.get(
+                      const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
                         event.id,
                       );
                       if (toolUseIndex !== undefined) {
                         (partialToolUse as any).id = event.id;
-                        this.assistantMessageContent[toolUseIndex] =
+                        this.streamingState.assistantMessageContent[toolUseIndex] =
                           partialToolUse;
                       }
-                      this.userMessageContentReady = false;
+                      this.streamingState.userMessageContentReady = false;
                     }
                   } else if (event.type === 'tool_call_end') {
                     const finalToolUse =
                       NativeToolCallParser.finalizeStreamingToolCall(event.id);
 
                     if (finalToolUse) {
-                      const toolUseIndex = this.streamingToolCallIndices.get(
+                      const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
                         event.id,
                       );
                       if (toolUseIndex !== undefined) {
                         (finalToolUse as any).id = event.id;
-                        this.assistantMessageContent[toolUseIndex] =
+                        this.streamingState.assistantMessageContent[toolUseIndex] =
                           finalToolUse;
                       }
-                      this.streamingToolCallIndices.delete(event.id);
-                      this.userMessageContentReady = false;
+                      this.streamingState.streamingToolCallIndices.delete(event.id);
+                      this.streamingState.userMessageContentReady = false;
                     }
                   }
                 }
@@ -369,8 +399,8 @@ export class Task {
                 });
 
                 if (toolUse) {
-                  this.assistantMessageContent.push(toolUse);
-                  this.userMessageContentReady = false;
+                  this.streamingState.assistantMessageContent.push(toolUse);
+                  this.streamingState.userMessageContentReady = false;
                 }
                 break;
               }
@@ -382,35 +412,35 @@ export class Task {
               case 'text': {
                 assistantMessage += chunk.text;
 
-                if (shouldUseXmlParser && this.assistantMessageParser) {
+                if (shouldUseXmlParser && this.streamingState.assistantMessageParser) {
                   // XML protocol: Parse raw assistant message chunk into content blocks
-                  const prevLength = this.assistantMessageContent.length;
-                  this.assistantMessageContent =
-                    this.assistantMessageParser.processChunk(chunk.text);
+                  const prevLength = this.streamingState.assistantMessageContent.length;
+                  this.streamingState.assistantMessageContent =
+                    this.streamingState.assistantMessageParser.processChunk(chunk.text);
 
-                  // console.debug(`assistantMessage:`, this.assistantMessageContent)
+                  // console.debug(`assistantMessage:`, this.streamingState.assistantMessageContent)
 
-                  if (this.assistantMessageContent.length > prevLength) {
-                    this.userMessageContentReady = false;
+                  if (this.streamingState.assistantMessageContent.length > prevLength) {
+                    this.streamingState.userMessageContentReady = false;
                   }
                 } else {
                   // Native protocol: Text chunks are plain text
                   const lastBlock =
-                    this.assistantMessageContent[
-                    this.assistantMessageContent.length - 1
+                    this.streamingState.assistantMessageContent[
+                    this.streamingState.assistantMessageContent.length - 1
                     ];
 
                   if (lastBlock?.type === 'text' && lastBlock.partial) {
                     lastBlock.content = assistantMessage;
                     lastBlock.partial = true;
-                    this.userMessageContentReady = false;
+                    this.streamingState.userMessageContentReady = false;
                   } else {
-                    this.assistantMessageContent.push({
+                    this.streamingState.assistantMessageContent.push({
                       type: 'text',
                       content: assistantMessage,
                       partial: true,
                     });
-                    this.userMessageContentReady = false;
+                    this.streamingState.userMessageContentReady = false;
                   }
                 }
                 break;
@@ -424,12 +454,12 @@ export class Task {
               break;
             }
 
-            if (this.didRejectTool) {
+            if (this.streamingState.didRejectTool) {
               assistantMessage += '\n\n[Response interrupted by user feedback]';
               break;
             }
 
-            if (this.didAlreadyUseTool) {
+            if (this.streamingState.didAlreadyUseTool) {
               assistantMessage +=
                 '\n\n[Response interrupted by a tool use result. Only one tool may be used at a time and should be placed at the end of the message.]';
               break;
@@ -444,20 +474,20 @@ export class Task {
                 NativeToolCallParser.finalizeStreamingToolCall(event.id);
 
               if (finalToolUse) {
-                const toolUseIndex = this.streamingToolCallIndices.get(
+                const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
                   event.id,
                 );
                 if (toolUseIndex !== undefined) {
                   (finalToolUse as any).id = event.id;
-                  this.assistantMessageContent[toolUseIndex] = finalToolUse;
+                  this.streamingState.assistantMessageContent[toolUseIndex] = finalToolUse;
                 }
-                this.streamingToolCallIndices.delete(event.id);
-                this.userMessageContentReady = false;
+                this.streamingState.streamingToolCallIndices.delete(event.id);
+                this.streamingState.userMessageContentReady = false;
               }
             }
           }
         } finally {
-          this.isStreaming = false;
+          this.streamingState.isStreaming = false;
 
           // Log streaming completion status
           if (chunkCount === 0) {
@@ -469,27 +499,27 @@ export class Task {
           }
         }
 
-        this.didCompleteReadingStream = true;
+        this.streamingState.didCompleteReadingStream = true;
 
         // Set any blocks to be complete
-        const partialBlocks = this.assistantMessageContent.filter(
+        const partialBlocks = this.streamingState.assistantMessageContent.filter(
           (block) => block.partial,
         );
         partialBlocks.forEach((block) => (block.partial = false));
 
         // Finalize any remaining partial content blocks (XML protocol only)
-        if (shouldUseXmlParser && this.assistantMessageParser) {
-          this.assistantMessageParser.finalizeContentBlocks();
-          const parsedBlocks = this.assistantMessageParser.getContentBlocks();
-          this.assistantMessageContent = parsedBlocks;
+        if (shouldUseXmlParser && this.streamingState.assistantMessageParser) {
+          this.streamingState.assistantMessageParser.finalizeContentBlocks();
+          const parsedBlocks = this.streamingState.assistantMessageParser.getContentBlocks();
+          this.streamingState.assistantMessageContent = parsedBlocks;
         }
 
         // Add to apiConversationHistory
-        const hasTextContent = assistantMessage.length > 0 || this.assistantMessageContent.some(
+        const hasTextContent = assistantMessage.length > 0 || this.streamingState.assistantMessageContent.some(
           (block) => block.type === 'text',
         );
         const HasReasoningContent = reasoningMessage.length > 0;
-        const hasToolUses = this.assistantMessageContent.some(
+        const hasToolUses = this.streamingState.assistantMessageContent.some(
           (block) => block.type === 'tool_use',
         );
 
@@ -506,7 +536,7 @@ export class Task {
             });
           }
 
-          const toolUseBlocks = this.assistantMessageContent.filter(
+          const toolUseBlocks = this.streamingState.assistantMessageContent.filter(
             (block) => block.type === 'tool_use',
           );
           for (const block of toolUseBlocks) {
@@ -561,7 +591,7 @@ export class Task {
 
               // Add tool result to user message content
               if (resultText) {
-                this.userMessageContent.push({
+                this.streamingState.userMessageContent.push({
                   type: 'tool_result' as const,
                   tool_use_id: toolCallId,
                   content: resultText,
@@ -571,7 +601,7 @@ export class Task {
                 if (toolUse.name === 'attempt_completion') {
                   // For attempt_completion, don't push to stack for further processing
                   console.log('Tool call completed with attempt_completion, ending recursion');
-                  this.didAttemptCompletion = true;
+                  this.streamingState.didAttemptCompletion = true;
                 }
               }
             }
@@ -585,7 +615,7 @@ export class Task {
           });
 
           // Set user message content as ready since we've processed the stream
-          this.userMessageContentReady = true;
+          this.streamingState.userMessageContentReady = true;
 
           const didToolUse = hasToolUses;
 
@@ -596,7 +626,7 @@ export class Task {
               this.apiConfiguration,
               modelInfo,
             );
-            this.userMessageContent.push({
+            this.streamingState.userMessageContent.push({
               type: 'text',
               text: formatResponse.noToolsUsed(toolProtocol),
             });
@@ -606,9 +636,9 @@ export class Task {
 
           // Handle scenario: user input new message
           // Only push to stack if not attempting completion
-          if (this.userMessageContent.length > 0 && !this.didAttemptCompletion) {
+          if (this.streamingState.userMessageContent.length > 0 && !this.streamingState.didAttemptCompletion) {
             stack.push({
-              userContent: [...this.userMessageContent],
+              userContent: [...this.streamingState.userMessageContent],
             });
           }
 
