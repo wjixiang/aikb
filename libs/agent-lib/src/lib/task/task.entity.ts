@@ -36,29 +36,18 @@ import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
 
 /**
- * Interface to encapsulate all streaming-related state variables
+ * Interface to encapsulate message processing state
  */
-interface StreamingState {
-  isStreaming: boolean;
-  currentStreamingContentIndex: number;
-  currentStreamingDidCheckpoint: boolean;
+interface MessageProcessingState {
   assistantMessageContent: AssistantMessageContent[];
-  presentAssistantMessageLocked: boolean;
-  presentAssistantMessageHasPendingUpdates: boolean;
   userMessageContent: (
     | Anthropic.TextBlockParam
     | Anthropic.ImageBlockParam
     | Anthropic.ToolResultBlockParam
   )[];
-  userMessageContentReady: boolean;
-  didRejectTool: boolean;
-  didAlreadyUseTool: boolean;
-  didToolFailInCurrentTurn: boolean;
-  didCompleteReadingStream: boolean;
   didAttemptCompletion: boolean;
   assistantMessageParser?: AssistantMessageParser;
-  streamingToolCallIndices: Map<string, number>;
-  cachedStreamingModel?: { id: string; info: ModelInfo };
+  cachedModel?: { id: string; info: ModelInfo };
 }
 
 /**
@@ -106,24 +95,13 @@ export class Task {
   isInitialized = false;
   isPaused: boolean = false;
 
-  // Streaming state encapsulated in a single object
-  private streamingState: StreamingState = {
-    isStreaming: false,
-    currentStreamingContentIndex: 0,
-    currentStreamingDidCheckpoint: false,
+  // Message processing state
+  private messageState: MessageProcessingState = {
     assistantMessageContent: [],
-    presentAssistantMessageLocked: false,
-    presentAssistantMessageHasPendingUpdates: false,
     userMessageContent: [],
-    userMessageContentReady: false,
-    didRejectTool: false,
-    didAlreadyUseTool: false,
-    didToolFailInCurrentTurn: false,
-    didCompleteReadingStream: false,
     didAttemptCompletion: false,
     assistantMessageParser: undefined,
-    streamingToolCallIndices: new Map(),
-    cachedStreamingModel: undefined,
+    cachedModel: undefined,
   };
 
   // Retry configuration
@@ -142,33 +120,24 @@ export class Task {
     this.instanceId = crypto.randomUUID().slice(0, 8);
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
-    this.streamingState.assistantMessageParser = new AssistantMessageParser();
+    this.messageState.assistantMessageParser = new AssistantMessageParser();
   }
 
   /**
-   * Reset streaming state for each new API request
+   * Reset message processing state for each new API request
    */
-  private resetStreamingState(): void {
-    this.streamingState.currentStreamingContentIndex = 0;
-    this.streamingState.assistantMessageContent = [];
-    this.streamingState.didCompleteReadingStream = false;
-    this.streamingState.userMessageContent = [];
-    this.streamingState.userMessageContentReady = false;
-    this.streamingState.didRejectTool = false;
-    this.streamingState.didAlreadyUseTool = false;
-    this.streamingState.didToolFailInCurrentTurn = false;
-    this.streamingState.didAttemptCompletion = false;
-    this.streamingState.assistantMessageParser?.reset();
-    this.streamingState.streamingToolCallIndices.clear();
-    NativeToolCallParser.clearAllStreamingToolCalls();
-    NativeToolCallParser.clearRawChunkState();
+  private resetMessageState(): void {
+    this.messageState.assistantMessageContent = [];
+    this.messageState.userMessageContent = [];
+    this.messageState.didAttemptCompletion = false;
+    this.messageState.assistantMessageParser?.reset();
   }
 
   /**
    * Getter for assistantMessageContent (for testing purposes)
    */
   public get assistantMessageContent(): AssistantMessageContent[] {
-    return this.streamingState.assistantMessageContent;
+    return this.messageState.assistantMessageContent;
   }
 
   /**
@@ -205,7 +174,7 @@ export class Task {
 
   /**
    * Core method for making recursive API requests to the LLM
-   * This is the main functionality we want to preserve
+   * Simplified version without streaming - processes complete response
    */
   public async recursivelyMakeClineRequests(
     userContent: Anthropic.Messages.ContentBlockParam[],
@@ -273,397 +242,60 @@ export class Task {
       }
 
       try {
-        // Reset streaming state for each new API request
-        this.resetStreamingState();
+        // Reset message processing state for each new API request
+        this.resetMessageState();
 
         // Cache model info once per API request
-        this.streamingState.cachedStreamingModel = this.api.getModel();
-        const streamModelInfo = this.streamingState.cachedStreamingModel.info;
+        this.messageState.cachedModel = this.api.getModel();
+        const modelInfo = this.messageState.cachedModel.info;
 
-        const streamProtocol = resolveToolProtocol(
+        const toolProtocol = resolveToolProtocol(
           this.apiConfiguration,
-          streamModelInfo,
+          modelInfo,
         );
 
-        const shouldUseXmlParser = streamProtocol === 'xml';
+        const shouldUseXmlParser = toolProtocol === 'xml';
 
-        // Create the API request stream
-        const stream = this.attemptApiRequest();
-        let reasoningMessage = '';
-        let assistantMessage = '';
-        this.streamingState.isStreaming = true;
+        // Collect complete response from stream
+        const response = await this.collectCompleteResponse();
 
-        // Variables for tracking stream status
-        let chunkCount = 0;
-        let hasReceivedContent = false;
-
-        try {
-          const iterator = stream[Symbol.asyncIterator]();
-
-          let item = await iterator.next();
-          while (!item.done) {
-            const chunk = item.value;
-            item = await iterator.next();
-
-            if (!chunk) {
-              continue;
-            }
-
-            chunkCount++;
-            console.log(`Received chunk ${chunkCount}:`, chunk);
-
-            // Track if we've received any meaningful content
-            if (chunk.type === 'text' || chunk.type === 'reasoning' || chunk.type === 'tool_call' || chunk.type === 'tool_call_partial') {
-              hasReceivedContent = true;
-            }
-            switch (chunk.type) {
-              case 'usage':
-                // Handle usage tracking (simplified)
-                // Will be emitted as event for further process
-                break;
-              case 'tool_call_partial': {
-                // Process raw tool call chunk through NativeToolCallParser
-                const events = NativeToolCallParser.processRawChunk({
-                  index: chunk.index,
-                  id: chunk.id,
-                  name: chunk.name,
-                  arguments: chunk.arguments,
-                });
-
-                for (const event of events) {
-                  if (event.type === 'tool_call_start') {
-                    NativeToolCallParser.startStreamingToolCall(
-                      event.id,
-                      event.name as any,
-                    );
-
-                    const toolUseIndex = this.streamingState.assistantMessageContent.length;
-                    this.streamingState.streamingToolCallIndices.set(event.id, toolUseIndex);
-
-                    const partialToolUse: ToolUse = {
-                      type: 'tool_use',
-                      name: event.name as any,
-                      params: {},
-                      partial: true,
-                      id: event.id,
-                    };
-
-                    console.debug(`partial_tool_use`, partialToolUse)
-
-                    this.streamingState.assistantMessageContent.push(partialToolUse);
-                    this.streamingState.userMessageContentReady = false;
-                  } else if (event.type === 'tool_call_delta') {
-                    const partialToolUse =
-                      NativeToolCallParser.processStreamingChunk(
-                        event.id,
-                        (chunk as any).delta || '',
-                      );
-
-                    if (partialToolUse) {
-                      const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
-                        event.id,
-                      );
-                      if (toolUseIndex !== undefined) {
-                        (partialToolUse as any).id = event.id;
-                        this.streamingState.assistantMessageContent[toolUseIndex] =
-                          partialToolUse;
-                      }
-                      this.streamingState.userMessageContentReady = false;
-                    }
-                  } else if (event.type === 'tool_call_end') {
-                    const finalToolUse =
-                      NativeToolCallParser.finalizeStreamingToolCall(event.id);
-
-                    if (finalToolUse) {
-                      const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
-                        event.id,
-                      );
-                      if (toolUseIndex !== undefined) {
-                        (finalToolUse as any).id = event.id;
-                        this.streamingState.assistantMessageContent[toolUseIndex] =
-                          finalToolUse;
-                      }
-                      this.streamingState.streamingToolCallIndices.delete(event.id);
-                      this.streamingState.userMessageContentReady = false;
-                    }
-                  }
-                }
-                break;
-              }
-              case 'tool_call': {
-                // Handle complete tool calls (legacy)
-                const toolUse = NativeToolCallParser.parseToolCall({
-                  id: chunk.id,
-                  name: chunk.name as any,
-                  arguments: chunk.arguments,
-                });
-
-                if (toolUse) {
-                  this.streamingState.assistantMessageContent.push(toolUse);
-                  this.streamingState.userMessageContentReady = false;
-                }
-                break;
-              }
-              case 'reasoning': {
-                reasoningMessage += chunk.text;
-                console.log('reasoning:', chunk.text);
-                break;
-              }
-              case 'text': {
-                assistantMessage += chunk.text;
-
-                if (shouldUseXmlParser && this.streamingState.assistantMessageParser) {
-                  // XML protocol: Parse raw assistant message chunk into content blocks
-                  const prevLength = this.streamingState.assistantMessageContent.length;
-                  this.streamingState.assistantMessageContent =
-                    this.streamingState.assistantMessageParser.processChunk(chunk.text);
-
-                  // console.debug(`assistantMessage:`, this.streamingState.assistantMessageContent)
-
-                  if (this.streamingState.assistantMessageContent.length > prevLength) {
-                    this.streamingState.userMessageContentReady = false;
-                  }
-                } else {
-                  // Native protocol: Text chunks are plain text
-                  const lastBlock =
-                    this.streamingState.assistantMessageContent[
-                    this.streamingState.assistantMessageContent.length - 1
-                    ];
-
-                  if (lastBlock?.type === 'text' && lastBlock.partial) {
-                    lastBlock.content = assistantMessage;
-                    lastBlock.partial = true;
-                    this.streamingState.userMessageContentReady = false;
-                  } else {
-                    this.streamingState.assistantMessageContent.push({
-                      type: 'text',
-                      content: assistantMessage,
-                      partial: true,
-                    });
-                    this.streamingState.userMessageContentReady = false;
-                  }
-                }
-                break;
-              }
-            }
-
-            if (
-              (this._status as 'running' | 'completed' | 'aborted') ===
-              'aborted'
-            ) {
-              break;
-            }
-
-            if (this.streamingState.didRejectTool) {
-              assistantMessage += '\n\n[Response interrupted by user feedback]';
-              break;
-            }
-
-            if (this.streamingState.didAlreadyUseTool) {
-              assistantMessage +=
-                '\n\n[Response interrupted by a tool use result. Only one tool may be used at a time and should be placed at the end of the message.]';
-              break;
-            }
-          }
-
-          // Finalize any remaining streaming tool calls
-          const finalizeEvents = NativeToolCallParser.finalizeRawChunks();
-          for (const event of finalizeEvents) {
-            if (event.type === 'tool_call_end') {
-              const finalToolUse =
-                NativeToolCallParser.finalizeStreamingToolCall(event.id);
-
-              if (finalToolUse) {
-                const toolUseIndex = this.streamingState.streamingToolCallIndices.get(
-                  event.id,
-                );
-                if (toolUseIndex !== undefined) {
-                  (finalToolUse as any).id = event.id;
-                  this.streamingState.assistantMessageContent[toolUseIndex] = finalToolUse;
-                }
-                this.streamingState.streamingToolCallIndices.delete(event.id);
-                this.streamingState.userMessageContentReady = false;
-              }
-            }
-          }
-        } finally {
-          this.streamingState.isStreaming = false;
-
-          // Log streaming completion status
-          if (chunkCount === 0) {
-            console.warn('No chunks received from API stream');
-          } else if (!hasReceivedContent) {
-            console.warn(`Received ${chunkCount} chunks but no meaningful content`);
-          } else {
-            console.log(`Stream completed successfully with ${chunkCount} chunks`);
-          }
+        if (!response || response.length === 0) {
+          throw new NoApiResponseError(1);
         }
 
-        this.streamingState.didCompleteReadingStream = true;
+        // Process the complete response
+        await this.processCompleteResponse(response, shouldUseXmlParser);
 
-        // Set any blocks to be complete
-        const partialBlocks = this.streamingState.assistantMessageContent.filter(
-          (block) => block.partial,
-        );
-        partialBlocks.forEach((block) => (block.partial = false));
-
-        // Finalize any remaining partial content blocks (XML protocol only)
-        if (shouldUseXmlParser && this.streamingState.assistantMessageParser) {
-          this.streamingState.assistantMessageParser.finalizeContentBlocks();
-          const parsedBlocks = this.streamingState.assistantMessageParser.getContentBlocks();
-          this.streamingState.assistantMessageContent = parsedBlocks;
-        }
-
-        // Add to apiConversationHistory
-        const hasTextContent = assistantMessage.length > 0 || this.streamingState.assistantMessageContent.some(
-          (block) => block.type === 'text',
-        );
-        const HasReasoningContent = reasoningMessage.length > 0;
-        const hasToolUses = this.streamingState.assistantMessageContent.some(
-          (block) => block.type === 'tool_use',
+        // Check if we have tool calls to execute
+        const toolUseBlocks = this.messageState.assistantMessageContent.filter(
+          (block: AssistantMessageContent) => block.type === 'tool_use',
         );
 
-        if (hasTextContent || hasToolUses || HasReasoningContent) {
-          // Build the assistant message content array
-          const assistantContent: Array<
-            Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
-          > = [];
-
-          if (assistantMessage) {
-            assistantContent.push({
-              type: 'text' as const,
-              text: assistantMessage,
-            });
-          }
-
-          const toolUseBlocks = this.streamingState.assistantMessageContent.filter(
-            (block) => block.type === 'tool_use',
-          );
-          for (const block of toolUseBlocks) {
-            console.log(`detect tool calling: ${JSON.stringify(block)}`)
-            const toolUse = block as ToolUse;
-            const toolCallId = randomUUID();
-
-            const input = toolUse.nativeArgs || toolUse.params;
-            assistantContent.push({
-              type: 'tool_use' as const,
-              id: toolCallId,
-              name: toolUse.name,
-              input,
-            });
-
-            // Handle tool calling
-            const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input)
-            console.log(`toolCallRes:${JSON.stringify(toolCallRes)}`)
-            // Process tool call result and add to user message content
-            if (toolCallRes) {
-              // Convert tool result to text format for user message
-              let resultText = '';
-
-              if (typeof toolCallRes === 'string') {
-                resultText = toolCallRes;
-              } else if (toolCallRes && typeof toolCallRes === 'object') {
-                // Handle structured tool responses
-                if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
-                  // Handle McpToolCallResponse - it has a content array
-                  resultText = toolCallRes.content.map(block => {
-                    if (block.type === 'text') {
-                      return block.text;
-                    }
-                    return `[${block.type} content]`;
-                  }).join('\n');
-                } else if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
-                  // Handle simple object with type and content
-                  resultText = toolCallRes.content;
-                } else if (Array.isArray(toolCallRes)) {
-                  // Handle array of content blocks
-                  resultText = toolCallRes.map(block => {
-                    if (block.type === 'text') {
-                      return block.text;
-                    }
-                    return `[${block.type} content]`;
-                  }).join('\n');
-                } else {
-                  // Fallback for other object types
-                  resultText = JSON.stringify(toolCallRes);
-                }
-              }
-
-              // Add tool result to user message content
-              if (resultText) {
-                this.streamingState.userMessageContent.push({
-                  type: 'tool_result' as const,
-                  tool_use_id: toolCallId,
-                  content: resultText,
-                });
-
-                // Check if this is an attempt_completion tool call
-                if (toolUse.name === 'attempt_completion') {
-                  // For attempt_completion, don't push to stack for further processing
-                  console.log('Tool call completed with attempt_completion, ending recursion');
-                  this.streamingState.didAttemptCompletion = true;
-                }
-              }
-            }
-
-
-          }
-
-          await this.addToApiConversationHistory({
-            role: 'assistant',
-            content: assistantContent,
+        if (toolUseBlocks.length === 0) {
+          // No tools used - this is an error case
+          this.messageState.userMessageContent.push({
+            type: 'text',
+            text: formatResponse.noToolsUsed(toolProtocol),
           });
+          this.consecutiveMistakeCount++;
+          throw new NoToolsUsedError();
+        }
 
-          // Set user message content as ready since we've processed the stream
-          this.streamingState.userMessageContentReady = true;
+        // Execute tool calls and build response
+        await this.executeToolCalls(toolUseBlocks);
 
-          const didToolUse = hasToolUses;
+        // Add assistant message to conversation history
+        await this.addAssistantMessageToHistory();
 
-          // Handle senario: LLM didn't use any tools
-          if (!didToolUse) {
-            const modelInfo = this.api.getModel().info;
-            const toolProtocol = resolveToolProtocol(
-              this.apiConfiguration,
-              modelInfo,
-            );
-            this.streamingState.userMessageContent.push({
-              type: 'text',
-              text: formatResponse.noToolsUsed(toolProtocol),
-            });
-            this.consecutiveMistakeCount++;
-            throw new NoToolsUsedError()
-          }
-
-          // Handle scenario: user input new message
-          // Only push to stack if not attempting completion
-          if (this.streamingState.userMessageContent.length > 0 && !this.streamingState.didAttemptCompletion) {
-            stack.push({
-              userContent: [...this.streamingState.userMessageContent],
-            });
-          }
-
-          didEndLoop = true
-
-        } else {
-          // No assistant response - this is an error case
-          const currentRetryAttempt = currentItem.retryAttempt ?? 0;
-          const error = new NoApiResponseError(currentRetryAttempt + 1);
-          this.collectedErrors.push(error);
-          console.error(error.message);
-
-          // Check if we've exceeded the maximum retry attempts
-          if (currentRetryAttempt >= this.maxRetryAttempts) {
-            console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded. Aborting.`);
-            throw new MaxRetryExceededError(this.maxRetryAttempts, this.collectedErrors);
-          }
-
-          // Push the same content back onto the stack to retry
-          console.log(`Retrying API request (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
+        // Check if we should continue recursion
+        if (this.messageState.userMessageContent.length > 0 && !this.messageState.didAttemptCompletion) {
           stack.push({
-            userContent: currentUserContent,
-            retryAttempt: currentRetryAttempt + 1,
+            userContent: [...this.messageState.userMessageContent],
           });
         }
+
+        didEndLoop = true;
+
       } catch (error) {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
@@ -715,6 +347,197 @@ export class Task {
     return false;
   }
 
+  /**
+   * Collect complete response from stream without processing chunks individually
+   */
+  private async collectCompleteResponse(): Promise<any[]> {
+    const stream = this.attemptApiRequest();
+    const chunks: any[] = [];
+
+    try {
+      const iterator = stream[Symbol.asyncIterator]();
+      let item = await iterator.next();
+
+      while (!item.done) {
+        const chunk = item.value;
+        if (chunk) {
+          chunks.push(chunk);
+        }
+        item = await iterator.next();
+      }
+
+      console.log(`Collected ${chunks.length} chunks from stream`);
+      return chunks;
+    } catch (error) {
+      console.error('Error collecting complete response:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process complete response collected from stream
+   */
+  private async processCompleteResponse(chunks: any[], shouldUseXmlParser: boolean): Promise<void> {
+    let reasoningMessage = '';
+    let assistantMessage = '';
+
+    // Process all chunks to build complete response
+    for (const chunk of chunks) {
+      switch (chunk.type) {
+        case 'usage':
+          // Handle usage tracking (simplified)
+          break;
+        case 'tool_call': {
+          // Handle complete tool calls
+          const toolUse = NativeToolCallParser.parseToolCall({
+            id: chunk.id,
+            name: chunk.name as any,
+            arguments: chunk.arguments,
+          });
+
+          if (toolUse) {
+            this.messageState.assistantMessageContent.push(toolUse);
+          }
+          break;
+        }
+        case 'reasoning': {
+          reasoningMessage += chunk.text;
+          console.log('reasoning:', chunk.text);
+          break;
+        }
+        case 'text': {
+          assistantMessage += chunk.text;
+          break;
+        }
+      }
+    }
+
+    // Process text content if using XML parser
+    if (shouldUseXmlParser && this.messageState.assistantMessageParser && assistantMessage) {
+      this.messageState.assistantMessageContent =
+        this.messageState.assistantMessageParser.processChunk(assistantMessage);
+      this.messageState.assistantMessageParser.finalizeContentBlocks();
+      const parsedBlocks = this.messageState.assistantMessageParser.getContentBlocks();
+      this.messageState.assistantMessageContent = parsedBlocks;
+    } else if (assistantMessage) {
+      // Native protocol: Add text as content block
+      this.messageState.assistantMessageContent.push({
+        type: 'text',
+        content: assistantMessage,
+      });
+    }
+  }
+
+  /**
+   * Execute tool calls and build user message content
+   */
+  private async executeToolCalls(toolUseBlocks: AssistantMessageContent[]): Promise<void> {
+    for (const block of toolUseBlocks) {
+      console.log(`detect tool calling: ${JSON.stringify(block)}`);
+      const toolUse = block as ToolUse;
+      const toolCallId = randomUUID();
+
+      const input = toolUse.nativeArgs || toolUse.params;
+
+      // Handle tool calling
+      const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input);
+      console.log(`toolCallRes:${JSON.stringify(toolCallRes)}`);
+
+      // Process tool call result and add to user message content
+      if (toolCallRes) {
+        // Convert tool result to text format for user message
+        let resultText = '';
+
+        if (typeof toolCallRes === 'string') {
+          resultText = toolCallRes;
+        } else if (toolCallRes && typeof toolCallRes === 'object') {
+          // Handle structured tool responses
+          if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
+            // Handle McpToolCallResponse - it has a content array
+            resultText = toolCallRes.content.map((block: any) => {
+              if (block.type === 'text') {
+                return block.text;
+              }
+              return `[${block.type} content]`;
+            }).join('\n');
+          } else if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
+            // Handle simple object with type and content
+            resultText = toolCallRes.content;
+          } else if (Array.isArray(toolCallRes)) {
+            // Handle array of content blocks
+            resultText = toolCallRes.map((block: any) => {
+              if (block.type === 'text') {
+                return block.text;
+              }
+              return `[${block.type} content]`;
+            }).join('\n');
+          } else {
+            // Fallback for other object types
+            resultText = JSON.stringify(toolCallRes);
+          }
+        }
+
+        // Add tool result to user message content
+        if (resultText) {
+          this.messageState.userMessageContent.push({
+            type: 'tool_result' as const,
+            tool_use_id: toolCallId,
+            content: resultText,
+          });
+
+          // Check if this is an attempt_completion tool call
+          if (toolUse.name === 'attempt_completion') {
+            // For attempt_completion, don't push to stack for further processing
+            console.log('Tool call completed with attempt_completion, ending recursion');
+            this.messageState.didAttemptCompletion = true;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Add assistant message to conversation history
+   */
+  private async addAssistantMessageToHistory(): Promise<void> {
+    const assistantContent: Array<Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam> = [];
+
+    // Add text content if present
+    const textBlocks = this.messageState.assistantMessageContent.filter(
+      (block: AssistantMessageContent) => block.type === 'text',
+    );
+
+    for (const textBlock of textBlocks) {
+      assistantContent.push({
+        type: 'text' as const,
+        text: textBlock.content || '',
+      });
+    }
+
+    // Add tool use blocks
+    const toolUseBlocks = this.messageState.assistantMessageContent.filter(
+      (block: AssistantMessageContent) => block.type === 'tool_use',
+    );
+
+    for (const block of toolUseBlocks) {
+      const toolUse = block as ToolUse;
+      const toolCallId = randomUUID();
+      const input = toolUse.nativeArgs || toolUse.params;
+
+      assistantContent.push({
+        type: 'tool_use' as const,
+        id: toolCallId,
+        name: toolUse.name,
+        input,
+      });
+    }
+
+    await this.addToApiConversationHistory({
+      role: 'assistant',
+      content: assistantContent,
+    });
+  }
+
   private async addToApiConversationHistory(
     message: Anthropic.MessageParam,
     reasoning?: string,
@@ -745,7 +568,7 @@ export class Task {
       console.log(`Starting API request attempt ${retryAttempt + 1}`);
 
       const systemPrompt = await this.getSystemPrompt();
-      console.debug(`system prompt: ${systemPrompt}`)
+      console.debug(`system prompt: ${systemPrompt}`);
 
       // Build clean conversation history
       const cleanConversationHistory = this.buildCleanConversationHistory(
@@ -800,24 +623,12 @@ export class Task {
   }
 
   private async getSystemPrompt(): Promise<string> {
-    return SYSTEM_PROMPT();
+    return await SYSTEM_PROMPT() || '';
   }
 
   private buildCleanConversationHistory(
-    messages: any[],
+    history: ApiMessage[]
   ): Anthropic.MessageParam[] {
-    return messages.map((msg) => {
-      if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-        const filteredContent = msg.content.filter(
-          (block: any) =>
-            block.type !== 'thinking' && block.type !== 'redacted_thinking',
-        );
-        return {
-          ...msg,
-          content: filteredContent as Anthropic.Messages.ContentBlockParam[],
-        };
-      }
-      return msg as Anthropic.MessageParam;
-    });
+    return history as unknown as Anthropic.MessageParam[];
   }
 }
