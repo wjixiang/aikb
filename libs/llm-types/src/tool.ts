@@ -17,28 +17,7 @@ export type ToolGroup = z.infer<typeof toolGroupsSchema>;
  */
 
 export const toolNames = [
-  'execute_command',
-  'read_file',
-  'write_to_file',
-  'apply_diff',
-  'search_and_replace',
-  'search_replace',
-  'apply_patch',
-  'search_files',
-  'list_files',
-  'list_code_definition_names',
-  'browser_action',
-  'use_mcp_tool',
-  'access_mcp_resource',
-  'ask_followup_question',
   'attempt_completion',
-  'switch_mode',
-  'new_task',
-  'fetch_instructions',
-  'codebase_search',
-  'update_todo_list',
-  'run_slash_command',
-  'generate_image',
   'semantic_search'
 ] as const;
 
