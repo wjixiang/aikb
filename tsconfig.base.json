@@ -87,7 +87,6 @@
       "llm-utils/*": ["libs/llm-utils/src/*"],
       "llm-shared/*": ["libs/llm-shared/src/*"],
       "llm-types": ["libs/llm-types/src/index.ts"],
-      "llm-core/*": ["libs/llm-core/src/*"],
       "llm-tools": ["libs/llm-tools/src/index.ts"]
     },
     "incremental": true,

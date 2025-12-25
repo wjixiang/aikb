@@ -5,6 +5,9 @@ import { AssistantMessageContent } from "./parseAssistantMessage"
 /**
  * Parser for assistant messages. Maintains state between chunks
  * to avoid reprocessing the entire message on each update.
+ * 
+ * Currently, system process LLM response synchronously, doesn't need
+ * to parse chunk in realtime.
  */
 export class AssistantMessageParser {
   private contentBlocks: AssistantMessageContent[] = []
@@ -78,6 +81,10 @@ export class AssistantMessageParser {
           // End of param value.
           // Do not trim content parameters to preserve newlines, but strip first and last newline only
           const paramValue = currentParamValue.slice(0, -paramClosingTag.length)
+          // Ensure params object exists
+          if (!this.currentToolUse.params) {
+            this.currentToolUse.params = {}
+          }
           this.currentToolUse.params[this.currentParamName] =
             this.currentParamName === "content"
               ? paramValue.replace(/^\n/, "").replace(/\n$/, "")
@@ -87,6 +94,10 @@ export class AssistantMessageParser {
         } else {
           // Partial param value is accumulating.
           // Write the currently accumulated param content in real time
+          // Ensure params object exists
+          if (!this.currentToolUse.params) {
+            this.currentToolUse.params = {}
+          }
           this.currentToolUse.params[this.currentParamName] = currentParamValue
           continue
         }
@@ -128,24 +139,28 @@ export class AssistantMessageParser {
           // content tag and the LAST content tag.
           const contentParamName: ToolParamName = "content"
 
-          if (
-            this.currentToolUse.name === "write_to_file" &&
-            this.accumulator.endsWith(`</${contentParamName}>`)
-          ) {
-            const toolContent = this.accumulator.slice(this.currentToolUseStartIndex)
-            const contentStartTag = `<${contentParamName}>`
-            const contentEndTag = `</${contentParamName}>`
-            const contentStartIndex = toolContent.indexOf(contentStartTag) + contentStartTag.length
-            const contentEndIndex = toolContent.lastIndexOf(contentEndTag)
+          // if (
+          //   this.currentToolUse.name === "write_to_file" &&
+          //   this.accumulator.endsWith(`</${contentParamName}>`)
+          // ) {
+          //   const toolContent = this.accumulator.slice(this.currentToolUseStartIndex)
+          //   const contentStartTag = `<${contentParamName}>`
+          //   const contentEndTag = `</${contentParamName}>`
+          //   const contentStartIndex = toolContent.indexOf(contentStartTag) + contentStartTag.length
+          //   const contentEndIndex = toolContent.lastIndexOf(contentEndTag)
 
-            if (contentStartIndex !== -1 && contentEndIndex !== -1 && contentEndIndex > contentStartIndex) {
-              // Don't trim content to preserve newlines, but strip first and last newline only
-              this.currentToolUse.params[contentParamName] = toolContent
-                .slice(contentStartIndex, contentEndIndex)
-                .replace(/^\n/, "")
-                .replace(/\n$/, "")
-            }
-          }
+          //   if (contentStartIndex !== -1 && contentEndIndex !== -1 && contentEndIndex > contentStartIndex) {
+          //     // Don't trim content to preserve newlines, but strip first and last newline only
+          //     // Ensure params object exists
+          //     if (!this.currentToolUse.params) {
+          //       this.currentToolUse.params = {}
+          //     }
+          //     this.currentToolUse.params[contentParamName] = toolContent
+          //       .slice(contentStartIndex, contentEndIndex)
+          //       .replace(/^\n/, "")
+          //       .replace(/\n$/, "")
+          //   }
+          // }
 
           // Partial tool value is accumulating.
           continue

@@ -1,13 +1,12 @@
 // task/task-events.handler.ts
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ToolUsage } from '../types/tool.type';
-import { TokenUsage } from '../types/message.type';
+import { ToolUsage, TokenUsage } from 'llm-types';
 import { TaskService } from './task.service';
 
 @Injectable()
 export class TaskEventsHandler {
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService) { }
 
   @OnEvent('task.created')
   handleTaskCreated(payload: { taskId: string }) {

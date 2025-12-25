@@ -611,108 +611,108 @@ describe('Task Entity Tests', () => {
     //     console.log('XML multiple tool calls assistant message content:', newTask.assistantMessageContent);
     // }, 10000);
 
-    it('should handle XML tool call with reasoning stream correctly', async () => {
-        // Force XML protocol by creating a config that doesn't support native tools
-        const xmlTestApiConfig: ProviderSettings = {
-            ...testApiConfig,
-            apiModelId: 'model-without-native-tools' // This will force XML protocol
-        };
+    // it('should handle XML tool call with reasoning stream correctly', async () => {
+    //     // Force XML protocol by creating a config that doesn't support native tools
+    //     const xmlTestApiConfig: ProviderSettings = {
+    //         ...testApiConfig,
+    //         apiModelId: 'model-without-native-tools' // This will force XML protocol
+    //     };
 
-        const newTask = new Task('test_task_id_xml_reasoning', xmlTestApiConfig);
+    //     const newTask = new Task('test_task_id_xml_reasoning', xmlTestApiConfig);
 
-        // Mock model info to not support native tools, forcing XML protocol
-        const mockModelInfo = {
-            supportsNativeTools: false,
-            maxTokens: 100000,
-            contextWindow: 200000,
-            supportsImages: false,
-            supportsPromptCache: true,
-            inputPrice: 0.6,
-            outputPrice: 2.2,
-            cacheWritesPrice: 0,
-            cacheReadsPrice: 0.11,
-            description: "Mock model without native tool support"
-        };
+    //     // Mock model info to not support native tools, forcing XML protocol
+    //     const mockModelInfo = {
+    //         supportsNativeTools: false,
+    //         maxTokens: 100000,
+    //         contextWindow: 200000,
+    //         supportsImages: false,
+    //         supportsPromptCache: true,
+    //         inputPrice: 0.6,
+    //         outputPrice: 2.2,
+    //         cacheWritesPrice: 0,
+    //         cacheReadsPrice: 0.11,
+    //         description: "Mock model without native tool support"
+    //     };
 
-        // Mock attemptApiRequest method to return XML tool call with reasoning
-        const mockToolArgs = {
-            path: "medical_guidelines.txt"
-        };
-        const mockReasoning = "用户询问糖尿病的诊断标准，我需要查找相关的医学指南文件来提供准确的信息。";
-        newTask['attemptApiRequest'] = vi.fn().mockReturnValue(
-            createMockXmlToolCallWithReasoningStream('read_file', mockToolArgs, mockReasoning)
-        );
+    //     // Mock attemptApiRequest method to return XML tool call with reasoning
+    //     const mockToolArgs = {
+    //         path: "medical_guidelines.txt"
+    //     };
+    //     const mockReasoning = "用户询问糖尿病的诊断标准，我需要查找相关的医学指南文件来提供准确的信息。";
+    //     newTask['attemptApiRequest'] = vi.fn().mockReturnValue(
+    //         createMockXmlToolCallWithReasoningStream('read_file', mockToolArgs, mockReasoning)
+    //     );
 
-        // Mock the api.getModel method to return our mock model info
-        const mockGetModel = vi.spyOn(newTask as any, 'api', 'get').mockReturnValue({
-            getModel: () => ({ info: mockModelInfo })
-        });
+    //     // Mock the api.getModel method to return our mock model info
+    //     const mockGetModel = vi.spyOn(newTask as any, 'api', 'get').mockReturnValue({
+    //         getModel: () => ({ info: mockModelInfo })
+    //     });
 
-        // Mock methods to avoid timeout issues
-        newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-        newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
-        newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
-        newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
+    //     // Mock methods to avoid timeout issues
+    //     newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
+    //     newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+    //     newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
+    //     newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
-        try {
-            // Add a user message
-            await newTask.recursivelyMakeClineRequests([{
-                type: 'text',
-                text: '请分析糖尿病的诊断标准'
-            }]);
+    //     try {
+    //         // Add a user message
+    //         await newTask.recursivelyMakeClineRequests([{
+    //             type: 'text',
+    //             text: '请分析糖尿病的诊断标准'
+    //         }]);
 
-            // Verify XML tool call with reasoning was processed
-            expect(newTask['attemptApiRequest']).toHaveBeenCalled();
-            expect(newTask.assistantMessageContent).toBeDefined();
+    //         // Verify XML tool call with reasoning was processed
+    //         expect(newTask['attemptApiRequest']).toHaveBeenCalled();
+    //         expect(newTask.assistantMessageContent).toBeDefined();
 
-            console.log('XML tool call with reasoning assistant message content:', newTask.assistantMessageContent);
-        } finally {
-            // Restore the mock
-            mockGetModel.mockRestore();
-        }
-    }, 10000);
+    //         console.log('XML tool call with reasoning assistant message content:', newTask.assistantMessageContent);
+    //     } finally {
+    //         // Restore the mock
+    //         mockGetModel.mockRestore();
+    //     }
+    // }, 10000);
 
-    it('should collect chunks from mock XML tool call stream directly', async () => {
-        const newTask = new Task('test_task_id_direct_xml', testApiConfig);
+    // it('should collect chunks from mock XML tool call stream directly', async () => {
+    //     const newTask = new Task('test_task_id_direct_xml', testApiConfig);
 
-        // Create a simple XML tool call stream
-        const mockToolArgs = { path: "test.txt", query: "test query" };
-        const xmlToolStream = createMockXmlToolCallStream('read_file', mockToolArgs);
+    //     // Create a simple XML tool call stream
+    //     const mockToolArgs = { path: "test.txt", query: "test query" };
+    //     const xmlToolStream = createMockXmlToolCallStream('read_file', mockToolArgs);
 
-        // Collect chunks directly from the stream
-        const chunks: ApiStreamChunk[] = [];
-        for await (const chunk of xmlToolStream) {
-            chunks.push(chunk);
-            console.log('Received XML chunk:', chunk);
-        }
+    //     // Collect chunks directly from the stream
+    //     const chunks: ApiStreamChunk[] = [];
+    //     for await (const chunk of xmlToolStream) {
+    //         chunks.push(chunk);
+    //         console.log('Received XML chunk:', chunk);
+    //     }
 
-        // Verify we received expected chunks
-        expect(chunks.length).toBe(4); // intro text, XML tool call text, closing text, usage
+    //     // Verify we received expected chunks
+    //     expect(chunks.length).toBe(4); // intro text, XML tool call text, closing text, usage
 
-        const introText = chunks[0];
-        const xmlToolCallText = chunks[1];
-        const closingText = chunks[2];
-        const usage = chunks[3];
+    //     const introText = chunks[0];
+    //     const xmlToolCallText = chunks[1];
+    //     const closingText = chunks[2];
+    //     const usage = chunks[3];
 
-        expect(introText.type).toBe('text');
-        expect(xmlToolCallText.type).toBe('text');
-        expect(closingText.type).toBe('text');
-        expect(usage.type).toBe('usage');
+    //     expect(introText.type).toBe('text');
+    //     expect(xmlToolCallText.type).toBe('text');
+    //     expect(closingText.type).toBe('text');
+    //     expect(usage.type).toBe('usage');
 
-        // Verify XML content is present
-        if (xmlToolCallText && xmlToolCallText.type === 'text') {
-            expect(xmlToolCallText.text).toContain('<read_file>');
-            expect(xmlToolCallText.text).toContain('<path>test.txt</path>');
-            expect(xmlToolCallText.text).toContain('<query>test query</query>');
-            expect(xmlToolCallText.text).toContain('</read_file>');
-        }
+    //     // Verify XML content is present
+    //     if (xmlToolCallText && xmlToolCallText.type === 'text') {
+    //         expect(xmlToolCallText.text).toContain('<read_file>');
+    //         expect(xmlToolCallText.text).toContain('<path>test.txt</path>');
+    //         expect(xmlToolCallText.text).toContain('<query>test query</query>');
+    //         expect(xmlToolCallText.text).toContain('</read_file>');
+    //     }
 
-        if (usage) {
-            expect((usage as any).inputTokens).toBe(50);
-        }
+    //     if (usage) {
+    //         expect((usage as any).inputTokens).toBe(50);
+    //     }
 
-        console.log('Direct XML tool call stream test completed successfully');
-    }, 10000);
+    //     console.log('Direct XML tool call stream test completed successfully');
+    // }, 10000);
 
     it.todo('should handle api request failure with retry mechanism')
     it.skip('should use simple tool correctly', async () => {

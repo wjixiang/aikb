@@ -6,7 +6,6 @@ import {
   getApiProtocol,
   getModelId,
   ModelInfo,
-  ClineMessage,
   ToolName
 } from 'llm-types';
 import Anthropic from '@anthropic-ai/sdk';
@@ -15,12 +14,12 @@ import { formatResponse } from './simplified-dependencies/formatResponse';
 import {
   AssistantMessageContent,
   ToolUse,
-} from 'llm-core/assistant-message/assistantMessageTypes';
-import { NativeToolCallParser } from 'llm-core/assistant-message/NativeToolCallParser';
+} from '../assistant-message/assistantMessageTypes';
+import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { ApiMessage } from './simplified-dependencies/taskPersistence';
-import { AssistantMessageParser } from 'llm-core/assistant-message/AssistantMessageParser';
-import { SYSTEM_PROMPT } from 'llm-core/prompts/system';
+import { AssistantMessageParser } from '../assistant-message/AssistantMessageParser';
+import { SYSTEM_PROMPT } from '../prompts/system';
 import {
   TaskError,
   TaskAbortedError,
@@ -34,18 +33,19 @@ import {
 } from './task.errors';
 import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
+import { TokenUsage } from 'llm-types'
 
-/**
- * Interface for token usage tracking
- */
-interface TokenUsage {
-  inputTokens: number;
-  outputTokens: number;
-  cacheWriteTokens?: number;
-  cacheReadTokens?: number;
-  reasoningTokens?: number;
-  totalCost?: number;
-}
+// /**
+//  * Interface for token usage tracking
+//  */
+// interface TokenUsage {
+//   inputTokens: number;
+//   outputTokens: number;
+//   cacheWriteTokens?: number;
+//   cacheReadTokens?: number;
+//   reasoningTokens?: number;
+//   totalCost?: number;
+// }
 
 /**
  * Interface to encapsulate message processing state
@@ -88,12 +88,12 @@ export class Task {
 
   // Token Usage
   tokenUsage: TokenUsage = {
-    inputTokens: 0,
-    outputTokens: 0,
-    cacheWriteTokens: 0,
-    cacheReadTokens: 0,
-    reasoningTokens: 0,
+    totalTokensIn: 0,
+    totalTokensOut: 0,
+    totalCacheWrites: 0,
+    totalCacheReads: 0,
     totalCost: 0,
+    contextTokens: 0,
   };
 
   // LLM Messages & Chat Messages
@@ -458,7 +458,7 @@ export class Task {
         }
         case 'reasoning': {
           reasoningMessage += chunk.text;
-          console.log('reasoning:', chunk.text);
+          // console.log('reasoning:', chunk.text);
           break;
         }
         case 'text': {
@@ -535,22 +535,24 @@ export class Task {
     // Initialize tokenUsage structure if needed
     if (!this.tokenUsage) {
       this.tokenUsage = {
-        inputTokens: 0,
-        outputTokens: 0,
-        cacheWriteTokens: 0,
-        cacheReadTokens: 0,
-        reasoningTokens: 0,
+        totalTokensIn: 0,
+        totalTokensOut: 0,
+        totalCacheWrites: 0,
+        totalCacheReads: 0,
         totalCost: 0,
+        contextTokens: 0,
       };
     }
 
     // Accumulate values from the usage chunk
-    this.tokenUsage.inputTokens += usageChunk.inputTokens || 0;
-    this.tokenUsage.outputTokens += usageChunk.outputTokens || 0;
-    this.tokenUsage.cacheWriteTokens += usageChunk.cacheWriteTokens || 0;
-    this.tokenUsage.cacheReadTokens += usageChunk.cacheReadTokens || 0;
-    this.tokenUsage.reasoningTokens += usageChunk.reasoningTokens || 0;
+    // Map from the chunk properties to the TokenUsage type properties
+    this.tokenUsage.totalTokensIn += usageChunk.inputTokens || 0;
+    this.tokenUsage.totalTokensOut += usageChunk.outputTokens || 0;
+    this.tokenUsage.totalCacheWrites += usageChunk.cacheWriteTokens || 0;
+    this.tokenUsage.totalCacheReads += usageChunk.cacheReadTokens || 0;
     this.tokenUsage.totalCost += usageChunk.totalCost || 0;
+    // Note: reasoningTokens is not part of the TokenUsage type, so we'll ignore it
+    // contextTokens might need to be calculated or set separately
   }
 
   /**

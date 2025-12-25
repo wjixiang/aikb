@@ -1,1 +1,4 @@
-export * from './lib/agent-lib.module';
+import { NativeToolCallParser } from './assistant-message/NativeToolCallParser';
+
+export * from './agent-lib.module';
+export { NativeToolCallParser }

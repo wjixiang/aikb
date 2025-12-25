@@ -8,12 +8,10 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/MedAgent',
   server: {
-    port: 4200,
-    host: 'localhost',
+    host: true,
   },
   preview: {
-    port: 4200,
-    host: 'localhost',
+    host: true,
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.

@@ -9,7 +9,7 @@ import {
   DEEP_SEEK_DEFAULT_TEMPERATURE,
 } from 'llm-types';
 
-import { NativeToolCallParser } from 'llm-core/assistant-message/NativeToolCallParser';
+import { NativeToolCallParser } from 'agent-lib';
 
 import type { ApiHandlerOptions, ModelRecord } from 'llm-shared/api';
 

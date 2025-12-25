@@ -535,7 +535,7 @@ describe('XAIHandler', () => {
     it('should yield tool_call_end events when finish_reason is tool_calls', async () => {
       // Import NativeToolCallParser to set up state
       const { NativeToolCallParser } = await import(
-        'llm-core/assistant-message/NativeToolCallParser.js'
+        'agent-lib'
       );
 
       // Clear any previous state
