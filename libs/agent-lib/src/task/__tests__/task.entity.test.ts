@@ -715,9 +715,7 @@ describe('Task Entity Tests', () => {
     // }, 10000);
 
     it.todo('should handle api request failure with retry mechanism')
-    it.skip('should use simple tool correctly', async () => {
 
-    })
 
     it('should handle task abort correctly', async () => {
         const newTask = new Task('test_task_id_abort', testApiConfig, 100);
@@ -735,7 +733,7 @@ describe('Task Entity Tests', () => {
             await new Promise(resolve => setTimeout(resolve, 100));
 
             // Check if task was aborted during processing
-            if ((newTask as any)._status === 'aborted') {
+            if (newTask.status === 'aborted') {
                 console.log('Task was aborted, stopping stream generation');
                 return;
             }

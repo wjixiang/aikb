@@ -34,6 +34,7 @@ import {
 import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
 import { TokenUsage } from 'llm-types'
+import { TaskStatus } from './task.type';
 
 // /**
 //  * Interface for token usage tracking
@@ -69,7 +70,7 @@ interface MessageProcessingState {
  */
 export class Task {
   readonly taskId: string;
-  private _status: 'running' | 'completed' | 'aborted' = 'running';
+  private _status: TaskStatus = 'running';
 
   readonly instanceId: string;
   readonly rootTaskId?: string;
@@ -165,8 +166,36 @@ export class Task {
   /**
    * Getter for task status (for testing purposes)
    */
-  public get status(): 'running' | 'completed' | 'aborted' {
+  public get status(): TaskStatus {
     return this._status;
+  }
+
+  /**
+   * Helper method to set task status to running
+   */
+  private setRunning(): void {
+    this._status = 'running';
+  }
+
+  /**
+   * Helper method to set task status to completed
+   */
+  private setCompleted(): void {
+    this._status = 'completed';
+  }
+
+  /**
+   * Helper method to set task status to aborted
+   */
+  private setAborted(): void {
+    this._status = 'aborted';
+  }
+
+  /**
+   * Check if task is aborted
+   */
+  private isAborted(): boolean {
+    return this._status === 'aborted';
   }
 
   /**
@@ -187,7 +216,7 @@ export class Task {
   // Start / Resume / Abort / Dispose / Complete
 
   async start(task?: string, images?: string[]): Promise<void> {
-    this._status = 'running';
+    this.setRunning();
 
     const result = await this.recursivelyMakeClineRequests([
       {
@@ -203,7 +232,7 @@ export class Task {
   }
 
   complete(tokenUsage?: any, toolUsage?: ToolUsage) {
-    this._status = 'completed';
+    this.setCompleted();
     // return {
     //   event: 'task.completed',
     //   data: {
@@ -215,7 +244,7 @@ export class Task {
   }
 
   abort(abortReason?: any) {
-    this._status = 'aborted';
+    this.setAborted();
     this.abortReason = abortReason;
     // return { event: 'task.aborted', data: { taskId: this.taskId } };
   }
@@ -246,7 +275,7 @@ export class Task {
       const currentUserContent = currentItem.userContent;
       let didEndLoop = false;
 
-      if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+      if (this.isAborted()) {
         console.log(`Task ${this.taskId} was aborted, exiting loop`);
         // Clear the stack to ensure the while loop terminates
         stack.length = 0;
@@ -409,7 +438,7 @@ export class Task {
 
       while (!item.done) {
         // Check for abort status during stream processing
-        if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+        if (this.isAborted()) {
           console.log(`Task ${this.taskId} was aborted during stream collection`);
           return chunks; // Return whatever chunks we have collected so far
         }
@@ -561,7 +590,7 @@ export class Task {
   private async executeToolCalls(toolUseBlocks: AssistantMessageContent[]): Promise<void> {
     for (const block of toolUseBlocks) {
       // Check for abort status before executing each tool
-      if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+      if (this.isAborted()) {
         console.log(`Task ${this.taskId} was aborted during tool execution`);
         return;
       }
@@ -576,7 +605,7 @@ export class Task {
       const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input);
 
       // Check for abort status after tool execution
-      if ((this._status as 'running' | 'completed' | 'aborted') === 'aborted') {
+      if (this.isAborted()) {
         console.log(`Task ${this.taskId} was aborted after tool execution`);
         return;
       }
