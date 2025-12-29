@@ -18,12 +18,6 @@ export default defineConfig(() => ({
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
-    setupFiles: ['./src/support/test-setup.ts'],
-    globalSetup: './src/support/global-setup.ts',
-    globalTeardown: './src/support/global-teardown.ts',
-    env: {
-      NODE_ENV: 'test',
-    },
     coverage: {
       reportsDirectory: '../../coverage/apps/auth-service-e2e',
       provider: 'v8' as const,
