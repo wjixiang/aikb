@@ -1,19 +1,25 @@
 // task/task.service.ts
 import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Task } from './task.entity';
-
+import { AgentDBPrismaService } from 'agent-db';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class TaskService {
-  constructor(private eventEmitter: EventEmitter2) { }
+  constructor(
+    private db: AgentDBPrismaService
+  ) { }
 
-  private tasks = new Map<string, Task>();
+  async createTask(taskInput: string): Promise<Task> {
+    const taskCreatedRes = await this.db.task.create({
+      data: {
+        id: v4(),
+        createdAt: new Date()
+      }
+    })
+    const task = new Task(taskCreatedRes.id, {} as any);
 
-  createTask(taskId: string): Task {
-    const task = new Task(taskId, {} as any);
-    this.tasks.set(taskId, task);
-    this.eventEmitter.emit('task.created', { taskId });
+
     return task;
   }
 

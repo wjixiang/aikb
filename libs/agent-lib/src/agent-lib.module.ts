@@ -3,9 +3,11 @@ import { TaskService } from './task/task.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TaskModule } from './task/task.module';
 
-
 @Module({
-  imports: [EventEmitterModule.forRoot(), TaskModule],
+  imports: [
+    EventEmitterModule.forRoot(),
+    TaskModule,
+  ],
   controllers: [],
   providers: [
     TaskService
