@@ -367,7 +367,7 @@ describe('Task Entity Tests', () => {
 
         // Mock methods to avoid timeout issues
         newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-        newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+        newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
         newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
         newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -391,7 +391,7 @@ describe('Task Entity Tests', () => {
 
         // Mock multiple methods to avoid timeout issues
         newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-        newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+        newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
         newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
         newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -558,7 +558,7 @@ describe('Task Entity Tests', () => {
         try {
             // Mock methods to avoid timeout issues
             newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-            newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+            newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
             newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
             newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -594,7 +594,7 @@ describe('Task Entity Tests', () => {
 
     //     // Mock methods to avoid timeout issues
     //     newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-    //     newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+    //     newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
     //     newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
     //     newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -650,7 +650,7 @@ describe('Task Entity Tests', () => {
 
     //     // Mock methods to avoid timeout issues
     //     newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-    //     newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+    //     newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
     //     newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
     //     newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -753,7 +753,7 @@ describe('Task Entity Tests', () => {
 
         // Mock methods to avoid timeout issues
         newTask['waitForUserMessageContentReady'] = vi.fn().mockResolvedValue(undefined);
-        newTask['addToApiConversationHistory'] = vi.fn().mockResolvedValue(undefined);
+        newTask['addToConversationHistory'] = vi.fn().mockResolvedValue(undefined);
         newTask['getSystemPrompt'] = vi.fn().mockResolvedValue('Mock system prompt');
         newTask['buildCleanConversationHistory'] = vi.fn().mockReturnValue([]);
 
@@ -785,3 +785,8 @@ describe('Task Entity Tests', () => {
         }
     }, 10000);
 });
+
+
+describe('Task Context Management Tests', () => {
+
+})

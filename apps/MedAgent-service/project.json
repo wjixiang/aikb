@@ -62,6 +62,13 @@
           "buildTarget": "MedAgent-service:build:production"
         }
       }
+    },
+    "gen-type": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx '/workspace/scripts/generate-typings.ts'",
+        "cwd": "apps/MedAgent-service"
+      }
     }
   }
 }

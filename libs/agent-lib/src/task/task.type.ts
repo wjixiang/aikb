@@ -1,1 +1,1 @@
-export type TaskStatus = 'running' | 'completed' | 'aborted';
+export type TaskStatus = 'idle' | 'running' | 'completed' | 'aborted';

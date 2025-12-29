@@ -1,0 +1,217 @@
+type Query {
+  listTaskInfo: [TaskInfo]!
+}
+
+type Mutation {
+  createTask(taskInput: String): TaskInfo!
+}
+
+type TaskInfo {
+  id: ID!
+  taskInput: String!
+  taskStatus: TaskStatus!
+  createdAt: String!
+}
+
+# ============================================
+# 1. Enum Type Definitions
+# ============================================
+
+"""
+Task status
+"""
+enum TaskStatus {
+  IDLE
+  RUNNING
+  COMPLETED
+  ABORTED
+}
+
+"""
+Message sender role
+"""
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+# ============================================
+# 2. Block Interface and Concrete Type Definitions
+# ============================================
+
+"""
+Block base interface
+"""
+interface Block {
+  """
+  Block type identifier
+  """
+  type: String!
+}
+
+"""
+Text block
+"""
+type TextBlock implements Block {
+  type: String!
+  text: String!
+}
+
+"""
+Image resource information
+"""
+type ImageSource {
+  type: String!
+  media_type: String!
+  data: String!
+}
+
+"""
+Image block
+"""
+type ImageBlock implements Block {
+  type: String!
+  source: ImageSource!
+}
+
+"""
+Tool use block
+"""
+type ToolUseBlock implements Block {
+  type: String!
+  id: String!
+  name: String!
+  input: String! # JSON string
+}
+
+"""
+Tool result block
+"""
+type ToolResultBlock implements Block {
+  type: String!
+  tool_use_id: String!
+  content: String # JSON string
+}
+
+# ============================================
+# 3. Union Type Definitions
+# ============================================
+
+"""
+Content block union type
+"""
+union ContentBlock = TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock
+
+"""
+Message content union type (text or block array)
+"""
+union MessageContent = StringContent | BlocksContent
+
+"""
+Plain text content wrapper type
+"""
+type StringContent {
+  text: String!
+}
+
+"""
+Block array content wrapper type
+"""
+type BlocksContent {
+  blocks: [ContentBlock!]!
+}
+
+# ============================================
+# 4. ApiMessage Type Definitions
+# ============================================
+
+"""
+API message
+"""
+type ApiMessage {
+  """
+  Sender role
+  """
+  role: MessageRole!
+
+  """
+  Message content (text or block array)
+  """
+  content: MessageContent!
+
+  """
+  Timestamp (milliseconds)
+  """
+  ts: Int
+}
+
+# ============================================
+# 6. Input Type Definitions
+# ============================================
+
+"""
+Generic block input
+"""
+input BlockInput {
+  type: String!
+  # Specific fields are dynamically processed based on type
+}
+
+"""
+Text block input
+"""
+input TextBlockInput {
+  type: String!
+  text: String!
+}
+
+"""
+Image source input
+"""
+input ImageSourceInput {
+  type: String!
+  media_type: String!
+  data: String!
+}
+
+"""
+Image block input
+"""
+input ImageBlockInput {
+  type: String!
+  source: ImageSourceInput!
+}
+
+"""
+Tool use block input
+"""
+input ToolUseBlockInput {
+  type: String!
+  id: String!
+  name: String!
+  input: String!
+}
+
+"""
+Tool result block input
+"""
+input ToolResultBlockInput {
+  type: String!
+  tool_use_id: String!
+  content: String
+}
+
+"""
+Message block input union type
+"""
+input MessageBlockInput {
+  type: String!
+  text: String
+  source: ImageSourceInput
+  id: String
+  name: String
+  input: String
+  tool_use_id: String
+  content: String
+}

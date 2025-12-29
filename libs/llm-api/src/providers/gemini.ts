@@ -36,8 +36,7 @@ type GeminiHandlerOptions = ApiHandlerOptions & {
 
 export class GeminiHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
 
   private client: GoogleGenAI;
@@ -55,23 +54,23 @@ export class GeminiHandler
 
     this.client = this.options.vertexJsonCredentials
       ? new GoogleGenAI({
+        vertexai: true,
+        project,
+        location,
+        googleAuthOptions: {
+          credentials: safeJsonParse<JWTInput>(
+            this.options.vertexJsonCredentials,
+            undefined,
+          ),
+        },
+      })
+      : this.options.vertexKeyFile
+        ? new GoogleGenAI({
           vertexai: true,
           project,
           location,
-          googleAuthOptions: {
-            credentials: safeJsonParse<JWTInput>(
-              this.options.vertexJsonCredentials,
-              undefined,
-            ),
-          },
+          googleAuthOptions: { keyFile: this.options.vertexKeyFile },
         })
-      : this.options.vertexKeyFile
-        ? new GoogleGenAI({
-            vertexai: true,
-            project,
-            location,
-            googleAuthOptions: { keyFile: this.options.vertexKeyFile },
-          })
         : isVertex
           ? new GoogleGenAI({ vertexai: true, project, location })
           : new GoogleGenAI({ apiKey });
@@ -88,7 +87,7 @@ export class GeminiHandler
       reasoning: thinkingConfig,
       maxTokens,
     } = this.getModel();
-    // Reset per-request metadata that we persist into apiConversationHistory.
+    // Reset per-request metadata that we persist into conversationHistory.
     this.lastThoughtSignature = undefined;
     this.lastResponseId = undefined;
 
@@ -314,7 +313,7 @@ export class GeminiHandler
       }
 
       if (finalResponse?.responseId) {
-        // Capture responseId so Task.addToApiConversationHistory can store it
+        // Capture responseId so Task.addToConversationHistory can store it
         // alongside the assistant message in api_history.json.
         this.lastResponseId = finalResponse.responseId;
       }

@@ -36,17 +36,6 @@ import { randomUUID } from 'node:crypto';
 import { TokenUsage } from 'llm-types'
 import { TaskStatus } from './task.type';
 
-// /**
-//  * Interface for token usage tracking
-//  */
-// interface TokenUsage {
-//   inputTokens: number;
-//   outputTokens: number;
-//   cacheWriteTokens?: number;
-//   cacheReadTokens?: number;
-//   reasoningTokens?: number;
-//   totalCost?: number;
-// }
 
 /**
  * Interface to encapsulate message processing state
@@ -98,7 +87,7 @@ export class Task {
   };
 
   // LLM Messages & Chat Messages
-  apiConversationHistory: ApiMessage[] = [];
+  conversationHistory: ApiMessage[] = [];
 
 
   // Ask
@@ -314,7 +303,7 @@ export class Task {
         currentItem.userMessageWasRemoved;
 
       if (shouldAddUserMessage) {
-        await this.addToApiConversationHistory({
+        await this.addToConversationHistory({
           role: 'user',
           content: finalUserContent,
         });
@@ -672,13 +661,13 @@ export class Task {
       });
     }
 
-    await this.addToApiConversationHistory({
+    await this.addToConversationHistory({
       role: 'assistant',
       content: assistantContent,
     });
   }
 
-  private async addToApiConversationHistory(
+  private async addToConversationHistory(
     message: Anthropic.MessageParam,
     reasoning?: string,
   ) {
@@ -700,7 +689,7 @@ export class Task {
       }
     }
 
-    this.apiConversationHistory.push(messageWithTs);
+    this.conversationHistory.push(messageWithTs);
   }
 
   private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
@@ -712,7 +701,7 @@ export class Task {
 
       // Build clean conversation history
       const cleanConversationHistory = this.buildCleanConversationHistory(
-        this.apiConversationHistory,
+        this.conversationHistory,
       );
 
       const metadata = {
