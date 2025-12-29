@@ -10,6 +10,6 @@ import { TaskModule } from './task/task.module';
   providers: [
     TaskService
   ],
-  exports: [],
+  exports: [TaskService],
 })
 export class AgentLibModule { }

@@ -87,7 +87,8 @@
       "llm-utils/*": ["libs/llm-utils/src/*"],
       "llm-shared/*": ["libs/llm-shared/src/*"],
       "llm-types": ["libs/llm-types/src/index.ts"],
-      "llm-tools": ["libs/llm-tools/src/index.ts"]
+      "llm-tools": ["libs/llm-tools/src/index.ts"],
+      "agent-db": ["libs/agent-db/src/index.ts"],
     },
     "incremental": true,
     "skipLibCheck": true,

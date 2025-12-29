@@ -1,9 +1,11 @@
 type Query {
-  listTaskInfo: [TaskInfo]!
+  listTaskInfo: [TaskInfo!]!
+  getTaskInfo(taskId: ID!): TaskInfo!
+  getTaskMessages(taskId: ID!): [ApiMessag!]!
 }
 
 type Mutation {
-  createTask(taskInput: String): TaskInfo!
+  createTask(input: CreateTaskInput!): TaskInfo!
 }
 
 type TaskInfo {
@@ -11,6 +13,11 @@ type TaskInfo {
   taskInput: String!
   taskStatus: TaskStatus!
   createdAt: String!
+}
+
+input CreateTaskInput {
+  userId: ID!
+  taskInput: String!
 }
 
 # ============================================

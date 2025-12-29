@@ -3,11 +3,11 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from './generated/prisma/client';
 import { Injectable } from '@nestjs/common';
 
-const connectionString = `${process.env['<%=dbName.toUpperCase()%>_DATABASE_URL']}`;
+const connectionString = `${process.env['AGENT_DATABASE_URL']}`;
 const adapter = new PrismaPg({ connectionString });
 
 @Injectable()
-export class <%=dbName%>PrismaService extends PrismaClient {
+export class AgentDBPrismaService extends PrismaClient {
   constructor() {
     super({
       adapter,

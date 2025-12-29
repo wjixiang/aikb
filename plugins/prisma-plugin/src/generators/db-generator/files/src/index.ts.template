@@ -1,2 +1,2 @@
-import { prisma } from './prisma';
-export { prisma };
+import { prisma, <%=dbName%>PrismaService } from './prisma';
+export { prisma, <%=dbName%>PrismaService };

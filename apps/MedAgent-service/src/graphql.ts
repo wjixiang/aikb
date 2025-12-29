@@ -21,6 +21,11 @@ export enum MessageRole {
     SYSTEM = "SYSTEM"
 }
 
+export class CreateTaskInput {
+    userId: string;
+    taskInput: string;
+}
+
 export class BlockInput {
     type: string;
 }
@@ -71,6 +76,14 @@ export interface Block {
 
 export abstract class IQuery {
     abstract listTaskInfo(): Nullable<TaskInfo>[] | Promise<Nullable<TaskInfo>[]>;
+
+    abstract getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo>;
+
+    abstract getTaskMessages(taskId: string): Nullable<ApiMessage>[] | Promise<Nullable<ApiMessage>[]>;
+}
+
+export abstract class IMutation {
+    abstract createTask(input: CreateTaskInput): TaskInfo | Promise<TaskInfo>;
 }
 
 export class TaskInfo {

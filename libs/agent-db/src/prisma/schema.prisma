@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Task {
+  id     String     @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status TaskStatus @default(idle)
+
+  createdAt   DateTime
+  completedAt DateTime?
+  abortedAt   DateTime?
+
+  consecutiveMistakeCount Int @default(0)
+  consecutiveMistakeLimit Int @default(3)
+
+  // Token Usage
+  totalTokensIn        Int                   @default(0) @map("total_tokens_in")
+  totalTokensOut       Int                   @default(0) @map("total_tokens_out")
+  totalCacheWrites     Int                   @default(0) @map("total_cache_writes")
+  totalCacheReads      Int                   @default(0) @map("total_cache_reads")
+  totalCost            Decimal               @default(0) @db.Decimal(10, 4)
+  contextTokens        Int                   @default(0) @map("context_tokens")
+  conversationMessages ConversationMessage[]
+  taskErrors           TaskError[]
+}
+
+enum TaskStatus {
+  idle
+  running
+  completed
+  aborted
+}
+
+// Conversation History - separate table for better query performance
+model ConversationMessage {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId String @map("task_id") @db.Uuid
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  role      String  @db.VarChar(50) // 'user', 'assistant', 'system'
+  content   Json // Store content blocks as JSONB
+  reasoning String? @db.Text // Optional reasoning for assistant messages
+  timestamp BigInt  @map("timestamp") // Unix timestamp in milliseconds
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([taskId])
+  @@index([timestamp])
+  @@map("conversation_messages")
+}
+
+// Task Errors - separate table for error tracking
+model TaskError {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId String @map("task_id") @db.Uuid
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  code      String  @db.VarChar(100)
+  message   String  @db.Text
+  retryable Boolean @default(false)
+  metadata  Json? // Additional error details
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([taskId])
+  @@index([code])
+  @@map("task_errors")
+}
