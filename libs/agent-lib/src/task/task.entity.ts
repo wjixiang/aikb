@@ -17,7 +17,6 @@ import {
 } from '../assistant-message/assistantMessageTypes';
 import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
-import { ApiMessage } from './simplified-dependencies/taskPersistence';
 import { AssistantMessageParser } from '../assistant-message/AssistantMessageParser';
 import { SYSTEM_PROMPT } from '../prompts/system';
 import {
@@ -34,7 +33,14 @@ import {
 import { ToolCallingHandler } from 'llm-tools'
 import { randomUUID } from 'node:crypto';
 import { TokenUsage } from 'llm-types'
-import { TaskStatus } from './task.type';
+import {
+  TaskStatus,
+  ThinkingBlock,
+  ExtendedApiMessage,
+  MessageAddedCallback,
+  TaskStatusChangedCallback,
+  ApiMessage
+} from './task.type';
 
 
 /**
@@ -51,6 +57,7 @@ interface MessageProcessingState {
   assistantMessageParser?: AssistantMessageParser;
   cachedModel?: { id: string; info: ModelInfo };
 }
+
 
 /**
  * Simplified Task entity with no core dependencies
@@ -91,9 +98,6 @@ export class Task {
 
 
   // Ask
-  private askResponse?: any;
-  private askResponseText?: string;
-  private askResponseImages?: string[];
   public lastMessageTs?: number;
 
   // TaskStatus
@@ -123,6 +127,10 @@ export class Task {
   // Error collection for retry attempts
   private collectedErrors: TaskError[] = [];
 
+  // Observer
+  private messageAddedCallbacks: MessageAddedCallback[] = [];
+  private taskStatusChangedCallbacks: TaskStatusChangedCallback[] = [];
+
   constructor(
     taskId: string,
     private apiConfiguration: ProviderSettings,
@@ -134,6 +142,43 @@ export class Task {
     this.api = buildApiHandler(apiConfiguration);
     this.messageState.assistantMessageParser = new AssistantMessageParser();
   }
+
+  // ==================== Registration Methods ====================
+
+  /**
+   * Register message added observer
+   * @param callback - Function to be called when a message is added
+   * @returns cleanup function - Used to unregister
+   */
+  onMessageAdded(callback: MessageAddedCallback): () => void {
+    // 1. Store the callback function in the array
+    this.messageAddedCallbacks.push(callback);
+
+    // 2. Return a cleanup function
+    return () => {
+      // Remove this callback from the array
+      this.messageAddedCallbacks = this.messageAddedCallbacks.filter(
+        cb => cb !== callback
+      );
+    };
+  }
+
+  // ==================== Notification Methods ====================
+
+  /**
+   * Notify all observers
+   */
+  private notifyMessageAdded(message: ApiMessage): void {
+    // Iterate through all registered callback functions and call them
+    this.messageAddedCallbacks.forEach(callback => {
+      try {
+        callback(message);  // ← Directly call the function passed by TaskService
+      } catch (error) {
+        console.error('Error in callback:', error);
+      }
+    });
+  }
+
 
   /**
    * Reset message processing state for each new API request
@@ -671,25 +716,25 @@ export class Task {
     message: Anthropic.MessageParam,
     reasoning?: string,
   ) {
-    const messageWithTs: any = {
-      ...message,
+    const messageWithTs: ExtendedApiMessage = {
+      role: message.role,
+      content: Array.isArray(message.content)
+        ? [...message.content] as Array<Anthropic.ContentBlockParam | ThinkingBlock>
+        : [{ type: 'text' as const, text: message.content as string }],
       ts: Date.now(),
     };
 
     if (message.role === 'assistant' && reasoning) {
-      const reasoningBlock = {
-        type: 'thinking' as const,
+      const reasoningBlock: ThinkingBlock = {
+        type: 'thinking',
         thinking: reasoning,
       };
 
-      if (Array.isArray(messageWithTs.content)) {
-        messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
-      } else {
-        messageWithTs.content = [reasoningBlock];
-      }
+      messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
     }
 
-    this.conversationHistory.push(messageWithTs);
+    this.notifyMessageAdded(messageWithTs as ApiMessage);
+    this.conversationHistory.push(messageWithTs as ApiMessage);
   }
 
   private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {

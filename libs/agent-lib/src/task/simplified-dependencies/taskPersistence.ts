@@ -1,33 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-
-/**
- * Simplified task persistence types
- * Extracted from core/task-persistence/index.ts
- */
-export interface ApiMessage {
-  role: 'user' | 'assistant' | 'system';
-  content:
-    | string
-    | Array<
-        | Anthropic.TextBlockParam
-        | Anthropic.ImageBlockParam
-        | Anthropic.ToolUseBlockParam
-        | Anthropic.ToolResultBlockParam
-      >;
-  ts?: number;
-}
-
-/**
- * Simplified task metadata
- * Extracted from core/task-persistence/taskMetadata.ts
- */
-export interface TaskMetadata {
-  taskId: string;
-  startTime?: number;
-  endTime?: number;
-  tokenCount?: number;
-  cost?: number;
-}
+import type { ThinkingBlock, ApiMessage, TaskMetadata, ExtendedContentBlock } from '../task.type';
 
 /**
  * Simplified task messages functions
