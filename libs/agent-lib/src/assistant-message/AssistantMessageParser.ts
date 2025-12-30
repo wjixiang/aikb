@@ -1,5 +1,5 @@
-import { type ToolName, toolNames } from "llm-types"
-import { TextContent, ToolUse, ToolParamName, toolParamNames } from "llm-shared/tools"
+import { type ToolName, toolNames } from "../types"
+import { TextContent, ToolUse, ToolParamName, toolParamNames } from "../shared/tools"
 import { AssistantMessageContent } from "./parseAssistantMessage"
 
 /**

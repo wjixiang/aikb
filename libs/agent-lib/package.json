@@ -1,0 +1,17 @@
+{
+  "name": "agent-lib",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@lmstudio/sdk": "^1.5.0",
+    "openai": "^5.10.1",
+    "@apollo/client": "^3.8.0",
+    "graphql": "^16.8.0",
+    "zod": "^3.25.67"
+  }
+}

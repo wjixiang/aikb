@@ -1,4 +1,4 @@
-import { QuizType } from 'llm-shared/';
+import { QuizType } from 'agent-lib/';
 
 export enum TabType {
   QUIZ = 'quiz',

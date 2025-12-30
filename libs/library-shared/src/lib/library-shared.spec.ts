@@ -1,7 +1,7 @@
-import { libraryShared } from 'llm-shared/';
+import { libraryShared } from './library-shared';
 
-describe('llm-shared/', () => {
+describe('agent-lib', () => {
   it('should work', () => {
-    expect(libraryShared()).toEqual('llm-shared/');
+    expect(libraryShared()).toEqual('agent-lib');
   });
 });

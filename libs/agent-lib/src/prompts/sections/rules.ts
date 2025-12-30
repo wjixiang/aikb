@@ -1,5 +1,5 @@
 import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "llm-types"
+import { getEffectiveProtocol, isNativeProtocol } from "../../types"
 
 function getVendorConfidentialitySection(): string {
     return `

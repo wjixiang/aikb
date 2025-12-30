@@ -1,4 +1,4 @@
-import { ApiHandler, ApiStreamChunk, buildApiHandler, type ApiStream } from 'llm-api';
+import { ApiHandler, ApiStreamChunk, buildApiHandler, type ApiStream } from '../api';
 import {
   DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ProviderSettings,
@@ -7,9 +7,9 @@ import {
   getModelId,
   ModelInfo,
   ToolName
-} from 'llm-types';
+} from '../types';
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveToolProtocol } from 'llm-utils/resolveToolProtocol';
+import { resolveToolProtocol } from '../utils/resolveToolProtocol';
 import { formatResponse } from './simplified-dependencies/formatResponse';
 import {
   AssistantMessageContent,
@@ -30,9 +30,9 @@ import {
   StreamingError,
   MaxRetryExceededError
 } from './task.errors';
-import { ToolCallingHandler } from 'llm-tools'
+import { ToolCallingHandler } from '../tools'
 import { randomUUID } from 'node:crypto';
-import { TokenUsage } from 'llm-types'
+import { TokenUsage } from '../types'
 import {
   TaskStatus,
   ThinkingBlock,

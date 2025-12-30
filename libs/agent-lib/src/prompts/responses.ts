@@ -1,6 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import * as path from "path"
-import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from "llm-types"
+import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from "../types"
 
 export const formatResponse = {
     toolDenied: (protocol?: ToolProtocol) => {

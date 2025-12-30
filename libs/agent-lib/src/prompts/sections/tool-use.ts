@@ -1,4 +1,4 @@
-import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from "llm-types"
+import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from "../../types"
 
 export function getSharedToolUseSection(protocol: ToolProtocol = TOOL_PROTOCOL.XML): string {
     if (isNativeProtocol(protocol)) {

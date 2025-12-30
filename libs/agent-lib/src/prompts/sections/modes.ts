@@ -1,5 +1,5 @@
-import { getAllModesWithPrompts } from "llm-shared/modes"
-import { ModeConfig } from "llm-types"
+import { getAllModesWithPrompts } from "../../shared/modes"
+import { ModeConfig } from "../../types"
 
 
 export async function getModesSection(

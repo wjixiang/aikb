@@ -1,4 +1,4 @@
-import { quizShared } from 'llm-shared/';
+import { quizShared } from './quiz-shared';
 
 describe('llm-shared/', () => {
   it('should work', () => {

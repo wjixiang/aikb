@@ -1,6 +1,6 @@
-import { type ToolName, toolNames } from "llm-types"
+import { type ToolName, toolNames } from "../types"
 
-import { TextContent, ToolUse, McpToolUse, ToolParamName, toolParamNames } from "llm-shared/tools"
+import { TextContent, ToolUse, McpToolUse, ToolParamName, toolParamNames } from "../shared/tools"
 import { AssistantMessageContent } from "./assistantMessageTypes"
 
 // export type AssistantMessageContent = TextContent | ToolUse | McpToolUse
@@ -70,21 +70,21 @@ export function parseAssistantMessage(assistantMessage: string): AssistantMessag
                 // content tag and the LAST content tag.
                 const contentParamName: ToolParamName = "content"
 
-                if (currentToolUse.name === "write_to_file" && accumulator.endsWith(`</${contentParamName}>`)) {
-                    const toolContent = accumulator.slice(currentToolUseStartIndex)
-                    const contentStartTag = `<${contentParamName}>`
-                    const contentEndTag = `</${contentParamName}>`
-                    const contentStartIndex = toolContent.indexOf(contentStartTag) + contentStartTag.length
-                    const contentEndIndex = toolContent.lastIndexOf(contentEndTag)
+                // if (currentToolUse.name === "write_to_file" && accumulator.endsWith(`</${contentParamName}>`)) {
+                //     const toolContent = accumulator.slice(currentToolUseStartIndex)
+                //     const contentStartTag = `<${contentParamName}>`
+                //     const contentEndTag = `</${contentParamName}>`
+                //     const contentStartIndex = toolContent.indexOf(contentStartTag) + contentStartTag.length
+                //     const contentEndIndex = toolContent.lastIndexOf(contentEndTag)
 
-                    if (contentStartIndex !== -1 && contentEndIndex !== -1 && contentEndIndex > contentStartIndex) {
-                        // Don't trim content to preserve newlines, but strip first and last newline only
-                        currentToolUse.params[contentParamName] = toolContent
-                            .slice(contentStartIndex, contentEndIndex)
-                            .replace(/^\n/, "")
-                            .replace(/\n$/, "")
-                    }
-                }
+                //     if (contentStartIndex !== -1 && contentEndIndex !== -1 && contentEndIndex > contentStartIndex) {
+                //         // Don't trim content to preserve newlines, but strip first and last newline only
+                //         currentToolUse.params[contentParamName] = toolContent
+                //             .slice(contentStartIndex, contentEndIndex)
+                //             .replace(/^\n/, "")
+                //             .replace(/\n$/, "")
+                //     }
+                // }
 
                 // Partial tool value is accumulating.
                 continue

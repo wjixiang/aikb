@@ -1,5 +1,4 @@
-import { ToolProtocol, TOOL_PROTOCOL } from "llm-types"
-import { isNativeProtocol } from "llm-types"
+import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from "../../types"
 
 /**
  * Generates medical research tool use guidelines for LLM prompts.

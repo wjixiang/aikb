@@ -1,4 +1,4 @@
-import { QuizType } from 'llm-shared/';
+import { QuizType } from 'agent-lib/';
 import { b } from '../baml_client/async_client';
 import { TextSegmenter } from './TextSegmenter';
 import pLimit from 'p-limit';

@@ -1,8 +1,8 @@
 import { SystemPromptSettings } from "./types";
-import { getEffectiveProtocol, isNativeProtocol, ModeConfig, PromptComponent } from 'llm-types'
-import { getModeBySlug, Mode, modes, getModeSelection, defaultModeSlug } from 'llm-shared/modes'
+import { getEffectiveProtocol, isNativeProtocol, ModeConfig, PromptComponent } from '../types'
+import { getModeBySlug, Mode, modes, getModeSelection, defaultModeSlug } from '../shared/modes'
 import { getModesSection } from "./sections/modes";
-import { getToolDescriptionsForMode } from 'llm-tools'
+import { getToolDescriptionsForMode } from '../tools'
 import { markdownFormattingSection } from "./sections/markdown-formatting";
 import { getSharedToolUseSection } from "./sections/tool-use";
 import { getToolUseGuidelinesSection } from "./sections/tool-use-guidelines";

@@ -1,4 +1,4 @@
-import { ToolProtocol } from "llm-types"
+import { ToolProtocol } from "../types"
 
 /**
  * Settings passed to system prompt generation functions
