@@ -67,6 +67,7 @@ interface MessageProcessingState {
 export class Task {
   readonly taskId: string;
   private _status: TaskStatus = 'running';
+  taskInput: string = '';
 
   readonly instanceId: string;
   readonly rootTaskId?: string;
@@ -133,11 +134,13 @@ export class Task {
 
   constructor(
     taskId: string,
+    taskInput: string,
     private apiConfiguration: ProviderSettings,
     consecutiveMistakeLimit = DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ) {
     this.taskId = taskId;
     this.instanceId = crypto.randomUUID().slice(0, 8);
+    this.taskInput = taskInput
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
     this.messageState.assistantMessageParser = new AssistantMessageParser();
@@ -163,6 +166,16 @@ export class Task {
     };
   }
 
+  onStatusChanged(callback: TaskStatusChangedCallback) {
+    this.taskStatusChangedCallbacks.push(callback)
+
+    return () => {
+      this.taskStatusChangedCallbacks = this.taskStatusChangedCallbacks.filter(
+        cb => cb !== callback
+      );
+    }
+  }
+
   // ==================== Notification Methods ====================
 
   /**
@@ -172,13 +185,22 @@ export class Task {
     // Iterate through all registered callback functions and call them
     this.messageAddedCallbacks.forEach(callback => {
       try {
-        callback(message);  // ← Directly call the function passed by TaskService
+        callback(this.taskId, message);  // ← Directly call the function passed by TaskService
       } catch (error) {
         console.error('Error in callback:', error);
       }
     });
   }
 
+  private notifyStatusChanged(status: TaskStatus): void {
+    this.taskStatusChangedCallbacks.forEach(callback => {
+      try {
+        callback(this.taskId, status);
+      } catch (error) {
+        console.error('Error in callback:', error);
+      }
+    })
+  }
 
   /**
    * Reset message processing state for each new API request
@@ -205,24 +227,18 @@ export class Task {
   }
 
   /**
-   * Helper method to set task status to running
+   * Helper method to set task status
    */
-  private setRunning(): void {
-    this._status = 'running';
-  }
-
-  /**
-   * Helper method to set task status to completed
-   */
-  private setCompleted(): void {
-    this._status = 'completed';
+  private setStatus(status: TaskStatus): void {
+    this._status = status;
+    this.notifyStatusChanged(this._status);
   }
 
   /**
    * Helper method to set task status to aborted
    */
   private setAborted(): void {
-    this._status = 'aborted';
+    this.setStatus('aborted');
   }
 
   /**
@@ -250,12 +266,12 @@ export class Task {
   // Start / Resume / Abort / Dispose / Complete
 
   async start(task?: string, images?: string[]): Promise<void> {
-    this.setRunning();
+    this.setStatus('running');
 
     const result = await this.recursivelyMakeClineRequests([
       {
         type: 'text',
-        text: `<task>${task}</task>`
+        text: `<task>${task ?? this.taskInput}</task>`
       }
     ])
 
@@ -266,7 +282,7 @@ export class Task {
   }
 
   complete(tokenUsage?: any, toolUsage?: ToolUsage) {
-    this.setCompleted();
+    this.setStatus('completed');
     // return {
     //   event: 'task.completed',
     //   data: {

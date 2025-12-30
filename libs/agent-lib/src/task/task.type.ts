@@ -44,12 +44,12 @@ export interface ExtendedApiMessage {
 /**
  * Callback type for message added events
  */
-export type MessageAddedCallback = (message: ApiMessage) => void;
+export type MessageAddedCallback = (taskId: string, message: ApiMessage) => void;
 
 /**
  * Callback type for task status changed events
  */
-export type TaskStatusChangedCallback = () => void;
+export type TaskStatusChangedCallback = (taskId: string, changedStatus: TaskStatus) => void;
 
 /**
  * Simplified task metadata

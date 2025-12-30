@@ -50,6 +50,7 @@ export type TaskSumAggregateOutputType = {
 
 export type TaskMinAggregateOutputType = {
   id: string | null
+  taskInput: string | null
   status: $Enums.TaskStatus | null
   createdAt: Date | null
   completedAt: Date | null
@@ -66,6 +67,7 @@ export type TaskMinAggregateOutputType = {
 
 export type TaskMaxAggregateOutputType = {
   id: string | null
+  taskInput: string | null
   status: $Enums.TaskStatus | null
   createdAt: Date | null
   completedAt: Date | null
@@ -82,6 +84,7 @@ export type TaskMaxAggregateOutputType = {
 
 export type TaskCountAggregateOutputType = {
   id: number
+  taskInput: number
   status: number
   createdAt: number
   completedAt: number
@@ -122,6 +125,7 @@ export type TaskSumAggregateInputType = {
 
 export type TaskMinAggregateInputType = {
   id?: true
+  taskInput?: true
   status?: true
   createdAt?: true
   completedAt?: true
@@ -138,6 +142,7 @@ export type TaskMinAggregateInputType = {
 
 export type TaskMaxAggregateInputType = {
   id?: true
+  taskInput?: true
   status?: true
   createdAt?: true
   completedAt?: true
@@ -154,6 +159,7 @@ export type TaskMaxAggregateInputType = {
 
 export type TaskCountAggregateInputType = {
   id?: true
+  taskInput?: true
   status?: true
   createdAt?: true
   completedAt?: true
@@ -257,6 +263,7 @@ export type TaskGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type TaskGroupByOutputType = {
   id: string
+  taskInput: string
   status: $Enums.TaskStatus
   createdAt: Date
   completedAt: Date | null
@@ -296,6 +303,7 @@ export type TaskWhereInput = {
   OR?: Prisma.TaskWhereInput[]
   NOT?: Prisma.TaskWhereInput | Prisma.TaskWhereInput[]
   id?: Prisma.UuidFilter<"Task"> | string
+  taskInput?: Prisma.StringFilter<"Task"> | string
   status?: Prisma.EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
@@ -314,6 +322,7 @@ export type TaskWhereInput = {
 
 export type TaskOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  taskInput?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -335,6 +344,7 @@ export type TaskWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.TaskWhereInput | Prisma.TaskWhereInput[]
   OR?: Prisma.TaskWhereInput[]
   NOT?: Prisma.TaskWhereInput | Prisma.TaskWhereInput[]
+  taskInput?: Prisma.StringFilter<"Task"> | string
   status?: Prisma.EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
@@ -353,6 +363,7 @@ export type TaskWhereUniqueInput = Prisma.AtLeast<{
 
 export type TaskOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  taskInput?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -377,6 +388,7 @@ export type TaskScalarWhereWithAggregatesInput = {
   OR?: Prisma.TaskScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TaskScalarWhereWithAggregatesInput | Prisma.TaskScalarWhereWithAggregatesInput[]
   id?: Prisma.UuidWithAggregatesFilter<"Task"> | string
+  taskInput?: Prisma.StringWithAggregatesFilter<"Task"> | string
   status?: Prisma.EnumTaskStatusWithAggregatesFilter<"Task"> | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Task"> | Date | string
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Task"> | Date | string | null
@@ -393,6 +405,7 @@ export type TaskScalarWhereWithAggregatesInput = {
 
 export type TaskCreateInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -411,6 +424,7 @@ export type TaskCreateInput = {
 
 export type TaskUncheckedCreateInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -429,6 +443,7 @@ export type TaskUncheckedCreateInput = {
 
 export type TaskUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -447,6 +462,7 @@ export type TaskUpdateInput = {
 
 export type TaskUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -465,6 +481,7 @@ export type TaskUncheckedUpdateInput = {
 
 export type TaskCreateManyInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -481,6 +498,7 @@ export type TaskCreateManyInput = {
 
 export type TaskUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -497,6 +515,7 @@ export type TaskUpdateManyMutationInput = {
 
 export type TaskUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -513,6 +532,7 @@ export type TaskUncheckedUpdateManyInput = {
 
 export type TaskCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  taskInput?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -540,6 +560,7 @@ export type TaskAvgOrderByAggregateInput = {
 
 export type TaskMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  taskInput?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -556,6 +577,7 @@ export type TaskMaxOrderByAggregateInput = {
 
 export type TaskMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  taskInput?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -648,6 +670,7 @@ export type TaskUpdateOneRequiredWithoutTaskErrorsNestedInput = {
 
 export type TaskCreateWithoutConversationMessagesInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -665,6 +688,7 @@ export type TaskCreateWithoutConversationMessagesInput = {
 
 export type TaskUncheckedCreateWithoutConversationMessagesInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -698,6 +722,7 @@ export type TaskUpdateToOneWithWhereWithoutConversationMessagesInput = {
 
 export type TaskUpdateWithoutConversationMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -715,6 +740,7 @@ export type TaskUpdateWithoutConversationMessagesInput = {
 
 export type TaskUncheckedUpdateWithoutConversationMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -732,6 +758,7 @@ export type TaskUncheckedUpdateWithoutConversationMessagesInput = {
 
 export type TaskCreateWithoutTaskErrorsInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -749,6 +776,7 @@ export type TaskCreateWithoutTaskErrorsInput = {
 
 export type TaskUncheckedCreateWithoutTaskErrorsInput = {
   id?: string
+  taskInput: string
   status?: $Enums.TaskStatus
   createdAt: Date | string
   completedAt?: Date | string | null
@@ -782,6 +810,7 @@ export type TaskUpdateToOneWithWhereWithoutTaskErrorsInput = {
 
 export type TaskUpdateWithoutTaskErrorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -799,6 +828,7 @@ export type TaskUpdateWithoutTaskErrorsInput = {
 
 export type TaskUncheckedUpdateWithoutTaskErrorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskInput?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -856,6 +886,7 @@ export type TaskCountOutputTypeCountTaskErrorsArgs<ExtArgs extends runtime.Types
 
 export type TaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  taskInput?: boolean
   status?: boolean
   createdAt?: boolean
   completedAt?: boolean
@@ -875,6 +906,7 @@ export type TaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 
 export type TaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  taskInput?: boolean
   status?: boolean
   createdAt?: boolean
   completedAt?: boolean
@@ -891,6 +923,7 @@ export type TaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type TaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  taskInput?: boolean
   status?: boolean
   createdAt?: boolean
   completedAt?: boolean
@@ -907,6 +940,7 @@ export type TaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type TaskSelectScalar = {
   id?: boolean
+  taskInput?: boolean
   status?: boolean
   createdAt?: boolean
   completedAt?: boolean
@@ -921,7 +955,7 @@ export type TaskSelectScalar = {
   contextTokens?: boolean
 }
 
-export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "createdAt" | "completedAt" | "abortedAt" | "consecutiveMistakeCount" | "consecutiveMistakeLimit" | "totalTokensIn" | "totalTokensOut" | "totalCacheWrites" | "totalCacheReads" | "totalCost" | "contextTokens", ExtArgs["result"]["task"]>
+export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "taskInput" | "status" | "createdAt" | "completedAt" | "abortedAt" | "consecutiveMistakeCount" | "consecutiveMistakeLimit" | "totalTokensIn" | "totalTokensOut" | "totalCacheWrites" | "totalCacheReads" | "totalCost" | "contextTokens", ExtArgs["result"]["task"]>
 export type TaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   conversationMessages?: boolean | Prisma.Task$conversationMessagesArgs<ExtArgs>
   taskErrors?: boolean | Prisma.Task$taskErrorsArgs<ExtArgs>
@@ -938,6 +972,7 @@ export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    taskInput: string
     status: $Enums.TaskStatus
     createdAt: Date
     completedAt: Date | null
@@ -1376,6 +1411,7 @@ export interface Prisma__TaskClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface TaskFieldRefs {
   readonly id: Prisma.FieldRef<"Task", 'String'>
+  readonly taskInput: Prisma.FieldRef<"Task", 'String'>
   readonly status: Prisma.FieldRef<"Task", 'TaskStatus'>
   readonly createdAt: Prisma.FieldRef<"Task", 'DateTime'>
   readonly completedAt: Prisma.FieldRef<"Task", 'DateTime'>

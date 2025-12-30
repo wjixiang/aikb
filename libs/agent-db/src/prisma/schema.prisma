@@ -8,8 +8,9 @@ datasource db {
 }
 
 model Task {
-  id     String     @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  status TaskStatus @default(idle)
+  id        String     @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskInput String
+  status    TaskStatus @default(idle)
 
   createdAt   DateTime
   completedAt DateTime?

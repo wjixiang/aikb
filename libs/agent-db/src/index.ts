@@ -1,2 +1,3 @@
 import { prisma, AgentDBPrismaService } from './prisma';
-export { prisma, AgentDBPrismaService };
+import { AgentDBModule } from './agent-db.module';
+export { prisma, AgentDBPrismaService, AgentDBModule };
