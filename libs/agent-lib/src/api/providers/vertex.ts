@@ -5,17 +5,16 @@ import {
   vertexModels,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 
 import { getModelParams } from '../transform/model-params';
 
 import { GeminiHandler } from './gemini';
-import { SingleCompletionHandler } from '../index';
+import { SingleCompletionHandler } from '../types';
 
 export class VertexHandler
   extends GeminiHandler
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   constructor(options: ApiHandlerOptions) {
     super({ ...options, isVertex: true });
   }

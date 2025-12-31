@@ -73,7 +73,7 @@ describe('IOIntelligenceHandler', () => {
   let mockOptions: ApiHandlerOptions;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockCreate.mockClear();
     mockOptions = {
       ioIntelligenceApiKey: 'test-api-key',
       apiModelId: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
@@ -112,7 +112,7 @@ describe('IOIntelligenceHandler', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.doUnmock('openai');
   });
 
   it('should create OpenAI client with correct configuration', () => {

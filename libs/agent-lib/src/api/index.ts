@@ -15,135 +15,16 @@ import {
 
 import { ApiStream } from './transform/stream';
 
-// Constants and functions moved from agent-lllm-shared/api
-export const DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS = 16_384;
-export const DEFAULT_HYBRID_REASONING_MODEL_THINKING_TOKENS = 8_192;
-export const GEMINI_25_PRO_MIN_THINKING_TOKENS = 128;
+// Re-export constants and functions from their new locations to maintain backward compatibility
+export {
+  DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS,
+  DEFAULT_HYBRID_REASONING_MODEL_THINKING_TOKENS,
+  GEMINI_25_PRO_MIN_THINKING_TOKENS,
+  shouldUseReasoningBudget,
+  shouldUseReasoningEffort,
+} from './utils/reasoning-budget';
 
-export const shouldUseReasoningBudget = ({
-  model,
-  settings,
-}: {
-  model: ModelInfo;
-  settings?: ProviderSettings;
-}): boolean =>
-  !!model.requiredReasoningBudget ||
-  (!!model.supportsReasoningBudget && !!settings?.enableReasoningEffort);
-
-export const shouldUseReasoningEffort = ({
-  model,
-  settings,
-}: {
-  model: ModelInfo;
-  settings?: ProviderSettings;
-}): boolean => {
-  // Explicit off switch
-  if (settings?.enableReasoningEffort === false) return false;
-
-  // Selected effort from settings or model default
-  const selectedEffort = (settings?.reasoningEffort ??
-    (model as any).reasoningEffort) as
-    | 'disable'
-    | 'none'
-    | 'minimal'
-    | 'low'
-    | 'medium'
-    | 'high'
-    | undefined;
-
-  // "disable" explicitly omits reasoning
-  if (selectedEffort === 'disable') return false;
-
-  const cap = model.supportsReasoningEffort as unknown;
-
-  // Capability array: use only if selected is included (treat "none"/"minimal" as valid)
-  if (Array.isArray(cap)) {
-    return (
-      !!selectedEffort &&
-      (cap as ReadonlyArray<string>).includes(selectedEffort as string)
-    );
-  }
-
-  // Boolean capability: true → require a selected effort
-  if (model.supportsReasoningEffort === true) {
-    return !!selectedEffort;
-  }
-
-  // Not explicitly supported: only allow when the model itself defines a default effort
-  // Ignore settings-only selections when capability is absent/false
-  const modelDefaultEffort = (model as any).reasoningEffort as
-    | 'none'
-    | 'minimal'
-    | 'low'
-    | 'medium'
-    | 'high'
-    | undefined;
-  return !!modelDefaultEffort;
-};
-
-export const getModelMaxOutputTokens = ({
-  modelId,
-  model,
-  settings,
-  format,
-}: {
-  modelId: string;
-  model: ModelInfo;
-  settings?: ProviderSettings;
-  format?: 'anthropic' | 'openai' | 'gemini' | 'openrouter';
-}): number | undefined => {
-  // Check for Claude Code specific max output tokens setting
-  if (settings?.apiProvider === 'claude-code') {
-    return (
-      settings.claudeCodeMaxOutputTokens ||
-      CLAUDE_CODE_DEFAULT_MAX_OUTPUT_TOKENS
-    );
-  }
-
-  if (shouldUseReasoningBudget({ model, settings })) {
-    return (
-      settings?.modelMaxTokens || DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS
-    );
-  }
-
-  const isAnthropicContext =
-    modelId.includes('claude') ||
-    format === 'anthropic' ||
-    (format === 'openrouter' && modelId.startsWith('anthropic/'));
-
-  // For "Hybrid" reasoning models, discard the model's actual maxTokens for Anthropic contexts
-  if (model.supportsReasoningBudget && isAnthropicContext) {
-    return ANTHROPIC_DEFAULT_MAX_TOKENS;
-  }
-
-  // For Anthropic contexts, always ensure a maxTokens value is set
-  if (isAnthropicContext && (!model.maxTokens || model.maxTokens === 0)) {
-    return ANTHROPIC_DEFAULT_MAX_TOKENS;
-  }
-
-  // If model has explicit maxTokens, clamp it to 20% of context window
-  // Exception: GPT-5 models should use their exact configured max output tokens
-  if (model.maxTokens) {
-    // Check if this is a GPT-5 model (case-insensitive)
-    const isGpt5Model = modelId.toLowerCase().includes('gpt-5');
-
-    // GPT-5 models bypass the 20% cap and use their full configured max tokens
-    if (isGpt5Model) {
-      return model.maxTokens;
-    }
-
-    // All other models are clamped to 20% of context window
-    return Math.min(model.maxTokens, Math.ceil(model.contextWindow * 0.2));
-  }
-
-  // For non-Anthropic formats without explicit maxTokens, return undefined
-  if (format) {
-    return undefined;
-  }
-
-  // Default fallback
-  return ANTHROPIC_DEFAULT_MAX_TOKENS;
-};
+export { getModelMaxOutputTokens } from './utils/model-max-tokens';
 
 export type {
   ApiStream,
@@ -160,100 +41,54 @@ export type {
   ApiStreamError,
 } from './transform/stream';
 
+
+// Import all handlers from providers index to avoid circular dependency
 import {
-  GlamaHandler,
+  OpenAiHandler,
+  NativeOllamaHandler,
   AnthropicHandler,
+  BasetenHandler,
   AwsBedrockHandler,
   CerebrasHandler,
-  OpenRouterHandler,
-  VertexHandler,
-  OpenAiHandler,
-  LmStudioHandler,
-  GeminiHandler,
-  OpenAiNativeHandler,
-  DeepSeekHandler,
-  MoonshotHandler,
-  MistralHandler,
-  UnboundHandler,
-  RequestyHandler,
-  HumanRelayHandler,
+  ChutesHandler,
+  DeepInfraHandler,
   FakeAIHandler,
-  XAIHandler,
+  FeatherlessHandler,
+  FireworksHandler,
+  GeminiHandler,
+  GlamaHandler,
   GroqHandler,
   HuggingFaceHandler,
-  ChutesHandler,
-  LiteLLMHandler,
-  QwenCodeHandler,
-  SambaNovaHandler,
+  HumanRelayHandler,
   IOIntelligenceHandler,
-  DoubaoHandler,
-  ZAiHandler,
-  FireworksHandler,
-  FeatherlessHandler,
-  VercelAiGatewayHandler,
-  DeepInfraHandler,
+  LiteLLMHandler,
+  LmStudioHandler,
   MiniMaxHandler,
-  BasetenHandler,
-} from './providers';
-import { NativeOllamaHandler } from './providers/native-ollama';
+  MistralHandler,
+  MoonshotHandler,
+  OpenAiNativeHandler,
+  OpenRouterHandler,
+  QwenCodeHandler,
+  RequestyHandler,
+  SambaNovaHandler,
+  UnboundHandler,
+  VercelAiGatewayHandler,
+  XAIHandler,
+  ZAiHandler,
+} from './providers/index';
 
-export interface SingleCompletionHandler {
-  completePrompt(prompt: string): Promise<string>;
-}
+export type {
+  SingleCompletionHandler,
+  ApiHandlerCreateMessageMetadata,
+} from './types';
 
-export interface ApiHandlerCreateMessageMetadata {
-  /**
-   * Task ID used for tracking and provider-specific features:
-   * - DeepInfra: Used as prompt_cache_key for caching
-   * - Roo: Sent as X-Roo-Task-ID header
-   * - Requesty: Sent as trace_id
-   * - Unbound: Sent in unbound_metadata
-   */
-  taskId: string;
-  /**
-   * Current mode slug for provider-specific tracking:
-   * - Requesty: Sent in extra metadata
-   * - Unbound: Sent in unbound_metadata
-   */
-  mode?: string;
-  suppressPreviousResponseId?: boolean;
-  /**
-   * Controls whether the response should be stored for 30 days in OpenAI's Responses API.
-   * When true (default), responses are stored and can be referenced in future requests
-   * using the previous_response_id for efficient conversation continuity.
-   * Set to false to opt out of response storage for privacy or compliance reasons.
-   * @default true
-   */
-  store?: boolean;
-  /**
-   * Optional array of tool definitions to pass to the model.
-   * For OpenAI-compatible providers, these are ChatCompletionTool definitions.
-   */
-  tools?: OpenAI.Chat.ChatCompletionTool[];
-  /**
-   * Controls which (if any) tool is called by the model.
-   * Can be "none", "auto", "required", or a specific tool choice.
-   */
-  tool_choice?: OpenAI.Chat.ChatCompletionCreateParams['tool_choice'];
-  /**
-   * The tool protocol being used (XML or Native).
-   * Used by providers to determine whether to include native tool definitions.
-   */
-  toolProtocol?: ToolProtocol;
-  /**
-   * Controls whether the model can return multiple tool calls in a single response.
-   * When true, parallel tool calls are enabled (OpenAI's parallel_tool_calls=true).
-   * When false (default), only one tool call is returned per response.
-   * Only applies when toolProtocol is "native".
-   */
-  parallelToolCalls?: boolean;
-}
+
 
 export interface ApiHandler {
   createMessage(
     systemPrompt: string,
     messages: Anthropic.Messages.MessageParam[],
-    metadata?: ApiHandlerCreateMessageMetadata,
+    // metadata?: ApiHandlerCreateMessageMetadata,
   ): ApiStream;
 
   getModel(): { id: string; info: ModelInfo };
@@ -293,10 +128,10 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
       return new GeminiHandler(options);
     case 'openai-native':
       return new OpenAiNativeHandler(options);
-    case 'deepseek':
-      return new DeepSeekHandler(options);
-    case 'doubao':
-      return new DoubaoHandler(options);
+    // case 'deepseek':
+    //   return new DeepSeekHandler(options);
+    // case 'doubao':
+    //   return new DoubaoHandler(options);
     case 'qwen-code':
       return new QwenCodeHandler(options);
     case 'moonshot':

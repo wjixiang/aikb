@@ -11,18 +11,30 @@ import {
 
 import { SambaNovaHandler } from '../sambanova';
 
-const mockCreate = vi.fn();
+// Use vi.hoisted to properly handle the mock initialization
+const { mockCreate, mockOpenAI } = vi.hoisted(() => {
+  const mockCreate = vi.fn();
+  const mockOpenAI = vi.fn();
+  return { mockCreate, mockOpenAI };
+});
 
 vitest.mock('openai', () => {
-  function MockOpenAI(options?: any) {
+  // Create a proper constructor function using the hoisted mock
+  function MockOpenAI(this: any, options: any) {
+    // Track the call to the constructor
+    mockOpenAI(options);
     return {
-      chat: { completions: { create: mockCreate } },
+      chat: {
+        completions: {
+          create: mockCreate,
+        },
+      },
     };
   }
 
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation(MockOpenAI),
+    default: MockOpenAI,
   };
 });
 
@@ -30,16 +42,20 @@ describe('SambaNovaHandler', () => {
   let handler: SambaNovaHandler;
 
   beforeEach(() => {
-    vitest.clearAllMocks();
+    mockCreate.mockClear();
     // mockCreate is already defined above
     handler = new SambaNovaHandler({
       sambaNovaApiKey: 'test-sambanova-api-key',
     });
   });
 
+  afterEach(() => {
+    vi.doUnmock('openai');
+  });
+
   it('should use the correct SambaNova base URL', () => {
     new SambaNovaHandler({ sambaNovaApiKey: 'test-sambanova-api-key' });
-    expect(OpenAI).toHaveBeenCalledWith(
+    expect(mockOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: 'https://api.sambanova.ai/v1' }),
     );
   });
@@ -47,7 +63,7 @@ describe('SambaNovaHandler', () => {
   it('should use the provided API key', () => {
     const sambaNovaApiKey = 'test-sambanova-api-key';
     new SambaNovaHandler({ sambaNovaApiKey });
-    expect(OpenAI).toHaveBeenCalledWith(
+    expect(mockOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ apiKey: sambaNovaApiKey }),
     );
   });

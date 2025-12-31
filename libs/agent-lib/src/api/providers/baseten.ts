@@ -4,7 +4,7 @@ import {
   basetenModels,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 import { BaseOpenAiCompatibleProvider } from './base-openai-compatible-provider';
 
 export class BasetenHandler extends BaseOpenAiCompatibleProvider<BasetenModelId> {

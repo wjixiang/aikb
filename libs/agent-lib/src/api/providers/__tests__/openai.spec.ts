@@ -1,7 +1,7 @@
 // npx vitest run api/providers/__tests__/openai.spec.ts
 
 import { OpenAiHandler, getOpenAiModels } from '../openai';
-import { ApiHandlerOptions } from '../../shared/api';
+import { ApiHandlerOptions } from '../../../shared/api';
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { openAiModelInfoSaneDefaults } from '../../../types';
@@ -102,6 +102,7 @@ describe('OpenAiHandler', () => {
   let mockOptions: ApiHandlerOptions;
 
   beforeEach(() => {
+    vi.resetModules();
     mockOptions = {
       openAiApiKey: 'test-api-key',
       openAiModelId: 'gpt-4',
@@ -109,6 +110,10 @@ describe('OpenAiHandler', () => {
     };
     handler = new OpenAiHandler(mockOptions);
     mockCreate.mockClear();
+  });
+
+  afterEach(() => {
+    vi.doUnmock('openai');
   });
 
   describe('constructor', () => {

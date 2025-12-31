@@ -1,10 +1,11 @@
 import { deepSeekModels, deepSeekDefaultModelId } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 
 import type { ApiStreamUsageChunk } from '../transform/stream';
 import { getModelParams } from '../transform/model-params';
 
+// Import OpenAiHandler directly from openai.ts to avoid circular dependency
 import { OpenAiHandler } from './openai';
 
 export class DeepSeekHandler extends OpenAiHandler {
@@ -20,27 +21,31 @@ export class DeepSeekHandler extends OpenAiHandler {
   }
 
   override getModel() {
-    const id = this.options.apiModelId ?? deepSeekDefaultModelId;
-    const info =
-      deepSeekModels[id as keyof typeof deepSeekModels] ||
-      deepSeekModels[deepSeekDefaultModelId];
+    const modelId = this.options.openAiModelId ?? deepSeekDefaultModelId;
+    const modelInfo = this.options.openAiCustomModelInfo ??
+      (deepSeekModels as any)[modelId] ??
+      (deepSeekModels as any)[deepSeekDefaultModelId];
+
     const params = getModelParams({
       format: 'openai',
-      modelId: id,
-      model: info,
+      modelId,
+      model: modelInfo,
       settings: this.options,
     });
-    return { id, info, ...params };
+
+    return { id: modelId, info: modelInfo, ...params };
   }
 
-  // Override to handle DeepSeek's usage metrics, including caching.
-  protected override processUsageMetrics(usage: any): ApiStreamUsageChunk {
+  protected override processUsageMetrics(
+    usage: any,
+    _modelInfo?: any,
+  ): ApiStreamUsageChunk {
     return {
       type: 'usage',
       inputTokens: usage?.prompt_tokens || 0,
       outputTokens: usage?.completion_tokens || 0,
-      cacheWriteTokens: usage?.prompt_tokens_details?.cache_miss_tokens,
-      cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens,
+      cacheWriteTokens: usage?.prompt_tokens_details?.cache_miss_tokens || undefined,
+      cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens || undefined,
     };
   }
 }

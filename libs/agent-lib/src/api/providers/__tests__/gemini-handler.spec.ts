@@ -4,6 +4,10 @@ import { GeminiHandler } from '../gemini';
 import type { ApiHandlerOptions } from '../../shared/api';
 
 describe('GeminiHandler backend support', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('passes tools for URL context and grounding in config', async () => {
     const options = {
       apiProvider: 'gemini',
@@ -11,7 +15,7 @@ describe('GeminiHandler backend support', () => {
       enableGrounding: true,
     } as ApiHandlerOptions;
     const handler = new GeminiHandler(options);
-    const stub = vi.fn().mockReturnValue((async function* () {})());
+    const stub = vi.fn().mockReturnValue((async function* () { })());
     // @ts-ignore access private client
     handler['client'].models.generateContentStream = stub;
     await handler.createMessage('instr', [] as any).next();

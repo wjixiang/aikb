@@ -1,33 +1,69 @@
-export { AnthropicHandler } from './anthropic';
-export { AwsBedrockHandler } from './bedrock';
-export { CerebrasHandler } from './cerebras';
-export { ChutesHandler } from './chutes';
-export { DeepSeekHandler } from './deepseek';
-export { DoubaoHandler } from './doubao';
-export { MoonshotHandler } from './moonshot';
-export { FakeAIHandler } from './fake-ai';
-export { GeminiHandler } from './gemini';
-export { GlamaHandler } from './glama';
-export { GroqHandler } from './groq';
-export { HuggingFaceHandler } from './huggingface';
-export { HumanRelayHandler } from './human-relay';
-export { IOIntelligenceHandler } from './io-intelligence';
-export { LiteLLMHandler } from './lite-llm';
-export { LmStudioHandler } from './lm-studio';
-export { MistralHandler } from './mistral';
-export { OpenAiNativeHandler } from './openai-native';
-export { OpenAiHandler } from './openai';
-export { OpenRouterHandler } from './openrouter';
-export { QwenCodeHandler } from './qwen-code';
-export { RequestyHandler } from './requesty';
-export { SambaNovaHandler } from './sambanova';
-export { UnboundHandler } from './unbound';
-export { VertexHandler } from './vertex';
-export { XAIHandler } from './xai';
-export { ZAiHandler } from './zai';
-export { FireworksHandler } from './fireworks';
-export { FeatherlessHandler } from './featherless';
-export { VercelAiGatewayHandler } from './vercel-ai-gateway';
-export { DeepInfraHandler } from './deepinfra';
-export { MiniMaxHandler } from './minimax';
-export { BasetenHandler } from './baseten';
+// Import handlers first to ensure they are evaluated before re-exporting
+import { OpenAiHandler } from './openai';
+import { AnthropicHandler } from './anthropic';
+import { AwsBedrockHandler } from './bedrock';
+import { BasetenHandler } from './baseten';
+import { CerebrasHandler } from './cerebras';
+import { ChutesHandler } from './chutes';
+import { DeepInfraHandler } from './deepinfra';
+import { FakeAIHandler } from './fake-ai';
+import { FeatherlessHandler } from './featherless';
+import { FireworksHandler } from './fireworks';
+import { GlamaHandler } from './glama';
+import { GroqHandler } from './groq';
+import { HuggingFaceHandler } from './huggingface';
+import { HumanRelayHandler } from './human-relay';
+import { IOIntelligenceHandler } from './io-intelligence';
+import { LiteLLMHandler } from './lite-llm';
+import { LmStudioHandler } from './lm-studio';
+import { MiniMaxHandler } from './minimax';
+import { NativeOllamaHandler } from './native-ollama';
+import { MistralHandler } from './mistral';
+import { OpenAiNativeHandler } from './openai-native';
+import { OpenRouterHandler } from './openrouter';
+import { QwenCodeHandler } from './qwen-code';
+import { RequestyHandler } from './requesty';
+import { SambaNovaHandler } from './sambanova';
+import { UnboundHandler } from './unbound';
+import { VercelAiGatewayHandler } from './vercel-ai-gateway';
+import { XAIHandler } from './xai';
+import { ZAiHandler } from './zai';
+
+// Import these last to ensure their dependencies are loaded first
+import { GeminiHandler } from './gemini';
+
+// Re-export all handlers
+export { OpenAiHandler };
+export { AnthropicHandler };
+export { AwsBedrockHandler };
+export { BasetenHandler };
+export { CerebrasHandler };
+export { ChutesHandler };
+export { DeepInfraHandler };
+export { FakeAIHandler };
+export { FeatherlessHandler };
+export { FireworksHandler };
+export { GlamaHandler };
+export { GroqHandler };
+export { HuggingFaceHandler };
+export { HumanRelayHandler };
+export { IOIntelligenceHandler };
+export { LiteLLMHandler };
+export { LmStudioHandler };
+export { MiniMaxHandler };
+export { NativeOllamaHandler };
+export { MistralHandler };
+export { OpenAiNativeHandler };
+export { OpenRouterHandler };
+export { QwenCodeHandler };
+export { RequestyHandler };
+export { SambaNovaHandler };
+export { UnboundHandler };
+export { VercelAiGatewayHandler };
+export { XAIHandler };
+export { ZAiHandler };
+export { GeminiHandler };
+
+// NOTE: VertexHandler, DeepSeekHandler, DoubaoHandler and MoonshotHandler are not
+// exported here to avoid circular dependency issues. They can be imported directly
+// from their respective files when needed.

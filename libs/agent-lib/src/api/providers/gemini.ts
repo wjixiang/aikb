@@ -6,6 +6,8 @@ import {
   type GenerateContentConfig,
   type GroundingMetadata,
   FunctionCallingConfigMode,
+  type ThinkingConfig,
+  ThinkingLevel,
 } from '@google/genai';
 import type { JWTInput } from 'google-auth-library';
 
@@ -16,7 +18,7 @@ import {
   geminiModels,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 import { safeJsonParse } from '../../shared/safeJsonParse';
 
 import { convertAnthropicMessageToGemini } from '../transform/gemini-format';
@@ -27,12 +29,48 @@ import { getModelParams } from '../transform/model-params';
 import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
-} from '../index';
+} from '../types';
 import { BaseProvider } from './base-provider';
+import type { GeminiReasoningParams } from '../transform/reasoning';
 
 type GeminiHandlerOptions = ApiHandlerOptions & {
   isVertex?: boolean;
 };
+
+/**
+ * Converts GeminiReasoningParams to Google GenAI ThinkingConfig
+ */
+function convertGeminiReasoningToThinkingConfig(
+  reasoningParams: GeminiReasoningParams | undefined
+): ThinkingConfig | undefined {
+  if (!reasoningParams) {
+    return undefined;
+  }
+
+  const thinkingConfig: ThinkingConfig = {};
+
+  if (reasoningParams.includeThoughts !== undefined) {
+    thinkingConfig.includeThoughts = reasoningParams.includeThoughts;
+  }
+
+  if (reasoningParams.thinkingBudget !== undefined) {
+    thinkingConfig.thinkingBudget = reasoningParams.thinkingBudget;
+  }
+
+  if (reasoningParams.thinkingLevel !== undefined) {
+    // Convert lowercase string to enum value
+    switch (reasoningParams.thinkingLevel) {
+      case 'low':
+        thinkingConfig.thinkingLevel = ThinkingLevel.LOW;
+        break;
+      case 'high':
+        thinkingConfig.thinkingLevel = ThinkingLevel.HIGH;
+        break;
+    }
+  }
+
+  return thinkingConfig;
+}
 
 export class GeminiHandler
   extends BaseProvider
@@ -185,7 +223,7 @@ export class GeminiHandler
       httpOptions: this.options.googleGeminiBaseUrl
         ? { baseUrl: this.options.googleGeminiBaseUrl }
         : undefined,
-      thinkingConfig,
+      thinkingConfig: convertGeminiReasoningToThinkingConfig(thinkingConfig),
       maxOutputTokens,
       temperature: temperatureConfig,
       ...(tools.length > 0 ? { tools } : {}),
@@ -561,7 +599,7 @@ export class GeminiHandler
     };
 
     if (cacheReadTokens > 0) {
-      trace.cacheRead = {
+      trace['cacheRead'] = {
         price: cacheReadsPrice,
         tokens: cacheReadTokens,
         cost: cacheReadCost,

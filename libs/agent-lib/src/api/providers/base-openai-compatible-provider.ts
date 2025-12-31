@@ -4,9 +4,8 @@ import OpenAI from 'openai';
 import type { ModelInfo } from '../../types';
 
 import {
-  type ApiHandlerOptions,
-  getModelMaxOutputTokens,
-} from '../index';
+  type ApiHandlerOptions
+} from '../../shared/api';
 import { XmlMatcher } from '../../utils/xml-matcher';
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';
@@ -14,7 +13,8 @@ import { convertToOpenAiMessages } from '../transform/openai-format';
 import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
-} from '../index';
+} from '../types';
+import { getModelMaxOutputTokens } from '../utils/model-max-tokens';
 import { DEFAULT_HEADERS } from './constants';
 import { BaseProvider } from './base-provider';
 import { handleOpenAIError } from './utils/openai-error-handler';

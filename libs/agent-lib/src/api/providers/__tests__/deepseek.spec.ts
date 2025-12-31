@@ -80,7 +80,7 @@ import type { Anthropic } from '@anthropic-ai/sdk';
 
 import { deepSeekDefaultModelId } from '../../../types';
 
-import type { ApiHandlerOptions } from '../../shared/api';
+import type { ApiHandlerOptions } from '../../../shared/api';
 
 import { DeepSeekHandler } from '../deepseek';
 
@@ -89,13 +89,17 @@ describe('DeepSeekHandler', () => {
   let mockOptions: ApiHandlerOptions;
 
   beforeEach(() => {
+    mockCreate.mockClear();
     mockOptions = {
-      deepSeekApiKey: 'test-api-key',
       apiModelId: 'deepseek-chat',
+      deepSeekApiKey: 'test-api-key',
       deepSeekBaseUrl: 'https://api.deepseek.com',
     };
     handler = new DeepSeekHandler(mockOptions);
-    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.doUnmock('openai');
   });
 
   describe('constructor', () => {

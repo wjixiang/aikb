@@ -47,7 +47,7 @@ describe('FireworksHandler', () => {
   let handler: FireworksHandler;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockCreate.mockClear();
     // Set up default mock implementation
     mockCreate.mockImplementation(async () => ({
       [Symbol.asyncIterator]: async function* () {
@@ -79,7 +79,7 @@ describe('FireworksHandler', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.doUnmock('openai');
   });
 
   it('should use the correct Fireworks base URL', () => {

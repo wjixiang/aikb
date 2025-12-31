@@ -18,25 +18,35 @@ import {
 
 import { MiniMaxHandler } from '../minimax';
 
-vitest.mock('@anthropic-ai/sdk', () => {
+// Use vi.hoisted to properly handle mock initialization
+const { mockCreate, mockAnthropicConstructor } = vi.hoisted(() => {
   const mockCreate = vi.fn();
+  const mockAnthropicConstructor = vi.fn();
+  return { mockCreate, mockAnthropicConstructor };
+});
+
+vitest.mock('@anthropic-ai/sdk', () => {
   return {
-    Anthropic: vitest.fn(() => ({
-      messages: {
+    Anthropic: class MockAnthropic {
+      messages = {
         create: mockCreate,
-      },
-    })),
+      };
+
+      constructor(config) {
+        mockAnthropicConstructor(config);
+        Object.assign(this, config);
+      }
+    },
   };
 });
 
 describe('MiniMaxHandler', () => {
   let handler: MiniMaxHandler;
-  let mockCreate: any;
 
   beforeEach(() => {
     vitest.clearAllMocks();
-    const anthropicInstance = (Anthropic as unknown as any)();
-    mockCreate = anthropicInstance.messages.create;
+    mockCreate.mockClear();
+    mockAnthropicConstructor.mockClear();
   });
 
   describe('International MiniMax (default)', () => {
@@ -49,7 +59,7 @@ describe('MiniMaxHandler', () => {
 
     it('should use the correct international MiniMax base URL by default', () => {
       new MiniMaxHandler({ minimaxApiKey: 'test-minimax-api-key' });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.minimax.io/anthropic',
         }),
@@ -61,7 +71,7 @@ describe('MiniMaxHandler', () => {
         minimaxApiKey: 'test-minimax-api-key',
         minimaxBaseUrl: 'https://api.minimax.io/v1',
       });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.minimax.io/anthropic',
         }),
@@ -71,7 +81,7 @@ describe('MiniMaxHandler', () => {
     it('should use the provided API key', () => {
       const minimaxApiKey = 'test-minimax-api-key';
       new MiniMaxHandler({ minimaxApiKey });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({ apiKey: minimaxApiKey }),
       );
     });
@@ -139,7 +149,7 @@ describe('MiniMaxHandler', () => {
         minimaxApiKey: 'test-minimax-api-key',
         minimaxBaseUrl: 'https://api.minimaxi.com/v1',
       });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.minimaxi.com/anthropic',
         }),
@@ -151,7 +161,7 @@ describe('MiniMaxHandler', () => {
         minimaxApiKey: 'test-minimax-api-key',
         minimaxBaseUrl: 'https://api.minimaxi.com/v1',
       });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.minimaxi.com/anthropic',
         }),
@@ -164,7 +174,7 @@ describe('MiniMaxHandler', () => {
         minimaxApiKey,
         minimaxBaseUrl: 'https://api.minimaxi.com/v1',
       });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({ apiKey: minimaxApiKey }),
       );
     });
@@ -181,7 +191,7 @@ describe('MiniMaxHandler', () => {
       const handlerDefault = new MiniMaxHandler({
         minimaxApiKey: 'test-minimax-api-key',
       });
-      expect(Anthropic).toHaveBeenCalledWith(
+      expect(mockAnthropicConstructor).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: 'https://api.minimax.io/anthropic',
         }),

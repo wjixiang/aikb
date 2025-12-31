@@ -5,7 +5,7 @@ import {
   type ModelInfo,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 
 import type { ApiStreamUsageChunk } from '../transform/stream';
 import { getModelParams } from '../transform/model-params';

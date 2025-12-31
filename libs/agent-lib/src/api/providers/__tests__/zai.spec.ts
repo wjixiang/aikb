@@ -24,15 +24,16 @@ const { mockCreate, mockOpenAI } = vi.hoisted(() => {
 
 // Mock the OpenAI module using the hoisted mocks
 vitest.mock('openai', () => {
-  class MockOpenAI {
-    constructor(options: any) {
-      mockOpenAI(options);
-      return {
-        chat: { completions: { create: mockCreate } },
-      };
-    }
-  }
-  return { default: MockOpenAI };
+  return {
+    default: class MockOpenAI {
+      chat = { completions: { create: mockCreate } };
+
+      constructor(options: any) {
+        mockOpenAI(options);
+        Object.assign(this, options);
+      }
+    },
+  };
 });
 
 // Import the mocked OpenAI
@@ -42,7 +43,10 @@ describe('ZAiHandler', () => {
   let handler: ZAiHandler;
   beforeEach(() => {
     mockCreate.mockClear();
-    vitest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.doUnmock('openai');
   });
 
   describe('International Z AI', () => {

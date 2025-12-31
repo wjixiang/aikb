@@ -6,6 +6,7 @@ import { type ModelInfo, geminiDefaultModelId } from '../../../types';
 
 import { t } from 'i18next';
 import { GeminiHandler } from '../gemini';
+import type { ApiStreamChunk } from '../../transform/stream';
 
 const GEMINI_MODEL_NAME = geminiDefaultModelId;
 
@@ -70,7 +71,7 @@ describe('GeminiHandler', () => {
       );
 
       const stream = handler.createMessage(systemPrompt, mockMessages);
-      const chunks = [];
+      const chunks: ApiStreamChunk[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);

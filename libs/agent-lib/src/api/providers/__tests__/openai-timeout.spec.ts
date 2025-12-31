@@ -1,7 +1,7 @@
 // npx vitest run api/providers/__tests__/openai-timeout.spec.ts
 
 import { OpenAiHandler } from '../openai';
-import { ApiHandlerOptions } from '../../shared/api';
+import { ApiHandlerOptions } from '../../../shared/api';
 
 // Mock the timeout config utility
 vitest.mock('../utils/timeout-config', () => ({
@@ -17,32 +17,36 @@ const mockAzureOpenAIConstructor = vi.fn();
 vitest.mock('openai', () => {
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation((config) => {
-      mockOpenAIConstructor(config);
-      return {
-        chat: {
-          completions: {
-            create: vi.fn(),
-          },
+    default: class MockOpenAI {
+      chat = {
+        completions: {
+          create: vi.fn(),
         },
       };
-    }),
-    AzureOpenAI: vi.fn().mockImplementation((config) => {
-      mockAzureOpenAIConstructor(config);
-      return {
-        chat: {
-          completions: {
-            create: vi.fn(),
-          },
+
+      constructor(config) {
+        mockOpenAIConstructor(config);
+        Object.assign(this, config);
+      }
+    },
+    AzureOpenAI: class MockAzureOpenAI {
+      chat = {
+        completions: {
+          create: vi.fn(),
         },
       };
-    }),
+
+      constructor(config) {
+        mockAzureOpenAIConstructor(config);
+        Object.assign(this, config);
+      }
+    },
   };
 });
 
 describe('OpenAiHandler timeout configuration', () => {
-  beforeEach(() => {
-    vitest.clearAllMocks();
+  afterEach(() => {
+    vi.doUnmock('openai');
   });
 
   it('should use default timeout for standard OpenAI', () => {

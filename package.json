@@ -300,6 +300,7 @@
     "@nx/vitest": "22.1.3",
     "@nx/web": "22.0.1",
     "@nx/webpack": "22.0.1",
+    "@nxlv/python": "^21.2.0",
     "@playwright/test": "^1.56.1",
     "@storybook/react": "10.0.6",
     "@storybook/react-vite": "10.0.6",

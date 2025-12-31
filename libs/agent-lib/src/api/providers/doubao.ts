@@ -1,5 +1,5 @@
 import { OpenAiHandler } from './openai';
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 import {
   DOUBAO_API_BASE_URL,
   doubaoDefaultModelId,
@@ -12,12 +12,12 @@ import { ApiStreamUsageChunk } from '../transform/stream';
 interface ChatCompletionMessageParam {
   role: 'system' | 'user' | 'assistant' | 'developer';
   content:
-    | string
-    | Array<{
-        type: 'text' | 'image_url';
-        text?: string;
-        image_url?: { url: string };
-      }>;
+  | string
+  | Array<{
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: { url: string };
+  }>;
 }
 
 interface ChatCompletionParams {

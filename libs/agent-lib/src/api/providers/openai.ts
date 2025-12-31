@@ -10,7 +10,7 @@ import {
   OPENAI_AZURE_AI_INFERENCE_PATH,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 
 import { XmlMatcher } from '../../utils/xml-matcher';
 
@@ -25,7 +25,7 @@ import { BaseProvider } from './base-provider';
 import type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
-} from '../index';
+} from '../types';
 import { getApiRequestTimeout } from './utils/timeout-config';
 import { handleOpenAIError } from './utils/openai-error-handler';
 
@@ -34,8 +34,7 @@ import { handleOpenAIError } from './utils/openai-error-handler';
 // compatible with the OpenAI API. We can also rename it to `OpenAIHandler`.
 export class OpenAiHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
   private client: OpenAI;
   private readonly providerName = 'OpenAI';
@@ -195,23 +194,23 @@ export class OpenAiHandler
       const isGrokXAI = this._isGrokXAI(this.options.openAiBaseUrl);
 
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-        {
-          model: modelId,
-          temperature:
-            this.options.modelTemperature ??
-            (deepseekReasoner ? DEEP_SEEK_DEFAULT_TEMPERATURE : 0),
-          messages: convertedMessages,
-          stream: true as const,
-          ...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
-          ...(reasoning && reasoning),
-          ...(metadata?.tools && {
-            tools: this.convertToolsForOpenAI(metadata.tools),
-          }),
-          ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-          ...(metadata?.toolProtocol === 'native' && {
-            parallel_tool_calls: metadata.parallelToolCalls ?? false,
-          }),
-        };
+      {
+        model: modelId,
+        temperature:
+          this.options.modelTemperature ??
+          (deepseekReasoner ? DEEP_SEEK_DEFAULT_TEMPERATURE : 0),
+        messages: convertedMessages,
+        stream: true as const,
+        ...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
+        ...(reasoning && reasoning),
+        ...(metadata?.tools && {
+          tools: this.convertToolsForOpenAI(metadata.tools),
+        }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+        ...(metadata?.toolProtocol === 'native' && {
+          parallel_tool_calls: metadata.parallelToolCalls ?? false,
+        }),
+      };
 
       // Add max_tokens if needed
       this.addMaxTokensIfNeeded(requestOptions, modelInfo);
@@ -279,24 +278,24 @@ export class OpenAiHandler
       }
     } else {
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-        {
-          model: modelId,
-          messages: deepseekReasoner
-            ? convertToR1Format([
-                { role: 'user', content: systemPrompt },
-                ...messages,
-              ])
-            : enabledLegacyFormat
-              ? [systemMessage, ...convertToSimpleMessages(messages)]
-              : [systemMessage, ...convertToOpenAiMessages(messages)],
-          ...(metadata?.tools && {
-            tools: this.convertToolsForOpenAI(metadata.tools),
-          }),
-          ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-          ...(metadata?.toolProtocol === 'native' && {
-            parallel_tool_calls: metadata.parallelToolCalls ?? false,
-          }),
-        };
+      {
+        model: modelId,
+        messages: deepseekReasoner
+          ? convertToR1Format([
+            { role: 'user', content: systemPrompt },
+            ...messages,
+          ])
+          : enabledLegacyFormat
+            ? [systemMessage, ...convertToSimpleMessages(messages)]
+            : [systemMessage, ...convertToOpenAiMessages(messages)],
+        ...(metadata?.tools && {
+          tools: this.convertToolsForOpenAI(metadata.tools),
+        }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+        ...(metadata?.toolProtocol === 'native' && {
+          parallel_tool_calls: metadata.parallelToolCalls ?? false,
+        }),
+      };
 
       // Add max_tokens if needed
       this.addMaxTokensIfNeeded(requestOptions, modelInfo);
@@ -372,10 +371,10 @@ export class OpenAiHandler
       const modelInfo = model.info;
 
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-        {
-          model: model.id,
-          messages: [{ role: 'user', content: prompt }],
-        };
+      {
+        model: model.id,
+        messages: [{ role: 'user', content: prompt }],
+      };
 
       // Add max_tokens if needed
       this.addMaxTokensIfNeeded(requestOptions, modelInfo);
@@ -417,31 +416,31 @@ export class OpenAiHandler
       const isGrokXAI = this._isGrokXAI(this.options.openAiBaseUrl);
 
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-        {
-          model: modelId,
-          messages: [
-            {
-              role: 'developer',
-              content: `Formatting re-enabled\n${systemPrompt}`,
-            },
-            ...convertToOpenAiMessages(messages),
-          ],
-          stream: true,
-          ...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
-          reasoning_effort: modelInfo.reasoningEffort as
-            | 'low'
-            | 'medium'
-            | 'high'
-            | undefined,
-          temperature: undefined,
-          ...(metadata?.tools && {
-            tools: this.convertToolsForOpenAI(metadata.tools),
-          }),
-          ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-          ...(metadata?.toolProtocol === 'native' && {
-            parallel_tool_calls: metadata.parallelToolCalls ?? false,
-          }),
-        };
+      {
+        model: modelId,
+        messages: [
+          {
+            role: 'developer',
+            content: `Formatting re-enabled\n${systemPrompt}`,
+          },
+          ...convertToOpenAiMessages(messages),
+        ],
+        stream: true,
+        ...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
+        reasoning_effort: modelInfo.reasoningEffort as
+          | 'low'
+          | 'medium'
+          | 'high'
+          | undefined,
+        temperature: undefined,
+        ...(metadata?.tools && {
+          tools: this.convertToolsForOpenAI(metadata.tools),
+        }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+        ...(metadata?.toolProtocol === 'native' && {
+          parallel_tool_calls: metadata.parallelToolCalls ?? false,
+        }),
+      };
 
       // O3 family models do not support the deprecated max_tokens parameter
       // but they do support max_completion_tokens (the modern OpenAI parameter)
@@ -463,29 +462,29 @@ export class OpenAiHandler
       yield* this.handleStreamResponse(stream);
     } else {
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-        {
-          model: modelId,
-          messages: [
-            {
-              role: 'developer',
-              content: `Formatting re-enabled\n${systemPrompt}`,
-            },
-            ...convertToOpenAiMessages(messages),
-          ],
-          reasoning_effort: modelInfo.reasoningEffort as
-            | 'low'
-            | 'medium'
-            | 'high'
-            | undefined,
-          temperature: undefined,
-          ...(metadata?.tools && {
-            tools: this.convertToolsForOpenAI(metadata.tools),
-          }),
-          ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-          ...(metadata?.toolProtocol === 'native' && {
-            parallel_tool_calls: metadata.parallelToolCalls ?? false,
-          }),
-        };
+      {
+        model: modelId,
+        messages: [
+          {
+            role: 'developer',
+            content: `Formatting re-enabled\n${systemPrompt}`,
+          },
+          ...convertToOpenAiMessages(messages),
+        ],
+        reasoning_effort: modelInfo.reasoningEffort as
+          | 'low'
+          | 'medium'
+          | 'high'
+          | undefined,
+        temperature: undefined,
+        ...(metadata?.tools && {
+          tools: this.convertToolsForOpenAI(metadata.tools),
+        }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+        ...(metadata?.toolProtocol === 'native' && {
+          parallel_tool_calls: metadata.parallelToolCalls ?? false,
+        }),
+      };
 
       // O3 family models do not support the deprecated max_tokens parameter
       // but they do support max_completion_tokens (the modern OpenAI parameter)

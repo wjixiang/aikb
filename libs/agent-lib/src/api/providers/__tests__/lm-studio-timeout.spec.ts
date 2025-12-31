@@ -15,16 +15,18 @@ const mockOpenAIConstructor = vi.fn();
 vitest.mock('openai', () => {
   return {
     __esModule: true,
-    default: vi.fn().mockImplementation((config) => {
-      mockOpenAIConstructor(config);
-      return {
-        chat: {
-          completions: {
-            create: vi.fn(),
-          },
+    default: class MockOpenAI {
+      chat = {
+        completions: {
+          create: vi.fn(),
         },
       };
-    }),
+
+      constructor(config) {
+        mockOpenAIConstructor(config);
+        Object.assign(this, config);
+      }
+    },
   };
 });
 
