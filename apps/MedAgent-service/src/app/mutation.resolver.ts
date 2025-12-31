@@ -1,4 +1,4 @@
-import { Resolver } from '@nestjs/graphql';
+import { Resolver, Mutation, Args } from '@nestjs/graphql';
 import { CreateTaskInput, IMutation, TaskInfo, TaskStatus } from '../graphql';
 import { TaskService } from 'agent-lib'
 
@@ -8,22 +8,29 @@ export class MutationResolver implements IMutation {
         private taskService: TaskService
     ) { }
 
-    async createTask(input: CreateTaskInput): Promise<TaskInfo> {
-        const task = await this.taskService.createTask(input.taskInput)
+    @Mutation('createTask')
+    async createTask(@Args('input') input: CreateTaskInput): Promise<TaskInfo> {
+        console.log('creating task', input)
+        try {
+            const task = await this.taskService.createTask(input.taskInput)
 
-        // Map lowercase status from agent-lib to uppercase GraphQL enum
-        const statusMap: Record<string, TaskStatus> = {
-            'idle': TaskStatus.IDLE,
-            'running': TaskStatus.RUNNING,
-            'completed': TaskStatus.COMPLETED,
-            'aborted': TaskStatus.ABORTED
-        };
+            // Map lowercase status from agent-lib to uppercase GraphQL enum
+            const statusMap: Record<string, TaskStatus> = {
+                'idle': TaskStatus.IDLE,
+                'running': TaskStatus.RUNNING,
+                'completed': TaskStatus.COMPLETED,
+                'aborted': TaskStatus.ABORTED
+            };
 
-        return {
-            id: task.taskId,
-            taskInput: task.taskInput,
-            taskStatus: statusMap[task.status] || TaskStatus.IDLE,
-            createdAt: new Date().toISOString()
+            return {
+                id: task.taskId,
+                taskInput: task.taskInput,
+                taskStatus: statusMap[task.status] || TaskStatus.IDLE,
+                createdAt: new Date().toISOString()
+            }
+        } catch (error) {
+            console.error('Error creating task:', error)
+            throw new Error(`Failed to create task: ${error instanceof Error ? error.message : String(error)}`)
         }
     }
 }

@@ -84,7 +84,7 @@ export async function getOllamaModels(
       { headers },
     );
     const parsedResponse = OllamaModelsResponseSchema.safeParse(response.data);
-    let modelInfoPromises = [];
+    let modelInfoPromises: Promise<void>[] = [];
 
     if (parsedResponse.success) {
       for (const ollamaModel of parsedResponse.data.models) {
@@ -110,7 +110,7 @@ export async function getOllamaModels(
       );
     }
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
       console.warn(`Failed connecting to Ollama at ${baseUrl}`);
     } else {
       console.error(

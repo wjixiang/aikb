@@ -1,7 +1,7 @@
 type Query {
   listTaskInfo: [TaskInfo!]!
   getTaskInfo(taskId: ID!): TaskInfo!
-  getTaskMessages(taskId: ID!): [ApiMessag!]!
+  getTaskMessages(taskId: ID!): [ApiMessage!]!
 }
 
 type Mutation {

@@ -9,7 +9,7 @@ import {
   CacheStrategyConfig,
   CacheResult,
   CachePointPlacement,
-} from '../types';
+} from './types';
 
 export abstract class CacheStrategy {
   /**
@@ -75,15 +75,15 @@ export abstract class CacheStrategy {
 
       const content: ContentBlock[] = Array.isArray(message.content)
         ? message.content.map((block) => {
-            if (typeof block === 'string') {
-              return { text: block } as unknown as ContentBlock;
-            }
-            if ('text' in block) {
-              return { text: block.text } as unknown as ContentBlock;
-            }
-            // Handle other content types if needed
-            return { text: '[Unsupported Content]' } as unknown as ContentBlock;
-          })
+          if (typeof block === 'string') {
+            return { text: block } as unknown as ContentBlock;
+          }
+          if ('text' in block) {
+            return { text: block.text } as unknown as ContentBlock;
+          }
+          // Handle other content types if needed
+          return { text: '[Unsupported Content]' } as unknown as ContentBlock;
+        })
         : [{ text: message.content } as unknown as ContentBlock];
 
       return {

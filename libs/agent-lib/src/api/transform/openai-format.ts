@@ -57,7 +57,12 @@ export function convertToOpenAiMessages(
                     toolResultImages.push(part);
                     return '(see following user message for image)';
                   }
-                  return part.text;
+                  // Handle text, document, and search result blocks
+                  if ('text' in part) {
+                    return part.text;
+                  }
+                  // Handle other block types that might not have text
+                  return JSON.stringify(part);
                 })
                 .join('\n') ?? '';
           }
@@ -90,10 +95,20 @@ export function convertToOpenAiMessages(
             role: 'user',
             content: nonToolMessages.map((part) => {
               if (part.type === 'image') {
+                // Check if the image source is Base64ImageSource
+                if ('media_type' in part.source && 'data' in part.source) {
+                  return {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${part.source.media_type};base64,${part.source.data}`,
+                    },
+                  };
+                }
+                // Handle URLImageSource (though this case shouldn't happen in practice)
                 return {
                   type: 'image_url',
                   image_url: {
-                    url: `data:${part.source.media_type};base64,${part.source.data}`,
+                    url: (part.source as any).url,
                   },
                 };
               }

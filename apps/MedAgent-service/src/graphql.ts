@@ -75,11 +75,11 @@ export interface Block {
 }
 
 export abstract class IQuery {
-    abstract listTaskInfo(): Nullable<TaskInfo>[] | Promise<Nullable<TaskInfo>[]>;
+    abstract listTaskInfo(): TaskInfo[] | Promise<TaskInfo[]>;
 
     abstract getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo>;
 
-    abstract getTaskMessages(taskId: string): Nullable<ApiMessage>[] | Promise<Nullable<ApiMessage>[]>;
+    abstract getTaskMessages(taskId: string): ApiMessage[] | Promise<ApiMessage[]>;
 }
 
 export abstract class IMutation {

@@ -1,18 +1,22 @@
 import OpenAI from 'openai';
 
+// Extended type for cache control support
+type ChatCompletionContentPartTextWithCache = OpenAI.Chat.ChatCompletionContentPartText & {
+  cache_control?: { type: 'ephemeral' };
+};
+
 export function addCacheBreakpoints(
   systemPrompt: string,
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
 ) {
   messages[0] = {
     role: 'system',
-    // @ts-ignore-next-line
     content: [
       {
         type: 'text',
         text: systemPrompt,
         cache_control: { type: 'ephemeral' },
-      },
+      } as ChatCompletionContentPartTextWithCache,
     ],
   };
 
@@ -45,8 +49,7 @@ export function addCacheBreakpoints(
           msg.content.push(lastTextPart);
         }
 
-        // @ts-ignore-next-line
-        lastTextPart['cache_control'] = { type: 'ephemeral' };
+        (lastTextPart as ChatCompletionContentPartTextWithCache)['cache_control'] = { type: 'ephemeral' };
       }
     });
 }

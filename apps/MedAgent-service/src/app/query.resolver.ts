@@ -1,16 +1,24 @@
-import { Resolver } from '@nestjs/graphql';
-import { IQuery, TaskInfo, ApiMessage } from '../graphql';
+import { Resolver, Query } from '@nestjs/graphql';
+import { IQuery, TaskInfo, ApiMessage, TaskStatus } from '../graphql';
 
 @Resolver()
 export class QueryResolver implements IQuery {
-    listTaskInfo(): (TaskInfo | null)[] | Promise<(TaskInfo | null)[]> {
-        throw new Error('Method not implemented.');
+
+    @Query('listTaskInfo')
+    listTaskInfo(): TaskInfo[] | Promise<TaskInfo[]> {
+        return [{
+            id: 'test',
+            taskInput: 'test',
+            taskStatus: TaskStatus.IDLE,
+            createdAt: 'test'
+        }]
     }
     getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo> {
         throw new Error('Method not implemented.');
     }
-    getTaskMessages(taskId: string): (ApiMessage | null)[] | Promise<(ApiMessage | null)[]> {
+    getTaskMessages(taskId: string): ApiMessage[] | Promise<ApiMessage[]> {
         throw new Error('Method not implemented.');
     }
+
 }
 

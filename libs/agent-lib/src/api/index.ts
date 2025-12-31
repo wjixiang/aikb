@@ -14,6 +14,11 @@ import {
 } from '../types';
 
 import { ApiStream } from './transform/stream';
+import type {
+  ApiHandlerOptions,
+  ModelRecord,
+  RouterName,
+} from '../shared/api';
 
 // Re-export constants and functions from their new locations to maintain backward compatibility
 export {
@@ -65,7 +70,6 @@ import {
   LmStudioHandler,
   MiniMaxHandler,
   MistralHandler,
-  MoonshotHandler,
   OpenAiNativeHandler,
   OpenRouterHandler,
   QwenCodeHandler,
@@ -77,12 +81,19 @@ import {
   ZAiHandler,
 } from './providers/index';
 
+// MoonshotHandler is imported directly due to circular dependency issues
+import { MoonshotHandler } from './providers/moonshot';
+
 export type {
   SingleCompletionHandler,
   ApiHandlerCreateMessageMetadata,
 } from './types';
 
+export type { ApiHandlerOptions, ModelRecord, RouterName } from '../shared/api';
 
+
+
+export { MoonshotHandler };
 
 export interface ApiHandler {
   createMessage(

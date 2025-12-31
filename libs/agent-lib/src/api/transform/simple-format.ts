@@ -17,7 +17,10 @@ export function convertToSimpleContent(
         return block.text;
       }
       if (block.type === 'image') {
-        return `[Image: ${block.source.media_type}]`;
+        if (block.source.type === 'base64') {
+          return `[Image: ${block.source.media_type}]`;
+        }
+        return '[Image: url]';
       }
       if (block.type === 'tool_use') {
         return `[Tool Use: ${block.name}]`;
@@ -33,7 +36,10 @@ export function convertToSimpleContent(
                 return part.text;
               }
               if (part.type === 'image') {
-                return `[Image: ${part.source.media_type}]`;
+                if (part.source.type === 'base64') {
+                  return `[Image: ${part.source.media_type}]`;
+                }
+                return '[Image: url]';
               }
               return '';
             })

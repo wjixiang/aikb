@@ -2,7 +2,8 @@ import { Anthropic } from '@anthropic-ai/sdk';
 
 import type { ModelInfo } from '../../types';
 
-import type { ApiHandler, ApiHandlerCreateMessageMetadata } from '../types';
+import type { ApiHandlerCreateMessageMetadata } from '../types';
+import type { ApiHandler } from '../index';
 import { ApiStream } from '../transform/stream';
 import { countTokens } from '../../utils/countTokens';
 
@@ -31,15 +32,15 @@ export abstract class BaseProvider implements ApiHandler {
     return tools.map((tool) =>
       tool.type === 'function'
         ? {
-            ...tool,
-            function: {
-              ...tool.function,
-              strict: true,
-              parameters: this.convertToolSchemaForOpenAI(
-                tool.function.parameters,
-              ),
-            },
-          }
+          ...tool,
+          function: {
+            ...tool.function,
+            strict: true,
+            parameters: this.convertToolSchemaForOpenAI(
+              tool.function.parameters,
+            ),
+          },
+        }
         : tool,
     );
   }

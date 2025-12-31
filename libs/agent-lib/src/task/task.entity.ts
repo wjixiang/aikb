@@ -480,7 +480,7 @@ export class Task {
    */
   private async collectCompleteResponse(): Promise<ApiStreamChunk[]> {
     const stream = this.attemptApiRequest();
-    const chunks = [];
+    const chunks: ApiStreamChunk[] = [];
 
     try {
       const iterator = stream[Symbol.asyncIterator]();
@@ -773,7 +773,6 @@ export class Task {
       const streamPromise = this.api.createMessage(
         systemPrompt,
         cleanConversationHistory as unknown as Anthropic.MessageParam[],
-        metadata,
       );
 
       try {

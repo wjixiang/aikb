@@ -88,10 +88,20 @@ export function convertToMistralMessages(
             role: 'user',
             content: nonToolMessages.map((part) => {
               if (part.type === 'image') {
+                // Check if the image source is Base64ImageSource
+                if ('media_type' in part.source && 'data' in part.source) {
+                  return {
+                    type: 'image_url',
+                    imageUrl: {
+                      url: `data:${part.source.media_type};base64,${part.source.data}`,
+                    },
+                  };
+                }
+                // Handle URLImageSource (though this case shouldn't happen in practice)
                 return {
                   type: 'image_url',
                   imageUrl: {
-                    url: `data:${part.source.media_type};base64,${part.source.data}`,
+                    url: (part.source as any).url,
                   },
                 };
               }

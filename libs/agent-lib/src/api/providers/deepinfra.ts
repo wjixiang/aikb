@@ -19,8 +19,7 @@ import { getModels } from './fetchers/modelCache';
 
 export class DeepInfraHandler
   extends RouterProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   constructor(options: ApiHandlerOptions) {
     super({
       options: {
@@ -74,7 +73,7 @@ export class DeepInfraHandler
       info,
       reasoningEffort: reasoning_effort,
     } = await this.fetchModel();
-    let prompt_cache_key = undefined;
+    let prompt_cache_key: string | undefined = undefined;
     if (info.supportsPromptCache && _metadata?.taskId) {
       prompt_cache_key = _metadata.taskId;
     }
@@ -164,10 +163,10 @@ export class DeepInfraHandler
     const { id: modelId, info } = this.getModel();
 
     const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-      {
-        model: modelId,
-        messages: [{ role: 'user', content: prompt }],
-      };
+    {
+      model: modelId,
+      messages: [{ role: 'user', content: prompt }],
+    };
     if (this.supportsTemperature(modelId)) {
       requestOptions.temperature = this.options.modelTemperature ?? 0;
     }
@@ -192,12 +191,12 @@ export class DeepInfraHandler
 
     const { totalCost } = modelInfo
       ? calculateApiCostOpenAI(
-          modelInfo,
-          inputTokens,
-          outputTokens,
-          cacheWriteTokens,
-          cacheReadTokens,
-        )
+        modelInfo,
+        inputTokens,
+        outputTokens,
+        cacheWriteTokens,
+        cacheReadTokens,
+      )
       : { totalCost: 0 };
 
     return {

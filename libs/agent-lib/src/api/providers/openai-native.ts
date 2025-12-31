@@ -30,8 +30,7 @@ export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler['getModel']>;
 
 export class OpenAiNativeHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: ApiHandlerOptions;
   private client: OpenAI;
   // Resolved service tier from Responses API (actual tier used by OpenAI)
@@ -313,13 +312,13 @@ export class OpenAiNativeHandler
       ...(reasoningEffort ? { include: ['reasoning.encrypted_content'] } : {}),
       ...(reasoningEffort
         ? {
-            reasoning: {
-              ...(reasoningEffort ? { effort: reasoningEffort } : {}),
-              ...(this.options.enableResponsesReasoningSummary
-                ? { summary: 'auto' as const }
-                : {}),
-            },
-          }
+          reasoning: {
+            ...(reasoningEffort ? { effort: reasoningEffort } : {}),
+            ...(this.options.enableResponsesReasoningSummary
+              ? { summary: 'auto' as const }
+              : {}),
+          },
+        }
         : {}),
       // Only include temperature if the model supports it
       ...(model.info.supportsTemperature !== false && {
@@ -333,8 +332,8 @@ export class OpenAiNativeHandler
       ...(requestedTier &&
         (requestedTier === 'default' ||
           allowedTierNames.has(requestedTier)) && {
-          service_tier: requestedTier,
-        }),
+        service_tier: requestedTier,
+      }),
       // Enable extended prompt cache retention for models that support it.
       // This uses the OpenAI Responses API `prompt_cache_retention` parameter.
       ...(promptCacheRetention
@@ -448,16 +447,23 @@ export class OpenAiNativeHandler
               content.push({ type: 'input_text', text: block.text });
             } else if (block.type === 'image') {
               const image = block as Anthropic.Messages.ImageBlockParam;
-              const imageUrl = `data:${image.source.media_type};base64,${image.source.data}`;
-              content.push({ type: 'input_image', image_url: imageUrl });
+              // Check if the image source is Base64ImageSource
+              if ('media_type' in image.source && 'data' in image.source) {
+                const imageUrl = `data:${image.source.media_type};base64,${image.source.data}`;
+                content.push({ type: 'input_image', image_url: imageUrl });
+              } else {
+                // Handle URLImageSource (though this case shouldn't happen in practice)
+                const imageUrl = (image.source as any).url;
+                content.push({ type: 'input_image', image_url: imageUrl });
+              }
             } else if (block.type === 'tool_result') {
               // Map Anthropic tool_result to Responses API function_call_output item
               const result =
                 typeof block.content === 'string'
                   ? block.content
                   : block.content
-                      ?.map((c) => (c.type === 'text' ? c.text : ''))
-                      .join('') || '';
+                    ?.map((c) => (c.type === 'text' ? c.text : ''))
+                    .join('') || '';
               toolResults.push({
                 type: 'function_call_output',
                 call_id: block.tool_use_id,

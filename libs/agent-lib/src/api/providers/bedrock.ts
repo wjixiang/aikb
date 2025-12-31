@@ -29,6 +29,7 @@ import {
 
 import type { ModelInfo } from '../../types/model';
 import type { ProviderSettings } from '../../types/provider-settings';
+import type { ModelInfo as CacheStrategyModelInfo } from '../transform/cache-strategy/types';
 
 import { ApiStream, shouldUseReasoningBudget } from '../index';
 import { BaseProvider } from './base-provider';
@@ -879,13 +880,13 @@ export class AwsBedrockHandler
     }
 
     // Convert model info to expected format for cache strategy
-    const cacheModelInfo: ModelInfo = {
-      maxTokens: modelInfo?.maxTokens || 8192,
-      contextWindow: modelInfo?.contextWindow || 200_000,
-      supportsPromptCache: modelInfo?.supportsPromptCache || false,
-      maxCachePoints: modelInfo?.maxCachePoints || 0,
-      minTokensPerCachePoint: modelInfo?.minTokensPerCachePoint || 50,
-      cachableFields: modelInfo?.cachableFields || [],
+    const cacheModelInfo: CacheStrategyModelInfo = {
+      maxTokens: modelInfo?.maxTokens ?? 8192,
+      contextWindow: modelInfo?.contextWindow ?? 200_000,
+      supportsPromptCache: modelInfo?.supportsPromptCache ?? false,
+      maxCachePoints: modelInfo?.maxCachePoints ?? 0,
+      minTokensPerCachePoint: modelInfo?.minTokensPerCachePoint ?? 50,
+      cachableFields: modelInfo?.cachableFields ?? [],
     };
 
     // Get previous cache point placements for this conversation if available

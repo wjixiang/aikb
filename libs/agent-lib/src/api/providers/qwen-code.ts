@@ -11,7 +11,7 @@ import {
   qwenCodeDefaultModelId,
 } from '../../types';
 
-import type { ApiHandlerOptions } from '../index';
+import type { ApiHandlerOptions } from '../../shared/api';
 
 import { convertToOpenAiMessages } from '../transform/openai-format';
 import { ApiStream } from '../transform/stream';
@@ -56,8 +56,7 @@ function objectToUrlEncoded(data: Record<string, string>): string {
 
 export class QwenCodeHandler
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected options: QwenCodeHandlerOptions;
   private credentials: QwenOAuthCredentials | null = null;
   private client: OpenAI | undefined;
@@ -241,14 +240,14 @@ export class QwenCodeHandler
     ];
 
     const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-      {
-        model: model.id,
-        temperature: 0,
-        messages: convertedMessages,
-        stream: true,
-        stream_options: { include_usage: true },
-        max_completion_tokens: model.info.maxTokens,
-      };
+    {
+      model: model.id,
+      temperature: 0,
+      messages: convertedMessages,
+      stream: true,
+      stream_options: { include_usage: true },
+      max_completion_tokens: model.info.maxTokens,
+    };
 
     const stream = await this.callApiWithRetry(() =>
       client.chat.completions.create(requestOptions),
@@ -328,11 +327,11 @@ export class QwenCodeHandler
     const model = this.getModel();
 
     const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-      {
-        model: model.id,
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: model.info.maxTokens,
-      };
+    {
+      model: model.id,
+      messages: [{ role: 'user', content: prompt }],
+      max_completion_tokens: model.info.maxTokens,
+    };
 
     const response = await this.callApiWithRetry(() =>
       client.chat.completions.create(requestOptions),
