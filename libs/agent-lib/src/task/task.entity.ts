@@ -265,19 +265,17 @@ export class Task {
   // Lifecycle
   // Start / Resume / Abort / Dispose / Complete
 
-  async start(task?: string, images?: string[]): Promise<void> {
+  async start(task?: string, images?: string[]): Promise<Task> {
     this.setStatus('running');
 
-    const result = await this.recursivelyMakeClineRequests([
+    this.recursivelyMakeClineRequests([
       {
         type: 'text',
         text: `<task>${task ?? this.taskInput}</task>`
       }
     ])
 
-    if (result) {
-      // this.complete()
-    }
+    return this
 
   }
 

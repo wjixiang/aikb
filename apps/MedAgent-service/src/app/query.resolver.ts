@@ -24,7 +24,7 @@ export class QueryResolver {
         return tasks.map(task => ({
             id: task.id,
             taskInput: task.taskInput,
-            taskStatus: task.status as TaskStatus,
+            taskStatus: task.status.toUpperCase() as TaskStatus,
             createdAt: task.createdAt.toISOString()
         }));
     }

@@ -25,6 +25,10 @@ export class CreateTaskInput {
     taskInput: string;
 }
 
+export class StartTaskInput {
+    taskId: string;
+}
+
 export class BlockInput {
     type: string;
 }
@@ -83,6 +87,8 @@ export abstract class IQuery {
 
 export abstract class IMutation {
     abstract createTask(input: CreateTaskInput): TaskInfo | Promise<TaskInfo>;
+
+    abstract startTask(input: StartTaskInput): StartTaskResult | Promise<StartTaskResult>;
 }
 
 export class TaskInfo {
@@ -90,6 +96,11 @@ export class TaskInfo {
     taskInput: string;
     taskStatus: TaskStatus;
     createdAt: string;
+}
+
+export class StartTaskResult {
+    isSuccess: boolean;
+    failedReason?: Nullable<string>;
 }
 
 export class TextBlock implements Block {

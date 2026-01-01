@@ -27,6 +27,58 @@ export class TaskService {
     });
   }
 
+  /**
+   */
+  // async executeTask(taskId: string) {
+  //   const task = new Task(taskCreatedRes.id, taskInput, {} as any);
+  //   this.tasks.set(task.taskId, task)
+
+  //   // Register observer
+  //   // Observe LLM messages
+  //   const cleanup1 = task.onMessageAdded(async (taskId: string, message: ApiMessage) => {
+  //     // Extract reasoning from assistant messages (thinking blocks)
+  //     let reasoning: string | undefined;
+  //     let contentToStore = message.content;
+
+  //     if (message.role === 'assistant' && Array.isArray(message.content)) {
+  //       const thinkingBlock = message.content.find((block: any) => block.type === 'thinking');
+  //       if (thinkingBlock) {
+  //         reasoning = (thinkingBlock as any).thinking;
+  //         // Remove thinking block from content for storage
+  //         contentToStore = message.content.filter((block: any) => block.type !== 'thinking');
+  //       }
+  //     }
+
+  //     // Store the message to database
+  //     await this.db.conversationMessage.create({
+  //       data: {
+  //         taskId: taskId,
+  //         role: message.role,
+  //         content: contentToStore as any,
+  //         reasoning: reasoning,
+  //         timestamp: message.ts || Date.now(),
+  //       }
+  //     });
+  //   });
+
+  //   // Observe task status changed
+  //   const cleanup2 = task.onStatusChanged(async (taskId: string, changedStatus: TaskStatus) => {
+  //     const taskStatusUpdatedResult = await this.db.task.update({
+  //       where: {
+  //         id: taskId,
+  //       },
+  //       data: {
+  //         status: changedStatus
+  //       }
+  //     })
+  //   })
+
+  //   // Store cleanup function for later use
+  //   this.cleanupCallbacks.set(taskCreatedRes.id, [cleanup1, cleanup2]);
+
+  //   return task;
+  // }
+
   async createTask(taskInput: string, userId: string): Promise<Task> {
     const taskCreatedRes = await this.db.task.create({
       data: {
@@ -36,7 +88,15 @@ export class TaskService {
         createdAt: new Date()
       }
     })
-    const task = new Task(taskCreatedRes.id, taskInput, {} as any);
+    const task = this.initializeTask(taskCreatedRes.id, taskInput);
+    return task;
+  }
+
+  /**
+   * Initialize a Task instance with observers for message and status changes
+   */
+  private initializeTask(taskId: string, taskInput: string): Task {
+    const task = new Task(taskId, taskInput, {} as any);
     this.tasks.set(task.taskId, task)
 
     // Register observer
@@ -80,15 +140,52 @@ export class TaskService {
     })
 
     // Store cleanup function for later use
-    this.cleanupCallbacks.set(taskCreatedRes.id, [cleanup1, cleanup2]);
+    this.cleanupCallbacks.set(taskId, [cleanup1, cleanup2]);
 
     return task;
   }
 
-  startTask(taskId: string): void {
-    const task = this.tasks.get(taskId);
-    if (!task) return;
-    task.start();
+  async startTask(taskId: string): Promise<{
+    isSuccess: boolean,
+    failedReason?: string
+  }> {
+    let task = this.tasks.get(taskId);
+
+    if (!task) {
+      // Check if task exists in database
+      const taskRecord = await this.db.task.findUnique({
+        where: { id: taskId },
+        include: {
+          conversationMessages: {
+            orderBy: { timestamp: 'asc' }
+          }
+        }
+      });
+
+      if (!taskRecord) {
+        return { isSuccess: false, failedReason: 'Task not found' };
+      }
+
+      // Restore task status
+      if (taskRecord.status === 'completed' || taskRecord.status === 'aborted') {
+        return { isSuccess: false, failedReason: 'Task already completed or aborted' };
+      }
+
+      // Reinitialize the task from database record
+      task = this.initializeTask(taskRecord.id, taskRecord.taskInput);
+
+      // Restore conversation history
+      task.conversationHistory = taskRecord.conversationMessages.map(msg => ({
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content as any,
+        ts: Number(msg.timestamp),
+      }));
+
+    }
+
+    // Start the task
+    await task.start();
+    return { isSuccess: true };
   }
 
   completeTask(

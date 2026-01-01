@@ -1,9 +1,12 @@
-import NxWelcome from './nx-welcome';
+
 
 export function App() {
   return (
-    <div>
-      <NxWelcome title="MedAgent" />
+    <div className='bg-background'>
+      <div className=''>
+      hello
+      </div>
+
     </div>
   );
 }

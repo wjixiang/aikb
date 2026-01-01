@@ -21,7 +21,7 @@ async function bootstrap() {
   });
 
   Logger.log('Application created, starting to listen...');
-  await app.listen(3001);
+  await app.listen(parseInt(process.env['PDF2MD_PORT'] ?? "3006"));
   await app.startAllMicroservices();
 
   Logger.log(

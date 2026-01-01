@@ -1,6 +1,16 @@
 import axios from 'axios';
 
 describe('/auth', () => {
+  it('register a test user', async () => {
+    const res = await axios.post(`http://localhost:3005/api/auth/register`,
+      {
+        email: `test_user@gmail.com`,
+        password: 'abcd123',
+        name: `test_user`
+      }
+    );
+  })
+
   it('register-login-logout-unregister', async () => {
     // Register
     const res = await axios.post(`http://localhost:3005/api/auth/register`,
