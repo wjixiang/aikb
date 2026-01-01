@@ -1,19 +1,26 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { prisma } from 'auth-db';
+import type { JwtAccessTokenPayload, JwtValidatedUser } from '../jwt.types';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
+    const secret = process.env['JWT_SECRET'];
+    if (!secret) {
+      throw new InternalServerErrorException(
+        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.'
+      );
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env['JWT_SECRET'] || 'fl5ox03',
+      secretOrKey: secret,
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtAccessTokenPayload): Promise<JwtValidatedUser> {
     // 验证用户是否存在且处于活跃状态
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },

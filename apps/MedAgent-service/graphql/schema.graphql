@@ -16,7 +16,6 @@ type TaskInfo {
 }
 
 input CreateTaskInput {
-  userId: ID!
   taskInput: String!
 }
 

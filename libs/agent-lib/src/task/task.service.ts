@@ -16,10 +16,22 @@ export class TaskService {
 
   private cleanupCallbacks = new Map<string, Array<() => void>>();
 
-  async createTask(taskInput: string): Promise<Task> {
+  async listTasksByUserId(userId: string) {
+    return this.db.task.findMany({
+      where: {
+        userId: userId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async createTask(taskInput: string, userId: string): Promise<Task> {
     const taskCreatedRes = await this.db.task.create({
       data: {
         id: v4(),
+        userId: userId,
         taskInput: taskInput,
         createdAt: new Date()
       }

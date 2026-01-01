@@ -5,6 +5,7 @@ import {
   ConflictException,
   BadRequestException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { prisma } from 'auth-db';
@@ -38,12 +39,17 @@ import {
   LoginDto,
   RegisterDto,
 } from './auth.dto';
+import type {
+  JwtAccessTokenPayload,
+  JwtRefreshTokenPayload,
+  JwtTokenPair,
+} from './jwt.types';
 
 @Injectable()
 export class AuthService {
   private readonly prisma = prisma;
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) { }
 
   /**
    * 获取用户列表（分页）
@@ -122,7 +128,7 @@ export class AuthService {
       },
     });
 
-    const userResponses: UserResponse[] = users.map((user) => ({
+    const userResponses: UserResponse[] = users.map((user: any) => ({
       id: user.id,
       email: user.email,
       name: user.name || undefined,
@@ -449,7 +455,7 @@ export class AuthService {
       take: 50,
     });
 
-    return sessions.map((session) => ({
+    return sessions.map((session: any) => ({
       id: session.id,
       sessionToken: session.sessionToken,
       userId: session.userId,
@@ -791,7 +797,7 @@ export class AuthService {
       take: 50,
     });
 
-    const activities = loginLogs.map((log) => ({
+    const activities = loginLogs.map((log: any) => ({
       type: 'LOGIN',
       description: log.success
         ? `成功登录 (${log.loginType})`
@@ -1035,21 +1041,33 @@ export class AuthService {
     id: string;
     email: string;
     name: string | null;
-  }) {
-    const payload = {
+  }): Promise<JwtTokenPair> {
+    const payload: JwtAccessTokenPayload = {
       sub: user.id,
       email: user.email,
     };
 
     // 生成访问令牌
+    const jwtSecret = process.env['JWT_SECRET'];
+    if (!jwtSecret) {
+      throw new InternalServerErrorException(
+        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.'
+      );
+    }
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env['JWT_SECRET'] || 'fl5ox03',
+      secret: jwtSecret,
       expiresIn: process.env['JWT_EXPIRATION'] || '15m',
     } as any);
 
     // 生成刷新令牌
+    const jwtRefreshSecret = process.env['JWT_REFRESH_SECRET'];
+    if (!jwtRefreshSecret) {
+      throw new InternalServerErrorException(
+        'JWT_REFRESH_SECRET environment variable is required. Please set a secure JWT refresh secret in your environment configuration.'
+      );
+    }
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env['JWT_REFRESH_SECRET'] || 'fl5ox03',
+      secret: jwtRefreshSecret,
       expiresIn: process.env['JWT_REFRESH_EXPIRATION'] || '7d',
     } as any);
 

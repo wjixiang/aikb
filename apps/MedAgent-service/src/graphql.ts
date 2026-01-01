@@ -22,7 +22,6 @@ export enum MessageRole {
 }
 
 export class CreateTaskInput {
-    userId: string;
     taskInput: string;
 }
 

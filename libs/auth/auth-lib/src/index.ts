@@ -11,9 +11,25 @@ export { AdminController } from './lib/admin.controller';
 
 // Export guards
 export { JwtAuthGuard } from './lib/guards/jwt-auth.guard';
+export { GqlJwtAuthGuard } from './lib/guards/gql-jwt-auth.guard';
 
 // Export strategies
 export { JwtStrategy } from './lib/strategies/jwt.strategy';
+
+// Export decorators
+export { CurrentUser } from './lib/current-user.decorator';
+export { GqlCurrentUser } from './lib/graphql-user.decorator';
+export type { CurrentUserData } from './lib/current-user.decorator';
+
+// Export JWT types
+export * from './lib/jwt.types';
+
+// Export test helpers
+export {
+    TestAuthHelper,
+    generateTestAccessToken,
+    generateTestRefreshToken,
+} from './lib/authTestHelper';
 
 // Export DTOs
 export * from './lib/auth.dto';

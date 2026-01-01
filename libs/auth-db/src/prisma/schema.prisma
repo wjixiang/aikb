@@ -9,30 +9,30 @@ datasource db {
 
 // 用户模型 - 针对中国用户优化
 model User {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String    @unique @db.VarChar(255)
-  name              String?   @db.VarChar(100) // 单一姓名字段，支持中文
-  avatar            String?   @db.VarChar(500)
-  phone             String?   @unique @db.VarChar(20) // 手机号，支持+86格式
-  passwordSalt      String?   @db.VarChar(64) // 密码盐值，客户端生成
-  passwordHash      String?   @db.VarChar(128) // 密码哈希，客户端计算
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email              String    @unique @db.VarChar(255)
+  name               String?   @db.VarChar(100) // 单一姓名字段，支持中文
+  avatar             String?   @db.VarChar(500)
+  phone              String?   @unique @db.VarChar(20) // 手机号，支持+86格式
+  passwordSalt       String?   @db.VarChar(64) // 密码盐值，客户端生成
+  passwordHash       String?   @db.VarChar(128) // 密码哈希，客户端计算
   passwordIterations Int?      @default(100000) // PBKDF2迭代次数
-  isEmailVerified   Boolean   @default(false)
-  isPhoneVerified   Boolean   @default(false)
-  isActive          Boolean   @default(true)
-  lastLoginAt       DateTime? @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime  @default(now()) @db.Timestamptz(6)
-  
+  isEmailVerified    Boolean   @default(false)
+  isPhoneVerified    Boolean   @default(false)
+  isActive           Boolean   @default(true)
+  lastLoginAt        DateTime? @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @db.Timestamptz(6)
+
   // 关联关系
-  refreshTokens     RefreshToken[]
+  refreshTokens      RefreshToken[]
   emailVerifications EmailVerification[]
   phoneVerifications PhoneVerification[]
-  passwordResets    PasswordReset[]
-  accounts          Account[]
-  sessions          Session[]
-  wechatAccounts    WechatAccount[]
-  
+  passwordResets     PasswordReset[]
+  accounts           Account[]
+  sessions           Session[]
+  wechatAccounts     WechatAccount[]
+
   @@index([email])
   @@index([phone])
   @@index([isActive])
@@ -43,16 +43,16 @@ model User {
 
 // 刷新令牌模型 - gRPC优化
 model RefreshToken {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  token       String   @unique @db.VarChar(500)
-  userId      String   @db.Uuid
-  expiresAt   DateTime @db.Timestamptz(6)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  isRevoked   Boolean  @default(false)
-  clientInfo  Json?     // 客户端信息（IP、User-Agent等）
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token      String   @unique @db.VarChar(500)
+  userId     String   @db.Uuid
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  isRevoked  Boolean  @default(false)
+  clientInfo Json? // 客户端信息（IP、User-Agent等）
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
@@ -68,9 +68,9 @@ model EmailVerification {
   expiresAt DateTime @db.Timestamptz(6)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   userId    String   @db.Uuid
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([email])
   @@index([token])
   @@index([expiresAt])
@@ -82,14 +82,14 @@ model PhoneVerification {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   phone     String   @db.VarChar(20)
   code      String   @db.VarChar(10) // 6位数字验证码
-  type      String   @db.VarChar(20) @default("REGISTER") // REGISTER, LOGIN, RESET_PASSWORD
+  type      String   @default("REGISTER") @db.VarChar(20) // REGISTER, LOGIN, RESET_PASSWORD
   attempts  Int      @default(0) // 验证尝试次数
   expiresAt DateTime @db.Timestamptz(6)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   userId    String?  @db.Uuid // 可选，用于已注册用户
-  
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([phone])
   @@index([code])
   @@index([expiresAt])
@@ -107,9 +107,9 @@ model PasswordReset {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   userId    String   @db.Uuid
   isUsed    Boolean  @default(false) // 标记是否已使用
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([email])
   @@index([phone])
   @@index([token])
@@ -134,9 +134,9 @@ model Account {
   session_state     String?  @db.Text
   createdAt         DateTime @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime @default(now()) @db.Timestamptz(6)
-  
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@index([provider])
@@ -151,11 +151,11 @@ model Session {
   expires      DateTime @db.Timestamptz(6)
   createdAt    DateTime @default(now()) @db.Timestamptz(6)
   lastActivity DateTime @default(now()) @db.Timestamptz(6)
-  clientInfo   Json?     // 客户端信息
-  isActive     Boolean   @default(true)
-  
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  clientInfo   Json? // 客户端信息
+  isActive     Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([sessionToken])
   @@index([expires])
@@ -165,25 +165,25 @@ model Session {
 
 // 微信账户模型 - 新增
 model WechatAccount {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId            String   @db.Uuid
-  wechatOpenId      String   @unique @db.VarChar(100)
-  wechatUnionId     String?  @db.VarChar(100) // 开放平台唯一标识
-  nickname          String?  @db.VarChar(100) // 微信昵称
-  avatar            String?  @db.VarChar(500) // 微信头像
-  sex               Int?     // 性别：1男性，2女性，0未知
-  province          String?  @db.VarChar(50) // 省份
-  city              String?  @db.VarChar(50) // 城市
-  country           String?  @db.VarChar(50) // 国家
-  accessToken       String?  @db.Text // 访问令牌
-  refreshToken      String?  @db.Text // 刷新令牌
-  expiresAt         DateTime? @db.Timestamptz(6) // 令牌过期时间
-  scope             String?  @db.Text // 授权范围
-  createdAt         DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime @default(now()) @db.Timestamptz(6)
-  
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @db.Uuid
+  wechatOpenId  String    @unique @db.VarChar(100)
+  wechatUnionId String?   @db.VarChar(100) // 开放平台唯一标识
+  nickname      String?   @db.VarChar(100) // 微信昵称
+  avatar        String?   @db.VarChar(500) // 微信头像
+  sex           Int? // 性别：1男性，2女性，0未知
+  province      String?   @db.VarChar(50) // 省份
+  city          String?   @db.VarChar(50) // 城市
+  country       String?   @db.VarChar(50) // 国家
+  accessToken   String?   @db.Text // 访问令牌
+  refreshToken  String?   @db.Text // 刷新令牌
+  expiresAt     DateTime? @db.Timestamptz(6) // 令牌过期时间
+  scope         String?   @db.Text // 授权范围
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([wechatOpenId])
   @@index([wechatUnionId])
@@ -192,18 +192,18 @@ model WechatAccount {
 
 // 登录日志模型 - 新增，用于安全审计
 model LoginLog {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String?  @db.Uuid
-  email       String?  @db.VarChar(255)
-  phone       String?  @db.VarChar(20)
-  loginType   String   @db.VarChar(20) // EMAIL, PHONE, OAUTH, WECHAT
-  provider    String?  @db.VarChar(50) // OAuth提供商
-  ip          String   @db.VarChar(45) // 支持IPv6
-  userAgent   String?  @db.Text
-  success     Boolean
-  failureReason String? @db.VarChar(255) // 失败原因
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?  @db.Uuid
+  email         String?  @db.VarChar(255)
+  phone         String?  @db.VarChar(20)
+  loginType     String   @db.VarChar(20) // EMAIL, PHONE, OAUTH, WECHAT
+  provider      String?  @db.VarChar(50) // OAuth提供商
+  ip            String   @db.VarChar(45) // 支持IPv6
+  userAgent     String?  @db.Text
+  success       Boolean
+  failureReason String?  @db.VarChar(255) // 失败原因
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
   @@index([userId])
   @@index([email])
   @@index([phone])
@@ -215,13 +215,13 @@ model LoginLog {
 
 // 密码历史模型 - 新增，防止密码重复使用
 model PasswordHistory {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String   @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @db.Uuid
   passwordHash String   @db.VarChar(128)
   passwordSalt String   @db.VarChar(64)
-  iterations  Int      @default(100000)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  
+  iterations   Int      @default(100000)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
   @@index([userId])
   @@index([createdAt])
   @@map("password_history")

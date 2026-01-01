@@ -66,7 +66,7 @@ interface MessageProcessingState {
  */
 export class Task {
   readonly taskId: string;
-  private _status: TaskStatus = 'running';
+  private _status: TaskStatus = 'idle';
   taskInput: string = '';
 
   readonly instanceId: string;

@@ -14,7 +14,8 @@
         "main": "libs/auth/auth-lib/src/index.ts",
         "tsConfig": "libs/auth/auth-lib/tsconfig.lib.json",
         "assets": ["libs/auth/auth-lib/*.md"]
-      }
+      },
+      "dependsOn": ["auth-db:build"]
     },
     "test": {
       "executor": "@nx/vite:test"

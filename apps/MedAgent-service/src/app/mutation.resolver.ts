@@ -1,18 +1,31 @@
-import { Resolver, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Mutation, Args, Context } from '@nestjs/graphql';
 import { CreateTaskInput, IMutation, TaskInfo, TaskStatus } from '../graphql';
 import { TaskService } from 'agent-lib'
+import { GqlJwtAuthGuard } from 'auth-lib'
+import { UseGuards } from '@nestjs/common';
 
 @Resolver()
-export class MutationResolver implements IMutation {
+@UseGuards(GqlJwtAuthGuard)
+export class MutationResolver {
     constructor(
         private taskService: TaskService
     ) { }
 
     @Mutation('createTask')
-    async createTask(@Args('input') input: CreateTaskInput): Promise<TaskInfo> {
+    async createTask(
+        @Args('input') input: CreateTaskInput,
+        @Context() context: any
+    ): Promise<TaskInfo> {
         console.log('creating task', input)
         try {
-            const task = await this.taskService.createTask(input.taskInput)
+            // Extract userId from the request context (set by GqlJwtAuthGuard)
+            const userId = context.req?.user?.sub;
+
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const task = await this.taskService.createTask(input.taskInput, userId)
 
             // Map lowercase status from agent-lib to uppercase GraphQL enum
             const statusMap: Record<string, TaskStatus> = {

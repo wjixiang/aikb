@@ -9,6 +9,7 @@ datasource db {
 
 model Task {
   id        String     @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String
   taskInput String
   status    TaskStatus @default(idle)
 
