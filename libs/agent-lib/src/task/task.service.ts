@@ -5,6 +5,7 @@ import { AgentDBPrismaService } from 'agent-db';
 import { v4 } from 'uuid';
 import { ApiMessage } from './task.type';
 import { TaskStatus } from './task.type';
+import { ProviderSettings } from '../types/provider-settings';
 
 @Injectable()
 export class TaskService {
@@ -27,58 +28,6 @@ export class TaskService {
     });
   }
 
-  /**
-   */
-  // async executeTask(taskId: string) {
-  //   const task = new Task(taskCreatedRes.id, taskInput, {} as any);
-  //   this.tasks.set(task.taskId, task)
-
-  //   // Register observer
-  //   // Observe LLM messages
-  //   const cleanup1 = task.onMessageAdded(async (taskId: string, message: ApiMessage) => {
-  //     // Extract reasoning from assistant messages (thinking blocks)
-  //     let reasoning: string | undefined;
-  //     let contentToStore = message.content;
-
-  //     if (message.role === 'assistant' && Array.isArray(message.content)) {
-  //       const thinkingBlock = message.content.find((block: any) => block.type === 'thinking');
-  //       if (thinkingBlock) {
-  //         reasoning = (thinkingBlock as any).thinking;
-  //         // Remove thinking block from content for storage
-  //         contentToStore = message.content.filter((block: any) => block.type !== 'thinking');
-  //       }
-  //     }
-
-  //     // Store the message to database
-  //     await this.db.conversationMessage.create({
-  //       data: {
-  //         taskId: taskId,
-  //         role: message.role,
-  //         content: contentToStore as any,
-  //         reasoning: reasoning,
-  //         timestamp: message.ts || Date.now(),
-  //       }
-  //     });
-  //   });
-
-  //   // Observe task status changed
-  //   const cleanup2 = task.onStatusChanged(async (taskId: string, changedStatus: TaskStatus) => {
-  //     const taskStatusUpdatedResult = await this.db.task.update({
-  //       where: {
-  //         id: taskId,
-  //       },
-  //       data: {
-  //         status: changedStatus
-  //       }
-  //     })
-  //   })
-
-  //   // Store cleanup function for later use
-  //   this.cleanupCallbacks.set(taskCreatedRes.id, [cleanup1, cleanup2]);
-
-  //   return task;
-  // }
-
   async createTask(taskInput: string, userId: string): Promise<Task> {
     const taskCreatedRes = await this.db.task.create({
       data: {
@@ -96,7 +45,16 @@ export class TaskService {
    * Initialize a Task instance with observers for message and status changes
    */
   private initializeTask(taskId: string, taskInput: string): Task {
-    const task = new Task(taskId, taskInput, {} as any);
+    // Temporarily use hard-code setting
+    const testApiConfig: ProviderSettings = {
+      apiProvider: 'zai',
+      apiKey: process.env['GLM_API_KEY'],
+      apiModelId: 'glm-4.6',
+      toolProtocol: 'xml',
+      zaiApiLine: 'china_coding'
+    };
+
+    const task = new Task(taskId, taskInput, testApiConfig);
     this.tasks.set(task.taskId, task)
 
     // Register observer

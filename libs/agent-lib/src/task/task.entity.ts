@@ -262,7 +262,7 @@ export class Task {
     this.collectedErrors = [];
   }
 
-  // Lifecycle
+  // ==================== Life Cycle Methods ====================
   // Start / Resume / Abort / Dispose / Complete
 
   async start(task?: string, images?: string[]): Promise<Task> {
@@ -546,7 +546,10 @@ export class Task {
     }
 
     // Process text content if using XML parser
+    // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
     if (shouldUseXmlParser && this.messageState.assistantMessageParser && assistantMessage) {
+      console.log('should use xml parser')
+
       this.messageState.assistantMessageContent =
         this.messageState.assistantMessageParser.processChunk(assistantMessage);
       this.messageState.assistantMessageParser.finalizeContentBlocks();
@@ -559,12 +562,15 @@ export class Task {
         content: assistantMessage,
       });
     }
+
+    console.log(`LLM resposne: ${reasoningMessage} \n\n ${assistantMessage} `)
   }
 
   /**
    * Parse tool call response into text format
    */
   private parseToolCallResponse(toolCallRes: any): string {
+    // console.log(toolCallRes)
     if (typeof toolCallRes === 'string') {
       return toolCallRes;
     }
@@ -647,6 +653,10 @@ export class Task {
       const toolUse = block as ToolUse;
       const toolCallId = randomUUID();
 
+      // Store the tool call ID directly in the tool use block
+      // This ensures the same ID is used when adding the assistant message to history
+      toolUse.id = toolCallId;
+
       const input = toolUse.nativeArgs || toolUse.params;
 
       // Handle tool calling
@@ -709,8 +719,11 @@ export class Task {
 
     for (const block of toolUseBlocks) {
       const toolUse = block as ToolUse;
-      const toolCallId = randomUUID();
       const input = toolUse.nativeArgs || toolUse.params;
+
+      // Use the tool call ID that was stored during executeToolCalls
+      // This ensures the tool_result block references the correct tool_use block
+      const toolCallId = toolUse.id || randomUUID();
 
       assistantContent.push({
         type: 'tool_use' as const,
@@ -756,12 +769,14 @@ export class Task {
       console.log(`Starting API request attempt ${retryAttempt + 1}`);
 
       const systemPrompt = await this.getSystemPrompt();
-      console.debug(`system prompt: ${systemPrompt}`);
+      // console.debug(`system prompt: ${systemPrompt}`);
 
       // Build clean conversation history
       const cleanConversationHistory = this.buildCleanConversationHistory(
         this.conversationHistory,
       );
+
+      console.log(`context: ${JSON.stringify(cleanConversationHistory)}`)
 
       const metadata = {
         taskId: this.taskId,

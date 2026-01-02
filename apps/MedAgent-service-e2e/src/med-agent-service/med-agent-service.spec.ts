@@ -16,11 +16,59 @@ describe('MedAgent-service-e2e', () => {
       authorization: `Bearer ${testAuthJWT}`,
     },
   })
+
+  it('basic workflow', async () => {
+    const creatTaskquery = gql`
+      mutation CreateTask {
+          createTask(input: {
+            taskInput: "动作电位的定义"
+          }) {
+              taskStatus
+              id
+          }
+        }
+      `
+    const createTaskdata = await graphQLClient.request(creatTaskquery)
+    console.log(JSON.stringify(createTaskdata))
+
+    // Query the task
+    const queryTheTask = gql`
+        {
+          listTaskInfo {
+            id
+            taskStatus
+            taskInput
+          }
+        }
+      `
+    const taskQuerydata = await graphQLClient.request(queryTheTask)
+    console.log(JSON.stringify(taskQuerydata))
+
+    // Start the task
+    const query = gql`
+      mutation StartTask {
+          startTask(input: {
+            taskId: "${createTaskdata.createTask.id}"
+          }) {
+            isSuccess
+            failedReason
+          }
+        }
+      `
+    const data = await graphQLClient.request(query)
+    console.log(JSON.stringify(data))
+    const sleep = (ms: number): Promise<void> => {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    };
+
+    await sleep(60000)
+  }, 90000)
+
   it.skip('should create a task', async () => {
     const query = gql`
       mutation CreateTask {
           createTask(input: {
-            taskInput: "hypertension"
+            taskInput: "动作电位的定义"
           }) {
               taskStatus
               id
@@ -31,7 +79,7 @@ describe('MedAgent-service-e2e', () => {
     console.log(JSON.stringify(data))
   })
 
-  it('query a task', async () => {
+  it.skip('query a task', async () => {
     const query = gql`
         {
           listTaskInfo {
@@ -45,7 +93,7 @@ describe('MedAgent-service-e2e', () => {
     console.log(JSON.stringify(data))
   }, 30000)
 
-  it('start a task', async () => {
+  it.skip('start a task', async () => {
     const query = gql`
       mutation StartTask {
           startTask(input: {
@@ -58,8 +106,12 @@ describe('MedAgent-service-e2e', () => {
       `
     const data = await graphQLClient.request(query)
     console.log(JSON.stringify(data))
-    setTimeout(() => { }, 10000)
-  }, 30000)
+    const sleep = (ms: number): Promise<void> => {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    };
+
+    await sleep(60000)
+  }, 90000)
 
 
 })
