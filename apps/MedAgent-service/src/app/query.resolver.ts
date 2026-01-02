@@ -1,5 +1,5 @@
 import { Resolver, Query, Args, Context } from '@nestjs/graphql';
-import { IQuery, TaskInfo, ApiMessage } from '../graphql';
+import { TaskInfo, ApiMessage } from '../graphql';
 import { AppService } from './app.service';
 import { GqlJwtAuthGuard } from 'auth-lib'
 import { UseGuards } from '@nestjs/common';

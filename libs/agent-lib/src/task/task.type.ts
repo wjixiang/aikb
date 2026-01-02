@@ -52,6 +52,11 @@ export type MessageAddedCallback = (taskId: string, message: ApiMessage) => void
 export type TaskStatusChangedCallback = (taskId: string, changedStatus: TaskStatus) => void;
 
 /**
+ * Callback type for task completed events
+ */
+export type TaskCompletedCallback = (taskId: string) => void;
+
+/**
  * Simplified task metadata
  * Extracted from core/task-persistence/taskMetadata.ts
  */

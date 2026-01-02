@@ -39,7 +39,8 @@ import {
   ExtendedApiMessage,
   MessageAddedCallback,
   TaskStatusChangedCallback,
-  ApiMessage
+  ApiMessage,
+  TaskCompletedCallback
 } from './task.type';
 
 
@@ -131,6 +132,7 @@ export class Task {
   // Observer
   private messageAddedCallbacks: MessageAddedCallback[] = [];
   private taskStatusChangedCallbacks: TaskStatusChangedCallback[] = [];
+  private taskCompletedCallbacks: TaskCompletedCallback[] = [];
 
   constructor(
     taskId: string,
@@ -176,6 +178,15 @@ export class Task {
     }
   }
 
+  onTaskCompleted(callback: TaskCompletedCallback) {
+    this.taskCompletedCallbacks.push(callback)
+
+    return () => {
+
+    }
+  }
+
+
   // ==================== Notification Methods ====================
 
   /**
@@ -202,6 +213,18 @@ export class Task {
     })
   }
 
+  private notifyTaskCompleted(): void {
+    this.taskCompletedCallbacks.forEach(callback => {
+      try {
+        callback(this.taskId)
+      } catch (error) {
+        console.error('Error in callback:', error);
+      }
+    })
+  }
+
+
+  // ==================== Helper Methods ====================
   /**
    * Reset message processing state for each new API request
    */
@@ -469,7 +492,7 @@ export class Task {
         return true;
       }
     }
-
+    this.complete()
     return false;
   }
 

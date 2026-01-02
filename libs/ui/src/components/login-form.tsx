@@ -1,5 +1,6 @@
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
+import {Link} from 'react-router-dom'
 import {
   Card,
   CardContent,
@@ -56,9 +57,9 @@ export function LoginForm({
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
-              <a href="#" className="underline underline-offset-4">
+              <Link className="underline underline-offset-4" to="/signup">
                 Sign up
-              </a>
+              </Link>
             </div>
           </form>
         </CardContent>

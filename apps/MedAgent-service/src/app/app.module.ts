@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { QueryResolver } from './query.resolver';
 import { MutationResolver } from './mutation.resolver';
 import { AgentLibModule } from 'agent-lib';
 import { AuthLibModule } from 'auth-lib';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -17,9 +16,9 @@ import { AuthLibModule } from 'auth-lib';
       context: ({ req }) => ({ req }), // Pass request to GraphQL context
     }),
     AgentLibModule,
-    AuthLibModule
+    AuthLibModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, QueryResolver, MutationResolver],
+  controllers: [],
+  providers: [QueryResolver, MutationResolver, AppService],
 })
-export class AppModule { }
+export class AppModule {}
