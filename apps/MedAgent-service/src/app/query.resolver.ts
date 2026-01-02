@@ -1,6 +1,6 @@
-import { Resolver, Query, Context } from '@nestjs/graphql';
-import { IQuery, TaskInfo, ApiMessage, TaskStatus } from '../graphql';
-import { TaskService } from 'agent-lib';
+import { Resolver, Query, Args, Context } from '@nestjs/graphql';
+import { IQuery, TaskInfo, ApiMessage } from '../graphql';
+import { AppService } from './app.service';
 import { GqlJwtAuthGuard } from 'auth-lib'
 import { UseGuards } from '@nestjs/common';
 
@@ -8,32 +8,21 @@ import { UseGuards } from '@nestjs/common';
 @UseGuards(GqlJwtAuthGuard)
 export class QueryResolver {
     constructor(
-        private taskService: TaskService
+        private appService: AppService
     ) { }
 
     @Query('listTaskInfo')
     async listTaskInfo(@Context() context: any): Promise<TaskInfo[]> {
-        // Extract userId from the request context (set by GqlJwtAuthGuard)
-        const userId = context.req?.user?.sub;
-
-        if (!userId) {
-            throw new Error('User not authenticated');
-        }
-
-        const tasks = await this.taskService.listTasksByUserId(userId);
-        return tasks.map(task => ({
-            id: task.id,
-            taskInput: task.taskInput,
-            taskStatus: task.status.toUpperCase() as TaskStatus,
-            createdAt: task.createdAt.toISOString()
-        }));
-    }
-    getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo> {
-        throw new Error('Method not implemented.');
-    }
-    getTaskMessages(taskId: string): ApiMessage[] | Promise<ApiMessage[]> {
-        throw new Error('Method not implemented.');
+        return this.appService.listTaskInfo(context);
     }
 
+    @Query('getTaskInfo')
+    async getTaskInfo(@Args('taskId') taskId: string, @Context() context: any): Promise<TaskInfo> {
+        return this.appService.getTaskInfo(taskId, context);
+    }
+
+    @Query('getTaskMessages')
+    async getTaskMessages(@Args('taskId') taskId: string, @Context() context: any): Promise<ApiMessage[]> {
+        return this.appService.getTaskMessages(taskId, context);
+    }
 }
-

@@ -28,6 +28,19 @@ export class TaskService {
     });
   }
 
+  async getTaskById(taskId: string) {
+    return this.db.task.findUnique({
+      where: { id: taskId }
+    });
+  }
+
+  async getTaskMessages(taskId: string) {
+    return this.db.conversationMessage.findMany({
+      where: { taskId: taskId },
+      orderBy: { timestamp: 'asc' }
+    });
+  }
+
   async createTask(taskInput: string, userId: string): Promise<Task> {
     const taskCreatedRes = await this.db.task.create({
       data: {
