@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from 'react';
 
 // Define the shape of the context value
@@ -27,6 +28,7 @@ interface AuthContextType {
   handleLogout: () => void;
   baseUrl: string;
   setBaseUrl: (url: string) => void;
+  refreshAccessToken: () => Promise<boolean>;
 }
 
 interface UserData {
@@ -53,6 +55,9 @@ export const AuthProvider = ({
   const [loading, setLoading] = useState(true); // 初始加载状态
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [baseUrl, setBaseUrl] = useState(initialBaseUrl);
+  const [tokenExpiry, setTokenExpiry] = useState<number | null>(null);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isRefreshingRef = useRef(false);
 
   // Helper function to build full API URL
   const getApiUrl = useCallback(
@@ -62,14 +67,165 @@ export const AuthProvider = ({
     [baseUrl],
   );
 
+  // 解析JWT token获取过期时间
+  const parseTokenExpiry = useCallback((token: string): number | null => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // 获取当前token
+  const getToken = useCallback(() => {
+    return localStorage.getItem('token');
+  }, []);
+
+  // 登出函数
+  const logout = useCallback(() => {
+    // 清除状态
+    setUser(null);
+    setIsAuthenticated(false);
+    setTokenExpiry(null);
+
+    // 清除本地存储
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('tokenExpiry');
+
+    // 清除刷新定时器
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  // 封装登出逻辑供外部使用（如token失效时）
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
+
+  // 安排token刷新定时器
+  const scheduleTokenRefresh = useCallback((expiryTime: number) => {
+    // 清除之前的定时器
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+
+    // 在token过期前5分钟刷新
+    const now = Date.now();
+    const refreshDelay = Math.max(0, expiryTime - now - 5 * 60 * 1000);
+
+    refreshTimerRef.current = setTimeout(() => {
+      refreshAccessToken();
+    }, refreshDelay);
+  }, []);
+
+  // 刷新访问令牌
+  const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+    // 防止并发刷新
+    if (isRefreshingRef.current) {
+      return false;
+    }
+
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      return false;
+    }
+
+    isRefreshingRef.current = true;
+
+    try {
+      const response = await fetch(getApiUrl('/api/auth/refresh'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        // 刷新失败，登出
+        handleLogout();
+        return false;
+      }
+
+      const data = await response.json();
+      const { accessToken, expiresIn } = data;
+
+      // 更新token
+      localStorage.setItem('token', accessToken);
+
+      // 更新过期时间
+      const expiryTime = Date.now() + (expiresIn || 3600) * 1000;
+      setTokenExpiry(expiryTime);
+      localStorage.setItem('tokenExpiry', expiryTime.toString());
+
+      // 安排下一次刷新
+      scheduleTokenRefresh(expiryTime);
+
+      return true;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      handleLogout();
+      return false;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [getApiUrl, handleLogout, scheduleTokenRefresh]);
+
+  // 带自动重试的fetch包装器
+  const fetchWithAuth = useCallback(
+    async (url: string, options: RequestInit = {}): Promise<Response> => {
+      const token = getToken();
+      const headers = {
+        ...options.headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      let response = await fetch(url, { ...options, headers });
+
+      // 如果收到401，尝试刷新token并重试
+      if (response.status === 401 && token) {
+        const refreshSuccess = await refreshAccessToken();
+        if (refreshSuccess) {
+          const newToken = getToken();
+          const newHeaders = {
+            ...options.headers,
+            ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
+          };
+          response = await fetch(url, { ...options, headers: newHeaders });
+        }
+      }
+
+      return response;
+    },
+    [getToken, refreshAccessToken],
+  );
+
   // 应用启动时检查本地存储的token
   useEffect(() => {
     const initAuth = async () => {
       try {
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
+        const savedExpiry = localStorage.getItem('tokenExpiry');
 
         if (token && savedUser) {
+          // 检查token是否已过期
+          const expiryTime = savedExpiry ? parseInt(savedExpiry, 10) : parseTokenExpiry(token);
+          const now = Date.now();
+
+          if (expiryTime && expiryTime < now) {
+            // Token已过期，尝试刷新
+            const refreshSuccess = await refreshAccessToken();
+            if (!refreshSuccess) {
+              handleLogout();
+              return;
+            }
+          }
+
           // 验证token有效性（可选）
           const response = await fetch(getApiUrl('/api/auth/validate'), {
             headers: {
@@ -80,6 +236,12 @@ export const AuthProvider = ({
           if (response.ok) {
             setUser(JSON.parse(savedUser));
             setIsAuthenticated(true);
+
+            // 如果有过期时间，安排自动刷新
+            if (expiryTime && expiryTime > now) {
+              setTokenExpiry(expiryTime);
+              scheduleTokenRefresh(expiryTime);
+            }
           } else {
             // Token无效，清除本地存储
             handleLogout();
@@ -94,7 +256,14 @@ export const AuthProvider = ({
     };
 
     initAuth();
-  }, [getApiUrl]);
+
+    // 组件卸载时清除定时器
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, [getApiUrl, handleLogout, parseTokenExpiry, refreshAccessToken, scheduleTokenRefresh]);
 
   // 登录函数
   const login = useCallback(
@@ -117,7 +286,7 @@ export const AuthProvider = ({
 
         const data = await response.json();
         // resturn structure: { accessToken: '...', user: { id: 1, name: '...', role: '...' } }
-        const { accessToken, user: userData } = data;
+        const { accessToken, user: userData, expiresIn } = data;
 
         // Update User status
         setUser(userData);
@@ -126,6 +295,14 @@ export const AuthProvider = ({
         // Store authentication information
         localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
+
+        // Store token expiry time (default 1 hour if not provided)
+        const expiryTime = Date.now() + (expiresIn || 3600) * 1000;
+        setTokenExpiry(expiryTime);
+        localStorage.setItem('tokenExpiry', expiryTime.toString());
+
+        // Start auto-refresh timer
+        scheduleTokenRefresh(expiryTime);
 
         return { success: true };
       } catch (error) {
@@ -139,24 +316,8 @@ export const AuthProvider = ({
         setLoading(false);
       }
     },
-    [getApiUrl],
+    [getApiUrl, scheduleTokenRefresh],
   );
-
-  // 登出函数
-  const logout = useCallback(() => {
-    // 清除状态
-    setUser(null);
-    setIsAuthenticated(false);
-
-    // 清除本地存储
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  }, []);
-
-  // 封装登出逻辑供外部使用（如token失效时）
-  const handleLogout = useCallback(() => {
-    logout();
-  }, [logout]);
 
   const signup = useCallback(
     async (credentials: { name: string; email: string; password: string }) => {
@@ -178,7 +339,7 @@ export const AuthProvider = ({
         const data = await response.json();
 
         // resturn structure: { token: '...', user: { id: 1, name: '...', role: '...' } }
-        const { accessToken, user: userData } = data;
+        const { accessToken, user: userData, expiresIn } = data;
 
         // Update User status
         setUser(userData);
@@ -187,6 +348,14 @@ export const AuthProvider = ({
         // Store authentication information
         localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
+
+        // Store token expiry time (default 1 hour if not provided)
+        const expiryTime = Date.now() + (expiresIn || 3600) * 1000;
+        setTokenExpiry(expiryTime);
+        localStorage.setItem('tokenExpiry', expiryTime.toString());
+
+        // Start auto-refresh timer
+        scheduleTokenRefresh(expiryTime);
 
         return { success: true };
       } catch (error) {
@@ -200,7 +369,7 @@ export const AuthProvider = ({
         setLoading(false);
       }
     },
-    [],
+    [getApiUrl, scheduleTokenRefresh],
   );
 
   // 更新用户信息 - Fixed: use functional state update to avoid stale closure
@@ -217,11 +386,6 @@ export const AuthProvider = ({
     });
   }, []);
 
-  // 获取当前token
-  const getToken = useCallback(() => {
-    return localStorage.getItem('token');
-  }, []);
-
   // Context值
   const value: AuthContextType = {
     user,
@@ -235,6 +399,7 @@ export const AuthProvider = ({
     handleLogout,
     baseUrl,
     setBaseUrl,
+    refreshAccessToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

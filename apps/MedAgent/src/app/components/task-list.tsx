@@ -28,6 +28,8 @@ interface TaskListProps {
   loading?: boolean;
   error?: Error | null;
   onTaskClick?: (taskId: string) => void;
+  onStartTask?: (taskId: string) => Promise<void>;
+  startingTaskId?: string;
 }
 
 const getStatusBadgeVariant = (
@@ -60,7 +62,12 @@ const getStatusColor = (status: TaskStatus): string => {
   }
 };
 
-const TaskCard = ({ task, onClick }: { task: TaskInfo; onClick?: () => void }) => (
+const TaskCard = ({ task, onClick, onStartTask, isStarting }: {
+  task: TaskInfo;
+  onClick?: () => void;
+  onStartTask?: (e: React.MouseEvent, taskId: string) => Promise<void>;
+  isStarting?: boolean;
+}) => (
   <Card
     className={`hover:shadow-md transition-shadow cursor-pointer ${onClick ? 'hover:border-primary' : ''}`}
     onClick={onClick}
@@ -77,11 +84,27 @@ const TaskCard = ({ task, onClick }: { task: TaskInfo; onClick?: () => void }) =
       <CardDescription className="line-clamp-2">
         {task.taskInput}
       </CardDescription>
+      {task.taskStatus === TaskStatus.IDLE && onStartTask && (
+        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="sm"
+            onClick={(e) => onStartTask(e, task.id)}
+            disabled={isStarting}
+          >
+            {isStarting ? 'Starting...' : 'Start Task'}
+          </Button>
+        </div>
+      )}
     </CardHeader>
   </Card>
 );
 
-const TaskListItem = ({ task, onClick }: { task: TaskInfo; onClick?: () => void }) => (
+const TaskListItem = ({ task, onClick, onStartTask, isStarting }: {
+  task: TaskInfo;
+  onClick?: () => void;
+  onStartTask?: (e: React.MouseEvent, taskId: string) => Promise<void>;
+  isStarting?: boolean;
+}) => (
   <div
     className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer ${onClick ? 'hover:border-primary' : ''}`}
     onClick={onClick}
@@ -96,10 +119,21 @@ const TaskListItem = ({ task, onClick }: { task: TaskInfo; onClick?: () => void 
     <Badge variant={getStatusBadgeVariant(task.taskStatus)}>
       {task.taskStatus}
     </Badge>
+    {task.taskStatus === TaskStatus.IDLE && onStartTask && (
+      <div onClick={(e) => e.stopPropagation()}>
+        <Button
+          size="sm"
+          onClick={(e) => onStartTask(e, task.id)}
+          disabled={isStarting}
+        >
+          {isStarting ? 'Starting...' : 'Start'}
+        </Button>
+      </div>
+    )}
   </div>
 );
 
-export function TaskList({ tasks, loading, error, onTaskClick }: TaskListProps) {
+export function TaskList({ tasks, loading, error, onTaskClick, onStartTask, startingTaskId }: TaskListProps) {
   const [viewMode, setViewMode] = React.useState<ViewMode>('card');
 
   if (loading) {
@@ -153,6 +187,8 @@ export function TaskList({ tasks, loading, error, onTaskClick }: TaskListProps) 
               key={task.id}
               task={task}
               onClick={onTaskClick ? () => onTaskClick(task.id) : undefined}
+              onStartTask={onStartTask ? (e, taskId) => onStartTask(taskId) : undefined}
+              isStarting={startingTaskId === task.id}
             />
           ))}
         </div>
@@ -163,6 +199,8 @@ export function TaskList({ tasks, loading, error, onTaskClick }: TaskListProps) 
               key={task.id}
               task={task}
               onClick={onTaskClick ? () => onTaskClick(task.id) : undefined}
+              onStartTask={onStartTask ? (e, taskId) => onStartTask(taskId) : undefined}
+              isStarting={startingTaskId === task.id}
             />
           ))}
         </div>

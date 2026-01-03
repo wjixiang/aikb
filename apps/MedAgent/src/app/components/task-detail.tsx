@@ -13,8 +13,46 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, Terminal, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import Markdown from 'react-markdown';
 
+// ==================== GraphQL Queries ====================
+const GET_TASK_INFO = gql`
+  query GetTaskInfo($taskId: ID!) {
+    getTaskInfo(taskId: $taskId) {
+      id
+      taskInput
+      taskStatus
+      createdAt
+    }
+  }
+`;
+
+const GET_TASK_MESSAGES = gql`
+  query GetTaskMessages($taskId: ID!) {
+    getTaskMessages(taskId: $taskId) {
+      role
+      text
+      blocks {
+        type
+        text
+        imageSource {
+          type
+          media_type
+          data
+        }
+        toolUseId
+        toolName
+        toolInput
+        toolResultId
+        toolResultContent
+      }
+      ts
+    }
+  }
+`;
+
+// ==================== Type Definitions ====================
 interface TaskDetailProps {
   taskId: string;
   onBack?: () => void;
@@ -33,42 +71,299 @@ interface TaskMessagesResponse {
   getTaskMessages: Message[];
 }
 
-export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
-  const GET_TASK_INFO = gql`
-    query GetTaskInfo($taskId: ID!) {
-      getTaskInfo(taskId: $taskId) {
-        id
-        taskInput
-        taskStatus
-        createdAt
-      }
-    }
-  `;
+interface ImageSource {
+  type: string;
+  media_type?: string | null;
+  data?: string | null;
+}
 
-  const GET_TASK_MESSAGES = gql`
-    query GetTaskMessages($taskId: ID!) {
-      getTaskMessages(taskId: $taskId) {
-        role
-        text
-        blocks {
-          type
-          text
-          imageSource {
-            type
-            media_type
-            data
-          }
-          toolUseId
-          toolName
-          toolInput
-          toolResultId
-          toolResultContent
+interface MessageBlock {
+  type: string;
+  text?: string | null;
+  imageSource?: ImageSource | null;
+  toolUseId?: string | null;
+  toolName?: string | null;
+  toolInput?: string | object | null;
+  toolResultId?: string | null;
+  toolResultContent?: string | object | null;
+}
+
+// ==================== Utility Functions ====================
+const getStatusBadgeVariant = (
+  status: TaskStatus,
+): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  const variantMap: Record<TaskStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    [TaskStatus.COMPLETED]: 'default',
+    [TaskStatus.RUNNING]: 'secondary',
+    [TaskStatus.ABORTED]: 'destructive',
+    [TaskStatus.IDLE]: 'outline',
+  };
+  return variantMap[status] ?? 'outline';
+};
+
+const getRoleBadgeVariant = (role: MessageRole): 'default' | 'secondary' | 'outline' => {
+  const variantMap: Record<MessageRole, 'default' | 'secondary' | 'outline'> = {
+    [MessageRole.USER]: 'default',
+    [MessageRole.ASSISTANT]: 'secondary',
+    [MessageRole.SYSTEM]: 'outline',
+  };
+  return variantMap[role] ?? 'outline';
+};
+
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleString();
+};
+
+const formatTimestamp = (ts: string | number): string => {
+  return new Date(Number(ts)).toLocaleTimeString();
+};
+
+const stringifyInput = (input: string | object): string => {
+  return typeof input === 'string' ? input : JSON.stringify(input, null, 2);
+};
+
+// ==================== Block Components ====================
+const TextBlock = React.memo(({ text }: { text: string }) => (
+  <div className="py-1">
+    <p className="text-sm leading-relaxed">{text}</p>
+  </div>
+));
+TextBlock.displayName = 'TextBlock';
+
+const ToolUseBlock = React.memo(({ toolName, toolInput }: { toolName: string; toolInput: string | object }) => {
+  const inputStr = stringifyInput(toolInput);
+  const isAttemptCompletion = toolName === 'attempt_completion';
+
+  return (
+    <div className="my-2 rounded-lg border border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/10">
+      <div className="flex items-center gap-2 border-b border-primary/10 px-3 py-2 dark:border-primary/20">
+        {isAttemptCompletion ? (
+          <CheckCircle className="h-4 w-4 text-primary" />
+        ) : (
+          <Terminal className="h-4 w-4 text-primary" />
+        )}
+        <span className="text-sm font-semibold text-primary">
+          {isAttemptCompletion ? 'Task Complete' : `Tool: ${toolName}`}
+        </span>
+      </div>
+      <pre className="overflow-x-auto px-3 py-2 text-xs text-foreground">
+        {isAttemptCompletion ? (
+          <Markdown>{JSON.parse(inputStr).result}</Markdown>
+        ) : (
+          inputStr
+        )}
+      </pre>
+    </div>
+  );
+});
+ToolUseBlock.displayName = 'ToolUseBlock';
+
+const ToolResultBlock = React.memo(({ toolResultContent }: { toolResultContent: string | object }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const contentStr = stringifyInput(toolResultContent);
+  console.log(toolResultContent)
+  return (
+    <div className="my-2 rounded-lg border border-secondary/20 bg-secondary/5 dark:border-secondary/30 dark:bg-secondary/10">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between gap-2 border-b border-secondary/10 px-3 py-2 dark:border-secondary/20 hover:bg-secondary/10 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Terminal className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-primary">
+            Tool Result
+          </span>
+        </div>
+        <svg
+          className={`h-4 w-4 text-secondary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isExpanded && (
+        <pre className="overflow-x-auto px-3 py-2 text-xs text-foreground">
+          {contentStr}
+        </pre>
+      )}
+    </div>
+  );
+});
+ToolResultBlock.displayName = 'ToolResultBlock';
+
+const ImageBlock = React.memo(({ imageSource }: { imageSource: ImageSource | null }) => {
+  if (!imageSource) return null;
+
+  return (
+    <div className="my-2 rounded-lg border border-accent/20 bg-accent/5 dark:border-accent/30 dark:bg-accent/10 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <ImageIcon className="h-4 w-4 text-accent" />
+        <span className="text-sm font-semibold text-accent">
+          Image: {imageSource.type}
+        </span>
+      </div>
+      {imageSource.data && (
+        <img
+          src={`data:${imageSource.media_type || 'image/png'};base64,${imageSource.data}`}
+          alt="Message image"
+          className="max-h-64 rounded border"
+        />
+      )}
+    </div>
+  );
+});
+ImageBlock.displayName = 'ImageBlock';
+
+const MessageBlocks = React.memo(({ blocks }: { blocks: MessageBlock[] }) => {
+  return (
+    <div className="space-y-1">
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case 'text':
+            return block.text && block.text.length > 0 ? (
+              <TextBlock key={index} text={block.text} />
+            ) : null;
+          case 'tool_use':
+            return block.toolName && block.toolInput ? (
+              <ToolUseBlock key={index} toolName={block.toolName} toolInput={block.toolInput} />
+            ) : null;
+          case 'tool_result':
+            return block.toolResultContent ? (
+              <ToolResultBlock key={index} toolResultContent={block.toolResultContent} />
+            ) : null;
+          case 'image':
+            return block.imageSource ? (
+              <ImageBlock key={index} imageSource={block.imageSource} />
+            ) : null;
+          default:
+            return null;
         }
-        ts
-      }
-    }
-  `;
+      })}
+    </div>
+  );
+});
+MessageBlocks.displayName = 'MessageBlocks';
 
+// ==================== Message Components ====================
+interface MessageItemProps {
+  message: Message;
+  index: number;
+  totalMessages: number;
+}
+
+const MessageItem = React.memo(({ message, index, totalMessages }: MessageItemProps) => {
+  const renderMessageContent = (): React.ReactNode => {
+    if (message.text) {
+      return <TextBlock text={message.text} />;
+    }
+
+    if (message.blocks && Array.isArray(message.blocks)) {
+      return <MessageBlocks blocks={message.blocks} />;
+    }
+
+    return null;
+  };
+
+  return (
+    <React.Fragment>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Badge variant={getRoleBadgeVariant(message.role)}>
+            {message.role}
+          </Badge>
+          {message.ts && (
+            <span className="text-xs text-muted-foreground">
+              {formatTimestamp(message.ts)}
+            </span>
+          )}
+        </div>
+        <div className="rounded-lg border bg-muted/50 p-4">
+          {renderMessageContent()}
+        </div>
+      </div>
+      {index < totalMessages - 1 && <Separator />}
+    </React.Fragment>
+  );
+});
+MessageItem.displayName = 'MessageItem';
+
+interface MessageListProps {
+  messages: Message[];
+}
+
+const MessageList = React.memo(({ messages }: MessageListProps) => {
+  if (messages.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        No messages yet
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {messages.map((message, index) => (
+        <MessageItem
+          key={index}
+          message={message}
+          index={index}
+          totalMessages={messages.length}
+        />
+      ))}
+    </div>
+  );
+});
+MessageList.displayName = 'MessageList';
+
+// ==================== Loading & Error States ====================
+const LoadingState = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="text-muted-foreground">Loading task details...</div>
+  </div>
+);
+
+const ErrorState = ({ error }: { error: Error | undefined }) => (
+  <div className="flex items-center justify-center p-8">
+    <div className="text-destructive">
+      Error: {error?.message || 'Unknown error occurred'}
+    </div>
+  </div>
+);
+
+// ==================== Task Info Card ====================
+interface TaskInfoCardProps {
+  task: TaskInfoResponse['getTaskInfo'] | undefined;
+}
+
+const TaskInfoCard = React.memo(({ task }: TaskInfoCardProps) => (
+  <Card>
+    <CardHeader>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <CardTitle className="text-xl">{task?.id}</CardTitle>
+          <CardDescription className="text-base">
+            {task?.taskInput}
+          </CardDescription>
+        </div>
+        <Badge variant={getStatusBadgeVariant(task?.taskStatus || TaskStatus.IDLE)}>
+          {task?.taskStatus}
+        </Badge>
+      </div>
+      {task?.createdAt && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" />
+          {formatDate(task.createdAt)}
+        </div>
+      )}
+    </CardHeader>
+  </Card>
+));
+TaskInfoCard.displayName = 'TaskInfoCard';
+
+// ==================== Main Component ====================
+export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
   const { data: taskData, loading: taskLoading, error: taskError } = useQuery<TaskInfoResponse>(
     GET_TASK_INFO,
     { variables: { taskId } }
@@ -79,90 +374,16 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
     { variables: { taskId } }
   );
 
-  const getStatusBadgeVariant = (
-    status: TaskStatus,
-  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-    switch (status) {
-      case TaskStatus.COMPLETED:
-        return 'default';
-      case TaskStatus.RUNNING:
-        return 'secondary';
-      case TaskStatus.ABORTED:
-        return 'destructive';
-      case TaskStatus.IDLE:
-      default:
-        return 'outline';
-    }
-  };
-
-  const formatMessageContent = (message: Message): string => {
-    // If there's text content, return it directly
-    if (message.text) {
-      return message.text;
-    }
-    
-    // If there are blocks, format them
-    if (message.blocks && Array.isArray(message.blocks)) {
-      return message.blocks
-        .map((block) => {
-          if (block.type === 'text' && block.text && block.text.length>0) {
-            return block.text;
-          }
-          if (block.type === 'tool_use' && block.toolName) {
-            return `[Tool: ${block.toolName}]
-${block.toolInput}
-`;
-          }
-          if (block.type === 'tool_result' && block.toolResultContent) {
-            return `[Tool Result: ${block.toolResultContent}]`;
-          }
-          // return JSON.stringify(block);
-        })
-        .join('\n');
-    }
-    
-    return '';
-  };
-
-  const getRoleBadgeVariant = (role: MessageRole): 'default' | 'secondary' | 'outline' => {
-    switch (role) {
-      case MessageRole.USER:
-        return 'default';
-      case MessageRole.ASSISTANT:
-        return 'secondary';
-      case MessageRole.SYSTEM:
-        return 'outline';
-      default:
-        return 'outline';
-    }
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
   if (taskLoading || messagesLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Loading task details...</div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (taskError || messagesError) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-destructive">
-          Error: {(taskError || messagesError)?.message}
-        </div>
-      </div>
-    );
+    return <ErrorState error={taskError || messagesError} />;
   }
 
   const task = taskData?.getTaskInfo;
   const messages = messagesData?.getTaskMessages || [];
-  console.log(messages)
 
   return (
     <div className="space-y-6">
@@ -173,25 +394,7 @@ ${block.toolInput}
         </Button>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-2">
-              <CardTitle className="text-xl">{task?.id}</CardTitle>
-              <CardDescription className="text-base">
-                {task?.taskInput}
-              </CardDescription>
-            </div>
-            <Badge variant={getStatusBadgeVariant(task?.taskStatus || TaskStatus.IDLE)}>
-              {task?.taskStatus}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {task?.createdAt && formatDate(task.createdAt)}
-          </div>
-        </CardHeader>
-      </Card>
+      <TaskInfoCard task={task} />
 
       <Card>
         <CardHeader>
@@ -202,36 +405,7 @@ ${block.toolInput}
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px] pr-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                No messages yet
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <React.Fragment key={index}>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={getRoleBadgeVariant(message.role)}>
-                          {message.role}
-                        </Badge>
-                        {message.ts && (
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(Number(message.ts)).toLocaleTimeString()}
-                          </span>
-                        )}
-                      </div>
-                      <div className="rounded-lg border bg-muted/50 p-4">
-                        <pre className="whitespace-pre-wrap wrap-break-word text-sm">
-                          {formatMessageContent(message)}
-                        </pre>
-                      </div>
-                    </div>
-                    {index < messages.length - 1 && <Separator />}
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
+            <MessageList messages={messages} />
           </ScrollArea>
         </CardContent>
       </Card>
