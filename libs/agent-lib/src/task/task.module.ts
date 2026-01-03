@@ -8,4 +8,4 @@ import { AgentDBModule } from 'agent-db';
   providers: [TaskService],
   exports: [TaskService],
 })
-export class TaskModule { }
+export class TaskModule {}

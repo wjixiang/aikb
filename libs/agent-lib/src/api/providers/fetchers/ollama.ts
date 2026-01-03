@@ -110,7 +110,12 @@ export async function getOllamaModels(
       );
     }
   } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ECONNREFUSED'
+    ) {
       console.warn(`Failed connecting to Ollama at ${baseUrl}`);
     } else {
       console.error(

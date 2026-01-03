@@ -3,14 +3,14 @@ import './path';
 export type InjectableConfigType =
   | string
   | {
-    [key: string]:
-    | undefined
-    | null
-    | boolean
-    | number
-    | InjectableConfigType
-    | Array<undefined | null | boolean | number | InjectableConfigType>;
-  };
+      [key: string]:
+        | undefined
+        | null
+        | boolean
+        | number
+        | InjectableConfigType
+        | Array<undefined | null | boolean | number | InjectableConfigType>;
+    };
 
 /**
  * Deeply injects environment variables into a configuration object/string/json

@@ -26,9 +26,9 @@ export * from './lib/jwt.types';
 
 // Export test helpers
 export {
-    TestAuthHelper,
-    generateTestAccessToken,
-    generateTestRefreshToken,
+  TestAuthHelper,
+  generateTestAccessToken,
+  generateTestRefreshToken,
 } from './lib/authTestHelper';
 
 // Export DTOs

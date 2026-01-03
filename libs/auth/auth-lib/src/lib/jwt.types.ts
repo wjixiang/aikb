@@ -8,14 +8,14 @@
  * 用于用户身份验证和授权
  */
 export interface JwtAccessTokenPayload {
-    /** 用户ID (subject) */
-    sub: string;
-    /** 用户邮箱 */
-    email: string;
-    /** 签发时间 (issued at) - 由 JWT 库自动添加 */
-    iat?: number;
-    /** 过期时间 (expiration) - 由 JWT 库自动添加 */
-    exp?: number;
+  /** 用户ID (subject) */
+  sub: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 签发时间 (issued at) - 由 JWT 库自动添加 */
+  iat?: number;
+  /** 过期时间 (expiration) - 由 JWT 库自动添加 */
+  exp?: number;
 }
 
 /**
@@ -23,14 +23,14 @@ export interface JwtAccessTokenPayload {
  * 用于获取新的访问令牌
  */
 export interface JwtRefreshTokenPayload {
-    /** 用户ID (subject) */
-    sub: string;
-    /** 用户邮箱 */
-    email: string;
-    /** 签发时间 (issued at) - 由 JWT 库自动添加 */
-    iat?: number;
-    /** 过期时间 (expiration) - 由 JWT 库自动添加 */
-    exp?: number;
+  /** 用户ID (subject) */
+  sub: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 签发时间 (issued at) - 由 JWT 库自动添加 */
+  iat?: number;
+  /** 过期时间 (expiration) - 由 JWT 库自动添加 */
+  exp?: number;
 }
 
 /**
@@ -38,14 +38,14 @@ export interface JwtRefreshTokenPayload {
  * 由 JwtStrategy.validate() 方法返回
  */
 export interface JwtValidatedUser {
-    /** 用户ID */
-    sub: string;
-    /** 用户邮箱 */
-    email: string;
-    /** 用户名称 */
-    name: string | null;
-    /** 用户是否活跃 */
-    isActive: boolean;
+  /** 用户ID */
+  sub: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 用户名称 */
+  name: string | null;
+  /** 用户是否活跃 */
+  isActive: boolean;
 }
 
 /**
@@ -53,24 +53,24 @@ export interface JwtValidatedUser {
  * 包含访问令牌和刷新令牌
  */
 export interface JwtTokenPair {
-    /** 访问令牌 */
-    accessToken: string;
-    /** 刷新令牌 */
-    refreshToken: string;
+  /** 访问令牌 */
+  accessToken: string;
+  /** 刷新令牌 */
+  refreshToken: string;
 }
 
 /**
  * JWT 令牌配置选项
  */
 export interface JwtSignOptions {
-    /** 令牌过期时间 (例如: '15m', '1h', '7d') */
-    expiresIn?: string;
-    /** 令牌主题 */
-    subject?: string;
-    /** 令牌签发者 */
-    issuer?: string;
-    /** 令牌受众 */
-    audience?: string | string[];
+  /** 令牌过期时间 (例如: '15m', '1h', '7d') */
+  expiresIn?: string;
+  /** 令牌主题 */
+  subject?: string;
+  /** 令牌签发者 */
+  issuer?: string;
+  /** 令牌受众 */
+  audience?: string | string[];
 }
 
 /**
@@ -78,10 +78,10 @@ export interface JwtSignOptions {
  * 用于测试环境生成测试令牌
  */
 export interface TestJwtPayload {
-    /** 用户ID (subject) */
-    sub: string;
-    /** 用户邮箱 */
-    email: string;
-    /** 用户名称 (可选) */
-    name?: string;
+  /** 用户ID (subject) */
+  sub: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 用户名称 (可选) */
+  name?: string;
 }

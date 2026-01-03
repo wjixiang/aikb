@@ -3,7 +3,7 @@ import { AgentDBPrismaService } from './prisma';
 
 @Global()
 @Module({
-    providers: [AgentDBPrismaService],
-    exports: [AgentDBPrismaService],
+  providers: [AgentDBPrismaService],
+  exports: [AgentDBPrismaService],
 })
-export class AgentDBModule { }
+export class AgentDBModule {}

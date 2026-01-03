@@ -8,7 +8,7 @@ import { EmbeddingProvider, OpenAIModel } from 'embedding';
 
 @Controller()
 export class ChunkEmbedController {
-  constructor(private readonly chunkEmbedService: ChunkEmbedService) { }
+  constructor(private readonly chunkEmbedService: ChunkEmbedService) {}
 
   @RabbitRPC({
     exchange: 'library',

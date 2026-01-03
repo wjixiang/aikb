@@ -2,35 +2,35 @@
  * Language
  */
 
-import z from "zod";
+import z from 'zod';
 
 export const languages = [
-  "ca",
-  "de",
-  "en",
-  "es",
-  "fr",
-  "hi",
-  "id",
-  "it",
-  "ja",
-  "ko",
-  "nl",
-  "pl",
-  "pt-BR",
-  "ru",
-  "tr",
-  "vi",
-  "zh-CN",
-  "zh-TW",
-] as const
+  'ca',
+  'de',
+  'en',
+  'es',
+  'fr',
+  'hi',
+  'id',
+  'it',
+  'ja',
+  'ko',
+  'nl',
+  'pl',
+  'pt-BR',
+  'ru',
+  'tr',
+  'vi',
+  'zh-CN',
+  'zh-TW',
+] as const;
 
-export const languagesSchema = z.enum(languages)
+export const languagesSchema = z.enum(languages);
 
-export type Language = z.infer<typeof languagesSchema>
+export type Language = z.infer<typeof languagesSchema>;
 
-export const isLanguage = (value: string): value is Language => languages.includes(value as Language)
-
+export const isLanguage = (value: string): value is Language =>
+  languages.includes(value as Language);
 
 /**
  * Language name mapping from ISO codes to full language names.

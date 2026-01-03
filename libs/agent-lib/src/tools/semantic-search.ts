@@ -1,7 +1,9 @@
-import { ToolArgs } from "./types"
+import { ToolArgs } from './types';
 
-export function getSemanticSearchDescription(args: ToolArgs): string | undefined {
-    return `## semantic_search
+export function getSemanticSearchDescription(
+  args: ToolArgs,
+): string | undefined {
+  return `## semantic_search
 Description:Perform semantic search on a vector index to find relevant chunks based on a query from several highly authoritative medical textbooks. 
 This tool searches through indexed documents using vector similarity to find the most relevant matches, making it ideal for finding conceptually related content even when exact keyword matches don't exist. 
 Use this tool when you need to search for preliminary information based on meaning and context rather than just exact text matches.
@@ -39,5 +41,5 @@ What are the latest treatments for type 2 diabetes mellitus?
 <filters>
 {"document_type": "clinical_study", "date_range": "2021-2023"}
 </filters>
-</semantic_search>`
+</semantic_search>`;
 }

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { prisma } from 'auth-db';
@@ -10,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const secret = process.env['JWT_SECRET'];
     if (!secret) {
       throw new InternalServerErrorException(
-        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.'
+        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.',
       );
     }
     super({

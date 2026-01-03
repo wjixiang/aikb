@@ -22,14 +22,14 @@ type JwtUser = z.infer<typeof JwtPayloadSchema>;
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async register(
     @Body(new ZodValidationPipe(RegisterSchema)) registerDto: RegisterDto,
     @Res() res: Response,
   ): Promise<Response> {
-    console.log(registerDto)
+    console.log(registerDto);
     const result = await this.authService.register(registerDto);
     // Set status code to 201 for successful registration
     return res.status(HttpStatus.CREATED).json(result);
@@ -79,6 +79,8 @@ export class AuthController {
     @Res() res: Response,
   ): Promise<Response> {
     await this.authService.deleteUser(req.user.sub);
-    return res.status(HttpStatus.OK).json({ message: 'Unregister successfully' });
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Unregister successfully' });
   }
 }

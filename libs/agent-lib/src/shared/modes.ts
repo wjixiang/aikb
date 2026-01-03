@@ -229,7 +229,6 @@ export function isToolAllowedForMode(
 
     const groupConfig = TOOL_GROUPS[groupName];
 
-
     // Check if the tool is in the group's regular tools
     const isRegularTool = groupConfig.tools.includes(tool);
 
@@ -246,7 +245,6 @@ export function isToolAllowedForMode(
     if (!options) {
       return true;
     }
-
 
     return true;
   }
@@ -271,19 +269,17 @@ export const defaultPrompts: Readonly<CustomModePrompts> = Object.freeze(
 
 /**
  * Helper function to get all modes with their prompt overrides from extension state
- * @returns 
+ * @returns
  */
-export async function getAllModesWithPrompts(
-
-): Promise<ModeConfig[]> {
+export async function getAllModesWithPrompts(): Promise<ModeConfig[]> {
   // const customModes =
   //   (await context.globalState.get<ModeConfig[]>('customModes')) || [];
   // const customModePrompts =
   //   (await context.globalState.get<CustomModePrompts>('customModePrompts')) ||
   //   {};
 
-  const customModes = []
-  const customModePrompts = {}
+  const customModes = [];
+  const customModePrompts = {};
 
   const allModes = getAllModes(customModes);
   return allModes.map((mode) => ({
@@ -346,7 +342,7 @@ export async function getFullModeDetails(
   //   description: baseDescription,
   //   customInstructions: fullCustomInstructions,
   // };
-  return baseMode
+  return baseMode;
 }
 
 // Helper function to safely get role definition

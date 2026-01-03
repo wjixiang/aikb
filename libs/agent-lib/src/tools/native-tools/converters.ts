@@ -1,5 +1,5 @@
-import type OpenAI from "openai"
-import type Anthropic from "@anthropic-ai/sdk"
+import type OpenAI from 'openai';
+import type Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Converts an OpenAI ChatCompletionTool to Anthropic's Tool format.
@@ -25,17 +25,19 @@ import type Anthropic from "@anthropic-ai/sdk"
  * // Returns: { name: "get_weather", description: "Get weather", input_schema: {...} }
  * ```
  */
-export function convertOpenAIToolToAnthropic(tool: OpenAI.Chat.ChatCompletionTool): Anthropic.Tool {
-    // Handle both ChatCompletionFunctionTool and ChatCompletionCustomTool
-    if (tool.type !== "function") {
-        throw new Error(`Unsupported tool type: ${tool.type}`)
-    }
+export function convertOpenAIToolToAnthropic(
+  tool: OpenAI.Chat.ChatCompletionTool,
+): Anthropic.Tool {
+  // Handle both ChatCompletionFunctionTool and ChatCompletionCustomTool
+  if (tool.type !== 'function') {
+    throw new Error(`Unsupported tool type: ${tool.type}`);
+  }
 
-    return {
-        name: tool.function.name,
-        description: tool.function.description || "",
-        input_schema: tool.function.parameters as Anthropic.Tool.InputSchema,
-    }
+  return {
+    name: tool.function.name,
+    description: tool.function.description || '',
+    input_schema: tool.function.parameters as Anthropic.Tool.InputSchema,
+  };
 }
 
 /**
@@ -44,6 +46,8 @@ export function convertOpenAIToolToAnthropic(tool: OpenAI.Chat.ChatCompletionToo
  * @param tools - Array of OpenAI ChatCompletionTools to convert
  * @returns Array of Anthropic Tool definitions
  */
-export function convertOpenAIToolsToAnthropic(tools: OpenAI.Chat.ChatCompletionTool[]): Anthropic.Tool[] {
-    return tools.map(convertOpenAIToolToAnthropic)
+export function convertOpenAIToolsToAnthropic(
+  tools: OpenAI.Chat.ChatCompletionTool[],
+): Anthropic.Tool[] {
+  return tools.map(convertOpenAIToolToAnthropic);
 }

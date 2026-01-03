@@ -2,11 +2,9 @@ import { Module } from '@nestjs/common';
 import { TaskModule } from './task/task.module';
 
 @Module({
-  imports: [
-    TaskModule,
-  ],
+  imports: [TaskModule],
   controllers: [],
   providers: [],
   exports: [TaskModule],
 })
-export class AgentLibModule { }
+export class AgentLibModule {}

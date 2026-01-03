@@ -18,10 +18,14 @@ if (!isTestEnv) {
     try {
       // Check if locales directory exists
       if (!fs.existsSync(localesDir)) {
-        console.warn(`Locales directory not found at ${localesDir}. Skipping translation loading.`);
+        console.warn(
+          `Locales directory not found at ${localesDir}. Skipping translation loading.`,
+        );
       } else {
         // Find all language directories
-        const languageDirs = fs.readdirSync(localesDir, { withFileTypes: true });
+        const languageDirs = fs.readdirSync(localesDir, {
+          withFileTypes: true,
+        });
 
         const languages = languageDirs
           .filter((dirent: { isDirectory: () => boolean }) =>
@@ -53,7 +57,10 @@ if (!isTestEnv) {
               const content = fs.readFileSync(filePath, 'utf8');
               translations[language][namespace] = JSON.parse(content);
             } catch (error) {
-              console.error(`Error loading translation file ${filePath}:`, error);
+              console.error(
+                `Error loading translation file ${filePath}:`,
+                error,
+              );
             }
           });
         });

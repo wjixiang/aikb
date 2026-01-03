@@ -14,7 +14,8 @@ import { SingleCompletionHandler } from '../types';
 
 export class VertexHandler
   extends GeminiHandler
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   constructor(options: ApiHandlerOptions) {
     super({ ...options, isVertex: true });
   }

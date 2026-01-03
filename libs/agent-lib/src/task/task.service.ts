@@ -9,35 +9,33 @@ import { ProviderSettings } from '../types/provider-settings';
 
 @Injectable()
 export class TaskService {
-  constructor(
-    private db: AgentDBPrismaService
-  ) { }
+  constructor(private db: AgentDBPrismaService) {}
 
-  tasks = new Map<string, Task>()
+  tasks = new Map<string, Task>();
 
   private cleanupCallbacks = new Map<string, Array<() => void>>();
 
   async listTasksByUserId(userId: string) {
     return this.db.task.findMany({
       where: {
-        userId: userId
+        userId: userId,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
   }
 
   async getTaskById(taskId: string) {
     return this.db.task.findUnique({
-      where: { id: taskId }
+      where: { id: taskId },
     });
   }
 
   async getTaskMessages(taskId: string) {
     return this.db.conversationMessage.findMany({
       where: { taskId: taskId },
-      orderBy: { timestamp: 'asc' }
+      orderBy: { timestamp: 'asc' },
     });
   }
 
@@ -47,9 +45,9 @@ export class TaskService {
         id: v4(),
         userId: userId,
         taskInput: taskInput,
-        createdAt: new Date()
-      }
-    })
+        createdAt: new Date(),
+      },
+    });
     const task = this.initializeTask(taskCreatedRes.id, taskInput);
     return task;
   }
@@ -64,51 +62,59 @@ export class TaskService {
       apiKey: process.env['GLM_API_KEY'],
       apiModelId: 'glm-4.6',
       toolProtocol: 'xml',
-      zaiApiLine: 'china_coding'
+      zaiApiLine: 'china_coding',
     };
 
     const task = new Task(taskId, taskInput, testApiConfig);
-    this.tasks.set(task.taskId, task)
+    this.tasks.set(task.taskId, task);
 
     // Register observer
     // Observe LLM messages
-    const cleanup1 = task.onMessageAdded(async (taskId: string, message: ApiMessage) => {
-      // Extract reasoning from assistant messages (thinking blocks)
-      let reasoning: string | undefined;
-      let contentToStore = message.content;
+    const cleanup1 = task.onMessageAdded(
+      async (taskId: string, message: ApiMessage) => {
+        // Extract reasoning from assistant messages (thinking blocks)
+        let reasoning: string | undefined;
+        let contentToStore = message.content;
 
-      if (message.role === 'assistant' && Array.isArray(message.content)) {
-        const thinkingBlock = message.content.find((block: any) => block.type === 'thinking');
-        if (thinkingBlock) {
-          reasoning = (thinkingBlock as any).thinking;
-          // Remove thinking block from content for storage
-          contentToStore = message.content.filter((block: any) => block.type !== 'thinking');
+        if (message.role === 'assistant' && Array.isArray(message.content)) {
+          const thinkingBlock = message.content.find(
+            (block: any) => block.type === 'thinking',
+          );
+          if (thinkingBlock) {
+            reasoning = (thinkingBlock as any).thinking;
+            // Remove thinking block from content for storage
+            contentToStore = message.content.filter(
+              (block: any) => block.type !== 'thinking',
+            );
+          }
         }
-      }
 
-      // Store the message to database
-      await this.db.conversationMessage.create({
-        data: {
-          taskId: taskId,
-          role: message.role,
-          content: contentToStore as any,
-          reasoning: reasoning,
-          timestamp: message.ts || Date.now(),
-        }
-      });
-    });
+        // Store the message to database
+        await this.db.conversationMessage.create({
+          data: {
+            taskId: taskId,
+            role: message.role,
+            content: contentToStore as any,
+            reasoning: reasoning,
+            timestamp: message.ts || Date.now(),
+          },
+        });
+      },
+    );
 
     // Observe task status changed
-    const cleanup2 = task.onStatusChanged(async (taskId: string, changedStatus: TaskStatus) => {
-      const taskStatusUpdatedResult = await this.db.task.update({
-        where: {
-          id: taskId,
-        },
-        data: {
-          status: changedStatus
-        }
-      })
-    })
+    const cleanup2 = task.onStatusChanged(
+      async (taskId: string, changedStatus: TaskStatus) => {
+        const taskStatusUpdatedResult = await this.db.task.update({
+          where: {
+            id: taskId,
+          },
+          data: {
+            status: changedStatus,
+          },
+        });
+      },
+    );
 
     // Store cleanup function for later use
     this.cleanupCallbacks.set(taskId, [cleanup1, cleanup2]);
@@ -117,8 +123,8 @@ export class TaskService {
   }
 
   async startTask(taskId: string): Promise<{
-    isSuccess: boolean,
-    failedReason?: string
+    isSuccess: boolean;
+    failedReason?: string;
   }> {
     let task = this.tasks.get(taskId);
 
@@ -128,9 +134,9 @@ export class TaskService {
         where: { id: taskId },
         include: {
           conversationMessages: {
-            orderBy: { timestamp: 'asc' }
-          }
-        }
+            orderBy: { timestamp: 'asc' },
+          },
+        },
       });
 
       if (!taskRecord) {
@@ -138,20 +144,25 @@ export class TaskService {
       }
 
       // Restore task status
-      if (taskRecord.status === 'completed' || taskRecord.status === 'aborted') {
-        return { isSuccess: false, failedReason: 'Task already completed or aborted' };
+      if (
+        taskRecord.status === 'completed' ||
+        taskRecord.status === 'aborted'
+      ) {
+        return {
+          isSuccess: false,
+          failedReason: 'Task already completed or aborted',
+        };
       }
 
       // Reinitialize the task from database record
       task = this.initializeTask(taskRecord.id, taskRecord.taskInput);
 
       // Restore conversation history
-      task.conversationHistory = taskRecord.conversationMessages.map(msg => ({
+      task.conversationHistory = taskRecord.conversationMessages.map((msg) => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content as any,
         ts: Number(msg.timestamp),
       }));
-
     }
 
     // Start the task
@@ -159,11 +170,10 @@ export class TaskService {
     return { isSuccess: true };
   }
 
-  completeTask(
-    // taskId: string,
-    // tokenUsage: TokenUsage,
-    // toolUsage: ToolUsage,
-  ): void {
+  completeTask() // taskId: string,
+  // tokenUsage: TokenUsage,
+  // toolUsage: ToolUsage,
+  : void {
     // const task = this.tasks.get(taskId);
     // if (!task) return;
     // const { event, data } = task.complete(tokenUsage, toolUsage);
@@ -181,10 +191,10 @@ export class TaskService {
     const cleanups = this.cleanupCallbacks.get(taskId);
     if (cleanups) {
       // 调用所有清理函数，从 Task 的回调列表中移除
-      cleanups.forEach(cleanup => cleanup());
+      cleanups.forEach((cleanup) => cleanup());
       this.cleanupCallbacks.delete(taskId);
     }
 
-    this.tasks.delete(taskId)
+    this.tasks.delete(taskId);
   }
 }

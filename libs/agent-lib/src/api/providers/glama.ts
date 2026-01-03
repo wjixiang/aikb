@@ -22,15 +22,14 @@ import { RouterProvider } from './router-provider';
 
 const DEFAULT_HEADERS = {
   'X-Glama-Metadata': JSON.stringify({
-    labels: [
-      { key: 'app', value: 'vscode.RooVetGit.Roo-Cline' },
-    ],
+    labels: [{ key: 'app', value: 'vscode.RooVetGit.Roo-Cline' }],
   }),
 };
 
 export class GlamaHandler
   extends RouterProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   constructor(options: ApiHandlerOptions) {
     super({
       options,
@@ -134,10 +133,10 @@ export class GlamaHandler
 
     try {
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-      {
-        model: modelId,
-        messages: [{ role: 'user', content: prompt }],
-      };
+        {
+          model: modelId,
+          messages: [{ role: 'user', content: prompt }],
+        };
 
       if (this.supportsTemperature(modelId)) {
         requestOptions.temperature =

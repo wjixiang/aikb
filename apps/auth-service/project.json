@@ -60,6 +60,13 @@
           "buildTarget": "auth-service:build:production"
         }
       }
+    },
+    "gen-type": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx '/workspace/scripts/generate-typings.ts'",
+        "cwd": "apps/auth-service"
+      }
     }
   }
 }

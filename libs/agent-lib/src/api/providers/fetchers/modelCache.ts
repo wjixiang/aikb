@@ -59,7 +59,9 @@ async function readModels(
   const cacheDir = await getCacheDirectoryPath(globalStoragePath);
   const filePath = path.join(cacheDir, filename);
   const exists = await fileExistsAtPath(filePath);
-  return exists && fs ? JSON.parse(await fs.readFile(filePath, 'utf8')) : undefined;
+  return exists && fs
+    ? JSON.parse(await fs.readFile(filePath, 'utf8'))
+    : undefined;
 }
 
 /**
@@ -276,14 +278,14 @@ export async function initializeModelCacheRefresh(): Promise<void> {
       provider: RouterName;
       options: GetModelsOptions;
     }> = [
-        { provider: 'openrouter', options: { provider: 'openrouter' } },
-        { provider: 'glama', options: { provider: 'glama' } },
-        {
-          provider: 'vercel-ai-gateway',
-          options: { provider: 'vercel-ai-gateway' },
-        },
-        { provider: 'chutes', options: { provider: 'chutes' } },
-      ];
+      { provider: 'openrouter', options: { provider: 'openrouter' } },
+      { provider: 'glama', options: { provider: 'glama' } },
+      {
+        provider: 'vercel-ai-gateway',
+        options: { provider: 'vercel-ai-gateway' },
+      },
+      { provider: 'chutes', options: { provider: 'chutes' } },
+    ];
 
     // Refresh each provider in background (fire and forget)
     for (const { options } of publicProviders) {

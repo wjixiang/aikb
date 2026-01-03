@@ -167,11 +167,11 @@ function convertToOllamaMessages(
         const toolCalls =
           toolMessages.length > 0
             ? toolMessages.map((tool) => ({
-              function: {
-                name: tool.name,
-                arguments: tool.input as Record<string, unknown>,
-              },
-            }))
+                function: {
+                  name: tool.name,
+                  arguments: tool.input as Record<string, unknown>,
+                },
+              }))
             : undefined;
 
         ollamaMessages.push({
@@ -188,7 +188,8 @@ function convertToOllamaMessages(
 
 export class NativeOllamaHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected options: ApiHandlerOptions;
   private client: Ollama | undefined;
   protected models: Record<string, ModelInfo> = {};

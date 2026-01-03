@@ -226,7 +226,7 @@ export const zaiApiLineConfigs = {
     name: 'China',
     baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
     isChina: true,
-  }
+  },
 } satisfies Record<
   ZaiApiLine,
   { name: string; baseUrl: string; isChina: boolean }

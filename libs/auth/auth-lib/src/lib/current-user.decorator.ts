@@ -4,7 +4,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  * 用户数据接口，与 JwtStrategy.validate() 返回值对应
  */
 export interface CurrentUserData {
-  sub: string;      // 用户ID
+  sub: string; // 用户ID
   email: string;
   name: string;
   isActive: boolean;
@@ -29,7 +29,10 @@ export interface CurrentUserData {
  * @CurrentUser('email') email: string
  */
 export const CurrentUser = createParamDecorator(
-  (data: keyof CurrentUserData | undefined, ctx: ExecutionContext): CurrentUserData | string | boolean | undefined => {
+  (
+    data: keyof CurrentUserData | undefined,
+    ctx: ExecutionContext,
+  ): CurrentUserData | string | boolean | undefined => {
     const request = ctx.switchToHttp().getRequest();
     const user = request.user as CurrentUserData;
 

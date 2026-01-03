@@ -8,10 +8,7 @@ import type {
   ReasoningEffortExtended,
 } from '../../types';
 
-import {
-  shouldUseReasoningBudget,
-  shouldUseReasoningEffort,
-} from '../index';
+import { shouldUseReasoningBudget, shouldUseReasoningEffort } from '../index';
 
 export type OpenRouterReasoningParams = {
   effort?: ReasoningEffortExtended;

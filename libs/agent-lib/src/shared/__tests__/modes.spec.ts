@@ -6,7 +6,7 @@ import { getModeBySlug } from '../modes';
 
 describe('modes', () => {
   it(getModeBySlug, () => {
-    const mode = getModeBySlug('ask')
-    console.log(mode)
-  })
-})
+    const mode = getModeBySlug('ask');
+    console.log(mode);
+  });
+});

@@ -30,7 +30,8 @@ export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler['getModel']>;
 
 export class OpenAiNativeHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected options: ApiHandlerOptions;
   private client: OpenAI;
   // Resolved service tier from Responses API (actual tier used by OpenAI)
@@ -312,13 +313,13 @@ export class OpenAiNativeHandler
       ...(reasoningEffort ? { include: ['reasoning.encrypted_content'] } : {}),
       ...(reasoningEffort
         ? {
-          reasoning: {
-            ...(reasoningEffort ? { effort: reasoningEffort } : {}),
-            ...(this.options.enableResponsesReasoningSummary
-              ? { summary: 'auto' as const }
-              : {}),
-          },
-        }
+            reasoning: {
+              ...(reasoningEffort ? { effort: reasoningEffort } : {}),
+              ...(this.options.enableResponsesReasoningSummary
+                ? { summary: 'auto' as const }
+                : {}),
+            },
+          }
         : {}),
       // Only include temperature if the model supports it
       ...(model.info.supportsTemperature !== false && {
@@ -332,8 +333,8 @@ export class OpenAiNativeHandler
       ...(requestedTier &&
         (requestedTier === 'default' ||
           allowedTierNames.has(requestedTier)) && {
-        service_tier: requestedTier,
-      }),
+          service_tier: requestedTier,
+        }),
       // Enable extended prompt cache retention for models that support it.
       // This uses the OpenAI Responses API `prompt_cache_retention` parameter.
       ...(promptCacheRetention
@@ -462,8 +463,8 @@ export class OpenAiNativeHandler
                 typeof block.content === 'string'
                   ? block.content
                   : block.content
-                    ?.map((c) => (c.type === 'text' ? c.text : ''))
-                    .join('') || '';
+                      ?.map((c) => (c.type === 'text' ? c.text : ''))
+                      .join('') || '';
               toolResults.push({
                 type: 'function_call_output',
                 call_id: block.tool_use_id,

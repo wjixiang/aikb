@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react';
 
-import Components from './components';
+import AuthUi from './auth-ui';
 
-describe('Components', () => {
+describe('AuthUi', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<Components />);
+    const { baseElement } = render(<AuthUi />);
     expect(baseElement).toBeTruthy();
   });
 });

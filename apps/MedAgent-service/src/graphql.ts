@@ -1,4 +1,3 @@
-
 /*
  * -------------------------------------------------------
  * THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
@@ -9,143 +8,151 @@
 /* eslint-disable */
 
 export enum TaskStatus {
-    IDLE = "IDLE",
-    RUNNING = "RUNNING",
-    COMPLETED = "COMPLETED",
-    ABORTED = "ABORTED"
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  ABORTED = 'ABORTED',
 }
 
 export enum MessageRole {
-    USER = "USER",
-    ASSISTANT = "ASSISTANT",
-    SYSTEM = "SYSTEM"
+  USER = 'USER',
+  ASSISTANT = 'ASSISTANT',
+  SYSTEM = 'SYSTEM',
 }
 
 export class CreateTaskInput {
-    taskInput: string;
+  taskInput: string;
 }
 
 export class StartTaskInput {
-    taskId: string;
+  taskId: string;
 }
 
 export class BlockInput {
-    type: string;
+  type: string;
 }
 
 export class TextBlockInput {
-    type: string;
-    text: string;
+  type: string;
+  text: string;
 }
 
 export class ImageSourceInput {
-    type: string;
-    media_type: string;
-    data: string;
+  type: string;
+  media_type: string;
+  data: string;
 }
 
 export class ImageBlockInput {
-    type: string;
-    source: ImageSourceInput;
+  type: string;
+  source: ImageSourceInput;
 }
 
 export class ToolUseBlockInput {
-    type: string;
-    id: string;
-    name: string;
-    input: string;
+  type: string;
+  id: string;
+  name: string;
+  input: string;
 }
 
 export class ToolResultBlockInput {
-    type: string;
-    tool_use_id: string;
-    content?: Nullable<string>;
+  type: string;
+  tool_use_id: string;
+  content?: Nullable<string>;
 }
 
 export class MessageBlockInput {
-    type: string;
-    text?: Nullable<string>;
-    source?: Nullable<ImageSourceInput>;
-    id?: Nullable<string>;
-    name?: Nullable<string>;
-    input?: Nullable<string>;
-    tool_use_id?: Nullable<string>;
-    content?: Nullable<string>;
+  type: string;
+  text?: Nullable<string>;
+  source?: Nullable<ImageSourceInput>;
+  id?: Nullable<string>;
+  name?: Nullable<string>;
+  input?: Nullable<string>;
+  tool_use_id?: Nullable<string>;
+  content?: Nullable<string>;
 }
 
 export interface Block {
-    type: string;
+  type: string;
 }
 
 export abstract class IQuery {
-    abstract listTaskInfo(): TaskInfo[] | Promise<TaskInfo[]>;
+  abstract listTaskInfo(): TaskInfo[] | Promise<TaskInfo[]>;
 
-    abstract getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo>;
+  abstract getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo>;
 
-    abstract getTaskMessages(taskId: string): ApiMessage[] | Promise<ApiMessage[]>;
+  abstract getTaskMessages(
+    taskId: string,
+  ): ApiMessage[] | Promise<ApiMessage[]>;
 }
 
 export abstract class IMutation {
-    abstract createTask(input: CreateTaskInput): TaskInfo | Promise<TaskInfo>;
+  abstract createTask(input: CreateTaskInput): TaskInfo | Promise<TaskInfo>;
 
-    abstract startTask(input: StartTaskInput): StartTaskResult | Promise<StartTaskResult>;
+  abstract startTask(
+    input: StartTaskInput,
+  ): StartTaskResult | Promise<StartTaskResult>;
 }
 
 export class TaskInfo {
-    id: string;
-    taskInput: string;
-    taskStatus: TaskStatus;
-    createdAt: string;
+  id: string;
+  taskInput: string;
+  taskStatus: TaskStatus;
+  createdAt: string;
 }
 
 export class StartTaskResult {
-    isSuccess: boolean;
-    failedReason?: Nullable<string>;
+  isSuccess: boolean;
+  failedReason?: Nullable<string>;
 }
 
 export class TextBlock implements Block {
-    type: string;
-    text: string;
+  type: string;
+  text: string;
 }
 
 export class ImageSource {
-    type: string;
-    media_type: string;
-    data: string;
+  type: string;
+  media_type: string;
+  data: string;
 }
 
 export class ImageBlock implements Block {
-    type: string;
-    source: ImageSource;
+  type: string;
+  source: ImageSource;
 }
 
 export class ToolUseBlock implements Block {
-    type: string;
-    id: string;
-    name: string;
-    input: string;
+  type: string;
+  id: string;
+  name: string;
+  input: string;
 }
 
 export class ToolResultBlock implements Block {
-    type: string;
-    tool_use_id: string;
-    content?: Nullable<string>;
+  type: string;
+  tool_use_id: string;
+  content?: Nullable<string>;
 }
 
 export class StringContent {
-    text: string;
+  text: string;
 }
 
 export class BlocksContent {
-    blocks: ContentBlock[];
+  blocks: ContentBlock[];
 }
 
 export class ApiMessage {
-    role: MessageRole;
-    content: MessageContent;
-    ts?: Nullable<number>;
+  role: MessageRole;
+  content: MessageContent;
+  ts?: Nullable<number>;
 }
 
-export type ContentBlock = TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock;
+export type ContentBlock =
+  | TextBlock
+  | ImageBlock
+  | ToolUseBlock
+  | ToolResultBlock;
 export type MessageContent = StringContent | BlocksContent;
 type Nullable<T> = T | null;

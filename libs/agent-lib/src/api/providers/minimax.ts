@@ -58,7 +58,8 @@ function convertOpenAIToolChoice(
 
 export class MiniMaxHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   private options: ApiHandlerOptions;
   private client: Anthropic;
 
@@ -279,17 +280,17 @@ export class MiniMaxHandler
           content:
             typeof message.content === 'string'
               ? [
-                {
-                  type: 'text',
-                  text: message.content,
-                  cache_control: cacheControl,
-                },
-              ]
+                  {
+                    type: 'text',
+                    text: message.content,
+                    cache_control: cacheControl,
+                  },
+                ]
               : message.content.map((content, contentIndex) =>
-                contentIndex === message.content.length - 1
-                  ? { ...content, cache_control: cacheControl }
-                  : content,
-              ),
+                  contentIndex === message.content.length - 1
+                    ? { ...content, cache_control: cacheControl }
+                    : content,
+                ),
         };
       }
       return message;

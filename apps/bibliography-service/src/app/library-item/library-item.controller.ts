@@ -25,7 +25,7 @@ import { LibraryItem } from 'bibliography';
 
 @Controller('library-items')
 export class LibraryItemController {
-  constructor(private readonly libraryItemService: LibraryItemService) { }
+  constructor(private readonly libraryItemService: LibraryItemService) {}
 
   /**
    * Create a new library item

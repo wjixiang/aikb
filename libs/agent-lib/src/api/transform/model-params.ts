@@ -151,9 +151,9 @@ export function getModelParams({
       customReasoningEffort !== undefined
         ? customReasoningEffort
         : (model.reasoningEffort as
-          | ReasoningEffortExtended
-          | 'disable'
-          | undefined);
+            | ReasoningEffortExtended
+            | 'disable'
+            | undefined);
     // Capability and settings checks are handled by shouldUseReasoningEffort.
     // Here we simply propagate the resolved effort into the params, while
     // still treating "disable" as an omission.

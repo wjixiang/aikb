@@ -41,7 +41,7 @@ type GeminiHandlerOptions = ApiHandlerOptions & {
  * Converts GeminiReasoningParams to Google GenAI ThinkingConfig
  */
 function convertGeminiReasoningToThinkingConfig(
-  reasoningParams: GeminiReasoningParams | undefined
+  reasoningParams: GeminiReasoningParams | undefined,
 ): ThinkingConfig | undefined {
   if (!reasoningParams) {
     return undefined;
@@ -74,7 +74,8 @@ function convertGeminiReasoningToThinkingConfig(
 
 export class GeminiHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected options: ApiHandlerOptions;
 
   private client: GoogleGenAI;
@@ -92,23 +93,23 @@ export class GeminiHandler
 
     this.client = this.options.vertexJsonCredentials
       ? new GoogleGenAI({
-        vertexai: true,
-        project,
-        location,
-        googleAuthOptions: {
-          credentials: safeJsonParse<JWTInput>(
-            this.options.vertexJsonCredentials,
-            undefined,
-          ),
-        },
-      })
-      : this.options.vertexKeyFile
-        ? new GoogleGenAI({
           vertexai: true,
           project,
           location,
-          googleAuthOptions: { keyFile: this.options.vertexKeyFile },
+          googleAuthOptions: {
+            credentials: safeJsonParse<JWTInput>(
+              this.options.vertexJsonCredentials,
+              undefined,
+            ),
+          },
         })
+      : this.options.vertexKeyFile
+        ? new GoogleGenAI({
+            vertexai: true,
+            project,
+            location,
+            googleAuthOptions: { keyFile: this.options.vertexKeyFile },
+          })
         : isVertex
           ? new GoogleGenAI({ vertexai: true, project, location })
           : new GoogleGenAI({ apiKey });

@@ -1,19 +1,26 @@
-import NxWelcome from './nx-welcome';
-
-import { Route, Routes, Link } from 'react-router-dom';
-import { LoginForm } from 'ui/blocks/login-form';
-import { SignupForm } from 'ui/blocks/signup-form';
+import { useState } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { AuthUi } from 'auth-ui';
+import { DashboardPage } from './pages/dashboard-page';
 
 export function App() {
-  return (
-    <div className="">
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
-      {/* <LoginForm /> */}
-      <Routes>
-        <Route path="" element={<LoginForm />}/>
-        <Route path="/signup" element={<SignupForm />}/>
-      </Routes>
-    </div>
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <AuthUi
+            mode={authMode}
+            onSuccess={(user) => {
+              console.log('Authentication successful:', user);
+            }}
+          />
+        }
+      />
+      <Route path="/dashboard" element={<DashboardPage />} />
+    </Routes>
   );
 }
 

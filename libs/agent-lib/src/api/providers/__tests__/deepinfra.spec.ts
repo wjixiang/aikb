@@ -1,6 +1,9 @@
 // npx vitest api/providers/__tests__/deepinfra.spec.ts
 
-import { deepInfraDefaultModelId, deepInfraDefaultModelInfo } from '../../../types';
+import {
+  deepInfraDefaultModelId,
+  deepInfraDefaultModelInfo,
+} from '../../../types';
 
 const mockCreate = vi.fn();
 const mockWithResponse = vi.fn();

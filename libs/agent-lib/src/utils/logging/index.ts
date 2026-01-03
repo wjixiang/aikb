@@ -7,13 +7,13 @@
  * No-operation logger implementation for production environments
  */
 const noopLogger = {
-  debug: (message: string, metadata?: any) => { },
-  info: (message: string, metadata?: any) => { },
-  warn: (message: string, metadata?: any) => { },
-  error: (message: string, metadata?: any) => { },
-  fatal: (message: string, metadata?: any) => { },
+  debug: (message: string, metadata?: any) => {},
+  info: (message: string, metadata?: any) => {},
+  warn: (message: string, metadata?: any) => {},
+  error: (message: string, metadata?: any) => {},
+  fatal: (message: string, metadata?: any) => {},
   child: () => noopLogger,
-  close: (message: string, metadata?: any) => { },
+  close: (message: string, metadata?: any) => {},
 };
 
 /**

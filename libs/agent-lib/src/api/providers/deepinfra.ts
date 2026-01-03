@@ -1,7 +1,10 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-import { deepInfraDefaultModelId, deepInfraDefaultModelInfo } from '../../types';
+import {
+  deepInfraDefaultModelId,
+  deepInfraDefaultModelInfo,
+} from '../../types';
 
 import type { ApiHandlerOptions } from '../index';
 import { calculateApiCostOpenAI } from '../../shared/cost';
@@ -19,7 +22,8 @@ import { getModels } from './fetchers/modelCache';
 
 export class DeepInfraHandler
   extends RouterProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   constructor(options: ApiHandlerOptions) {
     super({
       options: {
@@ -163,10 +167,10 @@ export class DeepInfraHandler
     const { id: modelId, info } = this.getModel();
 
     const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-    {
-      model: modelId,
-      messages: [{ role: 'user', content: prompt }],
-    };
+      {
+        model: modelId,
+        messages: [{ role: 'user', content: prompt }],
+      };
     if (this.supportsTemperature(modelId)) {
       requestOptions.temperature = this.options.modelTemperature ?? 0;
     }
@@ -191,12 +195,12 @@ export class DeepInfraHandler
 
     const { totalCost } = modelInfo
       ? calculateApiCostOpenAI(
-        modelInfo,
-        inputTokens,
-        outputTokens,
-        cacheWriteTokens,
-        cacheReadTokens,
-      )
+          modelInfo,
+          inputTokens,
+          outputTokens,
+          cacheWriteTokens,
+          cacheReadTokens,
+        )
       : { totalCost: 0 };
 
     return {

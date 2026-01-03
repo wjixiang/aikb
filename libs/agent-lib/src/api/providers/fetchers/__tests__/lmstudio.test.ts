@@ -430,7 +430,7 @@ describe('LMStudio Fetcher', () => {
     it('should return an empty object and log error if axios.get fails with a generic error', async () => {
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
-        .mockImplementation(() => { });
+        .mockImplementation(() => {});
       const networkError = new Error('Network connection failed');
       mockedAxios.get.mockRejectedValueOnce(networkError);
 
@@ -450,7 +450,7 @@ describe('LMStudio Fetcher', () => {
     it('should return an empty object and log info if axios.get fails with ECONNREFUSED', async () => {
       const consoleInfoSpy = vi
         .spyOn(console, 'warn')
-        .mockImplementation(() => { });
+        .mockImplementation(() => {});
       const econnrefusedError = new Error('Connection refused');
       (econnrefusedError as any).code = 'ECONNREFUSED';
       mockedAxios.get.mockRejectedValueOnce(econnrefusedError);
@@ -471,7 +471,7 @@ describe('LMStudio Fetcher', () => {
     it('should return an empty object and log error if listDownloadedModels fails', async () => {
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
-        .mockImplementation(() => { });
+        .mockImplementation(() => {});
       const listError = new Error('LMStudio SDK internal error');
 
       mockedAxios.get.mockResolvedValueOnce({ data: {} });

@@ -27,7 +27,8 @@ import type {
 // https://docs.anthropic.com/en/api/claude-on-vertex-ai
 export class AnthropicVertexHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected options: ApiHandlerOptions;
   private client: AnthropicVertex;
 
@@ -103,12 +104,12 @@ export class AnthropicVertexHandler
       // Cache the system prompt if caching is enabled.
       system: supportsPromptCache
         ? [
-          {
-            text: systemPrompt,
-            type: 'text' as const,
-            cache_control: { type: 'ephemeral' },
-          },
-        ]
+            {
+              text: systemPrompt,
+              type: 'text' as const,
+              cache_control: { type: 'ephemeral' },
+            },
+          ]
         : systemPrompt,
       messages: supportsPromptCache
         ? addCacheBreakpoints(sanitizedMessages)
@@ -236,12 +237,12 @@ export class AnthropicVertexHandler
             role: 'user',
             content: supportsPromptCache
               ? [
-                {
-                  type: 'text' as const,
-                  text: prompt,
-                  cache_control: { type: 'ephemeral' },
-                },
-              ]
+                  {
+                    type: 'text' as const,
+                    text: prompt,
+                    cache_control: { type: 'ephemeral' },
+                  },
+                ]
               : prompt,
           },
         ],

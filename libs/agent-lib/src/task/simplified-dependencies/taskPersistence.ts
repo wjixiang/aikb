@@ -1,5 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { ThinkingBlock, ApiMessage, TaskMetadata, ExtendedContentBlock } from '../task.type';
+import type {
+  ThinkingBlock,
+  ApiMessage,
+  TaskMetadata,
+  ExtendedContentBlock,
+} from '../task.type';
 
 /**
  * Simplified task messages functions

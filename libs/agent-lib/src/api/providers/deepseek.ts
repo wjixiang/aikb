@@ -22,7 +22,8 @@ export class DeepSeekHandler extends OpenAiHandler {
 
   override getModel() {
     const modelId = this.options.openAiModelId ?? deepSeekDefaultModelId;
-    const modelInfo = this.options.openAiCustomModelInfo ??
+    const modelInfo =
+      this.options.openAiCustomModelInfo ??
       (deepSeekModels as any)[modelId] ??
       (deepSeekModels as any)[deepSeekDefaultModelId];
 
@@ -44,7 +45,8 @@ export class DeepSeekHandler extends OpenAiHandler {
       type: 'usage',
       inputTokens: usage?.prompt_tokens || 0,
       outputTokens: usage?.completion_tokens || 0,
-      cacheWriteTokens: usage?.prompt_tokens_details?.cache_miss_tokens || undefined,
+      cacheWriteTokens:
+        usage?.prompt_tokens_details?.cache_miss_tokens || undefined,
       cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens || undefined,
     };
   }

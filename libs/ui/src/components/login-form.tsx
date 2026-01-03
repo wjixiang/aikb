@@ -1,6 +1,5 @@
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
-import {Link} from 'react-router-dom'
 import {
   Card,
   CardContent,
@@ -11,10 +10,22 @@ import {
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
+export interface LoginFormProps {
+  className?: string;
+  onSubmit?: (event: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
+  error?: string | null;
+  isLoading?: boolean;
+  onToggleMode?: () => void;
+}
+
 export function LoginForm({
   className,
+  onSubmit,
+  error,
+  isLoading = false,
+  onToggleMode,
   ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+}: LoginFormProps) {
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
@@ -25,15 +36,17 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={onSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="m@example.com"
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2">
@@ -46,20 +59,35 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  disabled={isLoading}
+                />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              {error && <div className="text-sm text-red-500">{error}</div>}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Login'}
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled={isLoading}>
                 Login with Google
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link className="underline underline-offset-4" to="/signup">
-                Sign up
-              </Link>
+              Don't have an account?{' '}
+              {onToggleMode ? (
+                <button
+                  type="button"
+                  onClick={onToggleMode}
+                  className="underline underline-offset-4 hover:underline"
+                >
+                  Sign up
+                </button>
+              ) : (
+                <span className="underline underline-offset-4">Sign up</span>
+              )}
             </div>
           </form>
         </CardContent>

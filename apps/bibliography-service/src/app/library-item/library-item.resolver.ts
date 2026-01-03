@@ -10,7 +10,7 @@ export class LibraryItemResolver {
   constructor(
     private readonly libraryItemService: LibraryItemService,
     private readonly vectorService: VectorService,
-  ) { }
+  ) {}
 
   private transformLibraryItemToMetadata(
     item: LibraryItem,
@@ -473,18 +473,18 @@ export class LibraryItemResolver {
         description: input.description || undefined,
         chunkingConfig: input.chunkingConfig
           ? {
-            strategy: input.chunkingConfig.strategy as any,
-          }
+              strategy: input.chunkingConfig.strategy as any,
+            }
           : undefined,
         embeddingConfig: input.embeddingConfig
           ? {
-            provider: input.embeddingConfig.provider as any,
-            model: input.embeddingConfig.model as any,
-            dimension: input.embeddingConfig.dimension,
-            batchSize: input.embeddingConfig.batchSize,
-            maxRetries: input.embeddingConfig.maxRetries,
-            timeout: input.embeddingConfig.timeout,
-          }
+              provider: input.embeddingConfig.provider as any,
+              model: input.embeddingConfig.model as any,
+              dimension: input.embeddingConfig.dimension,
+              batchSize: input.embeddingConfig.batchSize,
+              maxRetries: input.embeddingConfig.maxRetries,
+              timeout: input.embeddingConfig.timeout,
+            }
           : undefined,
         isDefault: input.isDefault ?? undefined,
         isActive: input.isActive ?? undefined,

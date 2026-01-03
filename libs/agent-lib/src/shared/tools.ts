@@ -127,8 +127,8 @@ export interface ToolUse<TName extends ToolName = ToolName> {
   partial: boolean;
   // nativeArgs is properly typed based on TName if it's in NativeToolArgs, otherwise never
   nativeArgs?: TName extends keyof NativeToolArgs
-  ? NativeToolArgs[TName]
-  : never;
+    ? NativeToolArgs[TName]
+    : never;
 }
 
 /**
@@ -151,13 +151,11 @@ export interface McpToolUse {
   partial: boolean;
 }
 
-
 export interface AttemptCompletionToolUse
   extends ToolUse<'attempt_completion'> {
   name: 'attempt_completion';
   params: Partial<Pick<Record<ToolParamName, string>, 'result'>>;
 }
-
 
 // Define tool group configuration
 export type ToolGroupConfig = {
@@ -168,16 +166,14 @@ export type ToolGroupConfig = {
 
 export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
   attempt_completion: 'complete tasks',
-  semantic_search: 'semantic search'
+  semantic_search: 'semantic search',
 } as const;
 
 // Define available tool groups.
 export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
   search: {
-    tools: [
-      'semantic_search'
-    ]
-  }
+    tools: ['semantic_search'],
+  },
 };
 
 // Tools that are always available to all modes.
@@ -188,17 +184,17 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 export type DiffResult =
   | { success: true; content: string; failParts?: DiffResult[] }
   | ({
-    success: false;
-    error?: string;
-    details?: {
-      similarity?: number;
-      threshold?: number;
-      matchedRange?: { start: number; end: number };
-      searchContent?: string;
-      bestMatch?: string;
-    };
-    failParts?: DiffResult[];
-  } & ({ error: string } | { failParts: DiffResult[] }));
+      success: false;
+      error?: string;
+      details?: {
+        similarity?: number;
+        threshold?: number;
+        matchedRange?: { start: number; end: number };
+        searchContent?: string;
+        bestMatch?: string;
+      };
+      failParts?: DiffResult[];
+    } & ({ error: string } | { failParts: DiffResult[] }));
 
 export interface DiffItem {
   content: string;

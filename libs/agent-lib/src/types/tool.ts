@@ -4,9 +4,7 @@ import { z } from 'zod';
  * ToolGroup
  */
 
-export const toolGroups = [
-  'search'
-] as const;
+export const toolGroups = ['search'] as const;
 
 export const toolGroupsSchema = z.enum(toolGroups);
 
@@ -16,10 +14,7 @@ export type ToolGroup = z.infer<typeof toolGroupsSchema>;
  * ToolName
  */
 
-export const toolNames = [
-  'attempt_completion',
-  'semantic_search'
-] as const;
+export const toolNames = ['attempt_completion', 'semantic_search'] as const;
 
 export const toolNamesSchema = z.enum(toolNames);
 

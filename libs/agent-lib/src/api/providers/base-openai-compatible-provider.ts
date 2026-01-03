@@ -3,9 +3,7 @@ import OpenAI from 'openai';
 
 import type { ModelInfo } from '../../types';
 
-import {
-  type ApiHandlerOptions
-} from '../../shared/api';
+import { type ApiHandlerOptions } from '../../shared/api';
 import { XmlMatcher } from '../../utils/xml-matcher';
 import { ApiStream, ApiStreamUsageChunk } from '../transform/stream';
 import { convertToOpenAiMessages } from '../transform/openai-format';
@@ -32,7 +30,8 @@ type BaseOpenAiCompatibleProviderOptions<ModelName extends string> =
 
 export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected readonly providerName: string;
   protected readonly baseURL: string;
   protected readonly defaultTemperature: number;
@@ -94,24 +93,24 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
       this.options['modelTemperature'] ?? this.defaultTemperature;
 
     const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-    {
-      model,
-      max_tokens,
-      temperature,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...convertToOpenAiMessages(messages),
-      ],
-      stream: true,
-      stream_options: { include_usage: true },
-      ...(metadata?.tools && {
-        tools: this.convertToolsForOpenAI(metadata.tools),
-      }),
-      ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-      ...(metadata?.toolProtocol === 'native' && {
-        parallel_tool_calls: metadata.parallelToolCalls ?? false,
-      }),
-    };
+      {
+        model,
+        max_tokens,
+        temperature,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...convertToOpenAiMessages(messages),
+        ],
+        stream: true,
+        stream_options: { include_usage: true },
+        ...(metadata?.tools && {
+          tools: this.convertToolsForOpenAI(metadata.tools),
+        }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+        ...(metadata?.toolProtocol === 'native' && {
+          parallel_tool_calls: metadata.parallelToolCalls ?? false,
+        }),
+      };
 
     // Add thinking parameter if reasoning is enabled and model supports it
     if (this.options['enableReasoningEffort'] && info.supportsReasoningBinary) {
@@ -216,12 +215,12 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
     const { totalCost } = modelInfo
       ? calculateApiCostOpenAI(
-        modelInfo,
-        inputTokens,
-        outputTokens,
-        cacheWriteTokens,
-        cacheReadTokens,
-      )
+          modelInfo,
+          inputTokens,
+          outputTokens,
+          cacheWriteTokens,
+          cacheReadTokens,
+        )
       : { totalCost: 0 };
 
     return {
@@ -273,7 +272,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
   override getModel() {
     const id =
       this.options['apiModelId'] &&
-        this.options['apiModelId'] in this.providerModels
+      this.options['apiModelId'] in this.providerModels
         ? (this.options['apiModelId'] as ModelName)
         : this.defaultProviderModelId;
 

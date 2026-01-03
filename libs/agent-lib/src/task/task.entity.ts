@@ -1,4 +1,9 @@
-import { ApiHandler, ApiStreamChunk, buildApiHandler, type ApiStream } from '../api';
+import {
+  ApiHandler,
+  ApiStreamChunk,
+  buildApiHandler,
+  type ApiStream,
+} from '../api';
 import {
   DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ProviderSettings,
@@ -6,7 +11,7 @@ import {
   getApiProtocol,
   getModelId,
   ModelInfo,
-  ToolName
+  ToolName,
 } from '../types';
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from '../utils/resolveToolProtocol';
@@ -28,11 +33,11 @@ import {
   NoApiResponseError,
   NoToolsUsedError,
   StreamingError,
-  MaxRetryExceededError
+  MaxRetryExceededError,
 } from './task.errors';
-import { ToolCallingHandler } from '../tools'
+import { ToolCallingHandler } from '../tools';
 import { randomUUID } from 'node:crypto';
-import { TokenUsage } from '../types'
+import { TokenUsage } from '../types';
 import {
   TaskStatus,
   ThinkingBlock,
@@ -40,9 +45,8 @@ import {
   MessageAddedCallback,
   TaskStatusChangedCallback,
   ApiMessage,
-  TaskCompletedCallback
+  TaskCompletedCallback,
 } from './task.type';
-
 
 /**
  * Interface to encapsulate message processing state
@@ -58,7 +62,6 @@ interface MessageProcessingState {
   assistantMessageParser?: AssistantMessageParser;
   cachedModel?: { id: string; info: ModelInfo };
 }
-
 
 /**
  * Simplified Task entity with no core dependencies
@@ -83,7 +86,7 @@ export class Task {
   consecutiveMistakeLimit: number = DEFAULT_CONSECUTIVE_MISTAKE_LIMIT;
   consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
   toolUsage: ToolUsage = {};
-  toolCallHandler = new ToolCallingHandler()
+  toolCallHandler = new ToolCallingHandler();
 
   // Token Usage
   tokenUsage: TokenUsage = {
@@ -97,7 +100,6 @@ export class Task {
 
   // LLM Messages & Chat Messages
   conversationHistory: ApiMessage[] = [];
-
 
   // Ask
   public lastMessageTs?: number;
@@ -142,7 +144,7 @@ export class Task {
   ) {
     this.taskId = taskId;
     this.instanceId = crypto.randomUUID().slice(0, 8);
-    this.taskInput = taskInput
+    this.taskInput = taskInput;
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
     this.messageState.assistantMessageParser = new AssistantMessageParser();
@@ -163,29 +165,26 @@ export class Task {
     return () => {
       // Remove this callback from the array
       this.messageAddedCallbacks = this.messageAddedCallbacks.filter(
-        cb => cb !== callback
+        (cb) => cb !== callback,
       );
     };
   }
 
   onStatusChanged(callback: TaskStatusChangedCallback) {
-    this.taskStatusChangedCallbacks.push(callback)
+    this.taskStatusChangedCallbacks.push(callback);
 
     return () => {
       this.taskStatusChangedCallbacks = this.taskStatusChangedCallbacks.filter(
-        cb => cb !== callback
+        (cb) => cb !== callback,
       );
-    }
+    };
   }
 
   onTaskCompleted(callback: TaskCompletedCallback) {
-    this.taskCompletedCallbacks.push(callback)
+    this.taskCompletedCallbacks.push(callback);
 
-    return () => {
-
-    }
+    return () => {};
   }
-
 
   // ==================== Notification Methods ====================
 
@@ -194,9 +193,9 @@ export class Task {
    */
   private notifyMessageAdded(message: ApiMessage): void {
     // Iterate through all registered callback functions and call them
-    this.messageAddedCallbacks.forEach(callback => {
+    this.messageAddedCallbacks.forEach((callback) => {
       try {
-        callback(this.taskId, message);  // ← Directly call the function passed by TaskService
+        callback(this.taskId, message); // ← Directly call the function passed by TaskService
       } catch (error) {
         console.error('Error in callback:', error);
       }
@@ -204,25 +203,24 @@ export class Task {
   }
 
   private notifyStatusChanged(status: TaskStatus): void {
-    this.taskStatusChangedCallbacks.forEach(callback => {
+    this.taskStatusChangedCallbacks.forEach((callback) => {
       try {
         callback(this.taskId, status);
       } catch (error) {
         console.error('Error in callback:', error);
       }
-    })
+    });
   }
 
   private notifyTaskCompleted(): void {
-    this.taskCompletedCallbacks.forEach(callback => {
+    this.taskCompletedCallbacks.forEach((callback) => {
       try {
-        callback(this.taskId)
+        callback(this.taskId);
       } catch (error) {
         console.error('Error in callback:', error);
       }
-    })
+    });
   }
-
 
   // ==================== Helper Methods ====================
   /**
@@ -294,12 +292,11 @@ export class Task {
     this.recursivelyMakeClineRequests([
       {
         type: 'text',
-        text: `<task>${task ?? this.taskInput}</task>`
-      }
-    ])
+        text: `<task>${task ?? this.taskInput}</task>`,
+      },
+    ]);
 
-    return this
-
+    return this;
   }
 
   complete(tokenUsage?: any, toolUsage?: ToolUsage) {
@@ -337,9 +334,7 @@ export class Task {
       userMessageWasRemoved?: boolean;
     }
 
-    const stack: StackItem[] = [
-      { userContent, retryAttempt: 0 },
-    ];
+    const stack: StackItem[] = [{ userContent, retryAttempt: 0 }];
 
     while (stack.length > 0) {
       const currentItem = stack.pop()!;
@@ -360,7 +355,7 @@ export class Task {
       ) {
         console.error('Consecutive mistake limit reached');
         this.consecutiveMistakeCount = 0;
-        throw new Error(`Consecutive mistake limit reached`)
+        throw new Error(`Consecutive mistake limit reached`);
       }
 
       // Determine API protocol based on provider and model
@@ -438,7 +433,10 @@ export class Task {
         await this.addAssistantMessageToHistory();
 
         // Check if we should continue recursion
-        if (this.messageState.userMessageContent.length > 0 && !this.messageState.didAttemptCompletion) {
+        if (
+          this.messageState.userMessageContent.length > 0 &&
+          !this.messageState.didAttemptCompletion
+        ) {
           stack.push({
             userContent: [...this.messageState.userMessageContent],
           });
@@ -446,7 +444,6 @@ export class Task {
 
         // For debugging: avoid stuck in loop for some tests
         // didEndLoop = true;
-
       } catch (error) {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
@@ -466,33 +463,45 @@ export class Task {
         }
 
         this.collectedErrors.push(taskError);
-        console.error(`Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`, taskError);
+        console.error(
+          `Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`,
+          taskError,
+        );
 
         // Don't retry non-retryable errors
         if (!taskError.retryable) {
-          console.error(`Non-retryable error encountered: ${taskError.code}. Aborting.`);
+          console.error(
+            `Non-retryable error encountered: ${taskError.code}. Aborting.`,
+          );
           throw taskError;
         }
 
         // Check if we've exceeded the maximum retry attempts
         if (currentRetryAttempt >= this.maxRetryAttempts) {
-          console.error(`Maximum retry attempts (${this.maxRetryAttempts}) exceeded due to errors. Aborting.`);
-          throw new MaxRetryExceededError(this.maxRetryAttempts, this.collectedErrors);
+          console.error(
+            `Maximum retry attempts (${this.maxRetryAttempts}) exceeded due to errors. Aborting.`,
+          );
+          throw new MaxRetryExceededError(
+            this.maxRetryAttempts,
+            this.collectedErrors,
+          );
         }
 
         // Push the same content back onto the stack to retry
-        console.log(`Retrying after error (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`);
+        console.log(
+          `Retrying after error (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`,
+        );
         stack.push({
           userContent: currentUserContent,
           retryAttempt: currentRetryAttempt + 1,
         });
       }
-      console.log(`stack length: ${stack.length}`)
+      console.log(`stack length: ${stack.length}`);
       if (didEndLoop) {
         return true;
       }
     }
-    this.complete()
+    this.complete();
     return false;
   }
 
@@ -510,7 +519,9 @@ export class Task {
       while (!item.done) {
         // Check for abort status during stream processing
         if (this.isAborted()) {
-          console.log(`Task ${this.taskId} was aborted during stream collection`);
+          console.log(
+            `Task ${this.taskId} was aborted during stream collection`,
+          );
           return chunks; // Return whatever chunks we have collected so far
         }
 
@@ -532,7 +543,10 @@ export class Task {
   /**
    * Process complete response collected from stream
    */
-  private async processCompleteResponse(chunks: ApiStreamChunk[], shouldUseXmlParser: boolean): Promise<void> {
+  private async processCompleteResponse(
+    chunks: ApiStreamChunk[],
+    shouldUseXmlParser: boolean,
+  ): Promise<void> {
     let reasoningMessage = '';
     let assistantMessage = '';
 
@@ -570,13 +584,18 @@ export class Task {
 
     // Process text content if using XML parser
     // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
-    if (shouldUseXmlParser && this.messageState.assistantMessageParser && assistantMessage) {
-      console.log('should use xml parser')
+    if (
+      shouldUseXmlParser &&
+      this.messageState.assistantMessageParser &&
+      assistantMessage
+    ) {
+      console.log('should use xml parser');
 
       this.messageState.assistantMessageContent =
         this.messageState.assistantMessageParser.processChunk(assistantMessage);
       this.messageState.assistantMessageParser.finalizeContentBlocks();
-      const parsedBlocks = this.messageState.assistantMessageParser.getContentBlocks();
+      const parsedBlocks =
+        this.messageState.assistantMessageParser.getContentBlocks();
       this.messageState.assistantMessageContent = parsedBlocks;
     } else if (assistantMessage) {
       // Native protocol: Add text as content block
@@ -586,7 +605,7 @@ export class Task {
       });
     }
 
-    console.log(`LLM resposne: ${reasoningMessage} \n\n ${assistantMessage} `)
+    console.log(`LLM resposne: ${reasoningMessage} \n\n ${assistantMessage} `);
   }
 
   /**
@@ -605,27 +624,35 @@ export class Task {
     // Handle structured tool responses
     if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
       // Handle McpToolCallResponse - it has a content array
-      return toolCallRes.content.map((block: any) => {
-        if (block.type === 'text') {
-          return block.text;
-        }
-        return `[${block.type} content]`;
-      }).join('\n');
+      return toolCallRes.content
+        .map((block: any) => {
+          if (block.type === 'text') {
+            return block.text;
+          }
+          return `[${block.type} content]`;
+        })
+        .join('\n');
     }
 
-    if ('type' in toolCallRes && toolCallRes.type === 'text' && toolCallRes.content) {
+    if (
+      'type' in toolCallRes &&
+      toolCallRes.type === 'text' &&
+      toolCallRes.content
+    ) {
       // Handle simple object with type and content
       return toolCallRes.content;
     }
 
     if (Array.isArray(toolCallRes)) {
       // Handle array of content blocks
-      return toolCallRes.map((block: any) => {
-        if (block.type === 'text') {
-          return block.text;
-        }
-        return `[${block.type} content]`;
-      }).join('\n');
+      return toolCallRes
+        .map((block: any) => {
+          if (block.type === 'text') {
+            return block.text;
+          }
+          return `[${block.type} content]`;
+        })
+        .join('\n');
     }
 
     // Fallback for other object types
@@ -664,7 +691,9 @@ export class Task {
   /**
    * Execute tool calls and build user message content
    */
-  private async executeToolCalls(toolUseBlocks: AssistantMessageContent[]): Promise<void> {
+  private async executeToolCalls(
+    toolUseBlocks: AssistantMessageContent[],
+  ): Promise<void> {
     for (const block of toolUseBlocks) {
       // Check for abort status before executing each tool
       if (this.isAborted()) {
@@ -683,7 +712,10 @@ export class Task {
       const input = toolUse.nativeArgs || toolUse.params;
 
       // Handle tool calling
-      const toolCallRes = await this.toolCallHandler.handleToolCalling(toolUse.name as ToolName, input);
+      const toolCallRes = await this.toolCallHandler.handleToolCalling(
+        toolUse.name as ToolName,
+        input,
+      );
 
       // Check for abort status after tool execution
       if (this.isAborted()) {
@@ -707,7 +739,9 @@ export class Task {
           // Check if this is an attempt_completion tool call
           if (toolUse.name === 'attempt_completion') {
             // For attempt_completion, don't push to stack for further processing
-            console.log('Tool call completed with attempt_completion, ending recursion');
+            console.log(
+              'Tool call completed with attempt_completion, ending recursion',
+            );
             this.messageState.didAttemptCompletion = true;
             // Clear user message content to prevent further recursion
             this.messageState.userMessageContent = [];
@@ -721,7 +755,9 @@ export class Task {
    * Add assistant message to conversation history
    */
   private async addAssistantMessageToHistory(): Promise<void> {
-    const assistantContent: Array<Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam> = [];
+    const assistantContent: Array<
+      Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
+    > = [];
 
     // Add text content if present
     const textBlocks = this.messageState.assistantMessageContent.filter(
@@ -769,7 +805,9 @@ export class Task {
     const messageWithTs: ExtendedApiMessage = {
       role: message.role,
       content: Array.isArray(message.content)
-        ? [...message.content] as Array<Anthropic.ContentBlockParam | ThinkingBlock>
+        ? ([...message.content] as Array<
+            Anthropic.ContentBlockParam | ThinkingBlock
+          >)
         : [{ type: 'text' as const, text: message.content as string }],
       ts: Date.now(),
     };
@@ -799,7 +837,7 @@ export class Task {
         this.conversationHistory,
       );
 
-      console.log(`context: ${JSON.stringify(cleanConversationHistory)}`)
+      console.log(`context: ${JSON.stringify(cleanConversationHistory)}`);
 
       const metadata = {
         taskId: this.taskId,
@@ -814,7 +852,7 @@ export class Task {
       try {
         const stream = await Promise.race([
           streamPromise,
-          this.createTimeoutPromise(this.apiRequestTimeout)
+          this.createTimeoutPromise(this.apiRequestTimeout),
         ]);
 
         console.log(`API request attempt ${retryAttempt + 1} successful`);
@@ -848,11 +886,11 @@ export class Task {
   }
 
   private async getSystemPrompt(): Promise<string> {
-    return await SYSTEM_PROMPT() || '';
+    return (await SYSTEM_PROMPT()) || '';
   }
 
   private buildCleanConversationHistory(
-    history: ApiMessage[]
+    history: ApiMessage[],
   ): Anthropic.MessageParam[] {
     return history as unknown as Anthropic.MessageParam[];
   }

@@ -1,18 +1,18 @@
 /**
  * Generates medical research capabilities description for LLM prompts.
- * 
+ *
  * This function creates a comprehensive overview of medical research capabilities that the LLM
  * can perform. It covers various aspects of medical scientific research including literature analysis,
  * clinical data interpretation, statistical analysis, and evidence-based medicine practices.
- * 
+ *
  * @returns A formatted markdown string containing medical research capabilities
- * 
+ *
  * @example
  * ```typescript
  * const capabilities = getCapabilitiesSection();
  * console.log(capabilities);
  * ```
- * 
+ *
  * @remarks
  * The capabilities include:
  * - Medical literature search and analysis
@@ -24,7 +24,7 @@
  * - Clinical guideline interpretation
  */
 export function getCapabilitiesSection(): string {
-    return `====
+  return `====
 
 CAPABILITIES
 
@@ -93,5 +93,5 @@ You are equipped with comprehensive medical research capabilities to assist with
 - Collaborate on multidisciplinary research teams
 - Provide educational content for medical professionals and patients
 
-These capabilities enable you to assist with comprehensive medical research tasks while maintaining scientific rigor, ethical standards, and clinical relevance throughout the investigative process.`
+These capabilities enable you to assist with comprehensive medical research tasks while maintaining scientific rigor, ethical standards, and clinical relevance throughout the investigative process.`;
 }

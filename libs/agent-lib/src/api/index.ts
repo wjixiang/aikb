@@ -14,11 +14,7 @@ import {
 } from '../types';
 
 import { ApiStream } from './transform/stream';
-import type {
-  ApiHandlerOptions,
-  ModelRecord,
-  RouterName,
-} from '../shared/api';
+import type { ApiHandlerOptions, ModelRecord, RouterName } from '../shared/api';
 
 // Re-export constants and functions from their new locations to maintain backward compatibility
 export {
@@ -45,7 +41,6 @@ export type {
   ApiStreamToolCallPartialChunk,
   ApiStreamError,
 } from './transform/stream';
-
 
 // Import all handlers from providers index to avoid circular dependency
 import {
@@ -90,8 +85,6 @@ export type {
 } from './types';
 
 export type { ApiHandlerOptions, ModelRecord, RouterName } from '../shared/api';
-
-
 
 export { MoonshotHandler };
 

@@ -15,7 +15,7 @@ describe('GeminiHandler backend support', () => {
       enableGrounding: true,
     } as ApiHandlerOptions;
     const handler = new GeminiHandler(options);
-    const stub = vi.fn().mockReturnValue((async function* () { })());
+    const stub = vi.fn().mockReturnValue((async function* () {})());
     // @ts-ignore access private client
     handler['client'].models.generateContentStream = stub;
     await handler.createMessage('instr', [] as any).next();

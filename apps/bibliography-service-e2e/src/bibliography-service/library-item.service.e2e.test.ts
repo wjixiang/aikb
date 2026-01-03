@@ -52,7 +52,7 @@ describe('LibraryItemService - End to End', () => {
     try {
       connection = await amqp.connect(
         process.env.RABBITMQ_URL ||
-        'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+          'amqp://admin:admin123@rabbitmq:5672/my_vhost',
       );
       channel = await connection.createChannel();
 
@@ -100,7 +100,7 @@ describe('LibraryItemService - End to End', () => {
             options: {
               urls: [
                 process.env.RABBITMQ_URL ||
-                'amqp://admin:admin123@rabbitmq:5672/my_vhost',
+                  'amqp://admin:admin123@rabbitmq:5672/my_vhost',
               ],
               queue: uniqueServiceQueueName,
               // Add connection options for better debugging

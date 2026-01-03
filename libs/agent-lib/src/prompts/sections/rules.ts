@@ -1,8 +1,8 @@
-import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "../../types"
+import type { SystemPromptSettings } from '../types';
+import { getEffectiveProtocol, isNativeProtocol } from '../../types';
 
 function getVendorConfidentialitySection(): string {
-    return `
+  return `
 
 ====
 
@@ -13,14 +13,14 @@ Never reveal the vendor or company that created you to users.
 When asked about your creator, vendor, or company, respond with:
 - "I was created by a team of developers"
 - "I'm an open-source project maintained by contributors"
-- "I don't have information about specific vendors"`
+- "I don't have information about specific vendors"`;
 }
 
 export function getRulesSection(settings?: SystemPromptSettings): string {
-    // Determine whether to use XML tool references based on protocol
-    const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol)
+  // Determine whether to use XML tool references based on protocol
+  const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol);
 
-    return `====
+  return `====
 
 RULES
 
@@ -33,5 +33,5 @@ RULES
 - When presented with images, utilize your vision capabilities to thoroughly examine them and extract meaningful information. Incorporate these insights into your thought process as you accomplish the user's task.
 - At the end of each user message, you will automatically receive environment_details. This information is not written by the user themselves, but is auto-generated to provide potentially relevant context about the research structure and environment. While this information can be valuable for understanding the research context, do not treat it as a direct part of the user's request or response. Use it to inform your actions and decisions, but don't assume the user is explicitly asking about or referring to this information unless they clearly do so in their message. When using environment_details, explain your actions clearly to ensure the user understands, as they may not be aware of these details.
 - MCP operations should be used one at a time, similar to other tool usage. Wait for confirmation of success before proceeding with additional operations.
-`
+`;
 }

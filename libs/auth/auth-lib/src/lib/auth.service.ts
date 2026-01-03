@@ -49,7 +49,7 @@ import type {
 export class AuthService {
   private readonly prisma = prisma;
 
-  constructor(private readonly jwtService: JwtService) { }
+  constructor(private readonly jwtService: JwtService) {}
 
   /**
    * 获取用户列表（分页）
@@ -1051,7 +1051,7 @@ export class AuthService {
     const jwtSecret = process.env['JWT_SECRET'];
     if (!jwtSecret) {
       throw new InternalServerErrorException(
-        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.'
+        'JWT_SECRET environment variable is required. Please set a secure JWT secret in your environment configuration.',
       );
     }
     const accessToken = this.jwtService.sign(payload, {
@@ -1063,7 +1063,7 @@ export class AuthService {
     const jwtRefreshSecret = process.env['JWT_REFRESH_SECRET'];
     if (!jwtRefreshSecret) {
       throw new InternalServerErrorException(
-        'JWT_REFRESH_SECRET environment variable is required. Please set a secure JWT refresh secret in your environment configuration.'
+        'JWT_REFRESH_SECRET environment variable is required. Please set a secure JWT refresh secret in your environment configuration.',
       );
     }
     const refreshToken = this.jwtService.sign(payload, {

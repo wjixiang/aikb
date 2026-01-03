@@ -79,5 +79,5 @@ export type GetModelsOptions = {
   [P in keyof typeof dynamicProviderExtras]: ({
     provider: P;
   } & (typeof dynamicProviderExtras)[P]) &
-  CommonFetchParams;
+    CommonFetchParams;
 }[RouterName];

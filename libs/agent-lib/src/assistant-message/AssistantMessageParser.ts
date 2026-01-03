@@ -1,45 +1,50 @@
-import { type ToolName, toolNames } from "../types"
-import { TextContent, ToolUse, ToolParamName, toolParamNames } from "../shared/tools"
-import { AssistantMessageContent } from "./parseAssistantMessage"
+import { type ToolName, toolNames } from '../types';
+import {
+  TextContent,
+  ToolUse,
+  ToolParamName,
+  toolParamNames,
+} from '../shared/tools';
+import { AssistantMessageContent } from './parseAssistantMessage';
 
 /**
  * Parser for assistant messages. Maintains state between chunks
  * to avoid reprocessing the entire message on each update.
- * 
+ *
  * Currently, system process LLM response synchronously, doesn't need
  * to parse chunk in realtime.
  */
 export class AssistantMessageParser {
-  private contentBlocks: AssistantMessageContent[] = []
-  private currentTextContent: TextContent | undefined = undefined
-  private currentTextContentStartIndex = 0
-  private currentToolUse: ToolUse | undefined = undefined
-  private currentToolUseStartIndex = 0
-  private currentParamName: ToolParamName | undefined = undefined
-  private currentParamValueStartIndex = 0
-  private readonly MAX_ACCUMULATOR_SIZE = 1024 * 1024 // 1MB limit
-  private readonly MAX_PARAM_LENGTH = 1024 * 100 // 100KB per parameter limit
-  private accumulator = ""
+  private contentBlocks: AssistantMessageContent[] = [];
+  private currentTextContent: TextContent | undefined = undefined;
+  private currentTextContentStartIndex = 0;
+  private currentToolUse: ToolUse | undefined = undefined;
+  private currentToolUseStartIndex = 0;
+  private currentParamName: ToolParamName | undefined = undefined;
+  private currentParamValueStartIndex = 0;
+  private readonly MAX_ACCUMULATOR_SIZE = 1024 * 1024; // 1MB limit
+  private readonly MAX_PARAM_LENGTH = 1024 * 100; // 100KB per parameter limit
+  private accumulator = '';
 
   /**
    * Initialize a new AssistantMessageParser instance.
    */
   constructor() {
-    this.reset()
+    this.reset();
   }
 
   /**
    * Reset the parser state.
    */
   public reset(): void {
-    this.contentBlocks = []
-    this.currentTextContent = undefined
-    this.currentTextContentStartIndex = 0
-    this.currentToolUse = undefined
-    this.currentToolUseStartIndex = 0
-    this.currentParamName = undefined
-    this.currentParamValueStartIndex = 0
-    this.accumulator = ""
+    this.contentBlocks = [];
+    this.currentTextContent = undefined;
+    this.currentTextContentStartIndex = 0;
+    this.currentToolUse = undefined;
+    this.currentToolUseStartIndex = 0;
+    this.currentParamName = undefined;
+    this.currentParamValueStartIndex = 0;
+    this.accumulator = '';
   }
 
   /**
@@ -48,7 +53,7 @@ export class AssistantMessageParser {
 
   public getContentBlocks(): AssistantMessageContent[] {
     // Return a shallow copy to prevent external mutation
-    return this.contentBlocks.slice()
+    return this.contentBlocks.slice();
   }
   /**
    * Process a new chunk of text and update the parser state.
@@ -56,77 +61,86 @@ export class AssistantMessageParser {
    */
   public processChunk(chunk: string): AssistantMessageContent[] {
     if (this.accumulator.length + chunk.length > this.MAX_ACCUMULATOR_SIZE) {
-      throw new Error("Assistant message exceeds maximum allowed size")
+      throw new Error('Assistant message exceeds maximum allowed size');
     }
     // Store the current length of the accumulator before adding the new chunk
-    const accumulatorStartLength = this.accumulator.length
+    const accumulatorStartLength = this.accumulator.length;
 
     for (let i = 0; i < chunk.length; i++) {
-      const char = chunk[i]
-      this.accumulator += char
-      const currentPosition = accumulatorStartLength + i
+      const char = chunk[i];
+      this.accumulator += char;
+      const currentPosition = accumulatorStartLength + i;
 
       // There should not be a param without a tool use.
       if (this.currentToolUse && this.currentParamName) {
-        const currentParamValue = this.accumulator.slice(this.currentParamValueStartIndex)
+        const currentParamValue = this.accumulator.slice(
+          this.currentParamValueStartIndex,
+        );
         if (currentParamValue.length > this.MAX_PARAM_LENGTH) {
           // Reset to a safe state
-          this.currentParamName = undefined
-          this.currentParamValueStartIndex = 0
-          continue
+          this.currentParamName = undefined;
+          this.currentParamValueStartIndex = 0;
+          continue;
         }
-        const paramClosingTag = `</${this.currentParamName}>`
+        const paramClosingTag = `</${this.currentParamName}>`;
         // Streamed param content: always write the currently accumulated value
         if (currentParamValue.endsWith(paramClosingTag)) {
           // End of param value.
           // Do not trim content parameters to preserve newlines, but strip first and last newline only
-          const paramValue = currentParamValue.slice(0, -paramClosingTag.length)
+          const paramValue = currentParamValue.slice(
+            0,
+            -paramClosingTag.length,
+          );
           // Ensure params object exists
           if (!this.currentToolUse.params) {
-            this.currentToolUse.params = {}
+            this.currentToolUse.params = {};
           }
           this.currentToolUse.params[this.currentParamName] =
-            this.currentParamName === "content"
-              ? paramValue.replace(/^\n/, "").replace(/\n$/, "")
-              : paramValue.trim()
-          this.currentParamName = undefined
-          continue
+            this.currentParamName === 'content'
+              ? paramValue.replace(/^\n/, '').replace(/\n$/, '')
+              : paramValue.trim();
+          this.currentParamName = undefined;
+          continue;
         } else {
           // Partial param value is accumulating.
           // Write the currently accumulated param content in real time
           // Ensure params object exists
           if (!this.currentToolUse.params) {
-            this.currentToolUse.params = {}
+            this.currentToolUse.params = {};
           }
-          this.currentToolUse.params[this.currentParamName] = currentParamValue
-          continue
+          this.currentToolUse.params[this.currentParamName] = currentParamValue;
+          continue;
         }
       }
 
       // No currentParamName.
 
       if (this.currentToolUse) {
-        const currentToolValue = this.accumulator.slice(this.currentToolUseStartIndex)
-        const toolUseClosingTag = `</${this.currentToolUse.name}>`
+        const currentToolValue = this.accumulator.slice(
+          this.currentToolUseStartIndex,
+        );
+        const toolUseClosingTag = `</${this.currentToolUse.name}>`;
         if (currentToolValue.endsWith(toolUseClosingTag)) {
           // End of a tool use.
-          this.currentToolUse.partial = false
+          this.currentToolUse.partial = false;
 
-          this.currentToolUse = undefined
-          continue
+          this.currentToolUse = undefined;
+          continue;
         } else {
-          const possibleParamOpeningTags = toolParamNames.map((name) => `<${name}>`)
+          const possibleParamOpeningTags = toolParamNames.map(
+            (name) => `<${name}>`,
+          );
           for (const paramOpeningTag of possibleParamOpeningTags) {
             if (this.accumulator.endsWith(paramOpeningTag)) {
               // Start of a new parameter.
-              const paramName = paramOpeningTag.slice(1, -1)
+              const paramName = paramOpeningTag.slice(1, -1);
               if (!toolParamNames.includes(paramName as ToolParamName)) {
                 // Handle invalid parameter name gracefully
-                continue
+                continue;
               }
-              this.currentParamName = paramName as ToolParamName
-              this.currentParamValueStartIndex = this.accumulator.length
-              break
+              this.currentParamName = paramName as ToolParamName;
+              this.currentParamValueStartIndex = this.accumulator.length;
+              break;
             }
           }
 
@@ -137,7 +151,7 @@ export class AssistantMessageParser {
           // closed and we end up with the rest of the file contents here.
           // To work around this, get the string between the starting
           // content tag and the LAST content tag.
-          const contentParamName: ToolParamName = "content"
+          const contentParamName: ToolParamName = 'content';
 
           // if (
           //   this.currentToolUse.name === "write_to_file" &&
@@ -163,58 +177,60 @@ export class AssistantMessageParser {
           // }
 
           // Partial tool value is accumulating.
-          continue
+          continue;
         }
       }
 
       // No currentToolUse.
 
-      let didStartToolUse = false
-      const possibleToolUseOpeningTags = toolNames.map((name) => `<${name}>`)
+      let didStartToolUse = false;
+      const possibleToolUseOpeningTags = toolNames.map((name) => `<${name}>`);
 
       for (const toolUseOpeningTag of possibleToolUseOpeningTags) {
         if (this.accumulator.endsWith(toolUseOpeningTag)) {
           // Extract and validate the tool name
-          const extractedToolName = toolUseOpeningTag.slice(1, -1)
+          const extractedToolName = toolUseOpeningTag.slice(1, -1);
 
           // Check if the extracted tool name is valid
           if (!toolNames.includes(extractedToolName as ToolName)) {
             // Invalid tool name, treat as plain text and continue
-            continue
+            continue;
           }
 
           // Start of a new tool use.
           this.currentToolUse = {
-            type: "tool_use",
+            type: 'tool_use',
             name: extractedToolName as ToolName,
             params: {},
             partial: true,
-          }
+          };
 
-          this.currentToolUseStartIndex = this.accumulator.length
+          this.currentToolUseStartIndex = this.accumulator.length;
 
           // This also indicates the end of the current text content.
           if (this.currentTextContent) {
-            this.currentTextContent.partial = false
+            this.currentTextContent.partial = false;
 
             // Remove the partially accumulated tool use tag from the
             // end of text (<tool).
             this.currentTextContent.content = this.currentTextContent.content
               .slice(0, -toolUseOpeningTag.slice(0, -1).length)
-              .trim()
+              .trim();
 
             // No need to push, currentTextContent is already in contentBlocks
-            this.currentTextContent = undefined
+            this.currentTextContent = undefined;
           }
 
           // Immediately push new tool_use block as partial
-          let idx = this.contentBlocks.findIndex((block) => block === this.currentToolUse)
+          let idx = this.contentBlocks.findIndex(
+            (block) => block === this.currentToolUse,
+          );
           if (idx === -1) {
-            this.contentBlocks.push(this.currentToolUse)
+            this.contentBlocks.push(this.currentToolUse);
           }
 
-          didStartToolUse = true
-          break
+          didStartToolUse = true;
+          break;
         }
       }
 
@@ -224,28 +240,32 @@ export class AssistantMessageParser {
         if (this.currentTextContent === undefined) {
           // If this is the first chunk and we're at the beginning of processing,
           // set the start index to the current position in the accumulator
-          this.currentTextContentStartIndex = currentPosition
+          this.currentTextContentStartIndex = currentPosition;
 
           // Create a new text content block and add it to contentBlocks
           this.currentTextContent = {
-            type: "text",
-            content: this.accumulator.slice(this.currentTextContentStartIndex).trim(),
+            type: 'text',
+            content: this.accumulator
+              .slice(this.currentTextContentStartIndex)
+              .trim(),
             partial: true,
-          }
+          };
 
           // Add the new text content to contentBlocks immediately
           // Ensures it appears in the UI right away
-          this.contentBlocks.push(this.currentTextContent)
+          this.contentBlocks.push(this.currentTextContent);
         } else {
           // Update the existing text content
-          this.currentTextContent.content = this.accumulator.slice(this.currentTextContentStartIndex).trim()
+          this.currentTextContent.content = this.accumulator
+            .slice(this.currentTextContentStartIndex)
+            .trim();
         }
       }
     }
     // Do not call finalizeContentBlocks() here.
     // Instead, update any partial blocks in the array and add new ones as they're completed.
     // This matches the behavior of the original parseAssistantMessage function.
-    return this.getContentBlocks()
+    return this.getContentBlocks();
   }
 
   /**
@@ -256,10 +276,10 @@ export class AssistantMessageParser {
     // Mark all partial blocks as complete
     for (const block of this.contentBlocks) {
       if (block.partial) {
-        block.partial = false
+        block.partial = false;
       }
-      if (block.type === "text" && typeof block.content === "string") {
-        block.content = block.content.trim()
+      if (block.type === 'text' && typeof block.content === 'string') {
+        block.content = block.content.trim();
       }
     }
   }

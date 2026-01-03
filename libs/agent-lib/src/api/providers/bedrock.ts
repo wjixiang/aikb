@@ -187,7 +187,8 @@ export type UsageType = {
 
 export class AwsBedrockHandler
   extends BaseProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   protected options: ProviderSettings;
   private client: BedrockRuntimeClient;
   private arnInfo: any;
@@ -251,8 +252,8 @@ export class AwsBedrockHandler
       // Add the endpoint configuration when specified and enabled
       ...(this.options.awsBedrockEndpoint &&
         this.options.awsBedrockEndpointEnabled && {
-        endpoint: this.options.awsBedrockEndpoint,
-      }),
+          endpoint: this.options.awsBedrockEndpoint,
+        }),
     };
 
     if (this.options.awsUseApiKey && this.options.awsApiKey) {
@@ -357,7 +358,7 @@ export class AwsBedrockHandler
     const modelConfig = this.getModel();
     const usePromptCache = Boolean(
       this.options.awsUsePromptCache &&
-      this.supportsAwsPromptCache(modelConfig),
+        this.supportsAwsPromptCache(modelConfig),
     );
 
     // Determine early if native tools should be used (needed for message conversion)
@@ -371,10 +372,11 @@ export class AwsBedrockHandler
 
     const conversationId =
       messages.length > 0
-        ? `conv_${messages[0].role}_${typeof messages[0].content === 'string'
-          ? messages[0].content.substring(0, 20)
-          : 'complex_content'
-        }`
+        ? `conv_${messages[0].role}_${
+            typeof messages[0].content === 'string'
+              ? messages[0].content.substring(0, 20)
+              : 'complex_content'
+          }`
         : 'default_conversation';
 
     const formatted = this.convertToBedrockConverseMessages(
@@ -1354,9 +1356,9 @@ export class AwsBedrockHandler
       logLevel: 'error' | 'warn' | 'info'; // Log level for this error type
     }
   > = {
-      ACCESS_DENIED: {
-        patterns: ['access', 'denied', 'permission'],
-        messageTemplate: `You don't have access to the model specified.
+    ACCESS_DENIED: {
+      patterns: ['access', 'denied', 'permission'],
+      messageTemplate: `You don't have access to the model specified.
 
 Please verify:
 1. Try cross-region inference if you're using a foundation model
@@ -1364,33 +1366,33 @@ Please verify:
 3. Your AWS credentials have permission to access this model (check IAM policies)
 4. The region in the ARN matches the region where the model is deployed
 5. If using a provisioned model, ensure it's active and not in a failed state`,
-        logLevel: 'error',
-      },
-      NOT_FOUND: {
-        patterns: ['not found', 'does not exist'],
-        messageTemplate: `The specified ARN does not exist or is invalid. Please check:
+      logLevel: 'error',
+    },
+    NOT_FOUND: {
+      patterns: ['not found', 'does not exist'],
+      messageTemplate: `The specified ARN does not exist or is invalid. Please check:
 
 1. The ARN format is correct (arn:aws:bedrock:region:account-id:resource-type/resource-name)
 2. The model exists in the specified region
 3. The account ID in the ARN is correct`,
-        logLevel: 'error',
-      },
-      THROTTLING: {
-        patterns: [
-          'throttl',
-          'rate',
-          'limit',
-          'bedrock is unable to process your request', // Amazon Bedrock specific throttling message
-          'please wait',
-          'quota exceeded',
-          'service unavailable',
-          'busy',
-          'overloaded',
-          'too many requests',
-          'request limit',
-          'concurrent requests',
-        ],
-        messageTemplate: `Request was throttled or rate limited. Please try:
+      logLevel: 'error',
+    },
+    THROTTLING: {
+      patterns: [
+        'throttl',
+        'rate',
+        'limit',
+        'bedrock is unable to process your request', // Amazon Bedrock specific throttling message
+        'please wait',
+        'quota exceeded',
+        'service unavailable',
+        'busy',
+        'overloaded',
+        'too many requests',
+        'request limit',
+        'concurrent requests',
+      ],
+      messageTemplate: `Request was throttled or rate limited. Please try:
 1. Reducing the frequency of requests
 2. If using a provisioned model, check its throughput settings
 3. Contact AWS support to request a quota increase if needed
@@ -1398,16 +1400,16 @@ Please verify:
 
 
 `,
-        logLevel: 'error',
-      },
-      TOO_MANY_TOKENS: {
-        patterns: [
-          'too many tokens',
-          'token limit exceeded',
-          'context length',
-          'maximum context length',
-        ],
-        messageTemplate: `"Too many tokens" error detected.
+      logLevel: 'error',
+    },
+    TOO_MANY_TOKENS: {
+      patterns: [
+        'too many tokens',
+        'token limit exceeded',
+        'context length',
+        'maximum context length',
+      ],
+      messageTemplate: `"Too many tokens" error detected.
 Possible Causes:
 1. Input exceeds model's context window limit
 2. Rate limiting (too many tokens per minute)
@@ -1422,15 +1424,15 @@ Suggestions:
 5. Check your Amazon Bedrock quotas and limits
 
 `,
-        logLevel: 'error',
-      },
-      SERVICE_QUOTA_EXCEEDED: {
-        patterns: [
-          'service quota exceeded',
-          'service quota',
-          'quota exceeded for model',
-        ],
-        messageTemplate: `Service quota exceeded. This error indicates you've reached AWS service limits.
+      logLevel: 'error',
+    },
+    SERVICE_QUOTA_EXCEEDED: {
+      patterns: [
+        'service quota exceeded',
+        'service quota',
+        'quota exceeded for model',
+      ],
+      messageTemplate: `Service quota exceeded. This error indicates you've reached AWS service limits.
 
 Please try:
 1. Contact AWS support to request a quota increase
@@ -1439,16 +1441,16 @@ Please try:
 4. Consider using a different model or region with available capacity
 
 `,
-        logLevel: 'error',
-      },
-      MODEL_NOT_READY: {
-        patterns: [
-          'model not ready',
-          'model is not ready',
-          'provisioned throughput not ready',
-          'model loading',
-        ],
-        messageTemplate: `Model is not ready or still loading. This can happen with:
+      logLevel: 'error',
+    },
+    MODEL_NOT_READY: {
+      patterns: [
+        'model not ready',
+        'model is not ready',
+        'provisioned throughput not ready',
+        'model loading',
+      ],
+      messageTemplate: `Model is not ready or still loading. This can happen with:
 1. Provisioned throughput models that are still initializing
 2. Custom models that are being loaded
 3. Models that are temporarily unavailable
@@ -1459,16 +1461,16 @@ Please try:
 3. Verify the model is properly provisioned
 
 `,
-        logLevel: 'error',
-      },
-      INTERNAL_SERVER_ERROR: {
-        patterns: [
-          'internal server error',
-          'internal error',
-          'server error',
-          'service error',
-        ],
-        messageTemplate: `Amazon Bedrock internal server error. This is a temporary service issue.
+      logLevel: 'error',
+    },
+    INTERNAL_SERVER_ERROR: {
+      patterns: [
+        'internal server error',
+        'internal error',
+        'server error',
+        'service error',
+      ],
+      messageTemplate: `Amazon Bedrock internal server error. This is a temporary service issue.
 
 Please try:
 1. Retry the request after a brief delay
@@ -1476,34 +1478,34 @@ Please try:
 3. Contact AWS support if the issue continues
 
 `,
-        logLevel: 'error',
-      },
-      ON_DEMAND_NOT_SUPPORTED: {
-        patterns: ['with on-demand throughput isn’t supported.'],
-        messageTemplate: `
+      logLevel: 'error',
+    },
+    ON_DEMAND_NOT_SUPPORTED: {
+      patterns: ['with on-demand throughput isn’t supported.'],
+      messageTemplate: `
 1. Try enabling cross-region inference in settings.
 2. Or, create an inference profile and then leverage the "Use custom ARN..." option of the model selector in settings.`,
-        logLevel: 'error',
-      },
-      ABORT: {
-        patterns: ['aborterror'], // This will match error.name.toLowerCase() for AbortError
-        messageTemplate: `Request was aborted: The operation timed out or was manually cancelled. Please try again or check your network connection.`,
-        logLevel: 'info',
-      },
-      INVALID_ARN_FORMAT: {
-        patterns: ['invalid_arn_format:', 'invalid arn format'],
-        messageTemplate: `Invalid ARN format. ARN should follow the pattern: arn:aws:bedrock:region:account-id:resource-type/resource-name`,
-        logLevel: 'error',
-      },
-      VALIDATION_ERROR: {
-        patterns: [
-          'input tag',
-          'does not match any of the expected tags',
-          'field required',
-          'validation',
-          'invalid parameter',
-        ],
-        messageTemplate: `Parameter validation error: {errorMessage}
+      logLevel: 'error',
+    },
+    ABORT: {
+      patterns: ['aborterror'], // This will match error.name.toLowerCase() for AbortError
+      messageTemplate: `Request was aborted: The operation timed out or was manually cancelled. Please try again or check your network connection.`,
+      logLevel: 'info',
+    },
+    INVALID_ARN_FORMAT: {
+      patterns: ['invalid_arn_format:', 'invalid arn format'],
+      messageTemplate: `Invalid ARN format. ARN should follow the pattern: arn:aws:bedrock:region:account-id:resource-type/resource-name`,
+      logLevel: 'error',
+    },
+    VALIDATION_ERROR: {
+      patterns: [
+        'input tag',
+        'does not match any of the expected tags',
+        'field required',
+        'validation',
+        'invalid parameter',
+      ],
+      messageTemplate: `Parameter validation error: {errorMessage}
 
 This error indicates that the request parameters don't match Amazon Bedrock's expected format.
 
@@ -1516,15 +1518,15 @@ Please check:
 - Model supports the requested features (extended thinking, etc.)
 - Parameter format matches Amazon Bedrock specification
 - Model ID is correct for the requested features`,
-        logLevel: 'error',
-      },
-      // Default/generic error
-      GENERIC: {
-        patterns: [], // Empty patterns array means this is the default
-        messageTemplate: `Unknown Error: {errorMessage}`,
-        logLevel: 'error',
-      },
-    };
+      logLevel: 'error',
+    },
+    // Default/generic error
+    GENERIC: {
+      patterns: [], // Empty patterns array means this is the default
+      messageTemplate: `Unknown Error: {errorMessage}`,
+      logLevel: 'error',
+    },
+  };
 
   /**
    * Determines the error type based on the error message or name
@@ -1638,11 +1640,11 @@ Please check:
   ):
     | string
     | Array<{
-      type: string;
-      text?: string;
-      inputTokens?: number;
-      outputTokens?: number;
-    }> {
+        type: string;
+        text?: string;
+        inputTokens?: number;
+        outputTokens?: number;
+      }> {
     // Determine error type
     const errorType = this.getErrorType(error);
 

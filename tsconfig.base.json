@@ -35,8 +35,6 @@
       ],
       "utils": ["libs/utils/src/index.ts"],
       "library-shared": ["libs/library-shared/src/index.ts"],
-      "components": ["libs/components/src/index.ts"],
-      "components/server": ["libs/components/src/server.ts"],
       "quiz-shared": ["libs/quiz-shared/src/index.ts"],
       "quiz-management-client": ["apps/quiz-management-client/src/index.ts"],
       "pdf2md-lib": ["libs/pdf2md-lib/src/index.ts"],
@@ -50,7 +48,7 @@
       "log-management": ["libs/log-management/src/index.ts"],
       "prisma-plugin": ["plugins/prisma-plugin/src/index.ts"],
       "auth-lib": ["libs/auth/auth-lib/src/index.ts"],
-      "auth-db":["libs/auth-db/src/index.ts"],
+      "auth-db": ["libs/auth-db/src/index.ts"],
       "ui": ["libs/ui/src/index.ts"],
       "ui/*": ["libs/ui/src/*"],
       "ui/blocks/*": ["libs/ui/src/components/*"],
@@ -88,7 +86,8 @@
       "llm-types": ["libs/llm-types/src/index.ts"],
       "llm-tools": ["libs/llm-tools/src/index.ts"],
       "agent-db": ["libs/agent-db/src/index.ts"],
-      "testAuthHelper": ["libs/auth/auth-lib/src/lib/authTestHelper.ts"]
+      "testAuthHelper": ["libs/auth/auth-lib/src/lib/authTestHelper.ts"],
+      "auth-ui": ["libs/auth-ui/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

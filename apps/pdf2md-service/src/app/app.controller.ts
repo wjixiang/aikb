@@ -5,7 +5,7 @@ import { Pdf2MArkdownDto } from 'library-shared';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService) {}
 
   @RabbitRPC({
     exchange: 'library',

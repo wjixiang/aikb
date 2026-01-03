@@ -32,15 +32,15 @@ export abstract class BaseProvider implements ApiHandler {
     return tools.map((tool) =>
       tool.type === 'function'
         ? {
-          ...tool,
-          function: {
-            ...tool.function,
-            strict: true,
-            parameters: this.convertToolSchemaForOpenAI(
-              tool.function.parameters,
-            ),
-          },
-        }
+            ...tool,
+            function: {
+              ...tool.function,
+              strict: true,
+              parameters: this.convertToolSchemaForOpenAI(
+                tool.function.parameters,
+              ),
+            },
+          }
         : tool,
     );
   }

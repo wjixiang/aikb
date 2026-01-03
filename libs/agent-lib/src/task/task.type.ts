@@ -6,8 +6,8 @@ export type TaskStatus = 'idle' | 'running' | 'completed' | 'aborted';
  * Thinking block for assistant messages
  */
 export interface ThinkingBlock {
-    type: 'thinking';
-    thinking: string;
+  type: 'thinking';
+  thinking: string;
 }
 
 /**
@@ -20,12 +20,9 @@ export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock;
  * Extracted from core/task-persistence/index.ts
  */
 export interface ApiMessage {
-    role: 'user' | 'assistant' | 'system';
-    content:
-    | string
-    | Anthropic.ContentBlockParam[]
-    | ExtendedContentBlock[];
-    ts?: number;
+  role: 'user' | 'assistant' | 'system';
+  content: string | Anthropic.ContentBlockParam[] | ExtendedContentBlock[];
+  ts?: number;
 }
 
 /**
@@ -36,20 +33,26 @@ export interface ApiMessage {
  * - Timestamp for tracking
  */
 export interface ExtendedApiMessage {
-    role: 'user' | 'assistant' | 'system';
-    content: Array<Anthropic.ContentBlockParam | ThinkingBlock>;
-    ts: number;
+  role: 'user' | 'assistant' | 'system';
+  content: Array<Anthropic.ContentBlockParam | ThinkingBlock>;
+  ts: number;
 }
 
 /**
  * Callback type for message added events
  */
-export type MessageAddedCallback = (taskId: string, message: ApiMessage) => void;
+export type MessageAddedCallback = (
+  taskId: string,
+  message: ApiMessage,
+) => void;
 
 /**
  * Callback type for task status changed events
  */
-export type TaskStatusChangedCallback = (taskId: string, changedStatus: TaskStatus) => void;
+export type TaskStatusChangedCallback = (
+  taskId: string,
+  changedStatus: TaskStatus,
+) => void;
 
 /**
  * Callback type for task completed events
@@ -61,9 +64,9 @@ export type TaskCompletedCallback = (taskId: string) => void;
  * Extracted from core/task-persistence/taskMetadata.ts
  */
 export interface TaskMetadata {
-    taskId: string;
-    startTime?: number;
-    endTime?: number;
-    tokenCount?: number;
-    cost?: number;
+  taskId: string;
+  startTime?: number;
+  endTime?: number;
+  tokenCount?: number;
+  cost?: number;
 }

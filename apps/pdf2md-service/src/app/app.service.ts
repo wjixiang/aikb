@@ -826,10 +826,10 @@ export class AppService {
       );
 
       const updateRequest: bibliographyProto.UpdateLibraryItemMarkdownRequest =
-      {
-        id: itemId,
-        markdownContent,
-      };
+        {
+          id: itemId,
+          markdownContent,
+        };
 
       this.logger.debug(
         `[DEBUG] Sending gRPC request: ${JSON.stringify(updateRequest)}`,

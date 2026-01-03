@@ -21,7 +21,8 @@ import { RouterProvider } from './router-provider';
 
 export class ChutesHandler
   extends RouterProvider
-  implements SingleCompletionHandler {
+  implements SingleCompletionHandler
+{
   constructor(options: ApiHandlerOptions) {
     super({
       options,
@@ -51,18 +52,18 @@ export class ChutesHandler
       }) ?? undefined;
 
     const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-    {
-      model,
-      max_tokens,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...convertToOpenAiMessages(messages),
-      ],
-      stream: true,
-      stream_options: { include_usage: true },
-      ...(metadata?.tools && { tools: metadata.tools }),
-      ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-    };
+      {
+        model,
+        max_tokens,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...convertToOpenAiMessages(messages),
+        ],
+        stream: true,
+        stream_options: { include_usage: true },
+        ...(metadata?.tools && { tools: metadata.tools }),
+        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+      };
 
     // Only add temperature if model supports it
     if (this.supportsTemperature(model)) {
@@ -191,11 +192,11 @@ export class ChutesHandler
         }) ?? undefined;
 
       const requestParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
-      {
-        model: modelId,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens,
-      };
+        {
+          model: modelId,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens,
+        };
 
       // Only add temperature if model supports it
       if (this.supportsTemperature(modelId)) {

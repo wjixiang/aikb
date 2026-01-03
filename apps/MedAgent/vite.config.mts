@@ -9,6 +9,7 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/MedAgent',
   server: {
+    port: 8000,
     host: true,
   },
   preview: {

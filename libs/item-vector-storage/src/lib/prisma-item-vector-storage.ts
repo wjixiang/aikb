@@ -303,8 +303,8 @@ export class PrismaItemVectorStorage implements IItemVectorStorage {
 
       const token = generateChunkEmbedGroupToken(
         chunkingConfig.strategy?.toString() ||
-        defaultChunkingConfig.strategy?.toString() ||
-        'h1',
+          defaultChunkingConfig.strategy?.toString() ||
+          'h1',
         embeddingConfig.model.toString(),
         embeddingConfig.dimension,
       );

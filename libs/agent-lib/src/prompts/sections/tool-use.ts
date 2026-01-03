@@ -1,15 +1,17 @@
-import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from "../../types"
+import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from '../../types';
 
-export function getSharedToolUseSection(protocol: ToolProtocol = TOOL_PROTOCOL.XML): string {
-    if (isNativeProtocol(protocol)) {
-        return `====
+export function getSharedToolUseSection(
+  protocol: ToolProtocol = TOOL_PROTOCOL.XML,
+): string {
+  if (isNativeProtocol(protocol)) {
+    return `====
 
 TOOL USE
 
-You have access to a set of tools that are executed upon the user's approval. Use the provider-native tool-calling mechanism. Do not include XML markup or examples.`
-    }
+You have access to a set of tools that are executed upon the user's approval. Use the provider-native tool-calling mechanism. Do not include XML markup or examples.`;
+  }
 
-    return `====
+  return `====
 
 TOOL USE
 
@@ -25,5 +27,5 @@ Tool uses are formatted using XML-style tags. The tool name itself becomes the X
 ...
 </actual_tool_name>
 
-Always use the actual tool name as the XML tag name for proper parsing and execution.`
+Always use the actual tool name as the XML tag name for proper parsing and execution.`;
 }
