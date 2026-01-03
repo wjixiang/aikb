@@ -10,6 +10,7 @@ import { VerificationController } from './verification.controller';
 import { PasswordResetController } from './password-reset.controller';
 import { AdminController } from './admin.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { authPrismaService } from 'auth-db';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
     PassportModule,
     JwtModule.register({
-      secret: 'fl5ox03',
+      secret: process.env['JWT_SECRET'] || 'fl5ox03',
       signOptions: {
         expiresIn: '7d',
       },
@@ -32,7 +33,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PasswordResetController,
     AdminController,
   ],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, JwtStrategy, authPrismaService],
+  exports: [AuthService, JwtModule, JwtStrategy],
 })
-export class AuthLibModule {}
+export class AuthLibModule { }

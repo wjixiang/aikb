@@ -71,7 +71,7 @@ export const AuthProvider = ({
 
         if (token && savedUser) {
           // 验证token有效性（可选）
-          const response = await fetch(getApiUrl('/api/auth/verify'), {
+          const response = await fetch(getApiUrl('/api/auth/validate'), {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -116,16 +116,16 @@ export const AuthProvider = ({
         }
 
         const data = await response.json();
-
-        // resturn structure: { token: '...', user: { id: 1, name: '...', role: '...' } }
-        const { token, user: userData } = data;
+        console.log(`signin data: ${JSON.stringify(data)}`)
+        // resturn structure: { accessToken: '...', user: { id: 1, name: '...', role: '...' } }
+        const { accessToken, user: userData } = data;
 
         // Update User status
         setUser(userData);
         setIsAuthenticated(true);
 
         // Store authentication information
-        localStorage.setItem('token', token);
+        localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
 
         return { success: true };
@@ -179,14 +179,14 @@ export const AuthProvider = ({
         const data = await response.json();
 
         // resturn structure: { token: '...', user: { id: 1, name: '...', role: '...' } }
-        const { token, user: userData } = data;
+        const { accessToken, user: userData } = data;
 
         // Update User status
         setUser(userData);
         setIsAuthenticated(true);
 
         // Store authentication information
-        localStorage.setItem('token', token);
+        localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
 
         return { success: true };

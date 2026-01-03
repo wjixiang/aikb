@@ -7,7 +7,7 @@ import { UseGuards } from '@nestjs/common';
 @Resolver()
 @UseGuards(GqlJwtAuthGuard)
 export class QueryResolver {
-  constructor(private appService: AppService) {}
+  constructor(private appService: AppService) { }
 
   @Query('listTaskInfo')
   async listTaskInfo(@Context() context: any): Promise<TaskInfo[]> {
@@ -27,6 +27,6 @@ export class QueryResolver {
     @Args('taskId') taskId: string,
     @Context() context: any,
   ): Promise<ApiMessage[]> {
-    return this.appService.getTaskMessages(taskId, context);
+    return await this.appService.getTaskMessages(taskId, context);
   }
 }

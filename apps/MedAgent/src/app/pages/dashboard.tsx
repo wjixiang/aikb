@@ -1,4 +1,4 @@
-import { TaskGroup } from './taskGroup';
+import { TaskDashboard } from './taskDashboard';
 import { AppSidebar } from 'ui/blocks/app-sidebar';
 import { SidebarInset, SidebarProvider } from 'ui/components/sidebar';
 import { SiteHeader } from 'ui/blocks/site-header';
@@ -20,7 +20,7 @@ export function Dashboard(props: DashboardProps) {
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <TaskGroup />
+          <TaskDashboard />
         </SidebarInset>
       </SidebarProvider>
     </>
