@@ -9,7 +9,7 @@ import { ProviderSettings } from '../types/provider-settings';
 
 @Injectable()
 export class TaskService {
-  constructor(private db: AgentDBPrismaService) {}
+  constructor(private db: AgentDBPrismaService) { }
 
   tasks = new Map<string, Task>();
 
@@ -32,11 +32,48 @@ export class TaskService {
     });
   }
 
-  async getTaskMessages(taskId: string) {
-    return this.db.conversationMessage.findMany({
+  async getTaskMessages(taskId: string): Promise<ApiMessage[]> {
+    const messages = await this.db.conversationMessage.findMany({
       where: { taskId: taskId },
       orderBy: { timestamp: 'asc' },
     });
+    return messages.map((msg) => this.mapConversationMessageToApiMessage(msg));
+  }
+
+  /**
+   * Map database ConversationMessage to ApiMessage
+   * Restores the message format from database storage
+   */
+  private mapConversationMessageToApiMessage(msg: any): ApiMessage {
+    const apiMessage: ApiMessage = {
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content as any,
+      ts: Number(msg.timestamp),
+    };
+
+    // If reasoning exists and role is assistant, prepend thinking block
+    if (msg.reasoning && msg.role === 'assistant') {
+      const thinkingBlock = {
+        type: 'thinking' as const,
+        thinking: msg.reasoning,
+      };
+
+      // If content is already an array, prepend thinking block
+      if (Array.isArray(apiMessage.content)) {
+        apiMessage.content = [thinkingBlock, ...apiMessage.content];
+      } else if (typeof apiMessage.content === 'string') {
+        // If content is a string, convert to array with thinking block and text block
+        apiMessage.content = [
+          thinkingBlock,
+          {
+            type: 'text' as const,
+            text: apiMessage.content,
+          },
+        ];
+      }
+    }
+
+    return apiMessage;
   }
 
   async createTask(taskInput: string, userId: string): Promise<Task> {
@@ -171,9 +208,9 @@ export class TaskService {
   }
 
   completeTask() // taskId: string,
-  // tokenUsage: TokenUsage,
-  // toolUsage: ToolUsage,
-  : void {
+    // tokenUsage: TokenUsage,
+    // toolUsage: ToolUsage,
+    : void {
     // const task = this.tasks.get(taskId);
     // if (!task) return;
     // const { event, data } = task.complete(tokenUsage, toolUsage);

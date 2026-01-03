@@ -34,3 +34,4 @@ export * from './tools';
 
 // Export from merged llm-types
 export * from './types';
+export type { ApiMessage } from './task/task.type'

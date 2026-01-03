@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
-import { TaskStatus, ApiMessage, MessageRole } from 'MedAgent-service/graphql';
+import { TaskStatus, Message, MessageRole } from 'MedAgent-service/graphql';
 import {
   Card,
   CardContent,
@@ -30,7 +30,7 @@ interface TaskInfoResponse {
 }
 
 interface TaskMessagesResponse {
-  getTaskMessages: ApiMessage[];
+  getTaskMessages: Message[];
 }
 
 export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
@@ -49,36 +49,20 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
     query GetTaskMessages($taskId: ID!) {
       getTaskMessages(taskId: $taskId) {
         role
-        content {
-          ... on StringContent {
-            text
+        text
+        blocks {
+          type
+          text
+          imageSource {
+            type
+            media_type
+            data
           }
-          ... on BlocksContent {
-            blocks {
-              ... on Block {
-                type
-              }
-              ... on TextBlock {
-                text
-              }
-              ... on ImageBlock {
-                source {
-                  type
-                  media_type
-                  data
-                }
-              }
-              ... on ToolUseBlock {
-                id
-                name
-                input
-              }
-              ... on ToolResultBlock {
-                tool_use_id
-                content
-              }
-            }
-          }
+          toolUseId
+          toolName
+          toolInput
+          toolResultId
+          toolResultContent
         }
         ts
       }
@@ -111,32 +95,33 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
     }
   };
 
-  const formatMessageContent = (content: any): string => {
-    if (typeof content === 'string') {
-      return content;
+  const formatMessageContent = (message: Message): string => {
+    // If there's text content, return it directly
+    if (message.text) {
+      return message.text;
     }
-    if (content && typeof content === 'object') {
-      if ('text' in content) {
-        return content.text;
-      }
-      if ('blocks' in content && Array.isArray(content.blocks)) {
-        return content.blocks
-          .map((block: any) => {
-            if (block.type === 'text' && block.text) {
-              return block.text;
-            }
-            if (block.type === 'tool_use' && block.name) {
-              return `[Tool: ${block.name}]`;
-            }
-            if (block.type === 'tool_result' && block.content) {
-              return `[Tool Result: ${block.content}]`;
-            }
-            return JSON.stringify(block);
-          })
-          .join('\n');
-      }
+    
+    // If there are blocks, format them
+    if (message.blocks && Array.isArray(message.blocks)) {
+      return message.blocks
+        .map((block) => {
+          if (block.type === 'text' && block.text && block.text.length>0) {
+            return block.text;
+          }
+          if (block.type === 'tool_use' && block.toolName) {
+            return `[Tool: ${block.toolName}]
+${block.toolInput}
+`;
+          }
+          if (block.type === 'tool_result' && block.toolResultContent) {
+            return `[Tool Result: ${block.toolResultContent}]`;
+          }
+          // return JSON.stringify(block);
+        })
+        .join('\n');
     }
-    return JSON.stringify(content);
+    
+    return '';
   };
 
   const getRoleBadgeVariant = (role: MessageRole): 'default' | 'secondary' | 'outline' => {
@@ -177,6 +162,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
   const task = taskData?.getTaskInfo;
   const messages = messagesData?.getTaskMessages || [];
+  console.log(messages)
 
   return (
     <div className="space-y-6">
@@ -231,13 +217,13 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
                         </Badge>
                         {message.ts && (
                           <span className="text-xs text-muted-foreground">
-                            {new Date(message.ts).toLocaleTimeString()}
+                            {new Date(Number(message.ts)).toLocaleTimeString()}
                           </span>
                         )}
                       </div>
                       <div className="rounded-lg border bg-muted/50 p-4">
                         <pre className="whitespace-pre-wrap wrap-break-word text-sm">
-                          {formatMessageContent(message.content)}
+                          {formatMessageContent(message)}
                         </pre>
                       </div>
                     </div>

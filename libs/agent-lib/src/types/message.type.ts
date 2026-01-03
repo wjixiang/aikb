@@ -43,78 +43,6 @@ export const clineAsks = [
 export const clineAskSchema = z.enum(clineAsks);
 
 export type ClineAsk = z.infer<typeof clineAskSchema>;
-/**
- * IdleAsk
- *
- * Asks that put the task into an "idle" state.
- */
-
-export const idleAsks = [
-  'completion_result',
-  'api_req_failed',
-  'resume_completed_task',
-  'mistake_limit_reached',
-  'auto_approval_max_req_reached',
-] as const satisfies readonly ClineAsk[];
-
-export type IdleAsk = (typeof idleAsks)[number];
-
-export function isIdleAsk(ask: ClineAsk): ask is IdleAsk {
-  return (idleAsks as readonly ClineAsk[]).includes(ask);
-}
-
-/**
- * ResumableAsk
- *
- * Asks that put the task into an "resumable" state.
- */
-
-export const resumableAsks = [
-  'resume_task',
-] as const satisfies readonly ClineAsk[];
-
-export type ResumableAsk = (typeof resumableAsks)[number];
-
-export function isResumableAsk(ask: ClineAsk): ask is ResumableAsk {
-  return (resumableAsks as readonly ClineAsk[]).includes(ask);
-}
-
-/**
- * InteractiveAsk
- *
- * Asks that put the task into an "user interaction required" state.
- */
-
-export const interactiveAsks = [
-  'followup',
-  'command',
-  'tool',
-  'browser_action_launch',
-  'use_mcp_server',
-] as const satisfies readonly ClineAsk[];
-
-export type InteractiveAsk = (typeof interactiveAsks)[number];
-
-export function isInteractiveAsk(ask: ClineAsk): ask is InteractiveAsk {
-  return (interactiveAsks as readonly ClineAsk[]).includes(ask);
-}
-
-/**
- * NonBlockingAsk
- *
- * Asks that are not associated with an actual approval, and are only used
- * to update chat messages.
- */
-
-export const nonBlockingAsks = [
-  'command_output',
-] as const satisfies readonly ClineAsk[];
-
-export type NonBlockingAsk = (typeof nonBlockingAsks)[number];
-
-export function isNonBlockingAsk(ask: ClineAsk): ask is NonBlockingAsk {
-  return (nonBlockingAsks as readonly ClineAsk[]).includes(ask);
-}
 
 /**
  * ClineSay
@@ -212,15 +140,13 @@ export type ToolProgressStatus = z.infer<typeof toolProgressStatusSchema>;
  * @property summary - The condensed summary that replaced the original context
  * @property condenseId - Optional unique identifier for this condensation operation
  */
-export const contextCondenseSchema = z.object({
+const contextCondenseSchema = z.object({
   cost: z.number(),
   prevContextTokens: z.number(),
   newContextTokens: z.number(),
   summary: z.string(),
   condenseId: z.string().optional(),
 });
-
-export type ContextCondense = z.infer<typeof contextCondenseSchema>;
 
 /**
  * ContextTruncation
@@ -237,14 +163,12 @@ export type ContextCondense = z.infer<typeof contextCondenseSchema>;
  * @property prevContextTokens - Token count before truncation occurred
  * @property newContextTokens - Token count after truncation occurred
  */
-export const contextTruncationSchema = z.object({
+const contextTruncationSchema = z.object({
   truncationId: z.string(),
   messagesRemoved: z.number(),
   prevContextTokens: z.number(),
   newContextTokens: z.number(),
 });
-
-export type ContextTruncation = z.infer<typeof contextTruncationSchema>;
 
 /**
  * ClineMessage

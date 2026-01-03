@@ -5,9 +5,9 @@ import {
   TaskStatus,
   CreateTaskInput,
   StartTaskResult,
-  StartTaskInput,
-  ApiMessage,
+  StartTaskInput
 } from '../graphql';
+import { ApiMessage } from 'agent-lib';
 
 // Map lowercase status from agent-lib to uppercase GraphQL enum
 const statusMap: Record<string, TaskStatus> = {
@@ -19,7 +19,7 @@ const statusMap: Record<string, TaskStatus> = {
 
 @Injectable()
 export class AppService {
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService) { }
 
   /**
    * Get user ID from request context
@@ -100,12 +100,8 @@ export class AppService {
       throw new Error('User not authorized to access this task');
     }
 
-    const messages = await this.taskService.getTaskMessages(taskId);
-    return messages.map((msg) => ({
-      role: msg.role.toUpperCase() as any,
-      content: msg.content as any,
-      ts: Number(msg.timestamp),
-    }));
+    // taskService.getTaskMessages now returns properly formatted ApiMessage[]
+    return this.taskService.getTaskMessages(taskId);
   }
 
   /**

@@ -116,7 +116,6 @@ export const AuthProvider = ({
         }
 
         const data = await response.json();
-        console.log(`signin data: ${JSON.stringify(data)}`)
         // resturn structure: { accessToken: '...', user: { id: 1, name: '...', role: '...' } }
         const { accessToken, user: userData } = data;
 

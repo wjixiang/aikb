@@ -3,8 +3,6 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { QueryResolver } from './query.resolver';
 import { MutationResolver } from './mutation.resolver';
-import { MessageContentResolver } from './message-content.resolver';
-import { ContentBlockResolver } from './content-block.resolver';
 import { AgentLibModule } from 'agent-lib';
 import { AuthLibModule } from 'auth-lib';
 import { AppService } from './app.service';
@@ -24,8 +22,6 @@ import { AppService } from './app.service';
   providers: [
     QueryResolver,
     MutationResolver,
-    MessageContentResolver,
-    ContentBlockResolver,
     AppService,
   ],
 })
