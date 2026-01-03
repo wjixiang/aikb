@@ -5,14 +5,13 @@ import {
   ModeConfig,
   PromptComponent,
 } from '../types';
-import {
-  getModeBySlug,
-  Mode,
-  modes,
-  getModeSelection,
-  defaultModeSlug,
-} from '../shared/modes';
-import { getModesSection } from './sections/modes';
+// import {
+//   getModeBySlug,
+//   Mode,
+//   modes,
+//   getModeSelection,
+//   defaultModeSlug,
+// } from '../shared/modes';
 import { getToolDescriptionsForMode } from '../tools';
 import { markdownFormattingSection } from './sections/markdown-formatting';
 import { getSharedToolUseSection } from './sections/tool-use';
@@ -22,28 +21,21 @@ import { getRulesSection } from './sections/rules';
 import { getObjectiveSection } from './sections/objectives';
 
 async function generatePrompt(
-  mode: Mode,
   promptComponent?: PromptComponent,
   settings?: SystemPromptSettings,
   modelId?: string,
 ) {
   // Get the full mode config to ensure we have the role definition (used for groups, etc.)
-  const modeConfig =
-    getModeBySlug(mode) || modes.find((m) => m.slug === mode) || modes[0];
-  const { roleDefinition, baseInstructions } = getModeSelection(
-    mode,
-    promptComponent,
-  );
+
+  const roleDefinition = ""
 
   // Determine the effective protocol (defaults to 'xml')
   const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol);
   // console.log(effectiveProtocol)
 
-  const modesSection = await getModesSection();
-
   const toolsCatalog = isNativeProtocol(effectiveProtocol)
     ? ''
-    : `\n\n${getToolDescriptionsForMode(mode, settings, modelId)}`;
+    : `\n\n${getToolDescriptionsForMode(settings, modelId)}`;
 
   // console.log(toolsCatalog)
   const basePrompt = `${roleDefinition}
@@ -63,6 +55,6 @@ ${getObjectiveSection()}
   return basePrompt;
 }
 
-export const SYSTEM_PROMPT = async (mode: Mode = defaultModeSlug) => {
-  return generatePrompt(mode);
+export const SYSTEM_PROMPT = async () => {
+  return generatePrompt();
 };

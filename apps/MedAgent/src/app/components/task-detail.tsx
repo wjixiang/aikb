@@ -161,7 +161,7 @@ ToolUseBlock.displayName = 'ToolUseBlock';
 const ToolResultBlock = React.memo(({ toolResultContent }: { toolResultContent: string | object }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const contentStr = stringifyInput(toolResultContent);
-  console.log(toolResultContent)
+  // console.log(toolResultContent)
   return (
     <div className="my-2 rounded-lg border border-secondary/20 bg-secondary/5 dark:border-secondary/30 dark:bg-secondary/10">
       <button

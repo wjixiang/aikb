@@ -22,7 +22,6 @@ export * from './shared/getApiMetrics';
 export * from './shared/globalFileNames';
 export * from './shared/language';
 export * from './shared/mcp';
-export * from './shared/modes';
 export * from './shared/requesty';
 export * from './shared/safeJsonParse';
 export * from './shared/support-prompt';

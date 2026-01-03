@@ -101,14 +101,6 @@ export class Task {
   // LLM Messages & Chat Messages
   conversationHistory: ApiMessage[] = [];
 
-  // Ask
-  public lastMessageTs?: number;
-
-  // TaskStatus
-  idleAsk?: any;
-  resumableAsk?: any;
-  interactiveAsk?: any;
-
   didFinishAbortingStream = false;
   abandoned = false;
   abortReason?: any;
@@ -183,7 +175,7 @@ export class Task {
   onTaskCompleted(callback: TaskCompletedCallback) {
     this.taskCompletedCallbacks.push(callback);
 
-    return () => {};
+    return () => { };
   }
 
   // ==================== Notification Methods ====================
@@ -322,8 +314,7 @@ export class Task {
    * Simplified version without streaming - processes complete response
    */
   public async recursivelyMakeClineRequests(
-    userContent: Anthropic.Messages.ContentBlockParam[],
-    includeFileDetails: boolean = false,
+    userContent: Anthropic.Messages.ContentBlockParam[]
   ): Promise<boolean> {
     // Reset collected errors for this new operation
     this.resetCollectedErrors();
@@ -806,8 +797,8 @@ export class Task {
       role: message.role,
       content: Array.isArray(message.content)
         ? ([...message.content] as Array<
-            Anthropic.ContentBlockParam | ThinkingBlock
-          >)
+          Anthropic.ContentBlockParam | ThinkingBlock
+        >)
         : [{ type: 'text' as const, text: message.content as string }],
       ts: Date.now(),
     };

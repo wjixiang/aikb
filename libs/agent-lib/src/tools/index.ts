@@ -1,16 +1,5 @@
 import type { ToolName, ModeConfig } from '../types';
 
-import {
-  TOOL_GROUPS,
-  ALWAYS_AVAILABLE_TOOLS,
-  DiffStrategy,
-} from '../shared/tools';
-import {
-  Mode,
-  getModeConfig,
-  isToolAllowedForMode,
-  getGroupName,
-} from '../shared/modes';
 
 import { ToolArgs } from './types';
 import { getSemanticSearchDescription } from './semantic-search';
@@ -49,11 +38,11 @@ const toolDescriptionMap: Record<
 };
 
 export function getToolDescriptionsForMode(
-  mode: Mode,
+  // mode: Mode,
   settings?: Record<string, any>,
   modelId?: string,
 ): string {
-  const config = getModeConfig(mode);
+  // const config = getModeConfig(mode);
   const args: ToolArgs = {
     settings: {
       ...settings,
@@ -63,40 +52,44 @@ export function getToolDescriptionsForMode(
 
   const tools = new Set<string>();
 
-  // Add tools from mode's groups
-  config.groups.forEach((groupEntry) => {
-    const groupName = getGroupName(groupEntry);
-    const toolGroup = TOOL_GROUPS[groupName];
-    if (toolGroup) {
-      toolGroup.tools.forEach((tool) => {
-        if (
-          isToolAllowedForMode(tool as ToolName, mode, undefined, undefined)
-        ) {
-          tools.add(tool);
-        }
-      });
-    }
-  });
+  // // Add tools from mode's groups
+  // config.groups.forEach((groupEntry) => {
+  //   const groupName = getGroupName(groupEntry);
+  //   const toolGroup = TOOL_GROUPS[groupName];
+  //   if (toolGroup) {
+  //     toolGroup.tools.forEach((tool) => {
+  //       if (
+  //         isToolAllowedForMode(tool as ToolName, mode, undefined, undefined)
+  //       ) {
+  //         tools.add(tool);
+  //       }
+  //     });
+  //   }
+  // });
 
-  // Add always available tools
-  ALWAYS_AVAILABLE_TOOLS.forEach((tool) => tools.add(tool));
+  // // Add always available tools
+  // ALWAYS_AVAILABLE_TOOLS.forEach((tool) => tools.add(tool));
 
   // Map tool descriptions for allowed tools
-  const descriptions = Array.from(tools).map((toolName) => {
-    const descriptionFn = toolDescriptionMap[toolName];
-    if (!descriptionFn) {
-      return undefined;
-    }
+  const descs = Array.from(toolSet.values()).map(e => {
+    return e.desc.xml
+  })
 
-    const description = descriptionFn({
-      ...args,
-      toolOptions: undefined, // No tool options in group-based approach
-    });
+  // const descriptions = Array.from(tools).map((toolName) => {
+  //   const descriptionFn = toolDescriptionMap[toolName];
+  //   if (!descriptionFn) {
+  //     return undefined;
+  //   }
 
-    return description;
-  });
+  //   const description = descriptionFn({
+  //     ...args,
+  //     toolOptions: undefined, // No tool options in group-based approach
+  //   });
 
-  return `# Tools\n\n${descriptions.filter(Boolean).join('\n\n')}`;
+  //   return description;
+  // });
+
+  return `# Tools\n\n${descs.join('\n\n')}`;
 }
 
 export { ToolCallingHandler };
