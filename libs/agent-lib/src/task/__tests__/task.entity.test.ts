@@ -97,35 +97,35 @@ function createMockMixedStream(): ApiStream {
     yield {
       type: 'tool_call_partial',
       index: 0,
-      id: 'search_456',
-      name: 'read_file',
-      arguments: '{"query": "糖尿病诊断标准"}',
+      id: 'attempt_456',
+      name: 'attempt_completion',
+      arguments: '{}',
     } as ApiStreamChunk;
 
     // Complete tool call
     yield {
       type: 'tool_call',
       index: 0,
-      id: 'search_456',
-      name: 'read_file',
-      arguments: '{"query": "糖尿病诊断标准"}',
+      id: 'attempt_456',
+      name: 'attempt_completion',
+      arguments: '{}',
     } as ApiStreamChunk;
 
     // XML tool call
 
     yield {
       type: 'text',
-      text: '<semantic',
+      text: '<attempt',
     };
 
     yield {
       type: 'text',
-      text: '_search>',
+      text: '_completion>',
     };
 
     yield {
       type: 'text',
-      text: 'test<semantic_search/>',
+      text: 'test<attempt_completion/>',
     };
 
     // Add usage info
@@ -295,7 +295,7 @@ describe('Task Entity Tests', () => {
 
     // Mock the attemptApiRequest method to return a stream with both text and tool calls
     const mockText = '这是一个测试响应，用于验证文本流处理功能。';
-    const mockToolArgs = { path: 'test.txt' };
+    const mockToolArgs = {};
 
     // Mock the method properly using vi.spyOn with mockImplementation
     const mockAttemptApiRequest = vi
@@ -304,7 +304,7 @@ describe('Task Entity Tests', () => {
         console.log('Mock attemptApiRequest called');
         // Create a stream with both text and tool calls to avoid "no tools used" issue
         yield* createMockTextStream(mockText);
-        yield* createMockToolCallStream('read_file', mockToolArgs);
+        yield* createMockToolCallStream('attempt_completion', mockToolArgs);
       });
 
     try {
@@ -459,8 +459,8 @@ describe('Task Entity Tests', () => {
     const newTask = new Task('test_task_id_direct_tool', '', testApiConfig);
 
     // Create a simple tool call stream
-    const mockToolArgs = { path: 'test.txt' };
-    const toolStream = createMockToolCallStream('read_file', mockToolArgs);
+    const mockToolArgs = { query: 'test query' };
+    const toolStream = createMockToolCallStream('semantic_search', mockToolArgs);
 
     // Collect chunks directly from the stream
     const chunks: ApiStreamChunk[] = [];
@@ -483,10 +483,10 @@ describe('Task Entity Tests', () => {
     expect(usage).toBeDefined();
 
     if (toolCallPartial) {
-      expect((toolCallPartial as any).name).toBe('read_file');
+      expect((toolCallPartial as any).name).toBe('semantic_search');
     }
     if (toolCall) {
-      expect((toolCall as any).name).toBe('read_file');
+      expect((toolCall as any).name).toBe('semantic_search');
     }
     if (usage) {
       expect((usage as any).inputTokens).toBe(30);

@@ -60,6 +60,11 @@ export type TaskStatusChangedCallback = (
 export type TaskCompletedCallback = (taskId: string) => void;
 
 /**
+ * Callback type for task aborted events
+ */
+export type TaskAbortedCallback = (taskId: string, abortReason: string) => void;
+
+/**
  * Simplified task metadata
  * Extracted from core/task-persistence/taskMetadata.ts
  */

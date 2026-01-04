@@ -119,3 +119,21 @@ export class MaxRetryExceededError extends TaskError {
     this.errors = errors;
   }
 }
+
+/**
+ * Error thrown when tool execution fails
+ */
+export class ToolExecutionFailedError extends TaskError {
+  readonly code = 'TOOL_EXECUTION_FAILED';
+  readonly retryable: boolean;
+
+  constructor(
+    toolName: string,
+    message: string,
+    cause?: Error,
+    retryable: boolean = true,
+  ) {
+    super(`Tool execution failed for '${toolName}': ${message}`, cause);
+    this.retryable = retryable;
+  }
+}

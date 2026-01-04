@@ -1,4 +1,4 @@
-import { ToolCallingHandler } from '../../tools';
+import { ToolCallingHandler, ToolExecutionError, ToolTimeoutError } from '../../tools';
 import { ToolName, ToolUsage } from '../../types';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import Anthropic from '@anthropic-ai/sdk';
@@ -63,6 +63,9 @@ export class ToolExecutor {
             const toolCallRes = await this.toolCallHandler.handleToolCalling(
                 toolUse.name as ToolName,
                 input,
+                {
+                    timeout: 30000, // 30 seconds timeout for tool execution
+                },
             );
 
             // Check for abort status after tool execution

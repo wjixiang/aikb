@@ -3,7 +3,9 @@ import {
     ApiTimeoutError,
     ApiRequestError,
     MaxRetryExceededError,
+    ToolExecutionFailedError,
 } from '../task.errors';
+import { ToolExecutionError, ToolTimeoutError, ToolNotFoundError } from '../../tools';
 
 /**
  * Configuration for error handling and retry logic
@@ -32,6 +34,37 @@ export class TaskErrorHandler {
     convertToTaskError(error: unknown): TaskError {
         if (error instanceof TaskError) {
             return error;
+        }
+
+        // Handle tool-specific errors
+        if (error instanceof ToolNotFoundError) {
+            // Tool not found is not retryable
+            return new ToolExecutionFailedError(
+                error.message.split("'")[1] || 'unknown',
+                error.message,
+                error,
+                false, // Not retryable
+            );
+        }
+
+        if (error instanceof ToolTimeoutError) {
+            // Tool timeout is retryable
+            return new ToolExecutionFailedError(
+                error.message.split("'")[1] || 'unknown',
+                error.message,
+                error,
+                true, // Retryable
+            );
+        }
+
+        if (error instanceof ToolExecutionError) {
+            // Tool execution error is retryable
+            return new ToolExecutionFailedError(
+                error.message.split("'")[1] || 'unknown',
+                error.message,
+                error,
+                true, // Retryable
+            );
         }
 
         if (error instanceof Error) {

@@ -12,6 +12,9 @@ import { semantic_search_tool } from './tools/semantic_search';
 import { ToolCallingHandler } from './toolCallingHandler';
 import { getNativeTools } from './native-tools';
 
+// Export tool errors
+export * from './tool.errors';
+
 export const toolSet = new Map<ToolName, Tool>();
 
 function registerTools() {

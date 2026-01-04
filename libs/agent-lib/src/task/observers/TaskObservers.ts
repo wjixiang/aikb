@@ -4,6 +4,7 @@ import type {
     MessageAddedCallback,
     TaskStatusChangedCallback,
     TaskCompletedCallback,
+    TaskAbortedCallback,
 } from '../task.type';
 
 /**
@@ -14,6 +15,7 @@ export class TaskObservers {
     private messageAddedCallbacks: MessageAddedCallback[] = [];
     private taskStatusChangedCallbacks: TaskStatusChangedCallback[] = [];
     private taskCompletedCallbacks: TaskCompletedCallback[] = [];
+    private taskAbortedCallbacks: TaskAbortedCallback[] = [];
 
     /**
      * Register message added observer
@@ -44,6 +46,16 @@ export class TaskObservers {
         this.taskCompletedCallbacks.push(callback);
 
         return () => { };
+    }
+
+    onTaskAborted(callback: TaskAbortedCallback): () => void {
+        this.taskAbortedCallbacks.push(callback);
+
+        return () => {
+            this.taskAbortedCallbacks = this.taskAbortedCallbacks.filter(
+                (cb) => cb !== callback,
+            );
+        };
     }
 
     /**
@@ -79,6 +91,19 @@ export class TaskObservers {
         this.taskCompletedCallbacks.forEach((callback) => {
             try {
                 callback(taskId);
+            } catch (error) {
+                console.error('Error in callback:', error);
+            }
+        });
+    }
+
+    /**
+     * Notify all observers of task abortion
+     */
+    notifyTaskAborted(taskId: string, abortReason: string): void {
+        this.taskAbortedCallbacks.forEach((callback) => {
+            try {
+                callback(taskId, abortReason);
             } catch (error) {
                 console.error('Error in callback:', error);
             }

@@ -32,6 +32,7 @@ import {
   MessageAddedCallback,
   TaskStatusChangedCallback,
   TaskCompletedCallback,
+  TaskAbortedCallback,
 } from './task.type';
 import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
 import { TaskObservers } from './observers/TaskObservers';
@@ -151,6 +152,10 @@ export class Task {
     return this.observers.onTaskCompleted(callback);
   }
 
+  onTaskAborted(callback: TaskAbortedCallback): () => void {
+    return this.observers.onTaskAborted(callback);
+  }
+
   // ==================== Helper Methods ====================
   /**
    * Reset message processing state for each new API request
@@ -198,13 +203,6 @@ export class Task {
   }
 
   /**
-   * Helper method to set task status to aborted
-   */
-  private setAborted(): void {
-    this.setStatus('aborted');
-  }
-
-  /**
    * Check if task is aborted
    */
   private isAborted(): boolean {
@@ -241,14 +239,15 @@ export class Task {
     return this;
   }
 
-  complete(tokenUsage?: any, toolUsage?: ToolUsage) {
+  complete(tokenUsage?: TokenUsage, toolUsage?: ToolUsage) {
     this.setStatus('completed');
     this.observers.notifyTaskCompleted(this.taskId);
   }
 
-  abort(abortReason?: any) {
-    this.setAborted();
+  abort(abortReason?: string) {
+    this.setStatus('aborted');
     this.abortReason = abortReason;
+    this.observers.notifyTaskAborted(this.taskId, abortReason || 'Task aborted');
   }
 
   /**
@@ -393,17 +392,17 @@ export class Task {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
         // Handle error using error handler
-        const shouldThrow = this.errorHandler.handleError(error, currentRetryAttempt);
+        const shouldAbort = this.errorHandler.handleError(error, currentRetryAttempt);
 
-        if (shouldThrow) {
-          throw shouldThrow;
+        if (shouldAbort) {
+          this.abort('Max retry attempts exceeded or non-retryable error');
+        } else {
+          // Push the same content back onto the stack to retry
+          stack.push({
+            userContent: currentUserContent,
+            retryAttempt: currentRetryAttempt + 1,
+          });
         }
-
-        // Push the same content back onto the stack to retry
-        stack.push({
-          userContent: currentUserContent,
-          retryAttempt: currentRetryAttempt + 1,
-        });
       }
       console.log(`stack length: ${stack.length}`);
       if (didEndLoop) {
