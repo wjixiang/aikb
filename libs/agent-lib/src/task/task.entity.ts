@@ -7,12 +7,12 @@ import {
 import {
   DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
   ProviderSettings,
-  ToolUsage,
   getApiProtocol,
   getModelId,
   ModelInfo,
   ToolName,
 } from '../types';
+import type { ToolUsage, TokenUsage } from '../types';
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from '../utils/resolveToolProtocol';
 import { formatResponse } from './simplified-dependencies/formatResponse';
@@ -20,34 +20,25 @@ import {
   AssistantMessageContent,
   ToolUse,
 } from '../assistant-message/assistantMessageTypes';
-import { NativeToolCallParser } from '../assistant-message/NativeToolCallParser';
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
-import { AssistantMessageParser } from '../assistant-message/AssistantMessageParser';
 import { SYSTEM_PROMPT } from '../prompts/system';
-import {
-  TaskError,
-  TaskAbortedError,
-  ConsecutiveMistakeError,
-  ApiTimeoutError,
-  ApiRequestError,
-  NoApiResponseError,
-  NoToolsUsedError,
-  StreamingError,
-  MaxRetryExceededError,
-} from './task.errors';
+import { ConsecutiveMistakeError, NoApiResponseError, NoToolsUsedError } from './task.errors';
 import { ToolCallingHandler } from '../tools';
-import { randomUUID } from 'node:crypto';
-import { TokenUsage } from '../types';
 import {
   TaskStatus,
   ThinkingBlock,
   ExtendedApiMessage,
+  ApiMessage,
   MessageAddedCallback,
   TaskStatusChangedCallback,
-  ApiMessage,
   TaskCompletedCallback,
 } from './task.type';
 import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
+import { TaskObservers } from './observers/TaskObservers';
+import { TokenUsageTracker } from './token-usage/TokenUsageTracker';
+import { ResponseProcessor } from './response/ResponseProcessor';
+import { TaskErrorHandler } from './error/TaskErrorHandler';
+import { ToolExecutor } from './tool-execution/ToolExecutor';
 
 /**
  * Interface to encapsulate message processing state
@@ -60,7 +51,6 @@ interface MessageProcessingState {
     | Anthropic.ToolResultBlockParam
   )[];
   didAttemptCompletion: boolean;
-  assistantMessageParser?: AssistantMessageParser;
   cachedModel?: { id: string; info: ModelInfo };
 }
 
@@ -81,24 +71,11 @@ export class Task {
   pendingNewTaskToolCallId?: string;
 
   private api: ApiHandler;
-  private toolCallingParser = new TooCallingParser()
 
   // Tool Use
   consecutiveMistakeCount: number = 0;
   consecutiveMistakeLimit: number = DEFAULT_CONSECUTIVE_MISTAKE_LIMIT;
   consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
-  toolUsage: ToolUsage = {};
-  toolCallHandler = new ToolCallingHandler();
-
-  // Token Usage
-  tokenUsage: TokenUsage = {
-    totalTokensIn: 0,
-    totalTokensOut: 0,
-    totalCacheWrites: 0,
-    totalCacheReads: 0,
-    totalCost: 0,
-    contextTokens: 0,
-  };
 
   // LLM Messages & Chat Messages
   conversationHistory: ApiMessage[] = [];
@@ -114,7 +91,6 @@ export class Task {
     assistantMessageContent: [],
     userMessageContent: [],
     didAttemptCompletion: false,
-    assistantMessageParser: undefined,
     cachedModel: undefined,
   };
 
@@ -122,13 +98,13 @@ export class Task {
   private readonly maxRetryAttempts: number = 3;
   private readonly apiRequestTimeout: number = 60000; // 60 seconds
 
-  // Error collection for retry attempts
-  private collectedErrors: TaskError[] = [];
-
-  // Observer
-  private messageAddedCallbacks: MessageAddedCallback[] = [];
-  private taskStatusChangedCallbacks: TaskStatusChangedCallback[] = [];
-  private taskCompletedCallbacks: TaskCompletedCallback[] = [];
+  // Helper classes
+  private readonly observers: TaskObservers;
+  private readonly tokenUsageTracker: TokenUsageTracker;
+  private readonly responseProcessor: ResponseProcessor;
+  private readonly errorHandler: TaskErrorHandler;
+  private readonly toolExecutor: ToolExecutor;
+  private readonly toolCallingParser = new TooCallingParser();
 
   constructor(
     taskId: string,
@@ -141,7 +117,19 @@ export class Task {
     this.taskInput = taskInput;
     this.consecutiveMistakeLimit = consecutiveMistakeLimit;
     this.api = buildApiHandler(apiConfiguration);
-    this.messageState.assistantMessageParser = new AssistantMessageParser();
+
+    // Initialize helper classes
+    this.observers = new TaskObservers();
+    this.tokenUsageTracker = new TokenUsageTracker();
+    this.responseProcessor = new ResponseProcessor(
+      this.tokenUsageTracker,
+      this.toolCallingParser,
+    );
+    this.errorHandler = new TaskErrorHandler({
+      maxRetryAttempts: this.maxRetryAttempts,
+      apiRequestTimeout: this.apiRequestTimeout,
+    });
+    this.toolExecutor = new ToolExecutor(new ToolCallingHandler());
   }
 
   // ==================== Registration Methods ====================
@@ -152,68 +140,15 @@ export class Task {
    * @returns cleanup function - Used to unregister
    */
   onMessageAdded(callback: MessageAddedCallback): () => void {
-    // 1. Store the callback function in the array
-    this.messageAddedCallbacks.push(callback);
-
-    // 2. Return a cleanup function
-    return () => {
-      // Remove this callback from the array
-      this.messageAddedCallbacks = this.messageAddedCallbacks.filter(
-        (cb) => cb !== callback,
-      );
-    };
+    return this.observers.onMessageAdded(callback);
   }
 
-  onStatusChanged(callback: TaskStatusChangedCallback) {
-    this.taskStatusChangedCallbacks.push(callback);
-
-    return () => {
-      this.taskStatusChangedCallbacks = this.taskStatusChangedCallbacks.filter(
-        (cb) => cb !== callback,
-      );
-    };
+  onStatusChanged(callback: TaskStatusChangedCallback): () => void {
+    return this.observers.onStatusChanged(callback);
   }
 
-  onTaskCompleted(callback: TaskCompletedCallback) {
-    this.taskCompletedCallbacks.push(callback);
-
-    return () => { };
-  }
-
-  // ==================== Notification Methods ====================
-
-  /**
-   * Notify all observers
-   */
-  private notifyMessageAdded(message: ApiMessage): void {
-    // Iterate through all registered callback functions and call them
-    this.messageAddedCallbacks.forEach((callback) => {
-      try {
-        callback(this.taskId, message); // ← Directly call the function passed by TaskService
-      } catch (error) {
-        console.error('Error in callback:', error);
-      }
-    });
-  }
-
-  private notifyStatusChanged(status: TaskStatus): void {
-    this.taskStatusChangedCallbacks.forEach((callback) => {
-      try {
-        callback(this.taskId, status);
-      } catch (error) {
-        console.error('Error in callback:', error);
-      }
-    });
-  }
-
-  private notifyTaskCompleted(): void {
-    this.taskCompletedCallbacks.forEach((callback) => {
-      try {
-        callback(this.taskId);
-      } catch (error) {
-        console.error('Error in callback:', error);
-      }
-    });
+  onTaskCompleted(callback: TaskCompletedCallback): () => void {
+    return this.observers.onTaskCompleted(callback);
   }
 
   // ==================== Helper Methods ====================
@@ -224,7 +159,6 @@ export class Task {
     this.messageState.assistantMessageContent = [];
     this.messageState.userMessageContent = [];
     this.messageState.didAttemptCompletion = false;
-    this.messageState.assistantMessageParser?.reset();
   }
 
   /**
@@ -242,11 +176,25 @@ export class Task {
   }
 
   /**
+   * Getter for token usage
+   */
+  public get tokenUsage(): TokenUsage {
+    return this.tokenUsageTracker.getUsage();
+  }
+
+  /**
+   * Getter for tool usage
+   */
+  public get toolUsage(): ToolUsage {
+    return this.toolExecutor.getToolUsage();
+  }
+
+  /**
    * Helper method to set task status
    */
   private setStatus(status: TaskStatus): void {
     this._status = status;
-    this.notifyStatusChanged(this._status);
+    this.observers.notifyStatusChanged(this.taskId, status);
   }
 
   /**
@@ -266,15 +214,15 @@ export class Task {
   /**
    * Get all collected errors for debugging purposes
    */
-  public getCollectedErrors(): TaskError[] {
-    return [...this.collectedErrors];
+  public getCollectedErrors() {
+    return this.errorHandler.getCollectedErrors();
   }
 
   /**
    * Reset collected errors (useful for starting a new operation)
    */
   public resetCollectedErrors(): void {
-    this.collectedErrors = [];
+    this.errorHandler.resetCollectedErrors();
   }
 
   // ==================== Life Cycle Methods ====================
@@ -295,20 +243,12 @@ export class Task {
 
   complete(tokenUsage?: any, toolUsage?: ToolUsage) {
     this.setStatus('completed');
-    // return {
-    //   event: 'task.completed',
-    //   data: {
-    //     taskId: this.taskId,
-    //     tokenUsage: tokenUsage || this.tokenUsage,
-    //     toolUsage: toolUsage || this.toolUsage
-    //   },
-    // };
+    this.observers.notifyTaskCompleted(this.taskId);
   }
 
   abort(abortReason?: any) {
     this.setAborted();
     this.abortReason = abortReason;
-    // return { event: 'task.aborted', data: { taskId: this.taskId } };
   }
 
   /**
@@ -402,7 +342,12 @@ export class Task {
         }
 
         // Process the complete response
-        shouldUseXmlParser ? await this.processXmlCompleteResponse(response) : await this.processCompleteResponse(response);
+        const processedResponse = shouldUseXmlParser
+          ? this.responseProcessor.processXmlCompleteResponse(response)
+          : this.responseProcessor.processCompleteResponse(response);
+
+        // Update message state with processed response
+        this.messageState.assistantMessageContent = processedResponse.assistantMessageContent;
 
         // Check if we have tool calls to execute
         const toolUseBlocks = this.messageState.assistantMessageContent.filter(
@@ -420,10 +365,17 @@ export class Task {
         }
 
         // Execute tool calls and build response
-        await this.executeToolCalls(toolUseBlocks);
+        const executionResult = await this.toolExecutor.executeToolCalls(
+          toolUseBlocks,
+          () => this.isAborted(),
+        );
+
+        // Update message state with execution result
+        this.messageState.userMessageContent = executionResult.userMessageContent;
+        this.messageState.didAttemptCompletion = executionResult.didAttemptCompletion;
 
         // Add assistant message to conversation history
-        await this.addAssistantMessageToHistory();
+        await this.addAssistantMessageToHistory(processedResponse.reasoningMessage);
 
         // Check if we should continue recursion
         if (
@@ -440,50 +392,14 @@ export class Task {
       } catch (error) {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
-        // Convert to TaskError if it's not already one
-        let taskError: TaskError;
-        if (error instanceof TaskError) {
-          taskError = error;
-        } else if (error instanceof Error) {
-          // Check for timeout errors
-          if (error.message.includes('timed out')) {
-            taskError = new ApiTimeoutError(this.apiRequestTimeout, error);
-          } else {
-            taskError = new ApiRequestError(error.message, undefined, error);
-          }
-        } else {
-          taskError = new ApiRequestError(String(error));
-        }
+        // Handle error using error handler
+        const shouldThrow = this.errorHandler.handleError(error, currentRetryAttempt);
 
-        this.collectedErrors.push(taskError);
-        console.error(
-          `Error in recursivelyMakeClineRequests (attempt ${currentRetryAttempt + 1}):`,
-          taskError,
-        );
-
-        // Don't retry non-retryable errors
-        if (!taskError.retryable) {
-          console.error(
-            `Non-retryable error encountered: ${taskError.code}. Aborting.`,
-          );
-          throw taskError;
-        }
-
-        // Check if we've exceeded the maximum retry attempts
-        if (currentRetryAttempt >= this.maxRetryAttempts) {
-          console.error(
-            `Maximum retry attempts (${this.maxRetryAttempts}) exceeded due to errors. Aborting.`,
-          );
-          throw new MaxRetryExceededError(
-            this.maxRetryAttempts,
-            this.collectedErrors,
-          );
+        if (shouldThrow) {
+          throw shouldThrow;
         }
 
         // Push the same content back onto the stack to retry
-        console.log(
-          `Retrying after error (attempt ${currentRetryAttempt + 2}/${this.maxRetryAttempts + 1})`,
-        );
         stack.push({
           userContent: currentUserContent,
           retryAttempt: currentRetryAttempt + 1,
@@ -533,331 +449,10 @@ export class Task {
     }
   }
 
-  private async processXmlCompleteResponse(chunks: ApiStreamChunk[]) {
-    let reasoningMessage = '';
-    let assistantMessage = '';
-
-    for (const chunk of chunks) {
-      switch (chunk.type) {
-        case 'usage':
-          // Accumulate token usage information
-          this.accumulateTokenUsage(chunk);
-          break;
-        case 'reasoning': {
-          reasoningMessage += chunk.text;
-          // console.log('reasoning:', chunk.text);
-          break;
-        }
-        case 'text': {
-          assistantMessage += chunk.text;
-          break;
-        }
-      }
-    }
-
-    // This section is added for the wired behavior of LLM that always output '<tool_call>'
-    // console.log('assistantMessage', assistantMessage)
-    assistantMessage = assistantMessage.replace('tool_call>', '')
-    console.log(assistantMessage)
-    const finalBlocks = this.toolCallingParser.xmlToolCallingParser.processMessage(assistantMessage)
-
-    // Append parsed blocks to existing content (don't overwrite)
-    this.messageState.assistantMessageContent.push(...finalBlocks);
-  }
-
-  /**
-   * Process complete response collected from stream
-   */
-  private async processCompleteResponse(
-    chunks: ApiStreamChunk[]
-  ): Promise<void> {
-    let reasoningMessage = '';
-    let assistantMessage = '';
-
-    // Clear any previous tool call state before processing new chunks
-    NativeToolCallParser.clearRawChunkState();
-
-    // Map to accumulate streaming tool call arguments by ID
-    const streamingToolCalls = new Map<string, { id: string; name: string; arguments: string }>();
-
-    // Process all chunks to build complete response
-    for (const chunk of chunks) {
-      switch (chunk.type) {
-        case 'usage':
-          // Accumulate token usage information
-          this.accumulateTokenUsage(chunk);
-          break;
-        case 'tool_call': {
-          // Handle complete tool calls (non-streaming format)
-          const toolUse = NativeToolCallParser.parseToolCall({
-            id: chunk.id,
-            name: chunk.name as any,
-            arguments: chunk.arguments,
-          });
-
-          if (toolUse) {
-            this.messageState.assistantMessageContent.push(toolUse);
-          }
-          break;
-        }
-        case 'tool_call_partial': {
-          // Handle streaming tool call chunks
-          const events = NativeToolCallParser.processRawChunk({
-            index: chunk.index,
-            id: chunk.id,
-            name: chunk.name,
-            arguments: chunk.arguments,
-          });
-
-          for (const event of events) {
-            switch (event.type) {
-              case 'tool_call_start':
-                streamingToolCalls.set(event.id, {
-                  id: event.id,
-                  name: event.name,
-                  arguments: '',
-                });
-                break;
-              case 'tool_call_delta':
-                const toolCall = streamingToolCalls.get(event.id);
-                if (toolCall) {
-                  toolCall.arguments += event.delta;
-                }
-                break;
-              case 'tool_call_end':
-                const completedToolCall = streamingToolCalls.get(event.id);
-                if (completedToolCall) {
-                  const toolUse = NativeToolCallParser.parseToolCall({
-                    id: completedToolCall.id,
-                    name: completedToolCall.name as any,
-                    arguments: completedToolCall.arguments,
-                  });
-
-                  if (toolUse) {
-                    this.messageState.assistantMessageContent.push(toolUse);
-                  }
-                  streamingToolCalls.delete(event.id);
-                }
-                break;
-            }
-          }
-          break;
-        }
-        case 'reasoning': {
-          reasoningMessage += chunk.text;
-          // console.log('reasoning:', chunk.text);
-          break;
-        }
-        case 'text': {
-          assistantMessage += chunk.text;
-          break;
-        }
-      }
-    }
-
-    // This section is added for the wired behavior of LLM that always output '<tool_call>'
-    // console.log('assistantMessage', assistantMessage)
-    assistantMessage = assistantMessage.replace('tool_call>', '')
-
-    // Finalize any remaining tool calls that weren't explicitly ended
-    const finalizationEvents = NativeToolCallParser.finalizeRawChunks();
-    for (const event of finalizationEvents) {
-      if (event.type === 'tool_call_end') {
-        const remainingToolCall = streamingToolCalls.get(event.id);
-        if (remainingToolCall) {
-          const toolUse = NativeToolCallParser.parseToolCall({
-            id: remainingToolCall.id,
-            name: remainingToolCall.name as any,
-            arguments: remainingToolCall.arguments,
-          });
-
-          if (toolUse) {
-            this.messageState.assistantMessageContent.push(toolUse);
-          }
-          streamingToolCalls.delete(event.id);
-        }
-      }
-    }
-
-    // // Process text content if using XML parser
-    // // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
-    // if (
-    //   shouldUseXmlParser &&
-    //   this.messageState.assistantMessageParser &&
-    //   assistantMessage
-    // ) {
-    //   console.log('should use xml parser');
-
-    //   const parsedBlocks = this.messageState.assistantMessageParser.processChunk(assistantMessage);
-    //   this.messageState.assistantMessageParser.finalizeContentBlocks();
-    //   const finalBlocks = this.messageState.assistantMessageParser.getContentBlocks();
-
-    //   // Append parsed blocks to existing content (don't overwrite)
-    //   this.messageState.assistantMessageContent.push(...finalBlocks);
-    // } else if (assistantMessage) {
-    //   // Native protocol: Add text as content block
-    //   this.messageState.assistantMessageContent.push({
-    //     type: 'text',
-    //     content: assistantMessage,
-    //   });
-    // }
-
-    // Native protocol: Add text as content block
-    this.messageState.assistantMessageContent.push({
-      type: 'text',
-      content: assistantMessage,
-    });
-
-    console.log(`LLM resposne: ${reasoningMessage} \n\n ${assistantMessage} `);
-  }
-
-  /**
-   * Parse tool call response into text format
-   */
-  private parseToolCallResponse(toolCallRes: any): string {
-    // console.log(toolCallRes)
-    if (typeof toolCallRes === 'string') {
-      return toolCallRes;
-    }
-
-    if (!toolCallRes || typeof toolCallRes !== 'object') {
-      return '';
-    }
-
-    // Handle structured tool responses
-    if ('content' in toolCallRes && Array.isArray(toolCallRes.content)) {
-      // Handle McpToolCallResponse - it has a content array
-      return toolCallRes.content
-        .map((block: any) => {
-          if (block.type === 'text') {
-            return block.text;
-          }
-          return `[${block.type} content]`;
-        })
-        .join('\n');
-    }
-
-    if (
-      'type' in toolCallRes &&
-      toolCallRes.type === 'text' &&
-      toolCallRes.content
-    ) {
-      // Handle simple object with type and content
-      return toolCallRes.content;
-    }
-
-    if (Array.isArray(toolCallRes)) {
-      // Handle array of content blocks
-      return toolCallRes
-        .map((block: any) => {
-          if (block.type === 'text') {
-            return block.text;
-          }
-          return `[${block.type} content]`;
-        })
-        .join('\n');
-    }
-
-    // Fallback for other object types
-    return JSON.stringify(toolCallRes);
-  }
-
-  /**
-   * Accumulate token usage information from usage chunks
-   */
-  private accumulateTokenUsage(usageChunk: any): void {
-    if (!usageChunk) return;
-
-    // Initialize tokenUsage structure if needed
-    if (!this.tokenUsage) {
-      this.tokenUsage = {
-        totalTokensIn: 0,
-        totalTokensOut: 0,
-        totalCacheWrites: 0,
-        totalCacheReads: 0,
-        totalCost: 0,
-        contextTokens: 0,
-      };
-    }
-
-    // Accumulate values from the usage chunk
-    // Map from the chunk properties to the TokenUsage type properties
-    this.tokenUsage.totalTokensIn += usageChunk.inputTokens || 0;
-    this.tokenUsage.totalTokensOut += usageChunk.outputTokens || 0;
-    this.tokenUsage.totalCacheWrites += usageChunk.cacheWriteTokens || 0;
-    this.tokenUsage.totalCacheReads += usageChunk.cacheReadTokens || 0;
-    this.tokenUsage.totalCost += usageChunk.totalCost || 0;
-    // Note: reasoningTokens is not part of the TokenUsage type, so we'll ignore it
-    // contextTokens might need to be calculated or set separately
-  }
-
-  /**
-   * Execute tool calls and build user message content
-   */
-  private async executeToolCalls(
-    toolUseBlocks: AssistantMessageContent[],
-  ): Promise<void> {
-    for (const block of toolUseBlocks) {
-      // Check for abort status before executing each tool
-      if (this.isAborted()) {
-        console.log(`Task ${this.taskId} was aborted during tool execution`);
-        return;
-      }
-
-      console.log(`detect tool calling: ${JSON.stringify(block)}`);
-      const toolUse = block as ToolUse;
-      const toolCallId = randomUUID();
-
-      // Store the tool call ID directly in the tool use block
-      // This ensures the same ID is used when adding the assistant message to history
-      toolUse.id = toolCallId;
-
-      const input = toolUse.nativeArgs || toolUse.params;
-
-      // Handle tool calling
-      const toolCallRes = await this.toolCallHandler.handleToolCalling(
-        toolUse.name as ToolName,
-        input,
-      );
-
-      // Check for abort status after tool execution
-      if (this.isAborted()) {
-        console.log(`Task ${this.taskId} was aborted after tool execution`);
-        return;
-      }
-
-      // Process tool call result and add to user message content
-      if (toolCallRes) {
-        // Convert tool result to text format for user message
-        const resultText = this.parseToolCallResponse(toolCallRes);
-
-        // Add tool result to user message content
-        if (resultText) {
-          this.messageState.userMessageContent.push({
-            type: 'tool_result' as const,
-            tool_use_id: toolCallId,
-            content: resultText,
-          });
-
-          // Check if this is an attempt_completion tool call
-          if (toolUse.name === 'attempt_completion') {
-            // For attempt_completion, don't push to stack for further processing
-            console.log(
-              'Tool call completed with attempt_completion, ending recursion',
-            );
-            this.messageState.didAttemptCompletion = true;
-            // Clear user message content to prevent further recursion
-            this.messageState.userMessageContent = [];
-          }
-        }
-      }
-    }
-  }
-
   /**
    * Add assistant message to conversation history
    */
-  private async addAssistantMessageToHistory(): Promise<void> {
+  private async addAssistantMessageToHistory(reasoning?: string): Promise<void> {
     const assistantContent: Array<
       Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
     > = [];
@@ -885,7 +480,7 @@ export class Task {
 
       // Use the tool call ID that was stored during executeToolCalls
       // This ensures the tool_result block references the correct tool_use block
-      const toolCallId = toolUse.id || randomUUID();
+      const toolCallId = toolUse.id || crypto.randomUUID();
 
       assistantContent.push({
         type: 'tool_use' as const,
@@ -898,7 +493,7 @@ export class Task {
     await this.addToConversationHistory({
       role: 'assistant',
       content: assistantContent,
-    });
+    }, reasoning);
   }
 
   private async addToConversationHistory(
@@ -924,7 +519,7 @@ export class Task {
       messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
     }
 
-    this.notifyMessageAdded(messageWithTs as ApiMessage);
+    this.observers.notifyMessageAdded(this.taskId, messageWithTs as ApiMessage);
     this.conversationHistory.push(messageWithTs as ApiMessage);
   }
 
@@ -962,28 +557,20 @@ export class Task {
         yield* stream;
       } catch (error) {
         if (error instanceof Error && error.message.includes('timed out')) {
-          throw new ApiTimeoutError(this.apiRequestTimeout, error);
+          throw new Error(`API request timed out after ${this.apiRequestTimeout}ms`);
         }
         throw error;
       }
     } catch (error) {
       console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
-
-      // Convert to TaskError if it's not already one
-      if (error instanceof TaskError) {
-        throw error;
-      } else if (error instanceof Error) {
-        throw new ApiRequestError(error.message, undefined, error);
-      } else {
-        throw new ApiRequestError(String(error));
-      }
+      throw error;
     }
   }
 
   private createTimeoutPromise(timeoutMs: number): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new ApiTimeoutError(timeoutMs));
+        reject(new Error(`API request timed out after ${timeoutMs}ms`));
       }, timeoutMs);
     });
   }
