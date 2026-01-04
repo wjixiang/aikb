@@ -8,28 +8,70 @@ import {
 } from './model';
 import {
   anthropicModels,
+} from './providers/anthropic';
+import {
   basetenModels,
+} from './providers/baseten';
+import {
   bedrockModels,
+} from './providers/bedrock';
+import {
   cerebrasModels,
+} from './providers/cerebras';
+import {
   claudeCodeModels,
+} from './providers/claude-code';
+import {
   deepSeekModels,
+} from './providers/deepseek';
+import {
   doubaoModels,
+} from './providers/doubao';
+import {
   featherlessModels,
+} from './providers/featherless';
+import {
   fireworksModels,
+} from './providers/fireworks';
+import {
   geminiModels,
+} from './providers/gemini';
+import {
   groqModels,
+} from './providers/groq';
+import {
   ioIntelligenceModels,
+} from './providers/io-intelligence';
+import {
   mistralModels,
+} from './providers/mistral';
+import {
   moonshotModels,
+} from './providers/moonshot';
+import {
   openAiNativeModels,
+} from './providers/openai';
+import {
   qwenCodeModels,
+} from './providers/qwen-code';
+import {
   sambaNovaModels,
+} from './providers/sambanova';
+import {
   vertexModels,
+} from './providers/vertex';
+import {
   vscodeLlmModels,
+} from './providers/vscode-llm';
+import {
   xaiModels,
+} from './providers/xai';
+import {
   internationalZAiModels,
+} from './providers/zai';
+import {
   minimaxModels,
-} from './providers/index';
+} from './providers/minimax';
 
 /**
  * constants

@@ -5,3 +5,4 @@ export * from './message.type';
 export * from './mode';
 
 export * from './providers/index';
+export * from './provider-default-model-id';

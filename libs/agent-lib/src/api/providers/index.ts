@@ -28,6 +28,7 @@ import { UnboundHandler } from './unbound';
 import { VercelAiGatewayHandler } from './vercel-ai-gateway';
 import { XAIHandler } from './xai';
 import { ZAiHandler } from './zai';
+// import { MoonshotHandler } from './moonshot'
 
 // Import these last to ensure their dependencies are loaded first
 import { GeminiHandler } from './gemini';
@@ -63,7 +64,7 @@ export { VercelAiGatewayHandler };
 export { XAIHandler };
 export { ZAiHandler };
 export { GeminiHandler };
-
+// export { MoonshotHandler }
 // NOTE: VertexHandler, DeepSeekHandler, DoubaoHandler and MoonshotHandler are not
 // exported here to avoid circular dependency issues. They can be imported directly
 // from their respective files when needed.

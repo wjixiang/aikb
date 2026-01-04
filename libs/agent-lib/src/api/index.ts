@@ -44,7 +44,6 @@ export type {
 
 // Import all handlers from providers index to avoid circular dependency
 import {
-  OpenAiHandler,
   NativeOllamaHandler,
   AnthropicHandler,
   BasetenHandler,
@@ -74,10 +73,11 @@ import {
   VercelAiGatewayHandler,
   XAIHandler,
   ZAiHandler,
+  OpenAiHandler,
 } from './providers/index';
 
 // MoonshotHandler is imported directly due to circular dependency issues
-import { MoonshotHandler } from './providers/moonshot';
+// export { MoonshotHandler } from './providers/moonshot';
 
 export type {
   SingleCompletionHandler,
@@ -86,7 +86,6 @@ export type {
 
 export type { ApiHandlerOptions, ModelRecord, RouterName } from '../shared/api';
 
-export { MoonshotHandler };
 
 export interface ApiHandler {
   createMessage(
@@ -138,8 +137,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
     //   return new DoubaoHandler(options);
     case 'qwen-code':
       return new QwenCodeHandler(options);
-    case 'moonshot':
-      return new MoonshotHandler(options);
+    // case 'moonshot':
+    //   return new MoonshotHandler(options);
     case 'mistral':
       return new MistralHandler(options);
     case 'unbound':

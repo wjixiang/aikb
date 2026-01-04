@@ -3,8 +3,8 @@
 import { OpenAiHandler, getOpenAiModels } from '../openai';
 import { ApiHandlerOptions } from '../../../shared/api';
 import { Anthropic } from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
-import { openAiModelInfoSaneDefaults } from '../../../types';
+// import OpenAI from 'openai';
+// import { openAiModelInfoSaneDefaults } from '../../../types';
 import axios from 'axios';
 
 // Use vi.hoisted to properly handle the mock initialization
