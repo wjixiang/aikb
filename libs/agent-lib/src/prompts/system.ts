@@ -28,8 +28,8 @@ async function generatePrompt(
 ) {
   // Get the full mode config to ensure we have the role definition (used for groups, etc.)
 
-  // const roleDefinition = getRoleDefinition()
-  const roleDefinition = ""
+  const roleDefinition = getRoleDefinition()
+  // const roleDefinition = ""
 
   // Determine the effective protocol (defaults to 'xml')
   const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol);

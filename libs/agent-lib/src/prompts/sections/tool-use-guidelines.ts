@@ -1,7 +1,7 @@
 import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from '../../types';
 
 /**
- * Generates medical research tool use guidelines for LLM prompts.
+ * Generates tool use guidelines for LLM prompts.
  *
  * This function creates a comprehensive set of guidelines specifically tailored for medical scientific research
  * and clinical investigation tasks. The guidelines help LLMs understand how to properly use tools when conducting

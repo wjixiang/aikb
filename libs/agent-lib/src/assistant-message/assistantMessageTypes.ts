@@ -110,7 +110,9 @@ export type ToolParamName =
   | 'file_path'
   | 'old_string'
   | 'new_string'
-  | 'uri';
+  | 'uri'
+  | 'result'
+  | 'action';
 
 export const toolNames: ToolName[] = [
   'read_file',
@@ -163,4 +165,6 @@ export const toolParamNames: ToolParamName[] = [
   'old_string',
   'new_string',
   'uri',
+  'result',
+  'action',
 ];
