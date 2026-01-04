@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { Tool, ToolArgs, ToolResponse } from "../types";
+import { Tool, ToolArgs, ToolResponse } from "../../types";
 
 const tool_graph_native_desc: OpenAI.Chat.ChatCompletionTool = {
     type: 'function',

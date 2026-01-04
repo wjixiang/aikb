@@ -400,7 +400,7 @@ export class Task {
         }
 
         // Process the complete response
-        await this.processCompleteResponse(response, shouldUseXmlParser);
+        shouldUseXmlParser ? await this.processXmlCompleteResponse(response) : await this.processCompleteResponse(response);
 
         // Check if we have tool calls to execute
         const toolUseBlocks = this.messageState.assistantMessageContent.filter(
@@ -531,12 +531,46 @@ export class Task {
     }
   }
 
+  private async processXmlCompleteResponse(chunks: ApiStreamChunk[]) {
+    let reasoningMessage = '';
+    let assistantMessage = '';
+
+    for (const chunk of chunks) {
+      switch (chunk.type) {
+        case 'usage':
+          // Accumulate token usage information
+          this.accumulateTokenUsage(chunk);
+          break;
+        case 'reasoning': {
+          reasoningMessage += chunk.text;
+          // console.log('reasoning:', chunk.text);
+          break;
+        }
+        case 'text': {
+          assistantMessage += chunk.text;
+          break;
+        }
+      }
+    }
+
+    // This section is added for the wired behavior of LLM that always output '<tool_call>'
+    // console.log('assistantMessage', assistantMessage)
+    assistantMessage = assistantMessage.replace('tool_call>', '')
+
+    const assistantMessageParser = new AssistantMessageParser()
+    assistantMessageParser.processChunk(assistantMessage);
+    assistantMessageParser.finalizeContentBlocks();
+    const finalBlocks = assistantMessageParser.getContentBlocks();
+
+    // Append parsed blocks to existing content (don't overwrite)
+    this.messageState.assistantMessageContent.push(...finalBlocks);
+  }
+
   /**
    * Process complete response collected from stream
    */
   private async processCompleteResponse(
-    chunks: ApiStreamChunk[],
-    shouldUseXmlParser: boolean,
+    chunks: ApiStreamChunk[]
   ): Promise<void> {
     let reasoningMessage = '';
     let assistantMessage = '';
@@ -646,28 +680,34 @@ export class Task {
       }
     }
 
-    // Process text content if using XML parser
-    // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
-    if (
-      shouldUseXmlParser &&
-      this.messageState.assistantMessageParser &&
-      assistantMessage
-    ) {
-      console.log('should use xml parser');
+    // // Process text content if using XML parser
+    // // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
+    // if (
+    //   shouldUseXmlParser &&
+    //   this.messageState.assistantMessageParser &&
+    //   assistantMessage
+    // ) {
+    //   console.log('should use xml parser');
 
-      const parsedBlocks = this.messageState.assistantMessageParser.processChunk(assistantMessage);
-      this.messageState.assistantMessageParser.finalizeContentBlocks();
-      const finalBlocks = this.messageState.assistantMessageParser.getContentBlocks();
+    //   const parsedBlocks = this.messageState.assistantMessageParser.processChunk(assistantMessage);
+    //   this.messageState.assistantMessageParser.finalizeContentBlocks();
+    //   const finalBlocks = this.messageState.assistantMessageParser.getContentBlocks();
 
-      // Append parsed blocks to existing content (don't overwrite)
-      this.messageState.assistantMessageContent.push(...finalBlocks);
-    } else if (assistantMessage) {
-      // Native protocol: Add text as content block
-      this.messageState.assistantMessageContent.push({
-        type: 'text',
-        content: assistantMessage,
-      });
-    }
+    //   // Append parsed blocks to existing content (don't overwrite)
+    //   this.messageState.assistantMessageContent.push(...finalBlocks);
+    // } else if (assistantMessage) {
+    //   // Native protocol: Add text as content block
+    //   this.messageState.assistantMessageContent.push({
+    //     type: 'text',
+    //     content: assistantMessage,
+    //   });
+    // }
+
+    // Native protocol: Add text as content block
+    this.messageState.assistantMessageContent.push({
+      type: 'text',
+      content: assistantMessage,
+    });
 
     console.log(`LLM resposne: ${reasoningMessage} \n\n ${assistantMessage} `);
   }
