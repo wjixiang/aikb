@@ -15,7 +15,7 @@ You have access to a set of tools that are executed upon the user's approval. Us
 
 TOOL USE
 
-You have access to a set of tools that are executed upon the user's approval. You must use exactly one tool per message, and every assistant message must include a tool call. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
+You have access to a set of tools that are executed upon the user's approval. You must use exactly one tool per message, and every assistant message must include a tool call. You use tools step-by-step to accomplish a given task, with each tool use informed by result of previous tool use.
 
 # Tool Use Formatting
 
@@ -27,5 +27,20 @@ Tool uses are formatted using XML-style tags. The tool name itself becomes the X
 ...
 </actual_tool_name>
 
-Always use the actual tool name as the XML tag name for proper parsing and execution.`;
+
+Always use the actual tool name as the XML tag name for proper parsing and execution.
+
+# Tool Use Example
+✅ Correct XML tool calling:
+<find_book>
+  </book_name>
+    Physiology
+  </book_name>
+<find_book/>
+
+❌ Incorrect XML tool calling:
+<tool_call>find_book>
+</find_book>
+
+`;
 }

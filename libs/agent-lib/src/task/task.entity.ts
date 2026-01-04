@@ -541,6 +541,12 @@ export class Task {
     let reasoningMessage = '';
     let assistantMessage = '';
 
+    // Clear any previous tool call state before processing new chunks
+    NativeToolCallParser.clearRawChunkState();
+
+    // Map to accumulate streaming tool call arguments by ID
+    const streamingToolCalls = new Map<string, { id: string; name: string; arguments: string }>();
+
     // Process all chunks to build complete response
     for (const chunk of chunks) {
       switch (chunk.type) {
@@ -549,7 +555,7 @@ export class Task {
           this.accumulateTokenUsage(chunk);
           break;
         case 'tool_call': {
-          // Handle complete tool calls
+          // Handle complete tool calls (non-streaming format)
           const toolUse = NativeToolCallParser.parseToolCall({
             id: chunk.id,
             name: chunk.name as any,
@@ -558,6 +564,49 @@ export class Task {
 
           if (toolUse) {
             this.messageState.assistantMessageContent.push(toolUse);
+          }
+          break;
+        }
+        case 'tool_call_partial': {
+          // Handle streaming tool call chunks
+          const events = NativeToolCallParser.processRawChunk({
+            index: chunk.index,
+            id: chunk.id,
+            name: chunk.name,
+            arguments: chunk.arguments,
+          });
+
+          for (const event of events) {
+            switch (event.type) {
+              case 'tool_call_start':
+                streamingToolCalls.set(event.id, {
+                  id: event.id,
+                  name: event.name,
+                  arguments: '',
+                });
+                break;
+              case 'tool_call_delta':
+                const toolCall = streamingToolCalls.get(event.id);
+                if (toolCall) {
+                  toolCall.arguments += event.delta;
+                }
+                break;
+              case 'tool_call_end':
+                const completedToolCall = streamingToolCalls.get(event.id);
+                if (completedToolCall) {
+                  const toolUse = NativeToolCallParser.parseToolCall({
+                    id: completedToolCall.id,
+                    name: completedToolCall.name as any,
+                    arguments: completedToolCall.arguments,
+                  });
+
+                  if (toolUse) {
+                    this.messageState.assistantMessageContent.push(toolUse);
+                  }
+                  streamingToolCalls.delete(event.id);
+                }
+                break;
+            }
           }
           break;
         }
@@ -573,6 +622,30 @@ export class Task {
       }
     }
 
+    // This section is added for the wired behavior of LLM that always output '<tool_call>'
+    // console.log('assistantMessage', assistantMessage)
+    assistantMessage = assistantMessage.replace('tool_call>', '')
+
+    // Finalize any remaining tool calls that weren't explicitly ended
+    const finalizationEvents = NativeToolCallParser.finalizeRawChunks();
+    for (const event of finalizationEvents) {
+      if (event.type === 'tool_call_end') {
+        const remainingToolCall = streamingToolCalls.get(event.id);
+        if (remainingToolCall) {
+          const toolUse = NativeToolCallParser.parseToolCall({
+            id: remainingToolCall.id,
+            name: remainingToolCall.name as any,
+            arguments: remainingToolCall.arguments,
+          });
+
+          if (toolUse) {
+            this.messageState.assistantMessageContent.push(toolUse);
+          }
+          streamingToolCalls.delete(event.id);
+        }
+      }
+    }
+
     // Process text content if using XML parser
     // console.log(shouldUseXmlParser, this.messageState.assistantMessageParser)
     if (
@@ -582,12 +655,12 @@ export class Task {
     ) {
       console.log('should use xml parser');
 
-      this.messageState.assistantMessageContent =
-        this.messageState.assistantMessageParser.processChunk(assistantMessage);
+      const parsedBlocks = this.messageState.assistantMessageParser.processChunk(assistantMessage);
       this.messageState.assistantMessageParser.finalizeContentBlocks();
-      const parsedBlocks =
-        this.messageState.assistantMessageParser.getContentBlocks();
-      this.messageState.assistantMessageContent = parsedBlocks;
+      const finalBlocks = this.messageState.assistantMessageParser.getContentBlocks();
+
+      // Append parsed blocks to existing content (don't overwrite)
+      this.messageState.assistantMessageContent.push(...finalBlocks);
     } else if (assistantMessage) {
       // Native protocol: Add text as content block
       this.messageState.assistantMessageContent.push({
@@ -828,7 +901,7 @@ export class Task {
         this.conversationHistory,
       );
 
-      console.log(`context: ${JSON.stringify(cleanConversationHistory)}`);
+      // console.log(`context: ${JSON.stringify(cleanConversationHistory)}`);
 
       const metadata = {
         taskId: this.taskId,
@@ -877,7 +950,17 @@ export class Task {
   }
 
   private async getSystemPrompt(): Promise<string> {
-    return (await SYSTEM_PROMPT()) || '';
+    // Get model info to determine tool protocol
+    const modelInfo = this.api.getModel();
+    const modelId = modelInfo.id;
+
+    // Resolve tool protocol based on provider settings and model info
+    const toolProtocol = resolveToolProtocol(
+      this.apiConfiguration,
+      modelInfo.info,
+    );
+
+    return (await SYSTEM_PROMPT({ toolProtocol }, modelId)) || '';
   }
 
   private buildCleanConversationHistory(

@@ -12,6 +12,7 @@ import {
   HelpCircleIcon,
   LayoutDashboardIcon,
   ListIcon,
+  LogInIcon,
   SearchIcon,
   SettingsIcon,
   UsersIcon,
@@ -30,13 +31,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/libs/ui/src/components/ui/sidebar';
+import { useAuth } from 'auth-ui';
+import { useNavigate } from 'react-router-dom';
 
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
   navMain: [
     {
       title: 'Dashboard',
@@ -149,6 +147,17 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const userData = user
+    ? {
+        name: user.name,
+        email: user.email,
+        avatar: '/avatars/default.jpg',
+      }
+    : null;
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -172,7 +181,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {userData ? (
+          <NavUser user={userData} onLogout={logout} />
+        ) : (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => navigate('/auth')}
+                className="w-full justify-start"
+              >
+                <LogInIcon className="h-4 w-4" />
+                <span className="ml-2">登录</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

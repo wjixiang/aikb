@@ -6,17 +6,16 @@ Description: After each research tool use, the user will respond with the result
 IMPORTANT NOTE: This tool CANNOT be used until you've confirmed from the user that any previous research tool uses were successful. Failure to do so will result in invalid research conclusions. Before using this tool, you must confirm that you've received successful results from the user for any previous research analyses. If not, then DO NOT use this tool.
 Parameters:
 - result: (required) The result of the medical research task. Formulate this result in a way that is final and does not require further input from the user. Don't end your result with questions or offers for further assistance.
+
+IMPORTANT: When calling this tool, output ONLY the XML tags below with your values. Do NOT include any explanatory text, comments, or markdown formatting.
+
 Usage:
 <attempt_completion>
-<result>
-Your final research findings description here
-</result>
+<result>Your final research findings description here</result>
 </attempt_completion>
 
 Example: Requesting to attempt completion with medical research results
 <attempt_completion>
-<result>
-I've analyzed 15 clinical studies on the treatment efficacy, finding that the intervention shows statistically significant improvement in patient outcomes with minimal adverse effects.
-</result>
+<result>I've analyzed 15 clinical studies on the treatment efficacy, finding that the intervention shows statistically significant improvement in patient outcomes with minimal adverse effects.</result>
 </attempt_completion>`;
 }

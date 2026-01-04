@@ -97,7 +97,7 @@ export class TaskService {
     const testApiConfig: ProviderSettings = {
       apiProvider: 'zai',
       apiKey: process.env['GLM_API_KEY'],
-      apiModelId: 'glm-4.6',
+      apiModelId: 'glm-4.7',
       toolProtocol: 'xml',
       zaiApiLine: 'china_coding',
     };

@@ -125,7 +125,9 @@ const stringifyInput = (input: string | object): string => {
 // ==================== Block Components ====================
 const TextBlock = React.memo(({ text }: { text: string }) => (
   <div className="py-1">
-    <p className="text-sm leading-relaxed">{text}</p>
+    <div className="prose text-sm leading-relaxed">
+      <Markdown>{text}</Markdown>
+    </div>
   </div>
 ));
 TextBlock.displayName = 'TextBlock';
@@ -148,7 +150,9 @@ const ToolUseBlock = React.memo(({ toolName, toolInput }: { toolName: string; to
       </div>
       <pre className="overflow-x-auto px-3 py-2 text-xs text-foreground">
         {isAttemptCompletion ? (
-          <Markdown>{JSON.parse(inputStr).result}</Markdown>
+          <div className="prose">
+            <Markdown>{JSON.parse(inputStr).result }</Markdown>
+          </div>
         ) : (
           inputStr
         )}
@@ -185,7 +189,9 @@ const ToolResultBlock = React.memo(({ toolResultContent }: { toolResultContent: 
       </button>
       {isExpanded && (
         <pre className="overflow-x-auto px-3 py-2 text-xs text-foreground">
-          {contentStr}
+          <div className="prose">
+            <Markdown>{contentStr}</Markdown>
+          </div>
         </pre>
       )}
     </div>
@@ -301,6 +307,7 @@ const MessageList = React.memo(({ messages }: MessageListProps) => {
       </div>
     );
   }
+  console.log(messages)
 
   return (
     <div className="space-y-4">

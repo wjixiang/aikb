@@ -1,5 +1,5 @@
 import type { ToolName, ModeConfig } from '../types';
-
+import OpenAI from 'openai';
 
 import { ToolArgs } from './types';
 import { getSemanticSearchDescription } from './semantic-search';
@@ -10,6 +10,7 @@ import { convertOpenAIToolToAnthropic } from './native-tools';
 import { Tool } from './types';
 import { semantic_search_tool } from './tools/semantic_search';
 import { ToolCallingHandler } from './toolCallingHandler';
+import { getNativeTools } from './native-tools';
 
 export const toolSet = new Map<ToolName, Tool>();
 
@@ -37,7 +38,7 @@ const toolDescriptionMap: Record<
   attempt_completion: (args) => getAttemptCompletionDescription(args),
 };
 
-export function getToolDescriptionsForMode(
+export function getToolDescriptions(
   // mode: Mode,
   settings?: Record<string, any>,
   modelId?: string,
@@ -52,44 +53,44 @@ export function getToolDescriptionsForMode(
 
   const tools = new Set<string>();
 
-  // // Add tools from mode's groups
-  // config.groups.forEach((groupEntry) => {
-  //   const groupName = getGroupName(groupEntry);
-  //   const toolGroup = TOOL_GROUPS[groupName];
-  //   if (toolGroup) {
-  //     toolGroup.tools.forEach((tool) => {
-  //       if (
-  //         isToolAllowedForMode(tool as ToolName, mode, undefined, undefined)
-  //       ) {
-  //         tools.add(tool);
-  //       }
-  //     });
-  //   }
-  // });
-
-  // // Add always available tools
-  // ALWAYS_AVAILABLE_TOOLS.forEach((tool) => tools.add(tool));
-
   // Map tool descriptions for allowed tools
   const descs = Array.from(toolSet.values()).map(e => {
     return e.desc.xml
   })
 
-  // const descriptions = Array.from(tools).map((toolName) => {
-  //   const descriptionFn = toolDescriptionMap[toolName];
-  //   if (!descriptionFn) {
-  //     return undefined;
-  //   }
 
-  //   const description = descriptionFn({
-  //     ...args,
-  //     toolOptions: undefined, // No tool options in group-based approach
-  //   });
-
-  //   return description;
-  // });
 
   return `# Tools\n\n${descs.join('\n\n')}`;
+}
+
+/**
+ * Get native tool descriptions for native protocol
+ * Returns formatted tool descriptions in text format for system prompt
+ */
+export function getNativeToolDescriptions(): string {
+  const nativeTools = getNativeTools();
+
+  const descriptions = nativeTools.map(tool => {
+    if (tool.type !== 'function') return '';
+
+    const toolDef = tool.function;
+    let desc = `## ${toolDef.name}\n\n${toolDef.description}\n\n`;
+
+    // Add parameters if they exist
+    const params = toolDef.parameters as any;
+    if (params && params['properties']) {
+      desc += `Parameters:\n`;
+      for (const [paramName, paramDef] of Object.entries(params['properties'])) {
+        const param = paramDef as any;
+        const required = Array.isArray(params['required']) && params['required'].includes(paramName) ? ' (required)' : ' (optional)';
+        desc += `- **${paramName}**${required}: ${param.description}\n`;
+      }
+    }
+
+    return desc;
+  });
+
+  return `# Available Tools\n\n${descriptions.join('\n\n')}`;
 }
 
 export { ToolCallingHandler };

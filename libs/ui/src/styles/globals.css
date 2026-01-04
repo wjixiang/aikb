@@ -143,3 +143,183 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Markdown Styles */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 {
+  @apply text-3xl font-bold mb-4 mt-6;
+  color: var(--color-h1);
+}
+
+.prose h2 {
+  @apply text-2xl font-semibold mb-3 mt-5;
+  color: var(--color-h2);
+}
+
+.prose h3 {
+  @apply text-xl font-semibold mb-2 mt-4;
+  color: var(--color-h3);
+}
+
+.prose h4 {
+  @apply text-lg font-medium mb-2 mt-3;
+  color: var(--color-h4);
+}
+
+.prose h5 {
+  @apply text-base font-medium mb-2 mt-3;
+  color: var(--color-h5);
+}
+
+.prose h6 {
+  @apply text-sm font-medium mb-2 mt-3;
+  color: var(--color-h6);
+}
+
+.prose p {
+  @apply mb-4 leading-7;
+}
+
+.prose a {
+  @apply underline underline-offset-2;
+  color: var(--color-link);
+}
+
+.prose a:hover {
+  color: var(--color-link-hover);
+}
+
+.prose a:visited {
+  color: var(--color-link-visited);
+}
+
+.prose strong {
+  @apply font-bold;
+}
+
+.prose em {
+  @apply italic;
+}
+
+.prose code {
+  @apply px-1.5 py-0.5 rounded text-sm font-mono;
+  background-color: var(--color-code-background);
+  color: var(--color-code-foreground);
+  border: 1px solid var(--color-code-border);
+}
+
+.prose pre {
+  @apply mb-4 mt-4 p-4 rounded-lg overflow-x-auto;
+  background-color: var(--color-code-background);
+  border: 1px solid var(--color-code-border);
+}
+
+.prose pre code {
+  @apply p-0 bg-transparent border-none;
+  color: var(--color-code-foreground);
+}
+
+.prose blockquote {
+  @apply mb-4 pl-4 py-1 border-l-4 italic;
+  background-color: var(--color-quote-background);
+  border-color: var(--color-quote-border);
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-4 pl-6;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose li {
+  @apply mb-1 leading-7;
+}
+
+.prose ul ul,
+.prose ol ul,
+.prose ul ol,
+.prose ol ol {
+  @apply mt-1 mb-1;
+}
+
+.prose hr {
+  @apply my-6 border-t;
+  border-color: var(--border);
+}
+
+.prose table {
+  @apply w-full mb-4 border-collapse;
+  border: 1px solid var(--border);
+}
+
+.prose th {
+  @apply px-4 py-2 text-left font-semibold border-b;
+  background-color: var(--muted);
+  border-color: var(--border);
+}
+
+.prose td {
+  @apply px-4 py-2 border-b;
+  border-color: var(--border);
+}
+
+.prose tr:last-child td {
+  @apply border-b-0;
+}
+
+.prose img {
+  @apply rounded-lg my-4 max-w-full h-auto;
+}
+
+.prose figure {
+  @apply my-4;
+}
+
+.prose figcaption {
+  @apply text-center text-sm mt-2;
+  color: var(--muted-foreground);
+}
+
+.prose del {
+  @apply line-through;
+  color: var(--muted-foreground);
+}
+
+.prose mark {
+  @apply px-1 py-0.5 rounded;
+  background-color: var(--accent);
+}
+
+/* Dark mode markdown styles */
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose h5,
+.dark .prose h6 {
+  filter: brightness(1.2);
+}
+
+.dark .prose code,
+.dark .prose pre {
+  background-color: oklch(0.2 0.01 220);
+  border-color: oklch(0.3 0.01 220);
+}
+
+.dark .prose blockquote {
+  background-color: oklch(0.22 0.01 60);
+}
+
+.dark .prose th {
+  background-color: var(--muted);
+}
