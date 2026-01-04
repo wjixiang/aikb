@@ -1,10 +1,10 @@
-import { AssistantMessageContent, ToolName, toolNames, ToolParamName, toolParamNames, ToolUse } from '../../assistant-message/assistantMessageTypes';
+import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 
 export default class XMLToolCallingParser {
     private contentBlocks: AssistantMessageContent[] = [];
     private currentTextContent: string = '';
     private currentToolUse: ToolUse | null = null;
-    private currentParamName: ToolParamName | null = null;
+    private currentParamName: string | null = null;
     private currentParamValue: string = '';
     private paramTagDepth: number = 0; // Track nesting depth of current parameter tag
     private inCodeBlock: boolean = false; // Track if we're inside a code block (```)
@@ -71,21 +71,35 @@ export default class XMLToolCallingParser {
                 continue;
             }
 
-            // Check for tool opening tag (only if not inside a parameter)
-            const toolMatch = this.findOpeningTag(message, pos, toolNames);
-            if (toolMatch) {
-                // Flush any pending text content
-                this.flushTextContent();
+            // Check for parameter opening tag (any tag inside a tool use)
+            if (this.currentToolUse) {
+                const paramMatch = this.findAnyOpeningTag(message, pos);
+                if (paramMatch) {
+                    this.currentParamName = paramMatch.tagName;
+                    this.currentParamValue = '';
+                    this.paramTagDepth = 0; // Start at depth 0
+                    pos = paramMatch.endPos;
+                    continue;
+                }
+            }
 
-                // Start new tool use
-                this.currentToolUse = {
-                    type: 'tool_use',
-                    name: toolMatch.tagName as ToolName,
-                    params: {},
-                    partial: true,
-                };
-                pos = toolMatch.endPos;
-                continue;
+            // Check for any opening tag (only if not inside a parameter or tool use)
+            if (!this.currentToolUse) {
+                const tagMatch = this.findAnyOpeningTag(message, pos);
+                if (tagMatch) {
+                    // Flush any pending text content
+                    this.flushTextContent();
+
+                    // Start new tool use
+                    this.currentToolUse = {
+                        type: 'tool_use',
+                        name: tagMatch.tagName,
+                        params: {},
+                        partial: true,
+                    };
+                    pos = tagMatch.endPos;
+                    continue;
+                }
             }
 
             // Check for tool closing tag
@@ -101,18 +115,6 @@ export default class XMLToolCallingParser {
                 }
             }
 
-            // Check for parameter opening tag
-            if (this.currentToolUse) {
-                const paramMatch = this.findOpeningTag(message, pos, toolParamNames);
-                if (paramMatch) {
-                    this.currentParamName = paramMatch.tagName as ToolParamName;
-                    this.currentParamValue = '';
-                    this.paramTagDepth = 0; // Start at depth 0
-                    pos = paramMatch.endPos;
-                    continue;
-                }
-            }
-
             // Accumulate text content (only if not inside a tool)
             if (!this.currentToolUse) {
                 this.currentTextContent += message[pos];
@@ -122,23 +124,26 @@ export default class XMLToolCallingParser {
         }
     }
 
-    private findOpeningTag(
-        message: string,
-        pos: number,
-        validTags: readonly string[],
-    ): { tagName: string; endPos: number } | null {
+    private findAnyOpeningTag(message: string, pos: number): { tagName: string; endPos: number } | null {
         if (message[pos] !== '<') {
             return null;
         }
 
-        for (const tag of validTags) {
-            const openingTag = `<${tag}>`;
-            if (message.substring(pos).startsWith(openingTag)) {
-                return { tagName: tag, endPos: pos + openingTag.length };
-            }
+        // Find closing '>' for the opening tag
+        const tagEndIndex = message.indexOf('>', pos);
+        if (tagEndIndex === -1) {
+            return null;
         }
 
-        return null;
+        // Extract tag name (between < and >, excluding the < and >)
+        const tagName = message.substring(pos + 1, tagEndIndex);
+
+        // Validate tag name: must be alphanumeric with underscores, hyphens, or colons
+        if (!/^[a-zA-Z_][a-zA-Z0-9_:-]*$/.test(tagName)) {
+            return null;
+        }
+
+        return { tagName, endPos: tagEndIndex + 1 };
     }
 
     private flushTextContent(): void {

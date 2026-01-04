@@ -255,5 +255,78 @@ Let me check the dependencies.`;
                 partial: false,
             });
         });
+
+        it('should parse text before tool call without whitespace', () => {
+            const message = 'hello world<attempt_completion></attempt_completion>';
+            const result = parser.processMessage(message);
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toEqual({
+                type: 'text',
+                content: 'hello world',
+            });
+            expect(result[1]).toEqual({
+                type: 'tool_use',
+                name: 'attempt_completion',
+                params: {},
+                partial: false,
+            });
+        });
+
+        it('should parse unknown tool name', () => {
+            const message = '<custom_tool></custom_tool>';
+            const result = parser.processMessage(message);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual({
+                type: 'tool_use',
+                name: 'custom_tool',
+                params: {},
+                partial: false,
+            });
+        });
+
+        it('should parse unknown tool name with parameters', () => {
+            const message = '<my_custom_tool><param1>value1</param1><param2>value2</param2></my_custom_tool>';
+            const result = parser.processMessage(message);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual({
+                type: 'tool_use',
+                name: 'my_custom_tool',
+                params: { param1: 'value1', param2: 'value2' },
+                partial: false,
+            });
+        });
+
+        it('should parse text with unknown tool call', () => {
+            const message = 'Let me use a custom tool.<unknown_action><data>some data</data></unknown_action>';
+            const result = parser.processMessage(message);
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toEqual({
+                type: 'text',
+                content: 'Let me use a custom tool.',
+            });
+            expect(result[1]).toEqual({
+                type: 'tool_use',
+                name: 'unknown_action',
+                params: { data: 'some data' },
+                partial: false,
+            });
+        });
+
+        it('should parse tool with hyphenated name', () => {
+            const message = '<my-custom-tool><arg>test</arg></my-custom-tool>';
+            const result = parser.processMessage(message);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual({
+                type: 'tool_use',
+                name: 'my-custom-tool',
+                params: { arg: 'test' },
+                partial: false,
+            });
+        });
     });
 });

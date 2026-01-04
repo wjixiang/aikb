@@ -47,6 +47,7 @@ import {
   ApiMessage,
   TaskCompletedCallback,
 } from './task.type';
+import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
 
 /**
  * Interface to encapsulate message processing state
@@ -80,6 +81,7 @@ export class Task {
   pendingNewTaskToolCallId?: string;
 
   private api: ApiHandler;
+  private toolCallingParser = new TooCallingParser()
 
   // Tool Use
   consecutiveMistakeCount: number = 0;
@@ -556,11 +558,8 @@ export class Task {
     // This section is added for the wired behavior of LLM that always output '<tool_call>'
     // console.log('assistantMessage', assistantMessage)
     assistantMessage = assistantMessage.replace('tool_call>', '')
-
-    const assistantMessageParser = new AssistantMessageParser()
-    assistantMessageParser.processChunk(assistantMessage);
-    assistantMessageParser.finalizeContentBlocks();
-    const finalBlocks = assistantMessageParser.getContentBlocks();
+    console.log(assistantMessage)
+    const finalBlocks = this.toolCallingParser.xmlToolCallingParser.processMessage(assistantMessage)
 
     // Append parsed blocks to existing content (don't overwrite)
     this.messageState.assistantMessageContent.push(...finalBlocks);
