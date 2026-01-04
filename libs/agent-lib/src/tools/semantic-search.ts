@@ -1,7 +1,7 @@
 import { ToolArgs } from './types';
 
 export function getSemanticSearchDescription(
-  args: ToolArgs,
+
 ): string | undefined {
   return `## semantic_search
 Description:Perform semantic search on a vector index to find relevant chunks based on a query from several highly authoritative medical textbooks. 

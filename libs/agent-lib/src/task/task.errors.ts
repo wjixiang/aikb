@@ -3,7 +3,6 @@
  */
 export abstract class TaskError extends Error {
   abstract readonly code: string;
-  abstract readonly retryable: boolean;
 
   constructor(
     message: string,
@@ -19,7 +18,6 @@ export abstract class TaskError extends Error {
  */
 export class TaskAbortedError extends TaskError {
   readonly code = 'TASK_ABORTED';
-  readonly retryable = false;
 
   constructor(taskId: string, cause?: Error) {
     super(`Task ${taskId} was aborted`, cause);
@@ -31,7 +29,6 @@ export class TaskAbortedError extends TaskError {
  */
 export class ConsecutiveMistakeError extends TaskError {
   readonly code = 'CONSECUTIVE_MISTAKE_LIMIT';
-  readonly retryable = false;
 
   constructor(limit: number, cause?: Error) {
     super(`Consecutive mistake limit of ${limit} reached`, cause);
@@ -43,7 +40,6 @@ export class ConsecutiveMistakeError extends TaskError {
  */
 export class ApiTimeoutError extends TaskError {
   readonly code = 'API_TIMEOUT';
-  readonly retryable = true;
 
   constructor(timeoutMs: number, cause?: Error) {
     super(`API request timed out after ${timeoutMs}ms`, cause);
@@ -55,7 +51,6 @@ export class ApiTimeoutError extends TaskError {
  */
 export class ApiRequestError extends TaskError {
   readonly code = 'API_REQUEST_FAILED';
-  readonly retryable = true;
 
   constructor(
     message: string,
@@ -71,7 +66,6 @@ export class ApiRequestError extends TaskError {
  */
 export class NoApiResponseError extends TaskError {
   readonly code = 'NO_API_RESPONSE';
-  readonly retryable = true;
 
   constructor(attempt: number, cause?: Error) {
     super(`No response received from API (attempt ${attempt})`, cause);
@@ -83,7 +77,6 @@ export class NoApiResponseError extends TaskError {
  */
 export class NoToolsUsedError extends TaskError {
   readonly code = 'NO_TOOLS_USED';
-  readonly retryable = true;
 
   constructor(cause?: Error) {
     super('LLM did not use any tools', cause);
@@ -95,7 +88,6 @@ export class NoToolsUsedError extends TaskError {
  */
 export class StreamingError extends TaskError {
   readonly code = 'STREAMING_FAILED';
-  readonly retryable = true;
 
   constructor(message: string, cause?: Error) {
     super(`Streaming failed: ${message}`, cause);
@@ -107,7 +99,6 @@ export class StreamingError extends TaskError {
  */
 export class MaxRetryExceededError extends TaskError {
   readonly code = 'MAX_RETRY_EXCEEDED';
-  readonly retryable = false;
 
   readonly errors: TaskError[];
 
@@ -125,15 +116,12 @@ export class MaxRetryExceededError extends TaskError {
  */
 export class ToolExecutionFailedError extends TaskError {
   readonly code = 'TOOL_EXECUTION_FAILED';
-  readonly retryable: boolean;
 
   constructor(
     toolName: string,
     message: string,
     cause?: Error,
-    retryable: boolean = true,
   ) {
     super(`Tool execution failed for '${toolName}': ${message}`, cause);
-    this.retryable = retryable;
   }
 }

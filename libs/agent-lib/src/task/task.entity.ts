@@ -40,6 +40,7 @@ import { TokenUsageTracker } from './token-usage/TokenUsageTracker';
 import { ResponseProcessor } from './response/ResponseProcessor';
 import { TaskErrorHandler } from './error/TaskErrorHandler';
 import { ToolExecutor } from './tool-execution/ToolExecutor';
+import { ErrorHandlerPrompt } from './error-prompt/ErrorHandlerPrompt';
 
 /**
  * Interface to encapsulate message processing state
@@ -392,14 +393,24 @@ export class Task {
         const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
         // Handle error using error handler
+        const taskError = this.errorHandler.convertToTaskError(error);
         const shouldAbort = this.errorHandler.handleError(error, currentRetryAttempt);
+
+        // Format error as prompt and add to user content
+        const errorPrompt = ErrorHandlerPrompt.formatErrorPrompt(taskError, currentRetryAttempt);
 
         if (shouldAbort) {
           this.abort('Max retry attempts exceeded or non-retryable error');
         } else {
-          // Push the same content back onto the stack to retry
+          // Push the same content with error prompt back onto the stack to retry
           stack.push({
-            userContent: currentUserContent,
+            userContent: [
+              {
+                type: 'text',
+                text: errorPrompt,
+              },
+              ...currentUserContent,
+            ],
             retryAttempt: currentRetryAttempt + 1,
           });
         }

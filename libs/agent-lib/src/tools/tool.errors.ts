@@ -19,7 +19,7 @@ export abstract class ToolError extends Error {
  */
 export class ToolNotFoundError extends ToolError {
     readonly code = 'TOOL_NOT_FOUND';
-    readonly retryable = false;
+    readonly retryable = true;
 
     constructor(toolName: string, cause?: Error) {
         super(`Tool '${toolName}' not found`, cause);
@@ -47,7 +47,7 @@ export class ToolExecutionError extends ToolError {
  */
 export class ToolParameterError extends ToolError {
     readonly code = 'TOOL_PARAMETER_INVALID';
-    readonly retryable = false;
+    readonly retryable = true;
 
     constructor(
         toolName: string,
@@ -80,7 +80,7 @@ export class ToolTimeoutError extends ToolError {
  */
 export class ToolNotRegisteredError extends ToolError {
     readonly code = 'TOOL_NOT_REGISTERED';
-    readonly retryable = false;
+    readonly retryable = true;
 
     constructor(toolName: string, cause?: Error) {
         super(`Tool '${toolName}' is not registered in the tool set`, cause);

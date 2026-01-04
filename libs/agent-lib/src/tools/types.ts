@@ -15,16 +15,16 @@ export type ToolResponse =
   | string
   | McpToolCallResponse
   | {
-      type: 'text' | 'image' | 'audio' | 'resource';
-      content: any;
-      isError?: boolean;
-    };
+    type: 'text' | 'image' | 'audio' | 'resource';
+    content: any;
+    isError?: boolean;
+  };
 
 export interface Tool {
   // 保留原有desc结构，但增强兼容性
   desc: {
     native: OpenAI.Chat.ChatCompletionTool;
-    xml: (args: ToolArgs) => string | undefined;
+    xml: (args?: ToolArgs) => string | undefined;
     // 新增：MCP格式描述
     mcp?: (args: ToolArgs) => McpTool;
   };

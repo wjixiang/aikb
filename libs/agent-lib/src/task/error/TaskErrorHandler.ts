@@ -38,32 +38,26 @@ export class TaskErrorHandler {
 
         // Handle tool-specific errors
         if (error instanceof ToolNotFoundError) {
-            // Tool not found is not retryable
             return new ToolExecutionFailedError(
                 error.message.split("'")[1] || 'unknown',
                 error.message,
                 error,
-                false, // Not retryable
             );
         }
 
         if (error instanceof ToolTimeoutError) {
-            // Tool timeout is retryable
             return new ToolExecutionFailedError(
                 error.message.split("'")[1] || 'unknown',
                 error.message,
                 error,
-                true, // Retryable
             );
         }
 
         if (error instanceof ToolExecutionError) {
-            // Tool execution error is retryable
             return new ToolExecutionFailedError(
                 error.message.split("'")[1] || 'unknown',
                 error.message,
                 error,
-                true, // Retryable
             );
         }
 
@@ -91,14 +85,6 @@ export class TaskErrorHandler {
             `Error in operation (attempt ${retryAttempt + 1}):`,
             taskError,
         );
-
-        // Don't retry non-retryable errors
-        if (!taskError.retryable) {
-            console.error(
-                `Non-retryable error encountered: ${taskError.code}. Aborting.`,
-            );
-            throw taskError;
-        }
 
         // Check if we've exceeded the maximum retry attempts
         if (retryAttempt >= this.maxRetryAttempts) {

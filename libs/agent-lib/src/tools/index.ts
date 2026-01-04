@@ -22,7 +22,7 @@ function registerTools() {
   toolSet.set('attempt_completion', {
     desc: {
       native: attempt_completion,
-      xml: (args) => getAttemptCompletionDescription(args),
+      xml: () => getAttemptCompletionDescription(),
     },
     resolve: async (args: any) => {
       // For attempt_completion, just return a success message
@@ -32,14 +32,14 @@ function registerTools() {
 }
 registerTools();
 
-// Map of tool names to their description functions
-const toolDescriptionMap: Record<
-  string,
-  (args: ToolArgs) => string | undefined
-> = {
-  semantic_search: (args) => getSemanticSearchDescription(args),
-  attempt_completion: (args) => getAttemptCompletionDescription(args),
-};
+// // Map of tool names to their description functions
+// const toolDescriptionMap: Record<
+//   string,
+//   (args: ToolArgs) => string | undefined
+// > = {
+//   semantic_search: (args) => getSemanticSearchDescription(args),
+//   attempt_completion: (args) => getAttemptCompletionDescription(args),
+// };
 
 export function getToolDescriptions(
   // mode: Mode,
@@ -58,7 +58,7 @@ export function getToolDescriptions(
 
   // Map tool descriptions for allowed tools
   const descs = Array.from(toolSet.values()).map(e => {
-    return e.desc.xml
+    return e.desc.xml()
   })
 
 
