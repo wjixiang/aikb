@@ -3,20 +3,20 @@
  *
  * This workspace demonstrates a pure component-based architecture where:
  * - Workspace is composed of multiple components
- * - Each component has its own state and editable status
+ * - Each component has its own state and editable props
  * - Components re-render when their state changes
  * - No central env property - components are self-contained
  * - Similar to React's component model but for LLM interaction
- * - All operations are performed through EditableStatus updates
+ * - All operations are performed through EditableProps updates
  */
 
 import { z } from 'zod';
 import { IWorkspace } from "./agentWorkspace";
 import {
-    EditableStatus,
-    EditableStatusUpdateResult,
-    EditableStatusSchema,
-    renderEditableStatusAsPrompt
+    EditableProps,
+    EditablePropsUpdateResult,
+    EditablePropsSchema,
+    renderEditablePropsAsPrompt
 } from "./workspaceTypes";
 import { createComponentRegistry } from "./componentRegistry";
 import { getBookshelfComponents, BookInfo } from "./bookshelfComponents";
@@ -31,22 +31,22 @@ import { getBookshelfComponents, BookInfo } from "./bookshelfComponents";
 export class BookshelfWorkspace implements IWorkspace {
     info = {
         name: 'BookshelfWorkspace',
-        desc: 'A workspace for managing and searching through a collection of books. Provides semantic search capabilities and book browsing functionality. All operations are performed through EditableStatus updates.'
+        desc: 'A workspace for managing and searching through a collection of books. Provides semantic search capabilities and book browsing functionality. All operations are performed through EditableProps updates.'
     };
 
     // Component-based architecture - no central env
     private componentRegistry = createComponentRegistry();
 
-    // Expose editable status from all components (for LLM interaction)
-    editableStatus: Record<string, EditableStatus>;
+    // Expose editable props from all components (for LLM interaction)
+    editableProps: Record<string, EditableProps>;
 
     // Special action fields (triggered by setting these to true)
-    private actionFields: Record<string, EditableStatus>;
+    private actionFields: Record<string, EditableProps>;
 
     initialized = false;
 
     constructor() {
-        this.editableStatus = {};
+        this.editableProps = {};
         this.actionFields = {};
     }
 
@@ -54,11 +54,11 @@ export class BookshelfWorkspace implements IWorkspace {
         // Register all components
         const components = getBookshelfComponents();
         for (const component of components) {
-            this.componentRegistry.register(component);
+            await this.componentRegistry.register(component);
 
-            // Deep copy editableStatus to avoid reference issues
-            for (const [key, value] of Object.entries(component.editableStatus)) {
-                this.editableStatus[key] = { ...value };
+            // Deep copy editableProps to avoid reference issues
+            for (const [key, value] of Object.entries(component.editableProps)) {
+                this.editableProps[key] = { ...value };
             }
         }
 
@@ -80,8 +80,8 @@ export class BookshelfWorkspace implements IWorkspace {
             readonly: false
         };
 
-        // Merge action fields into editable status
-        Object.assign(this.editableStatus, this.actionFields);
+        // Merge action fields into editable props
+        Object.assign(this.editableProps, this.actionFields);
     }
 
     /**
@@ -95,10 +95,10 @@ export class BookshelfWorkspace implements IWorkspace {
             .map((comp: any) => comp.render())
             .join('\n\n---\n\n');
 
-        const editableStatusInfo = Object.entries(this.editableStatus)
+        const editablePropsInfo = Object.entries(this.editableProps)
             .map(([key, status]) => {
                 const componentId = this.componentRegistry.findComponentByField(key)?.id || 'unknown';
-                const prompt = renderEditableStatusAsPrompt(key, status);
+                const prompt = renderEditablePropsAsPrompt(key, status);
                 return `  [${componentId}] ${prompt}`;
             })
             .join('\n');
@@ -111,23 +111,23 @@ export class BookshelfWorkspace implements IWorkspace {
 ${componentRenders}
 
 ---
-## 📋 Editable Status Fields
-${editableStatusInfo}
+## 📋 Editable Props Fields
+${editablePropsInfo}
         `;
     }
 
     /**
-     * Get the schema definition for editable status fields
+     * Get the schema definition for editable props fields
      * Aggregates schemas from all components
      */
-    getEditableStatusSchema(): EditableStatusSchema {
+    getEditablePropsSchema(): EditablePropsSchema {
         const components = this.componentRegistry.getAll();
         const fields: Record<string, any> = {};
 
         // Add component fields
         for (const component of components) {
-            for (const [key, field] of Object.entries(component.editableStatus)) {
-                const statusField = field as EditableStatus;
+            for (const [key, field] of Object.entries(component.editableProps)) {
+                const statusField = field as EditableProps;
                 fields[key] = {
                     description: statusField.description,
                     dependsOn: statusField.dependsOn,
@@ -150,19 +150,19 @@ ${editableStatusInfo}
     }
 
     /**
-     * Core method for LLM to directly update editable status fields
+     * Core method for LLM to directly update editable props fields
      * Routes updates to the appropriate component
      * 
      * Workflow:
-     * 1. LLM calls updateEditableStatus(fieldName, value)
+     * 1. LLM calls updateEditableProps(fieldName, value)
      * 2. Workspace routes to the component that owns this field
      * 3. Component validates and updates its state
-     * 4. Component's onUpdate lifecycle hook is called
+     * 4. Component's side effects are triggered
      * 5. Component re-renders
      * 6. Workspace aggregates all component renders
      * 7. Context is refreshed for LLM
      */
-    async updateEditableStatus(fieldName: string, value: any): Promise<EditableStatusUpdateResult> {
+    async updateEditableProps(fieldName: string, value: any): Promise<EditablePropsUpdateResult> {
         // Check if this is an action field
         if (this.actionFields[fieldName]) {
             return await this.handleActionField(fieldName, value);
@@ -180,16 +180,16 @@ ${editableStatusInfo}
         // Update component state
         const result = await this.componentRegistry.updateComponentState(component.id, fieldName, value);
 
-        // Sync workspace editableStatus with component's editableStatus
+        // Sync workspace editableProps with component's editableProps
         if (result.success) {
             const updatedComponent = this.componentRegistry.get(component.id);
-            if (updatedComponent && updatedComponent.editableStatus[fieldName]) {
+            if (updatedComponent && updatedComponent.editableProps[fieldName]) {
                 // Don't overwrite readonly fields - preserve their readonly flag
-                if (!this.editableStatus[fieldName]?.readonly) {
-                    this.editableStatus[fieldName] = { ...updatedComponent.editableStatus[fieldName] };
-                } else if (updatedComponent.editableStatus[fieldName].readonly) {
+                if (!this.editableProps[fieldName]?.readonly) {
+                    this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName] };
+                } else if ((updatedComponent.editableProps[fieldName] as EditableProps).readonly) {
                     // If the component's field is readonly, mark workspace field as readonly too
-                    this.editableStatus[fieldName] = { ...updatedComponent.editableStatus[fieldName], readonly: true };
+                    this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName], readonly: true };
                 }
             }
         }
@@ -206,8 +206,8 @@ ${editableStatusInfo}
     /**
      * Handle action field updates (special fields that trigger operations)
      */
-    private async handleActionField(fieldName: string, value: any): Promise<EditableStatusUpdateResult> {
-        const previousValue = this.editableStatus[fieldName]?.value;
+    private async handleActionField(fieldName: string, value: any): Promise<EditablePropsUpdateResult> {
+        const previousValue = this.editableProps[fieldName]?.value;
 
         switch (fieldName) {
             case 'semantic_search':
@@ -218,7 +218,7 @@ ${editableStatusInfo}
                         await this.componentRegistry.updateComponentState('search', 'search_query', value);
                     }
 
-                    this.editableStatus[fieldName].value = value;
+                    this.editableProps[fieldName].value = value;
                     return {
                         success: true,
                         updatedField: fieldName,

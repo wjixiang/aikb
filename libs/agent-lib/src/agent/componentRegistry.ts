@@ -9,7 +9,7 @@ import {
     ComponentUpdateResult,
     ComponentRegistryConfig
 } from './componentTypes';
-import { EditableStatus, EditableStatusValidationResult, validateEditableStatus } from './workspaceTypes';
+import { EditableProps, EditablePropsValidationResult, validateEditableProps } from './workspaceTypes';
 
 /**
  * Default configuration for component registry
@@ -34,7 +34,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
     /**
      * Register a component with the workspace
      */
-    register(component: WorkspaceComponent): void {
+    async register(component: WorkspaceComponent): Promise<void> {
         if (this.components.has(component.id)) {
             throw new Error(`Component with id '${component.id}' is already registered`);
         }
@@ -42,6 +42,9 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
         if (this.components.size >= (this.config.maxComponents || 100)) {
             throw new Error(`Maximum number of components (${this.config.maxComponents}) reached`);
         }
+
+        // Set registry reference on component
+        component._setRegistry(this);
 
         // Initialize component methods
         this.initializeComponent(component);
@@ -52,8 +55,14 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
 
         // Call onMount lifecycle hook
         if (this.config.enableLifecycle && component.lifecycle?.onMount) {
-            component.lifecycle.onMount();
+            const result = component.lifecycle.onMount();
+            if (result instanceof Promise) {
+                await result;
+            }
         }
+
+        // Trigger initial side effects
+        await component._updateStateAndTriggerEffects();
 
         // Initial render
         this.invalidateRenderCache(component);
@@ -112,8 +121,8 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
             };
         }
 
-        // Check if key exists in editable status
-        if (!(key in component.editableStatus)) {
+        // Check if key exists in editable props
+        if (!(key in component.editableProps)) {
             return {
                 success: false,
                 error: `Field '${key}' is not editable in component '${componentId}'`,
@@ -125,7 +134,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
             };
         }
 
-        const field = component.editableStatus[key];
+        const field = component.editableProps[key] as EditableProps;
 
         // Check if field is readonly
         if (field.readonly) {
@@ -141,7 +150,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
         }
 
         // Validate the value
-        const validationResult = this.validateFieldValue(field, value, component);
+        const validationResult = this.validateFieldValue(field as EditableProps, value, component);
         if (!validationResult.valid) {
             return {
                 success: false,
@@ -163,7 +172,10 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
         // Update editable status
         field.value = validationResult.data === null ? null : validationResult.data;
 
-        // Call onUpdate lifecycle hook
+        // Trigger side effects based on state changes
+        await component._updateStateAndTriggerEffects();
+
+        // Call onUpdate lifecycle hook (backward compatibility)
         if (this.config.enableLifecycle && component.lifecycle?.onUpdate) {
             await component.lifecycle.onUpdate({ ...component.state, [key]: previousValue });
         }
@@ -186,7 +198,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
      */
     findComponentByField(fieldName: string): WorkspaceComponent | undefined {
         for (const component of this.components.values()) {
-            if (fieldName in component.editableStatus) {
+            if (fieldName in component.editableProps) {
                 return component;
             }
         }
@@ -199,7 +211,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
     getAllEditableFields(): Record<string, string> {
         const fields: Record<string, string> = {};
         for (const component of this.components.values()) {
-            for (const fieldName of Object.keys(component.editableStatus)) {
+            for (const fieldName of Object.keys(component.editableProps)) {
                 fields[fieldName] = component.id;
             }
         }
@@ -216,36 +228,31 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
         }
 
         // Initialize editable status values from state
-        for (const [key, field] of Object.entries(component.editableStatus)) {
-            if (field.value === null && key in component.state) {
-                field.value = component.state[key] === null ? null : String(component.state[key]);
+        for (const [key, field] of Object.entries(component.editableProps)) {
+            const editableField = field as EditableProps;
+            if (editableField.value === null && key in component.state) {
+                editableField.value = component.state[key] === null ? null : String(component.state[key]);
             }
         }
 
-        // Implement updateState method
-        component.updateState = async (key: string, value: any) => {
-            return await this.updateComponentState(component.id, key, value);
-        };
-
-        // Implement getState method
-        component.getState = () => ({ ...component.state });
+        // Note: updateState and getState are now implemented in the abstract class
     }
 
     /**
      * Validate a field value against its constraint
      */
     private validateFieldValue(
-        field: EditableStatus,
+        field: EditableProps,
         value: any,
         component: WorkspaceComponent
-    ): EditableStatusValidationResult {
+    ): EditablePropsValidationResult {
         // Null is always valid (for clearing)
         if (value === null) {
             return { valid: true };
         }
 
         // Use Zod-based validation
-        const result = validateEditableStatus(field, value);
+        const result = validateEditableProps(field, value);
         return result;
     }
 

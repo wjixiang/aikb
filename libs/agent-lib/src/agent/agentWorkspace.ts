@@ -1,8 +1,8 @@
 import { Tool } from "../tools/types";
 import {
-    EditableStatus,
-    EditableStatusUpdateResult,
-    EditableStatusSchema
+    EditableProps,
+    EditablePropsUpdateResult,
+    EditablePropsSchema
 } from "./workspaceTypes";
 
 interface WorkSpaceInfo {
@@ -17,44 +17,44 @@ interface WorkspaceLlmInterface {
 
 /**
  * Core interface for Workspace implementations
- * Provides direct LLM interaction through EditableStatus without toolSet
+ * Provides direct LLM interaction through EditableProps without toolSet
  * 
  * In component-based architecture, each component manages its own state,
- * so the workspace doesn't need a separate env property.
+ * so that workspace doesn't need a separate env property.
  */
 export interface IWorkspace {
     info: WorkSpaceInfo;
-    editableStatus: Record<string, EditableStatus>;
+    editableProps: Record<string, EditableProps>;
     renderContext: () => string;
 
     /**
-     * Core method for LLM to directly update editable status fields
+     * Core method for LLM to directly update editable props fields
      * This is the primary entry point for LLM-Workspace interaction
      *
-     * @param fieldName - The name of the editable field to update
+     * @param fieldName - The name of editable field to update
      * @param value - The new value (null to clear)
      * @returns Result indicating success or failure with error details
      */
-    updateEditableStatus: (
+    updateEditableProps: (
         fieldName: string,
         value: any
-    ) => Promise<EditableStatusUpdateResult>;
+    ) => Promise<EditablePropsUpdateResult>;
 
     /**
-     * Get the schema definition for editable status fields
+     * Get the schema definition for editable props fields
      * Used to inform LLM about available fields and their constraints
      *
      * @returns Schema containing all editable field definitions
      */
-    getEditableStatusSchema: () => EditableStatusSchema;
+    getEditablePropsSchema: () => EditablePropsSchema;
 
     /**
-     * Initialize the workspace (load data, set up resources, etc.)
+     * Initialize workspace (load data, set up resources, etc.)
      */
     init?: () => Promise<void>;
 
     /**
-     * Reset the workspace to initial state
+     * Reset workspace to initial state
      */
     reset?: () => void;
 }

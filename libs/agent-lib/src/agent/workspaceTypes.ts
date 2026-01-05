@@ -1,20 +1,24 @@
 /**
- * Core types for Workspace - EditableStatus interaction architecture
+ * Core types for Workspace - EditableProps interaction architecture
  */
 
 import { z, ZodType, ZodTypeDef } from 'zod';
 
 /**
- * Enhanced EditableStatus interface with Zod schema support
+ * Enhanced EditableProps interface with Zod schema support
  *
- * This interface allows EditableStatus to accept any Zod-based object schema,
+ * EditableProps are special props that LLM can interact with directly via tool calls.
+ * Unlike regular props which are passed from parent components, EditableProps are
+ * exposed to LLM and can be modified by LLM through tool calls.
+ *
+ * This interface allows EditableProps to accept any Zod-based object schema,
  * enabling:
- * 1. Rendering the schema as a prompt for LLM to understand how to write values
- * 2. Validating LLM tool call parameters against the schema
+ * 1. Rendering schema as a prompt for LLM to understand how to write values
+ * 2. Validating LLM tool call parameters against schema
  */
-export interface EditableStatus<TInput = any, TOutput = TInput, TDef extends ZodTypeDef = ZodTypeDef> {
+export interface EditableProps<TInput = any, TOutput = TInput, TDef extends ZodTypeDef = ZodTypeDef> {
     /**
-     * Current value of the editable status field
+     * Current value of editable prop field
      */
     value: TOutput | null;
 
@@ -32,7 +36,7 @@ export interface EditableStatus<TInput = any, TOutput = TInput, TDef extends Zod
 
     /**
      * Whether this field is read-only
-     * If true, the LLM cannot modify this field
+     * If true, LLM cannot modify this field
      */
     readonly: boolean;
 
@@ -44,9 +48,9 @@ export interface EditableStatus<TInput = any, TOutput = TInput, TDef extends Zod
 }
 
 /**
- * Result of updating an editable status field
+ * Result of updating an editable prop field
  */
-export interface EditableStatusUpdateResult {
+export interface EditablePropsUpdateResult {
     success: boolean;
     error?: string;
     updatedField?: string;
@@ -56,9 +60,9 @@ export interface EditableStatusUpdateResult {
 }
 
 /**
- * Validation result for an editable status field
+ * Validation result for an editable prop field
  */
-export interface EditableStatusValidationResult {
+export interface EditablePropsValidationResult {
     valid: boolean;
     error?: string;
     data?: any;
@@ -190,30 +194,30 @@ export function renderSchemaAsPrompt<TInput, TOutput, TDef extends ZodTypeDef>(
 }
 
 /**
- * Validate a value against an EditableStatus's schema
+ * Validate a value against an EditableProps's schema
  * 
- * @param editableStatus - The EditableStatus to validate against
+ * @param editableProps - The EditableProps to validate against
  * @param value - The value to validate
  * @returns Validation result with success/error information
  */
-export function validateEditableStatus<TInput, TOutput, TDef extends ZodTypeDef>(
-    editableStatus: EditableStatus<TInput, TOutput, TDef>,
+export function validateEditableProps<TInput, TOutput, TDef extends ZodTypeDef>(
+    editableProps: EditableProps<TInput, TOutput, TDef>,
     value: any
-): EditableStatusValidationResult {
+): EditablePropsValidationResult {
     try {
-        // Handle null values if the schema allows them
+        // Handle null values if schema allows them
         if (value === null || value === undefined) {
-            const result = editableStatus.schema.safeParse(null);
+            const result = editableProps.schema.safeParse(null);
             if (result.success) {
                 return { valid: true, data: null };
             }
         }
 
-        const result = editableStatus.schema.safeParse(value);
+        const result = editableProps.schema.safeParse(value);
         if (result.success) {
             return { valid: true, data: result.data };
         } else {
-            const errors = result.error.errors.map(e => {
+            const errors = result.error.errors.map((e: any) => {
                 const path = e.path.length > 0 ? e.path.join('.') : 'value';
                 return `${path}: ${e.message}`;
             }).join('; ');
@@ -228,31 +232,39 @@ export function validateEditableStatus<TInput, TOutput, TDef extends ZodTypeDef>
 }
 
 /**
- * Render an EditableStatus as a prompt for LLM
+ * Render an EditableProps as a prompt for LLM
  * This generates a human-readable description that LLMs can use to understand
  * how to properly set the value
  * 
  * @param fieldName - The name of the field
- * @param editableStatus - The EditableStatus to render
+ * @param editableProps - The EditableProps to render
  * @returns A string representation for LLM consumption
  */
-export function renderEditableStatusAsPrompt<TInput, TOutput, TDef extends ZodTypeDef>(
+export function renderEditablePropsAsPrompt<TInput, TOutput, TDef extends ZodTypeDef>(
     fieldName: string,
-    editableStatus: EditableStatus<TInput, TOutput, TDef>
+    editableProps: EditableProps<TInput, TOutput, TDef>
 ): string {
-    const readonlyMark = editableStatus.readonly ? ' [READ-ONLY]' : '';
-    const currentValue = editableStatus.value !== null
-        ? ` (current: ${JSON.stringify(editableStatus.value)})`
+    const readonlyMark = editableProps.readonly ? ' [READ-ONLY]' : '';
+    const currentValue = editableProps.value !== null
+        ? ` (current: ${JSON.stringify(editableProps.value)})`
         : ' (not set)';
 
-    const schemaPrompt = renderSchemaAsPrompt(editableStatus.schema, fieldName, editableStatus.description);
+    const schemaPrompt = renderSchemaAsPrompt(editableProps.schema, fieldName, editableProps.description);
 
     return `${schemaPrompt}${readonlyMark}${currentValue}`;
 }
 
 /**
- * Schema definition for all editable status fields
+ * Schema definition for all editable props fields
  */
-export interface EditableStatusSchema {
+export interface EditablePropsSchema {
     fields: Record<string, any>;
 }
+
+// Export old names for backward compatibility
+export type EditableStatus<TInput = any, TOutput = TInput, TDef extends ZodTypeDef = ZodTypeDef> = EditableProps<TInput, TOutput, TDef>;
+export type EditableStatusUpdateResult = EditablePropsUpdateResult;
+export type EditableStatusValidationResult = EditablePropsValidationResult;
+export type EditableStatusSchema = EditablePropsSchema;
+export const validateEditableStatus = validateEditableProps;
+export const renderEditableStatusAsPrompt = renderEditablePropsAsPrompt;

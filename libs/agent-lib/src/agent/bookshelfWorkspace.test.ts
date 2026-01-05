@@ -21,10 +21,10 @@ describe(BookshelfWorkspace, () => {
             console.log(workspace.renderContext())
         });
 
-        it('should aggregate editable status from all components', () => {
-            expect(workspace.editableStatus).toHaveProperty('selected_book_name');
-            expect(workspace.editableStatus).toHaveProperty('current_page');
-            expect(workspace.editableStatus).toHaveProperty('search_query');
+        it('should aggregate editable props from all components', () => {
+            expect(workspace.editableProps).toHaveProperty('selected_book_name');
+            expect(workspace.editableProps).toHaveProperty('current_page');
+            expect(workspace.editableProps).toHaveProperty('search_query');
         });
 
         it('should render context with all component renders', () => {
@@ -36,9 +36,9 @@ describe(BookshelfWorkspace, () => {
         });
     });
 
-    describe('getEditableStatusSchema', () => {
+    describe('getEditablePropsSchema', () => {
         it('should return schema with all editable fields', () => {
-            const schema = workspace.getEditableStatusSchema();
+            const schema = workspace.getEditablePropsSchema();
             console.log(schema)
             expect(schema.fields).toHaveProperty('selected_book_name');
             expect(schema.fields).toHaveProperty('current_page');
@@ -46,16 +46,16 @@ describe(BookshelfWorkspace, () => {
         });
 
         it('should include componentId in field definitions', () => {
-            const schema = workspace.getEditableStatusSchema();
+            const schema = workspace.getEditablePropsSchema();
             expect(schema.fields['selected_book_name'].componentId).toBe('book_selector');
             expect(schema.fields['current_page'].componentId).toBe('book_viewer');
             expect(schema.fields['search_query'].componentId).toBe('search');
         });
     });
 
-    describe('updateEditableStatus - Component Routing', () => {
+    describe('updateEditableProps - Component Routing', () => {
         it('should route updates to correct component', async () => {
-            const result = await workspace.updateEditableStatus('selected_book_name', 'Physiology');
+            const result = await workspace.updateEditableProps('selected_book_name', 'Physiology');
             expect(result.success).toBe(true);
             expect(result.updatedField).toBe('selected_book_name');
 
@@ -65,7 +65,7 @@ describe(BookshelfWorkspace, () => {
         });
 
         it('should reject unknown field names', async () => {
-            const result = await workspace.updateEditableStatus('unknown_field', 'value');
+            const result = await workspace.updateEditableProps('unknown_field', 'value');
             expect(result.success).toBe(false);
             expect(result.error).toContain('Unknown editable field');
         });
@@ -74,30 +74,30 @@ describe(BookshelfWorkspace, () => {
             // Make a field readonly by modifying the component directly
             const bookSelector = workspace.getComponentRegistry().get('book_selector');
             if (bookSelector) {
-                bookSelector.editableStatus['selected_book_name'].readonly = true;
+                bookSelector.editableProps['selected_book_name'].readonly = true;
             }
 
-            const result = await workspace.updateEditableStatus('selected_book_name', 'Physiology');
+            const result = await workspace.updateEditableProps('selected_book_name', 'Physiology');
             expect(result.success).toBe(false);
             expect(result.error).toContain('read-only');
 
             // Restore readonly flag for subsequent tests
             if (bookSelector) {
-                bookSelector.editableStatus['selected_book_name'].readonly = false;
+                bookSelector.editableProps['selected_book_name'].readonly = false;
             }
         });
     });
 
     describe('BookSelector Component', () => {
         it('should update book selector state when selected_book_name changes', async () => {
-            await workspace.updateEditableStatus('selected_book_name', 'Anatomy');
+            await workspace.updateEditableProps('selected_book_name', 'Anatomy');
 
             const bookSelector = workspace.getComponentRegistry().get('book_selector');
             expect(bookSelector?.state['selected_book_name']).toBe('Anatomy');
         });
 
         it('should reject invalid book names', async () => {
-            const result = await workspace.updateEditableStatus('selected_book_name', 'InvalidBook');
+            const result = await workspace.updateEditableProps('selected_book_name', 'InvalidBook');
             // With nullable string schema, any string is valid
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
@@ -106,11 +106,11 @@ describe(BookshelfWorkspace, () => {
 
     describe('BookViewer Component', () => {
         beforeEach(async () => {
-            await workspace.updateEditableStatus('selected_book_name', 'Physiology');
+            await workspace.updateEditableProps('selected_book_name', 'Physiology');
         });
 
         it('should update book viewer state when current_page changes', async () => {
-            const result = await workspace.updateEditableStatus('current_page', '42');
+            const result = await workspace.updateEditableProps('current_page', '42');
             expect(result.success).toBe(true);
 
             // Wait for async update to complete
@@ -119,13 +119,13 @@ describe(BookshelfWorkspace, () => {
         });
 
         it('should reject invalid page numbers', async () => {
-            const result = await workspace.updateEditableStatus('current_page', '999a');
+            const result = await workspace.updateEditableProps('current_page', '999a');
             expect(result.success).toBe(false);
             expect(result.error).toBeTruthy();
         });
 
         it('should reject non-numeric page numbers', async () => {
-            const result = await workspace.updateEditableStatus('current_page', 'not_a_number');
+            const result = await workspace.updateEditableProps('current_page', 'not_a_number');
             expect(result.success).toBe(false);
             expect(result.error).toContain('number');
         });
@@ -133,14 +133,14 @@ describe(BookshelfWorkspace, () => {
 
     describe('Search Component', () => {
         it('should update search component state when search_query changes', async () => {
-            await workspace.updateEditableStatus('search_query', 'heart');
+            await workspace.updateEditableProps('search_query', 'heart');
 
             const searchComponent = workspace.getComponentRegistry().get('search');
             expect(searchComponent?.state['search_query']).toBe('heart');
         });
 
         it('should populate search results on query change', async () => {
-            await workspace.updateEditableStatus('search_query', 'nervous system');
+            await workspace.updateEditableProps('search_query', 'nervous system');
 
             const searchComponent = workspace.getComponentRegistry().get('search');
             expect(searchComponent?.state['results']).toBeDefined();
@@ -149,8 +149,8 @@ describe(BookshelfWorkspace, () => {
         });
 
         it('should clear search results when query is cleared', async () => {
-            await workspace.updateEditableStatus('search_query', 'test');
-            await workspace.updateEditableStatus('search_query', null);
+            await workspace.updateEditableProps('search_query', 'test');
+            await workspace.updateEditableProps('search_query', null);
 
             const searchComponent = workspace.getComponentRegistry().get('search');
             expect(searchComponent?.state['results']).toEqual([]);
@@ -159,7 +159,7 @@ describe(BookshelfWorkspace, () => {
 
     describe('Action Fields', () => {
         it('should execute semantic_search via status update', async () => {
-            const result = await workspace.updateEditableStatus('semantic_search', 'test query');
+            const result = await workspace.updateEditableProps('semantic_search', 'test query');
             expect(result.success).toBe(true);
             expect(result.data).toHaveProperty('query');
             expect(result.data).toHaveProperty('results');
@@ -170,9 +170,9 @@ describe(BookshelfWorkspace, () => {
         });
 
         it('should handle null semantic_search value', async () => {
-            await workspace.updateEditableStatus('semantic_search', 'test');
+            await workspace.updateEditableProps('semantic_search', 'test');
 
-            const result = await workspace.updateEditableStatus('semantic_search', null);
+            const result = await workspace.updateEditableProps('semantic_search', null);
             expect(result.success).toBe(true);
             expect(result.newValue).toBeNull();
         });
@@ -193,7 +193,7 @@ describe(BookshelfWorkspace, () => {
             const initialBook = workspace.getComponentRegistry().get('book_selector')?.state['selected_book_name'];
             // expect(initialBook).toBeNull();
 
-            await workspace.updateEditableStatus('selected_book_name', 'Physiology');
+            await workspace.updateEditableProps('selected_book_name', 'Physiology');
 
             // Verify component state was updated (which happens in onUpdate)
             const updatedBook = workspace.getComponentRegistry().get('book_selector')?.state['selected_book_name'];
@@ -222,7 +222,7 @@ describe(BookshelfWorkspace, () => {
             expect(context).toContain('No book selected');
 
             // Step 1: LLM updates book selector
-            await workspace.updateEditableStatus('selected_book_name', 'Biochemistry');
+            await workspace.updateEditableProps('selected_book_name', 'Biochemistry');
 
             // Verify component state
             const bookSelector = workspace.getComponentRegistry().get('book_selector');
@@ -230,7 +230,7 @@ describe(BookshelfWorkspace, () => {
 
             // Step 2: LLM updates page
             const bookViewer = workspace.getComponentRegistry().get('book_viewer');
-            await workspace.updateEditableStatus('current_page', 50);
+            await workspace.updateEditableProps('current_page', 50);
             expect(bookViewer?.state['current_page']).toBe(50);
 
             // Step 3: Context is re-rendered
