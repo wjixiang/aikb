@@ -96,23 +96,23 @@ ${bookList}
  * Displays selected book and allows page navigation
  */
 export class BookViewerComponent extends WorkspaceComponent {
-    constructor() {
+    constructor(props: { currentBook: BookInfo | null }) {
+        const editableProps = {
+            current_page: {
+                value: 1,
+                schema: z.coerce.number().int().positive(),
+                description: 'Navigate to a specific page in the current book',
+                dependsOn: ['book_selector.selected_book_name'],
+                readonly: false
+            }
+        } as Record<string, EditableProps>;
+
         super(
             'book_viewer',
             'BookViewer',
             'View and navigate through pages of selected book',
-            {
-                current_page: {
-                    value: 1,
-                    schema: z.coerce.number().int().positive(),
-                    description: 'Navigate to a specific page in the current book',
-                    dependsOn: ['book_selector.selected_book_name'],
-                    readonly: false
-                }
-            } as Record<string, EditableProps>,
-            {
-                currentBook: null as BookInfo | null
-            }
+            editableProps,
+            props
         );
 
         // Register state
@@ -136,7 +136,8 @@ export class BookViewerComponent extends WorkspaceComponent {
         const { currentBook } = this.props;
         const { current_page, totalPages, bookName, content } = this.state;
 
-        if (!bookName || !currentBook) {
+
+        if (!currentBook) {
             return `
 ## 📖 Book Viewer
 *No book selected. Please select a book first.*
@@ -174,7 +175,8 @@ export class SearchComponent extends WorkspaceComponent {
                     dependsOn: [],
                     readonly: false
                 }
-            } as Record<string, EditableProps>
+            } as Record<string, EditableProps>,
+            {}
         );
 
         // Register state
@@ -229,6 +231,7 @@ export class WorkspaceInfoComponent extends WorkspaceComponent {
             'WorkspaceInfo',
             'Displays workspace information and status',
             {},
+            {}
         );
 
         // Register state
@@ -238,7 +241,7 @@ export class WorkspaceInfoComponent extends WorkspaceComponent {
     render(): string {
         const { lastUpdated } = this.state;
         const { availableBooksCount, componentsCount } = this.props;
-        const formattedDate = new Date(lastUpdated).toLocaleString();
+        const formattedDate = new Date(lastUpdated as string).toLocaleString();
 
         return `
 ## ℹ️ Workspace Information
@@ -250,14 +253,3 @@ export class WorkspaceInfoComponent extends WorkspaceComponent {
     }
 }
 
-/**
- * Get all Bookshelf workspace components
- */
-export function getBookshelfComponents(): WorkspaceComponent[] {
-    return [
-        new WorkspaceInfoComponent(),
-        new BookSelectorComponent(),
-        new BookViewerComponent(),
-        new SearchComponent()
-    ];
-}

@@ -19,7 +19,7 @@ import {
     renderEditablePropsAsPrompt
 } from "./workspaceTypes";
 import { createComponentRegistry } from "./componentRegistry";
-import { getBookshelfComponents, BookInfo } from "./bookshelfComponents";
+import { BookSelectorComponent, BookViewerComponent, SearchComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
 
 /**
  * BookshelfWorkspace - Pure component-based implementation
@@ -52,37 +52,17 @@ export class BookshelfWorkspace implements IWorkspace {
 
     async init() {
         // Register all components
-        const components = getBookshelfComponents();
-        for (const component of components) {
-            await this.componentRegistry.register(component);
+        await Promise.all([
+            this.componentRegistry.register(new WorkspaceInfoComponent()),
+            this.componentRegistry.register(new BookSelectorComponent()),
+            this.componentRegistry.register(new BookViewerComponent({ currentBook: null })),
+            this.componentRegistry.register(new SearchComponent()),
+        ])
 
-            // Deep copy editableProps to avoid reference issues
-            for (const [key, value] of Object.entries(component.editableProps)) {
-                this.editableProps[key] = { ...value };
-            }
-        }
-
-        // Add special action fields
-        this.addActionFields();
 
         this.initialized = true;
     }
 
-    /**
-     * Add special action fields that trigger operations when set
-     */
-    private addActionFields() {
-        // Semantic search action - setting to a query performs search
-        this.actionFields['semantic_search'] = {
-            value: null,
-            schema: z.string().min(1).max(500).nullable(),
-            description: 'Set to a search query to perform semantic search across all books (results are displayed in the search component)',
-            readonly: false
-        };
-
-        // Merge action fields into editable props
-        Object.assign(this.editableProps, this.actionFields);
-    }
 
     /**
      * Render context by aggregating all component renders
@@ -95,24 +75,12 @@ export class BookshelfWorkspace implements IWorkspace {
             .map((comp: any) => comp.render())
             .join('\n\n---\n\n');
 
-        const editablePropsInfo = Object.entries(this.editableProps)
-            .map(([key, status]) => {
-                const componentId = this.componentRegistry.findComponentByField(key)?.id || 'unknown';
-                const prompt = renderEditablePropsAsPrompt(key, status);
-                return `  [${componentId}] ${prompt}`;
-            })
-            .join('\n');
-
         return `
 ################################
 ------Bookshelf Workspace-------
 ################################
 
 ${componentRenders}
-
----
-## 📋 Editable Props Fields
-${editablePropsInfo}
         `;
     }
 

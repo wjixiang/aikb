@@ -126,8 +126,8 @@ export abstract class WorkspaceComponent {
         id: string,
         name: string,
         description: string,
-        editableProps: Record<string, EditableProps> = {},
-        props: ComponentProps = {}
+        editableProps: Record<string, EditableProps>,
+        props: ComponentProps
     ) {
         this.id = id;
         this.name = name;
