@@ -42,6 +42,18 @@ import { TaskErrorHandler } from './error/TaskErrorHandler';
 import { ToolExecutor } from './tool-execution/ToolExecutor';
 import { ErrorHandlerPrompt } from './error-prompt/ErrorHandlerPrompt';
 
+type SystemMessage = ErrorMessage | ToolResultMessage
+
+interface ErrorMessage {
+  type: 'error';
+  content: string
+}
+
+interface ToolResultMessage {
+  type: 'tool_result';
+  content: string;
+}
+
 /**
  * Interface to encapsulate message processing state
  */
@@ -52,6 +64,7 @@ interface MessageProcessingState {
     | Anthropic.ImageBlockParam
     | Anthropic.ToolResultBlockParam
   )[];
+  systemMessageContent: SystemMessage[];
   didAttemptCompletion: boolean;
   cachedModel?: { id: string; info: ModelInfo };
 }
@@ -92,6 +105,7 @@ export class Task {
   private messageState: MessageProcessingState = {
     assistantMessageContent: [],
     userMessageContent: [],
+    systemMessageContent: [],
     didAttemptCompletion: false,
     cachedModel: undefined,
   };

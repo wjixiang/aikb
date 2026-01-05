@@ -15,6 +15,7 @@ export interface TextContent {
   partial?: boolean;
 }
 
+
 export interface ToolUse {
   type: 'tool_use';
   name: string;

@@ -1,15 +1,13 @@
 import { type ToolName, toolNames } from '../types';
 
-import {
-  TextContent,
-  ToolUse,
-  McpToolUse,
-  ToolParamName,
-  toolParamNames,
-} from '../shared/tools';
-import { AssistantMessageContent } from './assistantMessageTypes';
+// import {
+//   TextContent,
+//   ToolParamName,
+//   toolParamNames,
+// } from '../shared/tools';
+import { AssistantMessageContent, TextContent, ToolParamName, toolParamNames, ToolUse } from './assistantMessageTypes';
 
-// export type AssistantMessageContent = TextContent | ToolUse | McpToolUse
+// export type AssistantMessageContent = TextContent | ToolUse 
 
 export function parseAssistantMessage(
   assistantMessage: string,
