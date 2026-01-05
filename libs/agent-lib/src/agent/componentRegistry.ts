@@ -7,7 +7,8 @@ import {
     WorkspaceComponent,
     WorkspaceComponentRegistry,
     ComponentUpdateResult,
-    ComponentRegistryConfig
+    ComponentRegistryConfig,
+    ComponentProps
 } from './componentTypes';
 import { EditableProps, EditablePropsValidationResult, validateEditableProps } from './workspaceTypes';
 

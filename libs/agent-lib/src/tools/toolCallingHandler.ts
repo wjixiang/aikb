@@ -1,5 +1,5 @@
 import { ToolName } from '../types';
-import { toolSet } from '.';
+import { toolSet, ToolContext } from '.';
 import {
   ToolNotFoundError,
   ToolExecutionError,
@@ -11,6 +11,7 @@ import {
  */
 export interface ToolExecutionConfig {
   timeout?: number; // Timeout in milliseconds
+  context?: ToolContext; // Context to pass to tool execution
 }
 
 export class ToolCallingHandler {
@@ -33,7 +34,7 @@ export class ToolCallingHandler {
     try {
       // Execute tool with timeout
       const toolCallResult = await this.executeWithTimeout(
-        () => tool.resolve(param),
+        () => tool.resolve(param, config?.context),
         timeout,
         toolName,
       );

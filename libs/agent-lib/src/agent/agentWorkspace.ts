@@ -10,11 +10,6 @@ interface WorkSpaceInfo {
     desc: string;
 }
 
-interface WorkspaceLlmInterface {
-    input: any;
-    output: any;
-}
-
 /**
  * Core interface for Workspace implementations
  * Provides direct LLM interaction through EditableProps without toolSet
@@ -25,7 +20,7 @@ interface WorkspaceLlmInterface {
 export interface IWorkspace {
     info: WorkSpaceInfo;
     editableProps: Record<string, EditableProps>;
-    renderContext: () => string;
+    renderContext: () => Promise<string>;
 
     /**
      * Core method for LLM to directly update editable props fields
@@ -47,6 +42,15 @@ export interface IWorkspace {
      * @returns Schema containing all editable field definitions
      */
     getEditablePropsSchema: () => EditablePropsSchema;
+
+    /**
+     * Handle multiple state update tool calls from LLM
+     * This method processes an array of tool call parameters and converts them to actual state changes
+     *
+     * @param updates - Array of { field_name: string, value: any } objects representing field updates
+     * @returns Array of update results for each field update
+     */
+    handleStateUpdateToolCall: (updates: Array<{ field_name: string; value: any }>) => Promise<EditablePropsUpdateResult[]>;
 
     /**
      * Initialize workspace (load data, set up resources, etc.)

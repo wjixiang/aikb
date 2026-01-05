@@ -37,72 +37,25 @@ const mocked_availiable_books_data: BookInfo[] = [
 ];
 
 /**
- * BookSelector Component
- * Allows LLM to select a book from available books
- */
-export class BookSelectorComponent extends WorkspaceComponent {
-    constructor() {
-        super(
-            'book_selector',
-            'BookSelector',
-            'Select a book from available books',
-            {
-                selected_book_name: {
-                    value: null,
-                    schema: z.string().nullable(),
-                    description: 'Select a book to browse',
-                    dependsOn: [],
-                    readonly: false
-                }
-            } as Record<string, EditableProps>,
-            {
-                availableBooks: mocked_availiable_books_data
-            }
-        );
-
-        // Register state
-        this.state['selected_book_name'] = null as string | null;
-
-        // Use useEffect for side effects instead of onUpdate
-        this.useEffect('log-book-change', ['selected_book_name'], (deps) => {
-            console.log(`[BookSelector] Book selected: ${deps['selected_book_name']}`);
-        });
-    }
-
-    render(): string {
-        const { availableBooks } = this.props;
-        const selectedBook = this.state['selected_book_name'];
-
-        const bookList = availableBooks
-            .map((book: BookInfo) => {
-                const isSelected = book.bookName === selectedBook;
-                const marker = isSelected ? '→ ' : '  ';
-                return `${marker}${book.bookName} (${book.pages} pages)`;
-            })
-            .join('\n');
-
-        return `
-## 📚 Book Selector
-Current selection: ${selectedBook ? `**${selectedBook}**` : '*None*'}
-
-Available books:
-${bookList}
-        `;
-    }
-}
-
-/**
  * BookViewer Component
  * Displays selected book and allows page navigation
+ * Merged functionality from BookSelectorComponent
  */
 export class BookViewerComponent extends WorkspaceComponent {
-    constructor(props: { currentBook: BookInfo | null }) {
+    constructor() {
         const editableProps = {
+            selected_book_name: {
+                value: null,
+                schema: z.string().nullable(),
+                description: 'Select a book to browse',
+                dependsOn: [],
+                readonly: false
+            },
             current_page: {
                 value: 1,
                 schema: z.coerce.number().int().positive(),
                 description: 'Navigate to a specific page in the current book',
-                dependsOn: ['book_selector.selected_book_name'],
+                dependsOn: ['selected_book_name'],
                 readonly: false
             }
         } as Record<string, EditableProps>;
@@ -112,7 +65,10 @@ export class BookViewerComponent extends WorkspaceComponent {
             'BookViewer',
             'View and navigate through pages of selected book',
             editableProps,
-            props
+            {
+                availableBooks: mocked_availiable_books_data,
+                currentBook: null as BookInfo | null
+            }
         );
 
         // Register state
@@ -130,29 +86,81 @@ export class BookViewerComponent extends WorkspaceComponent {
         this.useEffect('load-content', ['current_page'], (deps) => {
             this.state['content'] = `Content for page ${deps['current_page']}...`;
         });
+
+        // Handle book selection change
+        this.useEffect('handle-book-change', ['selected_book_name'], (deps) => {
+            const selectedBookName = deps['selected_book_name'];
+            console.log(`[BookViewer] Book changed to: ${selectedBookName}`);
+
+            if (selectedBookName) {
+                // Find the book info from available books
+                const availableBooks = this.props['availableBooks'] as BookInfo[];
+                const selectedBook = availableBooks.find((b: BookInfo) => b.bookName === selectedBookName);
+
+                if (selectedBook) {
+                    // Update internal state with new book info
+                    this.state['bookName'] = selectedBook.bookName;
+                    this.state['totalPages'] = selectedBook.pages;
+                    this.state['current_page'] = 1; // Reset to first page
+                    this.state['content'] = `Content for page 1 of ${selectedBook.bookName}...`;
+
+                    // Update currentBook prop
+                    this.props['currentBook'] = selectedBook;
+                }
+            } else {
+                // Clear book info
+                this.state['bookName'] = null;
+                this.state['totalPages'] = 0;
+                this.state['current_page'] = 1;
+                this.state['content'] = '';
+                this.props['currentBook'] = null;
+            }
+        });
     }
 
     render(): string {
-        const { currentBook } = this.props;
+        const { availableBooks, currentBook } = this.props;
         const { current_page, totalPages, bookName, content } = this.state;
+        const selectedBook = this.state['selected_book_name'];
 
+        // Render book selector list
+        const bookList = availableBooks
+            .map((book: BookInfo) => {
+                const isSelected = book.bookName === selectedBook;
+                const marker = isSelected ? '→ ' : '  ';
+                return `${marker}${book.bookName} (${book.pages} pages)`;
+            })
+            .join('\n');
 
-        if (!currentBook) {
-            return `
-## 📖 Book Viewer
+        // Render book viewer content
+        let viewerContent = '';
+        if (!currentBook && !bookName) {
+            viewerContent = `
 *No book selected. Please select a book first.*
             `;
-        }
-
-        return `
-## 📖 Book Viewer
-**Book:** ${bookName}
-**Page:** ${current_page} / ${totalPages}
+        } else {
+            viewerContent = `
+**[selected_book_name](EDITABLE):** ${bookName || 'Unknown'}
+**[current_page](EDITABLE):** ${current_page} / ${totalPages}
 
 ${content}
 
 ---
 *Use 'current_page' editable status to navigate to different pages.*
+            `;
+        }
+
+        return `
+## 📖 Book Viewer
+
+- [selected_book_name]: ${selectedBook ? `**${selectedBook}**` : '*None*'}
+- [current_page]: ${current_page} / ${totalPages}
+
+### Available books
+${bookList}
+
+### Book Content
+${viewerContent}
         `;
     }
 }
@@ -212,9 +220,9 @@ export class SearchComponent extends WorkspaceComponent {
 
         return `
 ## 🔍 Search
-**Query:** ${search_query || '*None*'}
+[search_query]: ${search_query || '*None*'}
 
-**Results:**
+-----Results-----
 ${resultsList}
         `;
     }
@@ -240,15 +248,12 @@ export class WorkspaceInfoComponent extends WorkspaceComponent {
 
     render(): string {
         const { lastUpdated } = this.state;
-        const { availableBooksCount, componentsCount } = this.props;
         const formattedDate = new Date(lastUpdated as string).toLocaleString();
 
         return `
 ## ℹ️ Workspace Information
 **Last Updated:** ${formattedDate}
 
-**Available Books:** ${availableBooksCount}
-**Components:** ${componentsCount} (BookSelector, BookViewer, Search, WorkspaceInfo)
         `;
     }
 }

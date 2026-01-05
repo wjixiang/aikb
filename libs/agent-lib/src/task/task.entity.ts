@@ -23,7 +23,8 @@ import {
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { SYSTEM_PROMPT } from '../prompts/system';
 import { ConsecutiveMistakeError, NoApiResponseError, NoToolsUsedError } from './task.errors';
-import { ToolCallingHandler } from '../tools';
+import { ToolCallingHandler, ToolContext } from '../tools';
+import { IWorkspace } from '../agent/agentWorkspace';
 import {
   TaskStatus,
   ThinkingBlock,
@@ -39,7 +40,7 @@ import { TaskObservers } from './observers/TaskObservers';
 import { TokenUsageTracker } from './token-usage/TokenUsageTracker';
 import { ResponseProcessor } from './response/ResponseProcessor';
 import { TaskErrorHandler } from './error/TaskErrorHandler';
-import { ToolExecutor } from './tool-execution/ToolExecutor';
+import { ToolExecutor, ToolExecutorConfig } from './tool-execution/ToolExecutor';
 import { ErrorHandlerPrompt } from './error-prompt/ErrorHandlerPrompt';
 
 type SystemMessage = ErrorMessage | ToolResultMessage

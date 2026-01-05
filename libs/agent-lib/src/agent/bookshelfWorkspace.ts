@@ -19,12 +19,12 @@ import {
     renderEditablePropsAsPrompt
 } from "./workspaceTypes";
 import { createComponentRegistry } from "./componentRegistry";
-import { BookSelectorComponent, BookViewerComponent, SearchComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
+import { BookViewerComponent, SearchComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
 
 /**
  * BookshelfWorkspace - Pure component-based implementation
- * 
- * In this architecture, the workspace doesn't have a central `env` property.
+ *
+ * In this architecture, workspace doesn't have a central `env` property.
  * Instead, each component manages its own state independently.
  * The workspace simply aggregates component renders for the LLM.
  */
@@ -50,26 +50,44 @@ export class BookshelfWorkspace implements IWorkspace {
         this.actionFields = {};
     }
 
-    async init() {
+    /**
+     * Handle multiple state update tool calls from LLM
+     * This method processes an array of tool call parameters and converts them to actual state changes
+     *
+     * @param updates - Array of { field_name: string, value: any } objects
+     * @returns Array of update results for each field update
+     */
+    async handleStateUpdateToolCall(updates: Array<{ field_name: string; value: any }>): Promise<EditablePropsUpdateResult[]> {
+        const results: EditablePropsUpdateResult[] = [];
+
+        for (const update of updates) {
+            const result = await this.updateEditableProps(update.field_name, update.value);
+            results.push(result);
+        }
+
+        return results;
+    }
+
+    reset?: (() => void) | undefined;
+
+    async init(): Promise<void> {
         // Register all components
         await Promise.all([
             this.componentRegistry.register(new WorkspaceInfoComponent()),
-            this.componentRegistry.register(new BookSelectorComponent()),
-            this.componentRegistry.register(new BookViewerComponent({ currentBook: null })),
+            this.componentRegistry.register(new BookViewerComponent()),
             this.componentRegistry.register(new SearchComponent()),
-        ])
-
+        ]);
 
         this.initialized = true;
     }
-
 
     /**
      * Render context by aggregating all component renders
      * This is similar to React's render tree
      * Each component renders its own state independently
      */
-    renderContext: () => string = () => {
+    renderContext: () => Promise<string> = async () => {
+        if (!this.initialized) await this.init();
         const components = this.componentRegistry.getAll();
         const componentRenders = components
             .map((comp: any) => comp.render())
@@ -120,7 +138,7 @@ ${componentRenders}
     /**
      * Core method for LLM to directly update editable props fields
      * Routes updates to the appropriate component
-     * 
+     *
      * Workflow:
      * 1. LLM calls updateEditableProps(fieldName, value)
      * 2. Workspace routes to the component that owns this field
@@ -156,7 +174,7 @@ ${componentRenders}
                 if (!this.editableProps[fieldName]?.readonly) {
                     this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName] };
                 } else if ((updatedComponent.editableProps[fieldName] as EditableProps).readonly) {
-                    // If the component's field is readonly, mark workspace field as readonly too
+                    // If component's field is readonly, mark workspace field as readonly too
                     this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName], readonly: true };
                 }
             }

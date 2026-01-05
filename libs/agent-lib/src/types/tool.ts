@@ -14,7 +14,7 @@ export type ToolGroup = z.infer<typeof toolGroupsSchema>;
  * ToolName
  */
 
-export const toolNames = ['attempt_completion', 'semantic_search'] as const;
+export const toolNames = ['attempt_completion', 'semantic_search', 'update_workspace'] as const;
 
 export const toolNamesSchema = z.enum(toolNames);
 

@@ -20,6 +20,14 @@ import { getCapabilitiesSection } from './sections/capabilities';
 import { getRulesSection } from './sections/rules';
 import { getObjectiveSection } from './sections/objectives';
 import { getRoleDefinition } from './sections/role';
+import { generateWorkspaceGuide } from './sections/workspaceGuide';
+
+interface SystemPrompt {
+  system: string;
+  toolUse: string;
+  rules: string;
+  capabilities: string;
+}
 
 async function generatePrompt(
   promptComponent?: PromptComponent,
@@ -51,11 +59,9 @@ ${toolsCatalog}
 
 ${getToolUseGuidelinesSection(effectiveProtocol)}
 
-${getCapabilitiesSection()}
+${generateWorkspaceGuide()}
 
 ${getRulesSection()}
-
-${getObjectiveSection()}
 `;
   return basePrompt;
 }

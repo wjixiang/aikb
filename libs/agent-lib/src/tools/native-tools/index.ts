@@ -1,6 +1,7 @@
 import type OpenAI from 'openai';
 import { semantic_search } from './semantic_search';
 import attempt_completion from './attempt_completion';
+import update_workspace from './update_workspace';
 
 export {
   convertOpenAIToolToAnthropic,
@@ -19,6 +20,7 @@ export function getNativeTools(
   return [
     semantic_search,
     attempt_completion,
+    update_workspace,
   ] satisfies OpenAI.Chat.ChatCompletionTool[];
 }
 

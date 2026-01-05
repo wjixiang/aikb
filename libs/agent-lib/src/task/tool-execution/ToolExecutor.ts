@@ -1,4 +1,4 @@
-import { ToolCallingHandler, ToolExecutionError, ToolTimeoutError } from '../../tools';
+import { ToolCallingHandler, ToolExecutionError, ToolTimeoutError, ToolContext } from '../../tools';
 import { ToolName, ToolUsage } from '../../types';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import Anthropic from '@anthropic-ai/sdk';
@@ -18,12 +18,22 @@ export interface ToolExecutionResult {
 }
 
 /**
+ * Configuration for ToolExecutor
+ */
+export interface ToolExecutorConfig {
+    context?: ToolContext;
+}
+
+/**
  * Executes tool calls and builds user message content
  */
 export class ToolExecutor {
     private toolUsage: ToolUsage = {};
 
-    constructor(private readonly toolCallHandler: ToolCallingHandler) { }
+    constructor(
+        private readonly toolCallHandler: ToolCallingHandler,
+        private readonly config?: ToolExecutorConfig,
+    ) { }
 
     /**
      * Execute tool calls and build user message content
@@ -65,6 +75,7 @@ export class ToolExecutor {
                 input,
                 {
                     timeout: 30000, // 30 seconds timeout for tool execution
+                    context: this.config?.context,
                 },
             );
 

@@ -1,24 +1,28 @@
 import type { ToolName, ModeConfig } from '../types';
 import OpenAI from 'openai';
 
-import { ToolArgs } from './types';
+import { ToolArgs, ToolContext } from './types';
 import { getSemanticSearchDescription } from './semantic-search';
+import { getUpdateWorkspaceDescription } from './update-workspace';
 import attempt_completion from './native-tools/attempt_completion';
 import { getAttemptCompletionDescription } from './attempt-completion';
 import { convertOpenAIToolToAnthropic } from './native-tools';
 
 import { Tool } from './types';
 import { semantic_search_tool } from './tools/semantic_search';
+import { update_workspace_tool } from './tools/update_workspace';
 import { ToolCallingHandler } from './toolCallingHandler';
 import { getNativeTools } from './native-tools';
 
 // Export tool errors
 export * from './tool.errors';
+export type { ToolContext };
 
 export const toolSet = new Map<ToolName, Tool>();
 
 function registerTools() {
-  toolSet.set('semantic_search', semantic_search_tool);
+  // toolSet.set('semantic_search', semantic_search_tool);
+  toolSet.set('update_workspace', update_workspace_tool);
   toolSet.set('attempt_completion', {
     desc: {
       native: attempt_completion,

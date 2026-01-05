@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { McpTool, McpToolCallResponse } from '../shared/mcp';
+import { IWorkspace } from '../agent/agentWorkspace';
 
 export type ToolArgs = {
   toolOptions?: any;
@@ -20,6 +21,14 @@ export type ToolResponse =
     isError?: boolean;
   };
 
+/**
+ * Context passed to tool execution
+ */
+export interface ToolContext {
+  workspace?: IWorkspace;
+  [key: string]: any;
+}
+
 export interface Tool {
   // 保留原有desc结构，但增强兼容性
   desc: {
@@ -28,8 +37,8 @@ export interface Tool {
 
   };
 
-  // 增强resolve函数，支持MCP标准响应
-  resolve: (args: any) => Promise<ToolResponse>;
+  // 增强resolve函数，支持MCP标准响应和上下文
+  resolve: (args: any, context?: ToolContext) => Promise<ToolResponse>;
 
   // 新增：工具元数据
   metadata?: {
