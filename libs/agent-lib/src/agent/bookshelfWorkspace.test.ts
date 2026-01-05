@@ -21,8 +21,9 @@ describe(BookshelfWorkspace, () => {
         });
 
 
-        it('should render context with all component renders', () => {
-            const context = workspace.renderContext();
+        it('should render context with all component renders', async () => {
+            const context = await workspace.renderContext();
+            console.log(context)
             expect(context).toContain('Workspace Information');
             expect(context).toContain('Book Viewer');
             expect(context).toContain('Search');
@@ -189,7 +190,7 @@ describe(BookshelfWorkspace, () => {
     describe('Complete Workflow', () => {
         it('should demonstrate full component-based workflow', async () => {
             // Initial state
-            let context = workspace.renderContext();
+            let context = await workspace.renderContext();
             expect(context).toContain('No book selected');
 
             // Step 1: LLM updates book selector
@@ -206,7 +207,7 @@ describe(BookshelfWorkspace, () => {
             expect(bookViewer?.state['current_page']).toBe(50);
 
             // Step 3: Context is re-rendered
-            context = workspace.renderContext();
+            context = await workspace.renderContext();
             expect(context).toContain('Biochemistry');
             expect(context).toContain('50');
             expect(context).toContain('Content for page 50');

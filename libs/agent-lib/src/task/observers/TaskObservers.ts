@@ -45,7 +45,11 @@ export class TaskObservers {
     onTaskCompleted(callback: TaskCompletedCallback): () => void {
         this.taskCompletedCallbacks.push(callback);
 
-        return () => { };
+        return () => {
+            this.taskCompletedCallbacks = this.taskCompletedCallbacks.filter(
+                (cb) => cb !== callback,
+            );
+        };
     }
 
     onTaskAborted(callback: TaskAbortedCallback): () => void {

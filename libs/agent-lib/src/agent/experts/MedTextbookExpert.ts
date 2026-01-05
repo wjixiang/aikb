@@ -9,6 +9,4 @@ export class MedTextBookExpert extends Agent {
             new BookshelfWorkspace()
         )
     }
-
-
 }

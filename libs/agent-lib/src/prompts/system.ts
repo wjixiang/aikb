@@ -50,6 +50,7 @@ async function generatePrompt(
 
   // console.log(toolsCatalog)
   const basePrompt = `${roleDefinition}
+${generateWorkspaceGuide()}
 
 ${markdownFormattingSection()}
 
@@ -57,9 +58,11 @@ ${getSharedToolUseSection(effectiveProtocol)}
 
 ${toolsCatalog}
 
-${getToolUseGuidelinesSection(effectiveProtocol)}
+${
+    // getToolUseGuidelinesSection(effectiveProtocol)
+    ""
+    }
 
-${generateWorkspaceGuide()}
 
 ${getRulesSection()}
 `;

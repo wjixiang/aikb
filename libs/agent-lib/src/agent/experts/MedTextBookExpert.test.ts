@@ -6,5 +6,7 @@ describe(MedTextBookExpert, () => {
 
         const prompt = await expert.getSystemPrompt()
         console.log(prompt)
-    })
+        // Use start method instead of directly calling recursivelyMakeClineRequests
+        await expert.start('高血压的治疗');
+    }, 10000)
 })
