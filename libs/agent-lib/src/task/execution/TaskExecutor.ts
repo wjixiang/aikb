@@ -37,6 +37,8 @@ import { ToolExecutor, ToolExecutionResult, ToolExecutorConfig } from '../tool-e
 import { ErrorHandlerPrompt } from '../error-prompt/ErrorHandlerPrompt';
 import { formatResponse } from '../simplified-dependencies/formatResponse';
 import TooCallingParser from '../../tools/toolCallingParser/toolCallingParser';
+import { IWorkspace } from '../../agent/agentWorkspace';
+import { Agent } from '../../agent/agent';
 
 /**
  * Configuration for TaskExecutor
@@ -97,7 +99,6 @@ export class TaskExecutor {
 
     // Configuration
     private readonly config: TaskExecutorConfig;
-    private readonly apiConfiguration: ProviderSettings;
 
     // Helper classes
     private readonly observers: TaskObservers;
@@ -108,14 +109,13 @@ export class TaskExecutor {
 
     constructor(
         taskId: string,
-        apiConfiguration: ProviderSettings,
         config: TaskExecutorConfig,
+        private agent: Agent,
         toolExecutorConfig?: ToolExecutorConfig,
     ) {
         this.taskId = taskId;
-        this.apiConfiguration = apiConfiguration;
         this.config = config;
-        this.api = buildApiHandler(apiConfiguration);
+        this.api = buildApiHandler(this.agent.apiConfiguration);
 
         // Initialize helper classes
         this.observers = new TaskObservers();
@@ -297,7 +297,7 @@ export class TaskExecutor {
             const modelId = this.api.getModel().id;
             const modelInfo = this.api.getModel().info;
             const toolProtocol = resolveToolProtocol(
-                this.apiConfiguration,
+                this.agent.apiConfiguration,
                 modelInfo,
             );
 
@@ -366,15 +366,24 @@ export class TaskExecutor {
                 // Add assistant message to conversation history
                 await this.addAssistantMessageToHistory(processedResponse.reasoningMessage);
 
-                // Check if we should continue recursion
-                if (
-                    this.messageState.userMessageContent.length > 0 &&
-                    !this.messageState.didAttemptCompletion
-                ) {
-                    stack.push({
-                        userContent: [...this.messageState.userMessageContent],
-                    });
-                }
+                // // Check if we should continue recursion
+                // if (
+                //     this.messageState.userMessageContent.length > 0 &&
+                //     !this.messageState.didAttemptCompletion
+                // ) {
+                //     stack.push({
+                //         userContent: [...this.messageState.userMessageContent],
+                //     });
+                // }
+
+                const newContext = await this.agent.workspace.renderContext()
+                console.log(`new workspace LLM-interface: \n\n${newContext}`)
+                stack.push({
+                    userContent: [{
+                        type: 'text',
+                        text: newContext
+                    }],
+                });
 
                 // For debugging: avoid stuck in loop for some tests
                 // didEndLoop = true;
@@ -597,11 +606,14 @@ export class TaskExecutor {
 
         // Resolve tool protocol based on provider settings and model info
         const toolProtocol = resolveToolProtocol(
-            this.apiConfiguration,
+            this.agent.apiConfiguration,
             modelInfo.info,
         );
+        return `
+        ${(await SYSTEM_PROMPT({ toolProtocol }, modelId)) || ''}
 
-        return (await SYSTEM_PROMPT({ toolProtocol }, modelId)) || '';
+        ${await this.agent.workspace.getWorkspacePrompt()}
+        `
     }
 
     /**

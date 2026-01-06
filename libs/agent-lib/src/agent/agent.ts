@@ -49,11 +49,11 @@ export const defaultApiConfig: ProviderSettings = {
 export abstract class Agent {
     private taskExecutor: TaskExecutor;
     private toolCallingHandler: ToolCallingHandler;
-    private workspace: IWorkspace;
+    workspace: IWorkspace;
 
     constructor(
-        protected config: AgentConfig = defaultAgentConfig,
-        private apiConfiguration: ProviderSettings = defaultApiConfig,
+        public config: AgentConfig = defaultAgentConfig,
+        public apiConfiguration: ProviderSettings = defaultApiConfig,
         workspace: IWorkspace,
         taskId?: string,
     ) {
@@ -74,8 +74,8 @@ export abstract class Agent {
 
         this.taskExecutor = new TaskExecutor(
             finalTaskId,
-            this.apiConfiguration,
             taskExecutorConfig,
+            this,
             toolExecutorConfig,
         );
 

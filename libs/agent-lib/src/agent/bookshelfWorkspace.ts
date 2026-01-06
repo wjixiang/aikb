@@ -19,7 +19,7 @@ import {
     renderEditablePropsAsPrompt
 } from "./workspaceTypes";
 import { createComponentRegistry } from "./componentRegistry";
-import { BookViewerComponent, SearchComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
+import { BookViewerComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
 
 /**
  * BookshelfWorkspace - Pure component-based implementation
@@ -49,6 +49,13 @@ export class BookshelfWorkspace implements IWorkspace {
         this.editableProps = {};
         this.actionFields = {};
     }
+    getWorkspacePrompt: () => Promise<string> = async () => {
+        return `=====
+Workspace Description
+
+The area below is interactable, content will be refreshed between each conversation depending on your <update_workspace> action.
+        `
+    }
 
     /**
      * Handle multiple state update tool calls from LLM
@@ -75,7 +82,6 @@ export class BookshelfWorkspace implements IWorkspace {
         await Promise.all([
             this.componentRegistry.register(new WorkspaceInfoComponent()),
             this.componentRegistry.register(new BookViewerComponent()),
-            this.componentRegistry.register(new SearchComponent()),
         ]);
 
         this.initialized = true;
@@ -198,10 +204,10 @@ ${componentRenders}
         switch (fieldName) {
             case 'semantic_search':
                 if (value && value !== null) {
-                    // Update search component state
-                    const searchComponent = this.componentRegistry.get('search');
-                    if (searchComponent) {
-                        await this.componentRegistry.updateComponentState('search', 'search_query', value);
+                    // Update book viewer component's search_query state
+                    const bookViewerComponent = this.componentRegistry.get('book_viewer');
+                    if (bookViewerComponent) {
+                        await this.componentRegistry.updateComponentState('book_viewer', 'search_query', value);
                     }
 
                     this.editableProps[fieldName].value = value;
@@ -210,7 +216,7 @@ ${componentRenders}
                         updatedField: fieldName,
                         previousValue,
                         newValue: value,
-                        data: { query: value, results: searchComponent?.state['results'] || [] }
+                        data: { query: value, results: bookViewerComponent?.state['search_results'] || [] }
                     };
                 }
                 return {

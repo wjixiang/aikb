@@ -8,7 +8,8 @@ import {
     WorkspaceComponentRegistry,
     ComponentUpdateResult,
     ComponentRegistryConfig,
-    ComponentProps
+    ComponentProps,
+    SideEffectExecutionResult
 } from './componentTypes';
 import { EditableProps, EditablePropsValidationResult, validateEditableProps } from './workspaceTypes';
 
@@ -174,7 +175,7 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
         field.value = validationResult.data === null ? null : validationResult.data;
 
         // Trigger side effects based on state changes
-        await component._updateStateAndTriggerEffects();
+        const sideEffectResults = await component._updateStateAndTriggerEffects();
 
         // Call onUpdate lifecycle hook (backward compatibility)
         if (this.config.enableLifecycle && component.lifecycle?.onUpdate) {
@@ -190,7 +191,8 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
             updatedKey: key,
             previousValue,
             newValue: validationResult.data,
-            reRendered: true
+            reRendered: true,
+            sideEffectResults
         };
     }
 

@@ -21,6 +21,7 @@ export interface IWorkspace {
     info: WorkSpaceInfo;
     editableProps: Record<string, EditableProps>;
     renderContext: () => Promise<string>;
+    getWorkspacePrompt: () => Promise<string>;
 
     /**
      * Core method for LLM to directly update editable props fields

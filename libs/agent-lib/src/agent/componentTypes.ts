@@ -48,6 +48,10 @@ export interface ComponentUpdateResult {
     previousValue: any;
     newValue: any;
     reRendered: boolean;
+    /**
+     * Results from side effect executions
+     */
+    sideEffectResults?: SideEffectExecutionResult[];
 }
 
 /**
@@ -55,6 +59,66 @@ export interface ComponentUpdateResult {
  * Called when dependencies change
  */
 export type SideEffectFunction = (dependencies: ComponentState & ComponentProps) => void | Promise<void>;
+
+/**
+ * Error details for a failed side effect
+ */
+export interface SideEffectError {
+    /**
+     * The side effect ID that failed
+     */
+    sideEffectId: string;
+
+    /**
+     * Error message
+     */
+    message: string;
+
+    /**
+     * Stack trace if available
+     */
+    stack?: string;
+
+    /**
+     * The dependencies that triggered the error
+     */
+    dependencies?: ComponentState & ComponentProps;
+
+    /**
+     * Timestamp when the error occurred
+     */
+    timestamp: Date;
+
+    /**
+     * Whether this is a retryable error
+     */
+    retryable?: boolean;
+}
+
+/**
+ * Result of side effect execution
+ */
+export interface SideEffectExecutionResult {
+    /**
+     * The side effect ID
+     */
+    sideEffectId: string;
+
+    /**
+     * Whether execution was successful
+     */
+    success: boolean;
+
+    /**
+     * Error details if execution failed
+     */
+    error?: SideEffectError;
+
+    /**
+     * Execution duration in milliseconds
+     */
+    duration?: number;
+}
 
 /**
  * Side effect definition
@@ -79,6 +143,32 @@ export interface SideEffect {
      * Whether this side effect has been executed at least once
      */
     executed?: boolean;
+
+    /**
+     * Whether this side effect should stop execution on error
+     * If false, other side effects will continue even if this one fails
+     */
+    stopOnError?: boolean;
+
+    /**
+     * Maximum retry attempts for this side effect
+     */
+    maxRetries?: number;
+
+    /**
+     * Current retry count
+     */
+    retryCount?: number;
+
+    /**
+     * Last error encountered
+     */
+    lastError?: SideEffectError;
+
+    /**
+     * Whether this side effect should be retried on failure
+     */
+    retryable?: boolean;
 }
 
 /**
@@ -122,6 +212,12 @@ export abstract class WorkspaceComponent {
     // Track previous dependencies for change detection
     protected _previousDependencies: Map<string, any> = new Map();
 
+    // Track side effect errors
+    protected _sideEffectErrors: Map<string, SideEffectError[]> = new Map();
+
+    // Track execution results
+    protected _lastExecutionResults: SideEffectExecutionResult[] = [];
+
     constructor(
         id: string,
         name: string,
@@ -148,8 +244,18 @@ export abstract class WorkspaceComponent {
      * @param id - Unique identifier for this side effect
      * @param dependencies - Array of state/props keys to watch
      * @param execute - Function to execute when dependencies change
+     * @param options - Optional configuration for the side effect
      */
-    protected useEffect(id: string, dependencies: string[], execute: SideEffectFunction): void {
+    protected useEffect(
+        id: string,
+        dependencies: string[],
+        execute: SideEffectFunction,
+        options?: {
+            stopOnError?: boolean;
+            maxRetries?: number;
+            retryable?: boolean;
+        }
+    ): void {
         // Remove existing side effect with same id
         this._sideEffects = this._sideEffects.filter(se => se.id !== id);
 
@@ -158,7 +264,11 @@ export abstract class WorkspaceComponent {
             id,
             dependencies,
             execute,
-            executed: false
+            executed: false,
+            stopOnError: options?.stopOnError ?? false,
+            maxRetries: options?.maxRetries ?? 0,
+            retryCount: 0,
+            retryable: options?.retryable ?? false
         });
     }
 
@@ -166,9 +276,10 @@ export abstract class WorkspaceComponent {
      * Update component state and trigger side effects
      * @internal
      */
-    async _updateStateAndTriggerEffects(): Promise<void> {
+    async _updateStateAndTriggerEffects(): Promise<SideEffectExecutionResult[]> {
         const currentDependencies = { ...this.state, ...this.props };
         const changedKeys: string[] = [];
+        const executionResults: SideEffectExecutionResult[] = [];
 
         // Detect which dependencies changed
         for (const [key, value] of Object.entries(currentDependencies)) {
@@ -188,9 +299,188 @@ export abstract class WorkspaceComponent {
             );
 
             if (hasChangedDependency || !sideEffect.executed) {
-                await sideEffect.execute(currentDependencies);
-                sideEffect.executed = true;
+                const startTime = Date.now();
+                let result: SideEffectExecutionResult;
+
+                try {
+                    await sideEffect.execute(currentDependencies);
+                    sideEffect.executed = true;
+                    sideEffect.lastError = undefined;
+                    sideEffect.retryCount = 0;
+
+                    result = {
+                        sideEffectId: sideEffect.id,
+                        success: true,
+                        duration: Date.now() - startTime
+                    };
+                } catch (error) {
+                    const errorDetails: SideEffectError = {
+                        sideEffectId: sideEffect.id,
+                        message: error instanceof Error ? error.message : String(error),
+                        stack: error instanceof Error ? error.stack : undefined,
+                        dependencies: { ...currentDependencies },
+                        timestamp: new Date(),
+                        retryable: sideEffect.retryable
+                    };
+
+                    // Store error details
+                    sideEffect.lastError = errorDetails;
+                    if (!this._sideEffectErrors.has(sideEffect.id)) {
+                        this._sideEffectErrors.set(sideEffect.id, []);
+                    }
+                    this._sideEffectErrors.get(sideEffect.id)!.push(errorDetails);
+
+                    // Log detailed error
+                    console.error(`[${this.id}] Error in side effect '${sideEffect.id}':`, {
+                        message: errorDetails.message,
+                        dependencies: errorDetails.dependencies,
+                        timestamp: errorDetails.timestamp,
+                        stack: errorDetails.stack
+                    });
+
+                    result = {
+                        sideEffectId: sideEffect.id,
+                        success: false,
+                        error: errorDetails,
+                        duration: Date.now() - startTime
+                    };
+
+                    // Stop execution if configured to do so
+                    if (sideEffect.stopOnError) {
+                        console.error(`[${this.id}] Stopping side effect execution due to error in '${sideEffect.id}'`);
+                        executionResults.push(result);
+                        break;
+                    }
+                }
+
+                executionResults.push(result);
             }
+        }
+
+        // Store last execution results
+        this._lastExecutionResults = executionResults;
+
+        return executionResults;
+    }
+
+    /**
+     * Get all side effect errors for this component
+     */
+    getSideEffectErrors(): Map<string, SideEffectError[]> {
+        return new Map(this._sideEffectErrors);
+    }
+
+    /**
+     * Get errors for a specific side effect
+     */
+    getSideEffectErrorsById(sideEffectId: string): SideEffectError[] {
+        return this._sideEffectErrors.get(sideEffectId) || [];
+    }
+
+    /**
+     * Clear all side effect errors
+     */
+    clearSideEffectErrors(): void {
+        this._sideEffectErrors.clear();
+    }
+
+    /**
+     * Clear errors for a specific side effect
+     */
+    clearSideEffectErrorsById(sideEffectId: string): void {
+        this._sideEffectErrors.delete(sideEffectId);
+    }
+
+    /**
+     * Get the last execution results
+     */
+    getLastExecutionResults(): SideEffectExecutionResult[] {
+        return [...this._lastExecutionResults];
+    }
+
+    /**
+     * Retry a failed side effect
+     */
+    async retrySideEffect(sideEffectId: string): Promise<SideEffectExecutionResult> {
+        const sideEffect = this._sideEffects.find(se => se.id === sideEffectId);
+        if (!sideEffect) {
+            return {
+                sideEffectId,
+                success: false,
+                error: {
+                    sideEffectId,
+                    message: `Side effect '${sideEffectId}' not found`,
+                    timestamp: new Date()
+                }
+            };
+        }
+
+        if (!sideEffect.retryable) {
+            return {
+                sideEffectId,
+                success: false,
+                error: {
+                    sideEffectId,
+                    message: `Side effect '${sideEffectId}' is not retryable`,
+                    timestamp: new Date()
+                }
+            };
+        }
+
+        const maxRetries = sideEffect.maxRetries ?? 0;
+        if (sideEffect.retryCount && sideEffect.retryCount >= maxRetries) {
+            return {
+                sideEffectId,
+                success: false,
+                error: {
+                    sideEffectId,
+                    message: `Maximum retry attempts (${maxRetries}) exceeded`,
+                    timestamp: new Date()
+                }
+            };
+        }
+
+        const startTime = Date.now();
+        const currentDependencies = { ...this.state, ...this.props };
+
+        try {
+            sideEffect.retryCount = (sideEffect.retryCount || 0) + 1;
+            await sideEffect.execute(currentDependencies);
+            sideEffect.executed = true;
+            sideEffect.lastError = undefined;
+
+            // Clear errors for this side effect on successful retry
+            this.clearSideEffectErrorsById(sideEffectId);
+
+            return {
+                sideEffectId,
+                success: true,
+                duration: Date.now() - startTime
+            };
+        } catch (error) {
+            const errorDetails: SideEffectError = {
+                sideEffectId,
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                dependencies: { ...currentDependencies },
+                timestamp: new Date(),
+                retryable: sideEffect.retryable
+            };
+
+            sideEffect.lastError = errorDetails;
+            if (!this._sideEffectErrors.has(sideEffectId)) {
+                this._sideEffectErrors.set(sideEffectId, []);
+            }
+            this._sideEffectErrors.get(sideEffectId)!.push(errorDetails);
+
+            console.error(`[${this.id}] Retry ${sideEffect.retryCount} failed for side effect '${sideEffectId}':`, errorDetails);
+
+            return {
+                sideEffectId,
+                success: false,
+                error: errorDetails,
+                duration: Date.now() - startTime
+            };
         }
     }
 
