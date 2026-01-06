@@ -3,6 +3,7 @@ import { ToolName, ToolUsage } from '../../types';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import Anthropic from '@anthropic-ai/sdk';
 import { randomUUID } from 'node:crypto';
+import { IWorkspace } from '../../agent/agentWorkspace';
 
 /**
  * Result of executing tool calls
@@ -31,8 +32,7 @@ export class ToolExecutor {
     private toolUsage: ToolUsage = {};
 
     constructor(
-        private readonly toolCallHandler: ToolCallingHandler,
-        private readonly config?: ToolExecutorConfig,
+        private workspace: IWorkspace
     ) { }
 
     /**
@@ -64,51 +64,31 @@ export class ToolExecutor {
             // This ensures the same ID is used when adding the assistant message to history
             toolUse.id = toolCallId;
 
-            const input = toolUse.nativeArgs || toolUse.params;
-
             // Track tool usage
             this.trackToolUsage(toolUse.name as ToolName);
-
-            // Handle tool calling
-            const toolCallRes = await this.toolCallHandler.handleToolCalling(
-                toolUse.name as ToolName,
-                input,
-                {
-                    timeout: 30000, // 30 seconds timeout for tool execution
-                    context: this.config?.context,
-                },
-            );
 
             // Check for abort status after tool execution
             if (isAborted()) {
                 console.log('Task was aborted after tool execution');
                 return { userMessageContent, didAttemptCompletion, toolUsage: this.toolUsage };
             }
+            // Check if this is an attempt_completion tool call
+            if (toolUse.name === 'attempt_completion') {
+                // For attempt_completion, don't push to stack for further processing
+                console.log(
+                    'Tool call completed with attempt_completion, ending recursion',
+                );
+                didAttemptCompletion = true;
+                // Clear user message content to prevent further recursion
+                userMessageContent.length = 0;
+            }
 
-            // Process tool call result and add to user message content
-            if (toolCallRes) {
-                // Convert tool result to text format for user message
-                const resultText = this.parseToolCallResponse(toolCallRes);
-
-                // Add tool result to user message content
-                if (resultText) {
-                    userMessageContent.push({
-                        type: 'tool_result' as const,
-                        tool_use_id: toolCallId,
-                        content: resultText,
-                    });
-
-                    // Check if this is an attempt_completion tool call
-                    if (toolUse.name === 'attempt_completion') {
-                        // For attempt_completion, don't push to stack for further processing
-                        console.log(
-                            'Tool call completed with attempt_completion, ending recursion',
-                        );
-                        didAttemptCompletion = true;
-                        // Clear user message content to prevent further recursion
-                        userMessageContent.length = 0;
-                    }
-                }
+            if (toolUse.name === "update_workspace") {
+                console.log(
+                    `Tool call: update_workspace`
+                );
+                const input = toolUse.nativeArgs || toolUse.params;
+                await this.workspace.handleStateUpdateToolCall([input])
             }
         }
 

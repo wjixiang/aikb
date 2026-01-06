@@ -234,7 +234,7 @@ async function performSemanticSearch(query: string, chunkEmbedGroupId: string): 
 
         return data.semanticSearch.results.map((result: any) => {
             const title = result.libraryItem?.title || 'Unknown';
-            const content = result.content.substring(0, 100) + '...';
+            const content = result.content; // remove truncation
             return `Found "${query}" in "${title}" (score: ${result.score.toFixed(3)}): ${content}`;
         });
     } catch (error) {
@@ -276,13 +276,6 @@ export class BookViewerComponent extends WorkspaceComponent {
                 dependsOn: [],
                 readonly: false
             },
-            current_page: {
-                value: 1,
-                schema: z.coerce.number().int().positive(),
-                description: 'Navigate to a specific page in the current book',
-                dependsOn: ['selected_book_name'],
-                readonly: false
-            },
             search_query: {
                 value: null,
                 schema: z.string().min(1).nullable(),
@@ -295,7 +288,7 @@ export class BookViewerComponent extends WorkspaceComponent {
         super(
             'book_viewer',
             'BookViewer',
-            'View, navigate, and search through pages of selected book',
+            'View, navigate, and search through pages of selected book\n\n- Book content has been splited into chunks. To explore them, you NEED TO alter chunk_index state(currently has not provided) rather than page',
             editableProps,
             {
                 availableBooks: [] as BookInfo[],
@@ -304,7 +297,6 @@ export class BookViewerComponent extends WorkspaceComponent {
         );
 
         // Register state
-        this.state['current_page'] = 1;
         this.state['totalPages'] = 0;
         this.state['bookName'] = null as string | null;
         this.state['bookId'] = null as string | null;
@@ -322,29 +314,6 @@ export class BookViewerComponent extends WorkspaceComponent {
                 console.log(`[BookViewer] Fetched ${books.length} books`);
             } catch (error) {
                 console.error('[BookViewer] fetch-books effect failed:', error);
-            }
-        });
-
-        // Use useEffect for side effects
-        this.useEffect('log-page-change', ['current_page'], (deps) => {
-            try {
-                console.log(`[BookViewer] Page changed to ${deps['current_page']}`);
-            } catch (error) {
-                console.error('[BookViewer] log-page-change effect failed:', error);
-            }
-        });
-
-        // Load content when page changes
-        this.useEffect('load-content', ['current_page', 'bookId'], async (deps) => {
-            try {
-                const page = deps['current_page'];
-                const bookId = deps['bookId'];
-                if (bookId) {
-                    console.log(`[BookViewer] Loading content for page ${page}...`);
-                    // this.state['content'] = await fetchBookContent(bookId, page);
-                }
-            } catch (error) {
-                console.error('[BookViewer] load-content effect failed:', error);
             }
         });
 
@@ -404,7 +373,6 @@ export class BookViewerComponent extends WorkspaceComponent {
                         this.state['bookName'] = selectedBook.bookName;
                         this.state['bookId'] = selectedBook.id;
                         this.state['totalPages'] = selectedBook.pages;
-                        this.state['current_page'] = 1; // Reset to first page
 
                         // Get default chunk embed group for search
                         const chunkEmbedGroupId = await getDefaultChunkEmbedGroup(selectedBook.id);
@@ -421,7 +389,6 @@ export class BookViewerComponent extends WorkspaceComponent {
                     this.state['bookName'] = null;
                     this.state['bookId'] = null;
                     this.state['totalPages'] = 0;
-                    this.state['current_page'] = 1;
                     this.state['content'] = '';
                     this.state['chunkEmbedGroupId'] = null;
                     this.props['currentBook'] = null;
@@ -434,7 +401,7 @@ export class BookViewerComponent extends WorkspaceComponent {
 
     render(): string {
         const { availableBooks, currentBook } = this.props;
-        const { current_page, totalPages, bookName, content, search_query, search_results } = this.state;
+        const { totalPages, bookName, content, search_query, search_results } = this.state;
         const selectedBook = this.state['selected_book_name'];
 
         // Render book selector list
@@ -455,30 +422,23 @@ export class BookViewerComponent extends WorkspaceComponent {
         } else {
             viewerContent = `
 **[selected_book_name](EDITABLE):** ${bookName || 'Unknown'}
-**[current_page](EDITABLE):** ${current_page} / ${totalPages}
-
-${content}
 
 ---
-*Use 'current_page' editable status to navigate to different pages.*
             `;
         }
 
         // Render search results
         const resultsList = search_results.length > 0
-            ? search_results.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')
+            ? search_results.map((r: string, i: number) => `${'>'.repeat(6)}RESULT${i + 1}${'<'.repeat(6)}\n${r}`).join('\n--------------------\n')
             : '*No results*';
 
         return `
 ## 📖 Book Viewer
 
 - [selected_book_name]: ${selectedBook ? `**${selectedBook}**` : '*None*'}
-- [current_page]: ${current_page} / ${totalPages}
-
 ### Available books
 ${bookList}
 
-### Book Content
 ${viewerContent}
 
 ### 🔍 Search

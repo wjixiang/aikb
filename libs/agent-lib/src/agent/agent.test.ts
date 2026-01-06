@@ -10,6 +10,11 @@ import { z } from 'zod';
 
 // Mock workspace for testing
 class MockWorkspace implements IWorkspace {
+    getWorkspacePrompt: () => Promise<string> = async () => {
+        return ``
+    };
+    init?: (() => Promise<void>) | undefined;
+    reset?: (() => void) | undefined;
     info = {
         name: 'Test Workspace',
         desc: 'A test workspace',

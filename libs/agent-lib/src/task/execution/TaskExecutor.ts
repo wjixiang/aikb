@@ -19,14 +19,12 @@ import {
     NoApiResponseError,
     NoToolsUsedError,
 } from '../task.errors';
-import { ProviderSettings, ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from '../../types';
 import { TokenUsage, ToolUsage } from '../../types';
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveToolProtocol } from '../../utils/resolveToolProtocol';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import { SYSTEM_PROMPT } from '../../prompts/system';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../../types';
-import { TextBlockParam } from '@anthropic-ai/sdk/resources';
 
 // Import helper classes
 import { TaskObservers } from '../observers/TaskObservers';
@@ -37,7 +35,6 @@ import { ToolExecutor, ToolExecutionResult, ToolExecutorConfig } from '../tool-e
 import { ErrorHandlerPrompt } from '../error-prompt/ErrorHandlerPrompt';
 import { formatResponse } from '../simplified-dependencies/formatResponse';
 import TooCallingParser from '../../tools/toolCallingParser/toolCallingParser';
-import { IWorkspace } from '../../agent/agentWorkspace';
 import { Agent } from '../../agent/agent';
 
 /**
@@ -67,7 +64,8 @@ export interface MessageProcessingState {
  * Stack item for recursive request loop
  */
 interface StackItem {
-    userContent: Anthropic.Messages.ContentBlockParam[];
+    sender: 'user' | 'system';
+    content: Anthropic.Messages.ContentBlockParam[];
     retryAttempt?: number;
     userMessageWasRemoved?: boolean;
 }
@@ -129,9 +127,7 @@ export class TaskExecutor {
             apiRequestTimeout: config.apiRequestTimeout,
         });
         this.toolExecutor = new ToolExecutor(
-            // ToolCallingHandler will be set by the owner (Agent/Task)
-            null as any,
-            toolExecutorConfig,
+            this.agent.workspace
         );
     }
 
@@ -271,11 +267,11 @@ export class TaskExecutor {
         // Reset collected errors for this new operation
         this.resetCollectedErrors();
 
-        const stack: StackItem[] = [{ userContent, retryAttempt: 0 }];
+        const stack: StackItem[] = [{ sender: 'user', content: userContent, retryAttempt: 0 }];
 
         while (stack.length > 0) {
             const currentItem = stack.pop()!;
-            const currentUserContent = currentItem.userContent;
+            const currentUserContent = currentItem.content;
             let didEndLoop = false;
 
             if (this.isAborted()) {
@@ -305,16 +301,17 @@ export class TaskExecutor {
 
             // Add user message to conversation history if needed
             const isEmptyUserContent = currentUserContent.length === 0;
-            const shouldAddUserMessage =
-                ((currentItem.retryAttempt ?? 0) === 0 && !isEmptyUserContent) ||
-                currentItem.userMessageWasRemoved;
 
-            if (shouldAddUserMessage) {
-                await this.addToConversationHistory({
-                    role: 'user',
-                    content: currentUserContent,
-                });
-            }
+            const shouldAddUserMessage =
+                (((currentItem.retryAttempt ?? 0) === 0 && !isEmptyUserContent) ||
+                    currentItem.userMessageWasRemoved) && currentItem.sender === 'user';
+
+            if (shouldAddUserMessage) await this.addToConversationHistory({
+                role: 'user',
+                content: currentUserContent,
+            });
+
+            const oldWorkspaceContext = await this.agent.workspace.renderContext()
 
             try {
                 // Reset message processing state for each new API request
@@ -354,6 +351,7 @@ export class TaskExecutor {
                 }
 
                 // Execute tool calls and build response
+                // This will update workspace states
                 const executionResult = await this.toolExecutor.executeToolCalls(
                     toolUseBlocks,
                     () => this.isAborted(),
@@ -366,24 +364,25 @@ export class TaskExecutor {
                 // Add assistant message to conversation history
                 await this.addAssistantMessageToHistory(processedResponse.reasoningMessage);
 
-                // // Check if we should continue recursion
-                // if (
-                //     this.messageState.userMessageContent.length > 0 &&
-                //     !this.messageState.didAttemptCompletion
-                // ) {
-                //     stack.push({
-                //         userContent: [...this.messageState.userMessageContent],
-                //     });
-                // }
+                // Add workspace context to conversation history
+                this.addSystemMessageToHistory(oldWorkspaceContext)
+
+                // Check if we should continue recursion
+                if (
+                    !this.messageState.didAttemptCompletion
+                ) {
+                    stack.push({
+                        sender: 'system',
+                        content: [{
+                            type: 'text',
+                            text: 'WORKSPACE STATE UPDATED'
+                        }],
+                    });
+                }
 
                 // const newContext = await this.agent.workspace.renderContext()
-                // console.log(`new workspace LLM-interface: \n\n${newContext}`)
-                stack.push({
-                    userContent: [{
-                        type: 'text',
-                        text: 'WORKSPACE STATE UPDATED'
-                    }],
-                });
+                // console.log(`new workspace LLM-interface: \n========================\n${newContext}\n========================\n`)
+
 
                 // For debugging: avoid stuck in loop for some tests
                 // didEndLoop = true;
@@ -402,7 +401,8 @@ export class TaskExecutor {
                 } else {
                     // Push the same content with error prompt back onto the stack to retry
                     stack.push({
-                        userContent: [
+                        sender: 'user',
+                        content: [
                             {
                                 type: 'text',
                                 text: errorPrompt,
@@ -482,10 +482,20 @@ export class TaskExecutor {
     }
 
     /**
+     * Add workspace context into history
+     */
+    private addSystemMessageToHistory(workspaceContext: string): void {
+        this.addToConversationHistory({
+            role: 'system',
+            content: workspaceContext
+        })
+    }
+
+    /**
      * Add message to conversation history with timestamp and optional reasoning
      */
     private async addToConversationHistory(
-        message: Anthropic.MessageParam,
+        message: ApiMessage,
         reasoning?: string,
     ): Promise<void> {
         const messageWithTs: ExtendedApiMessage = {
@@ -555,6 +565,7 @@ export class TaskExecutor {
             const systemPrompt = await this.getSystemPrompt();
             const workspaceContext = await this.agent.workspace.renderContext()
             // console.debug(`system prompt: ${systemPrompt}`);
+            // console.log(workspaceContext)
 
             // Build clean conversation history
             const cleanConversationHistory = this.buildCleanConversationHistory(
