@@ -227,7 +227,7 @@ async function performSemanticSearch(query: string, chunkEmbedGroupId: string): 
                 scoreThreshold: 0.0
             }
         });
-        console.log(`semnatic search results: ${JSON.stringify(data)}`)
+        // console.log(`semnatic search results: ${JSON.stringify(data)}`)
         if (!data.semanticSearch || data.semanticSearch.results.length === 0) {
             return [];
         }

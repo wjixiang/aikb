@@ -238,6 +238,13 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
             }
         }
 
+        // Wrap the render method to automatically add description and editable state
+        const originalRender = component.render.bind(component);
+        component.render = function (): string {
+            const result = originalRender();
+            return component._wrapRender(result);
+        } as any;
+
         // Note: updateState and getState are now implemented in the abstract class
     }
 

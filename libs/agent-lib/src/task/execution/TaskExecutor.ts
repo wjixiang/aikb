@@ -376,12 +376,12 @@ export class TaskExecutor {
                 //     });
                 // }
 
-                const newContext = await this.agent.workspace.renderContext()
-                console.log(`new workspace LLM-interface: \n\n${newContext}`)
+                // const newContext = await this.agent.workspace.renderContext()
+                // console.log(`new workspace LLM-interface: \n\n${newContext}`)
                 stack.push({
                     userContent: [{
                         type: 'text',
-                        text: newContext
+                        text: 'WORKSPACE STATE UPDATED'
                     }],
                 });
 
@@ -553,6 +553,7 @@ export class TaskExecutor {
             console.log(`Starting API request attempt ${retryAttempt + 1}`);
 
             const systemPrompt = await this.getSystemPrompt();
+            const workspaceContext = await this.agent.workspace.renderContext()
             // console.debug(`system prompt: ${systemPrompt}`);
 
             // Build clean conversation history
@@ -562,7 +563,7 @@ export class TaskExecutor {
 
             // Create the stream with timeout
             const streamPromise = this.api.createMessage(
-                systemPrompt,
+                systemPrompt + "\n" + workspaceContext,
                 cleanConversationHistory,
             );
 

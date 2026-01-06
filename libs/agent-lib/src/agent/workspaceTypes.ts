@@ -190,7 +190,9 @@ export function renderSchemaAsPrompt<TInput, TOutput, TDef extends ZodTypeDef>(
     }
 
     const desc = description ? ` - ${description}` : '';
-    return `${fieldName}: ${typeDescription}${constraints}${desc}`;
+    // Only include fieldName if it's not empty (for use by renderEditablePropsAsPrompt)
+    const fieldNamePrefix = fieldName ? `${fieldName}: ` : '';
+    return `${fieldNamePrefix}${typeDescription}${constraints}${desc}`;
 }
 
 /**
@@ -235,7 +237,7 @@ export function validateEditableProps<TInput, TOutput, TDef extends ZodTypeDef>(
  * Render an EditableProps as a prompt for LLM
  * This generates a human-readable description that LLMs can use to understand
  * how to properly set the value
- * 
+ *
  * @param fieldName - The name of the field
  * @param editableProps - The EditableProps to render
  * @returns A string representation for LLM consumption
@@ -249,9 +251,11 @@ export function renderEditablePropsAsPrompt<TInput, TOutput, TDef extends ZodTyp
         ? ` (current: ${JSON.stringify(editableProps.value)})`
         : ' (not set)';
 
-    const schemaPrompt = renderSchemaAsPrompt(editableProps.schema, fieldName, editableProps.description);
+    // Get schema description without field name (pass empty string and description separately)
+    const schemaPrompt = renderSchemaAsPrompt(editableProps.schema, '', editableProps.description);
 
-    return `${schemaPrompt}${readonlyMark}${currentValue}`;
+    // Prepend field name to avoid duplication
+    return `${fieldName}: ${schemaPrompt}${readonlyMark}${currentValue}`;
 }
 
 /**

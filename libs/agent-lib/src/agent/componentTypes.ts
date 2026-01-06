@@ -3,7 +3,7 @@
  * React-like component model for LLM-Workspace interaction
  */
 
-import { EditableProps } from './workspaceTypes';
+import { EditableProps, renderEditablePropsAsPrompt } from './workspaceTypes';
 
 /**
  * Component state - similar to React state
@@ -172,6 +172,77 @@ export interface SideEffect {
 }
 
 /**
+ * Internal helper to wrap render output with component description and editable state
+ * This is automatically called by the abstract render() method in WorkspaceComponent
+ *
+ * @param component - The component instance
+ * @param result - The original render result from the subclass
+ * @returns The wrapped render output
+ */
+function wrapRenderOutput(component: WorkspaceComponent, result: string): string {
+    // Build the editable state section
+    let editableStateSection = '';
+    if (component.editableProps && Object.keys(component.editableProps).length > 0) {
+        const editableFields = Object.entries(component.editableProps).map(([fieldName, editableProp]) => {
+            return renderEditablePropsAsPrompt(fieldName, editableProp);
+        }).join('\n');
+
+        editableStateSection = `
+Editable State:
+---------------
+${editableFields}
+`;
+    }
+
+    // Build the final output with description and editable state
+    const modifiedResult = `
+*************************************
+${component.description}
+*************************************
+${editableStateSection}
+${result}
+`;
+
+    return modifiedResult;
+}
+
+/**
+ * Decorator factory for component render method
+ * Wraps the render output with component description and editable state
+ *
+ * Note: This decorator is optional. The WorkspaceComponent abstract class
+ * automatically wraps render output, so you don't need to apply this decorator
+ * to each component's render method.
+ *
+ * @example
+ * ```typescript
+ * class MyComponent extends WorkspaceComponent {
+ *     @componentRender()  // Optional - automatic wrapping is enabled
+ *     render(): string {
+ *         return 'My content';
+ *     }
+ * }
+ * ```
+ */
+export function componentRender(component?: WorkspaceComponent) {
+    return (
+        target: any,
+        propertyKey: string,
+        descriptor: PropertyDescriptor
+    ) => {
+        const originalMethod = descriptor.value;
+        descriptor.value = function (this: WorkspaceComponent): string {
+            // Get the original render result
+            const result = originalMethod.apply(this) as string;
+            // Wrap it with description and editable state
+            return wrapRenderOutput(this, result);
+        };
+
+        return descriptor;
+    };
+}
+
+/**
  * Workspace component abstract class
  * Similar to React components but for LLM interaction
  *
@@ -236,8 +307,20 @@ export abstract class WorkspaceComponent {
     /**
      * Abstract render method - must be implemented by subclasses
      * No longer accepts props parameter - uses internal props instead
+     *
+     * Note: The render output is automatically wrapped with component description
+     * and editable state. You don't need to manually apply the @componentRender decorator.
      */
     abstract render(): string;
+
+    /**
+     * Internal method to wrap render output with description and editable state
+     * This is called automatically by the component registry when rendering
+     * @internal
+     */
+    _wrapRender(result: string): string {
+        return wrapRenderOutput(this, result);
+    }
 
     /**
      * Register a side effect that executes when dependencies change
