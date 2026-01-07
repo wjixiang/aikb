@@ -30,16 +30,17 @@ class MockWorkspace extends WorkspaceBase {
         return ``;
     }
 
-    override async renderContext(): Promise<string> {
+    protected async renderContextImpl(): Promise<string> {
         return 'Test workspace context';
     }
 
-    override async updateEditableProps(fieldName: string, value: any): Promise<any> {
-        return {
+    override async updateEditableProps(updates: Array<{ field_name: string; value: any }>): Promise<any[]> {
+        return updates.map(update => ({
             success: true,
-            updatedField: fieldName,
-            value,
-        };
+            updatedField: update.field_name,
+            previousValue: this.editableProps[update.field_name]?.value,
+            newValue: update.value,
+        }));
     }
 
     override getEditablePropsSchema(): any {

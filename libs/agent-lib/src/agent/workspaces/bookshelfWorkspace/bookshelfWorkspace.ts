@@ -30,10 +30,7 @@ import { BookViewerComponent, WorkspaceInfoComponent } from "./bookshelfComponen
  */
 export class BookshelfWorkspace extends WorkspaceBase {
     // Component-based architecture - no central env
-    private componentRegistry = createComponentRegistry();
-
-    // Special action fields (triggered by setting these to true)
-    private actionFields: Record<string, EditableProps>;
+    override componentRegistry = createComponentRegistry();
 
     initialized = false;
 
@@ -42,7 +39,6 @@ export class BookshelfWorkspace extends WorkspaceBase {
             name: 'BookshelfWorkspace',
             desc: 'A workspace for managing and searching through a collection of books. Provides semantic search capabilities and book browsing functionality. All operations are performed through EditableProps updates.'
         });
-        this.actionFields = {};
     }
 
     /**
@@ -60,13 +56,9 @@ export class BookshelfWorkspace extends WorkspaceBase {
             }
         }
 
-        // Add action fields
-        for (const [key, field] of Object.entries(this.actionFields)) {
-            props[key] = field;
-        }
-
         return props;
     }
+
     async getWorkspacePrompt(): Promise<string> {
         return `=====
 Workspace Description
@@ -92,7 +84,7 @@ The area below is interactable, content will be refreshed between each conversat
      * This is similar to React's render tree
      * Each component renders its own state independently
      */
-    async renderContext(): Promise<string> {
+    protected async renderContextImpl(): Promise<string> {
         if (!this.initialized) await this.init();
         const components = this.componentRegistry.getAll();
         const componentRenders = components
@@ -106,118 +98,6 @@ The area below is interactable, content will be refreshed between each conversat
 
 ${componentRenders}
         `;
-    }
-
-    /**
-     * Get the schema definition for editable props fields
-     * Aggregates schemas from all components
-     */
-    getEditablePropsSchema(): EditablePropsSchema {
-        const components = this.componentRegistry.getAll();
-        const fields: Record<string, any> = {};
-
-        // Add component fields
-        for (const component of components) {
-            for (const [key, field] of Object.entries(component.editableProps)) {
-                const statusField = field as EditableProps;
-                fields[key] = {
-                    description: statusField.description,
-                    dependsOn: statusField.dependsOn,
-                    componentId: component.id,
-                    schema: statusField.schema
-                };
-            }
-        }
-
-        // Add action fields
-        for (const [key, field] of Object.entries(this.actionFields)) {
-            fields[key] = {
-                description: field.description,
-                componentId: 'workspace_actions',
-                schema: field.schema
-            };
-        }
-
-        return { fields };
-    }
-
-    /**
-     * Core method for LLM to directly update editable props fields
-     * Routes updates to the appropriate component
-     *
-     * Workflow:
-     * 1. LLM calls updateEditableProps(fieldName, value)
-     * 2. Workspace routes to the component that owns this field
-     * 3. Component validates and updates its state
-     * 4. Component's side effects are triggered
-     * 5. Component re-renders
-     * 6. Workspace aggregates all component renders
-     * 7. Context is refreshed for LLM
-     */
-    async updateEditableProps(fieldName: string, value: any): Promise<EditablePropsUpdateResult> {
-        // Check if this is an action field
-        if (this.actionFields[fieldName]) {
-            return await this.handleActionField(fieldName, value);
-        }
-
-        // Find component that owns this field
-        const component = this.componentRegistry.findComponentByField(fieldName);
-        if (!component) {
-            return {
-                success: false,
-                error: `Unknown editable field: ${fieldName}`
-            };
-        }
-
-        // Update component state
-        const result = await this.componentRegistry.updateComponentState(component.id, fieldName, value);
-
-        return {
-            success: result.success,
-            error: result.error,
-            updatedField: fieldName,
-            previousValue: result.previousValue,
-            newValue: result.newValue
-        };
-    }
-
-    /**
-     * Handle action field updates (special fields that trigger operations)
-     */
-    private async handleActionField(fieldName: string, value: any): Promise<EditablePropsUpdateResult> {
-        const previousValue = this.actionFields[fieldName]?.value;
-
-        switch (fieldName) {
-            case 'semantic_search':
-                if (value && value !== null) {
-                    // Update book viewer component's search_query state
-                    const bookViewerComponent = this.componentRegistry.get('book_viewer');
-                    if (bookViewerComponent) {
-                        await this.componentRegistry.updateComponentState('book_viewer', 'search_query', value);
-                    }
-
-                    this.actionFields[fieldName].value = value;
-                    return {
-                        success: true,
-                        updatedField: fieldName,
-                        previousValue,
-                        newValue: value,
-                        data: { query: value, results: bookViewerComponent?.state['search_results'] || [] }
-                    };
-                }
-                return {
-                    success: true,
-                    updatedField: fieldName,
-                    previousValue,
-                    newValue: null
-                };
-
-            default:
-                return {
-                    success: false,
-                    error: `Unknown action field: ${fieldName}`
-                };
-        }
     }
 
     /**

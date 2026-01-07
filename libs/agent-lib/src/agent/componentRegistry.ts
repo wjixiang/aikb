@@ -197,6 +197,115 @@ export class ComponentRegistry implements WorkspaceComponentRegistry {
     }
 
     /**
+     * Update multiple states of a component at once
+     * Side effects are triggered only once after all updates are applied
+     */
+    async updateMultipleComponentState(
+        componentId: string,
+        updates: Array<{ key: string; value: any }>
+    ): Promise<ComponentUpdateResult> {
+        const component = this.components.get(componentId);
+        if (!component) {
+            return {
+                success: false,
+                error: `Component '${componentId}' not found`,
+                componentId,
+                updatedKey: '',
+                previousValue: undefined,
+                newValue: undefined,
+                reRendered: false
+            };
+        }
+
+        const updateResults: Array<{ key: string; previousValue: any; newValue: any; error?: string }> = [];
+        const previousValues: Record<string, any> = {};
+        const newValues: Record<string, any> = {};
+        let hasError = false;
+        let firstError: string | undefined = undefined;
+
+        // Validate all updates first
+        for (const update of updates) {
+            const { key, value } = update;
+
+            // Check if key exists in editable props
+            if (!(key in component.editableProps)) {
+                hasError = true;
+                firstError = firstError || `Field '${key}' is not editable in component '${componentId}'`;
+                updateResults.push({ key, previousValue: component.state[key], newValue: value, error: `Field '${key}' is not editable` });
+                continue;
+            }
+
+            const field = component.editableProps[key] as EditableProps;
+
+            // Check if field is readonly
+            if (field.readonly) {
+                hasError = true;
+                firstError = firstError || `Field '${key}' is read-only`;
+                updateResults.push({ key, previousValue: component.state[key], newValue: value, error: `Field '${key}' is read-only` });
+                continue;
+            }
+
+            // Validate the value
+            const validationResult = this.validateFieldValue(field as EditableProps, value, component);
+            if (!validationResult.valid) {
+                hasError = true;
+                firstError = firstError || validationResult.error || 'Unknown validation error';
+                updateResults.push({ key, previousValue: component.state[key], newValue: value, error: validationResult.error });
+                continue;
+            }
+
+            // Store previous and new values
+            previousValues[key] = component.state[key];
+            newValues[key] = validationResult.data;
+            updateResults.push({ key, previousValue: component.state[key], newValue: validationResult.data });
+        }
+
+        // If any validation failed, return error
+        if (hasError) {
+            return {
+                success: false,
+                error: firstError,
+                componentId,
+                updatedKey: '',
+                previousValue: previousValues,
+                newValue: newValues,
+                reRendered: false
+            };
+        }
+
+        // Apply all updates
+        for (const update of updateResults) {
+            if (!update.error) {
+                const { key, newValue } = update;
+                component.state[key] = newValue;
+                const field = component.editableProps[key] as EditableProps;
+                field.value = newValue === null ? null : newValue;
+            }
+        }
+
+        // Trigger side effects only once after all updates
+        const sideEffectResults = await component._updateStateAndTriggerEffects();
+
+        // Call onUpdate lifecycle hook (backward compatibility)
+        if (this.config.enableLifecycle && component.lifecycle?.onUpdate) {
+            await component.lifecycle.onUpdate({ ...component.state, ...previousValues });
+        }
+
+        // Invalidate render cache
+        this.invalidateRenderCache(component);
+
+        return {
+            success: true,
+            componentId,
+            updatedKey: updates.map(u => u.key).join(', '),
+            previousValue: previousValues,
+            newValue: newValues,
+            reRendered: true,
+            sideEffectResults
+        };
+    }
+
+    /**
      * Find a component that owns a specific editable status field
      */
     findComponentByField(fieldName: string): WorkspaceComponent | undefined {

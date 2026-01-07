@@ -663,6 +663,18 @@ export interface WorkspaceComponentRegistry {
     ) => Promise<ComponentUpdateResult>;
 
     /**
+     * Update multiple states of a component at once
+     * Side effects are triggered only once after all updates are applied
+     * @param componentId - The ID of the component
+     * @param updates - Array of { key: string, value: any } objects representing state updates
+     * @returns Result of the batch update
+     */
+    updateMultipleComponentState: (
+        componentId: string,
+        updates: Array<{ key: string; value: any }>
+    ) => Promise<ComponentUpdateResult>;
+
+    /**
      * Find a component that owns a specific editable status field
      * @param fieldName - The name of the editable status field
      * @returns The component or undefined if not found
