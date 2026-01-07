@@ -23,8 +23,6 @@ import {
 import { processUserContentMentions } from './simplified-dependencies/processUserContentMentions';
 import { SYSTEM_PROMPT } from '../prompts/system';
 import { ConsecutiveMistakeError, NoApiResponseError, NoToolsUsedError } from './task.errors';
-import { ToolCallingHandler, ToolContext } from '../tools';
-import { IWorkspace } from '../agent/agentWorkspace';
 import {
   TaskStatus,
   ThinkingBlock,
@@ -40,7 +38,7 @@ import { TaskObservers } from './observers/TaskObservers';
 import { TokenUsageTracker } from './token-usage/TokenUsageTracker';
 import { ResponseProcessor } from './response/ResponseProcessor';
 import { TaskErrorHandler } from './error/TaskErrorHandler';
-import { ToolExecutor, ToolExecutorConfig } from './tool-execution/ToolExecutor';
+import { ToolExecutor } from './tool-execution/ToolExecutor';
 import { ErrorHandlerPrompt } from './error-prompt/ErrorHandlerPrompt';
 
 type SystemMessage = ErrorMessage | ToolResultMessage
@@ -74,6 +72,7 @@ interface MessageProcessingState {
  * Simplified Task entity with no core dependencies
  * Only essential functionality for recursivelyMakeClineRequests
  * All UI, frontend, persistence, and event emission features removed
+ * @deprecated Task will be replaced by Agent
  */
 export class Task {
   readonly taskId: string;
@@ -146,7 +145,7 @@ export class Task {
       maxRetryAttempts: this.maxRetryAttempts,
       apiRequestTimeout: this.apiRequestTimeout,
     });
-    this.toolExecutor = new ToolExecutor(new ToolCallingHandler());
+    this.toolExecutor = new ToolExecutor();
   }
 
   // ==================== Registration Methods ====================

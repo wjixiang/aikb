@@ -31,7 +31,7 @@ import { TaskObservers } from '../observers/TaskObservers';
 import { TokenUsageTracker } from '../token-usage/TokenUsageTracker';
 import { ResponseProcessor, ProcessedResponse } from '../response/ResponseProcessor';
 import { TaskErrorHandler } from '../error/TaskErrorHandler';
-import { ToolExecutor, ToolExecutionResult, ToolExecutorConfig } from '../tool-execution/ToolExecutor';
+import { ToolExecutor, ToolExecutionResult } from '../tool-execution/ToolExecutor';
 import { ErrorHandlerPrompt } from '../error-prompt/ErrorHandlerPrompt';
 import { formatResponse } from '../simplified-dependencies/formatResponse';
 import TooCallingParser from '../../tools/toolCallingParser/toolCallingParser';

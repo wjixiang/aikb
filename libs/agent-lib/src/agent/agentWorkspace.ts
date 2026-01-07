@@ -214,9 +214,3 @@ export abstract class WorkspaceBase {
      */
     reset?(): void;
 }
-
-/**
- * @deprecated Use WorkspaceBase abstract class instead
- * Kept for backward compatibility
- */
-export type IWorkspace = WorkspaceBase;

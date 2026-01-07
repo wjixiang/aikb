@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { McpTool, McpToolCallResponse } from '../shared/mcp';
-import { IWorkspace } from '../agent/agentWorkspace';
 
 export type ToolArgs = {
   toolOptions?: any;
@@ -21,13 +20,7 @@ export type ToolResponse =
     isError?: boolean;
   };
 
-/**
- * Context passed to tool execution
- */
-export interface ToolContext {
-  workspace?: IWorkspace;
-  [key: string]: any;
-}
+
 
 export interface Tool {
   // 保留原有desc结构，但增强兼容性

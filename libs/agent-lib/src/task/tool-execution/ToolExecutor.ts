@@ -1,9 +1,8 @@
-import { ToolCallingHandler, ToolExecutionError, ToolTimeoutError, ToolContext } from '../../tools';
 import { ToolName, ToolUsage } from '../../types';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import Anthropic from '@anthropic-ai/sdk';
 import { randomUUID } from 'node:crypto';
-import { IWorkspace } from '../../agent/agentWorkspace';
+import { WorkspaceBase } from '../../agent/agentWorkspace';
 
 /**
  * Result of executing tool calls
@@ -19,20 +18,13 @@ export interface ToolExecutionResult {
 }
 
 /**
- * Configuration for ToolExecutor
- */
-export interface ToolExecutorConfig {
-    context?: ToolContext;
-}
-
-/**
  * Executes tool calls and builds user message content
  */
 export class ToolExecutor {
     private toolUsage: ToolUsage = {};
 
     constructor(
-        private workspace: IWorkspace
+        private workspace: WorkspaceBase
     ) { }
 
     /**

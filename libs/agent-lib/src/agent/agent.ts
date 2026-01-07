@@ -9,8 +9,7 @@ import {
 } from "../task/task.type";
 import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
-import { IWorkspace } from "./agentWorkspace";
-import { ToolCallingHandler, ToolContext } from "../tools";
+import { WorkspaceBase } from "./agentWorkspace";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
 import { TextBlockParam } from "@anthropic-ai/sdk/resources";
 
@@ -19,7 +18,6 @@ import {
     TaskExecutor,
     TaskExecutorConfig,
 } from "../task/execution/TaskExecutor";
-import { ToolExecutorConfig } from "../task/tool-execution/ToolExecutor";
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -48,13 +46,12 @@ export const defaultApiConfig: ProviderSettings = {
  */
 export abstract class Agent {
     private taskExecutor: TaskExecutor;
-    private toolCallingHandler: ToolCallingHandler;
-    workspace: IWorkspace;
+    workspace: WorkspaceBase;
 
     constructor(
         public config: AgentConfig = defaultAgentConfig,
         public apiConfiguration: ProviderSettings = defaultApiConfig,
-        workspace: IWorkspace,
+        workspace: WorkspaceBase,
         taskId?: string,
     ) {
         this.workspace = workspace;
@@ -67,21 +64,13 @@ export abstract class Agent {
             consecutiveMistakeLimit: this.config.consecutiveMistakeLimit,
         };
 
-        // Initialize ToolExecutor config with workspace context
-        const toolExecutorConfig: ToolExecutorConfig = {
-            context: { workspace: this.workspace },
-        };
 
         this.taskExecutor = new TaskExecutor(
             finalTaskId,
             taskExecutorConfig,
-            this,
-            toolExecutorConfig,
+            this
         );
 
-        // Initialize tool calling handler and set it in TaskExecutor
-        this.toolCallingHandler = new ToolCallingHandler();
-        this.taskExecutor.setToolCallingHandler(this.toolCallingHandler);
     }
 
     // ==================== Public API (Delegated to TaskExecutor) ====================
@@ -233,23 +222,6 @@ export abstract class Agent {
 
     // ==================== Agent-Specific Methods ====================
 
-    /**
-     * Get tool context with workspace
-     */
-    private getToolContext(): ToolContext {
-        return { workspace: this.workspace };
-    }
-
-    /**
-     * Execute a tool call with workspace context
-     */
-    protected async executeToolCall(toolName: string, params: any): Promise<any> {
-        return this.toolCallingHandler.handleToolCalling(
-            toolName as ToolName,
-            params,
-            { context: this.getToolContext() }
-        );
-    }
 
     /**
      * Get system prompt for the agent

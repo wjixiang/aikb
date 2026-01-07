@@ -1,7 +1,7 @@
 import type { ToolName, ModeConfig } from '../types';
 import OpenAI from 'openai';
 
-import { ToolArgs, ToolContext } from './types';
+import { ToolArgs } from './types';
 import { getSemanticSearchDescription } from './semantic-search';
 import { getUpdateWorkspaceDescription } from './update-workspace';
 import attempt_completion from './native-tools/attempt_completion';
@@ -11,12 +11,10 @@ import { convertOpenAIToolToAnthropic } from './native-tools';
 import { Tool } from './types';
 import { semantic_search_tool } from './tools/semantic_search';
 import { update_workspace_tool } from './tools/update_workspace';
-import { ToolCallingHandler } from './toolCallingHandler';
 import { getNativeTools } from './native-tools';
 
 // Export tool errors
 export * from './tool.errors';
-export type { ToolContext };
 
 export const toolSet = new Map<ToolName, Tool>();
 
@@ -94,7 +92,6 @@ export function getNativeToolDescriptions(): string {
   return `# Available Tools\n\n${descriptions.join('\n\n')}`;
 }
 
-export { ToolCallingHandler };
 
 // Export native tool definitions (JSON schema format for OpenAI-compatible APIs)
 export { nativeTools } from './native-tools';
