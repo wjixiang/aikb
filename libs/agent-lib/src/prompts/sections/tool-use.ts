@@ -32,15 +32,15 @@ Always use the actual tool name as the XML tag name for proper parsing and execu
 
 # Tool Use Example
 ✅ Correct XML tool calling:
-<find_book>
-  </book_name>
+<attempt_complete>
+  </result>
     Physiology
-  </book_name>
-<find_book/>
+  </result>
+<attempt_complete/>
 
 ❌ Incorrect XML tool calling:
-<tool_call>find_book>
-</find_book>
+<tool_call>attempt_complete>
+</attempt_complete>
 
 `;
 }

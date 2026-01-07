@@ -31,27 +31,23 @@ export interface ToolContext {
 
 export interface Tool {
   // 保留原有desc结构，但增强兼容性
-  desc: {
-    native: OpenAI.Chat.ChatCompletionTool;
-    xml: (args?: ToolArgs) => string | undefined;
+  native: OpenAI.Chat.ChatCompletionTool;
+  xml: (args?: ToolArgs) => string | undefined;
+  // // 增强resolve函数，支持MCP标准响应和上下文
+  // resolve: (args: any, context?: ToolContext) => Promise<ToolResponse>;
 
-  };
+  // // 新增：工具元数据
+  // metadata?: {
+  //   name: string;
+  //   version?: string;
+  //   author?: string;
+  //   tags?: string[];
+  // };
 
-  // 增强resolve函数，支持MCP标准响应和上下文
-  resolve: (args: any, context?: ToolContext) => Promise<ToolResponse>;
-
-  // 新增：工具元数据
-  metadata?: {
-    name: string;
-    version?: string;
-    author?: string;
-    tags?: string[];
-  };
-
-  // 新增：工具执行选项
-  options?: {
-    timeout?: number;
-    retryCount?: number; // 新增：MCP特定选项
-    mcpProtocol?: 'stdio' | 'sse';
-  };
+  // // 新增：工具执行选项
+  // options?: {
+  //   timeout?: number;
+  //   retryCount?: number; // 新增：MCP特定选项
+  //   mcpProtocol?: 'stdio' | 'sse';
+  // };
 }

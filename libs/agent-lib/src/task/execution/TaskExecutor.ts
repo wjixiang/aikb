@@ -109,7 +109,6 @@ export class TaskExecutor {
         taskId: string,
         config: TaskExecutorConfig,
         private agent: Agent,
-        toolExecutorConfig?: ToolExecutorConfig,
     ) {
         this.taskId = taskId;
         this.config = config;
@@ -560,7 +559,7 @@ export class TaskExecutor {
      */
     private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
         try {
-            console.log(`Starting API request attempt ${retryAttempt + 1}`);
+            console.debug(`Starting API request attempt ${retryAttempt + 1}`);
 
             const systemPrompt = await this.getSystemPrompt();
             const workspaceContext = await this.agent.workspace.renderContext()

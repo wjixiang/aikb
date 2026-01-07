@@ -172,6 +172,32 @@ export interface SideEffect {
 }
 
 /**
+ * Constants for render output formatting
+ */
+const SECTION_SEPARATOR = '*************************************';
+const SUBSECTION_SEPARATOR = '---------------';
+
+/**
+ * Builds the editable state section for a component
+ *
+ * @param component - The component instance
+ * @returns The formatted editable state section, or empty string if no editable props
+ */
+function buildEditableStateSection(component: WorkspaceComponent): string {
+    const hasEditableProps = component.editableProps && Object.keys(component.editableProps).length > 0;
+
+    if (!hasEditableProps) {
+        return '';
+    }
+
+    const editableFields = Object.entries(component.editableProps)
+        .map(([fieldName, editableProp]) => renderEditablePropsAsPrompt(fieldName, editableProp))
+        .join('\n');
+
+    return `Editable State:\n${SUBSECTION_SEPARATOR}\n${editableFields}\n`;
+}
+
+/**
  * Internal helper to wrap render output with component description and editable state
  * This is automatically called by the abstract render() method in WorkspaceComponent
  *
@@ -180,30 +206,17 @@ export interface SideEffect {
  * @returns The wrapped render output
  */
 function wrapRenderOutput(component: WorkspaceComponent, result: string): string {
-    // Build the editable state section
-    let editableStateSection = '';
-    if (component.editableProps && Object.keys(component.editableProps).length > 0) {
-        const editableFields = Object.entries(component.editableProps).map(([fieldName, editableProp]) => {
-            return renderEditablePropsAsPrompt(fieldName, editableProp);
-        }).join('\n');
-
-        editableStateSection = `
-Editable State:
----------------
-${editableFields}
-`;
-    }
+    // Build the editable state section if editable props exist
+    const editableStateSection = buildEditableStateSection(component);
 
     // Build the final output with description and editable state
-    const modifiedResult = `
-*************************************
-${component.description}
-*************************************
-${editableStateSection}
-${result}
-`;
-
-    return modifiedResult;
+    return [
+        SECTION_SEPARATOR,
+        component.description,
+        SECTION_SEPARATOR,
+        editableStateSection,
+        result,
+    ].filter(Boolean).join('\n');
 }
 
 /**

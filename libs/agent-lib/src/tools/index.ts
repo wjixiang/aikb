@@ -24,14 +24,8 @@ function registerTools() {
   // toolSet.set('semantic_search', semantic_search_tool);
   toolSet.set('update_workspace', update_workspace_tool);
   toolSet.set('attempt_completion', {
-    desc: {
-      native: attempt_completion,
-      xml: () => getAttemptCompletionDescription(),
-    },
-    resolve: async (args: any) => {
-      // For attempt_completion, just return a success message
-      return 'Task completed successfully';
-    },
+    native: attempt_completion,
+    xml: () => getAttemptCompletionDescription(),
   });
 }
 registerTools();
@@ -62,7 +56,7 @@ export function getToolDescriptions(
 
   // Map tool descriptions for allowed tools
   const descs = Array.from(toolSet.values()).map(e => {
-    return e.desc.xml()
+    return e.xml()
   })
 
 
