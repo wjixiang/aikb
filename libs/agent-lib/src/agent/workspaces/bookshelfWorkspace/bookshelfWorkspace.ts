@@ -11,14 +11,14 @@
  */
 
 import { z } from 'zod';
-import { IWorkspace } from "./agentWorkspace";
+import { WorkspaceBase } from "../../agentWorkspace";
 import {
     EditableProps,
     EditablePropsUpdateResult,
     EditablePropsSchema,
     renderEditablePropsAsPrompt
-} from "./workspaceTypes";
-import { createComponentRegistry } from "./componentRegistry";
+} from "../../workspaceTypes";
+import { createComponentRegistry } from "../../componentRegistry";
 import { BookViewerComponent, WorkspaceInfoComponent } from "./bookshelfComponents";
 
 /**
@@ -28,17 +28,9 @@ import { BookViewerComponent, WorkspaceInfoComponent } from "./bookshelfComponen
  * Instead, each component manages its own state independently.
  * The workspace simply aggregates component renders for the LLM.
  */
-export class BookshelfWorkspace implements IWorkspace {
-    info = {
-        name: 'BookshelfWorkspace',
-        desc: 'A workspace for managing and searching through a collection of books. Provides semantic search capabilities and book browsing functionality. All operations are performed through EditableProps updates.'
-    };
-
+export class BookshelfWorkspace extends WorkspaceBase {
     // Component-based architecture - no central env
     private componentRegistry = createComponentRegistry();
-
-    // Expose editable props from all components (for LLM interaction)
-    editableProps: Record<string, EditableProps>;
 
     // Special action fields (triggered by setting these to true)
     private actionFields: Record<string, EditableProps>;
@@ -46,38 +38,46 @@ export class BookshelfWorkspace implements IWorkspace {
     initialized = false;
 
     constructor() {
-        this.editableProps = {};
+        super({
+            name: 'BookshelfWorkspace',
+            desc: 'A workspace for managing and searching through a collection of books. Provides semantic search capabilities and book browsing functionality. All operations are performed through EditableProps updates.'
+        });
         this.actionFields = {};
     }
-    getWorkspacePrompt: () => Promise<string> = async () => {
+
+    /**
+     * Get editable props for backward compatibility
+     * This aggregates editable props from all components and action fields
+     */
+    get editableProps(): Record<string, EditableProps> {
+        const props: Record<string, EditableProps> = {};
+
+        // Add component editable props
+        const components = this.componentRegistry.getAll();
+        for (const component of components) {
+            for (const [key, field] of Object.entries(component.editableProps)) {
+                props[key] = field as EditableProps;
+            }
+        }
+
+        // Add action fields
+        for (const [key, field] of Object.entries(this.actionFields)) {
+            props[key] = field;
+        }
+
+        return props;
+    }
+    async getWorkspacePrompt(): Promise<string> {
         return `=====
 Workspace Description
 
 The area below is interactable, content will be refreshed between each conversation depending on your <update_workspace> action.
-        `
+        `;
     }
 
-    /**
-     * Handle multiple state update tool calls from LLM
-     * This method processes an array of tool call parameters and converts them to actual state changes
-     *
-     * @param updates - Array of { field_name: string, value: any } objects
-     * @returns Array of update results for each field update
-     */
-    async handleStateUpdateToolCall(updates: Array<{ field_name: string; value: any }>): Promise<EditablePropsUpdateResult[]> {
-        const results: EditablePropsUpdateResult[] = [];
+    override reset?(): void;
 
-        for (const update of updates) {
-            const result = await this.updateEditableProps(update.field_name, update.value);
-            results.push(result);
-        }
-
-        return results;
-    }
-
-    reset?: (() => void) | undefined;
-
-    async init(): Promise<void> {
+    override async init(): Promise<void> {
         // Register all components
         await Promise.all([
             this.componentRegistry.register(new WorkspaceInfoComponent()),
@@ -92,7 +92,7 @@ The area below is interactable, content will be refreshed between each conversat
      * This is similar to React's render tree
      * Each component renders its own state independently
      */
-    renderContext: () => Promise<string> = async () => {
+    async renderContext(): Promise<string> {
         if (!this.initialized) await this.init();
         const components = this.componentRegistry.getAll();
         const componentRenders = components
@@ -172,20 +172,6 @@ ${componentRenders}
         // Update component state
         const result = await this.componentRegistry.updateComponentState(component.id, fieldName, value);
 
-        // Sync workspace editableProps with component's editableProps
-        if (result.success) {
-            const updatedComponent = this.componentRegistry.get(component.id);
-            if (updatedComponent && updatedComponent.editableProps[fieldName]) {
-                // Don't overwrite readonly fields - preserve their readonly flag
-                if (!this.editableProps[fieldName]?.readonly) {
-                    this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName] };
-                } else if ((updatedComponent.editableProps[fieldName] as EditableProps).readonly) {
-                    // If component's field is readonly, mark workspace field as readonly too
-                    this.editableProps[fieldName] = { ...updatedComponent.editableProps[fieldName], readonly: true };
-                }
-            }
-        }
-
         return {
             success: result.success,
             error: result.error,
@@ -199,7 +185,7 @@ ${componentRenders}
      * Handle action field updates (special fields that trigger operations)
      */
     private async handleActionField(fieldName: string, value: any): Promise<EditablePropsUpdateResult> {
-        const previousValue = this.editableProps[fieldName]?.value;
+        const previousValue = this.actionFields[fieldName]?.value;
 
         switch (fieldName) {
             case 'semantic_search':
@@ -210,7 +196,7 @@ ${componentRenders}
                         await this.componentRegistry.updateComponentState('book_viewer', 'search_query', value);
                     }
 
-                    this.editableProps[fieldName].value = value;
+                    this.actionFields[fieldName].value = value;
                     return {
                         success: true,
                         updatedField: fieldName,

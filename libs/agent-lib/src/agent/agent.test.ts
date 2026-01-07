@@ -2,38 +2,39 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import Anthropic from '@anthropic-ai/sdk';
 import { Agent, defaultAgentConfig, defaultApiConfig, AgentConfig } from './agent';
 import { ApiStreamChunk, ApiStream } from '../api';
-import { BookshelfWorkspace } from './bookshelfWorkspace';
-import { IWorkspace } from './agentWorkspace';
-import { TaskStatus, ApiMessage } from '../task/task.type';
-import { ToolUsage, TokenUsage } from '../types';
+import { BookshelfWorkspace } from './workspaces/bookshelfWorkspace/bookshelfWorkspace';
+import { WorkspaceBase } from './agentWorkspace';
+import { ApiMessage } from '../task/task.type';
 import { z } from 'zod';
 
 // Mock workspace for testing
-class MockWorkspace implements IWorkspace {
-    getWorkspacePrompt: () => Promise<string> = async () => {
-        return ``
-    };
-    init?: (() => Promise<void>) | undefined;
-    reset?: (() => void) | undefined;
-    info = {
-        name: 'Test Workspace',
-        desc: 'A test workspace',
-    };
+class MockWorkspace extends WorkspaceBase {
+    editableProps: Record<string, any>;
 
-    editableProps: Record<string, any> = {
-        test_field: {
-            value: null,
-            schema: z.string(),
-            description: 'Test field',
-            readonly: false,
-        },
-    };
+    constructor() {
+        super({
+            name: 'Test Workspace',
+            desc: 'A test workspace',
+        });
+        this.editableProps = {
+            test_field: {
+                value: null,
+                schema: z.string(),
+                description: 'Test field',
+                readonly: false,
+            },
+        };
+    }
 
-    async renderContext(): Promise<string> {
+    async getWorkspacePrompt(): Promise<string> {
+        return ``;
+    }
+
+    override async renderContext(): Promise<string> {
         return 'Test workspace context';
     }
 
-    async updateEditableProps(fieldName: string, value: any): Promise<any> {
+    override async updateEditableProps(fieldName: string, value: any): Promise<any> {
         return {
             success: true,
             updatedField: fieldName,
@@ -41,15 +42,7 @@ class MockWorkspace implements IWorkspace {
         };
     }
 
-    async handleStateUpdateToolCall(updates: Array<{ field_name: string; value: any }>): Promise<any[]> {
-        return updates.map(update => ({
-            success: true,
-            updatedField: update.field_name,
-            value: update.value,
-        }));
-    }
-
-    getEditablePropsSchema(): any {
+    override getEditablePropsSchema(): any {
         return {
             fields: this.editableProps,
         };
@@ -61,7 +54,7 @@ class TestAgent extends Agent {
     constructor(
         config?: AgentConfig,
         apiConfig?: any,
-        workspace?: IWorkspace,
+        workspace?: WorkspaceBase,
         taskId?: string,
     ) {
         super(config, apiConfig, workspace || new MockWorkspace(), taskId);

@@ -4,8 +4,8 @@
  */
 
 import { z } from 'zod';
-import { WorkspaceComponent, ComponentState, ComponentProps } from './componentTypes';
-import { EditableProps } from './workspaceTypes';
+import { WorkspaceComponent, ComponentState, ComponentProps } from '../../componentTypes';
+import { EditableProps } from '../../workspaceTypes';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
