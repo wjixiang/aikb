@@ -1,54 +1,55 @@
 type Author {
-    firstName: String!
-    lastName: String!
-    middleName: String
+  firstName: String!
+  lastName: String!
+  middleName: String
 }
 
 type ItemArchive {
-    fileType: String!
-    fileSize: Int!
-    fileHash: String!
-    addDate: String!
-    s3Key: String!
-    pageCount: Int!
-    wordCount: Int
+  fileType: String!
+  fileSize: Int!
+  fileHash: String!
+  addDate: String!
+  s3Key: String!
+  pageCount: Int!
+  wordCount: Int
 }
 
 type LibraryItemMetadata {
-    id: ID!
-    title: String!
-    authors: [Author!]!
-    abstract: String
-    publicationYear: Int
-    publisher: String
-    isbn: String
-    doi: String
-    url: String
-    tags: [String!]!
-    notes: String
-    collections: [String!]!
-    dateAdded: String!
-    dateModified: String!
-    language: String
-    markdownContent: String
-    markdownUpdatedDate: String
-    archives: [ItemArchive]
-    # chunkEmbedGroups: ChunkEmbedGroups
+  id: ID!
+  title: String!
+  authors: [Author!]!
+  abstract: String
+  evidenceType: String!
+  publicationYear: Int
+  publisher: String
+  isbn: String
+  doi: String
+  url: String
+  tags: [String!]!
+  notes: String
+  collections: [String!]!
+  dateAdded: String!
+  dateModified: String!
+  language: String
+  markdownContent: String
+  markdownUpdatedDate: String
+  archives: [ItemArchive]
+  # chunkEmbedGroups: ChunkEmbedGroups
 }
 
 type SignedS3UploadResult {
-    uploadUrl: String!
-    s3Key: String!
-    expiresAt: String!
+  uploadUrl: String!
+  s3Key: String!
+  expiresAt: String!
 }
 
 type ChunkEmbedConfig {
-    chunkingConfig: ChunkingConfig!
-    embeddingConfig: EmbeddingConfig!
+  chunkingConfig: ChunkingConfig!
+  embeddingConfig: EmbeddingConfig!
 }
 
 type ChunkingConfig {
-    strategy: String!
+  strategy: String!
 }
 
 type EmbeddingConfig {
@@ -79,86 +80,85 @@ type ChunkEmbedGroups {
 }
 
 type SemanticSearchResultChunk {
-    chunkId: ID!
-    itemId: ID!
-    title: String
-    content: String!
-    score: Float!
-    metadata: ChunkMetadata
-    libraryItem: LibraryItemMetadata
-    chunkEmbedGroup: ChunkEmbedGroup
+  chunkId: ID!
+  itemId: ID!
+  title: String
+  content: String!
+  score: Float!
+  metadata: ChunkMetadata
+  libraryItem: LibraryItemMetadata
+  chunkEmbedGroup: ChunkEmbedGroup
 }
 
 type ChunkMetadata {
-    startPosition: Int
-    endPosition: Int
-    wordCount: Int
-    chunkType: String
+  startPosition: Int
+  endPosition: Int
+  wordCount: Int
+  chunkType: String
 }
 
 input SemanticSearchFilters {
-    tags: [String!]
-    collections: [String!]
-    authors: [String!]
-    publicationYear: IntRange
+  tags: [String!]
+  collections: [String!]
+  authors: [String!]
+  publicationYear: IntRange
 }
 
 input IntRange {
-    min: Int
-    max: Int
+  min: Int
+  max: Int
 }
 
 type SemanticSearchResult {
-    query: String!
-    totalResults: Int!
-    results: [SemanticSearchResultChunk!]!
+  query: String!
+  totalResults: Int!
+  results: [SemanticSearchResultChunk!]!
 }
 
-
 type Query {
-    libraryItems: [LibraryItemMetadata!]!
-    libraryItem(id: ID!): LibraryItemMetadata
-    itemArchives(itemId: ID!): [ItemArchive!]!
-    chunkEmbedGroups(itemId: ID!): [ChunkEmbedGroups]
-    signedUploadUrl(request: RegisterPdfUploadUrlRequest!): SignedS3UploadResult
-    semanticSearch(
-        query: String!
-        chunkEmbedGroupId: ID!
-        topK: Int = 10
-        scoreThreshold: Float = 0.0
-        filters: SemanticSearchFilters
-    ): SemanticSearchResult
+  libraryItems: [LibraryItemMetadata!]!
+  libraryItem(id: ID!): LibraryItemMetadata
+  itemArchives(itemId: ID!): [ItemArchive!]!
+  chunkEmbedGroups(itemId: ID!): [ChunkEmbedGroups]
+  signedUploadUrl(request: RegisterPdfUploadUrlRequest!): SignedS3UploadResult
+  semanticSearch(
+    query: String!
+    chunkEmbedGroupId: ID!
+    topK: Int = 10
+    scoreThreshold: Float = 0.0
+    filters: SemanticSearchFilters
+  ): SemanticSearchResult
 }
 
 type Mutation {
-    createLibraryItem(title: String!): LibraryItemMetadata
-    createChunkEmbedGroup(input: CreateChunkEmbedGroupInput!): ChunkEmbedGroup
+  createLibraryItem(title: String!): LibraryItemMetadata
+  createChunkEmbedGroup(input: CreateChunkEmbedGroupInput!): ChunkEmbedGroup
 }
 
 input RegisterPdfUploadUrlRequest {
-    fileName: String!
+  fileName: String!
 }
 
 input ChunkingConfigInput {
-    strategy: String!
+  strategy: String!
 }
 
 input EmbeddingConfigInput {
-    model: String!
-    dimension: Int!
-    batchSize: Int!
-    maxRetries: Int!
-    timeout: Int!
-    provider: String!
+  model: String!
+  dimension: Int!
+  batchSize: Int!
+  maxRetries: Int!
+  timeout: Int!
+  provider: String!
 }
 
 input CreateChunkEmbedGroupInput {
-    itemId: ID!
-    name: String
-    description: String
-    chunkingConfig: ChunkingConfigInput
-    embeddingConfig: EmbeddingConfigInput
-    isDefault: Boolean
-    isActive: Boolean
-    createdBy: String
+  itemId: ID!
+  name: String
+  description: String
+  chunkingConfig: ChunkingConfigInput
+  embeddingConfig: EmbeddingConfigInput
+  isDefault: Boolean
+  isActive: Boolean
+  createdBy: String
 }
