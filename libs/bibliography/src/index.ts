@@ -1,3 +1,11 @@
+// NestJS exports
+export { BibliographyModule } from './bibliography.module.js';
+export { LibraryService } from './library.service.js';
+export type {
+  BibliographyModuleOptions,
+  BibliographyModuleAsyncOptions,
+} from './bibliography.interface.js';
+
 // Main bibliography exports
 export * from './library/index.js';
 export * from './library/storage/index.js';

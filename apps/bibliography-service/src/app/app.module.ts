@@ -10,6 +10,8 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { VectorModule } from 'bibliography-lib';
+import { BibliographyModule } from 'bibliography';
+import { S3Service } from '@aikb/s3-service';
 
 @Module({
   imports: [
@@ -34,6 +36,24 @@ import { VectorModule } from 'bibliography-lib';
       // },
     }),
     VectorModule,
+    BibliographyModule.registerAsync({
+      imports: [],
+      inject: [BibliographyDBPrismaService, 'S3_SERVICE'],
+      useFactory: (
+        prismaService: BibliographyDBPrismaService,
+        s3Service: S3Service,
+      ) => ({
+        prisma: prismaService,
+        s3ServiceConfig: {
+          accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY || '',
+          bucketName: process.env.PDF_OSS_BUCKET_NAME || '',
+          region: process.env.OSS_REGION || '',
+          endpoint: process.env.S3_ENDPOINT || '',
+          forcePathStyle: true,
+        },
+      }),
+    }),
   ],
   controllers: [LibraryItemController, BibliographyGrpcController],
   providers: [
@@ -43,4 +63,4 @@ import { VectorModule } from 'bibliography-lib';
     BibliographyDBPrismaService,
   ],
 })
-export class AppModule {}
+export class AppModule { }

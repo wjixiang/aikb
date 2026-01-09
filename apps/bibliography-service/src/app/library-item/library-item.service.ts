@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  PrismaLibraryStorage,
   LibraryItem,
-  Library,
   ItemArchive,
 } from 'bibliography';
 import {
@@ -23,13 +21,13 @@ import { HashUtils } from 'bibliography';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyDBPrismaService } from 'bibliography-db';
 import { VectorService } from 'bibliography-lib';
+import { LibraryService } from 'bibliography';
 import { ChunkEmbedGroupMetadata } from '@/libs/item-vector-storage/src';
 import { defaultChunkingConfig } from 'chunking';
 import { defaultEmbeddingConfig } from 'embedding';
 
 @Injectable()
 export class LibraryItemService {
-  private library: Library;
   private logger = createLoggerWithPrefix('bibliography-service');
 
   constructor(
@@ -37,21 +35,8 @@ export class LibraryItemService {
     @Inject('S3_SERVICE') private s3Service: S3Service,
     private bibliographyDBPrismaService: BibliographyDBPrismaService,
     private vectorService: VectorService,
-  ) {
-    // Initialize the storage and library
-    // const elasticsearchUrl =
-    //   process.env['ELASTICSEARCH_URL'] || 'http://elasticsearch:9200';
-    // const storage = new S3ElasticSearchLibraryStorage(elasticsearchUrl);
-    const storage = new PrismaLibraryStorage(this.bibliographyDBPrismaService, {
-      accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.OSS_SECRET_ACCESS_KEY || '',
-      bucketName: process.env.PDF_OSS_BUCKET_NAME || '',
-      region: process.env.OSS_REGION || '',
-      endpoint: process.env.S3_ENDPOINT || '',
-      forcePathStyle: true,
-    });
-    this.library = new Library(storage);
-  }
+    private libraryService: LibraryService,
+  ) { }
 
   /**
    * Create a new library item
@@ -77,7 +62,7 @@ export class LibraryItemService {
       language: createLibraryItemDto.language,
     };
 
-    return await this.library.createItem(metadata);
+    return await this.libraryService.createItem(metadata);
   }
 
   /**
@@ -104,7 +89,7 @@ export class LibraryItemService {
       language: createLibraryItemWithPdfDto.language,
     };
 
-    const item = await this.library.createItem(metadata);
+    const item = await this.libraryService.createItem(metadata);
 
     // Then add the PDF archive to the created item
     const pdfBuffer = createLibraryItemWithPdfDto.pdfBuffer;
@@ -137,7 +122,7 @@ export class LibraryItemService {
     await item.addArchiveToMetadata(newArchive);
 
     // Return the updated item
-    const updatedItem = await this.library.getItem(item.getItemId());
+    const updatedItem = await this.libraryService.getItem(item.getItemId());
     if (!updatedItem) {
       throw new Error(
         `Failed to retrieve updated library item ${item.getItemId()}`,
@@ -152,7 +137,7 @@ export class LibraryItemService {
    * @returns The library item or null if not found
    */
   async getLibraryItem(id: string): Promise<LibraryItem | null> {
-    return await this.library.getItem(id);
+    return await this.libraryService.getItem(id);
   }
 
   /**
@@ -181,7 +166,7 @@ export class LibraryItemService {
       filter.collections = collections;
     }
 
-    return await this.library.searchItems(filter);
+    return await this.libraryService.searchItems(filter);
   }
 
   /**
@@ -190,7 +175,7 @@ export class LibraryItemService {
    * @returns True if the item was deleted, false if not found
    */
   async deleteLibraryItem(id: string): Promise<boolean> {
-    return await this.library.deleteItem(id);
+    return await this.libraryService.deleteItem(id);
   }
 
   /**
@@ -203,7 +188,7 @@ export class LibraryItemService {
     id: string,
     updateMetadataDto: UpdateMetadataDto,
   ): Promise<LibraryItem> {
-    const item = await this.library.getItem(id);
+    const item = await this.libraryService.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
     }
@@ -216,10 +201,10 @@ export class LibraryItemService {
     };
 
     // Update the metadata through the storage
-    await this.library['storage'].updateMetadata(updatedMetadata);
+    await this.libraryService.storage.updateMetadata(updatedMetadata);
 
     // Return the updated item
-    const updatedItem = await this.library.getItem(id);
+    const updatedItem = await this.libraryService.getItem(id);
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
@@ -232,7 +217,7 @@ export class LibraryItemService {
    * @returns The download URL and expiration time
    */
   async getPdfDownloadUrl(id: string): Promise<PdfDownloadUrlDto> {
-    const item = await this.library.getItem(id);
+    const item = await this.libraryService.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
     }
@@ -242,7 +227,7 @@ export class LibraryItemService {
     }
 
     // Get the download URL from storage (use the first archive)
-    const downloadUrl = await this.library['storage'].getPdfDownloadUrl(
+    const downloadUrl = await this.libraryService.storage.getPdfDownloadUrl(
       item.metadata.archives[0].s3Key,
     );
 
@@ -320,7 +305,7 @@ export class LibraryItemService {
     console.debug(
       `[DEBUG] updateLibraryItemMarkdown called with id: ${id}, markdownContent length: ${markdownContent.length}`,
     );
-    const item = await this.library.getItem(id);
+    const item = await this.libraryService.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
     }
@@ -335,10 +320,10 @@ export class LibraryItemService {
     };
 
     // Update the metadata through the storage
-    await this.library['storage'].updateMetadata(updatedMetadata);
+    await this.libraryService.storage.updateMetadata(updatedMetadata);
 
     // Return the updated item
-    const updatedItem = await this.library.getItem(id);
+    const updatedItem = await this.libraryService.getItem(id);
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
@@ -357,10 +342,10 @@ export class LibraryItemService {
     addItemArchiveDto: AddItemArchiveDto,
   ): Promise<LibraryItem> {
     this.logger.debug('addArchiveToItem called with id:', id);
-    this.logger.debug('library object:', this.library);
-    this.logger.debug('library.storage:', (this.library as any).storage);
+    this.logger.debug('libraryService object:', this.libraryService);
+    this.logger.debug('libraryService.storage:', this.libraryService.storage);
 
-    const item = await this.library.getItem(id);
+    const item = await this.libraryService.getItem(id);
     if (!item) {
       throw new Error(`Library item with ID ${id} not found`);
     }
@@ -384,7 +369,7 @@ export class LibraryItemService {
     await item.addArchiveToMetadata(newArchive);
 
     // Return the updated item
-    const updatedItem = await this.library.getItem(id);
+    const updatedItem = await this.libraryService.getItem(id);
     if (!updatedItem) {
       throw new Error(`Failed to retrieve updated library item ${id}`);
     }
@@ -430,20 +415,20 @@ export class LibraryItemService {
         description: input.description || '',
         chunkingConfig: input.chunkingConfig
           ? {
-              strategy: input.chunkingConfig.strategy,
-              parameters: {},
-            }
+            strategy: input.chunkingConfig.strategy,
+            parameters: {},
+          }
           : defaultChunkingConfig,
         embeddingConfig: input.embeddingConfig
           ? {
-              provider: input.embeddingConfig.provider,
-              model: input.embeddingConfig.model,
-              dimension: input.embeddingConfig.dimension,
-              batchSize: input.embeddingConfig.batchSize || 20,
-              maxRetries: input.embeddingConfig.maxRetries || 3,
-              timeout: input.embeddingConfig.timeout || 20000,
-              parameters: {},
-            }
+            provider: input.embeddingConfig.provider,
+            model: input.embeddingConfig.model,
+            dimension: input.embeddingConfig.dimension,
+            batchSize: input.embeddingConfig.batchSize || 20,
+            maxRetries: input.embeddingConfig.maxRetries || 3,
+            timeout: input.embeddingConfig.timeout || 20000,
+            parameters: {},
+          }
           : defaultEmbeddingConfig,
         isDefault: input.isDefault || false,
         isActive: input.isActive !== undefined ? input.isActive : true,

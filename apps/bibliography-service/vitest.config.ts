@@ -18,7 +18,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      bibliography: resolve(__dirname, '../../libs/bibliography/src/index.ts'),
       'log-management': resolve(
         __dirname,
         '../../libs/log-management/src/index.ts',

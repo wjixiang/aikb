@@ -13,7 +13,6 @@ module.exports = {
     alias: {
       'log-management': join(__dirname, '../../dist/libs/log-management/src/index.js'),
       '@aikb/s3-service': join(__dirname, '../../dist/libs/s3-service/src/index.js'),
-      'bibliography': join(__dirname, '../../dist/libs/bibliography/src/index.js'),
       'chunking': join(__dirname, '../../dist/libs/chunking/src/index.js'),
       'embedding': join(__dirname, '../../dist/libs/embedding/src/index.js'),
       '@aikb/pdf-converter': join(__dirname, '../../dist/libs/pdf-converter/src/index.js'),
@@ -39,7 +38,6 @@ module.exports = {
   externals: {
     'log-management': 'commonjs log-management',
     '@aikb/s3-service': 'commonjs @aikb/s3-service',
-    'bibliography': 'commonjs bibliography',
     'chunking': 'commonjs chunking',
     'embedding': 'commonjs embedding',
     '@aikb/pdf-converter': 'commonjs @aikb/pdf-converter',
