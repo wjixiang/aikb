@@ -57,8 +57,7 @@ export const ModelName = {
   item_archives: 'item_archives',
   item_authors: 'item_authors',
   item_collections: 'item_collections',
-  items: 'items',
-  markdowns: 'markdowns'
+  items: 'items'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -146,6 +145,7 @@ export type Item_collectionsScalarFieldEnum = (typeof Item_collectionsScalarFiel
 export const ItemsScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  evidence_type: 'evidence_type',
   abstract: 'abstract',
   publication_year: 'publication_year',
   publisher: 'publisher',
@@ -162,17 +162,6 @@ export const ItemsScalarFieldEnum = {
 } as const
 
 export type ItemsScalarFieldEnum = (typeof ItemsScalarFieldEnum)[keyof typeof ItemsScalarFieldEnum]
-
-
-export const MarkdownsScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  content: 'content',
-  date_created: 'date_created',
-  date_modified: 'date_modified'
-} as const
-
-export type MarkdownsScalarFieldEnum = (typeof MarkdownsScalarFieldEnum)[keyof typeof MarkdownsScalarFieldEnum]
 
 
 export const SortOrder = {

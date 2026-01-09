@@ -37,6 +37,7 @@ export type ItemsSumAggregateOutputType = {
 export type ItemsMinAggregateOutputType = {
   id: string | null
   title: string | null
+  evidence_type: string | null
   abstract: string | null
   publication_year: number | null
   publisher: string | null
@@ -54,6 +55,7 @@ export type ItemsMinAggregateOutputType = {
 export type ItemsMaxAggregateOutputType = {
   id: string | null
   title: string | null
+  evidence_type: string | null
   abstract: string | null
   publication_year: number | null
   publisher: string | null
@@ -71,6 +73,7 @@ export type ItemsMaxAggregateOutputType = {
 export type ItemsCountAggregateOutputType = {
   id: number
   title: number
+  evidence_type: number
   abstract: number
   publication_year: number
   publisher: number
@@ -99,6 +102,7 @@ export type ItemsSumAggregateInputType = {
 export type ItemsMinAggregateInputType = {
   id?: true
   title?: true
+  evidence_type?: true
   abstract?: true
   publication_year?: true
   publisher?: true
@@ -116,6 +120,7 @@ export type ItemsMinAggregateInputType = {
 export type ItemsMaxAggregateInputType = {
   id?: true
   title?: true
+  evidence_type?: true
   abstract?: true
   publication_year?: true
   publisher?: true
@@ -133,6 +138,7 @@ export type ItemsMaxAggregateInputType = {
 export type ItemsCountAggregateInputType = {
   id?: true
   title?: true
+  evidence_type?: true
   abstract?: true
   publication_year?: true
   publisher?: true
@@ -238,6 +244,7 @@ export type itemsGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type ItemsGroupByOutputType = {
   id: string
   title: string
+  evidence_type: string
   abstract: string | null
   publication_year: number | null
   publisher: string | null
@@ -279,6 +286,7 @@ export type itemsWhereInput = {
   NOT?: Prisma.itemsWhereInput | Prisma.itemsWhereInput[]
   id?: Prisma.UuidFilter<"items"> | string
   title?: Prisma.StringFilter<"items"> | string
+  evidence_type?: Prisma.StringFilter<"items"> | string
   abstract?: Prisma.StringNullableFilter<"items"> | string | null
   publication_year?: Prisma.IntNullableFilter<"items"> | number | null
   publisher?: Prisma.StringNullableFilter<"items"> | string | null
@@ -296,12 +304,12 @@ export type itemsWhereInput = {
   item_archives?: Prisma.Item_archivesListRelationFilter
   item_authors?: Prisma.Item_authorsListRelationFilter
   item_collections?: Prisma.Item_collectionsListRelationFilter
-  markdowns?: Prisma.XOR<Prisma.MarkdownsNullableScalarRelationFilter, Prisma.markdownsWhereInput> | null
 }
 
 export type itemsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  evidence_type?: Prisma.SortOrder
   abstract?: Prisma.SortOrderInput | Prisma.SortOrder
   publication_year?: Prisma.SortOrderInput | Prisma.SortOrder
   publisher?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -319,7 +327,6 @@ export type itemsOrderByWithRelationInput = {
   item_archives?: Prisma.item_archivesOrderByRelationAggregateInput
   item_authors?: Prisma.item_authorsOrderByRelationAggregateInput
   item_collections?: Prisma.item_collectionsOrderByRelationAggregateInput
-  markdowns?: Prisma.markdownsOrderByWithRelationInput
 }
 
 export type itemsWhereUniqueInput = Prisma.AtLeast<{
@@ -328,6 +335,7 @@ export type itemsWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.itemsWhereInput[]
   NOT?: Prisma.itemsWhereInput | Prisma.itemsWhereInput[]
   title?: Prisma.StringFilter<"items"> | string
+  evidence_type?: Prisma.StringFilter<"items"> | string
   abstract?: Prisma.StringNullableFilter<"items"> | string | null
   publication_year?: Prisma.IntNullableFilter<"items"> | number | null
   publisher?: Prisma.StringNullableFilter<"items"> | string | null
@@ -345,12 +353,12 @@ export type itemsWhereUniqueInput = Prisma.AtLeast<{
   item_archives?: Prisma.Item_archivesListRelationFilter
   item_authors?: Prisma.Item_authorsListRelationFilter
   item_collections?: Prisma.Item_collectionsListRelationFilter
-  markdowns?: Prisma.XOR<Prisma.MarkdownsNullableScalarRelationFilter, Prisma.markdownsWhereInput> | null
 }, "id">
 
 export type itemsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  evidence_type?: Prisma.SortOrder
   abstract?: Prisma.SortOrderInput | Prisma.SortOrder
   publication_year?: Prisma.SortOrderInput | Prisma.SortOrder
   publisher?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -377,6 +385,7 @@ export type itemsScalarWhereWithAggregatesInput = {
   NOT?: Prisma.itemsScalarWhereWithAggregatesInput | Prisma.itemsScalarWhereWithAggregatesInput[]
   id?: Prisma.UuidWithAggregatesFilter<"items"> | string
   title?: Prisma.StringWithAggregatesFilter<"items"> | string
+  evidence_type?: Prisma.StringWithAggregatesFilter<"items"> | string
   abstract?: Prisma.StringNullableWithAggregatesFilter<"items"> | string | null
   publication_year?: Prisma.IntNullableWithAggregatesFilter<"items"> | number | null
   publisher?: Prisma.StringNullableWithAggregatesFilter<"items"> | string | null
@@ -395,6 +404,7 @@ export type itemsScalarWhereWithAggregatesInput = {
 export type itemsCreateInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -412,12 +422,12 @@ export type itemsCreateInput = {
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -435,12 +445,12 @@ export type itemsUncheckedCreateInput = {
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -458,12 +468,12 @@ export type itemsUpdateInput = {
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -481,12 +491,12 @@ export type itemsUncheckedUpdateInput = {
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsCreateManyInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -505,6 +515,7 @@ export type itemsCreateManyInput = {
 export type itemsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -523,6 +534,7 @@ export type itemsUpdateManyMutationInput = {
 export type itemsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -554,6 +566,7 @@ export type StringNullableListFilter<$PrismaModel = never> = {
 export type itemsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  evidence_type?: Prisma.SortOrder
   abstract?: Prisma.SortOrder
   publication_year?: Prisma.SortOrder
   publisher?: Prisma.SortOrder
@@ -576,6 +589,7 @@ export type itemsAvgOrderByAggregateInput = {
 export type itemsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  evidence_type?: Prisma.SortOrder
   abstract?: Prisma.SortOrder
   publication_year?: Prisma.SortOrder
   publisher?: Prisma.SortOrder
@@ -593,6 +607,7 @@ export type itemsMaxOrderByAggregateInput = {
 export type itemsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  evidence_type?: Prisma.SortOrder
   abstract?: Prisma.SortOrder
   publication_year?: Prisma.SortOrder
   publisher?: Prisma.SortOrder
@@ -680,23 +695,10 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
-export type itemsCreateNestedOneWithoutMarkdownsInput = {
-  create?: Prisma.XOR<Prisma.itemsCreateWithoutMarkdownsInput, Prisma.itemsUncheckedCreateWithoutMarkdownsInput>
-  connectOrCreate?: Prisma.itemsCreateOrConnectWithoutMarkdownsInput
-  connect?: Prisma.itemsWhereUniqueInput
-}
-
-export type itemsUpdateOneRequiredWithoutMarkdownsNestedInput = {
-  create?: Prisma.XOR<Prisma.itemsCreateWithoutMarkdownsInput, Prisma.itemsUncheckedCreateWithoutMarkdownsInput>
-  connectOrCreate?: Prisma.itemsCreateOrConnectWithoutMarkdownsInput
-  upsert?: Prisma.itemsUpsertWithoutMarkdownsInput
-  connect?: Prisma.itemsWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.itemsUpdateToOneWithWhereWithoutMarkdownsInput, Prisma.itemsUpdateWithoutMarkdownsInput>, Prisma.itemsUncheckedUpdateWithoutMarkdownsInput>
-}
-
 export type itemsCreateWithoutCitationsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -713,12 +715,12 @@ export type itemsCreateWithoutCitationsInput = {
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutCitationsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -735,7 +737,6 @@ export type itemsUncheckedCreateWithoutCitationsInput = {
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutCitationsInput = {
@@ -757,6 +758,7 @@ export type itemsUpdateToOneWithWhereWithoutCitationsInput = {
 export type itemsUpdateWithoutCitationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -773,12 +775,12 @@ export type itemsUpdateWithoutCitationsInput = {
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutCitationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -795,12 +797,12 @@ export type itemsUncheckedUpdateWithoutCitationsInput = {
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_archivesInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -817,12 +819,12 @@ export type itemsCreateWithoutItem_archivesInput = {
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_archivesInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -839,7 +841,6 @@ export type itemsUncheckedCreateWithoutItem_archivesInput = {
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_archivesInput = {
@@ -861,6 +862,7 @@ export type itemsUpdateToOneWithWhereWithoutItem_archivesInput = {
 export type itemsUpdateWithoutItem_archivesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -877,12 +879,12 @@ export type itemsUpdateWithoutItem_archivesInput = {
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_archivesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -899,12 +901,12 @@ export type itemsUncheckedUpdateWithoutItem_archivesInput = {
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_authorsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -921,12 +923,12 @@ export type itemsCreateWithoutItem_authorsInput = {
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_authorsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -943,7 +945,6 @@ export type itemsUncheckedCreateWithoutItem_authorsInput = {
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_authorsInput = {
@@ -965,6 +966,7 @@ export type itemsUpdateToOneWithWhereWithoutItem_authorsInput = {
 export type itemsUpdateWithoutItem_authorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -981,12 +983,12 @@ export type itemsUpdateWithoutItem_authorsInput = {
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_authorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1003,12 +1005,12 @@ export type itemsUncheckedUpdateWithoutItem_authorsInput = {
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsCreateWithoutItem_collectionsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -1025,12 +1027,12 @@ export type itemsCreateWithoutItem_collectionsInput = {
   citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsCreateNestedOneWithoutItemsInput
 }
 
 export type itemsUncheckedCreateWithoutItem_collectionsInput = {
   id?: string
   title: string
+  evidence_type: string
   abstract?: string | null
   publication_year?: number | null
   publisher?: string | null
@@ -1047,7 +1049,6 @@ export type itemsUncheckedCreateWithoutItem_collectionsInput = {
   citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
   item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
   item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
-  markdowns?: Prisma.markdownsUncheckedCreateNestedOneWithoutItemsInput
 }
 
 export type itemsCreateOrConnectWithoutItem_collectionsInput = {
@@ -1069,6 +1070,7 @@ export type itemsUpdateToOneWithWhereWithoutItem_collectionsInput = {
 export type itemsUpdateWithoutItem_collectionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1085,12 +1087,12 @@ export type itemsUpdateWithoutItem_collectionsInput = {
   citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUpdateOneWithoutItemsNestedInput
 }
 
 export type itemsUncheckedUpdateWithoutItem_collectionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
+  evidence_type?: Prisma.StringFieldUpdateOperationsInput | string
   abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1107,111 +1109,6 @@ export type itemsUncheckedUpdateWithoutItem_collectionsInput = {
   citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
   item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
   item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
-  markdowns?: Prisma.markdownsUncheckedUpdateOneWithoutItemsNestedInput
-}
-
-export type itemsCreateWithoutMarkdownsInput = {
-  id?: string
-  title: string
-  abstract?: string | null
-  publication_year?: number | null
-  publisher?: string | null
-  isbn?: string | null
-  doi?: string | null
-  url?: string | null
-  tags?: Prisma.itemsCreatetagsInput | string[]
-  notes?: string | null
-  date_added?: Date | string
-  date_modified?: Date | string
-  language?: string | null
-  markdown_content?: string | null
-  markdown_updated_date?: Date | string | null
-  citations?: Prisma.citationsCreateNestedManyWithoutItemsInput
-  item_archives?: Prisma.item_archivesCreateNestedManyWithoutItemsInput
-  item_authors?: Prisma.item_authorsCreateNestedManyWithoutItemsInput
-  item_collections?: Prisma.item_collectionsCreateNestedManyWithoutItemsInput
-}
-
-export type itemsUncheckedCreateWithoutMarkdownsInput = {
-  id?: string
-  title: string
-  abstract?: string | null
-  publication_year?: number | null
-  publisher?: string | null
-  isbn?: string | null
-  doi?: string | null
-  url?: string | null
-  tags?: Prisma.itemsCreatetagsInput | string[]
-  notes?: string | null
-  date_added?: Date | string
-  date_modified?: Date | string
-  language?: string | null
-  markdown_content?: string | null
-  markdown_updated_date?: Date | string | null
-  citations?: Prisma.citationsUncheckedCreateNestedManyWithoutItemsInput
-  item_archives?: Prisma.item_archivesUncheckedCreateNestedManyWithoutItemsInput
-  item_authors?: Prisma.item_authorsUncheckedCreateNestedManyWithoutItemsInput
-  item_collections?: Prisma.item_collectionsUncheckedCreateNestedManyWithoutItemsInput
-}
-
-export type itemsCreateOrConnectWithoutMarkdownsInput = {
-  where: Prisma.itemsWhereUniqueInput
-  create: Prisma.XOR<Prisma.itemsCreateWithoutMarkdownsInput, Prisma.itemsUncheckedCreateWithoutMarkdownsInput>
-}
-
-export type itemsUpsertWithoutMarkdownsInput = {
-  update: Prisma.XOR<Prisma.itemsUpdateWithoutMarkdownsInput, Prisma.itemsUncheckedUpdateWithoutMarkdownsInput>
-  create: Prisma.XOR<Prisma.itemsCreateWithoutMarkdownsInput, Prisma.itemsUncheckedCreateWithoutMarkdownsInput>
-  where?: Prisma.itemsWhereInput
-}
-
-export type itemsUpdateToOneWithWhereWithoutMarkdownsInput = {
-  where?: Prisma.itemsWhereInput
-  data: Prisma.XOR<Prisma.itemsUpdateWithoutMarkdownsInput, Prisma.itemsUncheckedUpdateWithoutMarkdownsInput>
-}
-
-export type itemsUpdateWithoutMarkdownsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isbn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  doi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tags?: Prisma.itemsUpdatetagsInput | string[]
-  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  date_added?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  date_modified?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  citations?: Prisma.citationsUpdateManyWithoutItemsNestedInput
-  item_archives?: Prisma.item_archivesUpdateManyWithoutItemsNestedInput
-  item_authors?: Prisma.item_authorsUpdateManyWithoutItemsNestedInput
-  item_collections?: Prisma.item_collectionsUpdateManyWithoutItemsNestedInput
-}
-
-export type itemsUncheckedUpdateWithoutMarkdownsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  abstract?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  publication_year?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  publisher?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isbn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  doi?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tags?: Prisma.itemsUpdatetagsInput | string[]
-  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  date_added?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  date_modified?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  markdown_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  markdown_updated_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  citations?: Prisma.citationsUncheckedUpdateManyWithoutItemsNestedInput
-  item_archives?: Prisma.item_archivesUncheckedUpdateManyWithoutItemsNestedInput
-  item_authors?: Prisma.item_authorsUncheckedUpdateManyWithoutItemsNestedInput
-  item_collections?: Prisma.item_collectionsUncheckedUpdateManyWithoutItemsNestedInput
 }
 
 
@@ -1275,6 +1172,7 @@ export type ItemsCountOutputTypeCountItem_collectionsArgs<ExtArgs extends runtim
 export type itemsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   title?: boolean
+  evidence_type?: boolean
   abstract?: boolean
   publication_year?: boolean
   publisher?: boolean
@@ -1292,13 +1190,13 @@ export type itemsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   item_archives?: boolean | Prisma.items$item_archivesArgs<ExtArgs>
   item_authors?: boolean | Prisma.items$item_authorsArgs<ExtArgs>
   item_collections?: boolean | Prisma.items$item_collectionsArgs<ExtArgs>
-  markdowns?: boolean | Prisma.items$markdownsArgs<ExtArgs>
   _count?: boolean | Prisma.ItemsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["items"]>
 
 export type itemsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   title?: boolean
+  evidence_type?: boolean
   abstract?: boolean
   publication_year?: boolean
   publisher?: boolean
@@ -1317,6 +1215,7 @@ export type itemsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type itemsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   title?: boolean
+  evidence_type?: boolean
   abstract?: boolean
   publication_year?: boolean
   publisher?: boolean
@@ -1335,6 +1234,7 @@ export type itemsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type itemsSelectScalar = {
   id?: boolean
   title?: boolean
+  evidence_type?: boolean
   abstract?: boolean
   publication_year?: boolean
   publisher?: boolean
@@ -1350,13 +1250,12 @@ export type itemsSelectScalar = {
   markdown_updated_date?: boolean
 }
 
-export type itemsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "abstract" | "publication_year" | "publisher" | "isbn" | "doi" | "url" | "tags" | "notes" | "date_added" | "date_modified" | "language" | "markdown_content" | "markdown_updated_date", ExtArgs["result"]["items"]>
+export type itemsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "evidence_type" | "abstract" | "publication_year" | "publisher" | "isbn" | "doi" | "url" | "tags" | "notes" | "date_added" | "date_modified" | "language" | "markdown_content" | "markdown_updated_date", ExtArgs["result"]["items"]>
 export type itemsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   citations?: boolean | Prisma.items$citationsArgs<ExtArgs>
   item_archives?: boolean | Prisma.items$item_archivesArgs<ExtArgs>
   item_authors?: boolean | Prisma.items$item_authorsArgs<ExtArgs>
   item_collections?: boolean | Prisma.items$item_collectionsArgs<ExtArgs>
-  markdowns?: boolean | Prisma.items$markdownsArgs<ExtArgs>
   _count?: boolean | Prisma.ItemsCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type itemsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1369,11 +1268,11 @@ export type $itemsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     item_archives: Prisma.$item_archivesPayload<ExtArgs>[]
     item_authors: Prisma.$item_authorsPayload<ExtArgs>[]
     item_collections: Prisma.$item_collectionsPayload<ExtArgs>[]
-    markdowns: Prisma.$markdownsPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     title: string
+    evidence_type: string
     abstract: string | null
     publication_year: number | null
     publisher: string | null
@@ -1785,7 +1684,6 @@ export interface Prisma__itemsClient<T, Null = never, ExtArgs extends runtime.Ty
   item_archives<T extends Prisma.items$item_archivesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_archivesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_archivesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   item_authors<T extends Prisma.items$item_authorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_authorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_authorsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   item_collections<T extends Prisma.items$item_collectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$item_collectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$item_collectionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  markdowns<T extends Prisma.items$markdownsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.items$markdownsArgs<ExtArgs>>): Prisma.Prisma__markdownsClient<runtime.Types.Result.GetResult<Prisma.$markdownsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1817,6 +1715,7 @@ export interface Prisma__itemsClient<T, Null = never, ExtArgs extends runtime.Ty
 export interface itemsFieldRefs {
   readonly id: Prisma.FieldRef<"items", 'String'>
   readonly title: Prisma.FieldRef<"items", 'String'>
+  readonly evidence_type: Prisma.FieldRef<"items", 'String'>
   readonly abstract: Prisma.FieldRef<"items", 'String'>
   readonly publication_year: Prisma.FieldRef<"items", 'Int'>
   readonly publisher: Prisma.FieldRef<"items", 'String'>
@@ -2311,25 +2210,6 @@ export type items$item_collectionsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.Item_collectionsScalarFieldEnum | Prisma.Item_collectionsScalarFieldEnum[]
-}
-
-/**
- * items.markdowns
- */
-export type items$markdownsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the markdowns
-   */
-  select?: Prisma.markdownsSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the markdowns
-   */
-  omit?: Prisma.markdownsOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.markdownsInclude<ExtArgs> | null
-  where?: Prisma.markdownsWhereInput
 }
 
 /**

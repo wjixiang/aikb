@@ -1,8 +1,6 @@
 import { ChunkSearchFilter, ItemChunk } from 'item-vector-storage';
-import { ILibraryStorage } from '../storage.js';
+import { ILibraryStorage } from '../storage/storage.js';
 import { ItemMetadata, Collection, Citation, ItemArchive } from '../types.js';
-// import { IdUtils } from 'utils';
-// import { IdUtils } from 'utils';
 import { IdUtils } from 'utils';
 
 // Define AbstractPdf interface locally since it's not exported

@@ -390,8 +390,7 @@ export const ModelName = {
   item_archives: 'item_archives',
   item_authors: 'item_authors',
   item_collections: 'item_collections',
-  items: 'items',
-  markdowns: 'markdowns'
+  items: 'items'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -407,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "authors" | "citations" | "collections" | "item_archives" | "item_authors" | "item_collections" | "items" | "markdowns"
+    modelProps: "authors" | "citations" | "collections" | "item_archives" | "item_authors" | "item_collections" | "items"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -929,80 +928,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    markdowns: {
-      payload: Prisma.$markdownsPayload<ExtArgs>
-      fields: Prisma.markdownsFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.markdownsFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.markdownsFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        findFirst: {
-          args: Prisma.markdownsFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.markdownsFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        findMany: {
-          args: Prisma.markdownsFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>[]
-        }
-        create: {
-          args: Prisma.markdownsCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        createMany: {
-          args: Prisma.markdownsCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.markdownsCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>[]
-        }
-        delete: {
-          args: Prisma.markdownsDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        update: {
-          args: Prisma.markdownsUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        deleteMany: {
-          args: Prisma.markdownsDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.markdownsUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.markdownsUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>[]
-        }
-        upsert: {
-          args: Prisma.markdownsUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$markdownsPayload>
-        }
-        aggregate: {
-          args: Prisma.MarkdownsAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateMarkdowns>
-        }
-        groupBy: {
-          args: Prisma.markdownsGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MarkdownsGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.markdownsCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MarkdownsCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -1111,6 +1036,7 @@ export type Item_collectionsScalarFieldEnum = (typeof Item_collectionsScalarFiel
 export const ItemsScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  evidence_type: 'evidence_type',
   abstract: 'abstract',
   publication_year: 'publication_year',
   publisher: 'publisher',
@@ -1127,17 +1053,6 @@ export const ItemsScalarFieldEnum = {
 } as const
 
 export type ItemsScalarFieldEnum = (typeof ItemsScalarFieldEnum)[keyof typeof ItemsScalarFieldEnum]
-
-
-export const MarkdownsScalarFieldEnum = {
-  id: 'id',
-  item_id: 'item_id',
-  content: 'content',
-  date_created: 'date_created',
-  date_modified: 'date_modified'
-} as const
-
-export type MarkdownsScalarFieldEnum = (typeof MarkdownsScalarFieldEnum)[keyof typeof MarkdownsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1311,7 +1226,6 @@ export type GlobalOmitConfig = {
   item_authors?: Prisma.item_authorsOmit
   item_collections?: Prisma.item_collectionsOmit
   items?: Prisma.itemsOmit
-  markdowns?: Prisma.markdownsOmit
 }
 
 /* Types for Logging */

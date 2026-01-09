@@ -1,4 +1,4 @@
-import { ILibraryStorage } from '../library/storage.js';
+import { ILibraryStorage } from '../library/storage/storage.js';
 import { IItemStorage } from './item-storage.js';
 
 /**
@@ -7,7 +7,7 @@ import { IItemStorage } from './item-storage.js';
  * without requiring them to directly implement IItemStorage
  */
 export class LibraryStorageAdapter implements IItemStorage {
-  constructor(private libraryStorage: ILibraryStorage) {}
+  constructor(private libraryStorage: ILibraryStorage) { }
 
   // PDF operations
   async getPdfDownloadUrl(s3Key: string): Promise<string> {

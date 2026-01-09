@@ -17,7 +17,7 @@ import {
   ItemArchive,
 } from './types.js';
 
-import { ILibraryStorage, AbstractPdf } from './storage.js';
+import { ILibraryStorage, AbstractPdf } from './storage/storage.js';
 import { HashUtils, CitationFormatter } from './utils.js';
 import { IdUtils } from 'utils';
 
@@ -106,8 +106,9 @@ export class Library implements ILibrary {
   async createItem(metadata: Partial<ItemMetadata>): Promise<LibraryItem> {
     const fullMetadata: ItemMetadata = {
       title: metadata.title || 'Untitled',
-      dateAdded: new Date(),
-      dateModified: new Date(),
+      evidenceType: metadata.evidenceType || 'RE01', // Default to Editorial Commentary if not provided
+      dateAdded: metadata.dateAdded || new Date(),
+      dateModified: metadata.dateModified || new Date(),
       tags: metadata.tags || [],
       collections: metadata.collections || [],
       authors: metadata.authors || [],

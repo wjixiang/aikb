@@ -4,7 +4,7 @@ import {
   Citation,
   SearchFilter,
   ItemArchive,
-} from './types.js';
+} from '../types.js';
 
 // Define AbstractPdf interface for PDF handling
 export interface AbstractPdf {

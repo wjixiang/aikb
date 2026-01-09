@@ -21,10 +21,11 @@ export class PrismaLibraryStorage implements ILibraryStorage {
   }
 
   // Helper methods for data transformation
-  private mapPrismaItemToItemMetadata(item: any): ItemMetadata {
+  private mapPrismaItemToItemMetadata(item): ItemMetadata {
     return {
       id: item.id,
       title: item.title,
+      evidenceType: item.evidenceType,
       authors:
         item.item_authors?.map((ia) => ({
           firstName: ia.authors.first_name,
@@ -130,6 +131,7 @@ export class PrismaLibraryStorage implements ILibraryStorage {
         title: itemData.title,
         abstract: itemData.abstract,
         publication_year: itemData.publicationYear,
+        evidence_type: itemData.evidenceType,
         publisher: itemData.publisher,
         isbn: itemData.isbn,
         doi: itemData.doi,
@@ -194,7 +196,6 @@ export class PrismaLibraryStorage implements ILibraryStorage {
         item_authors: { include: { authors: true } },
         item_archives: true,
         item_collections: { include: { collections: true } },
-        markdowns: true,
       },
     });
 
@@ -213,7 +214,6 @@ export class PrismaLibraryStorage implements ILibraryStorage {
         item_authors: { include: { authors: true } },
         item_archives: true,
         item_collections: { include: { collections: true } },
-        markdowns: true,
       },
     });
 
@@ -229,7 +229,6 @@ export class PrismaLibraryStorage implements ILibraryStorage {
             item_authors: { include: { authors: true } },
             item_archives: true,
             item_collections: { include: { collections: true } },
-            markdowns: true,
           },
         },
       },
@@ -385,7 +384,6 @@ export class PrismaLibraryStorage implements ILibraryStorage {
         item_authors: { include: { authors: true } },
         item_archives: true,
         item_collections: { include: { collections: true } },
-        markdowns: true,
       },
     });
 
@@ -508,16 +506,12 @@ export class PrismaLibraryStorage implements ILibraryStorage {
 
   // Markdown operations
   async saveMarkdown(itemId: string, markdownContent: string): Promise<void> {
-    await this.prisma.markdowns.upsert({
-      where: { item_id: itemId },
-      update: {
-        content: markdownContent,
-        date_modified: new Date(),
-      },
-      create: {
-        item_id: itemId,
-        content: markdownContent,
-      },
+    await this.prisma.items.update({
+      where: { id: itemId },
+      data: {
+        markdown_content: markdownContent,
+        markdown_updated_date: new Date(),
+      }
     });
 
     // Also update the item's markdown_content and markdown_updated_date
@@ -531,31 +525,23 @@ export class PrismaLibraryStorage implements ILibraryStorage {
   }
 
   async getMarkdown(itemId: string): Promise<string | null> {
-    const markdown = await this.prisma.markdowns.findUnique({
-      where: { item_id: itemId },
+    const item = await this.prisma.items.findUnique({
+      where: { id: itemId },
     });
 
-    return markdown?.content || null;
+    return item?.markdown_content || null;
   }
 
   async deleteMarkdown(itemId: string): Promise<boolean> {
-    try {
-      await this.prisma.markdowns.delete({
-        where: { item_id: itemId },
-      });
-
-      // Also clear the item's markdown_content and markdown_updated_date
-      await this.prisma.items.update({
-        where: { id: itemId },
-        data: {
-          markdown_content: null,
-          markdown_updated_date: null,
-        },
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    }
+    await this.prisma.items.update({
+      where: {
+        id: itemId
+      },
+      data: {
+        markdown_content: null,
+        markdown_updated_date: new Date()
+      }
+    })
+    return true
   }
 }

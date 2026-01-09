@@ -74,8 +74,3 @@ export type item_collections = Prisma.item_collectionsModel
  * 
  */
 export type items = Prisma.itemsModel
-/**
- * Model markdowns
- * 
- */
-export type markdowns = Prisma.markdownsModel

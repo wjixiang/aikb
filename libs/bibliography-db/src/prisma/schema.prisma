@@ -70,33 +70,24 @@ model item_collections {
 }
 
 model items {
-  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title                 String               @db.VarChar(500)
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                 String             @db.VarChar(500)
+  evidence_type         String
   abstract              String?
   publication_year      Int?
-  publisher             String?              @db.VarChar(255)
-  isbn                  String?              @db.VarChar(20)
-  doi                   String?              @db.VarChar(255)
-  url                   String?              @db.VarChar(500)
-  tags                  String[]             @default([])
+  publisher             String?            @db.VarChar(255)
+  isbn                  String?            @db.VarChar(20)
+  doi                   String?            @db.VarChar(255)
+  url                   String?            @db.VarChar(500)
+  tags                  String[]           @default([])
   notes                 String?
-  date_added            DateTime             @default(now()) @db.Timestamptz(6)
-  date_modified         DateTime             @default(now()) @db.Timestamptz(6)
-  language              String?              @db.VarChar(10)
+  date_added            DateTime           @default(now()) @db.Timestamptz(6)
+  date_modified         DateTime           @default(now()) @db.Timestamptz(6)
+  language              String?            @db.VarChar(10)
   markdown_content      String?
-  markdown_updated_date DateTime?            @db.Timestamptz(6)
+  markdown_updated_date DateTime?          @db.Timestamptz(6)
   citations             citations[]
   item_archives         item_archives[]
   item_authors          item_authors[]
   item_collections      item_collections[]
-  markdowns             markdowns?
-}
-
-model markdowns {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  item_id       String   @unique @db.Uuid
-  content       String
-  date_created  DateTime @default(now()) @db.Timestamptz(6)
-  date_modified DateTime @default(now()) @db.Timestamptz(6)
-  items         items    @relation(fields: [item_id], references: [id], onDelete: Cascade)
 }
