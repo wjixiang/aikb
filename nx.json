@@ -27,7 +27,8 @@
         "libs/EmbeddingModule/*",
         "libs/bibliography-lib/*",
         "libs/agent-lib/*",
-        "libs/test-nest/*"
+        "libs/test-nest/*",
+        "/libs/evidenceHub/*"
       ]
     },
     {
@@ -87,7 +88,8 @@
         "libs/EmbeddingModule/*",
         "libs/bibliography-lib/*",
         "libs/agent-lib/*",
-        "libs/test-nest/*"
+        "libs/test-nest/*",
+        "/libs/evidenceHub/*"
       ],
       "options": {
         "typecheck": {

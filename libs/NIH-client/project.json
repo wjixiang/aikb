@@ -13,6 +13,13 @@
         "jestConfig": "libs/NIH-client/jest.config.e2e.js",
         "passWithNoTests": true
       }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/NIH-client"
+      }
     }
   }
 }
