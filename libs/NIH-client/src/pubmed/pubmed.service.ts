@@ -16,6 +16,7 @@ export interface ArticleProfile {
     authors: string;
     journalCitation: string;
     snippet: string;
+    docsumLink: string;
     position?: number;
 }
 
@@ -102,6 +103,10 @@ export class PubmedService {
                 const shortSnippet = $article('.short-view-snippet').text().trim();
                 const snippet = fullSnippet || shortSnippet || '';
 
+                // Extract docsum link
+                const docsumLinkElement = $article('a.docsum-title');
+                const docsumLink = docsumLinkElement.attr('href') || '';
+
                 // Extract position number
                 const positionText = $article('.position-number').text().trim();
                 const position = positionText ? parseInt(positionText, 10) : undefined;
@@ -112,6 +117,7 @@ export class PubmedService {
                     authors,
                     journalCitation,
                     snippet,
+                    docsumLink,
                     position
                 });
             });

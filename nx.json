@@ -28,7 +28,8 @@
         "libs/bibliography-lib/*",
         "libs/agent-lib/*",
         "libs/test-nest/*",
-        "/libs/evidenceHub/*"
+        "/libs/evidenceHub/*",
+        "libs/medWiki/*"
       ]
     },
     {
@@ -89,7 +90,8 @@
         "libs/bibliography-lib/*",
         "libs/agent-lib/*",
         "libs/test-nest/*",
-        "/libs/evidenceHub/*"
+        "/libs/evidenceHub/*",
+        "libs/medWiki/*"
       ],
       "options": {
         "typecheck": {
@@ -111,7 +113,8 @@
         "apps/medquiz/quiz-service-e2e/**/*",
         "apps/library-chatbot-service-e2e/**/*",
         "apps/MedAgent-service-e2e/**/*",
-        "apps/auth-service-e2e/**/*"
+        "apps/auth-service-e2e/**/*",
+        "apps/medWiki-service-e2e/**/*"
       ]
     },
     {
@@ -125,7 +128,8 @@
         "apps/medquiz/quiz-service-e2e/**/*",
         "apps/library-chatbot-service-e2e/**/*",
         "apps/MedAgent-service-e2e/**/*",
-        "apps/auth-service-e2e/**/*"
+        "apps/auth-service-e2e/**/*",
+        "apps/medWiki-service-e2e/**/*"
       ]
     },
     {

@@ -90,7 +90,8 @@
       "auth-ui": ["libs/auth-ui/src/index.ts"],
       "MedAgent-service": ["apps/MedAgent-service/src/index.ts"],
       "MedAgent-service/*": ["apps/MedAgent-service/src/*"],
-      "evidenceHub": ["/libs/evidenceHub/src/index.ts"]
+      "evidenceHub": ["/libs/evidenceHub/src/index.ts"],
+      "medWiki": ["libs/medWiki/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

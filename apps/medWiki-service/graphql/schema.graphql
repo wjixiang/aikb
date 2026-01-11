@@ -1,0 +1,60 @@
+type query {
+  entities(where: entityWhereInput): [entity!]!
+  entity(where: entityWhereInput): [entity!]!
+}
+
+type entity {
+  id: ID!
+  nomenclature: [nomenclature!]!
+  definition: String!
+}
+
+type nomenclature {
+  name: String!
+  acronym: String
+  language: String!
+}
+
+input entityWhereInput {
+  id: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  definition: String
+  definition_contains: String
+  definition_starts_with: String
+  definition_ends_with: String
+  definition_in: [String!]
+  definition_not_in: [String!]
+  nomenclature: nomenclatureWhereInput
+  nomenclature_some: nomenclatureWhereInput
+  nomenclature_every: nomenclatureWhereInput
+  nomenclature_none: nomenclatureWhereInput
+  AND: [entityWhereInput!]
+  OR: [entityWhereInput!]
+  NOT: entityWhereInput
+}
+
+input nomenclatureWhereInput {
+  name: String
+  name_contains: String
+  name_starts_with: String
+  name_ends_with: String
+  name_in: [String!]
+  name_not_in: [String!]
+  acronym: String
+  acronym_contains: String
+  acronym_starts_with: String
+  acronym_ends_with: String
+  acronym_in: [String!]
+  acronym_not_in: [String!]
+  acronym_is_null: Boolean
+  language: String
+  language_contains: String
+  language_starts_with: String
+  language_ends_with: String
+  language_in: [String!]
+  language_not_in: [String!]
+  AND: [nomenclatureWhereInput!]
+  OR: [nomenclatureWhereInput!]
+  NOT: nomenclatureWhereInput
+}

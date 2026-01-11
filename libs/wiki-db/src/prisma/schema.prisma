@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model document {
+  id                  String            @id @unique @default(uuid())
+  outlinePath         String[]
+  records             record[]
+  embedding           DocumentEmbedding @relation(fields: [documentEmbeddingId], references: [id])
+  documentEmbeddingId String
+}
+
+model record {
+  id         String    @id @unique @default(uuid())
+  document   document? @relation(fields: [documentId], references: [id])
+  documentId String?
+  content    String
+}
+
+// Nomenclature table for entity names in different languages
+model Nomenclature {
+  id       String  @id @default(cuid())
+  entityId String
+  name     String
+  acronym  String?
+  language String // 'en' | 'zh' without enum restriction
+
+  // Many-to-one relationship with entity
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  // Indexes for search
+  @@index([entityId])
+  @@index([name])
+  @@index([language])
+  @@map("nomenclatures")
+}
+
+// Main entity table
+model Entity {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Abstract fields merged into Entity
+  definition String
+
+  // One-to-many relationship with nomenclatures
+  nomenclatures Nomenclature[]
+
+  // One-to-one relationship with embedding
+  embedding           EntityEmbedding?
+  documentEmbedding   DocumentEmbedding? @relation(fields: [documentEmbeddingId], references: [id])
+  documentEmbeddingId String?
+
+  // Indexes for search and retrieval
+  @@index([definition])
+  @@map("entities")
+}
+
+// Embedding table for vector storage
+model EntityEmbedding {
+  id       String @id @default(cuid())
+  entityId String @unique
+
+  // Embedding configuration (without enum restrictions)
+  model     String // EmbeddingModel
+  dimension Int
+  provider  String // EmbeddingProvider
+
+  // Vector data stored as array
+  vector Unsupported("vector")?
+
+  // One-to-one relationship with entity
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+}
+
+model DocumentEmbedding {
+  id       String @id @default(cuid())
+  entityId String @unique
+
+  // Embedding configuration (without enum restrictions)
+  model     String // EmbeddingModel
+  dimension Int
+  provider  String // EmbeddingProvider
+
+  // Vector data stored as array
+  vector Unsupported("vector")?
+
+  // One-to-one relationship with entity
+  // entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  entities  Entity[]
+  documents document[]
+}
