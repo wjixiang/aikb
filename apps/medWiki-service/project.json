@@ -69,6 +69,9 @@
         "command": "tsx '/workspace/scripts/generate-typings.ts'",
         "cwd": "apps/medWiki-service"
       }
+    },
+    "test": {
+      "executor": "@nx/vitest:test"
     }
   }
 }

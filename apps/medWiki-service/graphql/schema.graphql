@@ -1,6 +1,10 @@
-type query {
+type Query {
   entities(where: entityWhereInput): [entity!]!
-  entity(where: entityWhereInput): [entity!]!
+  entity(where: entityWhereInput): entity
+}
+
+type Mutation {
+  createEntity(input: createEntityInput): entity
 }
 
 type entity {
@@ -57,4 +61,15 @@ input nomenclatureWhereInput {
   AND: [nomenclatureWhereInput!]
   OR: [nomenclatureWhereInput!]
   NOT: nomenclatureWhereInput
+}
+
+input createEntityInput {
+  nomenclature: [nomenclatureInput!]!
+  definition: String!
+}
+
+input nomenclatureInput {
+  name: String!
+  acronym: String
+  language: String!
 }
