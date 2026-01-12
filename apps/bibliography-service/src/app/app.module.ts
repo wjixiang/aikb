@@ -8,7 +8,6 @@ import { BibliographyGrpcController } from '../grpc/bibliography.grpc.controller
 import { BibliographyDBPrismaService, BibliographyDBModule } from 'bibliography-db';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { join } from 'path';
 import { VectorModule } from 'bibliography-lib';
 import { BibliographyModule } from 'bibliography';
 import { S3Service } from '@aikb/s3-service';

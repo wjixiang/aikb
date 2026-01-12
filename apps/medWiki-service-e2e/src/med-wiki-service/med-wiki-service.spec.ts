@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { GraphQLClient, gql } from 'graphql-request';
 
 describe('GET /api', () => {

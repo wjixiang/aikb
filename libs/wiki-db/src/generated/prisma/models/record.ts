@@ -26,18 +26,21 @@ export type AggregateRecord = {
 
 export type RecordMinAggregateOutputType = {
   id: string | null
+  topic: string | null
   content: string | null
   documentId: string | null
 }
 
 export type RecordMaxAggregateOutputType = {
   id: string | null
+  topic: string | null
   content: string | null
   documentId: string | null
 }
 
 export type RecordCountAggregateOutputType = {
   id: number
+  topic: number
   content: number
   documentId: number
   _all: number
@@ -46,18 +49,21 @@ export type RecordCountAggregateOutputType = {
 
 export type RecordMinAggregateInputType = {
   id?: true
+  topic?: true
   content?: true
   documentId?: true
 }
 
 export type RecordMaxAggregateInputType = {
   id?: true
+  topic?: true
   content?: true
   documentId?: true
 }
 
 export type RecordCountAggregateInputType = {
   id?: true
+  topic?: true
   content?: true
   documentId?: true
   _all?: true
@@ -137,6 +143,7 @@ export type recordGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 
 export type RecordGroupByOutputType = {
   id: string
+  topic: string
   content: string
   documentId: string | null
   _count: RecordCountAggregateOutputType | null
@@ -164,6 +171,7 @@ export type recordWhereInput = {
   OR?: Prisma.recordWhereInput[]
   NOT?: Prisma.recordWhereInput | Prisma.recordWhereInput[]
   id?: Prisma.StringFilter<"record"> | string
+  topic?: Prisma.StringFilter<"record"> | string
   content?: Prisma.StringFilter<"record"> | string
   documentId?: Prisma.StringNullableFilter<"record"> | string | null
   document?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.documentWhereInput> | null
@@ -171,6 +179,7 @@ export type recordWhereInput = {
 
 export type recordOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  topic?: Prisma.SortOrder
   content?: Prisma.SortOrder
   documentId?: Prisma.SortOrderInput | Prisma.SortOrder
   document?: Prisma.documentOrderByWithRelationInput
@@ -181,6 +190,7 @@ export type recordWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.recordWhereInput | Prisma.recordWhereInput[]
   OR?: Prisma.recordWhereInput[]
   NOT?: Prisma.recordWhereInput | Prisma.recordWhereInput[]
+  topic?: Prisma.StringFilter<"record"> | string
   content?: Prisma.StringFilter<"record"> | string
   documentId?: Prisma.StringNullableFilter<"record"> | string | null
   document?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.documentWhereInput> | null
@@ -188,6 +198,7 @@ export type recordWhereUniqueInput = Prisma.AtLeast<{
 
 export type recordOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  topic?: Prisma.SortOrder
   content?: Prisma.SortOrder
   documentId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.recordCountOrderByAggregateInput
@@ -200,47 +211,55 @@ export type recordScalarWhereWithAggregatesInput = {
   OR?: Prisma.recordScalarWhereWithAggregatesInput[]
   NOT?: Prisma.recordScalarWhereWithAggregatesInput | Prisma.recordScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"record"> | string
+  topic?: Prisma.StringWithAggregatesFilter<"record"> | string
   content?: Prisma.StringWithAggregatesFilter<"record"> | string
   documentId?: Prisma.StringNullableWithAggregatesFilter<"record"> | string | null
 }
 
 export type recordCreateInput = {
   id?: string
+  topic: string
   content: string
   document?: Prisma.documentCreateNestedOneWithoutRecordsInput
 }
 
 export type recordUncheckedCreateInput = {
   id?: string
+  topic: string
   content: string
   documentId?: string | null
 }
 
 export type recordUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   document?: Prisma.documentUpdateOneWithoutRecordsNestedInput
 }
 
 export type recordUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type recordCreateManyInput = {
   id?: string
+  topic: string
   content: string
   documentId?: string | null
 }
 
 export type recordUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type recordUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -257,18 +276,21 @@ export type recordOrderByRelationAggregateInput = {
 
 export type recordCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  topic?: Prisma.SortOrder
   content?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
 }
 
 export type recordMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  topic?: Prisma.SortOrder
   content?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
 }
 
 export type recordMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  topic?: Prisma.SortOrder
   content?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
 }
@@ -321,11 +343,13 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type recordCreateWithoutDocumentInput = {
   id?: string
+  topic: string
   content: string
 }
 
 export type recordUncheckedCreateWithoutDocumentInput = {
   id?: string
+  topic: string
   content: string
 }
 
@@ -360,27 +384,32 @@ export type recordScalarWhereInput = {
   OR?: Prisma.recordScalarWhereInput[]
   NOT?: Prisma.recordScalarWhereInput | Prisma.recordScalarWhereInput[]
   id?: Prisma.StringFilter<"record"> | string
+  topic?: Prisma.StringFilter<"record"> | string
   content?: Prisma.StringFilter<"record"> | string
   documentId?: Prisma.StringNullableFilter<"record"> | string | null
 }
 
 export type recordCreateManyDocumentInput = {
   id?: string
+  topic: string
   content: string
 }
 
 export type recordUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type recordUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type recordUncheckedUpdateManyWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  topic?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -388,6 +417,7 @@ export type recordUncheckedUpdateManyWithoutDocumentInput = {
 
 export type recordSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  topic?: boolean
   content?: boolean
   documentId?: boolean
   document?: boolean | Prisma.record$documentArgs<ExtArgs>
@@ -395,6 +425,7 @@ export type recordSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 
 export type recordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  topic?: boolean
   content?: boolean
   documentId?: boolean
   document?: boolean | Prisma.record$documentArgs<ExtArgs>
@@ -402,6 +433,7 @@ export type recordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
 
 export type recordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  topic?: boolean
   content?: boolean
   documentId?: boolean
   document?: boolean | Prisma.record$documentArgs<ExtArgs>
@@ -409,11 +441,12 @@ export type recordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
 
 export type recordSelectScalar = {
   id?: boolean
+  topic?: boolean
   content?: boolean
   documentId?: boolean
 }
 
-export type recordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "documentId", ExtArgs["result"]["record"]>
+export type recordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "topic" | "content" | "documentId", ExtArgs["result"]["record"]>
 export type recordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.record$documentArgs<ExtArgs>
 }
@@ -431,6 +464,7 @@ export type $recordPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    topic: string
     content: string
     documentId: string | null
   }, ExtArgs["result"]["record"]>
@@ -858,6 +892,7 @@ export interface Prisma__recordClient<T, Null = never, ExtArgs extends runtime.T
  */
 export interface recordFieldRefs {
   readonly id: Prisma.FieldRef<"record", 'String'>
+  readonly topic: Prisma.FieldRef<"record", 'String'>
   readonly content: Prisma.FieldRef<"record", 'String'>
   readonly documentId: Prisma.FieldRef<"record", 'String'>
 }

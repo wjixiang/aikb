@@ -77,7 +77,9 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const DocumentScalarFieldEnum = {
   id: 'id',
-  title: 'title',
+  topic: 'topic',
+  type: 'type',
+  entities: 'entities',
   documentEmbeddingId: 'documentEmbeddingId'
 } as const
 
@@ -86,6 +88,7 @@ export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typ
 
 export const RecordScalarFieldEnum = {
   id: 'id',
+  topic: 'topic',
   content: 'content',
   documentId: 'documentId'
 } as const

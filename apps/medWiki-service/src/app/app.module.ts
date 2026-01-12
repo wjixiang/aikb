@@ -6,6 +6,9 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { EntityResolver } from './entity.resolver';
 import { EntityService, WIKI_PRISMA_SERVICE_TOKEN } from './entity.service';
 import { wikiPrismaService } from 'wiki-db';
+import { DocumentResolver } from './document.resolver';
+import { DocumentService } from './document.service';
+import { EmbeddingModule } from 'EmbeddingModule'
 
 @Module({
   imports: [
@@ -15,6 +18,7 @@ import { wikiPrismaService } from 'wiki-db';
       typePaths: ['/workspace/apps/medWiki-service/graphql/**/*.graphql'],
       context: ({ req }) => ({ req }), // Pass request to GraphQL context
     }),
+    EmbeddingModule,
     // AgentLibModule,
     // AuthLibModule,
   ],
@@ -25,7 +29,9 @@ import { wikiPrismaService } from 'wiki-db';
     {
       provide: WIKI_PRISMA_SERVICE_TOKEN,
       useClass: wikiPrismaService,
-    }
+    },
+    DocumentResolver,
+    DocumentService,
   ],
 })
 export class AppModule { }

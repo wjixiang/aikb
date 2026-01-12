@@ -9,7 +9,9 @@ datasource db {
 
 model document {
   id                  String            @id @unique @default(uuid())
-  title               String
+  topic               String
+  type                String
+  entities            String[]
   records             record[]
   embedding           DocumentEmbedding @relation(fields: [documentEmbeddingId], references: [id])
   documentEmbeddingId String
@@ -17,6 +19,7 @@ model document {
 
 model record {
   id         String    @id @unique @default(uuid())
+  topic      String
   content    String
   document   document? @relation(fields: [documentId], references: [id])
   documentId String?

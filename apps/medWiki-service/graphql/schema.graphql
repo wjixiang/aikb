@@ -1,10 +1,15 @@
 type Query {
   entities(where: entityWhereInput): [entity!]!
   entity(where: entityWhereInput): entity
+  documents: [document!]!
 }
 
 type Mutation {
   createEntity(input: createEntityInput): entity
+
+  "Document Mutation"
+  createDocument(input: createDocumentInput): document
+  updateDocument(input: updateDocumentInput): document
 }
 
 type entity {
@@ -17,6 +22,30 @@ type nomenclature {
   name: String!
   acronym: String
   language: String!
+}
+
+enum documentType {
+  property
+  relation
+}
+
+type document {
+  id: ID!
+  type: documentType!
+  entities: [String!]!
+  topic: String!
+  metadata: documentMetadata
+  record: [documentRecord]!
+}
+
+type documentMetadata {
+  tags: [String]
+}
+
+type documentRecord {
+  topic: String!
+  content: String!
+  updateDate: String!
 }
 
 input entityWhereInput {
@@ -72,4 +101,19 @@ input nomenclatureInput {
   name: String!
   acronym: String
   language: String!
+}
+
+input createDocumentInput {
+  type: documentType!
+  entities: [String!]!
+  topic: String!
+  content: String!
+}
+
+input updateDocumentInput {
+  documentId: String!
+  type: documentType
+  entities: [String]
+  topic: String
+  content: String
 }

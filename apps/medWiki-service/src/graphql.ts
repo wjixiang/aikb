@@ -8,6 +8,11 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export enum documentType {
+    property = "property",
+    relation = "relation"
+}
+
 export class EntityWhereInput {
     id?: Nullable<string>;
     id_in?: Nullable<string[]>;
@@ -63,14 +68,35 @@ export class NomenclatureInput {
     language: string;
 }
 
+export class CreateDocumentInput {
+    type: DocumentType;
+    entities: string[];
+    topic: string;
+    content: string;
+}
+
+export class UpdateDocumentInput {
+    documentId: string;
+    type?: Nullable<DocumentType>;
+    entities?: Nullable<Nullable<string>[]>;
+    topic?: Nullable<string>;
+    content?: Nullable<string>;
+}
+
 export abstract class IQuery {
     abstract entities(where?: Nullable<EntityWhereInput>): Entity[] | Promise<Entity[]>;
 
     abstract entity(where?: Nullable<EntityWhereInput>): Nullable<Entity> | Promise<Nullable<Entity>>;
+
+    abstract documents(): Document[] | Promise<Document[]>;
 }
 
 export abstract class IMutation {
     abstract createEntity(input?: Nullable<CreateEntityInput>): Nullable<Entity> | Promise<Nullable<Entity>>;
+
+    abstract createDocument(input?: Nullable<CreateDocumentInput>): Nullable<Document> | Promise<Nullable<Document>>;
+
+    abstract updateDocument(input?: Nullable<UpdateDocumentInput>): Nullable<Document> | Promise<Nullable<Document>>;
 }
 
 export class Entity {
@@ -83,6 +109,25 @@ export class Nomenclature {
     name: string;
     acronym?: Nullable<string>;
     language: string;
+}
+
+export class Document {
+    id: string;
+    type: DocumentType;
+    entities: string[];
+    topic: string;
+    metadata?: Nullable<DocumentMetadata>;
+    record: Nullable<DocumentRecord>[];
+}
+
+export class DocumentMetadata {
+    tags?: Nullable<Nullable<string>[]>;
+}
+
+export class DocumentRecord {
+    topic: string;
+    content: string;
+    updateDate: string;
 }
 
 type Nullable<T> = T | null;
