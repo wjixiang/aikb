@@ -4,12 +4,25 @@
   "sourceRoot": "apps/bibliography-service/src",
   "projectType": "application",
   "tags": [],
+  "namedInputs": {
+    "default": ["{projectRoot}/**", "sharedGlobals"],
+    "production": ["{projectRoot}/**", "sharedGlobals"]
+  },
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "s3-service:build",
+        "log-management:build",
+        "chunking:build",
+        "embedding:build",
+        "pdf-converter:build",
+        "item-vector-storage:build",
+        "utils:build",
+        "library-shared:build"
+      ],
       "options": {
-        "command": "webpack-cli build",
-        "args": ["--node-env=production"],
+        "command": "webpack-cli build --node-env=production && node scripts/fix-dependencies.js",
         "cwd": "apps/bibliography-service"
       },
       "configurations": {
@@ -38,7 +51,8 @@
       ],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
-        "buildTarget": "build"
+        "buildTarget": "build",
+        "outputPath": "{workspaceRoot}/dist/apps/bibliography-service"
       }
     },
     "prune": {
@@ -53,8 +67,7 @@
         "buildTarget": "bibliography-service:build",
         "runBuildTargetDependencies": false,
         "watch": true,
-        "inspect": true,
-        "port": 9229
+        "inspect": true
       }
     },
     "test": {

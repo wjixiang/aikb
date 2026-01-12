@@ -34,15 +34,5 @@ module.exports = {
       sourceMaps: true,
       outputModule: true
     }),
-  ],
-  externals: {
-    'log-management': 'commonjs log-management',
-    '@aikb/s3-service': 'commonjs @aikb/s3-service',
-    'chunking': 'commonjs chunking',
-    'embedding': 'commonjs embedding',
-    '@aikb/pdf-converter': 'commonjs @aikb/pdf-converter',
-    'item-vector-storage': 'commonjs item-vector-storage',
-    'utils': 'commonjs utils',
-    'library-shared': 'commonjs library-shared',
-  }
+  ]
 };

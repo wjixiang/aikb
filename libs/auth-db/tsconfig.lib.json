@@ -3,8 +3,6 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
-    "types": ["node"],
-    "target": "es2021",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictNullChecks": true,
@@ -13,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "prisma.config.ts"]
+  "include": ["src/index.ts", "src/prisma.ts", "prisma.config.ts"]
 }

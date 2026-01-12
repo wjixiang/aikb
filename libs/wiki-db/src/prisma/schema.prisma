@@ -9,7 +9,7 @@ datasource db {
 
 model document {
   id                  String            @id @unique @default(uuid())
-  outlinePath         String[]
+  title               String
   records             record[]
   embedding           DocumentEmbedding @relation(fields: [documentEmbeddingId], references: [id])
   documentEmbeddingId String
@@ -17,9 +17,9 @@ model document {
 
 model record {
   id         String    @id @unique @default(uuid())
+  content    String
   document   document? @relation(fields: [documentId], references: [id])
   documentId String?
-  content    String
 }
 
 // Nomenclature table for entity names in different languages

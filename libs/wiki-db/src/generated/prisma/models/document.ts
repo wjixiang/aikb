@@ -26,17 +26,19 @@ export type AggregateDocument = {
 
 export type DocumentMinAggregateOutputType = {
   id: string | null
+  title: string | null
   documentEmbeddingId: string | null
 }
 
 export type DocumentMaxAggregateOutputType = {
   id: string | null
+  title: string | null
   documentEmbeddingId: string | null
 }
 
 export type DocumentCountAggregateOutputType = {
   id: number
-  outlinePath: number
+  title: number
   documentEmbeddingId: number
   _all: number
 }
@@ -44,17 +46,19 @@ export type DocumentCountAggregateOutputType = {
 
 export type DocumentMinAggregateInputType = {
   id?: true
+  title?: true
   documentEmbeddingId?: true
 }
 
 export type DocumentMaxAggregateInputType = {
   id?: true
+  title?: true
   documentEmbeddingId?: true
 }
 
 export type DocumentCountAggregateInputType = {
   id?: true
-  outlinePath?: true
+  title?: true
   documentEmbeddingId?: true
   _all?: true
 }
@@ -133,7 +137,7 @@ export type documentGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type DocumentGroupByOutputType = {
   id: string
-  outlinePath: string[]
+  title: string
   documentEmbeddingId: string
   _count: DocumentCountAggregateOutputType | null
   _min: DocumentMinAggregateOutputType | null
@@ -160,7 +164,7 @@ export type documentWhereInput = {
   OR?: Prisma.documentWhereInput[]
   NOT?: Prisma.documentWhereInput | Prisma.documentWhereInput[]
   id?: Prisma.StringFilter<"document"> | string
-  outlinePath?: Prisma.StringNullableListFilter<"document">
+  title?: Prisma.StringFilter<"document"> | string
   documentEmbeddingId?: Prisma.StringFilter<"document"> | string
   records?: Prisma.RecordListRelationFilter
   embedding?: Prisma.XOR<Prisma.DocumentEmbeddingScalarRelationFilter, Prisma.DocumentEmbeddingWhereInput>
@@ -168,7 +172,7 @@ export type documentWhereInput = {
 
 export type documentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  outlinePath?: Prisma.SortOrder
+  title?: Prisma.SortOrder
   documentEmbeddingId?: Prisma.SortOrder
   records?: Prisma.recordOrderByRelationAggregateInput
   embedding?: Prisma.DocumentEmbeddingOrderByWithRelationInput
@@ -179,7 +183,7 @@ export type documentWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.documentWhereInput | Prisma.documentWhereInput[]
   OR?: Prisma.documentWhereInput[]
   NOT?: Prisma.documentWhereInput | Prisma.documentWhereInput[]
-  outlinePath?: Prisma.StringNullableListFilter<"document">
+  title?: Prisma.StringFilter<"document"> | string
   documentEmbeddingId?: Prisma.StringFilter<"document"> | string
   records?: Prisma.RecordListRelationFilter
   embedding?: Prisma.XOR<Prisma.DocumentEmbeddingScalarRelationFilter, Prisma.DocumentEmbeddingWhereInput>
@@ -187,7 +191,7 @@ export type documentWhereUniqueInput = Prisma.AtLeast<{
 
 export type documentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  outlinePath?: Prisma.SortOrder
+  title?: Prisma.SortOrder
   documentEmbeddingId?: Prisma.SortOrder
   _count?: Prisma.documentCountOrderByAggregateInput
   _max?: Prisma.documentMaxOrderByAggregateInput
@@ -199,76 +203,70 @@ export type documentScalarWhereWithAggregatesInput = {
   OR?: Prisma.documentScalarWhereWithAggregatesInput[]
   NOT?: Prisma.documentScalarWhereWithAggregatesInput | Prisma.documentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"document"> | string
-  outlinePath?: Prisma.StringNullableListFilter<"document">
+  title?: Prisma.StringWithAggregatesFilter<"document"> | string
   documentEmbeddingId?: Prisma.StringWithAggregatesFilter<"document"> | string
 }
 
 export type documentCreateInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   records?: Prisma.recordCreateNestedManyWithoutDocumentInput
   embedding: Prisma.DocumentEmbeddingCreateNestedOneWithoutDocumentsInput
 }
 
 export type documentUncheckedCreateInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   documentEmbeddingId: string
   records?: Prisma.recordUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type documentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   records?: Prisma.recordUpdateManyWithoutDocumentNestedInput
   embedding?: Prisma.DocumentEmbeddingUpdateOneRequiredWithoutDocumentsNestedInput
 }
 
 export type documentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   documentEmbeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   records?: Prisma.recordUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type documentCreateManyInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   documentEmbeddingId: string
 }
 
 export type documentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type documentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   documentEmbeddingId?: Prisma.StringFieldUpdateOperationsInput | string
-}
-
-export type StringNullableListFilter<$PrismaModel = never> = {
-  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
-  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
-  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  isEmpty?: boolean
 }
 
 export type documentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  outlinePath?: Prisma.SortOrder
+  title?: Prisma.SortOrder
   documentEmbeddingId?: Prisma.SortOrder
 }
 
 export type documentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  title?: Prisma.SortOrder
   documentEmbeddingId?: Prisma.SortOrder
 }
 
 export type documentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  title?: Prisma.SortOrder
   documentEmbeddingId?: Prisma.SortOrder
 }
 
@@ -287,17 +285,8 @@ export type documentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type documentCreateoutlinePathInput = {
-  set: string[]
-}
-
 export type StringFieldUpdateOperationsInput = {
   set?: string
-}
-
-export type documentUpdateoutlinePathInput = {
-  set?: string[]
-  push?: string | string[]
 }
 
 export type documentCreateNestedOneWithoutRecordsInput = {
@@ -360,13 +349,13 @@ export type documentUncheckedUpdateManyWithoutEmbeddingNestedInput = {
 
 export type documentCreateWithoutRecordsInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   embedding: Prisma.DocumentEmbeddingCreateNestedOneWithoutDocumentsInput
 }
 
 export type documentUncheckedCreateWithoutRecordsInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   documentEmbeddingId: string
 }
 
@@ -388,25 +377,25 @@ export type documentUpdateToOneWithWhereWithoutRecordsInput = {
 
 export type documentUpdateWithoutRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   embedding?: Prisma.DocumentEmbeddingUpdateOneRequiredWithoutDocumentsNestedInput
 }
 
 export type documentUncheckedUpdateWithoutRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   documentEmbeddingId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type documentCreateWithoutEmbeddingInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   records?: Prisma.recordCreateNestedManyWithoutDocumentInput
 }
 
 export type documentUncheckedCreateWithoutEmbeddingInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
   records?: Prisma.recordUncheckedCreateNestedManyWithoutDocumentInput
 }
 
@@ -441,30 +430,30 @@ export type documentScalarWhereInput = {
   OR?: Prisma.documentScalarWhereInput[]
   NOT?: Prisma.documentScalarWhereInput | Prisma.documentScalarWhereInput[]
   id?: Prisma.StringFilter<"document"> | string
-  outlinePath?: Prisma.StringNullableListFilter<"document">
+  title?: Prisma.StringFilter<"document"> | string
   documentEmbeddingId?: Prisma.StringFilter<"document"> | string
 }
 
 export type documentCreateManyEmbeddingInput = {
   id?: string
-  outlinePath?: Prisma.documentCreateoutlinePathInput | string[]
+  title: string
 }
 
 export type documentUpdateWithoutEmbeddingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   records?: Prisma.recordUpdateManyWithoutDocumentNestedInput
 }
 
 export type documentUncheckedUpdateWithoutEmbeddingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
   records?: Prisma.recordUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type documentUncheckedUpdateManyWithoutEmbeddingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  outlinePath?: Prisma.documentUpdateoutlinePathInput | string[]
+  title?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -500,7 +489,7 @@ export type DocumentCountOutputTypeCountRecordsArgs<ExtArgs extends runtime.Type
 
 export type documentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  outlinePath?: boolean
+  title?: boolean
   documentEmbeddingId?: boolean
   records?: boolean | Prisma.document$recordsArgs<ExtArgs>
   embedding?: boolean | Prisma.DocumentEmbeddingDefaultArgs<ExtArgs>
@@ -509,25 +498,25 @@ export type documentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
 
 export type documentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  outlinePath?: boolean
+  title?: boolean
   documentEmbeddingId?: boolean
   embedding?: boolean | Prisma.DocumentEmbeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
 export type documentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  outlinePath?: boolean
+  title?: boolean
   documentEmbeddingId?: boolean
   embedding?: boolean | Prisma.DocumentEmbeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
 export type documentSelectScalar = {
   id?: boolean
-  outlinePath?: boolean
+  title?: boolean
   documentEmbeddingId?: boolean
 }
 
-export type documentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "outlinePath" | "documentEmbeddingId", ExtArgs["result"]["document"]>
+export type documentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "documentEmbeddingId", ExtArgs["result"]["document"]>
 export type documentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   records?: boolean | Prisma.document$recordsArgs<ExtArgs>
   embedding?: boolean | Prisma.DocumentEmbeddingDefaultArgs<ExtArgs>
@@ -548,7 +537,7 @@ export type $documentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    outlinePath: string[]
+    title: string
     documentEmbeddingId: string
   }, ExtArgs["result"]["document"]>
   composites: {}
@@ -976,7 +965,7 @@ export interface Prisma__documentClient<T, Null = never, ExtArgs extends runtime
  */
 export interface documentFieldRefs {
   readonly id: Prisma.FieldRef<"document", 'String'>
-  readonly outlinePath: Prisma.FieldRef<"document", 'String[]'>
+  readonly title: Prisma.FieldRef<"document", 'String'>
   readonly documentEmbeddingId: Prisma.FieldRef<"document", 'String'>
 }
     

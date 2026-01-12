@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { LibraryItemController } from './library-item/library-item.controller';
 import { LibraryItemService } from './library-item/library-item.service';
 import { LibraryItemResolver } from './library-item/library-item.resolver';
-import { S3ServiceProvider } from './s3/s3.provider';
+import { S3Module } from './s3/s3.module';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { BibliographyGrpcController } from '../grpc/bibliography.grpc.controller';
-import { BibliographyDBPrismaService } from 'bibliography-db';
+import { BibliographyDBPrismaService, BibliographyDBModule } from 'bibliography-db';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
@@ -15,6 +15,8 @@ import { S3Service } from '@aikb/s3-service';
 
 @Module({
   imports: [
+    BibliographyDBModule,
+    S3Module,
     RabbitMQModule.forRoot({
       exchanges: [
         {
@@ -37,7 +39,6 @@ import { S3Service } from '@aikb/s3-service';
     }),
     VectorModule,
     BibliographyModule.registerAsync({
-      imports: [],
       inject: [BibliographyDBPrismaService, 'S3_SERVICE'],
       useFactory: (
         prismaService: BibliographyDBPrismaService,
@@ -59,8 +60,6 @@ import { S3Service } from '@aikb/s3-service';
   providers: [
     LibraryItemService,
     LibraryItemResolver,
-    S3ServiceProvider,
-    BibliographyDBPrismaService,
   ],
 })
 export class AppModule { }
