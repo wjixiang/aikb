@@ -36,26 +36,26 @@ export type DocumentEmbeddingSumAggregateOutputType = {
 
 export type DocumentEmbeddingMinAggregateOutputType = {
   id: string | null
-  entityId: string | null
   model: string | null
   dimension: number | null
   provider: string | null
+  documentId: string | null
 }
 
 export type DocumentEmbeddingMaxAggregateOutputType = {
   id: string | null
-  entityId: string | null
   model: string | null
   dimension: number | null
   provider: string | null
+  documentId: string | null
 }
 
 export type DocumentEmbeddingCountAggregateOutputType = {
   id: number
-  entityId: number
   model: number
   dimension: number
   provider: number
+  documentId: number
   _all: number
 }
 
@@ -70,26 +70,26 @@ export type DocumentEmbeddingSumAggregateInputType = {
 
 export type DocumentEmbeddingMinAggregateInputType = {
   id?: true
-  entityId?: true
   model?: true
   dimension?: true
   provider?: true
+  documentId?: true
 }
 
 export type DocumentEmbeddingMaxAggregateInputType = {
   id?: true
-  entityId?: true
   model?: true
   dimension?: true
   provider?: true
+  documentId?: true
 }
 
 export type DocumentEmbeddingCountAggregateInputType = {
   id?: true
-  entityId?: true
   model?: true
   dimension?: true
   provider?: true
+  documentId?: true
   _all?: true
 }
 
@@ -181,10 +181,10 @@ export type DocumentEmbeddingGroupByArgs<ExtArgs extends runtime.Types.Extension
 
 export type DocumentEmbeddingGroupByOutputType = {
   id: string
-  entityId: string
   model: string
   dimension: number
   provider: string
+  documentId: string
   _count: DocumentEmbeddingCountAggregateOutputType | null
   _avg: DocumentEmbeddingAvgAggregateOutputType | null
   _sum: DocumentEmbeddingSumAggregateOutputType | null
@@ -212,43 +212,40 @@ export type DocumentEmbeddingWhereInput = {
   OR?: Prisma.DocumentEmbeddingWhereInput[]
   NOT?: Prisma.DocumentEmbeddingWhereInput | Prisma.DocumentEmbeddingWhereInput[]
   id?: Prisma.StringFilter<"DocumentEmbedding"> | string
-  entityId?: Prisma.StringFilter<"DocumentEmbedding"> | string
   model?: Prisma.StringFilter<"DocumentEmbedding"> | string
   dimension?: Prisma.IntFilter<"DocumentEmbedding"> | number
   provider?: Prisma.StringFilter<"DocumentEmbedding"> | string
-  entities?: Prisma.EntityListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
+  documentId?: Prisma.StringFilter<"DocumentEmbedding"> | string
+  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.documentWhereInput>
 }
 
 export type DocumentEmbeddingOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  entityId?: Prisma.SortOrder
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   provider?: Prisma.SortOrder
-  entities?: Prisma.EntityOrderByRelationAggregateInput
-  documents?: Prisma.documentOrderByRelationAggregateInput
+  documentId?: Prisma.SortOrder
+  document?: Prisma.documentOrderByWithRelationInput
 }
 
 export type DocumentEmbeddingWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  entityId?: string
+  documentId?: string
   AND?: Prisma.DocumentEmbeddingWhereInput | Prisma.DocumentEmbeddingWhereInput[]
   OR?: Prisma.DocumentEmbeddingWhereInput[]
   NOT?: Prisma.DocumentEmbeddingWhereInput | Prisma.DocumentEmbeddingWhereInput[]
   model?: Prisma.StringFilter<"DocumentEmbedding"> | string
   dimension?: Prisma.IntFilter<"DocumentEmbedding"> | number
   provider?: Prisma.StringFilter<"DocumentEmbedding"> | string
-  entities?: Prisma.EntityListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
-}, "id" | "entityId">
+  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.documentWhereInput>
+}, "id" | "documentId">
 
 export type DocumentEmbeddingOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  entityId?: Prisma.SortOrder
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
   _count?: Prisma.DocumentEmbeddingCountOrderByAggregateInput
   _avg?: Prisma.DocumentEmbeddingAvgOrderByAggregateInput
   _max?: Prisma.DocumentEmbeddingMaxOrderByAggregateInput
@@ -261,63 +258,54 @@ export type DocumentEmbeddingScalarWhereWithAggregatesInput = {
   OR?: Prisma.DocumentEmbeddingScalarWhereWithAggregatesInput[]
   NOT?: Prisma.DocumentEmbeddingScalarWhereWithAggregatesInput | Prisma.DocumentEmbeddingScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"DocumentEmbedding"> | string
-  entityId?: Prisma.StringWithAggregatesFilter<"DocumentEmbedding"> | string
   model?: Prisma.StringWithAggregatesFilter<"DocumentEmbedding"> | string
   dimension?: Prisma.IntWithAggregatesFilter<"DocumentEmbedding"> | number
   provider?: Prisma.StringWithAggregatesFilter<"DocumentEmbedding"> | string
+  documentId?: Prisma.StringWithAggregatesFilter<"DocumentEmbedding"> | string
 }
 
 export type DocumentEmbeddingCreateInput = {
   id?: string
-  entityId: string
   model: string
   dimension: number
   provider: string
-  entities?: Prisma.EntityCreateNestedManyWithoutDocumentEmbeddingInput
-  documents?: Prisma.documentCreateNestedManyWithoutEmbeddingInput
+  document: Prisma.documentCreateNestedOneWithoutEmbeddingInput
 }
 
 export type DocumentEmbeddingUncheckedCreateInput = {
   id?: string
-  entityId: string
   model: string
   dimension: number
   provider: string
-  entities?: Prisma.EntityUncheckedCreateNestedManyWithoutDocumentEmbeddingInput
-  documents?: Prisma.documentUncheckedCreateNestedManyWithoutEmbeddingInput
+  documentId: string
 }
 
 export type DocumentEmbeddingUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  entities?: Prisma.EntityUpdateManyWithoutDocumentEmbeddingNestedInput
-  documents?: Prisma.documentUpdateManyWithoutEmbeddingNestedInput
+  document?: Prisma.documentUpdateOneRequiredWithoutEmbeddingNestedInput
 }
 
 export type DocumentEmbeddingUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  entities?: Prisma.EntityUncheckedUpdateManyWithoutDocumentEmbeddingNestedInput
-  documents?: Prisma.documentUncheckedUpdateManyWithoutEmbeddingNestedInput
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type DocumentEmbeddingCreateManyInput = {
   id?: string
-  entityId: string
   model: string
   dimension: number
   provider: string
+  documentId: string
 }
 
 export type DocumentEmbeddingUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
@@ -325,15 +313,10 @@ export type DocumentEmbeddingUpdateManyMutationInput = {
 
 export type DocumentEmbeddingUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-}
-
-export type DocumentEmbeddingScalarRelationFilter = {
-  is?: Prisma.DocumentEmbeddingWhereInput
-  isNot?: Prisma.DocumentEmbeddingWhereInput
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type DocumentEmbeddingNullableScalarRelationFilter = {
@@ -343,10 +326,10 @@ export type DocumentEmbeddingNullableScalarRelationFilter = {
 
 export type DocumentEmbeddingCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  entityId?: Prisma.SortOrder
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
 }
 
 export type DocumentEmbeddingAvgOrderByAggregateInput = {
@@ -355,254 +338,159 @@ export type DocumentEmbeddingAvgOrderByAggregateInput = {
 
 export type DocumentEmbeddingMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  entityId?: Prisma.SortOrder
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
 }
 
 export type DocumentEmbeddingMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  entityId?: Prisma.SortOrder
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
 }
 
 export type DocumentEmbeddingSumOrderByAggregateInput = {
   dimension?: Prisma.SortOrder
 }
 
-export type DocumentEmbeddingCreateNestedOneWithoutDocumentsInput = {
-  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentsInput>
-  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentsInput
+export type DocumentEmbeddingCreateNestedOneWithoutDocumentInput = {
+  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
+  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentInput
   connect?: Prisma.DocumentEmbeddingWhereUniqueInput
 }
 
-export type DocumentEmbeddingUpdateOneRequiredWithoutDocumentsNestedInput = {
-  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentsInput>
-  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentsInput
-  upsert?: Prisma.DocumentEmbeddingUpsertWithoutDocumentsInput
-  connect?: Prisma.DocumentEmbeddingWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentEmbeddingUpdateToOneWithWhereWithoutDocumentsInput, Prisma.DocumentEmbeddingUpdateWithoutDocumentsInput>, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentsInput>
-}
-
-export type DocumentEmbeddingCreateNestedOneWithoutEntitiesInput = {
-  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutEntitiesInput>
-  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutEntitiesInput
+export type DocumentEmbeddingUncheckedCreateNestedOneWithoutDocumentInput = {
+  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
+  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentInput
   connect?: Prisma.DocumentEmbeddingWhereUniqueInput
 }
 
-export type DocumentEmbeddingUpdateOneWithoutEntitiesNestedInput = {
-  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutEntitiesInput>
-  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutEntitiesInput
-  upsert?: Prisma.DocumentEmbeddingUpsertWithoutEntitiesInput
+export type DocumentEmbeddingUpdateOneWithoutDocumentNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
+  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentInput
+  upsert?: Prisma.DocumentEmbeddingUpsertWithoutDocumentInput
   disconnect?: Prisma.DocumentEmbeddingWhereInput | boolean
   delete?: Prisma.DocumentEmbeddingWhereInput | boolean
   connect?: Prisma.DocumentEmbeddingWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentEmbeddingUpdateToOneWithWhereWithoutEntitiesInput, Prisma.DocumentEmbeddingUpdateWithoutEntitiesInput>, Prisma.DocumentEmbeddingUncheckedUpdateWithoutEntitiesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentEmbeddingUpdateToOneWithWhereWithoutDocumentInput, Prisma.DocumentEmbeddingUpdateWithoutDocumentInput>, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentInput>
 }
 
-export type DocumentEmbeddingCreateWithoutDocumentsInput = {
+export type DocumentEmbeddingUncheckedUpdateOneWithoutDocumentNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
+  connectOrCreate?: Prisma.DocumentEmbeddingCreateOrConnectWithoutDocumentInput
+  upsert?: Prisma.DocumentEmbeddingUpsertWithoutDocumentInput
+  disconnect?: Prisma.DocumentEmbeddingWhereInput | boolean
+  delete?: Prisma.DocumentEmbeddingWhereInput | boolean
+  connect?: Prisma.DocumentEmbeddingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentEmbeddingUpdateToOneWithWhereWithoutDocumentInput, Prisma.DocumentEmbeddingUpdateWithoutDocumentInput>, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentInput>
+}
+
+export type DocumentEmbeddingCreateWithoutDocumentInput = {
   id?: string
-  entityId: string
   model: string
   dimension: number
   provider: string
-  entities?: Prisma.EntityCreateNestedManyWithoutDocumentEmbeddingInput
 }
 
-export type DocumentEmbeddingUncheckedCreateWithoutDocumentsInput = {
+export type DocumentEmbeddingUncheckedCreateWithoutDocumentInput = {
   id?: string
-  entityId: string
   model: string
   dimension: number
   provider: string
-  entities?: Prisma.EntityUncheckedCreateNestedManyWithoutDocumentEmbeddingInput
 }
 
-export type DocumentEmbeddingCreateOrConnectWithoutDocumentsInput = {
+export type DocumentEmbeddingCreateOrConnectWithoutDocumentInput = {
   where: Prisma.DocumentEmbeddingWhereUniqueInput
-  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentsInput>
+  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
 }
 
-export type DocumentEmbeddingUpsertWithoutDocumentsInput = {
-  update: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentsInput>
-  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentsInput>
+export type DocumentEmbeddingUpsertWithoutDocumentInput = {
+  update: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentInput>
+  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutDocumentInput>
   where?: Prisma.DocumentEmbeddingWhereInput
 }
 
-export type DocumentEmbeddingUpdateToOneWithWhereWithoutDocumentsInput = {
+export type DocumentEmbeddingUpdateToOneWithWhereWithoutDocumentInput = {
   where?: Prisma.DocumentEmbeddingWhereInput
-  data: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutDocumentsInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentsInput>
+  data: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutDocumentInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutDocumentInput>
 }
 
-export type DocumentEmbeddingUpdateWithoutDocumentsInput = {
+export type DocumentEmbeddingUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  entities?: Prisma.EntityUpdateManyWithoutDocumentEmbeddingNestedInput
 }
 
-export type DocumentEmbeddingUncheckedUpdateWithoutDocumentsInput = {
+export type DocumentEmbeddingUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  entities?: Prisma.EntityUncheckedUpdateManyWithoutDocumentEmbeddingNestedInput
 }
 
-export type DocumentEmbeddingCreateWithoutEntitiesInput = {
-  id?: string
-  entityId: string
-  model: string
-  dimension: number
-  provider: string
-  documents?: Prisma.documentCreateNestedManyWithoutEmbeddingInput
-}
-
-export type DocumentEmbeddingUncheckedCreateWithoutEntitiesInput = {
-  id?: string
-  entityId: string
-  model: string
-  dimension: number
-  provider: string
-  documents?: Prisma.documentUncheckedCreateNestedManyWithoutEmbeddingInput
-}
-
-export type DocumentEmbeddingCreateOrConnectWithoutEntitiesInput = {
-  where: Prisma.DocumentEmbeddingWhereUniqueInput
-  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutEntitiesInput>
-}
-
-export type DocumentEmbeddingUpsertWithoutEntitiesInput = {
-  update: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutEntitiesInput>
-  create: Prisma.XOR<Prisma.DocumentEmbeddingCreateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedCreateWithoutEntitiesInput>
-  where?: Prisma.DocumentEmbeddingWhereInput
-}
-
-export type DocumentEmbeddingUpdateToOneWithWhereWithoutEntitiesInput = {
-  where?: Prisma.DocumentEmbeddingWhereInput
-  data: Prisma.XOR<Prisma.DocumentEmbeddingUpdateWithoutEntitiesInput, Prisma.DocumentEmbeddingUncheckedUpdateWithoutEntitiesInput>
-}
-
-export type DocumentEmbeddingUpdateWithoutEntitiesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
-  dimension?: Prisma.IntFieldUpdateOperationsInput | number
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  documents?: Prisma.documentUpdateManyWithoutEmbeddingNestedInput
-}
-
-export type DocumentEmbeddingUncheckedUpdateWithoutEntitiesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  entityId?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
-  dimension?: Prisma.IntFieldUpdateOperationsInput | number
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  documents?: Prisma.documentUncheckedUpdateManyWithoutEmbeddingNestedInput
-}
-
-
-/**
- * Count Type DocumentEmbeddingCountOutputType
- */
-
-export type DocumentEmbeddingCountOutputType = {
-  entities: number
-  documents: number
-}
-
-export type DocumentEmbeddingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  entities?: boolean | DocumentEmbeddingCountOutputTypeCountEntitiesArgs
-  documents?: boolean | DocumentEmbeddingCountOutputTypeCountDocumentsArgs
-}
-
-/**
- * DocumentEmbeddingCountOutputType without action
- */
-export type DocumentEmbeddingCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentEmbeddingCountOutputType
-   */
-  select?: Prisma.DocumentEmbeddingCountOutputTypeSelect<ExtArgs> | null
-}
-
-/**
- * DocumentEmbeddingCountOutputType without action
- */
-export type DocumentEmbeddingCountOutputTypeCountEntitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.EntityWhereInput
-}
-
-/**
- * DocumentEmbeddingCountOutputType without action
- */
-export type DocumentEmbeddingCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.documentWhereInput
-}
 
 
 export type DocumentEmbeddingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  entityId?: boolean
   model?: boolean
   dimension?: boolean
   provider?: boolean
-  entities?: boolean | Prisma.DocumentEmbedding$entitiesArgs<ExtArgs>
-  documents?: boolean | Prisma.DocumentEmbedding$documentsArgs<ExtArgs>
-  _count?: boolean | Prisma.DocumentEmbeddingCountOutputTypeDefaultArgs<ExtArgs>
+  documentId?: boolean
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentEmbedding"]>
 
 export type DocumentEmbeddingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  entityId?: boolean
   model?: boolean
   dimension?: boolean
   provider?: boolean
+  documentId?: boolean
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentEmbedding"]>
 
 export type DocumentEmbeddingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  entityId?: boolean
   model?: boolean
   dimension?: boolean
   provider?: boolean
+  documentId?: boolean
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentEmbedding"]>
 
 export type DocumentEmbeddingSelectScalar = {
   id?: boolean
-  entityId?: boolean
   model?: boolean
   dimension?: boolean
   provider?: boolean
+  documentId?: boolean
 }
 
-export type DocumentEmbeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "entityId" | "model" | "dimension" | "provider", ExtArgs["result"]["documentEmbedding"]>
+export type DocumentEmbeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "model" | "dimension" | "provider" | "documentId", ExtArgs["result"]["documentEmbedding"]>
 export type DocumentEmbeddingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  entities?: boolean | Prisma.DocumentEmbedding$entitiesArgs<ExtArgs>
-  documents?: boolean | Prisma.DocumentEmbedding$documentsArgs<ExtArgs>
-  _count?: boolean | Prisma.DocumentEmbeddingCountOutputTypeDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
 }
-export type DocumentEmbeddingIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type DocumentEmbeddingIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type DocumentEmbeddingIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
+}
+export type DocumentEmbeddingIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  document?: boolean | Prisma.documentDefaultArgs<ExtArgs>
+}
 
 export type $DocumentEmbeddingPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DocumentEmbedding"
   objects: {
-    entities: Prisma.$EntityPayload<ExtArgs>[]
-    documents: Prisma.$documentPayload<ExtArgs>[]
+    document: Prisma.$documentPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    entityId: string
     model: string
     dimension: number
     provider: string
+    documentId: string
   }, ExtArgs["result"]["documentEmbedding"]>
   composites: {}
 }
@@ -997,8 +885,7 @@ readonly fields: DocumentEmbeddingFieldRefs;
  */
 export interface Prisma__DocumentEmbeddingClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  entities<T extends Prisma.DocumentEmbedding$entitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentEmbedding$entitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  documents<T extends Prisma.DocumentEmbedding$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentEmbedding$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$documentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  document<T extends Prisma.documentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.documentDefaultArgs<ExtArgs>>): Prisma.Prisma__documentClient<runtime.Types.Result.GetResult<Prisma.$documentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1029,10 +916,10 @@ export interface Prisma__DocumentEmbeddingClient<T, Null = never, ExtArgs extend
  */
 export interface DocumentEmbeddingFieldRefs {
   readonly id: Prisma.FieldRef<"DocumentEmbedding", 'String'>
-  readonly entityId: Prisma.FieldRef<"DocumentEmbedding", 'String'>
   readonly model: Prisma.FieldRef<"DocumentEmbedding", 'String'>
   readonly dimension: Prisma.FieldRef<"DocumentEmbedding", 'Int'>
   readonly provider: Prisma.FieldRef<"DocumentEmbedding", 'String'>
+  readonly documentId: Prisma.FieldRef<"DocumentEmbedding", 'String'>
 }
     
 
@@ -1282,6 +1169,10 @@ export type DocumentEmbeddingCreateManyAndReturnArgs<ExtArgs extends runtime.Typ
    */
   data: Prisma.DocumentEmbeddingCreateManyInput | Prisma.DocumentEmbeddingCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentEmbeddingIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1352,6 +1243,10 @@ export type DocumentEmbeddingUpdateManyAndReturnArgs<ExtArgs extends runtime.Typ
    * Limit how many DocumentEmbeddings to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentEmbeddingIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1418,54 +1313,6 @@ export type DocumentEmbeddingDeleteManyArgs<ExtArgs extends runtime.Types.Extens
    * Limit how many DocumentEmbeddings to delete.
    */
   limit?: number
-}
-
-/**
- * DocumentEmbedding.entities
- */
-export type DocumentEmbedding$entitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Entity
-   */
-  select?: Prisma.EntitySelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Entity
-   */
-  omit?: Prisma.EntityOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EntityInclude<ExtArgs> | null
-  where?: Prisma.EntityWhereInput
-  orderBy?: Prisma.EntityOrderByWithRelationInput | Prisma.EntityOrderByWithRelationInput[]
-  cursor?: Prisma.EntityWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.EntityScalarFieldEnum | Prisma.EntityScalarFieldEnum[]
-}
-
-/**
- * DocumentEmbedding.documents
- */
-export type DocumentEmbedding$documentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the document
-   */
-  select?: Prisma.documentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the document
-   */
-  omit?: Prisma.documentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.documentInclude<ExtArgs> | null
-  where?: Prisma.documentWhereInput
-  orderBy?: Prisma.documentOrderByWithRelationInput | Prisma.documentOrderByWithRelationInput[]
-  cursor?: Prisma.documentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
 }
 
 /**

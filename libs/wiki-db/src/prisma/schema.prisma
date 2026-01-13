@@ -8,12 +8,12 @@ datasource db {
 }
 
 model document {
-  id                  String            @id @unique @default(uuid())
+  id                  String             @id @unique @default(uuid())
   topic               String
   type                String
   entities            String[]
   records             record[]
-  embedding           DocumentEmbedding @relation(fields: [documentEmbeddingId], references: [id])
+  embedding           DocumentEmbedding?
   documentEmbeddingId String
 }
 
@@ -21,7 +21,7 @@ model record {
   id         String    @id @unique @default(uuid())
   topic      String
   content    String
-  document   document? @relation(fields: [documentId], references: [id])
+  document   document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId String?
 }
 
@@ -57,7 +57,6 @@ model Entity {
 
   // One-to-one relationship with embedding
   embedding           EntityEmbedding?
-  documentEmbedding   DocumentEmbedding? @relation(fields: [documentEmbeddingId], references: [id])
   documentEmbeddingId String?
 
   // Indexes for search and retrieval
@@ -83,8 +82,7 @@ model EntityEmbedding {
 }
 
 model DocumentEmbedding {
-  id       String @id @default(cuid())
-  entityId String @unique
+  id String @id @default(cuid())
 
   // Embedding configuration (without enum restrictions)
   model     String // EmbeddingModel
@@ -94,8 +92,8 @@ model DocumentEmbedding {
   // Vector data stored as array
   vector Unsupported("vector")?
 
-  // One-to-one relationship with entity
-  // entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  entities  Entity[]
-  documents document[]
+  document   document @relation(fields: [documentId], references: [id])
+  documentId String   @unique
+
+  @@map("DocumentEmbedding")
 }

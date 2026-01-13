@@ -1,7 +1,8 @@
 type Query {
-  entities(where: entityWhereInput): [entity!]!
+  entities(where: entityWhereInput): [entity]!
   entity(where: entityWhereInput): entity
-  documents: [document!]!
+  documents(where: documentWhereInput): [document]!
+  document(where: documentWhereInput): document
 }
 
 type Mutation {
@@ -10,6 +11,7 @@ type Mutation {
   "Document Mutation"
   createDocument(input: createDocumentInput): document
   updateDocument(input: updateDocumentInput): document
+  deleteDocument(input: deleteDocumentInput): document
 }
 
 type entity {
@@ -123,4 +125,73 @@ input updateDocumentInput {
   entities: [String]
   topic: String
   content: String
+}
+
+input deleteDocumentInput {
+  documentId: String!
+}
+
+input documentWhereInput {
+  id: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  type: documentType
+  type_in: [documentType!]
+  type_not_in: [documentType!]
+  entities: String
+  entities_in: [String!]
+  entities_not_in: [String!]
+  entities_contains: String
+  entities_starts_with: String
+  entities_ends_with: String
+  topic: String
+  topic_contains: String
+  topic_starts_with: String
+  topic_ends_with: String
+  topic_in: [String!]
+  topic_not_in: [String!]
+  topic_semantic_search: semanticSearchInput
+  metadata: documentMetadataWhereInput
+  record: documentRecordWhereInput
+  record_some: documentRecordWhereInput
+  record_every: documentRecordWhereInput
+  record_none: documentRecordWhereInput
+  record_semantic_search: semanticSearchInput
+  AND: [documentWhereInput!]
+  OR: [documentWhereInput!]
+  NOT: documentWhereInput
+}
+
+input documentMetadataWhereInput {
+  tags: String
+  tags_in: [String!]
+  tags_not_in: [String!]
+  tags_contains: String
+  tags_starts_with: String
+  tags_ends_with: String
+  tags_is_null: Boolean
+  AND: [documentMetadataWhereInput!]
+  OR: [documentMetadataWhereInput!]
+  NOT: documentMetadataWhereInput
+}
+
+input documentRecordWhereInput {
+  topic: String
+  topic_contains: String
+  topic_starts_with: String
+  topic_ends_with: String
+  topic_in: [String!]
+  topic_not_in: [String!]
+  content: String
+  content_contains: String
+  content_starts_with: String
+  content_ends_with: String
+  content_in: [String!]
+  content_not_in: [String!]
+  updateDate: String
+  updateDate_in: [String!]
+  updateDate_not_in: [String!]
+  AND: [documentRecordWhereInput!]
+  OR: [documentRecordWhereInput!]
+  NOT: documentRecordWhereInput
 }

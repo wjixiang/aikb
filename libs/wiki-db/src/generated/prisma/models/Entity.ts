@@ -184,7 +184,6 @@ export type EntityWhereInput = {
   documentEmbeddingId?: Prisma.StringNullableFilter<"Entity"> | string | null
   nomenclatures?: Prisma.NomenclatureListRelationFilter
   embedding?: Prisma.XOR<Prisma.EntityEmbeddingNullableScalarRelationFilter, Prisma.EntityEmbeddingWhereInput> | null
-  documentEmbedding?: Prisma.XOR<Prisma.DocumentEmbeddingNullableScalarRelationFilter, Prisma.DocumentEmbeddingWhereInput> | null
 }
 
 export type EntityOrderByWithRelationInput = {
@@ -195,7 +194,6 @@ export type EntityOrderByWithRelationInput = {
   documentEmbeddingId?: Prisma.SortOrderInput | Prisma.SortOrder
   nomenclatures?: Prisma.NomenclatureOrderByRelationAggregateInput
   embedding?: Prisma.EntityEmbeddingOrderByWithRelationInput
-  documentEmbedding?: Prisma.DocumentEmbeddingOrderByWithRelationInput
 }
 
 export type EntityWhereUniqueInput = Prisma.AtLeast<{
@@ -209,7 +207,6 @@ export type EntityWhereUniqueInput = Prisma.AtLeast<{
   documentEmbeddingId?: Prisma.StringNullableFilter<"Entity"> | string | null
   nomenclatures?: Prisma.NomenclatureListRelationFilter
   embedding?: Prisma.XOR<Prisma.EntityEmbeddingNullableScalarRelationFilter, Prisma.EntityEmbeddingWhereInput> | null
-  documentEmbedding?: Prisma.XOR<Prisma.DocumentEmbeddingNullableScalarRelationFilter, Prisma.DocumentEmbeddingWhereInput> | null
 }, "id">
 
 export type EntityOrderByWithAggregationInput = {
@@ -239,9 +236,9 @@ export type EntityCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   definition: string
+  documentEmbeddingId?: string | null
   nomenclatures?: Prisma.NomenclatureCreateNestedManyWithoutEntityInput
   embedding?: Prisma.EntityEmbeddingCreateNestedOneWithoutEntityInput
-  documentEmbedding?: Prisma.DocumentEmbeddingCreateNestedOneWithoutEntitiesInput
 }
 
 export type EntityUncheckedCreateInput = {
@@ -259,9 +256,9 @@ export type EntityUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   definition?: Prisma.StringFieldUpdateOperationsInput | string
+  documentEmbeddingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nomenclatures?: Prisma.NomenclatureUpdateManyWithoutEntityNestedInput
   embedding?: Prisma.EntityEmbeddingUpdateOneWithoutEntityNestedInput
-  documentEmbedding?: Prisma.DocumentEmbeddingUpdateOneWithoutEntitiesNestedInput
 }
 
 export type EntityUncheckedUpdateInput = {
@@ -287,6 +284,7 @@ export type EntityUpdateManyMutationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   definition?: Prisma.StringFieldUpdateOperationsInput | string
+  documentEmbeddingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityUncheckedUpdateManyInput = {
@@ -326,16 +324,6 @@ export type EntityMinOrderByAggregateInput = {
   documentEmbeddingId?: Prisma.SortOrder
 }
 
-export type EntityListRelationFilter = {
-  every?: Prisma.EntityWhereInput
-  some?: Prisma.EntityWhereInput
-  none?: Prisma.EntityWhereInput
-}
-
-export type EntityOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
-}
-
 export type EntityCreateNestedOneWithoutNomenclaturesInput = {
   create?: Prisma.XOR<Prisma.EntityCreateWithoutNomenclaturesInput, Prisma.EntityUncheckedCreateWithoutNomenclaturesInput>
   connectOrCreate?: Prisma.EntityCreateOrConnectWithoutNomenclaturesInput
@@ -368,55 +356,13 @@ export type EntityUpdateOneRequiredWithoutEmbeddingNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EntityUpdateToOneWithWhereWithoutEmbeddingInput, Prisma.EntityUpdateWithoutEmbeddingInput>, Prisma.EntityUncheckedUpdateWithoutEmbeddingInput>
 }
 
-export type EntityCreateNestedManyWithoutDocumentEmbeddingInput = {
-  create?: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput> | Prisma.EntityCreateWithoutDocumentEmbeddingInput[] | Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput[]
-  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput | Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput[]
-  createMany?: Prisma.EntityCreateManyDocumentEmbeddingInputEnvelope
-  connect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-}
-
-export type EntityUncheckedCreateNestedManyWithoutDocumentEmbeddingInput = {
-  create?: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput> | Prisma.EntityCreateWithoutDocumentEmbeddingInput[] | Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput[]
-  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput | Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput[]
-  createMany?: Prisma.EntityCreateManyDocumentEmbeddingInputEnvelope
-  connect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-}
-
-export type EntityUpdateManyWithoutDocumentEmbeddingNestedInput = {
-  create?: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput> | Prisma.EntityCreateWithoutDocumentEmbeddingInput[] | Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput[]
-  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput | Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput[]
-  upsert?: Prisma.EntityUpsertWithWhereUniqueWithoutDocumentEmbeddingInput | Prisma.EntityUpsertWithWhereUniqueWithoutDocumentEmbeddingInput[]
-  createMany?: Prisma.EntityCreateManyDocumentEmbeddingInputEnvelope
-  set?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  disconnect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  delete?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  connect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  update?: Prisma.EntityUpdateWithWhereUniqueWithoutDocumentEmbeddingInput | Prisma.EntityUpdateWithWhereUniqueWithoutDocumentEmbeddingInput[]
-  updateMany?: Prisma.EntityUpdateManyWithWhereWithoutDocumentEmbeddingInput | Prisma.EntityUpdateManyWithWhereWithoutDocumentEmbeddingInput[]
-  deleteMany?: Prisma.EntityScalarWhereInput | Prisma.EntityScalarWhereInput[]
-}
-
-export type EntityUncheckedUpdateManyWithoutDocumentEmbeddingNestedInput = {
-  create?: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput> | Prisma.EntityCreateWithoutDocumentEmbeddingInput[] | Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput[]
-  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput | Prisma.EntityCreateOrConnectWithoutDocumentEmbeddingInput[]
-  upsert?: Prisma.EntityUpsertWithWhereUniqueWithoutDocumentEmbeddingInput | Prisma.EntityUpsertWithWhereUniqueWithoutDocumentEmbeddingInput[]
-  createMany?: Prisma.EntityCreateManyDocumentEmbeddingInputEnvelope
-  set?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  disconnect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  delete?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  connect?: Prisma.EntityWhereUniqueInput | Prisma.EntityWhereUniqueInput[]
-  update?: Prisma.EntityUpdateWithWhereUniqueWithoutDocumentEmbeddingInput | Prisma.EntityUpdateWithWhereUniqueWithoutDocumentEmbeddingInput[]
-  updateMany?: Prisma.EntityUpdateManyWithWhereWithoutDocumentEmbeddingInput | Prisma.EntityUpdateManyWithWhereWithoutDocumentEmbeddingInput[]
-  deleteMany?: Prisma.EntityScalarWhereInput | Prisma.EntityScalarWhereInput[]
-}
-
 export type EntityCreateWithoutNomenclaturesInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   definition: string
+  documentEmbeddingId?: string | null
   embedding?: Prisma.EntityEmbeddingCreateNestedOneWithoutEntityInput
-  documentEmbedding?: Prisma.DocumentEmbeddingCreateNestedOneWithoutEntitiesInput
 }
 
 export type EntityUncheckedCreateWithoutNomenclaturesInput = {
@@ -449,8 +395,8 @@ export type EntityUpdateWithoutNomenclaturesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   definition?: Prisma.StringFieldUpdateOperationsInput | string
+  documentEmbeddingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   embedding?: Prisma.EntityEmbeddingUpdateOneWithoutEntityNestedInput
-  documentEmbedding?: Prisma.DocumentEmbeddingUpdateOneWithoutEntitiesNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutNomenclaturesInput = {
@@ -467,8 +413,8 @@ export type EntityCreateWithoutEmbeddingInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   definition: string
+  documentEmbeddingId?: string | null
   nomenclatures?: Prisma.NomenclatureCreateNestedManyWithoutEntityInput
-  documentEmbedding?: Prisma.DocumentEmbeddingCreateNestedOneWithoutEntitiesInput
 }
 
 export type EntityUncheckedCreateWithoutEmbeddingInput = {
@@ -501,8 +447,8 @@ export type EntityUpdateWithoutEmbeddingInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   definition?: Prisma.StringFieldUpdateOperationsInput | string
+  documentEmbeddingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nomenclatures?: Prisma.NomenclatureUpdateManyWithoutEntityNestedInput
-  documentEmbedding?: Prisma.DocumentEmbeddingUpdateOneWithoutEntitiesNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutEmbeddingInput = {
@@ -512,93 +458,6 @@ export type EntityUncheckedUpdateWithoutEmbeddingInput = {
   definition?: Prisma.StringFieldUpdateOperationsInput | string
   documentEmbeddingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nomenclatures?: Prisma.NomenclatureUncheckedUpdateManyWithoutEntityNestedInput
-}
-
-export type EntityCreateWithoutDocumentEmbeddingInput = {
-  id?: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  definition: string
-  nomenclatures?: Prisma.NomenclatureCreateNestedManyWithoutEntityInput
-  embedding?: Prisma.EntityEmbeddingCreateNestedOneWithoutEntityInput
-}
-
-export type EntityUncheckedCreateWithoutDocumentEmbeddingInput = {
-  id?: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  definition: string
-  nomenclatures?: Prisma.NomenclatureUncheckedCreateNestedManyWithoutEntityInput
-  embedding?: Prisma.EntityEmbeddingUncheckedCreateNestedOneWithoutEntityInput
-}
-
-export type EntityCreateOrConnectWithoutDocumentEmbeddingInput = {
-  where: Prisma.EntityWhereUniqueInput
-  create: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput>
-}
-
-export type EntityCreateManyDocumentEmbeddingInputEnvelope = {
-  data: Prisma.EntityCreateManyDocumentEmbeddingInput | Prisma.EntityCreateManyDocumentEmbeddingInput[]
-  skipDuplicates?: boolean
-}
-
-export type EntityUpsertWithWhereUniqueWithoutDocumentEmbeddingInput = {
-  where: Prisma.EntityWhereUniqueInput
-  update: Prisma.XOR<Prisma.EntityUpdateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedUpdateWithoutDocumentEmbeddingInput>
-  create: Prisma.XOR<Prisma.EntityCreateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedCreateWithoutDocumentEmbeddingInput>
-}
-
-export type EntityUpdateWithWhereUniqueWithoutDocumentEmbeddingInput = {
-  where: Prisma.EntityWhereUniqueInput
-  data: Prisma.XOR<Prisma.EntityUpdateWithoutDocumentEmbeddingInput, Prisma.EntityUncheckedUpdateWithoutDocumentEmbeddingInput>
-}
-
-export type EntityUpdateManyWithWhereWithoutDocumentEmbeddingInput = {
-  where: Prisma.EntityScalarWhereInput
-  data: Prisma.XOR<Prisma.EntityUpdateManyMutationInput, Prisma.EntityUncheckedUpdateManyWithoutDocumentEmbeddingInput>
-}
-
-export type EntityScalarWhereInput = {
-  AND?: Prisma.EntityScalarWhereInput | Prisma.EntityScalarWhereInput[]
-  OR?: Prisma.EntityScalarWhereInput[]
-  NOT?: Prisma.EntityScalarWhereInput | Prisma.EntityScalarWhereInput[]
-  id?: Prisma.StringFilter<"Entity"> | string
-  createdAt?: Prisma.DateTimeFilter<"Entity"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Entity"> | Date | string
-  definition?: Prisma.StringFilter<"Entity"> | string
-  documentEmbeddingId?: Prisma.StringNullableFilter<"Entity"> | string | null
-}
-
-export type EntityCreateManyDocumentEmbeddingInput = {
-  id?: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  definition: string
-}
-
-export type EntityUpdateWithoutDocumentEmbeddingInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  definition?: Prisma.StringFieldUpdateOperationsInput | string
-  nomenclatures?: Prisma.NomenclatureUpdateManyWithoutEntityNestedInput
-  embedding?: Prisma.EntityEmbeddingUpdateOneWithoutEntityNestedInput
-}
-
-export type EntityUncheckedUpdateWithoutDocumentEmbeddingInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  definition?: Prisma.StringFieldUpdateOperationsInput | string
-  nomenclatures?: Prisma.NomenclatureUncheckedUpdateManyWithoutEntityNestedInput
-  embedding?: Prisma.EntityEmbeddingUncheckedUpdateOneWithoutEntityNestedInput
-}
-
-export type EntityUncheckedUpdateManyWithoutDocumentEmbeddingInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  definition?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -640,7 +499,6 @@ export type EntitySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   documentEmbeddingId?: boolean
   nomenclatures?: boolean | Prisma.Entity$nomenclaturesArgs<ExtArgs>
   embedding?: boolean | Prisma.Entity$embeddingArgs<ExtArgs>
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
   _count?: boolean | Prisma.EntityCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["entity"]>
 
@@ -650,7 +508,6 @@ export type EntitySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   updatedAt?: boolean
   definition?: boolean
   documentEmbeddingId?: boolean
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
 }, ExtArgs["result"]["entity"]>
 
 export type EntitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -659,7 +516,6 @@ export type EntitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   updatedAt?: boolean
   definition?: boolean
   documentEmbeddingId?: boolean
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
 }, ExtArgs["result"]["entity"]>
 
 export type EntitySelectScalar = {
@@ -674,22 +530,16 @@ export type EntityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type EntityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   nomenclatures?: boolean | Prisma.Entity$nomenclaturesArgs<ExtArgs>
   embedding?: boolean | Prisma.Entity$embeddingArgs<ExtArgs>
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
   _count?: boolean | Prisma.EntityCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type EntityIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
-}
-export type EntityIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  documentEmbedding?: boolean | Prisma.Entity$documentEmbeddingArgs<ExtArgs>
-}
+export type EntityIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type EntityIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $EntityPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Entity"
   objects: {
     nomenclatures: Prisma.$NomenclaturePayload<ExtArgs>[]
     embedding: Prisma.$EntityEmbeddingPayload<ExtArgs> | null
-    documentEmbedding: Prisma.$DocumentEmbeddingPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1093,7 +943,6 @@ export interface Prisma__EntityClient<T, Null = never, ExtArgs extends runtime.T
   readonly [Symbol.toStringTag]: "PrismaPromise"
   nomenclatures<T extends Prisma.Entity$nomenclaturesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$nomenclaturesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NomenclaturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   embedding<T extends Prisma.Entity$embeddingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$embeddingArgs<ExtArgs>>): Prisma.Prisma__EntityEmbeddingClient<runtime.Types.Result.GetResult<Prisma.$EntityEmbeddingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  documentEmbedding<T extends Prisma.Entity$documentEmbeddingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$documentEmbeddingArgs<ExtArgs>>): Prisma.Prisma__DocumentEmbeddingClient<runtime.Types.Result.GetResult<Prisma.$DocumentEmbeddingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1377,10 +1226,6 @@ export type EntityCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    */
   data: Prisma.EntityCreateManyInput | Prisma.EntityCreateManyInput[]
   skipDuplicates?: boolean
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EntityIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1451,10 +1296,6 @@ export type EntityUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many Entities to update.
    */
   limit?: number
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EntityIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1564,25 +1405,6 @@ export type Entity$embeddingArgs<ExtArgs extends runtime.Types.Extensions.Intern
    */
   include?: Prisma.EntityEmbeddingInclude<ExtArgs> | null
   where?: Prisma.EntityEmbeddingWhereInput
-}
-
-/**
- * Entity.documentEmbedding
- */
-export type Entity$documentEmbeddingArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentEmbedding
-   */
-  select?: Prisma.DocumentEmbeddingSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentEmbedding
-   */
-  omit?: Prisma.DocumentEmbeddingOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentEmbeddingInclude<ExtArgs> | null
-  where?: Prisma.DocumentEmbeddingWhereInput
 }
 
 /**

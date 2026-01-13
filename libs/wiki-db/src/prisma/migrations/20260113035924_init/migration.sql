@@ -2,7 +2,9 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- CreateTable
 CREATE TABLE "document" (
     "id" TEXT NOT NULL,
-    "outlinePath" TEXT[],
+    "topic" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "entities" TEXT[],
     "documentEmbeddingId" TEXT NOT NULL,
 
     CONSTRAINT "document_pkey" PRIMARY KEY ("id")
@@ -11,8 +13,9 @@ CREATE TABLE "document" (
 -- CreateTable
 CREATE TABLE "record" (
     "id" TEXT NOT NULL,
-    "documentId" TEXT,
+    "topic" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "documentId" TEXT,
 
     CONSTRAINT "record_pkey" PRIMARY KEY ("id")
 );
@@ -33,7 +36,7 @@ CREATE TABLE "entities" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "description" TEXT NOT NULL,
+    "definition" TEXT NOT NULL,
     "documentEmbeddingId" TEXT,
 
     CONSTRAINT "entities_pkey" PRIMARY KEY ("id")
@@ -54,11 +57,11 @@ CREATE TABLE "EntityEmbedding" (
 -- CreateTable
 CREATE TABLE "DocumentEmbedding" (
     "id" TEXT NOT NULL,
-    "entityId" TEXT NOT NULL,
     "model" TEXT NOT NULL,
     "dimension" INTEGER NOT NULL,
     "provider" TEXT NOT NULL,
     "vector" vector,
+    "documentId" TEXT NOT NULL,
 
     CONSTRAINT "DocumentEmbedding_pkey" PRIMARY KEY ("id")
 );
@@ -79,25 +82,22 @@ CREATE INDEX "nomenclatures_name_idx" ON "nomenclatures"("name");
 CREATE INDEX "nomenclatures_language_idx" ON "nomenclatures"("language");
 
 -- CreateIndex
-CREATE INDEX "entities_description_idx" ON "entities"("description");
+CREATE INDEX "entities_definition_idx" ON "entities"("definition");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EntityEmbedding_entityId_key" ON "EntityEmbedding"("entityId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "DocumentEmbedding_entityId_key" ON "DocumentEmbedding"("entityId");
+CREATE UNIQUE INDEX "DocumentEmbedding_documentId_key" ON "DocumentEmbedding"("documentId");
 
 -- AddForeignKey
-ALTER TABLE "document" ADD CONSTRAINT "document_documentEmbeddingId_fkey" FOREIGN KEY ("documentEmbeddingId") REFERENCES "DocumentEmbedding"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "record" ADD CONSTRAINT "record_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "document"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "record" ADD CONSTRAINT "record_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "nomenclatures" ADD CONSTRAINT "nomenclatures_entityId_fkey" FOREIGN KEY ("entityId") REFERENCES "entities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "entities" ADD CONSTRAINT "entities_documentEmbeddingId_fkey" FOREIGN KEY ("documentEmbeddingId") REFERENCES "DocumentEmbedding"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "EntityEmbedding" ADD CONSTRAINT "EntityEmbedding_entityId_fkey" FOREIGN KEY ("entityId") REFERENCES "entities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EntityEmbedding" ADD CONSTRAINT "EntityEmbedding_entityId_fkey" FOREIGN KEY ("entityId") REFERENCES "entities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DocumentEmbedding" ADD CONSTRAINT "DocumentEmbedding_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "document"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

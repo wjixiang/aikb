@@ -948,10 +948,10 @@ export type EntityEmbeddingScalarFieldEnum = (typeof EntityEmbeddingScalarFieldE
 
 export const DocumentEmbeddingScalarFieldEnum = {
   id: 'id',
-  entityId: 'entityId',
   model: 'model',
   dimension: 'dimension',
-  provider: 'provider'
+  provider: 'provider',
+  documentId: 'documentId'
 } as const
 
 export type DocumentEmbeddingScalarFieldEnum = (typeof DocumentEmbeddingScalarFieldEnum)[keyof typeof DocumentEmbeddingScalarFieldEnum]
