@@ -75,6 +75,16 @@ export class NomenclatureInput {
     language: string;
 }
 
+export class UpdateEntityInput {
+    entityId: string;
+    nomenclature?: Nullable<Nullable<NomenclatureInput>[]>;
+    definition?: Nullable<string>;
+}
+
+export class DeleteEntityInput {
+    entityId: string;
+}
+
 export class CreateDocumentInput {
     type: DocumentType;
     entities: string[];
@@ -113,13 +123,12 @@ export class DocumentWhereInput {
     topic_ends_with?: Nullable<string>;
     topic_in?: Nullable<string[]>;
     topic_not_in?: Nullable<string[]>;
-    topic_semantic_search?: Nullable<SemanticSearchInput>;
+    document_semantic_search?: Nullable<SemanticSearchInput>;
     metadata?: Nullable<DocumentMetadataWhereInput>;
     record?: Nullable<DocumentRecordWhereInput>;
     record_some?: Nullable<DocumentRecordWhereInput>;
     record_every?: Nullable<DocumentRecordWhereInput>;
     record_none?: Nullable<DocumentRecordWhereInput>;
-    record_semantic_search?: Nullable<SemanticSearchInput>;
     AND?: Nullable<DocumentWhereInput[]>;
     OR?: Nullable<DocumentWhereInput[]>;
     NOT?: Nullable<DocumentWhereInput>;
@@ -171,6 +180,10 @@ export abstract class IQuery {
 
 export abstract class IMutation {
     abstract createEntity(input?: Nullable<CreateEntityInput>): Nullable<Entity> | Promise<Nullable<Entity>>;
+
+    abstract updateEntity(input?: Nullable<UpdateEntityInput>): Nullable<Entity> | Promise<Nullable<Entity>>;
+
+    abstract deleteEntity(input?: Nullable<DeleteEntityInput>): Nullable<Entity> | Promise<Nullable<Entity>>;
 
     abstract createDocument(input?: Nullable<CreateDocumentInput>): Nullable<Document> | Promise<Nullable<Document>>;
 

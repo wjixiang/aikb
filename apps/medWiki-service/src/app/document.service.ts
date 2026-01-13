@@ -111,7 +111,7 @@ export class DocumentService {
         // If content is provided, we need to:
         // 1. Create a new record entry
         // 2. Regenerate the embedding
-        if (input.content !== undefined) {
+        if (input.content != null) {
             // Get the current document to preserve topic if not provided
             const currentDoc = await this.storageService.document.findUnique({
                 where: { id: input.documentId },
@@ -142,6 +142,10 @@ export class DocumentService {
                     provider: embeddingResult.provider || defaultEmbeddingConfig.provider,
                 },
             };
+
+            await this.storageService.$queryRawUnsafe(
+                `UPDATE "DocumentEmbedding" SET vector = \'[${embeddingResult.embedding.join(',')}]\' WHERE id = '${currentDoc.documentEmbeddingId}';`
+            )
 
             // Create a new record entry
             updateData.records = {
@@ -238,11 +242,8 @@ export class DocumentService {
      */
     async getDocument(filter: DocumentWhereInput): Promise<Document | null> {
         // Identify semantic search query
-        if (filter.topic_semantic_search) {
-            const results = await this.performSemanticSearch(filter.topic_semantic_search, 1);
-            return results.length > 0 ? results[0] : null;
-        } else if (filter.record_semantic_search) {
-            const results = await this.performRecordSemanticSearch(filter.record_semantic_search, 1);
+        if (filter.document_semantic_search) {
+            const results = await this.performSemanticSearch(filter.document_semantic_search, 1);
             return results.length > 0 ? results[0] : null;
         } else {
             const prismaFilter = this.convertToPrismaWhere(filter);
@@ -267,10 +268,8 @@ export class DocumentService {
      */
     async getDocuments(filter: DocumentWhereInput): Promise<Document[]> {
         // Identify semantic search query
-        if (filter.topic_semantic_search) {
-            return this.performSemanticSearch(filter.topic_semantic_search);
-        } else if (filter.record_semantic_search) {
-            return this.performRecordSemanticSearch(filter.record_semantic_search);
+        if (filter.document_semantic_search) {
+            return this.performSemanticSearch(filter.document_semantic_search);
         } else {
             const prismaFilter = this.convertToPrismaWhere(filter);
             const documents = await this.storageService.document.findMany({
@@ -367,86 +366,6 @@ export class DocumentService {
         }
     }
 
-    /**
-     * Perform semantic search on document records
-     * @param semanticSearchInput - The semantic search parameters
-     * @param limit - Optional limit for number of results
-     * @returns Array of matching documents ordered by similarity
-     */
-    private async performRecordSemanticSearch(
-        semanticSearchInput: SemanticSearchInput,
-        limit?: number
-    ): Promise<Document[]> {
-        // Generate embedding for the search query
-        const embeddingResult = await this.embeddingService.embed({
-            text: semanticSearchInput.searchText,
-        });
-
-        if (!embeddingResult.success || !embeddingResult.embedding) {
-            throw new Error(
-                `Failed to generate embedding: ${embeddingResult.error || 'Unknown error'}`
-            );
-        }
-
-        const searchVector = embeddingResult.embedding;
-        const topK = limit ?? semanticSearchInput.topK ?? 10;
-        const threshold = semanticSearchInput.threshold ?? 0.0;
-
-        // Convert searchVector to PostgreSQL vector format
-        const vectorString = `[${searchVector.join(',')}]`;
-
-        try {
-            // Use pgvector's <=> operator for cosine similarity with raw SQL
-            // Note: Records don't have embeddings directly, so we search by document topic
-            const results = (await this.storageService.$queryRawUnsafe(
-                `
-                SELECT DISTINCT
-                    d.id,
-                    d.topic,
-                    1 - (de.vector <=> $1::vector) as similarity
-                FROM documents d
-                INNER JOIN "DocumentEmbedding" de ON d."documentEmbeddingId" = de.id
-                WHERE 1 - (de.vector <=> $1::vector) >= $2
-                ORDER BY similarity DESC
-                LIMIT $3
-            `,
-                vectorString,
-                threshold,
-                topK,
-            )) as any[];
-
-            if (results.length === 0) {
-                return [];
-            }
-
-            // Fetch full document data with records for all matching IDs
-            const documentIds = results.map((r) => r.id);
-            const documents = await this.storageService.document.findMany({
-                where: {
-                    id: { in: documentIds },
-                },
-                include: {
-                    records: {
-                        orderBy: {
-                            id: 'desc'
-                        }
-                    }
-                },
-            });
-
-            // Sort documents by similarity score from the search results
-            const documentMap = new Map(
-                documents.map((d) => [d.id, this.convertToGraphQLDocument(d)])
-            );
-
-            return results
-                .map((r) => documentMap.get(r.id))
-                .filter((d): d is Document => d !== undefined);
-        } catch (error) {
-            console.error('Error in record semantic search:', error);
-            throw error;
-        }
-    }
 
     /**
      * Convert GraphQL filter to Prisma where clause

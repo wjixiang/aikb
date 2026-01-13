@@ -1,5 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { EntityWhereInput, Entity, CreateEntityInput } from '../graphql';
+import { EntityWhereInput, Entity, CreateEntityInput, UpdateEntityInput, DeleteEntityInput } from '../graphql';
 import { EntityService } from './entity.service';
 
 /**
@@ -39,5 +39,25 @@ export class EntityResolver {
     @Mutation()
     async createEntity(@Args('input') input: CreateEntityInput): Promise<Entity> {
         return await this.entityService.createEntity(input);
+    }
+
+    /**
+     * Update an existing entity
+     * @param input - The input data for updating the entity
+     * @returns The updated entity
+     */
+    @Mutation()
+    async updateEntity(@Args('input') input: UpdateEntityInput): Promise<Entity> {
+        return await this.entityService.updateEntity(input);
+    }
+
+    /**
+     * Delete an entity
+     * @param input - The input data for deleting the entity
+     * @returns The deleted entity
+     */
+    @Mutation()
+    async deleteEntity(@Args('input') input: DeleteEntityInput): Promise<Entity> {
+        return await this.entityService.deleteEntity(input);
     }
 }

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { wikiPrismaService } from 'wiki-db';
-import { CreateEntityInput, Entity, EntityWhereInput, Nomenclature, SemanticSearchInput } from '../graphql';
+import { CreateEntityInput, UpdateEntityInput, DeleteEntityInput, Entity, EntityWhereInput, Nomenclature, NomenclatureInput, SemanticSearchInput } from '../graphql';
 import { EmbeddingService } from 'EmbeddingModule';
 
 // Define a custom injection token
@@ -151,6 +151,80 @@ export class EntityService {
             }
         });
         return this.convertToGraphQLEntity(newEntity);
+    }
+
+    /**
+     * Update an existing entity
+     * @param input - The input data for updating the entity
+     * @returns The updated entity
+     */
+    async updateEntity(input: UpdateEntityInput): Promise<Entity> {
+        // First, fetch the entity before updating to check if it exists
+        const existingEntity = await this.storageService.entity.findUnique({
+            where: { id: input.entityId },
+            include: { nomenclatures: true }
+        });
+
+        if (!existingEntity) {
+            throw new Error(`Entity with id ${input.entityId} not found`);
+        }
+
+        // Prepare update data
+        const updateData: any = {};
+
+        if (input.definition !== undefined) {
+            updateData.definition = input.definition;
+        }
+
+        // If nomenclature is provided, we need to update the nomenclatures
+        if (input.nomenclature !== undefined && input.nomenclature !== null) {
+            // Delete all existing nomenclatures
+            await this.storageService.nomenclature.deleteMany({
+                where: { entityId: input.entityId }
+            });
+
+            // Create new nomenclatures
+            updateData.nomenclatures = {
+                create: input.nomenclature.filter((n): n is NomenclatureInput => n !== null).map(n => ({
+                    name: n.name,
+                    acronym: n.acronym ?? null,
+                    language: n.language
+                }))
+            };
+        }
+
+        // Update the entity
+        const updatedEntity = await this.storageService.entity.update({
+            where: { id: input.entityId },
+            data: updateData,
+            include: { nomenclatures: true }
+        });
+
+        return this.convertToGraphQLEntity(updatedEntity);
+    }
+
+    /**
+     * Delete an entity
+     * @param input - The input data for deleting the entity
+     * @returns The deleted entity
+     */
+    async deleteEntity(input: DeleteEntityInput): Promise<Entity> {
+        // First, fetch the entity before deletion to return it
+        const entity = await this.storageService.entity.findUnique({
+            where: { id: input.entityId },
+            include: { nomenclatures: true }
+        });
+
+        if (!entity) {
+            throw new Error(`Entity with id ${input.entityId} not found`);
+        }
+
+        // Delete the entity (Prisma will handle cascading deletes for related nomenclatures)
+        await this.storageService.entity.delete({
+            where: { id: input.entityId }
+        });
+
+        return this.convertToGraphQLEntity(entity);
     }
 
     /**

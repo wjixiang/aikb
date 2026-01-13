@@ -6,7 +6,10 @@ type Query {
 }
 
 type Mutation {
+  "Entity Mutation"
   createEntity(input: createEntityInput): entity
+  updateEntity(input: updateEntityInput): entity
+  deleteEntity(input: deleteEntityInput): entity
 
   "Document Mutation"
   createDocument(input: createDocumentInput): document
@@ -112,6 +115,16 @@ input nomenclatureInput {
   language: String!
 }
 
+input updateEntityInput {
+  entityId: String!
+  nomenclature: [nomenclatureInput]
+  definition: String
+}
+
+input deleteEntityInput {
+  entityId: String!
+}
+
 input createDocumentInput {
   type: documentType!
   entities: [String!]!
@@ -150,13 +163,12 @@ input documentWhereInput {
   topic_ends_with: String
   topic_in: [String!]
   topic_not_in: [String!]
-  topic_semantic_search: semanticSearchInput
+  document_semantic_search: semanticSearchInput
   metadata: documentMetadataWhereInput
   record: documentRecordWhereInput
   record_some: documentRecordWhereInput
   record_every: documentRecordWhereInput
   record_none: documentRecordWhereInput
-  record_semantic_search: semanticSearchInput
   AND: [documentWhereInput!]
   OR: [documentWhereInput!]
   NOT: documentWhereInput
