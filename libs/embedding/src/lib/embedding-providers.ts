@@ -1,5 +1,5 @@
 import { createLoggerWithPrefix } from 'log-management';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { OpenAIModel, AlibabaModel, OnnxModel, EmbeddingConfig } from './embedding';
 
 const logger = createLoggerWithPrefix('EmbeddingProviders');

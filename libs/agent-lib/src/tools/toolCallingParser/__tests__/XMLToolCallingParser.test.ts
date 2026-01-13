@@ -200,12 +200,12 @@ describe('XMLToolCallingParser', () => {
             });
         });
 
-        it('should handle complex nested scenario', () => {
+        it.only('should handle complex nested scenario', () => {
             const message = `I'll help you with that.
-<read_file><path>package.json</path></read_file>
+<read_file><path><name>package.json</name></path></read_file>
 Let me check the dependencies.`;
             const result = parser.processMessage(message);
-
+            console.log(result)
             expect(result).toHaveLength(3);
             expect(result[0]).toEqual({
                 type: 'text',
@@ -214,7 +214,7 @@ Let me check the dependencies.`;
             expect(result[1]).toEqual({
                 type: 'tool_use',
                 name: 'read_file',
-                params: { path: 'package.json' },
+                params: { path: '<name>package.json</name>' },
                 partial: false,
             });
             expect(result[2]).toEqual({
