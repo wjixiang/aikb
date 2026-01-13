@@ -8,9 +8,8 @@ import { CreateChunkEmbedGroupRequest } from './types';
 @Controller()
 @libraryItemVectorProto.LibraryItemVectorServiceControllerMethods()
 export class VectorGrpcController
-  implements libraryItemVectorProto.LibraryItemVectorServiceController
-{
-  constructor(private readonly vectorService: VectorService) {}
+  implements libraryItemVectorProto.LibraryItemVectorServiceController {
+  constructor(private readonly vectorService: VectorService) { }
 
   /**
    * Convert protobuf CreateChunkEmbedGroupRequest to internal CreateChunkEmbedGroupRequest
@@ -23,27 +22,31 @@ export class VectorGrpcController
       description: protoRequest.description,
       chunkingConfig: protoRequest.chunkingConfig
         ? {
-            strategy: protoRequest.chunkingConfig.strategy as any,
-          }
+          strategy: protoRequest.chunkingConfig.strategy as any,
+        }
         : undefined,
       embeddingConfig: protoRequest.embeddingConfig
         ? {
-            provider: protoRequest.embeddingConfig.provider as any,
-            model: protoRequest.embeddingConfig.model as any,
-            dimension: protoRequest.embeddingConfig.dimension,
-            batchSize: parseInt(
-              protoRequest.embeddingConfig.parameters?.['batchSize'] || '20',
-              10,
-            ),
-            maxRetries: parseInt(
-              protoRequest.embeddingConfig.parameters?.['maxRetries'] || '3',
-              10,
-            ),
-            timeout: parseInt(
-              protoRequest.embeddingConfig.parameters?.['timeout'] || '20000',
-              10,
-            ),
-          }
+          provider: protoRequest.embeddingConfig.provider as any,
+          model: protoRequest.embeddingConfig.model as any,
+          dimension: protoRequest.embeddingConfig.dimension,
+          batchSize: parseInt(
+            protoRequest.embeddingConfig.parameters?.['batchSize'] || '20',
+            10,
+          ),
+          maxRetries: parseInt(
+            protoRequest.embeddingConfig.parameters?.['maxRetries'] || '3',
+            10,
+          ),
+          timeout: parseInt(
+            protoRequest.embeddingConfig.parameters?.['timeout'] || '20000',
+            10,
+          ),
+          concurrencyLimit: parseInt(
+            protoRequest.embeddingConfig.parameters?.['concurrencyLimit'] || '20',
+            10,
+          ),
+        }
         : undefined,
       isDefault: protoRequest.isDefault,
       isActive: protoRequest.isActive,
@@ -76,6 +79,7 @@ export class VectorGrpcController
           batchSize: group.embeddingConfig.batchSize?.toString() || '30',
           maxRetries: group.embeddingConfig.maxRetries?.toString() || '5',
           timeout: group.embeddingConfig.timeout?.toString() || '30000',
+          concurrencyLimit: group.embeddingConfig.concurrencyLimit?.toString() || '20',
         },
       },
       isDefault: group.isDefault,

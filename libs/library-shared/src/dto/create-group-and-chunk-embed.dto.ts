@@ -73,6 +73,12 @@ export class EmbeddingConfigDto {
   @IsNumber()
   @Min(1000)
   timeout?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  concurrencyLimit?: number;
 }
 
 export class CreateGroupAndChunkEmbedDto {

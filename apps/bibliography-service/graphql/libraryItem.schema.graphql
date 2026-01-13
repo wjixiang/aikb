@@ -59,6 +59,7 @@ type EmbeddingConfig {
   maxRetries: Int!
   timeout: Int!
   provider: String!
+  concurrencyLimit: Int!
 }
 
 type ChunkEmbedGroup {
@@ -150,6 +151,7 @@ input EmbeddingConfigInput {
   maxRetries: Int!
   timeout: Int!
   provider: String!
+  concurrencyLimit: Int!
 }
 
 input CreateChunkEmbedGroupInput {

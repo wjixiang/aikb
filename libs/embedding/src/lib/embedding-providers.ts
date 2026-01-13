@@ -1,6 +1,6 @@
 import { createLoggerWithPrefix } from 'log-management';
 import axios, { AxiosError } from 'axios';
-import { OpenAIModel, AlibabaModel, OnnxModel } from './embedding';
+import { OpenAIModel, AlibabaModel, OnnxModel, EmbeddingConfig } from './embedding';
 
 const logger = createLoggerWithPrefix('EmbeddingProviders');
 
@@ -17,10 +17,10 @@ const CONCURRENCY_LIMIT = parseInt(
  * Abstract base class for embedding providers
  */
 export abstract class EmbeddingProviderBase {
-  abstract embed(text: string | string[]): Promise<number[] | null>;
+  abstract embed(text: string | string[], config: EmbeddingConfig): Promise<number[] | null>;
   abstract embedBatch(
     texts: string[],
-    concurrencyLimit?: number,
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]>;
 }
 
@@ -104,7 +104,7 @@ export class OpenAIEmbeddingProvider extends EmbeddingProviderBase {
 
   async embedBatch(
     texts: string[],
-    concurrencyLimit: number = CONCURRENCY_LIMIT,
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]> {
     const results: (number[] | null)[] = new Array(texts.length).fill(null);
     const processingQueue: Promise<void>[] = [];
@@ -128,7 +128,7 @@ export class OpenAIEmbeddingProvider extends EmbeddingProviderBase {
       processingQueue.push(promise);
 
       // If we've reached the concurrency limit, wait for some to complete
-      if (processingQueue.length >= concurrencyLimit) {
+      if (processingQueue.length >= config.concurrencyLimit) {
         await Promise.race(processingQueue);
         // Remove completed promises from the queue
         processingQueue.splice(
@@ -166,7 +166,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
   async embed(
     text: string | string[],
-    model: AlibabaModel = AlibabaModel.TEXT_EMBEDDING_V3,
+    config: EmbeddingConfig
   ): Promise<number[] | null> {
     if (!this.apiKey) {
       logger.error('Alibaba API key not configured');
@@ -185,9 +185,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         const response = await axios.post(
           'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
           {
-            model: model,
+            model: config.model,
             input: text,
-            dimension: '1024',
+            dimension: config.dimension,
             encoding_format: 'float',
           },
           {
@@ -289,10 +289,10 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
   async embedBatch(
     texts: string[],
-    concurrencyLimit: number = CONCURRENCY_LIMIT,
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]> {
     logger.info(
-      `Starting embedBatch with ${texts.length} texts, concurrency limit: ${concurrencyLimit}`,
+      `Starting embedBatch with ${texts.length} texts, concurrency limit: ${config.concurrencyLimit}`,
     );
     const results: (number[] | null)[] = new Array(texts.length).fill(null);
     const MAX_BATCH_SIZE = 10; // Alibaba API limit
@@ -307,7 +307,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
       );
 
       try {
-        const batchResults = await this.processBatchWithRetry(batch);
+        const batchResults = await this.processBatchWithRetry(batch, config);
         logger.info(
           `Successfully processed batch with ${batchResults.length} embeddings`,
         );
@@ -325,13 +325,13 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
           `Falling back to individual processing for batch of ${batch.length} texts`,
         );
 
-        // Fallback to individual processing for this batch
-        await this.processBatchIndividually(
-          batch,
-          batchStartIndex,
-          results,
-          concurrencyLimit,
-        );
+        // // Fallback to individual processing for this batch
+        // await this.processBatchIndividually(
+        //   batch,
+        //   batchStartIndex,
+        //   results,
+        //   concurrencyLimit,
+        // );
       }
     }
 
@@ -343,6 +343,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
 
   private async processBatchWithRetry(
     batch: string[],
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]> {
     let retries = 0;
 
@@ -354,9 +355,9 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
         const response = await axios.post(
           'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings',
           {
-            model: AlibabaModel.TEXT_EMBEDDING_V3,
+            model: config.model,
             input: batch,
-            dimension: '1024',
+            dimension: config.dimension,
             encoding_format: 'float',
           },
           {
@@ -364,7 +365,7 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${this.apiKey}`,
             },
-            timeout: 30000, // 30 second timeout for batch requests
+            timeout: config.timeout,
           },
         );
 
@@ -432,57 +433,57 @@ export class AlibabaEmbeddingProvider extends EmbeddingProviderBase {
     );
   }
 
-  private async processBatchIndividually(
-    batch: string[],
-    batchStartIndex: number,
-    results: (number[] | null)[],
-    concurrencyLimit: number,
-  ): Promise<void> {
-    const processingQueue: Promise<void>[] = [];
-    const completedPromises = new Set<Promise<void>>();
+  // private async processBatchIndividually(
+  //   batch: string[],
+  //   batchStartIndex: number,
+  //   results: (number[] | null)[],
+  //   concurrencyLimit: number,
+  // ): Promise<void> {
+  //   const processingQueue: Promise<void>[] = [];
+  //   const completedPromises = new Set<Promise<void>>();
 
-    for (let j = 0; j < batch.length; j++) {
-      const text = batch[j];
-      if (!text) continue;
-      const processItem = async (batchIndex: number, globalIndex: number) => {
-        try {
-          results[globalIndex] = await this.embed(text);
-          logger.debug(
-            `Successfully processed individual text at index ${globalIndex}`,
-          );
-        } catch (error) {
-          logger.error(`Error embedding text at index ${globalIndex}:`, error);
-          results[globalIndex] = null;
-        }
-      };
+  //   for (let j = 0; j < batch.length; j++) {
+  //     const text = batch[j];
+  //     if (!text) continue;
+  //     const processItem = async (batchIndex: number, globalIndex: number) => {
+  //       try {
+  //         results[globalIndex] = await this.embed(text);
+  //         logger.debug(
+  //           `Successfully processed individual text at index ${globalIndex}`,
+  //         );
+  //       } catch (error) {
+  //         logger.error(`Error embedding text at index ${globalIndex}:`, error);
+  //         results[globalIndex] = null;
+  //       }
+  //     };
 
-      const promise = processItem(j, batchStartIndex + j);
-      processingQueue.push(promise);
+  //     const promise = processItem(j, batchStartIndex + j);
+  //     processingQueue.push(promise);
 
-      // If we've reached the concurrency limit, wait for some to complete
-      if (processingQueue.length >= concurrencyLimit) {
-        await Promise.race(processingQueue);
+  //     // If we've reached the concurrency limit, wait for some to complete
+  //     if (processingQueue.length >= concurrencyLimit) {
+  //       await Promise.race(processingQueue);
 
-        // Remove completed promises from the queue
-        await Promise.allSettled(processingQueue);
-        const stillPending = processingQueue.filter(
-          (p) => !completedPromises.has(p),
-        );
-        processingQueue.length = 0;
-        processingQueue.push(...stillPending);
+  //       // Remove completed promises from the queue
+  //       await Promise.allSettled(processingQueue);
+  //       const stillPending = processingQueue.filter(
+  //         (p) => !completedPromises.has(p),
+  //       );
+  //       processingQueue.length = 0;
+  //       processingQueue.push(...stillPending);
 
-        logger.debug(
-          `Removed completed promises, queue size: ${processingQueue.length}`,
-        );
-      }
-    }
+  //       logger.debug(
+  //         `Removed completed promises, queue size: ${processingQueue.length}`,
+  //       );
+  //     }
+  //   }
 
-    // Wait for all remaining promises to complete
-    logger.debug(
-      `Waiting for ${processingQueue.length} remaining promises to complete`,
-    );
-    await Promise.all(processingQueue);
-  }
+  //   // Wait for all remaining promises to complete
+  //   logger.debug(
+  //     `Waiting for ${processingQueue.length} remaining promises to complete`,
+  //   );
+  //   await Promise.all(processingQueue);
+  // }
 }
 
 /**
@@ -521,7 +522,7 @@ export class ONNXEmbeddingProvider extends EmbeddingProviderBase {
 
   async embedBatch(
     texts: string[],
-    concurrencyLimit: number = CONCURRENCY_LIMIT,
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]> {
     const results: (number[] | null)[] = new Array(texts.length).fill(null);
     const processingQueue: Promise<void>[] = [];
@@ -545,7 +546,7 @@ export class ONNXEmbeddingProvider extends EmbeddingProviderBase {
       processingQueue.push(promise);
 
       // If we've reached the concurrency limit, wait for some to complete
-      if (processingQueue.length >= concurrencyLimit) {
+      if (processingQueue.length >= config.concurrencyLimit) {
         await Promise.race(processingQueue);
         // Remove completed promises from the queue
         processingQueue.splice(

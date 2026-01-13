@@ -55,6 +55,12 @@ class EmbeddingConfigDto {
 
   @IsEnum(EmbeddingProvider)
   provider!: EmbeddingProvider;
+
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  concurrencyLimit?: number;
 }
 
 export class CreateChunkEmbedGroupDto {

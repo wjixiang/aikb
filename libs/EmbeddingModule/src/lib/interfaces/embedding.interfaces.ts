@@ -4,6 +4,7 @@ import {
   AlibabaModel,
   OnnxModel,
   EmbeddingModel,
+  EmbeddingConfig,
 } from 'embedding';
 
 /**
@@ -19,8 +20,7 @@ export interface EmbeddingRequest {
  */
 export interface BatchEmbeddingRequest {
   texts: string[];
-  provider?: EmbeddingProvider;
-  concurrencyLimit?: number;
+  config?: EmbeddingConfig
 }
 
 /**

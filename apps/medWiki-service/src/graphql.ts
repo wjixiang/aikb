@@ -18,6 +18,7 @@ export class EntityWhereInput {
     id_in?: Nullable<string[]>;
     id_not_in?: Nullable<string[]>;
     definition?: Nullable<string>;
+    definition_semantic_search?: Nullable<SemanticSearchInput>;
     definition_contains?: Nullable<string>;
     definition_starts_with?: Nullable<string>;
     definition_ends_with?: Nullable<string>;
@@ -30,6 +31,12 @@ export class EntityWhereInput {
     AND?: Nullable<EntityWhereInput[]>;
     OR?: Nullable<EntityWhereInput[]>;
     NOT?: Nullable<EntityWhereInput>;
+}
+
+export class SemanticSearchInput {
+    searchText: string;
+    topK?: Nullable<number>;
+    threshold?: Nullable<number>;
 }
 
 export class NomenclatureWhereInput {

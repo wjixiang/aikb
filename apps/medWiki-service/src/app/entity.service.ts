@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { wikiPrismaService } from 'wiki-db';
-import { CreateEntityInput, Entity, EntityWhereInput, Nomenclature } from '../graphql';
+import { CreateEntityInput, Entity, EntityWhereInput, Nomenclature, SemanticSearchInput } from '../graphql';
+import { EmbeddingService } from 'EmbeddingModule';
 
 // Define a custom injection token
 export const WIKI_PRISMA_SERVICE_TOKEN = Symbol('wikiPrismaService');
@@ -10,7 +11,8 @@ export class EntityService {
 
     constructor(
         @Inject(WIKI_PRISMA_SERVICE_TOKEN)
-        private storageService: wikiPrismaService
+        private storageService: wikiPrismaService,
+        private embeddingService: EmbeddingService,
     ) { }
 
     /**
@@ -35,14 +37,96 @@ export class EntityService {
      * @returns Array of matching entities
      */
     async getEntities(filter: EntityWhereInput): Promise<Entity[]> {
-        const prismaFilter = this.convertToPrismaWhere(filter);
-        const entities = await this.storageService.entity.findMany({
-            where: prismaFilter,
-            include: {
-                nomenclatures: true
-            }
+
+        // Identify semantic search query
+        if (filter.definition_semantic_search) {
+            return this.performSemanticSearch(filter.definition_semantic_search);
+        } else {
+            const prismaFilter = this.convertToPrismaWhere(filter);
+            const entities = await this.storageService.entity.findMany({
+                where: prismaFilter,
+                include: {
+                    nomenclatures: true
+                }
+            });
+            return entities.map(e => this.convertToGraphQLEntity(e));
+        }
+    }
+
+    /**
+     * Perform semantic search on entity definitions
+     * @param semanticSearchInput - The semantic search parameters
+     * @returns Array of matching entities ordered by similarity
+     */
+    private async performSemanticSearch(
+        semanticSearchInput: SemanticSearchInput
+    ): Promise<Entity[]> {
+        // Generate embedding for the search query
+        const embeddingResult = await this.embeddingService.embed({
+            text: semanticSearchInput.searchText,
         });
-        return entities.map(e => this.convertToGraphQLEntity(e));
+
+        if (!embeddingResult.success || !embeddingResult.embedding) {
+            throw new Error(
+                `Failed to generate embedding: ${embeddingResult.error || 'Unknown error'}`
+            );
+        }
+
+        const searchVector = embeddingResult.embedding;
+        const topK = semanticSearchInput.topK ?? 10;
+        const threshold = semanticSearchInput.threshold ?? 0.0;
+
+        // Convert searchVector to PostgreSQL vector format
+        const vectorString = `[${searchVector.join(',')}]`;
+
+        try {
+            // Use pgvector's <=> operator for cosine similarity with raw SQL
+            // The <=> operator returns the cosine distance (1 - cosine similarity)
+            // So we use 1 - (embedding <=> query) to get cosine similarity
+            const results = (await this.storageService.$queryRawUnsafe(
+                `
+                SELECT
+                    e.id,
+                    e.definition,
+                    1 - (ee.vector <=> $1::vector) as similarity
+                FROM entities e
+                INNER JOIN "EntityEmbedding" ee ON e.id = ee."entityId"
+                WHERE 1 - (ee.vector <=> $1::vector) >= $2
+                ORDER BY similarity DESC
+                LIMIT $3
+            `,
+                vectorString,
+                threshold,
+                topK,
+            )) as any[];
+
+            if (results.length === 0) {
+                return [];
+            }
+
+            // Fetch full entity data with nomenclatures for all matching IDs
+            const entityIds = results.map((r) => r.id);
+            const entities = await this.storageService.entity.findMany({
+                where: {
+                    id: { in: entityIds },
+                },
+                include: {
+                    nomenclatures: true,
+                },
+            });
+
+            // Sort entities by similarity score from the search results
+            const entityMap = new Map(
+                entities.map((e) => [e.id, this.convertToGraphQLEntity(e)])
+            );
+
+            return results
+                .map((r) => entityMap.get(r.id))
+                .filter((e): e is Entity => e !== undefined);
+        } catch (error) {
+            console.error('Error in semantic search:', error);
+            throw error;
+        }
     }
 
     /**

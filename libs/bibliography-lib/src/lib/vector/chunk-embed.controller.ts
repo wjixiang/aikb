@@ -8,7 +8,7 @@ import { EmbeddingProvider, OpenAIModel } from 'embedding';
 
 @Controller()
 export class ChunkEmbedController {
-  constructor(private readonly chunkEmbedService: ChunkEmbedService) {}
+  constructor(private readonly chunkEmbedService: ChunkEmbedService) { }
 
   @RabbitRPC({
     exchange: 'library',
@@ -58,6 +58,7 @@ export class ChunkEmbedController {
         batchSize: data.embeddingConfig?.batchSize || 10,
         maxRetries: data.embeddingConfig?.maxRetries || 3,
         timeout: data.embeddingConfig?.timeout || 30000,
+        concurrencyLimit: data.embeddingConfig?.concurrencyLimit || 20,
       },
       isDefault: false,
       isActive: true,

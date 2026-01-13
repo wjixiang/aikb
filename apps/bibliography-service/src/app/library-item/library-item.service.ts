@@ -427,6 +427,7 @@ export class LibraryItemService {
             batchSize: input.embeddingConfig.batchSize || 20,
             maxRetries: input.embeddingConfig.maxRetries || 3,
             timeout: input.embeddingConfig.timeout || 20000,
+            concurrencyLimit: input.embeddingConfig.concurrencyLimit || 20,
             parameters: {},
           }
           : defaultEmbeddingConfig,

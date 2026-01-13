@@ -6,6 +6,8 @@ import {
   embeddingManager,
   embeddingService as baseEmbeddingService,
   EmbeddingModel,
+  EmbeddingConfig,
+  defaultEmbeddingConfig,
 } from 'embedding';
 import { createLoggerWithPrefix } from 'log-management';
 import {
@@ -129,7 +131,7 @@ export class EmbeddingService implements OnModuleInit, OnModuleDestroy {
   /**
    * Generate embedding for a single text or array of texts
    */
-  async embed(request: EmbeddingRequest): Promise<EmbeddingResponse> {
+  async embed(request: EmbeddingRequest, config?: EmbeddingConfig): Promise<EmbeddingResponse> {
     const startTime = Date.now();
     const provider = request.provider || this.embedding.getProvider();
 
@@ -137,7 +139,7 @@ export class EmbeddingService implements OnModuleInit, OnModuleDestroy {
       this.stats.totalRequests++;
       this.stats.providerStats[provider].requests++;
 
-      const embedding = await this.embedding.embed(request.text, provider);
+      const embedding = await this.embedding.embed(request.text, config);
       const responseTime = Date.now() - startTime;
 
       if (embedding) {
@@ -186,9 +188,9 @@ export class EmbeddingService implements OnModuleInit, OnModuleDestroy {
     request: BatchEmbeddingRequest,
   ): Promise<BatchEmbeddingResponse> {
     const startTime = Date.now();
-    const provider = request.provider || this.embedding.getProvider();
+    const provider = request.config?.provider || this.embedding.getProvider();
     const concurrencyLimit =
-      request.concurrencyLimit ||
+      request.config?.concurrencyLimit ||
       this.configService.get<EmbeddingModuleConfig>('embedding')
         ?.defaultConcurrencyLimit ||
       5;
@@ -199,8 +201,10 @@ export class EmbeddingService implements OnModuleInit, OnModuleDestroy {
 
       const embeddings = await this.embedding.embedBatch(
         request.texts,
-        provider,
-        concurrencyLimit,
+        {
+          ...defaultEmbeddingConfig,
+          ...request.config
+        }
       );
       const responseTime = Date.now() - startTime;
 

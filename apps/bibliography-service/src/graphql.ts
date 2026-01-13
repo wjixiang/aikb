@@ -35,6 +35,7 @@ export class EmbeddingConfigInput {
     maxRetries: number;
     timeout: number;
     provider: string;
+    concurrencyLimit: number;
 }
 
 export class CreateChunkEmbedGroupInput {
@@ -108,6 +109,7 @@ export class EmbeddingConfig {
     maxRetries: number;
     timeout: number;
     provider: string;
+    concurrencyLimit: number;
 }
 
 export class ChunkEmbedGroup {

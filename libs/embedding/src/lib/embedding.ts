@@ -39,6 +39,7 @@ export interface EmbeddingConfig {
   maxRetries: number; // Maximum retry attempts
   timeout: number; // Request timeout in milliseconds
   provider: EmbeddingProvider; // Provider-specific configuration
+  concurrencyLimit: number;
 }
 
 export const defaultEmbeddingConfig: EmbeddingConfig = {
@@ -48,6 +49,7 @@ export const defaultEmbeddingConfig: EmbeddingConfig = {
   maxRetries: 3,
   timeout: 20000,
   provider: EmbeddingProvider.ALIBABA,
+  concurrencyLimit: 20
 };
 
 // Re-export the provider base class and implementations for convenience
@@ -56,7 +58,7 @@ export const defaultEmbeddingConfig: EmbeddingConfig = {
 // export { embeddingManager, EmbeddingManager } from './embedding-manager';
 
 export class Embedding {
-  private activeProvider: EmbeddingProvider = EmbeddingProvider.ALIBABA; // Default to alibaba
+  private activeProvider: EmbeddingProvider = defaultEmbeddingConfig.provider
 
   constructor() {
     // Check if manager is initialized, if not, initialize it
@@ -105,9 +107,9 @@ export class Embedding {
    */
   public async embed(
     text: string | string[],
-    provider?: EmbeddingProvider,
+    config?: EmbeddingConfig
   ): Promise<number[] | null> {
-    const targetProvider = provider || this.activeProvider;
+    const targetProvider = config?.provider || this.activeProvider;
     const providerInstance = embeddingManager.getProvider(targetProvider);
 
     if (!providerInstance) {
@@ -115,7 +117,10 @@ export class Embedding {
       return null;
     }
 
-    return providerInstance.embed(text);
+    return providerInstance.embed(text, {
+      ...defaultEmbeddingConfig,
+      ...config
+    });
   }
 
   /**
@@ -127,10 +132,9 @@ export class Embedding {
    */
   public async embedBatch(
     texts: string[],
-    provider?: EmbeddingProvider,
-    concurrencyLimit: number = CONCURRENCY_LIMIT,
+    config: EmbeddingConfig
   ): Promise<(number[] | null)[]> {
-    const targetProvider = provider || this.activeProvider;
+    const targetProvider = config.provider || this.activeProvider;
     const providerInstance = embeddingManager.getProvider(targetProvider);
 
     if (!providerInstance) {
@@ -140,7 +144,7 @@ export class Embedding {
       return new Array(texts.length).fill(null);
     }
 
-    return providerInstance.embedBatch(texts, concurrencyLimit);
+    return providerInstance.embedBatch(texts, config);
   }
 }
 

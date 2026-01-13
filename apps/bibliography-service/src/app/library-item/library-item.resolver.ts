@@ -83,6 +83,7 @@ export class LibraryItemResolver {
           maxRetries: group.embeddingConfig?.maxRetries || 3,
           timeout: group.embeddingConfig?.timeout || 20000,
           provider: group.embeddingConfig?.provider || '',
+          concurrencyLimit: group.embeddingConfig?.concurrencyLimit || 20,
         },
       },
       isDefault: group.isDefault,
@@ -485,6 +486,7 @@ export class LibraryItemResolver {
             batchSize: input.embeddingConfig.batchSize,
             maxRetries: input.embeddingConfig.maxRetries,
             timeout: input.embeddingConfig.timeout,
+            concurrencyLimit: input.embeddingConfig.concurrencyLimit,
           }
           : undefined,
         isDefault: input.isDefault ?? undefined,
