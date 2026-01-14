@@ -1,5 +1,5 @@
-import { BookshelfWorkspace } from './bookshelfWorkspace';
-import { BookViewerComponent, WorkspaceInfoComponent } from './bookshelfComponents';
+import { BookshelfWorkspace } from '../bookshelfWorkspace';
+import { BookViewerComponent, WorkspaceInfoComponent } from '../bookshelfComponents';
 
 describe(BookshelfWorkspace, () => {
     let workspace: BookshelfWorkspace;

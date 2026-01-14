@@ -255,7 +255,51 @@ export function renderEditablePropsAsPrompt<TInput, TOutput, TDef extends ZodTyp
     const schemaPrompt = renderSchemaAsPrompt(editableProps.schema, '', editableProps.description);
 
     // Prepend field name to avoid duplication
-    return `${fieldName}: ${schemaPrompt}${readonlyMark}${currentValue}`;
+    return `- ${fieldName}: ${schemaPrompt}${readonlyMark}${currentValue}`;
+}
+
+/**
+ * Render EditableProps descriptions as a structured markdown prompt for LLM
+ * This generates a two-section markdown output:
+ * 1. A list of all editable fields with their types and current values
+ * 2. Detailed descriptions for each field
+ *
+ * @param fields - Record of field names to their EditableProps
+ * @returns A structured markdown string for LLM consumption
+ */
+export function renderEditablePropsDescAsPrompt(
+    fields: Record<string, EditableProps<any, any, any>>
+): string {
+    const fieldNames = Object.keys(fields);
+
+    if (fieldNames.length === 0) {
+        return 'No editable fields available.';
+    }
+
+    // Section 1: Field listing with types and current values
+    const listingSection = fieldNames
+        .map(name => {
+            const prop = fields[name];
+            const readonlyMark = prop.readonly ? ' [READ-ONLY]' : '';
+            const currentValue = prop.value !== null
+                ? ` (current: ${JSON.stringify(prop.value)})`
+                : ' (not set)';
+            const schemaPrompt = renderSchemaAsPrompt(prop.schema, '', '');
+            return `- \`${name}\`: ${schemaPrompt}${readonlyMark}${currentValue}`;
+        })
+        .join('\n');
+
+    // Section 2: Detailed descriptions
+    const descriptionSection = fieldNames
+        .map(name => {
+            const prop = fields[name];
+            const readonlyMark = prop.readonly ? ' [READ-ONLY]' : '';
+            const schemaPrompt = renderSchemaAsPrompt(prop.schema, '', prop.description);
+            return `### ${name}${readonlyMark}\n\n${schemaPrompt}`;
+        })
+        .join('\n\n');
+
+    return `## Editable Fields\n\n${listingSection}\n\n## Field Descriptions\n\n${descriptionSection}`;
 }
 
 /**

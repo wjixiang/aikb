@@ -9,7 +9,8 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../../coverage/libs/agent-lib"
+        "reportsDirectory": "../../coverage/libs/agent-lib",
+        "config": "libs/agent-lib/vite.config.mts"
       }
     }
   }

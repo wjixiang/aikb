@@ -25,7 +25,10 @@ export class WikiEditorComponents extends WorkspaceComponent {
         super(
             'wiki_editor',
             'Wiki Editor',
-            'A component for editing wiki documents using XML-based commands. Supports insert, replace, delete, append, prepend, move, copy, and batch operations.',
+            `A powerful, LLM-friendly, text-based application for knowledge management.
+- This application provides capabilities to exploring and editing notes accumulated in the knowledge vault.
+
+`,
             {
                 edit_command: {
                     value: null,
@@ -270,6 +273,7 @@ Batch operations:
         const history = this.getCommandHistory();
 
         let output = `
+
 Current Content:
 ---------------
 ${content || '(empty)'}

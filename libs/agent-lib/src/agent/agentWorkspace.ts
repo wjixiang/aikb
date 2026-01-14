@@ -5,6 +5,7 @@ import {
     EditablePropsSchema
 } from "./workspaceTypes";
 import { WorkspaceComponentRegistry, WorkspaceComponent } from "./componentTypes";
+import { createComponentRegistry } from "./componentRegistry";
 
 interface WorkSpaceInfo {
     name: string;
@@ -20,9 +21,9 @@ interface WorkSpaceInfo {
  */
 export abstract class WorkspaceBase {
     info: WorkSpaceInfo;
-
+    initialized = false;
     // Component registry for managing workspace components
-    protected componentRegistry?: WorkspaceComponentRegistry;
+    componentRegistry: WorkspaceComponentRegistry = createComponentRegistry()
 
     // Store errors captured from handleStateUpdateToolCall
     protected capturedErrors: string[] = [];
@@ -37,7 +38,25 @@ export abstract class WorkspaceBase {
      * This method wraps the abstract renderContextImpl and adds captured errors
      */
     async renderContext(): Promise<string> {
-        const context = await this.renderContextImpl();
+        if (!this.initialized) {
+            if (this.init) {
+                await this.init();
+            } else {
+                throw new Error('Workspace initializing method not implemented')
+            }
+        }
+        const components = this.componentRegistry.getAll();
+        const componentRenders = components
+            .map((comp: any) => comp.render())
+            .join('\n\n---\n\n');
+
+        const context = `
+################################
+------${this.info.name}-------
+################################
+
+${componentRenders}
+        `;
 
         // Add captured errors as a separate paragraph if any exist
         if (this.capturedErrors.length > 0) {
@@ -48,11 +67,6 @@ export abstract class WorkspaceBase {
         return context;
     }
 
-    /**
-     * Implementation method for rendering workspace context
-     * Subclasses should override this method instead of renderContext
-     */
-    protected abstract renderContextImpl(): Promise<string>;
 
     /**
      * Get the workspace prompt/description

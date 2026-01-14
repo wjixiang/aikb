@@ -30,9 +30,6 @@ import { BookViewerComponent, WorkspaceInfoComponent } from "./bookshelfComponen
  */
 export class BookshelfWorkspace extends WorkspaceBase {
     // Component-based architecture - no central env
-    override componentRegistry = createComponentRegistry();
-
-    initialized = false;
 
     constructor() {
         super({
@@ -79,26 +76,26 @@ The area below is interactable, content will be refreshed between each conversat
         this.initialized = true;
     }
 
-    /**
-     * Render context by aggregating all component renders
-     * This is similar to React's render tree
-     * Each component renders its own state independently
-     */
-    protected async renderContextImpl(): Promise<string> {
-        if (!this.initialized) await this.init();
-        const components = this.componentRegistry.getAll();
-        const componentRenders = components
-            .map((comp: any) => comp.render())
-            .join('\n\n---\n\n');
+    //     /**
+    //      * Render context by aggregating all component renders
+    //      * This is similar to React's render tree
+    //      * Each component renders its own state independently
+    //      */
+    //     protected async renderContextImpl(): Promise<string> {
+    //         if (!this.initialized) await this.init();
+    //         const components = this.componentRegistry.getAll();
+    //         const componentRenders = components
+    //             .map((comp: any) => comp.render())
+    //             .join('\n\n---\n\n');
 
-        return `
-################################
-------Bookshelf Workspace-------
-################################
+    //         return `
+    // ################################
+    // ------${this.info.name}-------
+    // ################################
 
-${componentRenders}
-        `;
-    }
+    // ${componentRenders}
+    //         `;
+    //     }
 
     /**
      * Get all components (for testing/debugging)
