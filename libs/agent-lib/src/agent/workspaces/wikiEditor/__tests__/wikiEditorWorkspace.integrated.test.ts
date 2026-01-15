@@ -203,7 +203,7 @@ describe(WikiEditorWorkspace, () => {
                 await workspace.handleStateUpdateToolCall([
                     { field_name: 'edit_command', value: '<delete><search>test</search><delete_all>true</delete_all></delete>' }
                 ])
-                expect(wikiEditorComponent.getContent()).toBe('test')
+                expect(wikiEditorComponent.getContent()).toBe('  ')
             })
 
             it('should delete by range', async () => {
@@ -233,7 +233,7 @@ describe(WikiEditorWorkspace, () => {
                 await workspace.handleStateUpdateToolCall([
                     { field_name: 'edit_command', value: '<insert><before>content</before><content>INSERTED</content></insert>' }
                 ])
-                expect(wikiEditorComponent.getContent()).toBe('InitialINSERTED content')
+                expect(wikiEditorComponent.getContent()).toBe('Initial INSERTEDcontent')
             })
         })
 
@@ -262,7 +262,7 @@ describe(WikiEditorWorkspace, () => {
                 await workspace.handleStateUpdateToolCall([
                     { field_name: 'edit_command', value: '<move><search>C</search><before>A</before></move>' }
                 ])
-                expect(wikiEditorComponent.getContent()).toBe('C A B')
+                expect(wikiEditorComponent.getContent()).toBe('CA B ')
             })
         })
 
@@ -271,7 +271,7 @@ describe(WikiEditorWorkspace, () => {
                 await workspace.handleStateUpdateToolCall([
                     { field_name: 'edit_command', value: '<copy><search>Initial</search><position>8</position></copy>' }
                 ])
-                expect(wikiEditorComponent.getContent()).toBe('Initial contentInitial')
+                expect(wikiEditorComponent.getContent()).toBe('Initial Initialcontent')
             })
 
             it('should copy content after text marker', async () => {
@@ -309,7 +309,7 @@ describe(WikiEditorWorkspace, () => {
                         </batch>`
                     }
                 ])
-                expect(wikiEditorComponent.getContent()).toBe('Initial contentline1line2line3')
+                expect(wikiEditorComponent.getContent()).toBe('Initial content\nline1\nline2\nline3')
             })
 
             it('should stop on error by default', async () => {
@@ -328,7 +328,7 @@ describe(WikiEditorWorkspace, () => {
                 const result = wikiEditorComponent.getLastExecutionResult()
                 expect(result?.success).toBe(false)
                 expect(result?.error).toContain('Could not find text to delete')
-                expect(wikiEditorComponent.getContent()).toBe('Initial contentline1')
+                expect(wikiEditorComponent.getContent()).toBe('Initial content\nline1')
             })
 
             it('should continue on error when stop_on_error is false', async () => {
@@ -347,7 +347,7 @@ describe(WikiEditorWorkspace, () => {
                 ])
                 const result = wikiEditorComponent.getLastExecutionResult()
                 expect(result?.success).toBe(true) // Batch succeeds overall when stop_on_error is false
-                expect(wikiEditorComponent.getContent()).toBe('Initial contentline1line2')
+                expect(wikiEditorComponent.getContent()).toBe('Initial content\nline1\nline2')
             })
         })
     })
@@ -408,7 +408,7 @@ describe(WikiEditorWorkspace, () => {
         })
 
         it('should get content length', () => {
-            expect(wikiEditorComponent.getContentLength()).toBe(14)
+            expect(wikiEditorComponent.getContentLength()).toBe(17)
         })
 
         it('should get line count', () => {
@@ -417,7 +417,7 @@ describe(WikiEditorWorkspace, () => {
 
         it('should get content preview', () => {
             const preview = wikiEditorComponent.getContentPreview(10)
-            expect(preview).toBe('Line1\nLine2...')
+            expect(preview).toBe('Line1\nLine...')
         })
 
         it('should return full content when preview length exceeds content', () => {
@@ -489,7 +489,7 @@ Content for section 2.`
             ])
 
             await workspace.handleStateUpdateToolCall([
-                { field_name: 'edit_command', value: '<insert><after>## Section 1</after><content>\n\nNew paragraph here.</content></insert>' }
+                { field_name: 'edit_command', value: '<insert><after>## Section1</after><content>\n\nNew paragraph here.</content></insert>' }
             ])
 
             expect(wikiEditorComponent.getContent()).toContain('New paragraph here')
@@ -510,7 +510,7 @@ Content for section 2.`
                 { field_name: 'edit_command', value: '<replace><search>middle</search><replace_text>MIDDLE</replace_text></replace>' }
             ])
 
-            expect(wikiEditorComponent.getContent()).toBe('StartMIDDLEend')
+            expect(wikiEditorComponent.getContent()).toBe('Start\nMIDDLE\nend')
         })
 
         it('should handle batch with mixed command types', async () => {

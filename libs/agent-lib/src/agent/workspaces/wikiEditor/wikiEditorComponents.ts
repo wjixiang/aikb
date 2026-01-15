@@ -27,6 +27,9 @@ export class WikiEditorComponents extends WorkspaceComponent {
             'Wiki Editor',
             `A powerful, LLM-friendly, text-based application for knowledge management.
 - This application provides capabilities to exploring and editing notes accumulated in the knowledge vault.
+- The content of Interface Area will refresh each conversation based on your modification of editable props. To change editable props, you have two methods:
+  1. Direct Modification: select props field and input desired value directly
+  2. Indirect Modification: input specific commands to excute props modification 
 
 `,
             {
@@ -78,6 +81,12 @@ Batch operations:
   </commands>
 </batch>
 `,
+                    readonly: false
+                },
+                file_command: {
+                    value: null,
+                    schema: z.string().nullable(),
+                    description: '',
                     readonly: false
                 }
             },
