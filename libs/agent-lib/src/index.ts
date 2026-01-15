@@ -7,6 +7,8 @@ export * from './agent-lib.module';
 export { NativeToolCallParser };
 export { Task, TaskService };
 
+
+
 // Export from merged llm-api (includes reasoning functions)
 export * from './api';
 
@@ -34,3 +36,7 @@ export * from './tools';
 // Export from merged llm-types
 export * from './types';
 export type { ApiMessage } from './task/task.type'
+
+// Export from agent v2 (virtual workspace)
+export * from './agent/v2/virtualWorkspace';
+export * from './agent/v2/statefulComponent';

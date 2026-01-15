@@ -1,36 +1,33 @@
 import { proxy } from 'valtio'
 import * as z from 'zod';
-import { SecurityConfig, SecureExecutionContext, createSecurityConfig } from './scriptSecurity';
 
 export enum Permission {
     r = 'READ_ONLY',
     w = 'WRITE_ONLY',
     rw = 'READ_AND_WRITE'
 }
-export enum StateType {
-    private = 'PRIVATE',
-    public = 'PUBLIC',
-}
-export interface State {
-    type: StateType;
-    schema: z.Schema
-    state: object;
-}
 
 /**
- * Public states will be parsed into context 9
+ * State definition for components
+ * All states are now unified - no distinction between public and private
  */
-export interface PublicState extends State {
-    type: StateType.public;
+export interface State {
+    /**
+     * Schema defining the structure of the state
+     */
+    schema: z.Schema;
+    /**
+     * The actual state data (using valtio proxy for reactivity)
+     */
+    state: object;
+    /**
+     * Permission level for script execution
+     */
     permission: Permission;
     /**
      * Describe what will happen if state being changed
      */
     sideEffectsDesc?: string;
-}
-
-export interface PrivateState extends State {
-    type: StateType.private;
 }
 
 /**
@@ -44,7 +41,7 @@ export interface ScriptExecutionResult {
 }
 
 /**
- * Common tools available to LLM for interacting with the virtual workspace
+ * Common tools available to LLM for interacting with virtual workspace
  */
 export interface CommonTools {
     /**
@@ -59,102 +56,29 @@ export interface CommonTools {
 
 /**
  * Fully state-controlled interactive component
- * - this framework doesn't accept customized llm tools anymore. Instead, it allows LLM to write script to mutate states
+ * - Components define their states (unified state model)
+ * - Script execution is handled by the VirtualWorkspace, not by individual components
+ * - Components can provide utility functions for script execution
  */
 export abstract class StatefulComponent {
-    protected privateStates: Record<string, PrivateState> = {}
-    protected publicStates: Record<string, PublicState> = {}
+    /**
+     * All states managed by this component
+     * No distinction between public and private - all states are accessible
+     */
+    protected states: Record<string, State> = {};
 
     /**
-     * Security configuration for script execution
-     * Override this in subclasses to customize security settings
+     * Get all states for workspace to merge
      */
-    protected securityConfig: SecurityConfig = {};
-
-    /**
-     * Execute a JavaScript script to mutate public states
-     * The script has access to all public states via a sandboxed environment
-     *
-     * Security features:
-     * - Script validation before execution
-     * - Timeout enforcement
-     * - Iteration limits
-     * - Blocked patterns (require, eval, process, etc.)
-     * - Controlled global scope
-     */
-    async executeScript(script: string): Promise<ScriptExecutionResult> {
-        const config = createSecurityConfig(this.securityConfig);
-        const securityContext = new SecureExecutionContext(config);
-
-        try {
-            // Step 1: Validate script before execution
-            const validationResult = await securityContext.validateScript(script);
-            if (!validationResult.valid) {
-                return {
-                    success: false,
-                    message: 'Script validation failed',
-                    error: validationResult.errors.join('; ')
-                };
-            }
-
-            // Log warnings if any
-            if (validationResult.warnings.length > 0) {
-                console.warn('[Security]', validationResult.warnings.join('; '));
-            }
-
-            // Step 2: Create sandboxed environment
-            const sandbox = securityContext.createSandbox();
-
-            // Add all public states to sandbox (with write access)
-            for (const [key, publicState] of Object.entries(this.publicStates)) {
-                if (publicState.permission === Permission.rw || publicState.permission === Permission.w) {
-                    sandbox[key] = publicState.state;
-                }
-            }
-
-            // Add utility functions to sandbox
-            const utilities = this.getScriptUtilities();
-            for (const [utilName, utilFunc] of Object.entries(utilities)) {
-                sandbox[utilName] = utilFunc;
-            }
-
-            // Step 3: Start execution with timeout enforcement
-            securityContext.startExecution();
-
-            // Step 4: Create and execute the script function
-            const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-            const scriptFunction = new AsyncFunction(...Object.keys(sandbox), script);
-
-            // Execute the script with sandbox variables
-            const result = await scriptFunction(...Object.values(sandbox));
-
-            // Step 5: Stop execution and get stats
-            securityContext.stopExecution();
-            const stats = securityContext.getExecutionStats();
-
-            console.log('[Execution]', `Completed in ${stats.elapsed}ms with ${stats.iterations} iterations`);
-
-            return {
-                success: true,
-                message: 'Script executed successfully',
-                output: result
-            };
-        } catch (error) {
-            securityContext.stopExecution();
-            return {
-                success: false,
-                message: 'Script execution failed',
-                error: error instanceof Error ? error.message : String(error)
-            };
-        }
+    getStates(): Record<string, State> {
+        return this.states;
     }
-
 
     /**
      * Get available utility functions for script execution
      * Override this to provide component-specific utilities
      */
-    protected getScriptUtilities(): Record<string, Function> {
+    getScriptUtilities(): Record<string, Function> {
         return {};
     }
 
@@ -164,9 +88,9 @@ export abstract class StatefulComponent {
     private generateStateInitializationCode(): string {
         const lines: string[] = [];
 
-        for (const [key, publicState] of Object.entries(this.publicStates)) {
-            if (publicState.permission === Permission.rw || publicState.permission === Permission.w) {
-                lines.push(`const ${key} = ${JSON.stringify(publicState.state)};`);
+        for (const [key, state] of Object.entries(this.states)) {
+            if (state.permission === Permission.rw || state.permission === Permission.w) {
+                lines.push(`const ${key} = ${JSON.stringify(state.state)};`);
             }
         }
 
@@ -187,32 +111,31 @@ export abstract class StatefulComponent {
 
     /**
      * Render the virtual workspace as context for LLM
-     * This includes public states and their schemas
+     * This includes states and their schemas
      */
     async render(): Promise<string> {
         const lines: string[] = [];
 
         lines.push('╔════════════════════════════════════════════════════════════════╗');
         lines.push('║                    VIRTUAL WORKSPACE - AVAILABLE STATES                    ║');
-        lines.push('╚══════════════════════════════════════════════════════════════╝');
+        lines.push('╚════════════════════════════════════════════════════════════════╝');
         lines.push('');
 
-        for (const [key, publicState] of Object.entries(this.publicStates)) {
+        for (const [key, state] of Object.entries(this.states)) {
             lines.push('┌─────────────────────────────────────────────────────────────────────────────┐');
             lines.push(`│ State: ${key.padEnd(55)}│`);
             lines.push('├─────────────────────────────────────────────────────────────────────────────┤');
 
-            // Type and Permission
-            lines.push(`│ Type:        ${publicState.type.padEnd(49)}│`);
-            lines.push(`│ Permission:   ${publicState.permission.padEnd(49)}│`);
+            // Permission
+            lines.push(`│ Permission:   ${state.permission.padEnd(49)}│`);
 
             // Schema (simplified representation)
-            const schemaStr = this.formatSchema(publicState.schema);
+            const schemaStr = this.formatSchema(state.schema);
             lines.push(`│ Schema:       ${schemaStr.substring(0, 48).padEnd(49)}│`);
 
             // Side Effects
-            if (publicState.sideEffectsDesc) {
-                const sideEffects = publicState.sideEffectsDesc;
+            if (state.sideEffectsDesc) {
+                const sideEffects = state.sideEffectsDesc;
                 const chunks = this.chunkString(sideEffects, 49);
                 lines.push(`│ Side Effects: ${chunks[0].padEnd(49)}│`);
                 for (let i = 1; i < chunks.length; i++) {
@@ -223,7 +146,7 @@ export abstract class StatefulComponent {
             // Current Value
             lines.push('├─────────────────────────────────────────────────────────────────────────────┤');
             lines.push('│ Current Value:');
-            const valueLines = this.formatValue(publicState.state, 49);
+            const valueLines = this.formatValue(state.state, 49);
             for (const line of valueLines) {
                 lines.push(`│ ${line.padEnd(65)}│`);
             }
@@ -313,13 +236,13 @@ directly in your script.
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 Example 1: Simple state update
-─────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 await execute_script(\`
   search_box_state.search_pattern = "new search term";
 \`);
 
 Example 2: Complex logic with conditions
-─────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 await execute_script(\`
   if (search_box_state.search_pattern.includes("test")) {
     search_box_state.search_pattern = "filtered";
@@ -327,7 +250,7 @@ await execute_script(\`
 \`);
 
 Example 3: Using utility functions
-─────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 await execute_script(\`
   // Use utility functions if available
   const result = someUtilityFunction(search_box_state);
@@ -335,7 +258,7 @@ await execute_script(\`
 \`);
 
 Example 4: Complete the task
-─────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 await attempt_completion("Task completed successfully");
 
 `;
