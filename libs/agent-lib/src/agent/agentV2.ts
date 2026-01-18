@@ -13,18 +13,15 @@ import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
 import { VirtualWorkspace } from "./virtualWorkspace";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
-import { TextBlockParam } from "@anthropic-ai/sdk/resources";
+import { b } from '../baml_client'
 import {
-    ApiHandler,
     ApiStream,
     ApiStreamChunk,
-    buildApiHandler,
 } from '../api';
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
 import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
-import { resolveToolProtocol } from '../utils/resolveToolProtocol';
 import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt';
 import { formatResponse } from '../task/simplified-dependencies/formatResponse';
 import {
@@ -108,8 +105,7 @@ export class AgentV2 {
     private taskCompletedCallbacks: TaskCompletedCallback[] = [];
     private taskAbortedCallbacks: TaskAbortedCallback[] = [];
 
-    // API and helper classes
-    private api: ApiHandler;
+    // Helper classes
     private tokenUsageTracker: TokenUsageTracker;
     private responseProcessor: ResponseProcessor;
     private messageState: MessageProcessingState = {
@@ -128,9 +124,6 @@ export class AgentV2 {
         this.workspace = workspace;
         this._taskId = taskId || crypto.randomUUID();
 
-        // Initialize API handler
-        this.api = buildApiHandler(this.apiConfiguration);
-
         // Initialize helper classes
         this.tokenUsageTracker = new TokenUsageTracker();
         this.responseProcessor = new ResponseProcessor(
@@ -142,6 +135,10 @@ export class AgentV2 {
         workspace.setCompletionCallback(async (result: string) => {
             this.complete();
         });
+
+        this.onMessageAdded((message) => {
+            console.log(message)
+        })
     }
 
     // ==================== Public API ====================
@@ -400,13 +397,9 @@ export class AgentV2 {
                 throw new Error(`Consecutive mistake limit reached`);
             }
 
-            // Determine API protocol based on provider and model
-            const modelId = this.api.getModel().id;
-            const modelInfo = this.api.getModel().info;
-            const toolProtocol = resolveToolProtocol(
-                this.apiConfiguration,
-                modelInfo,
-            );
+            // Determine API protocol based on provider configuration
+            // Since we're using BAML with GLM47_coder client, use the configured tool protocol
+            const toolProtocol = this.apiConfiguration.toolProtocol || 'xml';
 
             const shouldUseXmlParser = toolProtocol === 'xml';
 
@@ -425,16 +418,26 @@ export class AgentV2 {
             const oldWorkspaceContext = await this.workspace.render();
 
             try {
+                console.log('[DEBUG] Starting API request processing...');
                 // Reset message processing state for each new API request
                 this.resetMessageState();
 
                 // Cache model info once per API request
-                this.messageState.cachedModel = this.api.getModel();
+                // Using BAML client (GLM47_coder) which uses glm-4.7 model
+                this.messageState.cachedModel = {
+                    id: this.apiConfiguration.apiModelId || 'glm-4.7',
+                    info: {
+                        supportsNativeTools: false, // BAML uses XML protocol
+                        defaultToolProtocol: 'xml',
+                    }
+                };
+                console.log('[DEBUG] Model cached:', this.messageState.cachedModel.id);
 
                 // Collect complete response from stream
+
                 const response = await this.collectCompleteResponse(this._status);
 
-                if (!response || response.length === 0) {
+                if (!response) {
                     throw new NoApiResponseError(1);
                 }
 
@@ -703,31 +706,42 @@ export class AgentV2 {
     /**
      * Collect complete response from stream without processing chunks individually
      */
-    private async collectCompleteResponse(status: TaskStatus): Promise<ApiStreamChunk[]> {
+    private async collectCompleteResponse(status: TaskStatus) {
+
         const stream = this.attemptApiRequest();
         const chunks: ApiStreamChunk[] = [];
+        console.log('[DEBUG] Stream obtained from attemptApiRequest');
 
         try {
-            const iterator = stream[Symbol.asyncIterator]();
-            let item = await iterator.next();
+            // const iterator = stream[Symbol.asyncIterator]();
+            // console.log('[DEBUG] Got async iterator, waiting for first chunk...');
+            // let item = await iterator.next();
+            // console.log('[DEBUG] First chunk received:', JSON.stringify(item).substring(0, 500));
 
-            while (!item.done) {
-                // Check for abort status during stream processing
-                if (status === 'aborted') {
-                    return chunks; // Return whatever chunks we have collected so far
-                }
+            // let chunkIndex = 0;
+            // while (!item.done) {
+            //     // Check for abort status during stream processing
+            //     if (status === 'aborted') {
+            //         console.log('[DEBUG] Stream collection aborted');
+            //         return chunks; // Return whatever chunks we have collected so far
+            //     }
 
-                const chunk = item.value;
-                if (chunk) {
-                    chunks.push(chunk);
-                }
-                item = await iterator.next();
-            }
+            //     const chunk = item.value;
+            //     if (chunk) {
+            //         chunkIndex++;
+            //         console.log(`[DEBUG] Adding chunk #${chunkIndex} of type: ${chunk.type}`);
+            //         chunks.push(chunk);
+            //     }
+            //     item = await iterator.next();
+            // }
 
-            console.log(`Collected ${chunks.length} chunks from stream`);
-            return chunks;
+            // console.log(`[DEBUG] Stream iteration complete, collected ${chunks.length} chunks`);
+            const finalResponse = await (await stream).getFinalResponse()
+
+
+            return finalResponse;
         } catch (error) {
-            console.error('Error collecting complete response:', error);
+            console.error('[DEBUG] Error collecting complete response:', error);
             throw error;
         }
     }
@@ -735,40 +749,63 @@ export class AgentV2 {
     /**
      * Attempt API request with timeout
      */
-    private async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
+    private async attemptApiRequest(retryAttempt: number = 0) {
+        console.log('[DEBUG] attemptApiRequest - START');
         try {
             console.debug(`Starting API request attempt ${retryAttempt + 1}`);
 
             const systemPrompt = await this.getSystemPrompt();
-            const workspaceContext = await this.workspace.render();
+            console.log('[DEBUG] System prompt obtained, length:', systemPrompt.length);
 
-            // Build clean conversation history
+            const workspaceContext = await this.workspace.render();
+            console.log('[DEBUG] Workspace context obtained, length:', workspaceContext.length);
+
+            // Build clean conversation history and convert to string array for BAML
             const cleanConversationHistory = this.buildCleanConversationHistory(
                 this._conversationHistory,
             );
+            console.log('[DEBUG] Clean conversation history built, messages:', cleanConversationHistory.length);
 
-            // Create the stream with timeout
-            const streamPromise = this.api.createMessage(
-                systemPrompt + "\n" + workspaceContext,
-                cleanConversationHistory,
-            );
+            // Convert conversation history to string array format for BAML
+            const memoryContext = cleanConversationHistory.map((msg) => {
+                const role = msg.role === 'user' ? 'user' : 'assistant';
+                const content = typeof msg.content === 'string'
+                    ? msg.content
+                    : msg.content.map((block) => {
+                        if (block.type === 'text') {
+                            return block.text;
+                        } else if (block.type === 'tool_use') {
+                            return `<tool_use name="${block.name}" id="${block.id}">${JSON.stringify(block.input)}</tool_use>`;
+                        } else if (block.type === 'tool_result') {
+                            return `<tool_result tool_use_id="${block.tool_use_id}">${block.content}</tool_result>`;
+                        }
+                        return '';
+                    }).join('\n');
+                return `<${role}>\n${content}\n</${role}>`;
+            });
+            console.log('[DEBUG] Memory context converted to string array, length:', memoryContext.length);
 
             try {
-                const stream = await Promise.race([
-                    streamPromise,
-                    this.createTimeoutPromise(this.config.apiRequestTimeout),
-                ]);
-
-                console.log(`API request attempt ${retryAttempt + 1} successful`);
-                yield* stream;
+                console.log('[DEBUG] Calling b.stream.ApiRequest...');
+                // Create the BAML stream
+                const bamlStream = b.stream.ApiRequest(systemPrompt, workspaceContext, memoryContext);
+                return bamlStream
+                // Convert BAML stream to ApiStream format
+                // console.log('[DEBUG] Converting BAML stream to ApiStream...');
+                // for await (const chunk of bamlStream) {
+                //     console.log(chunk)
+                //     yield { type: 'text', text: chunk };
+                // }
+                // console.log('[DEBUG] BAML stream conversion completed');
             } catch (error) {
+                console.error('[DEBUG] Error in BAML stream:', error);
                 if (error instanceof Error && error.message.includes('timed out')) {
                     throw new Error(`API request timed out after ${this.config.apiRequestTimeout}ms`);
                 }
                 throw error;
             }
         } catch (error) {
-            console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
+            console.error(`[DEBUG] API request attempt ${retryAttempt + 1} failed:`, error);
             throw error;
         }
     }

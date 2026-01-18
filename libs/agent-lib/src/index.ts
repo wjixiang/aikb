@@ -36,7 +36,7 @@ export * from './types';
 export type { ApiMessage } from './task/task.type'
 
 // Export from agent v2 (virtual workspace)
-export * from './agent/v2/virtualWorkspace';
-export * from './agent/v2/statefulComponent';
+export * from './agent/virtualWorkspace';
+export * from './agent/statefulComponent';
 export { AgentV2, defaultAgentConfig, defaultApiConfig }
 export type { AgentConfig }

@@ -19,7 +19,7 @@ loadDevMessages();
 loadErrorMessages();
 
 // GraphQL Client for medWiki-service
-const WIKI_SERVICE_URL = (process.env as any)['WIKI_SERVICE_URL'] || 'http://localhost:3001';
+const WIKI_SERVICE_URL = (process.env as any)['WIKI_SERVICE_URL'] || 'http://localhost:3000';
 
 let apolloClient: ApolloClient<NormalizedCacheObject> | null = null;
 

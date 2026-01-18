@@ -30,8 +30,7 @@ type BaseOpenAiCompatibleProviderOptions<ModelName extends string> =
 
 export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
   extends BaseProvider
-  implements SingleCompletionHandler
-{
+  implements SingleCompletionHandler {
   protected readonly providerName: string;
   protected readonly baseURL: string;
   protected readonly defaultTemperature: number;
@@ -78,7 +77,9 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
     metadata?: ApiHandlerCreateMessageMetadata,
     requestOptions?: OpenAI.RequestOptions,
   ) {
+    console.log('[DEBUG] createStream - START');
     const { id: model, info } = this.getModel();
+    console.log('[DEBUG] Model:', model, 'Info:', JSON.stringify(info).substring(0, 200));
 
     // Centralized cap: clamp to 20% of the context window (unless provider-specific exceptions apply)
     const max_tokens =
@@ -88,29 +89,32 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
         settings: this.options,
         format: 'openai',
       }) ?? undefined;
+    console.log('[DEBUG] max_tokens:', max_tokens);
 
     const temperature =
       this.options['modelTemperature'] ?? this.defaultTemperature;
+    console.log('[DEBUG] temperature:', temperature);
 
     const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
-      {
-        model,
-        max_tokens,
-        temperature,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...convertToOpenAiMessages(messages),
-        ],
-        stream: true,
-        stream_options: { include_usage: true },
-        ...(metadata?.tools && {
-          tools: this.convertToolsForOpenAI(metadata.tools),
-        }),
-        ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
-        ...(metadata?.toolProtocol === 'native' && {
-          parallel_tool_calls: metadata.parallelToolCalls ?? false,
-        }),
-      };
+    {
+      model,
+      max_tokens,
+      temperature,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...convertToOpenAiMessages(messages),
+      ],
+      stream: true,
+      stream_options: { include_usage: true },
+      ...(metadata?.tools && {
+        tools: this.convertToolsForOpenAI(metadata.tools),
+      }),
+      ...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+      ...(metadata?.toolProtocol === 'native' && {
+        parallel_tool_calls: metadata.parallelToolCalls ?? false,
+      }),
+    };
+    console.log('[DEBUG] Params constructed, messages count:', params.messages.length);
 
     // Add thinking parameter if reasoning is enabled and model supports it
     if (this.options['enableReasoningEffort'] && info.supportsReasoningBinary) {
@@ -118,8 +122,34 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
     }
 
     try {
-      return this.client.chat.completions.create(params, requestOptions);
+      console.log('[DEBUG] Calling this.client.chat.completions.create...');
+      console.log('[DEBUG] Params:', JSON.stringify(params).substring(0, 500));
+
+      // Add timeout to stream creation to prevent hanging
+      const timeoutMs = 120000; // 2 minutes
+      const startTime = Date.now();
+
+      const streamPromise = this.client.chat.completions.create(params, requestOptions);
+
+      // Race the stream creation with a timeout
+      const stream = await Promise.race([
+        streamPromise,
+        new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Stream creation timed out after ${timeoutMs}ms`));
+          }, timeoutMs);
+        }),
+      ]);
+
+      const elapsed = Date.now() - startTime;
+      console.log(`[DEBUG] Stream created successfully from OpenAI client after ${elapsed}ms`);
+      console.log('[DEBUG] Stream type:', typeof stream);
+      console.log('[DEBUG] Stream constructor:', stream?.constructor?.name);
+      console.log('[DEBUG] Stream is Promise:', stream instanceof Promise);
+      console.log('[DEBUG] Stream then:', typeof stream.then);
+      return stream;
     } catch (error) {
+      console.error('[DEBUG] Error creating stream from OpenAI client:', error);
       throw handleOpenAIError(error, this.providerName);
     }
   }
@@ -129,7 +159,16 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
     messages: Anthropic.Messages.MessageParam[],
     metadata?: ApiHandlerCreateMessageMetadata,
   ): ApiStream {
+    console.log('[DEBUG] BaseOpenAiCompatibleProvider.createMessage - START');
+    console.log('[DEBUG] System prompt length:', systemPrompt.length);
+    console.log('[DEBUG] Messages count:', messages.length);
+
+    console.log('[DEBUG] About to call createStream...');
+    const startTime = Date.now();
     const stream = await this.createStream(systemPrompt, messages, metadata);
+    const elapsed = Date.now() - startTime;
+    console.log(`[DEBUG] Stream created successfully after ${elapsed}ms`);
+    console.log('[DEBUG] Stream value:', stream);
 
     const matcher = new XmlMatcher(
       'think',
@@ -141,65 +180,82 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
     );
 
     let lastUsage: OpenAI.CompletionUsage | undefined;
+    let chunkCount = 0;
 
-    for await (const chunk of stream) {
-      // Check for provider-specific error responses (e.g., MiniMax base_resp)
-      const chunkAny = chunk as any;
-      if (
-        chunkAny.base_resp?.status_code &&
-        chunkAny.base_resp.status_code !== 0
-      ) {
-        throw new Error(
-          `${this.providerName} API Error (${chunkAny.base_resp.status_code}): ${chunkAny.base_resp.status_msg || 'Unknown error'}`,
-        );
-      }
+    console.log('[DEBUG] Starting to iterate stream...');
+    console.log('[DEBUG] Stream object:', typeof stream, stream);
 
-      const delta = chunk.choices?.[0]?.delta;
-
-      if (delta?.content) {
-        for (const processedChunk of matcher.update(delta.content)) {
-          yield processedChunk;
+    try {
+      for await (const chunk of stream) {
+        chunkCount++;
+        console.log(`[DEBUG] Received chunk #${chunkCount}:`, JSON.stringify(chunk).substring(0, 300));
+        // Check for provider-specific error responses (e.g., MiniMax base_resp)
+        const chunkAny = chunk as any;
+        if (
+          chunkAny.base_resp?.status_code &&
+          chunkAny.base_resp.status_code !== 0
+        ) {
+          throw new Error(
+            `${this.providerName} API Error (${chunkAny.base_resp.status_code}): ${chunkAny.base_resp.status_msg || 'Unknown error'}`,
+          );
         }
-      }
 
-      if (delta) {
-        for (const key of ['reasoning_content', 'reasoning'] as const) {
-          if (key in delta) {
-            const reasoning_content =
-              ((delta as any)[key] as string | undefined) || '';
-            if (reasoning_content?.trim()) {
-              yield { type: 'reasoning', text: reasoning_content };
-            }
-            break;
+        const delta = chunk.choices?.[0]?.delta;
+
+        if (delta?.content) {
+          for (const processedChunk of matcher.update(delta.content)) {
+            yield processedChunk;
           }
         }
-      }
 
-      // Emit raw tool call chunks - NativeToolCallParser handles state management
-      if (delta?.tool_calls) {
-        for (const toolCall of delta.tool_calls) {
-          yield {
-            type: 'tool_call_partial',
-            index: toolCall.index,
-            id: toolCall.id,
-            name: toolCall.function?.name,
-            arguments: toolCall.function?.arguments,
-          };
+        if (delta) {
+          for (const key of ['reasoning_content', 'reasoning'] as const) {
+            if (key in delta) {
+              const reasoning_content =
+                ((delta as any)[key] as string | undefined) || '';
+              if (reasoning_content?.trim()) {
+                yield { type: 'reasoning', text: reasoning_content };
+              }
+              break;
+            }
+          }
+        }
+
+        // Emit raw tool call chunks - NativeToolCallParser handles state management
+        if (delta?.tool_calls) {
+          for (const toolCall of delta.tool_calls) {
+            yield {
+              type: 'tool_call_partial',
+              index: toolCall.index,
+              id: toolCall.id,
+              name: toolCall.function?.name,
+              arguments: toolCall.function?.arguments,
+            };
+          }
+        }
+
+        if (chunk.usage) {
+          lastUsage = chunk.usage;
         }
       }
 
-      if (chunk.usage) {
-        lastUsage = chunk.usage;
+      if (lastUsage) {
+        console.log('[DEBUG] Yielding usage chunk');
+        yield this.processUsageMetrics(lastUsage, this.getModel().info);
       }
-    }
 
-    if (lastUsage) {
-      yield this.processUsageMetrics(lastUsage, this.getModel().info);
-    }
+      // Process any remaining content
+      console.log('[DEBUG] Processing remaining content with matcher.final()');
+      const finalChunks = matcher.final();
+      console.log('[DEBUG] Final chunks count:', finalChunks.length);
+      for (const processedChunk of finalChunks) {
+        yield processedChunk;
+      }
 
-    // Process any remaining content
-    for (const processedChunk of matcher.final()) {
-      yield processedChunk;
+      console.log(`[DEBUG] createMessage completed, total chunks yielded: ${chunkCount}`);
+    } catch (error) {
+      console.error('[DEBUG] Error during stream iteration:', error);
+      throw error;
     }
   }
 
@@ -215,12 +271,12 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
     const { totalCost } = modelInfo
       ? calculateApiCostOpenAI(
-          modelInfo,
-          inputTokens,
-          outputTokens,
-          cacheWriteTokens,
-          cacheReadTokens,
-        )
+        modelInfo,
+        inputTokens,
+        outputTokens,
+        cacheWriteTokens,
+        cacheReadTokens,
+      )
       : { totalCost: 0 };
 
     return {
@@ -272,7 +328,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
   override getModel() {
     const id =
       this.options['apiModelId'] &&
-      this.options['apiModelId'] in this.providerModels
+        this.options['apiModelId'] in this.providerModels
         ? (this.options['apiModelId'] as ModelName)
         : this.defaultProviderModelId;
 
