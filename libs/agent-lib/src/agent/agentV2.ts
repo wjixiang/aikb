@@ -8,30 +8,30 @@ import {
     TaskStatusChangedCallback,
     TaskCompletedCallback,
     TaskAbortedCallback,
-} from "../../task/task.type";
-import { ProviderSettings } from "../../types/provider-settings";
-import { ToolName, TokenUsage, ToolUsage } from "../../types";
+} from "../task/task.type";
+import { ProviderSettings } from "../types/provider-settings";
+import { ToolName, TokenUsage, ToolUsage } from "../types";
 import { VirtualWorkspace } from "./virtualWorkspace";
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../../types";
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
 import { TextBlockParam } from "@anthropic-ai/sdk/resources";
 import {
     ApiHandler,
     ApiStream,
     ApiStreamChunk,
     buildApiHandler,
-} from '../../api';
-import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
-import { ResponseProcessor, ProcessedResponse } from '../../task/response/ResponseProcessor';
-import { TokenUsageTracker } from '../../task/token-usage/TokenUsageTracker';
-import TooCallingParser from '../../tools/toolCallingParser/toolCallingParser';
-import { resolveToolProtocol } from '../../utils/resolveToolProtocol';
-import { ErrorHandlerPrompt } from '../../task/error-prompt/ErrorHandlerPrompt';
-import { formatResponse } from '../../task/simplified-dependencies/formatResponse';
+} from '../api';
+import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
+import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
+import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
+import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
+import { resolveToolProtocol } from '../utils/resolveToolProtocol';
+import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt';
+import { formatResponse } from '../task/simplified-dependencies/formatResponse';
 import {
     ConsecutiveMistakeError,
     NoApiResponseError,
     NoToolsUsedError,
-} from '../../task/task.errors';
+} from '../task/task.errors';
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -851,7 +851,7 @@ export class AgentV2 {
      * Uses VirtualWorkspace's renderWithScriptSection for context
      */
     async getSystemPrompt() {
-        const { SYSTEM_PROMPT } = await import("../../prompts/system.js");
+        const { SYSTEM_PROMPT } = await import("../prompts/system.js");
         return `
 ${await SYSTEM_PROMPT()}
 
