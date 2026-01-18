@@ -1,7 +1,6 @@
 type Query {
-  listTaskInfo: [TaskInfo!]!
-  getTaskInfo(taskId: ID!): TaskInfo!
-  getTaskMessages(taskId: ID!): [Message!]!
+  task(where: TaskWhereInput): TaskInfo
+  tasks(where: TaskWhereInput): [TaskInfo]!
 }
 
 type Mutation {
@@ -203,4 +202,81 @@ input MessageBlockInput {
   input: String
   tool_use_id: String
   content: String
+}
+
+input TaskWhereInput {
+  """
+  Filter by task ID
+  """
+  id: ID
+
+  """
+  Filter by task IDs
+  """
+  id_in: [ID!]
+
+  """
+  Filter by user ID
+  """
+  userId: String
+
+  """
+  Filter by user IDs
+  """
+  userId_in: [String!]
+
+  """
+  Filter by task status
+  """
+  status: TaskStatus
+
+  """
+  Filter by task statuses
+  """
+  status_in: [TaskStatus!]
+
+  """
+  Filter by creation date (greater than)
+  """
+  createdAt_gt: String
+
+  """
+  Filter by creation date (less than)
+  """
+  createdAt_lt: String
+
+  """
+  Filter by creation date (greater than or equal)
+  """
+  createdAt_gte: String
+
+  """
+  Filter by creation date (less than or equal)
+  """
+  createdAt_lte: String
+
+  """
+  Filter by task input (contains)
+  """
+  taskInput_contains: String
+
+  """
+  Filter by task input (starts with)
+  """
+  taskInput_starts_with: String
+
+  """
+  Logical AND - all conditions must be satisfied
+  """
+  AND: [TaskWhereInput!]
+
+  """
+  Logical OR - at least one condition must be satisfied
+  """
+  OR: [TaskWhereInput!]
+
+  """
+  Logical NOT - negates the conditions (all conditions must NOT be satisfied)
+  """
+  NOT: [TaskWhereInput!]
 }

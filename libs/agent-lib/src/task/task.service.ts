@@ -7,6 +7,9 @@ import { ApiMessage } from './task.type';
 import { TaskStatus } from './task.type';
 import { ProviderSettings } from '../types/provider-settings';
 
+/**
+ * @deprecated
+ */
 @Injectable()
 export class TaskService {
   constructor(private db: AgentDBPrismaService) { }
@@ -23,6 +26,31 @@ export class TaskService {
       orderBy: {
         createdAt: 'desc',
       },
+    });
+  }
+
+  /**
+   * Query tasks with custom where clause
+   * @param where - Prisma where clause
+   * @returns Array of tasks
+   */
+  async queryTasks(where: any) {
+    return this.db.task.findMany({
+      where: where,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Query a single task with custom where clause
+   * @param where - Prisma where clause
+   * @returns Single task or null
+   */
+  async queryTask(where: any) {
+    return this.db.task.findFirst({
+      where: where,
     });
   }
 

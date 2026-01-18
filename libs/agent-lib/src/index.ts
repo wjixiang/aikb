@@ -1,4 +1,5 @@
 // Export from existing agent-lib modules
+import { AgentV2, AgentConfig, defaultAgentConfig, defaultApiConfig } from './agent/v2/agentV2';
 import { NativeToolCallParser } from './assistant-message/NativeToolCallParser';
 import { Task } from './task/task.entity';
 import { TaskService } from './task/task.service';
@@ -40,3 +41,5 @@ export type { ApiMessage } from './task/task.type'
 // Export from agent v2 (virtual workspace)
 export * from './agent/v2/virtualWorkspace';
 export * from './agent/v2/statefulComponent';
+export { AgentV2, defaultAgentConfig, defaultApiConfig }
+export type { AgentConfig }

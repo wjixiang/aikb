@@ -73,12 +73,28 @@ export class MessageBlockInput {
     content?: Nullable<string>;
 }
 
+export class TaskWhereInput {
+    id?: Nullable<string>;
+    id_in?: Nullable<string[]>;
+    userId?: Nullable<string>;
+    userId_in?: Nullable<string[]>;
+    status?: Nullable<TaskStatus>;
+    status_in?: Nullable<TaskStatus[]>;
+    createdAt_gt?: Nullable<string>;
+    createdAt_lt?: Nullable<string>;
+    createdAt_gte?: Nullable<string>;
+    createdAt_lte?: Nullable<string>;
+    taskInput_contains?: Nullable<string>;
+    taskInput_starts_with?: Nullable<string>;
+    AND?: Nullable<TaskWhereInput[]>;
+    OR?: Nullable<TaskWhereInput[]>;
+    NOT?: Nullable<TaskWhereInput[]>;
+}
+
 export abstract class IQuery {
-    abstract listTaskInfo(): TaskInfo[] | Promise<TaskInfo[]>;
+    abstract task(where?: Nullable<TaskWhereInput>): Nullable<TaskInfo> | Promise<Nullable<TaskInfo>>;
 
-    abstract getTaskInfo(taskId: string): TaskInfo | Promise<TaskInfo>;
-
-    abstract getTaskMessages(taskId: string): Message[] | Promise<Message[]>;
+    abstract tasks(where?: Nullable<TaskWhereInput>): Nullable<TaskInfo>[] | Promise<Nullable<TaskInfo>[]>;
 }
 
 export abstract class IMutation {

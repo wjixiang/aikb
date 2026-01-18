@@ -1,4 +1,4 @@
-import { Permission, PublicState, StatefulComponent, StateType } from './statefulComponent';
+import { Permission, State, StatefulComponent } from './statefulComponent';
 import { proxy, subscribe } from 'valtio';
 import * as z from 'zod';
 
@@ -7,9 +7,8 @@ import * as z from 'zod';
  * This component provides utility functions that can be used in LLM scripts
  */
 export class DemoComponent extends StatefulComponent {
-    protected override publicStates: Record<string, PublicState> = {
+    protected override states: Record<string, State> = {
         search_box_state: {
-            type: StateType.public,
             permission: Permission.rw,
             schema: z.object({
                 search_pattern: z.string().max(300)
@@ -20,7 +19,6 @@ export class DemoComponent extends StatefulComponent {
             })
         },
         filter_state: {
-            type: StateType.public,
             permission: Permission.rw,
             schema: z.object({
                 category: z.string().optional(),
@@ -40,59 +38,17 @@ export class DemoComponent extends StatefulComponent {
     constructor() {
         super();
         // Subscribe to search_box_state changes
-        subscribe(this.publicStates['search_box_state'].state, async () => {
-            console.log(`search_box_state changed to`, this.publicStates['search_box_state'].state);
-            const state = this.publicStates['search_box_state'].state as { search_pattern: string };
+        subscribe(this.states['search_box_state'].state, async () => {
+            console.log(`search_box_state changed to`, this.states['search_box_state'].state);
+            const state = this.states['search_box_state'].state as { search_pattern: string };
             this.state.search_result = `Search results for: ${state.search_pattern}`;
         });
 
         // Subscribe to filter_state changes
-        subscribe(this.publicStates['filter_state'].state, async () => {
-            console.log(`filter_state changed to`, this.publicStates['filter_state'].state);
-            this.state.filtered_results = `Filtered by: ${JSON.stringify(this.publicStates['filter_state'].state)}`;
+        subscribe(this.states['filter_state'].state, async () => {
+            console.log(`filter_state changed to`, this.states['filter_state'].state);
+            this.state.filtered_results = `Filtered by: ${JSON.stringify(this.states['filter_state'].state)}`;
         });
-    }
-
-    /**
-     * Override to provide utility functions for script execution
-     */
-    protected override getScriptUtilities(): Record<string, Function> {
-        return {
-            /**
-             * Normalize search pattern by trimming and lowercasing
-             */
-            normalizeSearch: (pattern: string) => {
-                return pattern.trim().toLowerCase();
-            },
-            /**
-             * Validate price range
-             */
-            validatePriceRange: (min: number, max: number) => {
-                if (min < 0 || max < 0) {
-                    throw new Error('Prices cannot be negative');
-                }
-                if (min > max) {
-                    throw new Error('Min price cannot be greater than max price');
-                }
-                return true;
-            },
-            /**
-             * Generate search query with filters
-             */
-            buildSearchQuery: (pattern: string, filters: any) => {
-                let query = pattern;
-                if (filters.category) {
-                    query += ` category:${filters.category}`;
-                }
-                if (filters.min_price !== undefined) {
-                    query += ` min:${filters.min_price}`;
-                }
-                if (filters.max_price !== undefined) {
-                    query += ` max:${filters.max_price}`;
-                }
-                return query;
-            }
-        };
     }
 
     /**

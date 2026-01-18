@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { QueryResolver } from './query.resolver';
-import { MutationResolver } from './mutation.resolver';
 import { AgentLibModule } from 'agent-lib';
 import { AuthLibModule } from 'auth-lib';
-import { AppService } from './app.service';
+import { TaskResolver } from './task.resolver';
+import { TaskService } from './task.service';
 
 @Module({
   imports: [
@@ -20,9 +19,8 @@ import { AppService } from './app.service';
   ],
   controllers: [],
   providers: [
-    QueryResolver,
-    MutationResolver,
-    AppService,
+    TaskResolver,
+    TaskService,
   ],
 })
 export class AppModule { }

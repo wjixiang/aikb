@@ -275,7 +275,7 @@ export class ChunkEmbedService {
       // Generate embeddings using batch functionality
       const embeddings = await embeddingService.embedBatch(
         contents,
-        embeddingConfig.provider as EmbeddingProvider,
+        embeddingConfig
       );
 
       return embeddings;

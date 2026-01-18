@@ -12,9 +12,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
-import { S3Service, createS3ServiceFromEnv } from '@aikb/s3-service';
-import { S3Utils } from 'utils';
+import { Agent } from 'undici';
 import { HashUtils } from 'bibliography';
 import { PDFDocument } from 'pdf-lib';
 
@@ -86,12 +84,21 @@ async function uploadFileToS3(
 ): Promise<void> {
   const fileBuffer = fs.readFileSync(filePath);
 
+  // Create an undici Agent with increased timeouts for large file uploads
+  const agent = new Agent({
+    connectTimeout: 30000,  // 30 seconds to establish connection
+    headersTimeout: 300000, // 5 minutes to receive headers (default is too short for large files)
+    bodyTimeout: 600000,    // 10 minutes for upload body
+  });
+
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/pdf',
     },
     body: fileBuffer,
+    // @ts-ignore - undici dispatcher option
+    dispatcher: agent,
   });
 
   if (!response.ok) {

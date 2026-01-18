@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ChunkEmbedGroupConfig,
   ChunkEmbedGroupMetadata,
   ItemChunk,
   PrismaItemVectorStorage,
@@ -38,19 +39,15 @@ export class VectorService {
         request.chunkingConfig?.strategy ?? defaultChunkingConfig.strategy,
     };
 
-    const embeddingConfig = {
-      provider:
-        request.embeddingConfig?.provider || defaultEmbeddingConfig.provider,
+    const embeddingConfig: EmbeddingConfig = {
+      provider: request.embeddingConfig?.provider || defaultEmbeddingConfig.provider,
       model: request.embeddingConfig?.model || defaultEmbeddingConfig.model,
-      dimension:
-        request.embeddingConfig?.dimension || defaultEmbeddingConfig.dimension,
-      batchSize:
-        request.embeddingConfig?.batchSize || defaultEmbeddingConfig.batchSize,
-      maxRetries:
-        request.embeddingConfig?.maxRetries ||
+      dimension: request.embeddingConfig?.dimension || defaultEmbeddingConfig.dimension,
+      batchSize: request.embeddingConfig?.batchSize || defaultEmbeddingConfig.batchSize,
+      maxRetries: request.embeddingConfig?.maxRetries ||
         defaultEmbeddingConfig.maxRetries,
-      timeout:
-        request.embeddingConfig?.timeout || defaultEmbeddingConfig.timeout,
+      timeout: request.embeddingConfig?.timeout || defaultEmbeddingConfig.timeout,
+      concurrencyLimit: 0
     };
 
     // Create the chunk embedding group using the storage implementation
@@ -61,7 +58,7 @@ export class VectorService {
       embeddingConfig.dimension,
     );
 
-    const groupConfig = {
+    const groupConfig: ChunkEmbedGroupConfig & { token: string } = {
       itemId: request.itemId,
       token,
       name: request.name || '',
@@ -106,6 +103,7 @@ export class VectorService {
         batchSize: 30,
         maxRetries: 5,
         timeout: 30000,
+        concurrencyLimit: 20
       },
       isDefault: createdGroup.isDefault,
       isActive: createdGroup.isActive,
@@ -265,7 +263,7 @@ export class VectorService {
       embeddingService.setProvider(embeddingConfig.provider);
 
       // Generate embedding using batch functionality for better performance
-      const embeddings = await embeddingService.embedBatch([content]);
+      const embeddings = await embeddingService.embedBatch([content], embeddingConfig);
 
       // Return the first (and only) embedding from the batch result
       return embeddings[0] || null;
@@ -289,7 +287,7 @@ export class VectorService {
       // Generate embeddings using batch functionality
       const embeddings = await embeddingService.embedBatch(
         contents,
-        embeddingConfig.provider,
+        embeddingConfig,
       );
 
       return embeddings;
