@@ -4,9 +4,10 @@
  * Demonstrates the agent functionality with real AI
  */
 
-import { KmsWorkspace } from '../libs/agent-lib/src/agent/workspaces/KmsWorkspace';
-import { AgentV2, defaultAgentConfig, defaultApiConfig } from '../libs/agent-lib/src/agent/agentV2';
-import { ProviderSettings } from '../libs/agent-lib/src/types/provider-settings';
+import { KmsWorkspace } from './agent/workspaces/KmsWorkspace';
+import { AgentV2, defaultAgentConfig, defaultApiConfig } from './agent/agentV2';
+import { ProviderSettings } from './types/provider-settings';
+import { b } from './baml_client'
 import { config } from 'dotenv'
 config()
 
@@ -166,8 +167,20 @@ async function main() {
     console.log('         - API service is down');
 }
 
-// Run the demo
-main().catch(error => {
-    console.error('Demo failed:', error);
-    process.exit(1);
-});
+// // Run the demo
+// main().catch(error => {
+//     console.error('Demo failed:', error);
+//     process.exit(1);
+// });
+
+describe('agent', () => {
+
+    it('run', async () => {
+        await main()
+    }, 180000)
+
+    it('request baml directly', async () => {
+        const reuslt = await b.ApiRequest('test', 'hello', [])
+        console.log(reuslt)
+    }, 30000)
+})

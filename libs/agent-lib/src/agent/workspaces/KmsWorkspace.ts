@@ -26,15 +26,15 @@ export class KmsWorkspace extends VirtualWorkspace {
             priority: 0
         });
 
-        this.registerComponent({
-            key: 'workspace_info',
-            component: new WorkspaceInfoComponent(),
-            priority: 10
-        });
+        // this.registerComponent({
+        //     key: 'workspace_info',
+        //     component: new WorkspaceInfoComponent(),
+        //     priority: 10
+        // });
 
-        this.registerComponent({
-            key: 'knowledge_explorer',
-            component: new KnowledgeManageComponent()
-        })
+        // this.registerComponent({
+        //     key: 'knowledge_explorer',
+        //     component: new KnowledgeManageComponent()
+        // })
     }
 }

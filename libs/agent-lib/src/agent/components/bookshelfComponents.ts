@@ -298,9 +298,14 @@ export class BookViewerComponent extends StatefulComponent {
             const state = this.states['book_viewer_state'].state as { selected_book_name: string | null; search_query: string | null };
             await this.handleStateChange(state);
         });
+    }
 
-        // Fetch available books on initialization
-        this.fetchBooks();
+    /**
+     * Initialize the BookViewer component
+     * Fetches available books from the bibliography service
+     */
+    protected async init(): Promise<void> {
+        await this.fetchBooks();
     }
 
     private async fetchBooks(): Promise<void> {
@@ -415,6 +420,9 @@ export class BookViewerComponent extends StatefulComponent {
      * Render the component as markdown
      */
     override async render(): Promise<string> {
+        // Ensure initialization before rendering (calls init() if not already initialized)
+        await this.ensureInitialized();
+
         const state = this.states['book_viewer_state'].state as { selected_book_name: string | null; search_query: string | null };
         const selectedBook = state.selected_book_name;
 
@@ -487,6 +495,14 @@ export class WorkspaceInfoComponent extends StatefulComponent {
     }
 
     /**
+     * Initialize the WorkspaceInfo component
+     * Updates the timestamp on initialization
+     */
+    protected async init(): Promise<void> {
+        this.updateTimestamp();
+    }
+
+    /**
      * Update the last updated timestamp
      */
     updateTimestamp(): void {
@@ -497,6 +513,9 @@ export class WorkspaceInfoComponent extends StatefulComponent {
      * Render the component as markdown
      */
     override async render(): Promise<string> {
+        // Ensure initialization before rendering (calls init() if not already initialized)
+        await this.ensureInitialized();
+
         const state = this.states['workspace_info_state'].state as { lastUpdated: string };
         const formattedDate = new Date(state.lastUpdated).toLocaleString();
 

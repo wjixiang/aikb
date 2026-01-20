@@ -353,10 +353,17 @@ export class KnowledgeManageComponent extends StatefulComponent {
             const state = this.states['entities_state'].state as EntitiesState;
             await this.handleEntitiesChange(state);
         });
+    }
 
-        // Initial data fetch
-        this.fetchDocuments();
-        this.fetchEntities();
+    /**
+     * Initialize the KnowledgeManage component
+     * Fetches initial documents and entities
+     */
+    protected async init(): Promise<void> {
+        await Promise.all([
+            this.fetchDocuments(),
+            this.fetchEntities()
+        ]);
     }
 
     /**
@@ -838,6 +845,9 @@ export class KnowledgeManageComponent extends StatefulComponent {
      * Render the component as markdown
      */
     override async render(): Promise<string> {
+        // Ensure initialization before rendering (calls init() if not already initialized)
+        await this.ensureInitialized();
+
         const listState = this.states['document_list_state'].state as DocumentListState;
         const editorState = this.states['document_editor_state'].state as DocumentEditorState;
         const searchState = this.states['search_state'].state as SearchState;

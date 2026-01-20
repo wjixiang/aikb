@@ -348,7 +348,7 @@ export class VirtualWorkspace {
             lines.push('└────────────────────────────────────────────────────────────────────────────────────┘');
             lines.push('');
 
-            const componentRender = await registration.component.render();
+            const componentRender = await registration.component.renderWithScriptSection();
             lines.push(componentRender);
             lines.push('');
         }

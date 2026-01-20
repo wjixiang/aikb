@@ -22,12 +22,7 @@ import { getObjectiveSection } from './sections/objectives';
 import { getRoleDefinition } from './sections/role';
 import { generateWorkspaceGuide } from './sections/workspaceGuide';
 
-interface SystemPrompt {
-  system: string;
-  toolUse: string;
-  rules: string;
-  capabilities: string;
-}
+
 
 async function generatePrompt(
   promptComponent?: PromptComponent,
@@ -44,9 +39,9 @@ async function generatePrompt(
   // console.log(effectiveProtocol)
 
   // Get tool descriptions based on protocol
-  const toolsCatalog = isNativeProtocol(effectiveProtocol)
-    ? `\n\n${getNativeToolDescriptions()}`
-    : `\n\n${getToolDescriptions(settings, modelId)}`;
+  // const toolsCatalog = isNativeProtocol(effectiveProtocol)
+  //   ? `\n\n${getNativeToolDescriptions()}`
+  //   : `\n\n${getToolDescriptions(settings, modelId)}`;
 
   // console.log(toolsCatalog)
   const basePrompt = `${roleDefinition}
@@ -54,9 +49,7 @@ ${generateWorkspaceGuide()}
 
 ${markdownFormattingSection()}
 
-${getSharedToolUseSection(effectiveProtocol)}
 
-${toolsCatalog}
 
 ${
     // getToolUseGuidelinesSection(effectiveProtocol)

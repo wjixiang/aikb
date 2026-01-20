@@ -13,17 +13,12 @@ import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
 import { VirtualWorkspace } from "./virtualWorkspace";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
-import { b } from '../baml_client'
-import {
-    ApiStream,
-    ApiStreamChunk,
-} from '../api';
+import { AttemptCompletion, b, ExecuteScript } from '../baml_client'
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
 import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
 import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt';
-import { formatResponse } from '../task/simplified-dependencies/formatResponse';
 import {
     ConsecutiveMistakeError,
     NoApiResponseError,
@@ -37,7 +32,7 @@ export interface AgentConfig {
 }
 
 export const defaultAgentConfig: AgentConfig = {
-    apiRequestTimeout: 60000,
+    apiRequestTimeout: 40000,
     maxRetryAttempts: 3,
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 };
@@ -435,39 +430,47 @@ export class AgentV2 {
 
                 // Collect complete response from stream
 
-                const response = await this.collectCompleteResponse(this._status);
+                const response = await this.attemptApiRequest();
 
                 if (!response) {
                     throw new NoApiResponseError(1);
                 }
 
                 // Process the complete response
-                const processedResponse = shouldUseXmlParser
-                    ? this.responseProcessor.processXmlCompleteResponse(response)
-                    : this.responseProcessor.processCompleteResponse(response);
+                // const processedResponse = shouldUseXmlParser
+                //     ? this.responseProcessor.processXmlCompleteResponse(response)
+                //     : this.responseProcessor.processCompleteResponse(response);
 
-                // Update message state with processed response
-                this.messageState.assistantMessageContent = processedResponse.assistantMessageContent;
+                // // Update message state with processed response
+                // // this.messageState.assistantMessageContent = processedResponse.assistantMessageContent;
+                // this.messageState.assistantMessageContent = [{
+                //     type: "tool_use"
+
+                // }]
 
                 // Check if we have tool calls to execute
-                const toolUseBlocks = this.messageState.assistantMessageContent.filter(
-                    (block: AssistantMessageContent) => block.type === 'tool_use',
-                );
+                // const toolUseBlocks = this.messageState.assistantMessageContent.filter(
+                //     (block: AssistantMessageContent) => block.type === 'tool_use',
+                // );
 
-                if (toolUseBlocks.length === 0) {
-                    // No tools used - this is an error case
-                    this.messageState.userMessageContent.push({
-                        type: 'text',
-                        text: formatResponse.noToolsUsed(toolProtocol),
-                    });
-                    this._consecutiveMistakeCount++;
-                    throw new NoToolsUsedError();
-                }
+                // if (toolUseBlocks.length === 0) {
+                //     // No tools used - this is an error case
+                //     this.messageState.userMessageContent.push({
+                //         type: 'text',
+                //         text: formatResponse.noToolsUsed(toolProtocol),
+                //     });
+                //     this._consecutiveMistakeCount++;
+                //     throw new NoToolsUsedError();
+                // }
+
+                // Convert BAML response to assistant message content and get tool use ID
+                const toolUseId = this.convertBamlResponseToAssistantMessage(response);
 
                 // Execute tool calls and build response
                 // This will update workspace states
                 const executionResult = await this.executeToolCalls(
-                    toolUseBlocks,
+                    response,
+                    toolUseId,
                     () => this.isAborted(),
                 );
 
@@ -476,7 +479,15 @@ export class AgentV2 {
                 this.messageState.didAttemptCompletion = executionResult.didAttemptCompletion;
 
                 // Add assistant message to conversation history
-                await this.addAssistantMessageToHistory(processedResponse.reasoningMessage);
+                await this.addAssistantMessageToHistory();
+
+                // Add user message (tool result) to conversation history
+                if (this.messageState.userMessageContent.length > 0) {
+                    await this.addToConversationHistory({
+                        role: 'user',
+                        content: this.messageState.userMessageContent,
+                    });
+                }
 
                 // Add workspace context to conversation history
                 this.addSystemMessageToHistory(oldWorkspaceContext);
@@ -542,6 +553,23 @@ export class AgentV2 {
         this.messageState.assistantMessageContent = [];
         this.messageState.userMessageContent = [];
         this.messageState.didAttemptCompletion = false;
+    }
+
+    /**
+     * Convert BAML response to assistant message content
+     * Returns the tool_use_id for use in the tool result
+     */
+    private convertBamlResponseToAssistantMessage(response: AttemptCompletion | ExecuteScript): string {
+        const toolUseId = crypto.randomUUID();
+        const toolUse: ToolUse = {
+            type: 'tool_use',
+            name: response.toolName,
+            id: toolUseId,
+            params: { data: response.data },
+            nativeArgs: { data: response.data },
+        };
+        this.messageState.assistantMessageContent = [toolUse];
+        return toolUseId;
     }
 
     /**
@@ -642,7 +670,8 @@ export class AgentV2 {
      * Execute tool calls and build response
      */
     private async executeToolCalls(
-        toolUseBlocks: AssistantMessageContent[],
+        toolCall: AttemptCompletion | ExecuteScript,
+        toolUseId: string,
         isAborted: () => boolean,
     ): Promise<{ userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>, didAttemptCompletion: boolean }> {
         const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
@@ -650,24 +679,11 @@ export class AgentV2 {
 
         const commonTools = this.workspace.getCommonTools();
 
-        for (const block of toolUseBlocks) {
-            if (block.type !== 'tool_use') continue;
-
-            const toolUse = block as ToolUse;
-            const toolName = toolUse.name;
-            const toolParams = toolUse.nativeArgs || toolUse.params;
-
-            // Track tool usage
-            if (!this._toolUsage[toolName as keyof ToolUsage]) {
-                (this._toolUsage as any)[toolName] = 0;
-            }
-            (this._toolUsage as any)[toolName]++;
-
-            try {
-                let result: any;
-
-                if (toolName === 'execute_script') {
-                    const script = toolParams.script;
+        try {
+            let result: any;
+            switch (toolCall.toolName) {
+                case 'execute_script':
+                    const script = toolCall.data;
                     const executionResult = await commonTools.execute_script(script);
                     result = {
                         success: executionResult.success,
@@ -675,81 +691,42 @@ export class AgentV2 {
                         output: executionResult.output,
                         error: executionResult.error,
                     };
-                } else if (toolName === 'attempt_completion') {
+                    break;
+                case 'attempt_completion':
                     didAttemptCompletion = true;
-                    const completionResult = toolParams.result;
+                    const completionResult = toolCall.data;
                     await commonTools.attempt_completion(completionResult);
                     result = { success: true, result: completionResult };
-                } else {
-                    result = { error: `Unknown tool: ${toolName}` };
-                }
-
-                userMessageContent.push({
-                    type: 'tool_result',
-                    tool_use_id: toolUse.id || crypto.randomUUID(),
-                    content: JSON.stringify(result),
-                });
-            } catch (error) {
-                userMessageContent.push({
-                    type: 'tool_result',
-                    tool_use_id: toolUse.id || crypto.randomUUID(),
-                    content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-                });
+                    break;
+                default:
+                    result = { error: `Unknown tool: ${toolCall}` };
+                    break;
             }
+
+            userMessageContent.push({
+                type: 'tool_result',
+                tool_use_id: toolUseId,
+                content: JSON.stringify(result),
+            });
+        } catch (error) {
+            userMessageContent.push({
+                type: 'tool_result',
+                tool_use_id: toolUseId,
+                content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+            });
         }
+
 
         return { userMessageContent, didAttemptCompletion };
     }
 
     // ==================== API Request Handling ====================
 
-    /**
-     * Collect complete response from stream without processing chunks individually
-     */
-    private async collectCompleteResponse(status: TaskStatus) {
-
-        const stream = this.attemptApiRequest();
-        const chunks: ApiStreamChunk[] = [];
-        console.log('[DEBUG] Stream obtained from attemptApiRequest');
-
-        try {
-            // const iterator = stream[Symbol.asyncIterator]();
-            // console.log('[DEBUG] Got async iterator, waiting for first chunk...');
-            // let item = await iterator.next();
-            // console.log('[DEBUG] First chunk received:', JSON.stringify(item).substring(0, 500));
-
-            // let chunkIndex = 0;
-            // while (!item.done) {
-            //     // Check for abort status during stream processing
-            //     if (status === 'aborted') {
-            //         console.log('[DEBUG] Stream collection aborted');
-            //         return chunks; // Return whatever chunks we have collected so far
-            //     }
-
-            //     const chunk = item.value;
-            //     if (chunk) {
-            //         chunkIndex++;
-            //         console.log(`[DEBUG] Adding chunk #${chunkIndex} of type: ${chunk.type}`);
-            //         chunks.push(chunk);
-            //     }
-            //     item = await iterator.next();
-            // }
-
-            // console.log(`[DEBUG] Stream iteration complete, collected ${chunks.length} chunks`);
-            const finalResponse = await (await stream).getFinalResponse()
-
-
-            return finalResponse;
-        } catch (error) {
-            console.error('[DEBUG] Error collecting complete response:', error);
-            throw error;
-        }
-    }
 
     /**
      * Attempt API request with timeout
      */
-    private async attemptApiRequest(retryAttempt: number = 0) {
+    async attemptApiRequest(retryAttempt: number = 0) {
         console.log('[DEBUG] attemptApiRequest - START');
         try {
             console.debug(`Starting API request attempt ${retryAttempt + 1}`);
@@ -786,22 +763,43 @@ export class AgentV2 {
             console.log('[DEBUG] Memory context converted to string array, length:', memoryContext.length);
 
             try {
-                console.log('[DEBUG] Calling b.stream.ApiRequest...');
-                // Create the BAML stream
-                const bamlStream = b.stream.ApiRequest(systemPrompt, workspaceContext, memoryContext);
-                return bamlStream
-                // Convert BAML stream to ApiStream format
-                // console.log('[DEBUG] Converting BAML stream to ApiStream...');
-                // for await (const chunk of bamlStream) {
-                //     console.log(chunk)
-                //     yield { type: 'text', text: chunk };
-                // }
-                // console.log('[DEBUG] BAML stream conversion completed');
-            } catch (error) {
-                console.error('[DEBUG] Error in BAML stream:', error);
-                if (error instanceof Error && error.message.includes('timed out')) {
-                    throw new Error(`API request timed out after ${this.config.apiRequestTimeout}ms`);
+                console.log('[DEBUG] Calling b.ApiRequest...');
+                console.log('[DEBUG] Setting up timeout:', this.config.apiRequestTimeout, 'ms');
+
+                // Use Promise.race for timeout (more reliable than AbortController for BAML)
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => {
+                        console.error(`[DEBUG] Timeout triggered after ${this.config.apiRequestTimeout}ms`);
+                        reject(new Error(`API request timed out after ${this.config.apiRequestTimeout}ms`));
+                    }, this.config.apiRequestTimeout);
+                });
+
+                console.log('[DEBUG] About to call b.ApiRequest with Promise.race...');
+
+                try {
+                    // Race between BAML request and timeout
+                    const bamlResponse = await Promise.race([
+                        b.ApiRequest(
+                            systemPrompt,
+                            workspaceContext,
+                            memoryContext
+                        ),
+                        //     b.ApiRequest('test', 'hello', []),
+                        //     timeoutPromise
+                    ]);
+
+                    return bamlResponse;
+
+
+                } catch (error) {
+                    console.log('[DEBUG] Error caught');
+                    console.log('[DEBUG] Error name:', error instanceof Error ? error.name : 'unknown');
+                    console.log('[DEBUG] Error message:', error instanceof Error ? error.message : String(error));
+                    throw error;
                 }
+
+            } catch (error) {
+                console.error('[DEBUG] Error in BAML request:', error);
                 throw error;
             }
         } catch (error) {
@@ -811,20 +809,9 @@ export class AgentV2 {
     }
 
     /**
-     * Create timeout promise
-     */
-    private createTimeoutPromise(timeoutMs: number): Promise<never> {
-        return new Promise((_, reject) => {
-            setTimeout(() => {
-                reject(new Error(`API request timed out after ${timeoutMs}ms`));
-            }, timeoutMs);
-        });
-    }
-
-    /**
      * Build clean conversation history
      */
-    private buildCleanConversationHistory(
+    buildCleanConversationHistory(
         history: ApiMessage[],
     ): Anthropic.MessageParam[] {
         return history

@@ -8,11 +8,10 @@ class ExecuteScript {
     data string
 }
 
+
 function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContext: string[]) -> AttemptCompletion |  ExecuteScript{
     client GLM47_coder
     prompt #"
-        {{_.role("system")}}
-        {{ ctx.output_format }}
 
         {{_.role("user")}}
 
@@ -24,6 +23,7 @@ function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContex
             {{message}}
         {% endfor %}
 
+        {{ ctx.output_format }}
     "#
 }
 

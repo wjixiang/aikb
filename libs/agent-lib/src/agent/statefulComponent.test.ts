@@ -42,6 +42,14 @@ class TestSearchComponent extends StatefulComponent {
     }
 
     /**
+     * Initialize the TestSearchComponent
+     * No specific initialization needed for test component
+     */
+    protected async init(): Promise<void> {
+        // No initialization needed for test component
+    }
+
+    /**
      * Get current search result (internal state)
      */
     getSearchResult(): string {
@@ -296,6 +304,10 @@ return "Async operation completed";
                         state: proxy({ value: 'read-only' })
                     }
                 };
+
+                protected async init(): Promise<void> {
+                    // No initialization needed for test component
+                }
             }
 
             const roComponent = new ReadOnlyComponent();
@@ -324,6 +336,10 @@ return "Async operation completed";
                         state: proxy({ value: 'write-only' })
                     }
                 };
+
+                protected async init(): Promise<void> {
+                    // No initialization needed for test component
+                }
             }
 
             const woComponent = new WriteOnlyComponent();

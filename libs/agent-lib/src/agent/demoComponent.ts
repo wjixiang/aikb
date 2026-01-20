@@ -52,6 +52,14 @@ export class DemoComponent extends StatefulComponent {
     }
 
     /**
+     * Initialize the DemoComponent
+     * No specific initialization needed for this demo component
+     */
+    protected async init(): Promise<void> {
+        // No initialization needed for demo component
+    }
+
+    /**
      * Get current search result
      */
     getSearchResult(): string {

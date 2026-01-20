@@ -109,11 +109,31 @@ export abstract class StatefulComponent {
         return lines.join('\n');
     }
 
+    protected isInit = false;
+
+    /**
+     * Abstract initialization method that subclasses must implement
+     * This method should set up the component's states and any other initialization logic
+     */
+    protected abstract init(): Promise<void>;
+
+    /**
+     * Ensure the component is initialized before rendering
+     */
+    protected async ensureInitialized(): Promise<void> {
+        if (!this.isInit) {
+            await this.init();
+            this.isInit = true;
+        }
+    }
+
     /**
      * Render the virtual workspace as context for LLM
      * This includes states and their schemas
      */
     async render(): Promise<string> {
+        // Ensure initialization before rendering
+        await this.ensureInitialized();
         const lines: string[] = [];
 
         lines.push('╔════════════════════════════════════════════════════════════════╗');

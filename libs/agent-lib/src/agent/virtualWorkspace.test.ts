@@ -14,6 +14,10 @@ class TestComponentA extends StatefulComponent {
         }
     };
 
+    protected async init(): Promise<void> {
+        // No initialization needed for test component
+    }
+
     getValue(): string {
         return (this.states['state_a'].state as any).value;
     }
@@ -28,6 +32,10 @@ class TestComponentB extends StatefulComponent {
         }
     };
 
+    protected async init(): Promise<void> {
+        // No initialization needed for test component
+    }
+
     getCount(): number {
         return (this.states['state_b'].state as any).count;
     }
@@ -41,6 +49,10 @@ class TestComponentC extends StatefulComponent {
             state: proxy({ flag: false })
         }
     };
+
+    protected async init(): Promise<void> {
+        // No initialization needed for test component
+    }
 
     getFlag(): boolean {
         return (this.states['state_c'].state as any).flag;
