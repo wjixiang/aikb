@@ -35,7 +35,7 @@ async function generatePrompt(
   // const roleDefinition = ""
 
   // Determine the effective protocol (defaults to 'xml')
-  const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol);
+  // const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol);
   // console.log(effectiveProtocol)
 
   // Get tool descriptions based on protocol

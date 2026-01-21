@@ -137,7 +137,7 @@ async function main() {
     console.log('Step 10: Demo - Start Agent (Commented out)');
     console.log('To actually start the agent with real AI, uncomment the following code:');
     try {
-        await agent.start('Search for information about medical terminology');
+        await agent.start('请你调查骨肉瘤的治疗');
         console.log('Agent completed successfully');
     } catch (error) {
         console.error('Agent failed:', error);

@@ -1,5 +1,6 @@
 import { StatefulComponent, State, ScriptExecutionResult, CommonTools, Permission } from './statefulComponent';
 import { SecurityConfig, SecureExecutionContext, createSecurityConfig } from './scriptSecurity';
+import { prettifyCodeContext, renderInfoBox } from './componentUtils';
 
 /**
  * Configuration options for VirtualWorkspace
@@ -324,9 +325,14 @@ export class VirtualWorkspace {
     async render(): Promise<string> {
         const lines: string[] = [];
 
-        lines.push('╔════════════════════════════════════════════════════════════════════════════════════════╗');
-        lines.push(`║  VIRTUAL WORKSPACE: ${this.config.name.padEnd(50)}║`);
-        lines.push('╚════════════════════════════════════════════════════════════════════════════════════════╝');
+        // Render workspace header using info box utility
+        lines.push(renderInfoBox({
+            title: `VIRTUAL WORKSPACE: ${this.config.name}`,
+            width: 80,
+            padding: 1,
+            margin: 0,
+            style: 'double'
+        }));
 
         if (this.config.description) {
             lines.push('');
@@ -343,9 +349,14 @@ export class VirtualWorkspace {
             .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
 
         for (const [key, registration] of sortedComponents) {
-            lines.push('┌────────────────────────────────────────────────────────────────────────────────────┐');
-            lines.push(`│ Component: ${key.padEnd(54)}│`);
-            lines.push('└────────────────────────────────────────────────────────────────────────────────────┘');
+            // Render component header using info box utility
+            lines.push(renderInfoBox({
+                title: `Component: ${key}`,
+                width: 80,
+                padding: 1,
+                margin: 0,
+                style: 'single'
+            }));
             lines.push('');
 
             const componentRender = await registration.component.renderWithScriptSection();
@@ -401,15 +412,23 @@ export class VirtualWorkspace {
         const scriptSection = `
 ${context}
 
-╔════════════════════════════════════════════════════════════════════════════════════════╗
-║                    SCRIPT EXECUTION GUIDE                                              ║
-╚════════════════════════════════════════════════════════════════════════════════════════╝
+${renderInfoBox({
+            title: 'SCRIPT EXECUTION GUIDE',
+            width: 80,
+            padding: 1,
+            margin: 0,
+            style: 'double'
+        })}
 
 This workspace contains ${this.components.size} component(s) with merged states. You can interact with them using the following tools:
 
-╔════════════════════════════════════════════════════════════════════════════════════════╗
-║                    AVAILABLE TOOLS                                                     ║
-╚════════════════════════════════════════════════════════════════════════════════════════╝
+${renderInfoBox({
+            title: 'AVAILABLE TOOLS',
+            width: 80,
+            padding: 1,
+            margin: 0,
+            style: 'double'
+        })}
 
 1. execute_script(script: string)
    Execute JavaScript code to mutate component states.
@@ -419,9 +438,13 @@ This workspace contains ${this.components.size} component(s) with merged states.
 2. attempt_completion(result: string)
    Complete the task and return the final result.
 
-╔════════════════════════════════════════════════════════════════════════════════════════╗
-║                    AVAILABLE STATES (MERGED FROM ALL COMPONENTS)                      ║
-╚════════════════════════════════════════════════════════════════════════════════════════╝
+${renderInfoBox({
+            title: 'AVAILABLE STATES (MERGED FROM ALL COMPONENTS)',
+            width: 80,
+            padding: 1,
+            margin: 0,
+            style: 'double'
+        })}
 
 ${Array.from(this.components.entries())
                 .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0))
@@ -431,35 +454,34 @@ ${Array.from(this.components.entries())
                 })
                 .join('\n')}
 
-╔════════════════════════════════════════════════════════════════════════════════════════╗
-║                    EXAMPLES                                                            ║
-╚════════════════════════════════════════════════════════════════════════════════════════╝
+${renderInfoBox({
+                    title: 'EXAMPLES',
+                    width: 80,
+                    padding: 1,
+                    margin: 0,
+                    style: 'double'
+                })}
 
 Example 1: Update a state
 ───────────────────────────────────────────────────────────────────────────────────────
-await execute_script(\`
-  state_a.value = "new value";
-\`);
+
+${prettifyCodeContext(`state_a.value = "new value";`)}
+
 
 Example 2: Complex logic with multiple states
 ───────────────────────────────────────────────────────────────────────────────────────
-await execute_script(\`
-  if (state_a.value.includes("test")) {
+
+${prettifyCodeContext(`if (state_a.value.includes("test")) {
     state_b.count = state_b.count + 1;
-  }
-\`);
+};`)}
 
 Example 3: Using utility functions
 ───────────────────────────────────────────────────────────────────────────────────────
-await execute_script(\`
-  // Use utility functions if available
-  const result = someUtilityFunction(state_a);
-  state_a.value = result;
-\`);
 
-Example 4: Complete the task
-───────────────────────────────────────────────────────────────────────────────────────
-await attempt_completion("Task completed successfully");
+${prettifyCodeContext(`// Use utility functions if available
+const result = someUtilityFunction(state_a);
+state_a.value = result;`)}
+
 
 `;
 
