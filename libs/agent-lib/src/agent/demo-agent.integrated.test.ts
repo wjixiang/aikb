@@ -4,10 +4,10 @@
  * Demonstrates the agent functionality with real AI
  */
 
-import { KmsWorkspace } from './agent/workspaces/KmsWorkspace';
-import { AgentV2, defaultAgentConfig, defaultApiConfig } from './agent/agentV2';
-import { ProviderSettings } from './types/provider-settings';
-import { b } from './baml_client'
+import { KmsWorkspace } from './workspaces/KmsWorkspace';
+import { AgentV2, defaultAgentConfig, defaultApiConfig } from './agentV2';
+import { ProviderSettings } from '../types/provider-settings';
+import { b } from '../baml_client'
 import { config } from 'dotenv'
 config()
 
@@ -107,7 +107,7 @@ async function main() {
 
     // Step 8: Display script execution guide
     console.log('Step 8: Script Execution Guide');
-    const scriptGuide = await workspace.renderWithScriptSection();
+    const scriptGuide = await workspace.render();
     console.log(scriptGuide);
     console.log();
 

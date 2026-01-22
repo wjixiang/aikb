@@ -126,7 +126,7 @@ describe('StatefulComponent - Unified State Model', () => {
         });
 
         it('should render with script section for LLM', async () => {
-            const context = await component.renderWithScriptSection();
+            const context = await component.render();
 
             expect(context).toContain('AVAILABLE STATES');
             expect(context).toContain('SCRIPT WRITING GUIDE');
@@ -217,7 +217,7 @@ return "Async operation completed";
 
         it('should simulate virtual workspace workflow', async () => {
             // Virtual workspace: Render environment -> LLM returns script -> Execute script -> Re-render
-            const context1 = await workspace.renderWithScriptSection();
+            const context1 = await workspace.render();
 
             expect(context1).toContain('VIRTUAL WORKSPACE: Test Workspace');
             expect(context1).toContain('SCRIPT EXECUTION GUIDE');
@@ -234,7 +234,7 @@ return "Async operation completed";
             expect(result.success).toBe(true);
 
             // Re-render to see updated state
-            const context2 = await workspace.renderWithScriptSection();
+            const context2 = await workspace.render();
 
             expect(context2).toContain('test search query');
         });

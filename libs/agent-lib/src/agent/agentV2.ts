@@ -436,32 +436,6 @@ export class AgentV2 {
                     throw new NoApiResponseError(1);
                 }
 
-                // Process the complete response
-                // const processedResponse = shouldUseXmlParser
-                //     ? this.responseProcessor.processXmlCompleteResponse(response)
-                //     : this.responseProcessor.processCompleteResponse(response);
-
-                // // Update message state with processed response
-                // // this.messageState.assistantMessageContent = processedResponse.assistantMessageContent;
-                // this.messageState.assistantMessageContent = [{
-                //     type: "tool_use"
-
-                // }]
-
-                // Check if we have tool calls to execute
-                // const toolUseBlocks = this.messageState.assistantMessageContent.filter(
-                //     (block: AssistantMessageContent) => block.type === 'tool_use',
-                // );
-
-                // if (toolUseBlocks.length === 0) {
-                //     // No tools used - this is an error case
-                //     this.messageState.userMessageContent.push({
-                //         type: 'text',
-                //         text: formatResponse.noToolsUsed(toolProtocol),
-                //     });
-                //     this._consecutiveMistakeCount++;
-                //     throw new NoToolsUsedError();
-                // }
 
                 // Convert BAML response to assistant message content and get tool use ID
                 const toolUseId = this.convertBamlResponseToAssistantMessage(response);
@@ -872,14 +846,14 @@ export class AgentV2 {
 
     /**
      * Get system prompt for agent
-     * Uses VirtualWorkspace's renderWithScriptSection for context
+     * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
         const { SYSTEM_PROMPT } = await import("../prompts/system.js");
         return `
 ${await SYSTEM_PROMPT()}
 
-${await this.workspace.renderWithScriptSection()}
+${await this.workspace.render()}
         `;
     }
 }

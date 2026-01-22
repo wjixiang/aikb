@@ -12,6 +12,14 @@
         "reportsDirectory": "../../coverage/libs/agent-lib",
         "config": "libs/agent-lib/vite.config.mts"
       }
+    },
+    "integrate": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/agent-lib",
+        "config": "libs/agent-lib/vite.config.integrated.mts"
+      }
     }
   }
 }

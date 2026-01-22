@@ -1,6 +1,7 @@
 import { StatefulComponent, State, ScriptExecutionResult, CommonTools, Permission } from './statefulComponent';
 import { SecurityConfig, SecureExecutionContext, createSecurityConfig } from './scriptSecurity';
-import { prettifyCodeContext, renderInfoBox } from './componentUtils';
+import { prettifyCodeContext } from './components/aesthetics/componentUtils';
+import { tdiv } from './components/aesthetics/TUI_elements';
 
 /**
  * Configuration options for VirtualWorkspace
@@ -322,17 +323,21 @@ export class VirtualWorkspace {
      * Render the entire workspace as context for LLM
      * Components are rendered in priority order (lower priority first)
      */
-    async render(): Promise<string> {
+    private async _render(): Promise<string> {
         const lines: string[] = [];
 
-        // Render workspace header using info box utility
-        lines.push(renderInfoBox({
-            title: `VIRTUAL WORKSPACE: ${this.config.name}`,
+        // Render workspace header using tdiv
+        const workspaceHeader = new tdiv({
             width: 80,
-            padding: 1,
-            margin: 0,
-            style: 'double'
-        }));
+            height: 0,
+            border: true,
+            content: `VIRTUAL WORKSPACE: ${this.config.name}`,
+            styles: {
+                borderStyle: { line: 'double' },
+                align: 'center'
+            }
+        });
+        lines.push(workspaceHeader.render());
 
         if (this.config.description) {
             lines.push('');
@@ -349,17 +354,21 @@ export class VirtualWorkspace {
             .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
 
         for (const [key, registration] of sortedComponents) {
-            // Render component header using info box utility
-            lines.push(renderInfoBox({
-                title: `Component: ${key}`,
+            // Render component header using tdiv
+            const componentHeader = new tdiv({
                 width: 80,
-                padding: 1,
-                margin: 0,
-                style: 'single'
-            }));
+                height: 0,
+                border: true,
+                content: `Component: ${key}`,
+                styles: {
+                    borderStyle: { line: 'single' },
+                    align: 'center'
+                }
+            });
+            lines.push(componentHeader.render());
             lines.push('');
 
-            const componentRender = await registration.component.renderWithScriptSection();
+            const componentRender = await registration.component.render();
             lines.push(componentRender);
             lines.push('');
         }
@@ -370,8 +379,8 @@ export class VirtualWorkspace {
     /**
      * Render the workspace with script writing guide
      */
-    async renderWithScriptSection(): Promise<string> {
-        const context = await this.render();
+    async render(): Promise<string> {
+        const context = await this._render();
 
         // Generate merged state initialization code
         const lines: string[] = [];
@@ -412,23 +421,29 @@ export class VirtualWorkspace {
         const scriptSection = `
 ${context}
 
-${renderInfoBox({
-            title: 'SCRIPT EXECUTION GUIDE',
+${new tdiv({
             width: 80,
-            padding: 1,
-            margin: 0,
-            style: 'double'
-        })}
+            height: 0,
+            border: true,
+            content: 'SCRIPT EXECUTION GUIDE',
+            styles: {
+                borderStyle: { line: 'double' },
+                align: 'center'
+            }
+        }).render()}
 
 This workspace contains ${this.components.size} component(s) with merged states. You can interact with them using the following tools:
 
-${renderInfoBox({
-            title: 'AVAILABLE TOOLS',
+${new tdiv({
             width: 80,
-            padding: 1,
-            margin: 0,
-            style: 'double'
-        })}
+            height: 0,
+            border: true,
+            content: 'AVAILABLE TOOLS',
+            styles: {
+                borderStyle: { line: 'double' },
+                align: 'center'
+            }
+        }).render()}
 
 1. execute_script(script: string)
    Execute JavaScript code to mutate component states.
@@ -438,13 +453,16 @@ ${renderInfoBox({
 2. attempt_completion(result: string)
    Complete the task and return the final result.
 
-${renderInfoBox({
-            title: 'AVAILABLE STATES (MERGED FROM ALL COMPONENTS)',
+${new tdiv({
             width: 80,
-            padding: 1,
-            margin: 0,
-            style: 'double'
-        })}
+            height: 0,
+            border: true,
+            content: 'AVAILABLE STATES',
+            styles: {
+                borderStyle: { line: 'double' },
+                align: 'center'
+            }
+        }).render()}
 
 ${Array.from(this.components.entries())
                 .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0))
@@ -454,13 +472,16 @@ ${Array.from(this.components.entries())
                 })
                 .join('\n')}
 
-${renderInfoBox({
-                    title: 'EXAMPLES',
+${new tdiv({
                     width: 80,
-                    padding: 1,
-                    margin: 0,
-                    style: 'double'
-                })}
+                    height: 0,
+                    border: true,
+                    content: 'EXAMPLES',
+                    styles: {
+                        borderStyle: { line: 'double' },
+                        align: 'center'
+                    }
+                }).render()}
 
 Example 1: Update a state
 ───────────────────────────────────────────────────────────────────────────────────────

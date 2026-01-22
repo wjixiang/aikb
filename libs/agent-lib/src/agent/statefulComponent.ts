@@ -1,5 +1,6 @@
 import { proxy } from 'valtio'
 import * as z from 'zod';
+import { renderInfoBox } from './components/aesthetics/componentUtils';
 
 export enum Permission {
     r = 'READ_ONLY',
@@ -128,10 +129,10 @@ export abstract class StatefulComponent {
     }
 
     /**
-     * Render the virtual workspace as context for LLM
+     * Render the virtual workspace as context for LLM (internal method)
      * This includes states and their schemas
      */
-    async render(): Promise<string> {
+    async _render(): Promise<string> {
         // Ensure initialization before rendering
         await this.ensureInitialized();
         const lines: string[] = [];
@@ -226,8 +227,8 @@ export abstract class StatefulComponent {
      * Render the context with script section for LLM
      * This provides a template for LLM to write scripts
      */
-    async renderWithScriptSection(): Promise<string> {
-        const context = await this.render();
+    async render(): Promise<string> {
+        const context = await this._render();
         const stateInitCode = this.generateStateInitializationCode();
 
         const scriptSection = `
@@ -243,10 +244,10 @@ Start your script with the following initialization code:
 ║                  STATE INITIALIZATION                              ║
 ╚════════════════════════════════════════════════════════════════════╝
 ${stateInitCode}
+${renderInfoBox({
+            title: 'HOW TO INTERACT WITH STATES '
+        })}
 
-╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                    HOW TO INTERACT WITH STATES                            ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════╝
 
 You can write JavaScript code to mutate states above. Use the state names
 directly in your script.

@@ -329,6 +329,7 @@ export class KnowledgeManageComponent extends StatefulComponent {
     private allEntities: Entity[] = [];
     private isLoading: boolean = false;
     private lastSelectedDocumentId: string | null = null;
+    private isInitializing: boolean = false;
 
     constructor() {
         super();
@@ -360,17 +361,26 @@ export class KnowledgeManageComponent extends StatefulComponent {
      * Fetches initial documents and entities
      */
     protected async init(): Promise<void> {
-        await Promise.all([
-            this.fetchDocuments(),
-            this.fetchEntities()
-        ]);
+        // Set initialization flag to prevent subscribe callbacks from interfering
+        this.isInitializing = true;
+        try {
+            // Execute both fetch operations in parallel for better performance
+            await Promise.all([
+                this.fetchDocuments(),
+                this.fetchEntities()
+            ]);
+            console.debug(`init successfully`);
+        } finally {
+            this.isInitializing = false;
+        }
     }
 
     /**
      * Handle document list state changes
      */
     private async handleDocumentListChange(state: DocumentListState): Promise<void> {
-        if (this.isLoading) return;
+        // Skip processing during initialization or when already loading
+        if (this.isLoading || this.isInitializing) return;
 
         // Re-filter and sort documents
         this.filterAndSortDocuments();
@@ -417,6 +427,9 @@ export class KnowledgeManageComponent extends StatefulComponent {
      * Handle entities state changes
      */
     private async handleEntitiesChange(state: EntitiesState): Promise<void> {
+        // Skip processing during initialization
+        if (this.isInitializing) return;
+
         // Re-filter entities
         this.filterEntities();
     }
@@ -434,7 +447,15 @@ export class KnowledgeManageComponent extends StatefulComponent {
             });
 
             this.allDocuments = data.documents || [];
-            this.filterAndSortDocuments();
+            // Only call filterAndSortDocuments if not initializing (to avoid triggering subscription)
+            if (!this.isInitializing) {
+                this.filterAndSortDocuments();
+            } else {
+                // During initialization, directly set the state to avoid triggering subscription
+                const state = this.states['document_list_state'].state as DocumentListState;
+                state.documents = [...this.allDocuments];
+            }
+            console.debug(`fetch documents successfully`)
         } catch (error) {
             console.error('[KnowledgeManageComponent] Failed to fetch documents:', error);
         } finally {
@@ -638,7 +659,15 @@ export class KnowledgeManageComponent extends StatefulComponent {
             });
 
             this.allEntities = data.entities || [];
-            this.filterEntities();
+            // Only call filterEntities if not initializing (to avoid triggering subscription)
+            if (!this.isInitializing) {
+                this.filterEntities();
+            } else {
+                // During initialization, directly set the state to avoid triggering subscription
+                const state = this.states['entities_state'].state as EntitiesState;
+                state.entities = [...this.allEntities];
+            }
+            console.debug(`fetch entities successfully`)
         } catch (error) {
             console.error('[KnowledgeManageComponent] Failed to fetch entities:', error);
         }

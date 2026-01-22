@@ -1,3 +1,5 @@
+import { tdiv } from './TUI_elements';
+
 export function prettifyCodeContext(codeContext: string) {
     const lines = codeContext.split('\n')
     const lineNum = lines.length + 1
@@ -37,36 +39,6 @@ export interface InfoBoxConfig {
 }
 
 /**
- * Box border characters for different styles
- */
-const BoxBorders = {
-    single: {
-        topLeft: '┌',
-        topRight: '┐',
-        bottomLeft: '└',
-        bottomRight: '┘',
-        horizontal: '─',
-        vertical: '│'
-    },
-    double: {
-        topLeft: '╔',
-        topRight: '╗',
-        bottomLeft: '╚',
-        bottomRight: '╝',
-        horizontal: '═',
-        vertical: '║'
-    },
-    rounded: {
-        topLeft: '╭',
-        topRight: '╮',
-        bottomLeft: '╰',
-        bottomRight: '╯',
-        horizontal: '─',
-        vertical: '│'
-    }
-};
-
-/**
  * Render an info box with dynamic content and margin adjustment
  * @param config - Configuration for the info box
  * @returns Formatted info box as a string
@@ -81,59 +53,51 @@ export function renderInfoBox(config: InfoBoxConfig): string {
         style = 'double'
     } = config;
 
-    const borders = BoxBorders[style];
+    const contentWidth = width - (padding * 2);
     const innerWidth = width - 2; // Account for border characters
-    const contentWidth = innerWidth - (padding * 2);
-    const marginLine = margin > 0 ? '\n'.repeat(margin) : '';
 
+    // Build content string with title and content
     const lines: string[] = [];
 
-    // Add top margin
-    if (margin > 0) {
-        lines.push(marginLine);
-    }
-
-    // Render top border
-    lines.push(borders.topLeft + borders.horizontal.repeat(innerWidth) + borders.topRight);
-
-    // Render title row
+    // Add title with padding
     const titlePadding = Math.max(0, contentWidth - title.length);
     const leftPadding = Math.floor(titlePadding / 2);
     const rightPadding = titlePadding - leftPadding;
-    const titleRow = '│' +
-        ' '.repeat(padding) +
-        ' '.repeat(leftPadding) +
-        title +
-        ' '.repeat(rightPadding) +
-        ' '.repeat(padding) +
-        '│';
-    lines.push(titleRow);
+    lines.push(' '.repeat(padding) + ' '.repeat(leftPadding) + title + ' '.repeat(rightPadding) + ' '.repeat(padding));
 
-    // Render content rows
+    // Add content lines with padding
     if (content.length > 0) {
         for (const contentLine of content) {
-            // Handle multi-line content by wrapping
             const wrappedLines = wrapText(contentLine, contentWidth);
             for (const wrappedLine of wrappedLines) {
-                const contentRow = '│' +
-                    ' '.repeat(padding) +
-                    wrappedLine.padEnd(contentWidth) +
-                    ' '.repeat(padding) +
-                    '│';
-                lines.push(contentRow);
+                lines.push(' '.repeat(padding) + wrappedLine.padEnd(contentWidth) + ' '.repeat(padding));
             }
         }
     }
 
-    // Render bottom border
-    lines.push(borders.bottomLeft + borders.horizontal.repeat(innerWidth) + borders.bottomRight);
+    const contentStr = lines.join('\n');
 
-    // Add bottom margin
+    // Create tdiv with the content
+    const box = new tdiv({
+        width: width,
+        height: 0, // Auto-height based on content
+        border: true,
+        content: contentStr,
+        styles: {
+            borderStyle: { line: style },
+            align: 'left'
+        }
+    });
+
+    let result = box.render();
+
+    // Add margin
     if (margin > 0) {
-        lines.push(marginLine);
+        const marginLine = '\n'.repeat(margin);
+        result = marginLine + result + marginLine;
     }
 
-    return lines.join('\n');
+    return result;
 }
 
 /**

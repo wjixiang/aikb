@@ -12,19 +12,6 @@ export default defineConfig(() => ({
   //  plugins: [ nxViteTsPaths() ],
   // },
   test: {
-    name: 'agent-lib',
-    watch: false,
-    globals: true,
-    environment: 'node',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['{src,tests}/**/*.integrated.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
-    coverage: {
-      reportsDirectory: '../../coverage/libs/agent-lib',
-      provider: 'v8' as const,
-    },
-  },
-  integrate: {
     name: 'agent-lib-integrated',
     watch: false,
     globals: true,

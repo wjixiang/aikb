@@ -17,7 +17,7 @@ describe('Bookshelf Components E2E Tests', () => {
 
         describe('Initialization', () => {
             it('should render into context', async () => {
-                const context = await component.renderWithScriptSection()
+                const context = await component.render()
                 console.log(context)
             })
             it('should initialize with book_viewer_state', () => {
