@@ -198,7 +198,7 @@ export abstract class StatefulComponent {
             border: true,
             content: contentLines.join('\n'),
             styles: {
-                borderStyle: { line: 'single' },
+                border: { line: 'single' },
                 align: 'left',
                 padding: { all: 1 },
                 margin: { bottom: 1 }

@@ -84,7 +84,7 @@ export function renderInfoBox(config: InfoBoxConfig): string {
         border: true,
         content: contentStr,
         styles: {
-            borderStyle: { line: style },
+            border: { line: style },
             align: 'left'
         }
     });

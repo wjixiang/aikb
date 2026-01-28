@@ -180,7 +180,7 @@ class ttable extends TUIElement {
 
 interface ttableMetadata extends ElementMetadata {
     columnWidths?: number[];
-    borderStyle?: 'none' | 'outer' | 'all' | 'horizontal' | 'vertical';
+    border?: 'none' | 'outer' | 'all' | 'horizontal' | 'vertical';
     headerBorder?: boolean;
 }
 ```
@@ -386,10 +386,10 @@ interface Theme {
     name: string;
     colors: ColorPalette;
     borders: {
-        single: BorderStyle;
-        double: BorderStyle;
-        rounded: BorderStyle;
-        dashed: BorderStyle;
+        single: border;
+        double: border;
+        rounded: border;
+        dashed: border;
     };
     fonts: {
         default: string;
@@ -415,7 +415,7 @@ interface ComputedStyles {
     height: number;
     padding: Spacing;
     margin: Spacing;
-    border: BorderStyle;
+    border: border;
 
     // Typography
     color: string;
@@ -461,7 +461,7 @@ class tdivBuilder {
     padding(value: Spacing): this;
     margin(value: Spacing): this;
     align(value: Alignment): this;
-    style(value: BorderStyle): this;
+    style(value: border): this;
     content(value: string): this;
     children(...elements: TUIElement[]): this;
     build(): tdiv;
@@ -479,7 +479,7 @@ const Card: FunctionalComponent = ({ title, content, footer }) => {
         width: 80,
         border: true,
         styles: {
-            borderStyle: { line: 'single' },
+            border: { line: 'single' },
             padding: { all: 1 }
         }
     }, [
@@ -590,7 +590,7 @@ const header = new tdiv({
     border: true,
     content: 'VIRTUAL WORKSPACE',
     styles: {
-        borderStyle: { line: 'double' },
+        border: { line: 'double' },
         align: 'center',
         padding: { vertical: 1 }
     }

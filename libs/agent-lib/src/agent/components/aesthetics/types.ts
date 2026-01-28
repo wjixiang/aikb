@@ -6,17 +6,17 @@
  * Base metadata for all TUI elements
  */
 export interface ElementMetadata {
-    /** Width of the element (0 for auto) */
-    width?: number;
-    /** Height of the element (0 for auto) */
-    height?: number;
-    /** Whether to render a border */
-    border?: boolean;
     /** Text content of the element */
     content?: string;
     /** Style properties */
     styles?: {
-        borderStyle?: BorderStyle;
+        /** Width of the element (0 for auto) */
+        width?: number;
+        /** Height of the element (0 for auto) */
+        height?: number;
+        /** Whether to render a border */
+        showBorder?: boolean;
+        border?: border;
         align?: 'left' | 'center' | 'right';
         padding?: PaddingStyle;
         margin?: MarginStyle;
@@ -26,7 +26,7 @@ export interface ElementMetadata {
 /**
  * Border style configuration
  */
-export interface BorderStyle {
+export interface border {
     line: 'single' | 'double' | 'rounded' | 'dashed';
 }
 
@@ -77,7 +77,7 @@ export interface ComputedStyles {
     height: number;
     padding: Spacing;
     margin: Spacing;
-    border: BorderStyle | null;
+    border: border | null;
     align: 'left' | 'center' | 'right';
 }
 

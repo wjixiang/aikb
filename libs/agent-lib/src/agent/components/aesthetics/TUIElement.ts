@@ -9,7 +9,7 @@ import {
     Spacing,
     PaddingStyle,
     MarginStyle,
-    BorderStyle,
+    border,
     BoxBorders,
     BoxBorderChars
 } from './types';
@@ -50,25 +50,28 @@ export abstract class TUIElement {
      * Calculate computed styles for the element
      */
     protected computeStyles(): ComputedStyles {
-        const { width, height, border, styles } = this.metadata;
+        const { styles } = this.metadata;
+        const width = styles?.width;
+        const height = styles?.height;
+        const showBorder = styles?.showBorder;
         const padding = this.resolvePadding(styles?.padding);
         const margin = this.resolveMargin(styles?.margin);
-        const borderStyle = this.resolveBorderStyle(styles?.borderStyle);
+        const border = this.resolveborder(styles?.border);
         const align = styles?.align || 'left';
 
         // Calculate dimensions
         const contentDims = this.calculateContentDimensions();
-        const finalWidth = width ?? (contentDims.width + padding[1] + padding[3] + (border ? 2 : 0));
+        const finalWidth = width ?? (contentDims.width + padding[1] + padding[3] + (showBorder ? 2 : 0));
         const finalHeight = height === 0
-            ? (contentDims.height + padding[0] + padding[2] + (border ? 2 : 0))
-            : (height ?? (contentDims.height + padding[0] + padding[2] + (border ? 2 : 0)));
+            ? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0))
+            : (height ?? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0)));
 
         return {
             width: finalWidth,
             height: finalHeight,
             padding,
             margin,
-            border: border ? borderStyle : null,
+            border: showBorder ? border : null,
             align
         };
     }
@@ -153,14 +156,14 @@ export abstract class TUIElement {
     /**
      * Resolve border style
      */
-    protected resolveBorderStyle(borderStyle?: BorderStyle): BorderStyle {
-        return borderStyle || { line: 'single' };
+    protected resolveborder(border?: border): border {
+        return border || { line: 'single' };
     }
 
     /**
      * Get border characters for the specified style
      */
-    protected getBorderChars(style: BorderStyle): BoxBorderChars {
+    protected getBorderChars(style: border): BoxBorderChars {
         return BoxBorders[style.line] || BoxBorders['single'];
     }
 

@@ -8,7 +8,7 @@ Phase 1 of TUI Elements enhancement has been successfully completed. This phase 
 
 #### 1. Core Type System ([types.ts](libs/agent-lib/src/agent/components/aesthetics/types.ts))
 - ElementMetadata: Base metadata interface for all elements
-- BorderStyle: Border style configuration (single, double, rounded, dashed)
+- border: Border style configuration (single, double, rounded, dashed)
 - PaddingStyle/MarginStyle: Spacing configuration with shorthand properties
 - Spacing: 4-tuple [top, right, bottom, left] for computed values
 - ComputedStyles: Resolved styles for rendering
@@ -114,7 +114,7 @@ const container = new tdiv({
     width: 80,
     border: true,
     styles: {
-        borderStyle: { line: 'double' },
+        border: { line: 'double' },
         padding: { all: 1 }
     }
 });

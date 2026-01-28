@@ -142,11 +142,11 @@ export abstract class StatefulComponent {
         contentLines.push(...valueStr.split('\n'));
 
         return new tdiv({
-            width: 80,
-            border: true,
             content: contentLines.join('\n'),
             styles: {
-                borderStyle: { line: 'single' },
+                width: 80,
+                showBorder: true,
+                border: { line: 'single' },
                 align: 'left',
                 padding: { all: 1 },
                 margin: { bottom: 1 }

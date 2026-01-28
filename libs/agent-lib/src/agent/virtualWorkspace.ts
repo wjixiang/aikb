@@ -333,7 +333,7 @@ export class VirtualWorkspace {
             border: true,
             content: `VIRTUAL WORKSPACE: ${this.config.name}`,
             styles: {
-                borderStyle: { line: 'double' },
+                border: { line: 'double' },
                 align: 'center'
             }
         });
@@ -361,7 +361,7 @@ export class VirtualWorkspace {
                 border: true,
                 content: `Component: ${key}`,
                 styles: {
-                    borderStyle: { line: 'single' },
+                    border: { line: 'single' },
                     align: 'center'
                 }
             });
@@ -427,7 +427,7 @@ ${new tdiv({
             border: true,
             content: 'SCRIPT EXECUTION GUIDE',
             styles: {
-                borderStyle: { line: 'double' },
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -440,7 +440,7 @@ ${new tdiv({
             border: true,
             content: 'AVAILABLE TOOLS',
             styles: {
-                borderStyle: { line: 'double' },
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -459,7 +459,7 @@ ${new tdiv({
             border: true,
             content: 'AVAILABLE STATES',
             styles: {
-                borderStyle: { line: 'double' },
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -478,7 +478,7 @@ ${new tdiv({
                     border: true,
                     content: 'EXAMPLES',
                     styles: {
-                        borderStyle: { line: 'double' },
+                        border: { line: 'double' },
                         align: 'center'
                     }
                 }).render()}

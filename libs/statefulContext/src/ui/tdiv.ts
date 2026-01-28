@@ -32,6 +32,7 @@ export class tdiv extends TUIElement {
      */
     render(): string {
         const styles = this.computeStyles();
+        console.debug(styles)
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
@@ -49,6 +50,7 @@ export class tdiv extends TUIElement {
         // Top border
         if (styles.border) {
             result += ' '.repeat(styles.margin[3]);
+            console.debug('border:', result)
             const borderChars = this.getBorderChars(styles.border);
             result += borderChars.topLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.topRight + '\n';
         }

@@ -79,12 +79,12 @@ export function renderInfoBox(config: InfoBoxConfig): string {
 
     // Create tdiv with the content
     const box = new tdiv({
-        width: width,
-        height: 0, // Auto-height based on content
-        border: true,
         content: contentStr,
         styles: {
-            borderStyle: { line: style },
+            width: width,
+            height: 0, // Auto-height based on content
+            showBorder: true,
+            border: { line: style },
             align: 'left'
         }
     });

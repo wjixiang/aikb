@@ -270,12 +270,12 @@ export class VirtualWorkspace {
 
         // Render workspace header using tdiv
         const workspaceHeader = new tdiv({
-            width: 80,
-            height: 0,
-            border: true,
             content: `VIRTUAL WORKSPACE: ${this.config.name}`,
             styles: {
-                borderStyle: { line: 'double' },
+                width: 80,
+                height: 0,
+                showBorder: true,
+                border: { line: 'double' },
                 align: 'center'
             }
         });
@@ -298,12 +298,12 @@ export class VirtualWorkspace {
         for (const [key, registration] of sortedComponents) {
             // Render component header using tdiv
             const componentHeader = new tdiv({
-                width: 80,
-                height: 0,
-                border: true,
                 content: `Component: ${key}`,
                 styles: {
-                    borderStyle: { line: 'single' },
+                    width: 80,
+                    height: 0,
+                    showBorder: true,
+                    border: { line: 'single' },
                     align: 'center'
                 }
             });
@@ -364,12 +364,12 @@ export class VirtualWorkspace {
 ${context}
 
 ${new tdiv({
-            width: 80,
-            height: 0,
-            border: true,
             content: 'SCRIPT EXECUTION GUIDE',
             styles: {
-                borderStyle: { line: 'double' },
+                width: 80,
+                height: 0,
+                showBorder: true,
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -377,12 +377,12 @@ ${new tdiv({
 This workspace contains ${this.components.size} component(s) with merged states. You can interact with them using the following tools:
 
 ${new tdiv({
-            width: 80,
-            height: 0,
-            border: true,
             content: 'AVAILABLE TOOLS',
             styles: {
-                borderStyle: { line: 'double' },
+                width: 80,
+                height: 0,
+                showBorder: true,
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -396,12 +396,12 @@ ${new tdiv({
    Complete the task and return the final result.
 
 ${new tdiv({
-            width: 80,
-            height: 0,
-            border: true,
             content: 'AVAILABLE STATES',
             styles: {
-                borderStyle: { line: 'double' },
+                width: 80,
+                height: 0,
+                showBorder: true,
+                border: { line: 'double' },
                 align: 'center'
             }
         }).render()}
@@ -415,12 +415,12 @@ ${Array.from(this.components.entries())
                 .join('\n')}
 
 ${new tdiv({
-                    width: 80,
-                    height: 0,
-                    border: true,
                     content: 'EXAMPLES',
                     styles: {
-                        borderStyle: { line: 'double' },
+                        width: 80,
+                        height: 0,
+                        showBorder: true,
+                        border: { line: 'double' },
                         align: 'center'
                     }
                 }).render()}
