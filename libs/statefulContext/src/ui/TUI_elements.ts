@@ -7,7 +7,7 @@
  */
 
 // Re-export types for convenience
-export * from './types';
+export * from '../types';
 
 // Re-export base class
 export { TUIElement } from './TUIElement';
@@ -30,4 +30,4 @@ export type { ttextMetadata } from './text/ttext';
 export { renderInfoBox, prettifyCodeContext } from './componentUtils';
 
 // Re-export BoxBorders for backward compatibility
-export { BoxBorders } from './types';
+export { BoxBorders } from '../types';

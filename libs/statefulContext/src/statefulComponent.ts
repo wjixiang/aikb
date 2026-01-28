@@ -1,60 +1,8 @@
-import { proxy } from 'valtio'
+import { proxy } from 'valtio';
 import * as z from 'zod';
-import { renderInfoBox } from './components/aesthetics/componentUtils';
-import { tdiv, th, tp } from './components/aesthetics/TUI_elements';
-
-export enum Permission {
-    r = 'READ_ONLY',
-    w = 'WRITE_ONLY',
-    rw = 'READ_AND_WRITE'
-}
-
-/**
- * State definition for components
- * All states are now unified - no distinction between public and private
- */
-export interface State {
-    /**
-     * Schema defining the structure of the state
-     */
-    schema: z.Schema;
-    /**
-     * The actual state data (using valtio proxy for reactivity)
-     */
-    state: object;
-    /**
-     * Permission level for script execution
-     */
-    permission: Permission;
-    /**
-     * Describe what will happen if state being changed
-     */
-    sideEffectsDesc?: string;
-}
-
-/**
- * Result of script execution
- */
-export interface ScriptExecutionResult {
-    success: boolean;
-    message: string;
-    output?: any;
-    error?: string;
-}
-
-/**
- * Common tools available to LLM for interacting with virtual workspace
- */
-export interface CommonTools {
-    /**
-     * Execute a script to mutate states
-     */
-    execute_script: (script: string) => Promise<ScriptExecutionResult>;
-    /**
-     * Complete the task and return final result
-     */
-    attempt_completion: (result: string) => Promise<void>;
-}
+import { renderInfoBox } from './ui/componentUtils';
+import { tdiv, th, tp } from './ui/TUI_elements';
+import { State, Permission, ScriptExecutionResult, CommonTools } from './types';
 
 /**
  * Fully state-controlled interactive component
@@ -297,3 +245,6 @@ export abstract class StatefulComponent {
         return scriptSection;
     }
 }
+export { Permission };
+export type { State };
+

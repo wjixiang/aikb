@@ -1,0 +1,13 @@
+{
+  "name": "stateful-context",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "valtio": "^2.0.0",
+    "zod": "^3.25.0"
+  }
+}
