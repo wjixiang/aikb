@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-    SecurityConfig,
+
     SecureExecutionContext,
-    DEFAULT_SECURITY_CONFIG,
+
     ScriptSanitizer,
     createSecurityConfig,
     validateSecurityConfig,
 } from './scriptSecurity';
+import { DEFAULT_SECURITY_CONFIG, SecurityConfig } from './types';
 
 describe('Script Security Module', () => {
     describe('SecurityConfig', () => {

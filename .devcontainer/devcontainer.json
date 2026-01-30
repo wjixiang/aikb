@@ -18,7 +18,8 @@
 				"bradlc.vscode-tailwindcss",
 				"csstools.postcss",
 				"GraphQL.vscode-graphql-syntax",
-				"esbenp.prettier-vscode"
+				"esbenp.prettier-vscode",
+				"firsttris.vscode-jest-runner"
 			]
 		}
 	}

@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../statefulContext/src/scriptSecurity.test.ts"],
   "exclude": [
     "jest.config.ts",
     "src/**/*.spec.ts",

@@ -92,7 +92,7 @@
       "MedAgent-service/*": ["apps/MedAgent-service/src/*"],
       "evidenceHub": ["/libs/evidenceHub/src/index.ts"],
       "wiki-db": ["libs/wiki-db/src/index.ts"],
-      "statefulContext": ["/libs/statefulContext/src/index.ts"]
+      "statefulContext": ["libs/statefulContext/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

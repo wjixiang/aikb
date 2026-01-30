@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { Permission, State, StatefulComponent } from '../statefulComponent';
+import { Permission, State, StatefulComponent } from 'statefulContext';
 import { proxy, subscribe } from 'valtio';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { BookViewerComponent, WorkspaceInfoComponent, BookInfo } from './bookshelfComponents';
+import { BookViewerComponent, WorkspaceInfoComponent, BookInfo } from '../bookshelfComponents';
 
 describe('Bookshelf Components E2E Tests', () => {
     describe('BookViewerComponent', () => {

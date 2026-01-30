@@ -3,7 +3,7 @@
  * Virtual workspace for managing and searching through bookshelf content
  */
 
-import { VirtualWorkspace, ComponentRegistration } from '../virtualWorkspace';
+import { VirtualWorkspace, ComponentRegistration } from 'statefulContext';
 import { BookViewerComponent, WorkspaceInfoComponent } from '../components/bookshelfComponents';
 import { KnowledgeManageComponent } from '../components/knowledgeManageComponent';
 
