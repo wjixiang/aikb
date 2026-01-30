@@ -3,9 +3,115 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as z from 'zod';
 
-interface PubmedSearchParams {
+export type FieldConstraint =
+    | "All Fields"
+    | "Affiliation"
+    | "Author"
+    | "Author - Corporate"
+    | "Author - First"
+    | "Author - Identifier"
+    | "Author - Last"
+    | "Book"
+    | "Conflict of Interest Statements"
+    | "Date - Completion"
+    | "Date - Create"
+    | "Date - Entry"
+    | "Date - MeSH"
+    | "Date - Modification"
+    | "Date - Publication"
+    | "EC/RN Number"
+    | "Editor"
+    | "Filter"
+    | "Grants and Funding"
+    | "ISBN"
+    | "Investigator"
+    | "Issue"
+    | "Journal"
+    | "Language"
+    | "Location ID"
+    | "MeSH Major Topic"
+    | "MeSH Subheading"
+    | "MeSH Terms"
+    | "Other Term"
+    | "Pagination"
+    | "Pharmacological Action"
+    | "Publication Type"
+    | "Publisher"
+    | "Secondary Source ID"
+    | "Subject - Personal Name"
+    | "Supplementary Concept"
+    | "Text Word"
+    | "Title"
+    | "Title/Abstract"
+    | "Transliterated Title"
+    | "Volume"
+
+export interface RetrivalStrategy {
     term: string;
-    sort: string;
+    filed: FieldConstraint[]; // OR relation
+    AND: RetrivalStrategy[] | null;
+    OR: RetrivalStrategy[] | null;
+    NOT: RetrivalStrategy[] | null;
+}
+
+export function renderRetrivalStrategy(strategy: RetrivalStrategy): string {
+    const parts: string[] = [];
+
+    // Handle field constraints with OR relation
+    if (strategy.filed && strategy.filed.length > 0) {
+        const fieldParts = strategy.filed.map(field => {
+            if (field === "All Fields") {
+                return strategy.term;
+            }
+            return `${field}[${strategy.term}]`;
+        });
+
+        if (fieldParts.length === 1) {
+            parts.push(fieldParts[0]);
+        } else {
+            parts.push(`(${fieldParts.join(' OR ')})`);
+        }
+    }
+
+    // Handle AND operators
+    if (strategy.AND && strategy.AND.length > 0) {
+        const andParts = strategy.AND.map(s => renderRetrivalStrategy(s));
+        if (andParts.length > 0) {
+            const andStr = andParts.join(' AND ');
+            parts.push(andStr.length > 1 ? `(${andStr})` : andStr);
+        }
+    }
+
+    // Handle OR operators
+    if (strategy.OR && strategy.OR.length > 0) {
+        const orParts = strategy.OR.map(s => renderRetrivalStrategy(s));
+        if (orParts.length > 0) {
+            const orStr = orParts.join(' OR ');
+            parts.push(orStr.length > 1 ? `(${orStr})` : orStr);
+        }
+    }
+
+    // Handle NOT operators
+    if (strategy.NOT && strategy.NOT.length > 0) {
+        const notParts = strategy.NOT.map(s => renderRetrivalStrategy(s));
+        if (notParts.length > 0) {
+            const notStr = notParts.join(' NOT ');
+            parts.push(notStr.length > 1 ? `(${notStr})` : notStr);
+        }
+    }
+
+    // Combine all parts with AND between top-level components
+    if (parts.length === 0) {
+        return strategy.term || '';
+    }
+
+    return parts.join(' AND ');
+}
+
+export interface PubmedSearchParams {
+    term: string;
+    sort: 'match' | 'date' | 'pubdate' | 'fauth' | 'jour';
+    sortOrder: 'asc' | 'dsc';
     filter: string[];
     page: number | null;
 }

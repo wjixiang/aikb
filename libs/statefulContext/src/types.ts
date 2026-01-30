@@ -1,3 +1,4 @@
+import * as z from 'zod'
 /**
  * Core type definitions for stateful context library
  */
@@ -225,6 +226,13 @@ export interface ScriptExecutionResult {
     output?: any;
     error?: string;
 }
+
+export interface Tool {
+    toolName: string;
+    paramsSchema: z.ZodType<any>;
+    desc: string;
+}
+
 
 /**
  * Common tools available to LLM for interacting with virtual workspace

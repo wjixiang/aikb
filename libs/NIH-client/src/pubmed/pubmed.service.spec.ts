@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PubmedService } from '../pubmed.service';
+import { PubmedService, PubmedSearchParams } from './pubmed.service';
 import * as cheerio from 'cheerio';
-import { fstat, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import path from 'path';
+import { vi } from 'vitest';
 
 describe('PubmedService', () => {
   let service: PubmedService;
@@ -19,16 +20,18 @@ describe('PubmedService', () => {
     // expect(service).toBeDefined();
     await service.searchByPattern({
       term: '(hypertension[Title]) AND (food[Text Word])',
-      sort: '',
+      sort: 'match',
+      sortOrder: 'asc',
       filter: [],
       page: null
     })
   });
 
   it('should build search params correctly', () => {
-    const testPattern = {
+    const testPattern: PubmedSearchParams = {
       term: '(hypertension[Title]) AND (food[Text Word])',
-      sort: '',
+      sort: 'match',
+      sortOrder: 'asc',
       filter: [],
       page: null
     }

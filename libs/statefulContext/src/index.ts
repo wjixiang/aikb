@@ -12,6 +12,8 @@ export * from './types';
 // Re-export stateful component
 export { StatefulComponent } from './statefulComponent';
 
+export { ToolComponent } from './toolComponent'
+
 // Re-export script security
 export {
     SecureExecutionContext,

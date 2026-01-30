@@ -68,14 +68,18 @@ export class tdiv extends TUIElement {
         }
 
         // Content lines
-        let contentLines: string[];
-        // If content already contains newlines (pre-formatted), use it directly
-        // Also check if content contains box border characters (from renderInfoBox)
-        if (finalContent.includes('\n') || this.hasBoxBorders(finalContent)) {
-            contentLines = finalContent.split('\n');
-        } else {
-            contentLines = this.wrapContent(finalContent, innerWidth);
+        let contentLines: string[] = [];
+
+        const rawLines = finalContent.split('\n');
+        for (let index = 0; index < rawLines.length; index++) {
+            let currentLine = rawLines[index];
+            while (currentLine.length > innerWidth) {
+                contentLines.push(currentLine.slice(0, innerWidth));
+                currentLine = currentLine.slice(innerWidth + 1);
+            }
+            contentLines.push(currentLine)
         }
+
         const renderedChildren = this.renderChildren(innerWidth);
         const allContentLines = [...contentLines, ...renderedChildren];
 
