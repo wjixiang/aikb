@@ -25,4 +25,4 @@ export {
 export { VirtualWorkspace, ScriptRuntime } from './virtualWorkspace';
 
 // Re-export TUI elements
-export * from './ui/TUI_elements';
+export * from './ui';

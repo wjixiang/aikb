@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { Permission, State, StatefulComponent } from 'statefulContext';
 import { proxy, subscribe } from 'valtio';
+import { tdiv, TUIElement } from 'statefulContext';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
@@ -419,7 +420,7 @@ export class BookViewerComponent extends StatefulComponent {
     /**
      * Render the component as markdown
      */
-    override async render(): Promise<string> {
+    override async render(): Promise<TUIElement> {
         // Ensure initialization before rendering (calls init() if not already initialized)
         await this.ensureInitialized();
 
@@ -438,15 +439,9 @@ export class BookViewerComponent extends StatefulComponent {
         // Render book viewer content
         let viewerContent = '';
         if (!this.currentBook && !this.bookName) {
-            viewerContent = `
-*No book selected. Please select a book first.*
-            `;
+            viewerContent = '*No book selected. Please select a book first.*';
         } else {
-            viewerContent = `
-**[selected_book_name](EDITABLE):** ${this.bookName || 'Unknown'}
-
----
-            `;
+            viewerContent = `**[selected_book_name](EDITABLE):** ${this.bookName || 'Unknown'}\n\n---`;
         }
 
         // Render search results
@@ -454,21 +449,58 @@ export class BookViewerComponent extends StatefulComponent {
             ? this.searchResults.map((r: string, i: number) => `${'>'.repeat(6)}RESULT${i + 1}${'<'.repeat(6)}\n${r}`).join('\n--------------------\n')
             : '*No results*';
 
-        return `
-        ## 📖 Book Viewer
+        // Create container tdiv
+        const container = new tdiv({
+            content: '',
+            styles: {
+                width: 80,
+                showBorder: false
+            }
+        });
 
-        - [selected_book_name]: ${selectedBook ? `**${selectedBook}**` : '*None*'}
-        ### Available books
-        ${bookList}
+        // Add header
+        container.addChild(new tdiv({
+            content: '## 📖 Book Viewer',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
-        ${viewerContent}
+        // Add selected book info
+        container.addChild(new tdiv({
+            content: `- [selected_book_name]: ${selectedBook ? `**${selectedBook}**` : '*None*'}`,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
-        ### 🔍 Search
-        [search_query]: ${state.search_query || '*None*'}
+        // Add available books section
+        container.addChild(new tdiv({
+            content: '### Available books',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: bookList,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
------Results-----
-${resultsList}
-        `;
+        // Add viewer content
+        container.addChild(new tdiv({
+            content: viewerContent,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+
+        // Add search section
+        container.addChild(new tdiv({
+            content: '### 🔍 Search',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: `[search_query]: ${state.search_query || '*None*'}`,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: '-----Results-----\n' + resultsList,
+            styles: { width: 80, showBorder: false }
+        }));
+
+        return container;
     }
 }
 
@@ -512,17 +544,22 @@ export class WorkspaceInfoComponent extends StatefulComponent {
     /**
      * Render the component as markdown
      */
-    override async render(): Promise<string> {
+    override async render(): Promise<TUIElement> {
         // Ensure initialization before rendering (calls init() if not already initialized)
         await this.ensureInitialized();
 
         const state = this.states['workspace_info_state'].state as { lastUpdated: string };
         const formattedDate = new Date(state.lastUpdated).toLocaleString();
 
-        return `
-## ℹ️ Workspace Information
-**Last Updated:** ${formattedDate}
+        // Create container tdiv
+        const container = new tdiv({
+            content: `## ℹ️ Workspace Information\n**Last Updated:** ${formattedDate}`,
+            styles: {
+                width: 80,
+                showBorder: false
+            }
+        });
 
-        `;
+        return container;
     }
 }

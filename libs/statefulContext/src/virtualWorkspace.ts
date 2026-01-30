@@ -2,7 +2,7 @@ import { StatefulComponent } from './statefulComponent';
 import { State, ScriptExecutionResult, CommonTools, Permission, ComponentRegistration, VirtualWorkspaceConfig, WorkspaceScriptExecutionResult, CompletionCallback, SecurityConfig } from './types';
 import { SecureExecutionContext, createSecurityConfig } from './scriptSecurity';
 import { prettifyCodeContext } from './ui/componentUtils';
-import { tdiv } from './ui/TUI_elements';
+import { tdiv, TUIElement } from './ui';
 
 /**
  * Script Runtime - executes LLM output scripts against workspace components
@@ -265,8 +265,15 @@ export class VirtualWorkspace {
      * Render the entire workspace as context for LLM
      * Components are rendered in priority order (lower priority first)
      */
-    private async _render(): Promise<string> {
-        const lines: string[] = [];
+    private async _render(): Promise<TUIElement> {
+        // Create container tdiv
+        const container = new tdiv({
+            content: '',
+            styles: {
+                width: 80,
+                showBorder: false
+            }
+        });
 
         // Render workspace header using tdiv
         const workspaceHeader = new tdiv({
@@ -279,17 +286,19 @@ export class VirtualWorkspace {
                 align: 'center'
             }
         });
-        lines.push(workspaceHeader.render());
+        container.addChild(workspaceHeader);
 
         if (this.config.description) {
-            lines.push('');
-            lines.push(`Description: ${this.config.description}`);
+            container.addChild(new tdiv({
+                content: `Description: ${this.config.description}`,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }));
         }
 
-        lines.push('');
-        lines.push(`Workspace ID: ${this.config.id}`);
-        lines.push(`Components: ${this.components.size}`);
-        lines.push('');
+        container.addChild(new tdiv({
+            content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
         // Sort components by priority
         const sortedComponents = Array.from(this.components.entries())
@@ -307,15 +316,13 @@ export class VirtualWorkspace {
                     align: 'center'
                 }
             });
-            lines.push(componentHeader.render());
-            lines.push('');
+            container.addChild(componentHeader);
 
             const componentRender = await registration.component.render();
-            lines.push(componentRender);
-            lines.push('');
+            container.addChild(componentRender);
         }
 
-        return lines.join('\n');
+        return container;
     }
 
     /**

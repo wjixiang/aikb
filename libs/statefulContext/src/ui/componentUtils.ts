@@ -1,4 +1,4 @@
-import { tdiv } from './TUI_elements';
+import { tdiv } from './index';
 
 export function prettifyCodeContext(codeContext: string) {
     const lines = codeContext.split('\n')

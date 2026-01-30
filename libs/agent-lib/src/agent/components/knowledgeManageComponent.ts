@@ -12,6 +12,7 @@
 import { z } from 'zod';
 import { Permission, State, StatefulComponent } from 'statefulContext';
 import { proxy, subscribe } from 'valtio';
+import { tdiv, TUIElement } from 'statefulContext';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
@@ -357,7 +358,7 @@ export class KnowledgeManageComponent extends StatefulComponent {
     }
 
     /**
-     * Initialize the KnowledgeManage component
+     * Initialize KnowledgeManage component
      * Fetches initial documents and entities
      */
     protected async init(): Promise<void> {
@@ -579,7 +580,7 @@ export class KnowledgeManageComponent extends StatefulComponent {
             const content = (doc.record[0]?.content || '').toLowerCase();
             const topic = targetDoc.topic.toLowerCase();
 
-            // Check if content contains the topic
+            // Check if content contains topic
             if (content.includes(topic)) return true;
 
             // Check if entities overlap
@@ -871,9 +872,9 @@ export class KnowledgeManageComponent extends StatefulComponent {
     }
 
     /**
-     * Render the component as markdown
+     * Render component as markdown
      */
-    override async render(): Promise<string> {
+    override async render(): Promise<TUIElement> {
         // Ensure initialization before rendering (calls init() if not already initialized)
         await this.ensureInitialized();
 
@@ -882,6 +883,21 @@ export class KnowledgeManageComponent extends StatefulComponent {
         const searchState = this.states['search_state'].state as SearchState;
         const backlinksState = this.states['backlinks_state'].state as BacklinksState;
         const entitiesState = this.states['entities_state'].state as EntitiesState;
+
+        // Create container tdiv
+        const container = new tdiv({
+            content: '',
+            styles: {
+                width: 80,
+                showBorder: false
+            }
+        });
+
+        // Add main header
+        container.addChild(new tdiv({
+            content: '## 📚 Knowledge Management',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
         // Render document list
         const documentList = listState.documents
@@ -894,6 +910,49 @@ export class KnowledgeManageComponent extends StatefulComponent {
             })
             .join('\n');
 
+        // Render filter info
+        const filterInfo = listState.filter ?
+            `**Filter:**\n- Type: ${listState.filter.type || '*Any*'}\n- Topic contains: ${listState.filter.topic_contains || '*None*'}\n- Entities: ${listState.filter.entities?.join(', ') || '*None*'}\n- Tags: ${listState.filter.tags?.join(', ') || '*None*'}\n**Sort:** ${listState.sort_by} (${listState.sort_order})` : '';
+
+        // Add document list section
+        container.addChild(new tdiv({
+            content: '### 📄 Document List',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        if (filterInfo) {
+            container.addChild(new tdiv({
+                content: filterInfo,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }));
+        }
+        container.addChild(new tdiv({
+            content: documentList || '*No documents*',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+
+        // Render editor content
+        let editorContent = '';
+        if (editorState.mode === 'create') {
+            editorContent = `**Mode:** Create New Document\n- [topic]: ${editorState.topic || '*Not set*'}\n- [type]: ${editorState.type || '*Not set*'}\n- [entities]: ${editorState.entities.length > 0 ? editorState.entities.join(', ') : '*None*'}\n- [tags]: ${editorState.tags.length > 0 ? editorState.tags.join(', ') : '*None*'}\n- [content]: ${editorState.content ? '```markdown\n' + editorState.content + '\n```' : '*Empty*'}`;
+        } else if (editorState.selected_document_id) {
+            const doc = this.allDocuments.find(d => d.id === editorState.selected_document_id);
+            if (doc) {
+                editorContent = `**Mode:** ${editorState.mode === 'view' ? 'View' : 'Edit'}\n**Document ID:** ${doc.id}\n**Type:** ${doc.type}\n**Topic:** ${doc.topic}\n**Entities:** ${doc.entities.join(', ') || '*None*'}\n**Tags:** ${doc.metadata.tags.join(', ') || '*None*'}\n**Last Updated:** ${doc.record[0]?.updateDate || '*Unknown*'}\n\n---\n**Content:**\n\`\`\`markdown\n${doc.record[0]?.content || '*No content*'}\n\`\`\``;
+            }
+        } else {
+            editorContent = '*No document selected. Select a document from the list or create a new one.*';
+        }
+
+        // Add editor section
+        container.addChild(new tdiv({
+            content: '### ✏️ Document Editor',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: editorContent,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+
         // Render search results
         const searchResults = searchState.search_results.length > 0
             ? searchState.search_results.map((result: SearchResult, i: number) => {
@@ -901,6 +960,20 @@ export class KnowledgeManageComponent extends StatefulComponent {
                 return `${i + 1}. ${result.document.topic}${score}`;
             }).join('\n')
             : '*No results*';
+
+        // Add search section
+        container.addChild(new tdiv({
+            content: '### 🔍 Search',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: `- [search_query]: ${searchState.search_query || '*None*'}\n- [search_type]: ${searchState.search_type}\n- [top_k]: ${searchState.top_k}\n- [threshold]: ${searchState.threshold}`,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: '**Results:**\n' + searchResults,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
 
         // Render backlinks
         const backlinksList = backlinksState.backlinks.length > 0
@@ -910,6 +983,16 @@ export class KnowledgeManageComponent extends StatefulComponent {
             }).join('\n')
             : '*No backlinks*';
 
+        // Add backlinks section
+        container.addChild(new tdiv({
+            content: '### 🔗 Backlinks',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: `**Target:** ${backlinksState.target_document_id || '*None*'}\n${backlinksList}`,
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+
         // Render entities
         const entitiesList = entitiesState.entities.length > 0
             ? entitiesState.entities.map((entity: Entity, i: number) => {
@@ -918,77 +1001,16 @@ export class KnowledgeManageComponent extends StatefulComponent {
             }).join('\n')
             : '*No entities*';
 
-        // Render editor content
-        let editorContent = '';
-        if (editorState.mode === 'create') {
-            editorContent = `
-**Mode:** Create New Document
-- [topic]: ${editorState.topic || '*Not set*'}
-- [type]: ${editorState.type || '*Not set*'}
-- [entities]: ${editorState.entities.length > 0 ? editorState.entities.join(', ') : '*None*'}
-- [tags]: ${editorState.tags.length > 0 ? editorState.tags.join(', ') : '*None*'}
-- [content]: ${editorState.content ? '```markdown\n' + editorState.content + '\n```' : '*Empty*'}
-            `;
-        } else if (editorState.selected_document_id) {
-            const doc = this.allDocuments.find(d => d.id === editorState.selected_document_id);
-            if (doc) {
-                editorContent = `
-**Mode:** ${editorState.mode === 'view' ? 'View' : 'Edit'}
-**Document ID:** ${doc.id}
-**Type:** ${doc.type}
-**Topic:** ${doc.topic}
-**Entities:** ${doc.entities.join(', ') || '*None*'}
-**Tags:** ${doc.metadata.tags.join(', ') || '*None*'}
-**Last Updated:** ${doc.record[0]?.updateDate || '*Unknown*'}
+        // Add entities section
+        container.addChild(new tdiv({
+            content: '### 🏷️ Entities',
+            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+        }));
+        container.addChild(new tdiv({
+            content: entitiesList,
+            styles: { width: 80, showBorder: false }
+        }));
 
----
-**Content:**
-\`\`\`markdown
-${doc.record[0]?.content || '*No content*'}
-\`\`\`
-                `;
-            }
-        } else {
-            editorContent = `
-*No document selected. Select a document from the list or create a new one.*
-            `;
-        }
-
-        // Render filter info
-        const filterInfo = listState.filter ? `
-**Filter:**
-- Type: ${listState.filter.type || '*Any*'}
-- Topic contains: ${listState.filter.topic_contains || '*None*'}
-- Entities: ${listState.filter.entities?.join(', ') || '*None*'}
-- Tags: ${listState.filter.tags?.join(', ') || '*None*'}
-**Sort:** ${listState.sort_by} (${listState.sort_order})
-        ` : '';
-
-        return `
-## 📚 Knowledge Management
-
-### 📄 Document List
-${filterInfo}
-${documentList || '*No documents*'}
-
-### ✏️ Document Editor
-${editorContent}
-
-### 🔍 Search
-- [search_query]: ${searchState.search_query || '*None*'}
-- [search_type]: ${searchState.search_type}
-- [top_k]: ${searchState.top_k}
-- [threshold]: ${searchState.threshold}
-
-**Results:**
-${searchResults}
-
-### 🔗 Backlinks
-**Target:** ${backlinksState.target_document_id || '*None*'}
-${backlinksList}
-
-### 🏷️ Entities
-${entitiesList}
-        `;
+        return container;
     }
 }
