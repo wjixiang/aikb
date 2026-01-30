@@ -20,6 +20,63 @@ export interface ArticleProfile {
     position?: number;
 }
 
+export interface Affiliation {
+    institution?: string;
+    city?: string;
+    country?: string;
+    email?: string;
+}
+
+export interface Author {
+    name: string;
+    affiliations: Affiliation[];
+}
+
+export interface Keyword {
+    text: string;
+    isMeSH?: boolean;
+}
+
+export interface Reference {
+    pmid?: string;
+    citation: string;
+}
+
+export interface SimilarArticle {
+    pmid: string;
+    title: string;
+}
+
+export interface FullTextSource {
+    name: string;
+    url: string;
+    type?: string;
+}
+
+export interface ArticleDetail {
+    doi: string;
+    pmid: string;
+    title: string;
+    authors: Author[];
+    affiliations: Affiliation[];
+    abstract: string;
+    keywords: Keyword[];
+    conflictOfInterestStatement: string;
+    similarArticles: SimilarArticle[];
+    references: Reference[];
+    publicationTypes: string[];
+    meshTerms: Keyword[];
+    relatedInformation: Record<string, string[]>;
+    fullTextSources: FullTextSource[];
+    journalInfo: {
+        title?: string;
+        volume?: string;
+        issue?: string;
+        pages?: string;
+        pubDate?: string;
+    };
+}
+
 @Injectable()
 export class PubmedService {
     axiosClient = axios.create({
@@ -51,9 +108,16 @@ export class PubmedService {
         } catch (error) {
             console.log(error instanceof Error ? error.message : String(error))
         }
-        return response.data
 
         // Get article profile list
+        const articleProfiles = this.getArticleProfileList($);
+
+        return {
+            totalResults: convertedResult,
+            totalPages: convertedTotalPagesResult,
+            articleProfiles,
+            html: response.data
+        };
 
     }
 
@@ -66,7 +130,9 @@ export class PubmedService {
         if (params.page) {
             urlParams.append('page', String(params.page))
         }
-        params.filter.map(e => urlParams.append('filter', e))
+        if (params.filter && params.filter.length > 0) {
+            params.filter.forEach(e => urlParams.append('filter', e))
+        }
         return `?${urlParams.toString()}`
     }
 
@@ -122,9 +188,319 @@ export class PubmedService {
                 });
             });
         } catch (error) {
-            console.error('Error parsing article profiles:', error instanceof Error ? error.message : String(error));
+            const errorMessage = `Error parsing article profiles: ${error instanceof Error ? error.message : String(error)}`
+            // console.error(errorMessage);
+            throw new Error(errorMessage)
         }
 
         return articleProfiles;
+    }
+
+    async loadArticle(pmid: string): Promise<cheerio.CheerioAPI> {
+        try {
+            const response = await this.axiosClient.get(`/${pmid}`)
+            console.log(response.data)
+            const $ = cheerio.load(response.data)
+            return $
+        } catch (error) {
+            throw new Error(`Load article detail page request failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`)
+        }
+    }
+
+    private extractTitle($: cheerio.CheerioAPI): string {
+        const title = $('h1.article-title').first().text().trim() ||
+            $('h1.heading-title').first().text().trim();
+        if (!title) {
+            throw new Error('Failed to extract article title');
+        }
+        return title;
+    }
+
+    private extractAuthors($: cheerio.CheerioAPI): Author[] {
+        const authors: Author[] = [];
+        $('div.authors-list').find('span.authors-list-item').each((index, element) => {
+            const $author = $(element);
+            const name = $author.find('a[data-ga-action="author"]').text().trim() ||
+                $author.text().trim();
+
+            if (!name) return;
+
+            const affiliations: Affiliation[] = [];
+            $author.find('.affiliations').find('li').each((_, affElement) => {
+                const $aff = $(affElement);
+                const institution = $aff.find('.institution').text().trim();
+                const city = $aff.find('.city').text().trim();
+                const country = $aff.find('.country').text().trim();
+                const email = $aff.find('.email').text().trim();
+
+                if (institution || city || country || email) {
+                    affiliations.push({ institution, city, country, email });
+                }
+            });
+
+            authors.push({ name, affiliations });
+        });
+
+        if (authors.length === 0) {
+            throw new Error('Failed to extract article authors');
+        }
+
+        return authors;
+    }
+
+    private extractAffiliations($: cheerio.CheerioAPI): Affiliation[] {
+        const affiliations: Affiliation[] = [];
+        $('.affiliations').find('li').each((_, element) => {
+            const $aff = $(element);
+            const text = $aff.text().trim();
+            const institution = $aff.find('.institution').text().trim() || text;
+            const city = $aff.find('.city').text().trim();
+            const country = $aff.find('.country').text().trim();
+            const email = $aff.find('.email').text().trim();
+
+            if (institution || city || country || email) {
+                affiliations.push({ institution, city, country, email });
+            }
+        });
+
+        if (affiliations.length === 0) {
+            throw new Error('Failed to extract affiliations');
+        }
+
+        return affiliations;
+    }
+
+    private extractAbstract($: cheerio.CheerioAPI): string {
+        const abstract = $('#abstract').find('.abstract-content').text().trim() ||
+            $('.abstract').text().trim() ||
+            $('div.abstract-content').text().trim();
+
+        if (!abstract) {
+            throw new Error('Failed to extract article abstract');
+        }
+
+        return abstract;
+    }
+
+    private extractKeywords($: cheerio.CheerioAPI): Keyword[] {
+        const keywords: Keyword[] = [];
+
+        // Try to extract from keywords section first
+        const $keywordsSection = $('#keywords');
+        if ($keywordsSection.length > 0) {
+            $keywordsSection.find('.keywords-list').find('.keyword-link').each((_, element) => {
+                const $keyword = $(element);
+                const text = $keyword.text().trim();
+                if (text) {
+                    keywords.push({ text, isMeSH: $keyword.hasClass('major') });
+                }
+            });
+        }
+
+        // If no keywords section, try extracting from mesh-terms section (excluding major MeSH terms)
+        if (keywords.length === 0) {
+            $('#mesh-terms').find('.keywords-list').find('.keyword-link').not('.major').each((_, element) => {
+                const $keyword = $(element);
+                const text = $keyword.text().trim();
+                if (text) {
+                    keywords.push({ text, isMeSH: false });
+                }
+            });
+        }
+
+        if (keywords.length === 0) {
+            throw new Error('Failed to extract article keywords');
+        }
+
+        return keywords;
+    }
+
+    private extractConflictOfInterestStatement($: cheerio.CheerioAPI): string {
+        const statement = $('.conflict-of-interest').find('.statement').text().trim() ||
+            $('.conflict-of-interest-statement').text().trim() ||
+            $('div[data-section="conflict-of-interest"]').text().trim();
+
+        if (!statement) {
+            throw new Error('Failed to extract conflict of interest statement');
+        }
+
+        return statement;
+    }
+
+    private extractSimilarArticles($: cheerio.CheerioAPI): SimilarArticle[] {
+        const similarArticles: SimilarArticle[] = [];
+        $('#similar').find('.articles-list').find('li.full-docsum').each((_, element) => {
+            const $article = $(element);
+            const pmid = $article.find('a.docsum-title').attr('href')?.match(/\/(\d+)/)?.[1] || '';
+            const title = $article.find('.docsum-title').text().trim();
+            if (pmid && title) {
+                similarArticles.push({ pmid, title });
+            }
+        });
+
+        if (similarArticles.length === 0) {
+            throw new Error('Failed to extract similar articles');
+        }
+
+        return similarArticles;
+    }
+
+    private extractReferences($: cheerio.CheerioAPI): Reference[] {
+        const references: Reference[] = [];
+        $('#references').find('li').each((_, element) => {
+            const $ref = $(element);
+            const pmid = $ref.find('a').attr('href')?.match(/\/(\d+)/)?.[1];
+            const citation = $ref.text().trim();
+            if (citation) {
+                references.push({ pmid, citation });
+            }
+        });
+
+        if (references.length === 0) {
+            throw new Error('Failed to extract article references');
+        }
+
+        return references;
+    }
+
+    private extractPublicationTypes($: cheerio.CheerioAPI): string[] {
+        const types: string[] = [];
+        $('.publication-types').find('li').each((_, element) => {
+            const type = $(element).text().trim();
+            if (type) {
+                types.push(type);
+            }
+        });
+
+        if (types.length === 0) {
+            throw new Error('Failed to extract publication types');
+        }
+
+        return types;
+    }
+
+    private extractMeshTerms($: cheerio.CheerioAPI): Keyword[] {
+        const meshTerms: Keyword[] = [];
+        $('#mesh-terms').find('.keywords-list').find('.keyword-link').each((_, element) => {
+            const $term = $(element);
+            const text = $term.text().trim();
+            if (text) {
+                meshTerms.push({ text, isMeSH: true });
+            }
+        });
+
+        if (meshTerms.length === 0) {
+            throw new Error('Failed to extract MeSH terms');
+        }
+
+        return meshTerms;
+    }
+
+    private extractRelatedInformation($: cheerio.CheerioAPI): Record<string, string[]> {
+        const relatedInfo: Record<string, string[]> = {};
+        $('#related-links').find('.related-links-list').find('li').each((_, element) => {
+            const $section = $(element);
+            const link = $section.find('a');
+            const href = link.attr('href');
+            const text = link.text().trim();
+            if (href && text) {
+                const sectionTitle = 'Related information';
+                if (!relatedInfo[sectionTitle]) {
+                    relatedInfo[sectionTitle] = [];
+                }
+                relatedInfo[sectionTitle].push(`${text}: ${href}`);
+            }
+        });
+
+        if (Object.keys(relatedInfo).length === 0) {
+            throw new Error('Failed to extract related information');
+        }
+
+        return relatedInfo;
+    }
+
+    private extractFullTextSources($: cheerio.CheerioAPI): FullTextSource[] {
+        const sources: FullTextSource[] = [];
+        $('.full-text-links').find('a').each((_, element) => {
+            const $link = $(element);
+            const url = $link.attr('href') || '';
+            const name = $link.text().trim();
+            const type = $link.attr('data-ga-label') || $link.attr('data-source-type');
+            if (url && name) {
+                sources.push({ name, url, type });
+            }
+        });
+
+        if (sources.length === 0) {
+            throw new Error('Failed to extract full text sources');
+        }
+
+        return sources;
+    }
+
+    private extractJournalInfo($: cheerio.CheerioAPI): {
+        title?: string;
+        volume?: string;
+        issue?: string;
+        pages?: string;
+        pubDate?: string;
+    } {
+        // Try extracting from meta tags first
+        let title = $('meta[name="citation_journal_title"]').attr('content') || '';
+        let volume = $('meta[name="citation_volume"]').attr('content') || '';
+        let issue = $('meta[name="citation_issue"]').attr('content') || '';
+
+        // If not found in meta tags, try extracting from classes
+        if (!title) {
+            title = $('.journal-title').text().trim();
+        }
+        if (!volume) {
+            volume = $('.volume').text().trim();
+        }
+        if (!issue) {
+            issue = $('.issue').text().trim();
+        }
+        const pages = $('.pages').text().trim();
+        const pubDate = $('.pub-date').text().trim();
+
+        if (!title && !volume && !issue && !pages && !pubDate) {
+            throw new Error('Failed to extract journal information');
+        }
+
+        return {
+            title,
+            volume,
+            issue,
+            pages,
+            pubDate
+        };
+    }
+
+    private extractDOI($: cheerio.CheerioAPI, pmid: string): string {
+        const DOI = $('span.identifier.doi > a.id-link').first().text().trim()
+        if (DOI.length < 1) throw new Error(`Get article detail failed: failed to find DOI of pmid ${pmid}`)
+        console.log(DOI)
+        return DOI
+    }
+
+    async getArticleDetail(pmid: string): Promise<ArticleDetail> {
+        const $article = await this.loadArticle(pmid)
+        return {
+            doi: this.extractDOI($article, pmid),
+            pmid,
+            title: this.extractTitle($article),
+            authors: this.extractAuthors($article),
+            affiliations: this.extractAffiliations($article),
+            abstract: this.extractAbstract($article),
+            keywords: this.extractKeywords($article),
+            conflictOfInterestStatement: this.extractConflictOfInterestStatement($article),
+            similarArticles: this.extractSimilarArticles($article),
+            references: this.extractReferences($article),
+            publicationTypes: this.extractPublicationTypes($article),
+            meshTerms: this.extractMeshTerms($article),
+            relatedInformation: this.extractRelatedInformation($article),
+            fullTextSources: this.extractFullTextSources($article),
+            journalInfo: this.extractJournalInfo($article)
+        }
     }
 }

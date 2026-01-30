@@ -17,7 +17,6 @@ services:
       - '8000:8000'
     networks:
       - app-network
-      - shared-net
     depends_on:
       - elasticsearch
       - rabbitmq
@@ -71,19 +70,19 @@ services:
     restart: unless-stopped
 
 
-  crawl4ai:
-    image: unclecode/crawl4ai:latest
-    restart: unless-stopped
-    ports:
-      - '11235:11235'
-    networks:
-      - app-network
+  # crawl4ai:
+  #   image: unclecode/crawl4ai:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - '11235:11235'
+  #   networks:
+  #     - app-network
 
   rabbitmq:
     image: rabbitmq:3.13.6-management
     ports:
       - '5672:5672'
-      - '8080:15672'
+      - '8088:15672'
     environment:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin123
@@ -135,5 +134,3 @@ volumes:
 networks:
   app-network:
     driver: bridge
-  shared-net:
-    external: true
