@@ -9,8 +9,8 @@ vi.mock('nih-client', () => ({
         axiosClient = {};
     },
     renderRetrivalStrategy: vi.fn((strategy: any) => {
-        if (strategy.filed && strategy.filed.length > 0) {
-            const fieldParts = strategy.filed.map((field: string) => {
+        if (strategy.field && strategy.field.length > 0) {
+            const fieldParts = strategy.field.map((field: string) => {
                 if (field === "All Fields") {
                     return strategy.term;
                 }
@@ -429,7 +429,7 @@ describe('BibliographySearchComponent E2E Tests', () => {
             await component.handleToolCall('search_pubmed', {
                 strategy: {
                     term: 'cancer',
-                    filed: ['Title', 'Abstract'],
+                    field: ['Title', 'Abstract'],
                     AND: null,
                     OR: null,
                     NOT: null

@@ -48,7 +48,7 @@ export type FieldConstraint =
 
 export interface RetrivalStrategy {
     term: string;
-    filed: FieldConstraint[]; // OR relation
+    field: FieldConstraint[]; // OR relation
     AND: RetrivalStrategy[] | null;
     OR: RetrivalStrategy[] | null;
     NOT: RetrivalStrategy[] | null;
@@ -58,8 +58,8 @@ export function renderRetrivalStrategy(strategy: RetrivalStrategy): string {
     const parts: string[] = [];
 
     // Handle field constraints with OR relation
-    if (strategy.filed && strategy.filed.length > 0) {
-        const fieldParts = strategy.filed.map(field => {
+    if (strategy.field && strategy.field.length > 0) {
+        const fieldParts = strategy.field.map(field => {
             if (field === "All Fields") {
                 return strategy.term;
             }
@@ -201,9 +201,13 @@ export class PubmedService {
         let convertedResult = null;
         try {
             convertedResult = z.coerce.number().parse(totalResult);
-            console.log(convertedResult)
+            // Handle NaN case - when parsing fails or returns NaN, set to null
+            if (Number.isNaN(convertedResult)) {
+                convertedResult = null;
+            }
         } catch (error) {
-            console.log(error instanceof Error ? error.message : String(error))
+            // Silently handle parsing errors - set to null
+            convertedResult = null;
         }
 
         // Get total pages
@@ -211,8 +215,13 @@ export class PubmedService {
         let convertedTotalPagesResult = null;
         try {
             convertedTotalPagesResult = z.coerce.number().parse(totalPagesResult);
+            // Handle NaN case - when parsing fails or returns NaN, set to null
+            if (Number.isNaN(convertedTotalPagesResult)) {
+                convertedTotalPagesResult = null;
+            }
         } catch (error) {
-            console.log(error instanceof Error ? error.message : String(error))
+            // Silently handle parsing errors - set to null
+            convertedTotalPagesResult = null;
         }
 
         // Get article profile list
@@ -231,7 +240,12 @@ export class PubmedService {
         let urlParams = new URLSearchParams();
         urlParams.append('term', params.term);
         if (params.sort) {
-            urlParams.append('sort', params.sort)
+            if (params.sort === 'match') {
+
+            } else {
+                urlParams.append('sort', params.sort)
+            }
+
         }
         if (params.page) {
             urlParams.append('page', String(params.page))

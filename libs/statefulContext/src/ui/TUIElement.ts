@@ -20,6 +20,8 @@ import {
 export abstract class TUIElement {
     protected metadata: ElementMetadata;
     protected children: TUIElement[];
+    /** Default terminal width when no width is specified */
+    protected static readonly DEFAULT_TERMINAL_WIDTH = 120;
 
     constructor(metadata: ElementMetadata, children?: TUIElement[]) {
         this.metadata = metadata;
@@ -61,7 +63,7 @@ export abstract class TUIElement {
 
         // Calculate dimensions
         const contentDims = this.calculateContentDimensions();
-        const finalWidth = width ?? availableWidth ?? (contentDims.width + padding[1] + padding[3] + (showBorder ? 2 : 0));
+        const finalWidth = width ?? availableWidth ?? TUIElement.DEFAULT_TERMINAL_WIDTH;
         const finalHeight = height === 0
             ? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0))
             : (height ?? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0)));

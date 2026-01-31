@@ -36,6 +36,7 @@ export class tp extends TUIElement {
      * Render paragraph element with a specified available width
      */
     override renderWithWidth(availableWidth: number | undefined): string {
+        const styles = this.computeStyles(availableWidth);
         const { content } = this.metadata;
         const indent = this.metadata.indent ?? 0;
         const lineHeight = this.metadata.lineHeight ?? 1;
@@ -43,48 +44,102 @@ export class tp extends TUIElement {
 
         const finalContent = content ?? '';
 
+        // Calculate inner content area dimensions
+        const innerWidth = styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0) - indent;
+        const innerHeight = styles.height - styles.padding[0] - styles.padding[2] - (styles.border ? 2 : 0);
+
+        let result = '';
+
+        // Top margin
+        for (let i = 0; i < styles.margin[0]; i++) {
+            result += ' '.repeat(styles.margin[3]) + '\n';
+        }
+
+        // Top border
+        if (styles.border) {
+            result += ' '.repeat(styles.margin[3]);
+            const borderChars = this.getBorderChars(styles.border);
+            result += borderChars.topLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.topRight + '\n';
+        }
+
+        // Top padding
+        for (let i = 0; i < styles.padding[0]; i++) {
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
+            } else {
+                result += ' '.repeat(styles.width);
+            }
+            result += '\n';
+        }
+
         // Apply text styling
         const styledContent = this.applyTextStyle(finalContent, textStyle);
 
-        // Split into lines
-        let lines = styledContent.split('\n');
-
-        // If availableWidth is specified, wrap the content
-        if (availableWidth) {
-            const maxWidth = availableWidth - indent;
-            if (maxWidth > 0) {
-                const wrappedLines: string[] = [];
-                for (const line of lines) {
-                    if (line.length <= maxWidth) {
-                        wrappedLines.push(line);
-                    } else {
-                        // Simple word wrapping
-                        const words = line.split(' ');
-                        let currentLine = '';
-                        for (const word of words) {
-                            if (currentLine.length === 0) {
-                                currentLine = word;
-                            } else if (currentLine.length + 1 + word.length <= maxWidth) {
-                                currentLine += ' ' + word;
-                            } else {
-                                wrappedLines.push(currentLine);
-                                currentLine = word;
-                            }
-                        }
-                        if (currentLine.length > 0) {
-                            wrappedLines.push(currentLine);
-                        }
-                    }
+        // Split into lines and wrap content like tdiv does
+        let contentLines: string[] = [];
+        const rawLines = styledContent.split('\n');
+        for (let index = 0; index < rawLines.length; index++) {
+            let currentLine = rawLines[index];
+            // If innerWidth is available, wrap the content
+            if (innerWidth > 0) {
+                while (currentLine.length > innerWidth) {
+                    contentLines.push(currentLine.slice(0, innerWidth));
+                    currentLine = currentLine.slice(innerWidth + 1);
                 }
-                lines = wrappedLines;
             }
+            contentLines.push(currentLine);
         }
 
         // Apply indent to each line
         const indentStr = ' '.repeat(indent);
-        const indentedLines = lines.map(line => indentStr + line);
+        const indentedLines = contentLines.map(line => indentStr + line);
 
-        return indentedLines.join('\n');
+        // Render content area
+        const contentHeight = Math.max(innerHeight, indentedLines.length);
+        for (let i = 0; i < contentHeight; i++) {
+            const line = indentedLines[i] || '';
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + this.padLine(line, styles.width - 2 - indent, styles.align) + borderChars.vertical;
+            } else {
+                result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3] - indent, styles.align);
+            }
+            result += '\n';
+        }
+
+        // Bottom padding
+        for (let i = 0; i < styles.padding[2]; i++) {
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
+            } else {
+                result += ' '.repeat(styles.width);
+            }
+            result += '\n';
+        }
+
+        // Bottom border
+        if (styles.border) {
+            result += ' '.repeat(styles.margin[3]);
+            const borderChars = this.getBorderChars(styles.border);
+            result += borderChars.bottomLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.bottomRight + '\n';
+        }
+
+        // Bottom margin
+        for (let i = 0; i < styles.margin[2]; i++) {
+            result += ' '.repeat(styles.margin[3]) + '\n';
+        }
+
+        // Trim trailing newlines only if no bottom margin
+        if (styles.margin[2] === 0) {
+            result = result.trimEnd();
+        }
+
+        return result;
     }
 
     /**
@@ -112,7 +167,7 @@ export class tp extends TUIElement {
     /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
         const { content } = this.metadata;
         const indent = this.metadata.indent ?? 0;
 

@@ -42,16 +42,108 @@ export class ttext extends TUIElement {
      * Render text element with a specified available width
      */
     override renderWithWidth(availableWidth: number | undefined): string {
+        const styles = this.computeStyles(availableWidth);
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
-        // If availableWidth is specified and content is longer, wrap the content
-        if (availableWidth && finalContent.length > availableWidth) {
-            const wrappedLines = this.wrapContent(finalContent, availableWidth);
-            return wrappedLines.map(line => this.applyTextStyle(line)).join('\n');
+        // Calculate inner content area dimensions
+        const innerWidth = styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0);
+        const innerHeight = styles.height - styles.padding[0] - styles.padding[2] - (styles.border ? 2 : 0);
+
+        let result = '';
+
+        // Top margin
+        for (let i = 0; i < styles.margin[0]; i++) {
+            result += ' '.repeat(styles.margin[3]) + '\n';
         }
 
-        return this.applyTextStyle(finalContent);
+        // Top border
+        if (styles.border) {
+            result += ' '.repeat(styles.margin[3]);
+            const borderChars = this.getBorderChars(styles.border);
+            result += borderChars.topLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.topRight + '\n';
+        }
+
+        // Top padding
+        for (let i = 0; i < styles.padding[0]; i++) {
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
+            } else {
+                result += ' '.repeat(styles.width);
+            }
+            result += '\n';
+        }
+
+        // Wrap content to fit inner width
+        let contentLines: string[] = [];
+        const rawLines = finalContent.split('\n');
+        for (let index = 0; index < rawLines.length; index++) {
+            let currentLine = rawLines[index];
+            // If innerWidth is available, wrap the content
+            if (innerWidth > 0) {
+                while (currentLine.length > innerWidth) {
+                    contentLines.push(currentLine.slice(0, innerWidth));
+                    currentLine = currentLine.slice(innerWidth + 1);
+                }
+            }
+            contentLines.push(currentLine);
+        }
+
+        // Apply text styling to each line and handle underline/strikethrough
+        const styledLines: string[] = [];
+        for (const line of contentLines) {
+            styledLines.push(line);
+            if (this.metadata.underline || this.metadata.strikethrough) {
+                styledLines.push('─'.repeat(line.length));
+            }
+        }
+
+        // Render content area
+        const contentHeight = Math.max(innerHeight, styledLines.length);
+        for (let i = 0; i < contentHeight; i++) {
+            const line = styledLines[i] || '';
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + this.padLine(line, styles.width - 2, styles.align) + borderChars.vertical;
+            } else {
+                result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3], styles.align);
+            }
+            result += '\n';
+        }
+
+        // Bottom padding
+        for (let i = 0; i < styles.padding[2]; i++) {
+            result += ' '.repeat(styles.margin[3]);
+            if (styles.border) {
+                const borderChars = this.getBorderChars(styles.border);
+                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
+            } else {
+                result += ' '.repeat(styles.width);
+            }
+            result += '\n';
+        }
+
+        // Bottom border
+        if (styles.border) {
+            result += ' '.repeat(styles.margin[3]);
+            const borderChars = this.getBorderChars(styles.border);
+            result += borderChars.bottomLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.bottomRight + '\n';
+        }
+
+        // Bottom margin
+        for (let i = 0; i < styles.margin[2]; i++) {
+            result += ' '.repeat(styles.margin[3]) + '\n';
+        }
+
+        // Trim trailing newlines only if no bottom margin
+        if (styles.margin[2] === 0) {
+            result = result.trimEnd();
+        }
+
+        return result;
     }
 
     /**
@@ -114,7 +206,7 @@ export class ttext extends TUIElement {
     /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
