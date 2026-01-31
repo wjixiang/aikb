@@ -32,7 +32,7 @@ export class tdiv extends TUIElement {
      */
     render(): string {
         const styles = this.computeStyles();
-        console.debug(styles)
+        // console.debug(styles)
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
@@ -84,7 +84,8 @@ export class tdiv extends TUIElement {
         const allContentLines = [...contentLines, ...renderedChildren];
 
         // Render content area
-        for (let i = 0; i < innerHeight; i++) {
+        const contentHeight = Math.max(innerHeight, allContentLines.length);
+        for (let i = 0; i < contentHeight; i++) {
             const line = allContentLines[i] || '';
             result += ' '.repeat(styles.margin[3]);
             if (styles.border) {

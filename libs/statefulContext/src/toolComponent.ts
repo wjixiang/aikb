@@ -15,12 +15,13 @@ export abstract class ToolComponent {
         return toolSection;
     }
 
-    async render(): Promise<TUIElement[]> {
+    async render(): Promise<TUIElement> {
         const body = await this.renderImply();
         const container = new tdiv({
-            styles: { width: 80, showBorder: false }
+            styles: { width: 200, showBorder: false },
         }, body);
 
-        return [container]
+
+        return container
     }
 }

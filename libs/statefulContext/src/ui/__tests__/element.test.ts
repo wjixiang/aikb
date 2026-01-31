@@ -13,7 +13,7 @@ describe(tdiv, () => {
         console.log(elm.render())
     })
 
-    it('should nest elements', () => {
+    it.only('should nest elements', () => {
         const elm1 = new tdiv({
             content: 'test_content' + 'abc'.repeat(100),
             styles: {
@@ -24,7 +24,7 @@ describe(tdiv, () => {
         })
 
         const elm2 = new tdiv({
-            content: 'test_content',
+            content: 'nested_content',
             styles: {
                 // width: 100,
                 // height: 0,
@@ -33,6 +33,8 @@ describe(tdiv, () => {
         })
 
         elm1.addChild(elm2)
-        console.log(elm1.render())
+        const renderResult = elm1.render()
+        console.debug(renderResult)
+        expect(renderResult).include('nested_content')
     })
 })

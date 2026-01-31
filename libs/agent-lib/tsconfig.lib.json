@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
-    "types": ["node"],
     "target": "es2021",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

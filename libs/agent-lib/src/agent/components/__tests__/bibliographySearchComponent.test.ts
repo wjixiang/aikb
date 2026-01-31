@@ -7,6 +7,7 @@ describe(BibliographySearchComponent, () => {
     })
 
     it('should render into proper context', async () => {
-        console.log(await component.render())
+        const renderResult = (await component.render()).render()
+        console.debug(renderResult)
     })
 })

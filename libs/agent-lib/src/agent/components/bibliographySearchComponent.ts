@@ -26,7 +26,6 @@ const retrievalStrategySchema: z.ZodType<RetrivalStrategy> = z.lazy(() =>
 
 export class BibliographySearchComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;
-    override renderImply: () => Promise<TUIElement[]>;
     override handleToolCall: (toolName: string, params: any) => Promise<void>;
 
     private pubmedService: PubmedService;
@@ -38,7 +37,6 @@ export class BibliographySearchComponent extends ToolComponent {
         super();
         this.pubmedService = new PubmedService();
         this.toolSet = this.initializeToolSet();
-        this.renderImply = this.renderImplyImpl.bind(this);
         this.handleToolCall = this.handleToolCallImpl.bind(this);
     }
 
@@ -89,16 +87,16 @@ export class BibliographySearchComponent extends ToolComponent {
         return tools;
     }
 
-    private async renderImplyImpl(): Promise<TUIElement[]> {
+    renderImply = async () => {
         const elements: TUIElement[] = [];
 
         // Render header
-        elements.push(new th({ content: 'Bibliography Search', level: 1, underline: true }));
+        elements.push(new th({ content: 'Bibliography Search' }));
 
-        // Render current article detail if available
+        // // Render current article detail if available
         if (this.currentArticleDetail) {
             elements.push(this.renderArticleDetail(this.currentArticleDetail));
-            return elements;
+            // return elements;
         }
 
         // Render search results if available
@@ -106,9 +104,9 @@ export class BibliographySearchComponent extends ToolComponent {
             elements.push(this.renderSearchResults());
         } else {
             // Render welcome message
-            elements.push(new tp({
+            elements.push(new tdiv({
                 content: 'Welcome to Bibliography Search. Use the search_pubmed tool to find articles.',
-                indent: 2
+
             }));
         }
 
