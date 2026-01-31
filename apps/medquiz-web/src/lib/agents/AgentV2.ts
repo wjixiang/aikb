@@ -11,7 +11,7 @@ import type {
 
 type agent_action = 'send_notification' | 'stream_message';
 
-export default class AgentV2 {
+export default class Agent {
   context: ChatMessage[] = [];
   isTaskComplete: boolean = false;
   toolRegistry: ToolRegistry;

@@ -1,6 +1,6 @@
 import { ToolComponent } from './toolComponent';
 import { ComponentRegistration, VirtualWorkspaceConfig } from './types';
-import { tdiv, TUIElement } from './ui';
+import { tdiv, th, TUIElement } from './ui';
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
@@ -41,6 +41,27 @@ export class VirtualWorkspace {
      */
     getComponentKeys(): string[] {
         return Array.from(this.components.keys());
+    }
+
+    renderToolBox() {
+        const container = new tdiv({
+            content: "TOOL BOX",
+            styles: {
+                align: 'center',
+                showBorder: true
+            }
+        })
+        // container.addChild(new th({
+        //     content: "TOOL BOX",
+        //     styles: {
+        //         align: 'center'
+        //     }
+        // }))
+        this.components.forEach(e => {
+            container.addChild(e.component.renderToolSection())
+        })
+        return container
+
     }
 
     /**

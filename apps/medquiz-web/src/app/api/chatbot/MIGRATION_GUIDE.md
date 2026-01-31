@@ -11,12 +11,12 @@ This guide helps you integrate the new multi-step autonomous research agents wit
 
 ```typescript
 // Frontend usage
-const response = await fetch("/api/chatbot/research", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
+const response = await fetch('/api/chatbot/research', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    query: "diabetes complications",
-    mode: "basic",
+    query: 'diabetes complications',
+    mode: 'basic',
     config: { topK: 15, maxIterations: 3 },
   }),
 });
@@ -29,11 +29,11 @@ const response = await fetch("/api/chatbot/research", {
 
 ```typescript
 // Compatible with existing format
-const response = await fetch("/api/chatbot/compatible-research", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
+const response = await fetch('/api/chatbot/compatible-research', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    query: "diabetes complications",
+    query: 'diabetes complications',
     rag_config: { topK: 15, maxIterations: 3 },
   }),
 });
@@ -99,7 +99,7 @@ const response = await fetch("/api/chatbot/compatible-research", {
 
 ```typescript
 // hooks/useResearch.ts
-import { useState } from "react";
+import { useState } from 'react';
 
 export function useResearch() {
   const [loading, setLoading] = useState(false);
@@ -108,9 +108,9 @@ export function useResearch() {
   const research = async (query: string, config?: any) => {
     setLoading(true);
     try {
-      const response = await fetch("/api/chatbot/compatible-research", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/chatbot/compatible-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
           rag_config: config,
@@ -133,7 +133,7 @@ export function useResearch() {
 
 ```typescript
 // Streaming research
-const eventSource = new EventSource("/api/chatbot/compatible-research");
+const eventSource = new EventSource('/api/chatbot/compatible-research');
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.log(data.type, data.content);
@@ -195,14 +195,14 @@ curl -X POST http://localhost:3000/api/chatbot/compatible-research \
 
 ```typescript
 // Before (using old Agent)
-const response = await fetch("/api/chatbot", {
-  method: "POST",
+const response = await fetch('/api/chatbot', {
+  method: 'POST',
   body: JSON.stringify({ query, rag_config }),
 });
 
 // After (using new research agents)
-const response = await fetch("/api/chatbot/compatible-research", {
-  method: "POST",
+const response = await fetch('/api/chatbot/compatible-research', {
+  method: 'POST',
   body: JSON.stringify({ query, rag_config }),
 });
 ```
@@ -223,7 +223,7 @@ const config = {
   useHyDE: true,
   useHybrid: true,
   topK: 15,
-  language: "zh",
+  language: 'zh',
   maxIterations: 3,
   minRelevanceScore: 0.7,
 };
@@ -238,7 +238,7 @@ const config = {
 npx tsx src/test_script/test_research_agents.ts --basic "test query"
 
 # Test API endpoints
-npx tsx src/test_script/test_research_agents.ts --agentv2 "test query"
+npx tsx src/test_script/test_research_agents.ts --Agent "test query"
 ```
 
 ### Integration Test

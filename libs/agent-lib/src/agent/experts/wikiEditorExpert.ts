@@ -1,3 +1,3 @@
-import { AgentV2 } from "../agentV2";
+import { Agent } from "../agent";
 import { VirtualWorkspace } from "../virtualWorkspace";
 

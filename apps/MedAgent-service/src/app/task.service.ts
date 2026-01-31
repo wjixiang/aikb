@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AgentDBPrismaService } from 'agent-db';
-import { AgentV2, defaultAgentConfig, defaultApiConfig } from 'agent-lib';
+import { Agent, defaultAgentConfig, defaultApiConfig } from 'agent-lib';
 import { VirtualWorkspace } from 'agent-lib';
 import {
     TaskInfo,
@@ -21,13 +21,13 @@ const statusMap: Record<string, TaskStatus> = {
 };
 
 /**
- * TaskService using AgentV2 for task management
+ * TaskService using Agent for task management
  * Replaces the deprecated TaskService from agent-lib
  */
 @Injectable()
 export class TaskService {
     // Store active agents in memory
-    private agents = new Map<string, AgentV2>();
+    private agents = new Map<string, Agent>();
 
     constructor(private db: AgentDBPrismaService) { }
 
@@ -309,7 +309,7 @@ export class TaskService {
                 },
             });
 
-            // Create and initialize AgentV2 instance
+            // Create and initialize Agent instance
             const agent = this.initializeAgent(task.id, input.taskInput);
             this.agents.set(task.id, agent);
 
@@ -328,9 +328,9 @@ export class TaskService {
     }
 
     /**
-     * Initialize an AgentV2 instance with observers for message and status changes
+     * Initialize an Agent instance with observers for message and status changes
      */
-    private initializeAgent(taskId: string, taskInput: string): AgentV2 {
+    private initializeAgent(taskId: string, taskInput: string): Agent {
         // Create a simple VirtualWorkspace for the agent
         const workspace = new VirtualWorkspace({
             id: taskId,
@@ -338,8 +338,8 @@ export class TaskService {
             description: 'Workspace for task execution',
         });
 
-        // Create AgentV2 instance
-        const agent = new AgentV2(
+        // Create Agent instance
+        const agent = new Agent(
             defaultAgentConfig,
             defaultApiConfig,
             workspace,

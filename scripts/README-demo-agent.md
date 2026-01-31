@@ -1,6 +1,6 @@
-# AgentV2 Demo Script
+# Agent Demo Script
 
-This script demonstrates the functionality of `AgentV2` with `KmsWorkspace`.
+This script demonstrates the functionality of `Agent` with `KmsWorkspace`.
 
 ## Running the Demo
 
@@ -21,7 +21,7 @@ npx tsx scripts/demo-agent.ts
    - Statistics (component count, states, etc.)
    - Available tools (`execute_script`, `attempt_completion`)
 
-3. **Creates AgentV2 Instance**:
+3. **Creates Agent Instance**:
    - Uses real AI configuration (zai provider with glm-4.7 model)
    - Sets up observers for message/status events
    - Displays script execution guide

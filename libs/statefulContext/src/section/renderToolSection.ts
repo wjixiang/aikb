@@ -214,26 +214,26 @@ export function renderToolSection(tools: Tool[]): TUIElement {
     const children: TUIElement[] = [];
 
     for (const tool of tools) {
-        const toolChildren: TUIElement[] = [
-            new ttext({ content: `## ${tool.toolName}`, bold: true }),
-            new ttext({ content: `Description: ${tool.desc}` }),
-            new ttext({ content: `Parameters:` }),
-            new ttext({ content: renderZodSchema(tool.paramsSchema) }),
-            new ttext({ content: "" }), // Empty line between tools
-        ];
-
-        children.push(new tdiv({
+        const toolElm = new tdiv({
+            content: [
+                `Tool Name: ${tool.toolName}`,
+                `Description: ${tool.desc}`,
+                `Parameters:`,
+                renderZodSchema(tool.paramsSchema),
+            ].join('\n'),
             styles: {
-                padding: { vertical: 1 },
-            },
-        }, toolChildren));
+                showBorder: true
+            }
+        })
+
+        children.push(toolElm);
     }
 
     return new tdiv({
         styles: {
             showBorder: true,
             border: { line: 'double' },
-            padding: { all: 1 },
+            // padding: { all: 1 },
         },
     }, children);
 }

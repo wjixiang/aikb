@@ -46,7 +46,7 @@ export const defaultApiConfig: ProviderSettings = {
 };
 
 /**
- * AgentV2 class that uses VirtualWorkspace for context management
+ * Agent class that uses VirtualWorkspace for context management
  * 
  * Key features:
  * - Uses VirtualWorkspace instead of WorkspaceBase
@@ -78,7 +78,7 @@ interface MessageProcessingState {
     cachedModel?: { id: string; info: any };
 }
 
-export class AgentV2 {
+export class Agent {
     workspace: VirtualWorkspace;
     private _status: TaskStatus = 'idle';
     private _taskId: string;
@@ -303,7 +303,7 @@ export class AgentV2 {
     /**
      * Start agent with a user query
      */
-    async start(query: string): Promise<AgentV2> {
+    async start(query: string): Promise<Agent> {
         this._status = 'running';
         this.notifyStatusChanged('running');
 
@@ -858,7 +858,7 @@ export class AgentV2 {
         return false;
     }
 
-    // ==================== AgentV2-Specific Methods ====================
+    // ==================== Agent-Specific Methods ====================
 
     /**
      * Get system prompt for agent
@@ -868,8 +868,8 @@ export class AgentV2 {
         const { SYSTEM_PROMPT } = await import("../prompts/system.js");
         return `
 ${await SYSTEM_PROMPT()}
+${this.workspace.renderToolBox().render()}
 
-${await this.workspace.render()}
         `;
     }
 }

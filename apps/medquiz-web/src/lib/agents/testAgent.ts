@@ -1,8 +1,8 @@
-import AgentV2 from './AgentV2';
+import Agent from './Agent';
 import { toolRegistry } from './toolRegistry';
 
 /**
- * Test the enhanced AgentV2 with tool calling
+ * Test the enhanced Agent with tool calling
  */
 async function testAgent() {
   console.log('Testing enhanced agent...');
@@ -14,7 +14,7 @@ async function testAgent() {
   );
 
   // Create a new agent instance
-  const agent = new AgentV2();
+  const agent = new Agent();
 
   // Simple query that should trigger tool usage
   const query = "What's the weather like in Beijing?";

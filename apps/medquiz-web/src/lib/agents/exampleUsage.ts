@@ -1,4 +1,4 @@
-import AgentV2 from './AgentV2';
+import Agent from './Agent';
 import { AgentMessage } from './agent.types';
 import * as dotenv from 'dotenv';
 import { runV3Example } from './exampleUsageV3';
@@ -7,13 +7,13 @@ import { runCrewExample, runDelegationExample } from './crews/exampleCrew';
 dotenv.config();
 
 /**
- * Example usage of the enhanced AgentV2 with tool calling
+ * Example usage of the enhanced Agent with tool calling
  */
 async function runExample() {
-  console.log('=== AgentV2 Example ===');
+  console.log('=== Agent Example ===');
 
   // Create a new agent instance
-  const agent = new AgentV2();
+  const agent = new Agent();
 
   // Example query that should trigger tool usage
   const query = "What's the weather like in Beijing today?";

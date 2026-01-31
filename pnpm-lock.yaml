@@ -51,8 +51,8 @@ importers:
         specifier: ^3.901.0
         version: 3.901.0
       '@boundaryml/baml':
-        specifier: ^0.215.0
-        version: 0.215.2
+        specifier: ^0.218.1
+        version: 0.218.1
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2649,56 +2649,56 @@ packages:
   '@borewit/text-codec@0.1.1':
     resolution: {integrity: sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA==}
 
-  '@boundaryml/baml-darwin-arm64@0.215.2':
-    resolution: {integrity: sha512-e0W9M8+l0vDr2YeGUu2k/itt009e2dpPZGLMnN/U4R1ddijIczzh6mUcmaOQmKv2MH4g9VhfuIW3eyQzmUBzRg==}
+  '@boundaryml/baml-darwin-arm64@0.218.1':
+    resolution: {integrity: sha512-148Dkt7/WmBcWdkLW7kBQdwiHvlfSFSjx45ek6uvwbsYp0geN/fLnTARX3R+csRXHRD3JJ1asJkTkg7nnGQj9g==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@boundaryml/baml-darwin-x64@0.215.2':
-    resolution: {integrity: sha512-L/fDtX5Yj9fkoMD6N0vW1aO8ClS39Zn4CrK9ZwQdZHIz2jBd4e6VDnEk4bynGNorzJpXFrZ+BFNleSEqRvoXAg==}
+  '@boundaryml/baml-darwin-x64@0.218.1':
+    resolution: {integrity: sha512-5t/EDE42jZeHH1wHTV6+TTRhAk1f8hvmw9K9CLHTGrtMh62XD0QpvyKjaISJLWqzkK8LMsG3GIEjiXzNT9d49w==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@boundaryml/baml-linux-arm64-gnu@0.215.2':
-    resolution: {integrity: sha512-sPp4VfjiaYdAtDl/byQWHp41fHpOTBx5bmVWVfiuxKMONbtLPcM2Tb0c78bAYNinJmpA2ll8z05O81K6SrdXew==}
+  '@boundaryml/baml-linux-arm64-gnu@0.218.1':
+    resolution: {integrity: sha512-DhhhuSqt2FqHhl5zdBirkn9IDgOFijoY36Qwo2ea6ehAZDHW1gVH1OKiwTEtASeoVTN+orpEPN7eHKJ82g1+DA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@boundaryml/baml-linux-arm64-musl@0.215.2':
-    resolution: {integrity: sha512-nF8+ooeN/ES9xi9tonh4dSRsVVS4rSGLIYIeG99fMy14KsCs4Q3QDiNeiolFfenYw5eQoFTiONbYd7FLME0/yg==}
+  '@boundaryml/baml-linux-arm64-musl@0.218.1':
+    resolution: {integrity: sha512-aJxD3V75ShVtp0gVx6/lnmYctxWyy4CYn78IfNP8IkFVTyP/yE7M//O2/4af7ro7rjiKEzFJaDAoc4zrauv2jQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@boundaryml/baml-linux-x64-gnu@0.215.2':
-    resolution: {integrity: sha512-6drkU0R78l3+ufEO7agAhq5t/3Q6cn+Ev2aBzKQsWfLazCvaTNMTzn+3x41jzBiWqQtlSQh7VTMMilCpYjLQmw==}
+  '@boundaryml/baml-linux-x64-gnu@0.218.1':
+    resolution: {integrity: sha512-vVeM90S9IS1PinE1CHzbkOd2FsLLgUgDSzJhJB/Ag6ftXJslZsUKPA0feR0b0EY22p1ZLpQncYumQnLahG+mCg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@boundaryml/baml-linux-x64-musl@0.215.2':
-    resolution: {integrity: sha512-gXhYkWgqhn7iGMpi1kLwKw6WNKSFsy2mIzvy3ntHyzdgrRkm4ReSBdVZ3lgquu7VqrIwBQmIWd0kP6vbWixT5w==}
+  '@boundaryml/baml-linux-x64-musl@0.218.1':
+    resolution: {integrity: sha512-Sq+Yq2Yvkh7FIpwTRCnh5PpyilDDploiIz5YJtf0e23uXIqti1SY+BVbJ3KO10WrJgZhmTEqvpVRUzSfuE547A==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@boundaryml/baml-win32-arm64-msvc@0.215.2':
-    resolution: {integrity: sha512-mKWJhyE36+BR8QGWXKwamNJlu76EK3rUS6L78XWqWpKyQAMHnw8anmAGrqYf8tKfWlPaowE/BqqrmWmsdIDbQA==}
+  '@boundaryml/baml-win32-arm64-msvc@0.218.1':
+    resolution: {integrity: sha512-UtmeauttBjZaqWq3WF6TxRvlSY59lSNCd7hJDGrTqRKM+cQeCVAo4vq4IfODol8fagnpLnCgcEnXH6TZuV5I6w==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@boundaryml/baml-win32-x64-msvc@0.215.2':
-    resolution: {integrity: sha512-84D7XwaB5AF0K1RWn4s5AFYaUrp5jrNU/KrgVsLwcfnx6U89w+1VV54aEmqXzjOBwWkshGRjSY4IPpiRzi3eZg==}
+  '@boundaryml/baml-win32-x64-msvc@0.218.1':
+    resolution: {integrity: sha512-WriD5EUds3RJL9Y3jbYNy6/1iYS4eP2iEtMyOPfu1e8/GitMMgyD1WKx2+xXP4wa9/PhOEjFQ5oT6WPOOq3ocg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
 
-  '@boundaryml/baml@0.215.2':
-    resolution: {integrity: sha512-zI5Mb2NDLA+8tWQweC2MS91LS71/4Gif8u9lSyxdRxBOA9eOBVJ1ngbKwtAwFy9CCBB1jUSxYWoDjkR9nA9ahA==}
+  '@boundaryml/baml@0.218.1':
+    resolution: {integrity: sha512-GQBfdBE+PAij+0lzUZKjhtsDB+ecust9PNwBgImHqOXqJsa5j0VPrSy0gKRVJOxUW/svG7uDQH5+f3bpBRi0oA==}
     engines: {node: '>= 10'}
     hasBin: true
 
@@ -18106,10 +18106,12 @@ packages:
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   tar@7.5.2:
     resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   tcp-port-used@1.0.2:
     resolution: {integrity: sha512-l7ar8lLUD3XS1V2lfoJlCBaeoaWo/2xfYt81hM7VlvR4RrMVFqfmzfhLVk40hAb368uitje5gPtBRL1m/DGvLA==}
@@ -21782,42 +21784,42 @@ snapshots:
 
   '@borewit/text-codec@0.1.1': {}
 
-  '@boundaryml/baml-darwin-arm64@0.215.2':
+  '@boundaryml/baml-darwin-arm64@0.218.1':
     optional: true
 
-  '@boundaryml/baml-darwin-x64@0.215.2':
+  '@boundaryml/baml-darwin-x64@0.218.1':
     optional: true
 
-  '@boundaryml/baml-linux-arm64-gnu@0.215.2':
+  '@boundaryml/baml-linux-arm64-gnu@0.218.1':
     optional: true
 
-  '@boundaryml/baml-linux-arm64-musl@0.215.2':
+  '@boundaryml/baml-linux-arm64-musl@0.218.1':
     optional: true
 
-  '@boundaryml/baml-linux-x64-gnu@0.215.2':
+  '@boundaryml/baml-linux-x64-gnu@0.218.1':
     optional: true
 
-  '@boundaryml/baml-linux-x64-musl@0.215.2':
+  '@boundaryml/baml-linux-x64-musl@0.218.1':
     optional: true
 
-  '@boundaryml/baml-win32-arm64-msvc@0.215.2':
+  '@boundaryml/baml-win32-arm64-msvc@0.218.1':
     optional: true
 
-  '@boundaryml/baml-win32-x64-msvc@0.215.2':
+  '@boundaryml/baml-win32-x64-msvc@0.218.1':
     optional: true
 
-  '@boundaryml/baml@0.215.2':
+  '@boundaryml/baml@0.218.1':
     dependencies:
       '@scarf/scarf': 1.4.0
     optionalDependencies:
-      '@boundaryml/baml-darwin-arm64': 0.215.2
-      '@boundaryml/baml-darwin-x64': 0.215.2
-      '@boundaryml/baml-linux-arm64-gnu': 0.215.2
-      '@boundaryml/baml-linux-arm64-musl': 0.215.2
-      '@boundaryml/baml-linux-x64-gnu': 0.215.2
-      '@boundaryml/baml-linux-x64-musl': 0.215.2
-      '@boundaryml/baml-win32-arm64-msvc': 0.215.2
-      '@boundaryml/baml-win32-x64-msvc': 0.215.2
+      '@boundaryml/baml-darwin-arm64': 0.218.1
+      '@boundaryml/baml-darwin-x64': 0.218.1
+      '@boundaryml/baml-linux-arm64-gnu': 0.218.1
+      '@boundaryml/baml-linux-arm64-musl': 0.218.1
+      '@boundaryml/baml-linux-x64-gnu': 0.218.1
+      '@boundaryml/baml-linux-x64-musl': 0.218.1
+      '@boundaryml/baml-win32-arm64-msvc': 0.218.1
+      '@boundaryml/baml-win32-x64-msvc': 0.218.1
 
   '@braintree/sanitize-url@7.1.1': {}
 

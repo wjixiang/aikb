@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 
 /**
- * CLI script to test the example usage of AgentV2
+ * CLI script to test the example usage of Agent
  */
 
 import { runExample } from '../lib/agents/exampleUsage';
 
 async function main() {
-  console.log('Running AgentV2 example usage test...\n');
+  console.log('Running Agent example usage test...\n');
 
   try {
     await runExample();

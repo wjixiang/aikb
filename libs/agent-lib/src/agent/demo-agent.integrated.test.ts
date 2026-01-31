@@ -1,11 +1,11 @@
 #!/usr/bin/env tsx
 /**
- * Demo script for AgentV2 with KmsWorkspace
+ * Demo script for Agent with KmsWorkspace
  * Demonstrates the agent functionality with real AI
  */
 
 import { KmsWorkspace } from './workspaces/KmsWorkspace';
-import { AgentV2, defaultAgentConfig, defaultApiConfig } from './agentV2';
+import { Agent, defaultAgentConfig, defaultApiConfig } from './agent';
 import { ProviderSettings } from '../types/provider-settings';
 import { b } from '../baml_client'
 import { config } from 'dotenv'
@@ -13,7 +13,7 @@ config()
 
 async function main() {
     console.log('='.repeat(80));
-    console.log('AgentV2 Demo with KmsWorkspace');
+    console.log('Agent Demo with KmsWorkspace');
     console.log('='.repeat(80));
     console.log();
 
@@ -54,8 +54,8 @@ async function main() {
     console.log(`  - attempt_completion: ${typeof tools.attempt_completion}`);
     console.log();
 
-    // Step 6: Create AgentV2 with real AI configuration
-    console.log('Step 6: Creating AgentV2 with Real AI...');
+    // Step 6: Create Agent with real AI configuration
+    console.log('Step 6: Creating Agent with Real AI...');
     const apiConfig: ProviderSettings = {
         ...defaultApiConfig,
         apiKey: process.env['GLM_API_KEY'] || 'your-api-key-here',
@@ -66,7 +66,7 @@ async function main() {
     console.log(`  Tool Protocol: ${apiConfig.toolProtocol}`);
     console.log();
 
-    const agent = new AgentV2(
+    const agent = new Agent(
         defaultAgentConfig,
         apiConfig,
         workspace,
@@ -150,7 +150,7 @@ async function main() {
     console.log();
     console.log('Summary:');
     console.log('  - KmsWorkspace instantiated with 3 components');
-    console.log('  - AgentV2 instantiated with real AI configuration');
+    console.log('  - Agent instantiated with real AI configuration');
     console.log('  - Observers registered for message/status events');
     console.log('  - Script execution guide displayed');
     console.log();
