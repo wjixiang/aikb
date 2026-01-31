@@ -11,9 +11,9 @@ import {
 } from "../task/task.type";
 import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
-import { VirtualWorkspace } from "./virtualWorkspace";
+import { VirtualWorkspace } from "statefulContext";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
-import { AttemptCompletion, b, ExecuteScript } from '../baml_client'
+import { AttemptCompletion, b, ToolCall } from '../baml_client'
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
@@ -125,11 +125,6 @@ export class AgentV2 {
             this.tokenUsageTracker,
             new TooCallingParser(),
         );
-
-        // Set completion callback for script execution
-        workspace.setCompletionCallback(async (result: string) => {
-            this.complete();
-        });
 
         this.onMessageAdded((message) => {
             console.log(message)
@@ -533,16 +528,37 @@ export class AgentV2 {
      * Convert BAML response to assistant message content
      * Returns the tool_use_id for use in the tool result
      */
-    private convertBamlResponseToAssistantMessage(response: AttemptCompletion | ExecuteScript): string {
+    private convertBamlResponseToAssistantMessage(response: AttemptCompletion | ToolCall): string {
         const toolUseId = crypto.randomUUID();
-        const toolUse: ToolUse = {
-            type: 'tool_use',
-            name: response.toolName,
-            id: toolUseId,
-            params: { data: response.data },
-            nativeArgs: { data: response.data },
-        };
-        this.messageState.assistantMessageContent = [toolUse];
+
+        if (response.toolName === 'attempt_completion') {
+            const toolUse: ToolUse = {
+                type: 'tool_use',
+                name: response.toolName,
+                id: toolUseId,
+                params: { data: response.data },
+                nativeArgs: { data: response.data },
+            };
+            this.messageState.assistantMessageContent = [toolUse];
+        } else if (response.toolName === 'call_tool') {
+            const toolUse: ToolUse = {
+                type: 'tool_use',
+                name: response.toolName,
+                id: toolUseId,
+                params: {
+                    componentKey: response.componentKey,
+                    actualToolName: response.actualToolName,
+                    toolParams: response.toolParams
+                },
+                nativeArgs: {
+                    componentKey: response.componentKey,
+                    actualToolName: response.actualToolName,
+                    toolParams: response.toolParams
+                },
+            };
+            this.messageState.assistantMessageContent = [toolUse];
+        }
+
         return toolUseId;
     }
 
@@ -644,37 +660,37 @@ export class AgentV2 {
      * Execute tool calls and build response
      */
     private async executeToolCalls(
-        toolCall: AttemptCompletion | ExecuteScript,
+        toolCall: AttemptCompletion | ToolCall,
         toolUseId: string,
         isAborted: () => boolean,
     ): Promise<{ userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>, didAttemptCompletion: boolean }> {
         const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
         let didAttemptCompletion = false;
 
-        const commonTools = this.workspace.getCommonTools();
-
         try {
             let result: any;
-            switch (toolCall.toolName) {
-                case 'execute_script':
-                    const script = toolCall.data;
-                    const executionResult = await commonTools.execute_script(script);
-                    result = {
-                        success: executionResult.success,
-                        message: executionResult.message,
-                        output: executionResult.output,
-                        error: executionResult.error,
-                    };
-                    break;
-                case 'attempt_completion':
-                    didAttemptCompletion = true;
-                    const completionResult = toolCall.data;
-                    await commonTools.attempt_completion(completionResult);
-                    result = { success: true, result: completionResult };
-                    break;
-                default:
-                    result = { error: `Unknown tool: ${toolCall}` };
-                    break;
+
+            if (toolCall.toolName === 'attempt_completion') {
+                didAttemptCompletion = true;
+                const completionResult = toolCall.data;
+                result = { success: true, result: completionResult };
+            } else if (toolCall.toolName === 'call_tool') {
+                // Parse tool params
+                let parsedParams: any = {};
+                try {
+                    parsedParams = JSON.parse(toolCall.toolParams);
+                } catch (e) {
+                    parsedParams = toolCall.toolParams;
+                }
+
+                // Call the tool on the VirtualWorkspace component
+                result = await this.workspace.handleToolCall(
+                    toolCall.componentKey,
+                    toolCall.actualToolName,
+                    parsedParams
+                );
+            } else {
+                result = { error: `Unknown tool: ${toolCall}` };
             }
 
             userMessageContent.push({

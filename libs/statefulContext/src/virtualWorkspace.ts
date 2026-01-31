@@ -148,6 +148,51 @@ export class VirtualWorkspace {
             totalTools
         };
     }
+
+    /**
+     * Handle tool call on a component
+     * @param componentKey - The key of the component to call
+     * @param toolName - The name of the tool to call
+     * @param params - The parameters to pass to the tool
+     * @returns Promise resolving to the tool result
+     */
+    async handleToolCall(componentKey: string, toolName: string, params: any): Promise<any> {
+        const component = this.getComponent(componentKey);
+        if (!component) {
+            return { error: `Component not found: ${componentKey}` };
+        }
+
+        // Check if the component has the tool
+        if (!component.toolSet.has(toolName)) {
+            return { error: `Tool not found: ${toolName} in component: ${componentKey}` };
+        }
+
+        try {
+            await component.handleToolCall(toolName, params);
+            return { success: true };
+        } catch (error) {
+            return {
+                error: error instanceof Error ? error.message : String(error),
+                success: false
+            };
+        }
+    }
+
+    /**
+     * Get all available tools from all components
+     * @returns Array of tool definitions with component information
+     */
+    getAllTools(): Array<{ componentKey: string; toolName: string; tool: any }> {
+        const tools: Array<{ componentKey: string; toolName: string; tool: any }> = [];
+
+        for (const [key, registration] of this.components.entries()) {
+            for (const [toolName, tool] of registration.component.toolSet.entries()) {
+                tools.push({ componentKey: key, toolName, tool });
+            }
+        }
+
+        return tools;
+    }
 }
 export type { ComponentRegistration };
 

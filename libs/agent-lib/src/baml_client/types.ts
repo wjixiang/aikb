@@ -53,8 +53,10 @@ export interface AttemptCompletion {
   
 }
 
-export interface ExecuteScript {
-  toolName: "execute_script"
-  data: string
+export interface ToolCall {
+  toolName: "call_tool"
+  componentKey: string
+  actualToolName: string
+  toolParams: string
   
 }

@@ -22,7 +22,7 @@ import type { BamlRuntime, FunctionResult, BamlCtxManager, Image, Audio, Pdf, Vi
 import { toBamlError, BamlAbortError, type HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type * as types from "./types"
-import type {AttemptCompletion, ExecuteScript} from "./types"
+import type {AttemptCompletion, ToolCall} from "./types"
 import type TypeBuilder from "./type_builder"
 import { HttpRequest, HttpStreamRequest } from "./sync_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -99,7 +99,7 @@ export class BamlSyncClient {
   ApiRequest(
       systemPrompt: string,workspaceContext: string,memoryContext: string[],
       __baml_options__?: BamlCallOptions<never>
-  ): types.AttemptCompletion | types.ExecuteScript {
+  ): types.AttemptCompletion | types.ToolCall {
     try {
       const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
       const __signal__ = __options__.signal;
@@ -132,7 +132,7 @@ export class BamlSyncClient {
         __signal__,
         __options__.watchers,
       )
-      return __raw__.parsed(false) as types.AttemptCompletion | types.ExecuteScript
+      return __raw__.parsed(false) as types.AttemptCompletion | types.ToolCall
     } catch (error: any) {
       throw toBamlError(error);
     }

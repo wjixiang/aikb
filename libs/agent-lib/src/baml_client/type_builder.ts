@@ -29,14 +29,14 @@ export default class TypeBuilder {
     
     AttemptCompletion: ClassViewer<'AttemptCompletion', "toolName" | "data">;
     
-    ExecuteScript: ClassViewer<'ExecuteScript', "toolName" | "data">;
+    ToolCall: ClassViewer<'ToolCall', "toolName" | "componentKey" | "actualToolName" | "toolParams">;
     
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AttemptCompletion","ExecuteScript",
+            "AttemptCompletion","ToolCall",
           ]),
           enums: new Set([
             
@@ -48,8 +48,8 @@ export default class TypeBuilder {
           "toolName","data",
         ]);
         
-        this.ExecuteScript = this.tb.classViewer("ExecuteScript", [
-          "toolName","data",
+        this.ToolCall = this.tb.classViewer("ToolCall", [
+          "toolName","componentKey","actualToolName","toolParams",
         ]);
         
         

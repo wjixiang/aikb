@@ -1,30 +1,44 @@
 export function generateWorkspaceGuide() {
     return `
-====
-Stateful Workspace Interface Guide
+===
+Tool-Based Workspace Interface Guide
 
-You are an AI assistant working with a workspace system. The workspace has editable status fields that you can modify through tool calls.
+You are an AI assistant working with a workspace system. The workspace contains components that expose tools for you to call.
 
-## Editable Status Fields
-All fields marked with \`[]\` in the workspace description are editable status fields. These fields can be modified by you through tool calls to update the workspace state.
+## Available Tools
+The workspace consists of multiple components, each with its own set of tools. Tools are displayed in the workspace context with:
+- Tool name
+- Description of what the tool does
+- Parameters (with types and descriptions)
+- Which component the tool belongs to
 
-When you need to modify a field:
-1. Use the <update_workspace> tool to update the editable status field
-2. The field will be validated against its schema
-3. If the update is successful, the workspace state will change and side effects will be triggered
-4. If the update fails, you will receive an error message
+## How to Use Tools
+When you need to perform an action:
+1. Use the <call_tool> function with the following parameters:
+   - componentKey: The key of the component that has the tool
+   - actualToolName: The name of the tool to call
+   - toolParams: A JSON string containing the parameters for the tool
+2. The tool will be executed on the component
+3. If successful, the component's state will be updated
+4. If the tool call fails, you will receive an error message
 
-## How to Identify Editable Fields
-Editable fields are displayed in the workspace context with the following format:
-- Field name with description
-- Current value (if any)
-- Schema/type information
+## Tool Call Format
+When calling a tool, use the following format:
+\`\`\`
+call_tool(
+  componentKey: "component_name",
+  actualToolName: "tool_name",
+  toolParams: '{"param1": "value1", "param2": "value2"}'
+)
+\`\`\`
 
 ## Important Notes
-- Only modify fields that are marked as [EDITABLE]
-- Read-only fields cannot be modified
-- Some fields may depend on other fields - modifying a field may trigger cascading updates
-- Always check the current workspace state before making changes
+- Each tool has specific parameters that must be provided
+- Parameters should be passed as a JSON string
+- Check the tool description in the workspace context for required and optional parameters
+- Tool calls may have side effects on the component's state
+- Always check the current workspace state before making tool calls
+- When your task is complete, use the <attempt_completion> function
 
-    `
+    `;
 }

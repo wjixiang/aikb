@@ -3,13 +3,15 @@ class AttemptCompletion {
     data string
 }
 
-class ExecuteScript {
-    toolName "execute_script"
-    data string
+class ToolCall {
+    toolName "call_tool"
+    componentKey string
+    actualToolName string
+    toolParams string
 }
 
 
-function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContext: string[]) -> AttemptCompletion |  ExecuteScript{
+function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContext: string[]) -> AttemptCompletion |  ToolCall{
     client GLM47_coder
     prompt #"
 

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AttemptCompletion,  ExecuteScript } from "./types"
+import type {  AttemptCompletion,  ToolCall } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -40,8 +40,10 @@ export namespace partial_types {
       toolName?: "attempt_completion" | null
       data?: string | null
     }
-    export interface ExecuteScript {
-      toolName?: "execute_script" | null
-      data?: string | null
+    export interface ToolCall {
+      toolName?: "call_tool" | null
+      componentKey?: string | null
+      actualToolName?: string | null
+      toolParams?: string | null
     }
 }
