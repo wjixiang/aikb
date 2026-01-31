@@ -1,12 +1,11 @@
 /**
- * Bookshelf Workspace Components (v2)
- * Script-interaction based components for Bookshelf workspace
+ * Bookshelf Workspace Components (v3)
+ * Tool-call based components for Bookshelf workspace
  */
 
 import { z } from 'zod';
-import { Permission, State, StatefulComponent } from 'statefulContext';
-import { proxy, subscribe } from 'valtio';
-import { tdiv, TUIElement } from 'statefulContext';
+import { ToolComponent, Tool } from 'statefulContext';
+import { tdiv } from 'statefulContext';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
@@ -251,7 +250,7 @@ async function getDefaultChunkEmbedGroup(itemId: string): Promise<string | null>
             variables: { itemId }
         });
         const groups = data.chunkEmbedGroups[0].groups || [];
-        // Use the first group as default
+        // Use first group as default
         const firstGroup = groups[0];
         return firstGroup?.id || null;
     } catch (error) {
@@ -261,27 +260,25 @@ async function getDefaultChunkEmbedGroup(itemId: string): Promise<string | null>
 }
 
 /**
- * BookViewer Component (v2)
+ * BookViewer Component (v3)
  * Displays selected book and allows page navigation
- * Uses script-interaction mode with valtio for reactive state management
+ * Uses tool-call mechanism for state management
  */
-export class BookViewerComponent extends StatefulComponent {
-    protected override states: Record<string, State> = {
-        book_viewer_state: {
-            permission: Permission.rw,
-            schema: z.object({
-                selected_book_name: z.string().nullable(),
-                search_query: z.string().nullable()
-            }),
-            sideEffectsDesc: `Changing selected_book_name will load the book content. Changing search_query will perform semantic search across the book.`,
-            state: proxy<{ selected_book_name: string | null; search_query: string | null }>({
-                selected_book_name: null,
-                search_query: null
-            })
-        }
-    };
+export class BookViewerComponent extends ToolComponent {
+    toolSet = new Map<string, Tool>([
+        ['selectBook', {
+            toolName: 'selectBook',
+            desc: 'Select a book from the library',
+            paramsSchema: z.object({ bookName: z.string().describe('Name of the book to select') })
+        }],
+        ['search', {
+            toolName: 'search',
+            desc: 'Perform semantic search across the book',
+            paramsSchema: z.object({ query: z.string().describe('Search query text') })
+        }]
+    ]);
 
-    // Internal state (not exposed to scripts)
+    // Internal state
     private availableBooks: BookInfo[] = [];
     private currentBook: BookInfo | null = null;
     private totalPages: number = 0;
@@ -293,22 +290,12 @@ export class BookViewerComponent extends StatefulComponent {
 
     constructor() {
         super();
-
-        // Subscribe to state changes for reactive behavior
-        subscribe(this.states['book_viewer_state'].state, async () => {
-            const state = this.states['book_viewer_state'].state as { selected_book_name: string | null; search_query: string | null };
-            await this.handleStateChange(state);
-        });
+        this.fetchBooks();
     }
 
     /**
-     * Initialize the BookViewer component
-     * Fetches available books from the bibliography service
+     * Fetch available books from bibliography service
      */
-    protected async init(): Promise<void> {
-        await this.fetchBooks();
-    }
-
     private async fetchBooks(): Promise<void> {
         try {
             console.log('[BookViewer] Fetching available books from bibliography-service...');
@@ -319,74 +306,129 @@ export class BookViewerComponent extends StatefulComponent {
         }
     }
 
-    private async handleStateChange(state: { selected_book_name: string | null; search_query: string | null }): Promise<void> {
-        // Handle book selection change
-        if (state.selected_book_name !== this.bookName) {
-            await this.handleBookChange(state.selected_book_name);
-        }
+    /**
+     * Render component as TUIElement array
+     */
+    renderImply = async () => {
+        // Render book selector list
+        const bookList = this.availableBooks
+            .map((book: BookInfo) => {
+                const isSelected = book.bookName === this.bookName;
+                const marker = isSelected ? '→ ' : '  ';
+                return `${marker}${book.bookName} (${book.pages} pages)`;
+            })
+            .join('\n');
 
-        // Handle search query change
-        if (state.search_query !== null && state.search_query !== undefined) {
-            await this.handleSearchQuery(state.search_query);
-        }
-    }
-
-    private async handleBookChange(selectedBookName: string | null): Promise<void> {
-        console.log(`[BookViewer] Book changed to: ${selectedBookName}`);
-
-        if (selectedBookName) {
-            // Find the book info from available books
-            const selectedBook = this.availableBooks.find((b: BookInfo) => b.bookName === selectedBookName);
-
-            if (selectedBook) {
-                // Update internal state with new book info
-                this.bookName = selectedBook.bookName;
-                this.bookId = selectedBook.id;
-                this.totalPages = selectedBook.pages;
-                this.currentBook = selectedBook;
-
-                // Get default chunk embed group for search
-                this.chunkEmbedGroupId = await getDefaultChunkEmbedGroup(selectedBook.id);
-
-                // Load initial content
-                this.content = await fetchBookContent(selectedBook.id, 1);
-            }
+        // Render book viewer content
+        let viewerContent = '';
+        if (!this.currentBook && !this.bookName) {
+            viewerContent = '*No book selected. Please select a book first.*';
         } else {
-            // Clear book info
-            this.bookName = null;
-            this.bookId = null;
-            this.totalPages = 0;
-            this.content = '';
-            this.chunkEmbedGroupId = null;
-            this.currentBook = null;
-        }
-    }
-
-    private async handleSearchQuery(query: string): Promise<void> {
-        console.log(`[BookViewer] Search query: ${query}`);
-
-        if (!query || query.length === 0) {
-            this.searchResults = [];
-            return;
+            viewerContent = `**[book_name](EDITABLE):** ${this.bookName || 'Unknown'}\n\n---`;
         }
 
-        if (!this.chunkEmbedGroupId) {
-            if (!this.bookId) {
-                console.warn('[BookViewer] No book selected for search');
-                return;
-            }
-            const defaultChunkEmbedGroupId = await getDefaultChunkEmbedGroup(this.bookId);
-            this.chunkEmbedGroupId = defaultChunkEmbedGroupId;
-        }
+        // Render search results
+        const resultsList = this.searchResults.length > 0
+            ? this.searchResults.map((r: string, i: number) => `${'>'.repeat(6)}RESULT${i + 1}${'<'.repeat(6)}\n${r}`).join('\n--------------------\n')
+            : '*No results*';
 
-        if (this.chunkEmbedGroupId) {
-            console.log(`[BookViewer] Performing semantic search for "${query}"...`);
-            this.searchResults = await performSemanticSearch(query, this.chunkEmbedGroupId);
-        }
-    }
+        return [
+            new tdiv({
+                content: '## 📖 Book Viewer',
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: `- [book_name]: ${this.bookName ? `**${this.bookName}**` : '*None*'}`,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: '### Available books',
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: bookList,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: viewerContent,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: '### 🔍 Search',
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: `[search_query]: ${this.searchResults.length > 0 ? this.searchResults[0].split(':')[1]?.trim() || '*None*' : '*None*'}`,
+                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+            }),
+            new tdiv({
+                content: '-----Results-----\n' + resultsList,
+                styles: { width: 80, showBorder: false }
+            })
+        ];
+    };
 
     /**
-     * Get available books (utility function for scripts)
+     * Handle tool calls
+     */
+    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+        if (toolName === 'selectBook') {
+            const bookName = params.bookName;
+            console.log(`[BookViewer] Book changed to: ${bookName}`);
+
+            if (bookName) {
+                // Find book info from available books
+                const selectedBook = this.availableBooks.find((b: BookInfo) => b.bookName === bookName);
+
+                if (selectedBook) {
+                    // Update internal state with new book info
+                    this.bookName = selectedBook.bookName;
+                    this.bookId = selectedBook.id;
+                    this.totalPages = selectedBook.pages;
+                    this.currentBook = selectedBook;
+
+                    // Get default chunk embed group for search
+                    this.chunkEmbedGroupId = await getDefaultChunkEmbedGroup(selectedBook.id);
+
+                    // Load initial content
+                    this.content = await fetchBookContent(selectedBook.id, 1);
+                }
+            } else {
+                // Clear book info
+                this.bookName = null;
+                this.bookId = null;
+                this.totalPages = 0;
+                this.content = '';
+                this.chunkEmbedGroupId = null;
+                this.currentBook = null;
+            }
+        } else if (toolName === 'search') {
+            const query = params.query;
+            console.log(`[BookViewer] Search query: ${query}`);
+
+            if (!query || query.length === 0) {
+                this.searchResults = [];
+                return;
+            }
+
+            if (!this.chunkEmbedGroupId) {
+                if (!this.bookId) {
+                    console.warn('[BookViewer] No book selected for search');
+                    return;
+                }
+                const defaultChunkEmbedGroupId = await getDefaultChunkEmbedGroup(this.bookId);
+                this.chunkEmbedGroupId = defaultChunkEmbedGroupId;
+            }
+
+            if (this.chunkEmbedGroupId) {
+                console.log(`[BookViewer] Performing semantic search for "${query}"...`);
+                this.searchResults = await performSemanticSearch(query, this.chunkEmbedGroupId);
+            }
+        }
+    };
+
+    /**
+     * Get available books
      */
     getAvailableBooks(): BookInfo[] {
         return this.availableBooks;
@@ -405,161 +447,50 @@ export class BookViewerComponent extends StatefulComponent {
     getSearchResults(): string[] {
         return this.searchResults;
     }
-
-    /**
-     * Get script utilities for this component
-     */
-    override getScriptUtilities(): Record<string, Function> {
-        return {
-            getAvailableBooks: () => this.getAvailableBooks(),
-            getContent: () => this.getContent(),
-            getSearchResults: () => this.getSearchResults()
-        };
-    }
-
-    /**
-     * Render the component as markdown
-     */
-    override async render(): Promise<TUIElement> {
-        // Ensure initialization before rendering (calls init() if not already initialized)
-        await this.ensureInitialized();
-
-        const state = this.states['book_viewer_state'].state as { selected_book_name: string | null; search_query: string | null };
-        const selectedBook = state.selected_book_name;
-
-        // Render book selector list
-        const bookList = this.availableBooks
-            .map((book: BookInfo) => {
-                const isSelected = book.bookName === selectedBook;
-                const marker = isSelected ? '→ ' : '  ';
-                return `${marker}${book.bookName} (${book.pages} pages)`;
-            })
-            .join('\n');
-
-        // Render book viewer content
-        let viewerContent = '';
-        if (!this.currentBook && !this.bookName) {
-            viewerContent = '*No book selected. Please select a book first.*';
-        } else {
-            viewerContent = `**[selected_book_name](EDITABLE):** ${this.bookName || 'Unknown'}\n\n---`;
-        }
-
-        // Render search results
-        const resultsList = this.searchResults.length > 0
-            ? this.searchResults.map((r: string, i: number) => `${'>'.repeat(6)}RESULT${i + 1}${'<'.repeat(6)}\n${r}`).join('\n--------------------\n')
-            : '*No results*';
-
-        // Create container tdiv
-        const container = new tdiv({
-            content: '',
-            styles: {
-                width: 80,
-                showBorder: false
-            }
-        });
-
-        // Add header
-        container.addChild(new tdiv({
-            content: '## 📖 Book Viewer',
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-
-        // Add selected book info
-        container.addChild(new tdiv({
-            content: `- [selected_book_name]: ${selectedBook ? `**${selectedBook}**` : '*None*'}`,
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-
-        // Add available books section
-        container.addChild(new tdiv({
-            content: '### Available books',
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-        container.addChild(new tdiv({
-            content: bookList,
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-
-        // Add viewer content
-        container.addChild(new tdiv({
-            content: viewerContent,
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-
-        // Add search section
-        container.addChild(new tdiv({
-            content: '### 🔍 Search',
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-        container.addChild(new tdiv({
-            content: `[search_query]: ${state.search_query || '*None*'}`,
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
-        container.addChild(new tdiv({
-            content: '-----Results-----\n' + resultsList,
-            styles: { width: 80, showBorder: false }
-        }));
-
-        return container;
-    }
 }
 
 /**
- * WorkspaceInfo Component (v2)
+ * WorkspaceInfo Component (v3)
  * Displays workspace information and status
  */
-export class WorkspaceInfoComponent extends StatefulComponent {
-    protected override states: Record<string, State> = {
-        workspace_info_state: {
-            permission: Permission.r,
-            schema: z.object({
-                lastUpdated: z.string()
-            }),
-            sideEffectsDesc: `Read-only state showing when the workspace was last updated`,
-            state: proxy<{ lastUpdated: string }>({
-                lastUpdated: new Date().toISOString()
-            })
-        }
-    };
+export class WorkspaceInfoComponent extends ToolComponent {
+    toolSet = new Map<string, Tool>([
+        ['updateTimestamp', {
+            toolName: 'updateTimestamp',
+            desc: 'Update the last updated timestamp',
+            paramsSchema: z.object({})
+        }]
+    ]);
+
+    private lastUpdated: string = new Date().toISOString();
 
     constructor() {
         super();
     }
 
     /**
-     * Initialize the WorkspaceInfo component
-     * Updates the timestamp on initialization
+     * Render component as TUIElement array
      */
-    protected async init(): Promise<void> {
-        this.updateTimestamp();
-    }
+    renderImply = async () => {
+        const formattedDate = new Date(this.lastUpdated).toLocaleString();
+
+        return [
+            new tdiv({
+                content: `## ℹ️ Workspace Information\n**Last Updated:** ${formattedDate}`,
+                styles: {
+                    width: 80,
+                    showBorder: false
+                }
+            })
+        ];
+    };
 
     /**
-     * Update the last updated timestamp
+     * Handle tool calls
      */
-    updateTimestamp(): void {
-        (this.states['workspace_info_state'].state as { lastUpdated: string }).lastUpdated = new Date().toISOString();
-    }
-
-    /**
-     * Render the component as markdown
-     */
-    override async render(): Promise<TUIElement> {
-        // Ensure initialization before rendering (calls init() if not already initialized)
-        await this.ensureInitialized();
-
-        const state = this.states['workspace_info_state'].state as { lastUpdated: string };
-        const formattedDate = new Date(state.lastUpdated).toLocaleString();
-
-        // Create container tdiv
-        const container = new tdiv({
-            content: `## ℹ️ Workspace Information\n**Last Updated:** ${formattedDate}`,
-            styles: {
-                width: 80,
-                showBorder: false
-            }
-        });
-
-        return container;
-    }
+    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+        if (toolName === 'updateTimestamp') {
+            this.lastUpdated = new Date().toISOString();
+        }
+    };
 }

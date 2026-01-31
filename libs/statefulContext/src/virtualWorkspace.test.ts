@@ -1,79 +1,128 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { VirtualWorkspace, ScriptRuntime, ComponentRegistration } from './virtualWorkspace';
-import { StatefulComponent, State, Permission } from './statefulComponent';
-import { proxy } from 'valtio';
+import { VirtualWorkspace, ComponentRegistration } from './virtualWorkspace';
+import { ToolComponent } from './toolComponent';
+import { Tool } from './types';
+import { tdiv } from './ui';
 import * as z from 'zod';
-import { VirtualWorkspaceConfig } from './types';
 
-// Test component implementations
-class TestComponentA extends StatefulComponent {
-    protected override states: Record<string, State> = {
-        state_a: {
-            permission: Permission.rw,
-            schema: z.object({ value: z.string() }),
-            state: proxy({ value: 'initial-a' })
+// Test component implementations using ToolComponent
+class TestToolComponentA extends ToolComponent {
+    toolSet = new Map<string, Tool>([
+        ['search', {
+            toolName: 'search',
+            desc: 'Search for something',
+            paramsSchema: z.object({ query: z.string() })
+        }]
+    ]);
+
+    private searchQuery = '';
+    private searchResults: string[] = [];
+
+    renderImply = async (): Promise<tdiv[]> => {
+        return [
+            new tdiv({
+                content: `Search Query: ${this.searchQuery}`,
+                styles: { width: 80, showBorder: false }
+            }),
+            new tdiv({
+                content: `Results: ${this.searchResults.join(', ')}`,
+                styles: { width: 80, showBorder: false }
+            })
+        ];
+    };
+
+    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+        if (toolName === 'search') {
+            this.searchQuery = params.query;
+            this.searchResults = [`result1 for ${params.query}`, `result2 for ${params.query}`];
         }
     };
 
-    protected async init(): Promise<void> {
-        // No initialization needed for test component
+    getSearchQuery(): string {
+        return this.searchQuery;
     }
 
-    getValue(): string {
-        return (this.states['state_a'].state as any).value;
+    getSearchResults(): string[] {
+        return this.searchResults;
     }
 }
 
-class TestComponentB extends StatefulComponent {
-    protected override states: Record<string, State> = {
-        state_b: {
-            permission: Permission.rw,
-            schema: z.object({ count: z.number() }),
-            state: proxy({ count: 0 })
+class TestToolComponentB extends ToolComponent {
+    toolSet = new Map<string, Tool>([
+        ['increment', {
+            toolName: 'increment',
+            desc: 'Increment counter',
+            paramsSchema: z.object({ amount: z.number().optional() })
+        }]
+    ]);
+
+    private counter = 0;
+
+    renderImply = async (): Promise<tdiv[]> => {
+        return [
+            new tdiv({
+                content: `Counter: ${this.counter}`,
+                styles: { width: 80, showBorder: false }
+            })
+        ];
+    };
+
+    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+        if (toolName === 'increment') {
+            this.counter += params.amount || 1;
         }
     };
 
-    protected async init(): Promise<void> {
-        // No initialization needed for test component
-    }
-
-    getCount(): number {
-        return (this.states['state_b'].state as any).count;
+    getCounter(): number {
+        return this.counter;
     }
 }
 
-class TestComponentC extends StatefulComponent {
-    protected override states: Record<string, State> = {
-        state_c: {
-            permission: Permission.rw,
-            schema: z.object({ flag: z.boolean() }),
-            state: proxy({ flag: false })
-        }
+class TestToolComponentC extends ToolComponent {
+    toolSet = new Map<string, Tool>([
+        ['toggle', {
+            toolName: 'toggle',
+            desc: 'Toggle flag',
+            paramsSchema: z.object({})
+        }]
+    ]);
+
+    private flag = false;
+
+    renderImply = async (): Promise<tdiv[]> => {
+        return [
+            new tdiv({
+                content: `Flag: ${this.flag}`,
+                styles: { width: 80, showBorder: false }
+            })
+        ];
     };
 
-    protected async init(): Promise<void> {
-        // No initialization needed for test component
-    }
+    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+        if (toolName === 'toggle') {
+            this.flag = !this.flag;
+        }
+    };
 
     getFlag(): boolean {
-        return (this.states['state_c'].state as any).flag;
+        return this.flag;
     }
 }
 
 describe('VirtualWorkspace', () => {
     let workspace: VirtualWorkspace;
-    let componentA: TestComponentA;
-    let componentB: TestComponentB;
+    let componentA: TestToolComponentA;
+    let componentB: TestToolComponentB;
 
     beforeEach(() => {
-        const config: VirtualWorkspaceConfig = {
+        const config = {
             id: 'test-workspace',
             name: 'Test Workspace',
             description: 'A test workspace for unit testing'
         };
         workspace = new VirtualWorkspace(config);
-        componentA = new TestComponentA();
-        componentB = new TestComponentB();
+        componentA = new TestToolComponentA();
+        componentB = new TestToolComponentB();
     });
 
     describe('Initialization', () => {
@@ -124,19 +173,6 @@ describe('VirtualWorkspace', () => {
             const removed = workspace.unregisterComponent('non-existent');
             expect(removed).toBe(false);
         });
-
-        it('should update script runtime when component is registered', () => {
-            workspace.registerComponent({ key: 'componentA', component: componentA });
-            const runtime = workspace.getScriptRuntime();
-            expect(runtime.getComponentKeys()).toContain('componentA');
-        });
-
-        it('should update script runtime when component is unregistered', () => {
-            workspace.registerComponent({ key: 'componentA', component: componentA });
-            workspace.unregisterComponent('componentA');
-            const runtime = workspace.getScriptRuntime();
-            expect(runtime.getComponentKeys()).not.toContain('componentA');
-        });
     });
 
     describe('Workspace Statistics', () => {
@@ -144,7 +180,7 @@ describe('VirtualWorkspace', () => {
             const stats = workspace.getStats();
             expect(stats.componentCount).toBe(0);
             expect(stats.componentKeys).toEqual([]);
-            expect(stats.totalStates).toBe(0);
+            expect(stats.totalTools).toBe(0);
         });
 
         it('should return correct stats with components', () => {
@@ -155,174 +191,56 @@ describe('VirtualWorkspace', () => {
             expect(stats.componentCount).toBe(2);
             expect(stats.componentKeys).toContain('componentA');
             expect(stats.componentKeys).toContain('componentB');
-            expect(stats.totalStates).toBe(2); // Each component has 1 state
+            expect(stats.totalTools).toBe(2); // Each component has 1 tool
         });
     });
 
-    describe('Common Tools', () => {
-        it('should provide execute_script tool', () => {
-            const tools = workspace.getCommonTools();
-            expect(tools.execute_script).toBeDefined();
-            expect(typeof tools.execute_script).toBe('function');
-        });
-
-        it('should provide attempt_completion tool', () => {
-            const tools = workspace.getCommonTools();
-            expect(tools.attempt_completion).toBeDefined();
-            expect(typeof tools.attempt_completion).toBe('function');
-        });
-
-        it('should execute script with merged states', async () => {
+    describe('Rendering', () => {
+        it('should render workspace with components', async () => {
             workspace.registerComponent({ key: 'componentA', component: componentA });
             workspace.registerComponent({ key: 'componentB', component: componentB });
-            const tools = workspace.getCommonTools();
 
-            const result = await tools.execute_script('state_a.value = "updated";');
-
-            expect(result.success).toBe(true);
-            expect(componentA.getValue()).toBe('updated');
-            // componentB should remain unchanged
-            expect(componentB.getCount()).toBe(0);
+            const context = await workspace.render();
+            expect(context).toContain('Test Workspace');
+            expect(context).toContain('componentA');
+            expect(context).toContain('componentB');
         });
 
-        it('should handle completion callback', async () => {
-            const completionCallback = vi.fn().mockResolvedValue(undefined);
-            workspace.setCompletionCallback(completionCallback);
-            const tools = workspace.getCommonTools();
+        it('should render components in priority order', async () => {
+            const componentC = new TestToolComponentC();
+            workspace.registerComponent({ key: 'componentC', component: componentC, priority: 3 });
+            workspace.registerComponent({ key: 'componentA', component: componentA, priority: 1 });
+            workspace.registerComponent({ key: 'componentB', component: componentB, priority: 2 });
 
-            await tools.attempt_completion('Task completed');
+            const context = await workspace.render();
+            const componentAPos = context.indexOf('componentA');
+            const componentBPos = context.indexOf('componentB');
+            const componentCPos = context.indexOf('componentC');
 
-            expect(completionCallback).toHaveBeenCalledWith('Task completed');
-        });
-    });
-});
-
-describe('ScriptRuntime', () => {
-    let runtime: ScriptRuntime;
-    let componentA: TestComponentA;
-    let componentB: TestComponentB;
-
-    beforeEach(() => {
-        componentA = new TestComponentA();
-        componentB = new TestComponentB();
-        const components = new Map<string, StatefulComponent>();
-        components.set('componentA', componentA);
-        components.set('componentB', componentB);
-        runtime = new ScriptRuntime(components);
-    });
-
-    describe('Component Access', () => {
-        it('should get all component keys', () => {
-            const keys = runtime.getComponentKeys();
-            expect(keys).toContain('componentA');
-            expect(keys).toContain('componentB');
-        });
-
-        it('should get specific component', () => {
-            const component = runtime.getComponent('componentA');
-            expect(component).toBe(componentA);
-        });
-
-        it('should return undefined for non-existent component', () => {
-            const component = runtime.getComponent('non-existent');
-            expect(component).toBeUndefined();
+            expect(componentAPos).toBeLessThan(componentBPos);
+            expect(componentBPos).toBeLessThan(componentCPos);
         });
     });
 
-    describe('Script Execution with Merged States', () => {
-        it('should execute script with merged states from all components', async () => {
-            const result = await runtime.execute('state_a.value = "test";');
+    describe('Tool Calls', () => {
+        it('should handle tool calls on components', async () => {
+            workspace.registerComponent({ key: 'componentA', component: componentA });
 
-            expect(result.success).toBe(true);
-            expect(componentA.getValue()).toBe('test');
+            await componentA.handleToolCall('search', { query: 'test query' });
+
+            expect(componentA.getSearchQuery()).toBe('test query');
+            expect(componentA.getSearchResults()).toEqual(['result1 for test query', 'result2 for test query']);
         });
 
-        it('should include execution metadata', async () => {
-            const result = await runtime.execute('state_a.value = "test";');
+        it('should handle tool calls on multiple components', async () => {
+            workspace.registerComponent({ key: 'componentA', component: componentA });
+            workspace.registerComponent({ key: 'componentB', component: componentB });
 
-            expect(result.metadata).toBeDefined();
-            expect(result.metadata?.executionTime).toBeGreaterThanOrEqual(0);
-            expect(result.metadata?.componentCount).toBe(2);
-            expect(result.metadata?.stateCount).toBe(2);
-        });
+            await componentA.handleToolCall('search', { query: 'test' });
+            await componentB.handleToolCall('increment', { amount: 5 });
 
-        it('should modify multiple states in single script', async () => {
-            const result = await runtime.execute(`
-                state_a.value = "multi-a";
-                state_b.count = 42;
-            `);
-
-            expect(result.success).toBe(true);
-            expect(componentA.getValue()).toBe('multi-a');
-            expect(componentB.getCount()).toBe(42);
-        });
-
-        it('should handle script errors gracefully', async () => {
-            const result = await runtime.execute('throw new Error("Intentional error");');
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('Intentional error');
-        });
-
-        it('should support async operations in scripts', async () => {
-            const result = await runtime.execute(`
-                await new Promise(resolve => setTimeout(resolve, 5));
-                state_a.value = "async update";
-            `);
-
-            expect(result.success).toBe(true);
-            expect(componentA.getValue()).toBe('async update');
-        });
-    });
-
-    describe('Completion Callback', () => {
-        it('should set completion callback', () => {
-            const callback = vi.fn();
-            runtime.setCompletionCallback(callback);
-            // Callback is set, no assertion needed
-        });
-
-        it('should call completion callback', async () => {
-            const callback = vi.fn().mockResolvedValue(undefined);
-            runtime.setCompletionCallback(callback);
-
-            await runtime.attemptCompletion('done');
-
-            expect(callback).toHaveBeenCalledWith('done');
-        });
-
-        it('should throw error when no callback is set', async () => {
-            await expect(runtime.attemptCompletion('done')).rejects.toThrow('No completion callback registered');
-        });
-    });
-
-    describe('Common Tools', () => {
-        it('should provide execute_script tool', () => {
-            const tools = runtime.getCommonTools();
-            expect(tools.execute_script).toBeDefined();
-        });
-
-        it('should provide attempt_completion tool', () => {
-            const tools = runtime.getCommonTools();
-            expect(tools.attempt_completion).toBeDefined();
-        });
-
-        it('should handle script execution via tools', async () => {
-            const tools = runtime.getCommonTools();
-            const result = await tools.execute_script('state_a.value = "via-tools";');
-
-            expect(result.success).toBe(true);
-            expect(componentA.getValue()).toBe('via-tools');
-        });
-
-        it('should handle completion via tools', async () => {
-            const callback = vi.fn().mockResolvedValue(undefined);
-            runtime.setCompletionCallback(callback);
-            const tools = runtime.getCommonTools();
-
-            await tools.attempt_completion('completed');
-
-            expect(callback).toHaveBeenCalledWith('completed');
+            expect(componentA.getSearchQuery()).toBe('test');
+            expect(componentB.getCounter()).toBe(5);
         });
     });
 });
@@ -335,9 +253,9 @@ describe('Integration Tests', () => {
             description: 'Testing complete workflow'
         });
 
-        const componentA = new TestComponentA();
-        const componentB = new TestComponentB();
-        const componentC = new TestComponentC();
+        const componentA = new TestToolComponentA();
+        const componentB = new TestToolComponentB();
+        const componentC = new TestToolComponentC();
 
         workspace.registerComponent({ key: 'search', component: componentA, priority: 1 });
         workspace.registerComponent({ key: 'counter', component: componentB, priority: 2 });
@@ -349,42 +267,20 @@ describe('Integration Tests', () => {
         expect(context).toContain('search');
         expect(context).toContain('counter');
         expect(context).toContain('toggle');
-        expect(context).toContain('AVAILABLE STATES (MERGED FROM ALL COMPONENTS)');
 
-        // Execute script that modifies multiple states
-        const tools = workspace.getCommonTools();
-        const result1 = await tools.execute_script(`
-            state_a.value = "search query";
-            state_b.count = 42;
-            state_c.flag = true;
-        `);
-        expect(result1.success).toBe(true);
-        expect(componentA.getValue()).toBe('search query');
-        expect(componentB.getCount()).toBe(42);
+        // Execute tool calls
+        await componentA.handleToolCall('search', { query: 'search query' });
+        await componentB.handleToolCall('increment', { amount: 42 });
+        await componentC.handleToolCall('toggle', {});
+
+        expect(componentA.getSearchQuery()).toBe('search query');
+        expect(componentB.getCounter()).toBe(42);
         expect(componentC.getFlag()).toBe(true);
 
         // Verify stats
         const stats = workspace.getStats();
         expect(stats.componentCount).toBe(3);
-        expect(stats.totalStates).toBe(3);
-    });
-
-    it('should handle completion callback in workspace', async () => {
-        const workspace = new VirtualWorkspace({
-            id: 'completion-test',
-            name: 'Completion Test Workspace'
-        });
-
-        const componentA = new TestComponentA();
-        workspace.registerComponent({ key: 'componentA', component: componentA });
-
-        const completionCallback = vi.fn().mockResolvedValue(undefined);
-        workspace.setCompletionCallback(completionCallback);
-
-        const tools = workspace.getCommonTools();
-        await tools.attempt_completion('Task completed successfully');
-
-        expect(completionCallback).toHaveBeenCalledWith('Task completed successfully');
+        expect(stats.totalTools).toBe(3);
     });
 
     it('should handle component replacement', async () => {
@@ -393,8 +289,8 @@ describe('Integration Tests', () => {
             name: 'Replacement Test Workspace'
         });
 
-        const componentA1 = new TestComponentA();
-        const componentA2 = new TestComponentA();
+        const componentA1 = new TestToolComponentA();
+        const componentA2 = new TestToolComponentA();
 
         workspace.registerComponent({ key: 'componentA', component: componentA1 });
         expect(workspace.getComponent('componentA')).toBe(componentA1);
@@ -407,28 +303,28 @@ describe('Integration Tests', () => {
         expect(workspace.getComponent('componentA')).not.toBe(componentA1);
     });
 
-    it('should demonstrate state merging across components', async () => {
+    it('should render updated component state after tool calls', async () => {
         const workspace = new VirtualWorkspace({
-            id: 'merge-test',
-            name: 'Merge Test Workspace'
+            id: 'render-test',
+            name: 'Render Test Workspace'
         });
 
-        const componentA = new TestComponentA();
-        const componentB = new TestComponentB();
-
+        const componentA = new TestToolComponentA();
         workspace.registerComponent({ key: 'componentA', component: componentA });
-        workspace.registerComponent({ key: 'componentB', component: componentB });
 
-        const tools = workspace.getCommonTools();
+        // Render initial state
+        let context = await workspace.render();
+        expect(context).toContain('componentA');
 
-        // Script can access both states
-        const result = await tools.execute_script(`
-            const combined = state_a.value + " - " + state_b.count;
-            state_a.value = combined;
-        `);
+        // Make tool call
+        await componentA.handleToolCall('search', { query: 'test query' });
 
-        expect(result.success).toBe(true);
-        expect(componentA.getValue()).toBe('initial-a - 0');
-        expect(componentB.getCount()).toBe(0);
+        // Verify state was updated
+        expect(componentA.getSearchQuery()).toBe('test query');
+        expect(componentA.getSearchResults()).toEqual(['result1 for test query', 'result2 for test query']);
+
+        // Render updated state
+        context = await workspace.render();
+        expect(context).toContain('componentA');
     });
 });

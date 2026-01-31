@@ -16,10 +16,11 @@ export abstract class ToolComponent {
     }
 
     async render(): Promise<TUIElement[]> {
-        const container = new tdiv({});
-
         const body = await this.renderImply();
-        body.forEach(e => container.addChild(e));
+        const container = new tdiv({
+            styles: { width: 80, showBorder: false }
+        }, body);
+
         return [container]
     }
 }

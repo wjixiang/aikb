@@ -2,29 +2,18 @@
  * Stateful Context Library
  *
  * A state management framework for dynamic context rendering in agent systems.
- * Provides components for managing state, executing scripts, and rendering
+ * Provides components for managing state, executing tools, and rendering
  * terminal UI elements.
  */
 
 // Re-export all types
 export * from './types';
 
-// Re-export stateful component
-export { StatefulComponent } from './statefulComponent';
-
-export { ToolComponent } from './toolComponent'
-
-// Re-export script security
-export {
-    SecureExecutionContext,
-    ScriptSanitizer,
-    createSecurityConfig,
-    validateSecurityConfig,
-    SecurityConfigSchema
-} from './scriptSecurity';
+// Re-export tool component
+export { ToolComponent } from './toolComponent';
 
 // Re-export virtual workspace
-export { VirtualWorkspace, ScriptRuntime } from './virtualWorkspace';
+export { VirtualWorkspace } from './virtualWorkspace';
 
 // Re-export TUI elements
 export * from './ui';

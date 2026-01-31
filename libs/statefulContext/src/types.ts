@@ -386,10 +386,10 @@ export interface ComponentRegistration {
      */
     key: string;
     /**
-     * The stateful component instance
+     * The tool component instance
      * Use type import to avoid circular dependency
      */
-    component: import('./statefulComponent').StatefulComponent;
+    component: import('./toolComponent').ToolComponent;
     /**
      * Optional priority for rendering (lower = earlier)
      */

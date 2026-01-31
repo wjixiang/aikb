@@ -36,8 +36,9 @@ describe('BibliographySearchComponent E2E Tests', () => {
     });
 
     describe('Initialization', () => {
-        it('should initialize toolSet with 4 tools', () => {
+        it.only('should initialize toolSet with 4 tools', () => {
             expect(component.toolSet.size).toBe(4);
+            // console.log(component.render())
             expect(component.toolSet.has('search_pubmed')).toBe(true);
             expect(component.toolSet.has('view_article')).toBe(true);
             expect(component.toolSet.has('navigate_page')).toBe(true);
