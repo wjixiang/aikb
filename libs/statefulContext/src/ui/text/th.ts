@@ -29,6 +29,13 @@ export class th extends TUIElement {
      * Render heading element
      */
     render(): string {
+        return this.renderWithWidth(undefined);
+    }
+
+    /**
+     * Render heading element with a specified available width
+     */
+    override renderWithWidth(availableWidth: number | undefined): string {
         const { content } = this.metadata;
         const level = this.metadata.level ?? 1;
         const underline = this.metadata.underline ?? false;
@@ -43,7 +50,8 @@ export class th extends TUIElement {
         // Add underline if specified
         let result = styledContent;
         if (underline) {
-            result += '\n' + '─'.repeat(contentWidth);
+            const underlineWidth = availableWidth ? Math.min(availableWidth, contentWidth) : contentWidth;
+            result += '\n' + '─'.repeat(underlineWidth);
         }
 
         return result;

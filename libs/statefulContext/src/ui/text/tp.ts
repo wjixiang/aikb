@@ -29,6 +29,13 @@ export class tp extends TUIElement {
      * Render paragraph element
      */
     render(): string {
+        return this.renderWithWidth(undefined);
+    }
+
+    /**
+     * Render paragraph element with a specified available width
+     */
+    override renderWithWidth(availableWidth: number | undefined): string {
         const { content } = this.metadata;
         const indent = this.metadata.indent ?? 0;
         const lineHeight = this.metadata.lineHeight ?? 1;
@@ -40,7 +47,38 @@ export class tp extends TUIElement {
         const styledContent = this.applyTextStyle(finalContent, textStyle);
 
         // Split into lines
-        const lines = styledContent.split('\n');
+        let lines = styledContent.split('\n');
+
+        // If availableWidth is specified, wrap the content
+        if (availableWidth) {
+            const maxWidth = availableWidth - indent;
+            if (maxWidth > 0) {
+                const wrappedLines: string[] = [];
+                for (const line of lines) {
+                    if (line.length <= maxWidth) {
+                        wrappedLines.push(line);
+                    } else {
+                        // Simple word wrapping
+                        const words = line.split(' ');
+                        let currentLine = '';
+                        for (const word of words) {
+                            if (currentLine.length === 0) {
+                                currentLine = word;
+                            } else if (currentLine.length + 1 + word.length <= maxWidth) {
+                                currentLine += ' ' + word;
+                            } else {
+                                wrappedLines.push(currentLine);
+                                currentLine = word;
+                            }
+                        }
+                        if (currentLine.length > 0) {
+                            wrappedLines.push(currentLine);
+                        }
+                    }
+                }
+                lines = wrappedLines;
+            }
+        }
 
         // Apply indent to each line
         const indentStr = ' '.repeat(indent);

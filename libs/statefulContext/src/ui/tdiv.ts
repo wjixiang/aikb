@@ -31,7 +31,14 @@ export class tdiv extends TUIElement {
      * Render the tdiv element
      */
     render(): string {
-        const styles = this.computeStyles();
+        return this.renderWithWidth(undefined);
+    }
+
+    /**
+     * Render the tdiv element with a specified available width
+     */
+    override renderWithWidth(availableWidth: number | undefined): string {
+        const styles = this.computeStyles(availableWidth);
         // console.debug(styles)
         const { content } = this.metadata;
         const finalContent = content ?? '';
@@ -50,7 +57,6 @@ export class tdiv extends TUIElement {
         // Top border
         if (styles.border) {
             result += ' '.repeat(styles.margin[3]);
-            console.debug('border:', result)
             const borderChars = this.getBorderChars(styles.border);
             result += borderChars.topLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.topRight + '\n';
         }
@@ -132,7 +138,7 @@ export class tdiv extends TUIElement {
     /**
      * Calculate content dimensions considering children
      */
-    protected override calculateContentDimensions(): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
@@ -146,10 +152,10 @@ export class tdiv extends TUIElement {
             maxContentHeight = lines.length;
         }
 
-        // Calculate from children
+        // Calculate from children - pass available width to children
         if (this.children.length > 0) {
             for (const child of this.children) {
-                const childRender = child.render();
+                const childRender = child.renderWithWidth(availableWidth);
                 const childLines = childRender.split('\n');
                 maxContentWidth = Math.max(maxContentWidth, ...childLines.map(line => line.length));
                 maxContentHeight += childLines.length;

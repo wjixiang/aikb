@@ -121,11 +121,9 @@ export class VirtualWorkspace {
             });
             container.addChild(componentHeader);
 
-            // ToolComponent.render() returns TUIElement[], so we need to add each element
-            const componentRenders = await registration.component.render();
-            for (const element of componentRenders) {
-                container.addChild(element);
-            }
+            // ToolComponent.render() returns TUIElement (a container), so we add it directly
+            const componentRender = await registration.component.render();
+            container.addChild(componentRender);
         }
 
         return container;

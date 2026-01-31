@@ -19,7 +19,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## ECHO");
+        expect(result).toContain("Tool Name: echo");
         expect(result).toContain("Description: Echo a message");
         expect(result).toContain("Parameters:");
         expect(result).toContain("message: string // The message to echo");
@@ -38,7 +38,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## SEARCH");
+        expect(result).toContain("Tool Name: search");
         expect(result).toContain("query: string (min: 1) // Search query");
         expect(result).toContain("limit: number (integer) (min: 1) (max: 100) = 10 // Result limit");
         expect(result).toContain("exact: boolean? // Exact match");
@@ -59,7 +59,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## CREATEUSER");
+        expect(result).toContain("Tool Name: createUser");
         expect(result).toContain("name: string");
         expect(result).toContain("profile: {");
         expect(result).toContain("age: number (integer)");
@@ -78,7 +78,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## PROCESSITEMS");
+        expect(result).toContain("Tool Name: processItems");
         expect(result).toContain("items: string[] // List of items");
         expect(result).toContain("counts: number[]?");
     });
@@ -94,7 +94,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## SETVALUE");
+        expect(result).toContain("Tool Name: setValue");
         expect(result).toContain("value: (string | number | boolean)");
     });
 
@@ -109,7 +109,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## SETSTATUS");
+        expect(result).toContain("Tool Name: setStatus");
         expect(result).toContain('status: ("active" | "inactive" | "pending")');
     });
 
@@ -124,7 +124,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## SETMODE");
+        expect(result).toContain("Tool Name: setMode");
         expect(result).toContain('mode: "production"');
     });
 
@@ -140,7 +140,7 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## UPDATE");
+        expect(result).toContain("Tool Name: update");
         expect(result).toContain("value: string | null");
     });
 
@@ -174,8 +174,8 @@ describe("renderToolSection", () => {
             },
         ];
         const result = renderToolSection(tools).render();
-        expect(result).toContain("## TOOL1");
-        expect(result).toContain("## TOOL2");
+        expect(result).toContain("Tool Name: tool1");
+        expect(result).toContain("Tool Name: tool2");
         expect(result).toContain("First tool");
         expect(result).toContain("Second tool");
     });

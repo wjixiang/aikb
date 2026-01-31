@@ -35,8 +35,21 @@ export class ttext extends TUIElement {
      * Render text element
      */
     render(): string {
+        return this.renderWithWidth(undefined);
+    }
+
+    /**
+     * Render text element with a specified available width
+     */
+    override renderWithWidth(availableWidth: number | undefined): string {
         const { content } = this.metadata;
         const finalContent = content ?? '';
+
+        // If availableWidth is specified and content is longer, wrap the content
+        if (availableWidth && finalContent.length > availableWidth) {
+            const wrappedLines = this.wrapContent(finalContent, availableWidth);
+            return wrappedLines.map(line => this.applyTextStyle(line)).join('\n');
+        }
 
         return this.applyTextStyle(finalContent);
     }

@@ -49,7 +49,7 @@ export abstract class TUIElement {
     /**
      * Calculate computed styles for the element
      */
-    protected computeStyles(): ComputedStyles {
+    protected computeStyles(availableWidth?: number): ComputedStyles {
         const { styles } = this.metadata;
         const width = styles?.width;
         const height = styles?.height;
@@ -61,7 +61,7 @@ export abstract class TUIElement {
 
         // Calculate dimensions
         const contentDims = this.calculateContentDimensions();
-        const finalWidth = width ?? (contentDims.width + padding[1] + padding[3] + (showBorder ? 2 : 0));
+        const finalWidth = width ?? availableWidth ?? (contentDims.width + padding[1] + padding[3] + (showBorder ? 2 : 0));
         const finalHeight = height === 0
             ? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0))
             : (height ?? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0)));
@@ -220,7 +220,7 @@ export abstract class TUIElement {
     /**
      * Render all children elements
      */
-    protected renderChildren(availableWidth: number): string[] {
+    protected renderChildren(availableWidth?: number): string[] {
         if (this.children.length === 0) {
             return [];
         }
@@ -228,12 +228,20 @@ export abstract class TUIElement {
         const result: string[] = [];
 
         for (const child of this.children) {
-            const childRender = child.render();
+            const childRender = child.renderWithWidth(availableWidth);
             const childLines = childRender.split('\n');
             result.push(...childLines);
         }
 
         return result;
+    }
+
+    /**
+     * Render the element with a specified available width
+     * This is used by parent elements to constrain child width
+     */
+    renderWithWidth(availableWidth?: number): string {
+        return this.render();
     }
 
     /**
