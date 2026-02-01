@@ -49,14 +49,12 @@ export function get_checks<CheckName extends string>(checks: Record<CheckName, C
 }
 export interface AttemptCompletion {
   toolName: "attempt_completion"
-  data: string
+  toolParams: string
   
 }
 
 export interface ToolCall {
-  toolName: "call_tool"
-  componentKey: string
-  actualToolName: string
+  toolName: string
   toolParams: string
   
 }

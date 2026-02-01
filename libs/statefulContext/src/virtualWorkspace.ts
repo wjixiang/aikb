@@ -1,6 +1,6 @@
 import { ToolComponent } from './toolComponent';
 import { ComponentRegistration, VirtualWorkspaceConfig } from './types';
-import { tdiv, th, TUIElement } from './ui';
+import { tdiv, th, Tool, TUIElement } from './ui';
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
@@ -9,6 +9,14 @@ import { tdiv, th, TUIElement } from './ui';
 export class VirtualWorkspace {
     private config: VirtualWorkspaceConfig;
     private components: Map<string, ComponentRegistration>;
+
+    /**
+     * Combine all avaliable tools from each components.
+     */
+    private toolSet = new Map<string, {
+        tool: Tool;
+        componentKey: string;
+    }>;
 
     constructor(config: VirtualWorkspaceConfig) {
         this.config = config;
@@ -20,12 +28,22 @@ export class VirtualWorkspace {
      */
     registerComponent(registration: ComponentRegistration): void {
         this.components.set(registration.key, registration);
+        registration.component.toolSet.forEach((value, key) => {
+            this.toolSet.set(value.toolName, {
+                tool: value,
+                componentKey: registration.key
+            })
+        })
     }
 
     /**
      * Unregister a component from the workspace
      */
     unregisterComponent(key: string): boolean {
+        const componentToDelete = this.components.get(key);
+        componentToDelete?.component.toolSet.forEach((value, key) => {
+            this.toolSet.delete(value.toolName)
+        })
         return this.components.delete(key);
     }
 
@@ -73,7 +91,6 @@ export class VirtualWorkspace {
         const container = new tdiv({
             content: '',
             styles: {
-                width: 80,
                 showBorder: false
             }
         });
@@ -82,7 +99,6 @@ export class VirtualWorkspace {
         const workspaceHeader = new tdiv({
             content: `VIRTUAL WORKSPACE: ${this.config.name}`,
             styles: {
-                width: 80,
                 height: 0,
                 showBorder: true,
                 border: { line: 'double' },
@@ -94,14 +110,14 @@ export class VirtualWorkspace {
         if (this.config.description) {
             container.addChild(new tdiv({
                 content: `Description: ${this.config.description}`,
-                styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
+                styles: { showBorder: false, margin: { bottom: 1 } }
             }));
         }
 
-        container.addChild(new tdiv({
-            content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
-            styles: { width: 80, showBorder: false, margin: { bottom: 1 } }
-        }));
+        // container.addChild(new tdiv({
+        //     content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
+        //     styles: { showBorder: false, margin: { bottom: 1 } }
+        // }));
 
         // Sort components by priority
         const sortedComponents = Array.from(this.components.entries())
@@ -109,17 +125,16 @@ export class VirtualWorkspace {
 
         for (const [key, registration] of sortedComponents) {
             // Render component header using tdiv
-            const componentHeader = new tdiv({
-                content: `Component: ${key}`,
-                styles: {
-                    width: 80,
-                    height: 0,
-                    showBorder: true,
-                    border: { line: 'single' },
-                    align: 'center'
-                }
-            });
-            container.addChild(componentHeader);
+            // const componentHeader = new tdiv({
+            //     content: `Component: ${key}`,
+            //     styles: {
+
+            //         showBorder: true,
+            //         border: { line: 'single' },
+            //         align: 'center'
+            //     }
+            // });
+            // container.addChild(componentHeader);
 
             // ToolComponent.render() returns TUIElement (a container), so we add it directly
             const componentRender = await registration.component.render();
@@ -175,19 +190,18 @@ export class VirtualWorkspace {
      * @param params - The parameters to pass to the tool
      * @returns Promise resolving to the tool result
      */
-    async handleToolCall(componentKey: string, toolName: string, params: any): Promise<any> {
-        const component = this.getComponent(componentKey);
-        if (!component) {
-            return { error: `Component not found: ${componentKey}` };
-        }
-
-        // Check if the component has the tool
-        if (!component.toolSet.has(toolName)) {
-            return { error: `Tool not found: ${toolName} in component: ${componentKey}` };
-        }
+    async handleToolCall(toolName: string, params: any): Promise<any> {
+        // const component = this.getComponent(componentKey);
+        // if (!component) {
+        //     return { error: `Component not found: ${componentKey}` };
+        // }
 
         try {
-            await component.handleToolCall(toolName, params);
+            const toolToExecute = this.toolSet.get(toolName)
+            if (!toolToExecute) throw new Error(`Tool not found: ${toolName}`)
+
+            const component = this.components.get(toolToExecute?.componentKey)
+            await component?.component.handleToolCall(toolName, params);
             return { success: true };
         } catch (error) {
             return {

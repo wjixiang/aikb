@@ -1,12 +1,10 @@
 class AttemptCompletion {
     toolName "attempt_completion"
-    data string
+    toolParams string
 }
 
 class ToolCall {
-    toolName "call_tool"
-    componentKey string
-    actualToolName string
+    toolName string
     toolParams string
 }
 

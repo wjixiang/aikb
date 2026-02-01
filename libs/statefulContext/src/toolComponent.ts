@@ -18,7 +18,7 @@ export abstract class ToolComponent {
     async render(): Promise<TUIElement> {
         const body = await this.renderImply();
         const container = new tdiv({
-            styles: { width: 200, showBorder: false },
+            styles: { showBorder: true },
         }, body);
 
 

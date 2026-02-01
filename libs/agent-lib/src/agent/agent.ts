@@ -536,8 +536,8 @@ export class Agent {
                 type: 'tool_use',
                 name: response.toolName,
                 id: toolUseId,
-                params: { data: response.data },
-                nativeArgs: { data: response.data },
+                params: { data: response.toolParams },
+                nativeArgs: { data: response.toolParams },
             };
             this.messageState.assistantMessageContent = [toolUse];
         } else if (response.toolName === 'call_tool') {
@@ -545,16 +545,7 @@ export class Agent {
                 type: 'tool_use',
                 name: response.toolName,
                 id: toolUseId,
-                params: {
-                    componentKey: response.componentKey,
-                    actualToolName: response.actualToolName,
-                    toolParams: response.toolParams
-                },
-                nativeArgs: {
-                    componentKey: response.componentKey,
-                    actualToolName: response.actualToolName,
-                    toolParams: response.toolParams
-                },
+                params: JSON.parse(response.toolParams)
             };
             this.messageState.assistantMessageContent = [toolUse];
         }
@@ -672,9 +663,9 @@ export class Agent {
 
             if (toolCall.toolName === 'attempt_completion') {
                 didAttemptCompletion = true;
-                const completionResult = toolCall.data;
+                const completionResult = toolCall.toolParams;
                 result = { success: true, result: completionResult };
-            } else if (toolCall.toolName === 'call_tool') {
+            } else {
                 // Parse tool params
                 let parsedParams: any = {};
                 try {
@@ -683,14 +674,13 @@ export class Agent {
                     parsedParams = toolCall.toolParams;
                 }
 
+                console.debug('parsedParams:', parsedParams)
+
                 // Call the tool on the VirtualWorkspace component
                 result = await this.workspace.handleToolCall(
-                    toolCall.componentKey,
-                    toolCall.actualToolName,
+                    toolCall.toolName,
                     parsedParams
                 );
-            } else {
-                result = { error: `Unknown tool: ${toolCall}` };
             }
 
             userMessageContent.push({
@@ -717,7 +707,7 @@ export class Agent {
      * Attempt API request with timeout
      */
     async attemptApiRequest(retryAttempt: number = 0) {
-        console.log('[DEBUG] attemptApiRequest - START');
+
         try {
             console.debug(`Starting API request attempt ${retryAttempt + 1}`);
 

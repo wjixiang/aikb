@@ -27,9 +27,9 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
-    AttemptCompletion: ClassViewer<'AttemptCompletion', "toolName" | "data">;
+    AttemptCompletion: ClassViewer<'AttemptCompletion', "toolName" | "toolParams">;
     
-    ToolCall: ClassViewer<'ToolCall', "toolName" | "componentKey" | "actualToolName" | "toolParams">;
+    ToolCall: ClassViewer<'ToolCall', "toolName" | "toolParams">;
     
     
 
@@ -45,11 +45,11 @@ export default class TypeBuilder {
         });
         
         this.AttemptCompletion = this.tb.classViewer("AttemptCompletion", [
-          "toolName","data",
+          "toolName","toolParams",
         ]);
         
         this.ToolCall = this.tb.classViewer("ToolCall", [
-          "toolName","componentKey","actualToolName","toolParams",
+          "toolName","toolParams",
         ]);
         
         

@@ -7,7 +7,8 @@ import {
     Author,
     Keyword,
     FullTextSource,
-    renderRetrivalStrategy
+    renderRetrivalStrategy,
+    RetrivalStrategy
 } from 'nih-client'
 import { createBibliographySearchToolSet } from './bibliographySearchTools'
 
@@ -19,6 +20,7 @@ export class BibliographySearchComponent extends ToolComponent {
     currentResults: { totalResults: number | null; totalPages: number | null; articleProfiles: ArticleProfile[] } | null = null;
     currentArticleDetail: ArticleDetail | null = null;
     currentPage: number = 1;
+    retrivalStrategkes: RetrivalStrategy[] = []
 
     constructor() {
         super();
@@ -35,7 +37,19 @@ export class BibliographySearchComponent extends ToolComponent {
         const elements: TUIElement[] = [];
 
         // Render header
-        elements.push(new th({ content: 'Bibliography Search' }));
+        elements.push(new th({
+            content: 'Bibliography Search', styles: {
+                align: 'center'
+            }
+        }));
+
+        const strategyElement = new tdiv({
+            content: 'Retrieval Strategy',
+            styles: {
+                showBorder: true,
+                align: 'center'
+            }
+        })
 
         // // Render current article detail if available
         if (this.currentArticleDetail) {

@@ -86,7 +86,7 @@ export class tp extends TUIElement {
             if (innerWidth > 0) {
                 while (currentLine.length > innerWidth) {
                     contentLines.push(currentLine.slice(0, innerWidth));
-                    currentLine = currentLine.slice(innerWidth + 1);
+                    currentLine = currentLine.slice(innerWidth);
                 }
             }
             contentLines.push(currentLine);
@@ -103,9 +103,11 @@ export class tp extends TUIElement {
             result += ' '.repeat(styles.margin[3]);
             if (styles.border) {
                 const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + this.padLine(line, styles.width - 2 - indent, styles.align) + borderChars.vertical;
+                // Use innerWidth which already accounts for indent
+                result += borderChars.vertical + this.padLine(line, innerWidth + indent, styles.align) + borderChars.vertical;
             } else {
-                result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3] - indent, styles.align);
+                // Don't subtract indent because line already has indent added
+                result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3], styles.align);
             }
             result += '\n';
         }

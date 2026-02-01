@@ -38,12 +38,10 @@ export interface StreamState<T> {
 export namespace partial_types {
     export interface AttemptCompletion {
       toolName?: "attempt_completion" | null
-      data?: string | null
+      toolParams?: string | null
     }
     export interface ToolCall {
-      toolName?: "call_tool" | null
-      componentKey?: string | null
-      actualToolName?: string | null
+      toolName?: string | null
       toolParams?: string | null
     }
 }

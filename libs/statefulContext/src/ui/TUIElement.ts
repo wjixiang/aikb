@@ -200,7 +200,7 @@ export abstract class TUIElement {
      * Pad a line to the specified width with alignment
      */
     protected padLine(line: string, width: number, align: 'left' | 'center' | 'right' = 'left'): string {
-        if (line.length >= width) {
+        if (line.length > width) {
             return line.substring(0, width);
         }
 

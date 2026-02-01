@@ -84,7 +84,7 @@ export class th extends TUIElement {
             if (innerWidth > 0) {
                 while (currentLine.length > innerWidth) {
                     contentLines.push(currentLine.slice(0, innerWidth));
-                    currentLine = currentLine.slice(innerWidth + 1);
+                    currentLine = currentLine.slice(innerWidth);
                 }
             }
             contentLines.push(currentLine);
