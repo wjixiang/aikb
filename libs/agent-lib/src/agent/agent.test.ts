@@ -80,7 +80,7 @@ describe(Agent, () => {
             })
         })
 
-        it.only('should add workspace context into history', async () => {
+        it('should add workspace context into history', async () => {
             agent = new Agent(defaultAgentConfig, defaultApiConfig, mockWorkspace)
             agent.addSystemMessageToHistory('WORKSPACE CONTEXT')
             const history = agent.getConversationHistory().map(e => JSON.stringify(e.content)).join('\n')

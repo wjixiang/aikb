@@ -267,6 +267,7 @@ export class BibliographySearchComponent extends ToolComponent {
 
         try {
             const results = await this.pubmedService.searchByPattern(searchParams);
+            console.log(results.totalPages)
             this.currentResults = {
                 totalResults: results.totalResults,
                 totalPages: results.totalPages,

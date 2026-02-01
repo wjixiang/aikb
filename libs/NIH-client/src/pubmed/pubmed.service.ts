@@ -212,6 +212,7 @@ export class PubmedService {
 
         // Get total pages
         let convertedTotalPagesResult = this.getTotalPages($)
+        console.log('convertedTotalPagesResult', convertedTotalPagesResult)
 
         // Get article profile list
         const articleProfiles = this.getArticleProfileList($);
@@ -246,7 +247,7 @@ export class PubmedService {
     }
 
     getTotalPages($: cheerio.CheerioAPI) {
-        const totalPagesResult = $('div.page-number-wrapper').first().find('label.of-total-pages').text().replace('of ', '')
+        const totalPagesResult = $('label.of-total-pages').first().text().replace('of ', '').replace(',', '')
         let convertedTotalPagesResult = null;
         try {
             convertedTotalPagesResult = z.coerce.number().parse(totalPagesResult);

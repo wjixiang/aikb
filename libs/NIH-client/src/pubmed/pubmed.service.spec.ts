@@ -72,7 +72,7 @@ describe('PubmedService', () => {
 
   })
 
-  it('should get total pages', async () => {
+  it.only('should get total pages', async () => {
     const $ = cheerio.load(testPubmedWebStr)
     const totalPages = service.getTotalPages($)
 

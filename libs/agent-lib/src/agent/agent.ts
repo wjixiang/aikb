@@ -717,7 +717,7 @@ export class Agent {
             // Convert conversation history to string array format for BAML
             // Enhanced to clearly mark workspace context updates
             const memoryContext = cleanConversationHistory.map((msg) => {
-                let role = msg.role === 'user' ? 'user' : 'assistant';
+                let role = msg.role;
                 let content = '';
 
                 // Special handling for system messages containing workspace context
