@@ -126,9 +126,7 @@ export class Agent {
             new TooCallingParser(),
         );
 
-        this.onMessageAdded((message) => {
-            console.log(message)
-        })
+        // Note: Message added callback for debugging can be registered externally
     }
 
     // ==================== Public API ====================
@@ -373,7 +371,6 @@ export class Agent {
             let didEndLoop = false;
 
             if (this.isAborted()) {
-                console.log(`Task ${this._taskId} was aborted, exiting loop`);
                 stack.length = 0;
                 return false;
             }
@@ -408,7 +405,6 @@ export class Agent {
             const oldWorkspaceContext = await this.workspace.render();
 
             try {
-                console.log('[DEBUG] Starting API request processing...');
                 // Reset message processing state for each new API request
                 this.resetMessageState();
 
@@ -421,7 +417,6 @@ export class Agent {
                         defaultToolProtocol: 'xml',
                     }
                 };
-                console.log('[DEBUG] Model cached:', this.messageState.cachedModel.id);
 
                 // Collect complete response from stream
 
@@ -503,7 +498,6 @@ export class Agent {
                 }
             }
 
-            console.log(`stack length: ${stack.length}`);
             if (didEndLoop) {
                 return true;
             }
@@ -678,7 +672,6 @@ export class Agent {
                     parsedParams = toolCall.toolParams;
                 }
 
-                console.debug('parsedParams:', parsedParams)
 
                 // Call the tool on the VirtualWorkspace component
                 result = await this.workspace.handleToolCall(
@@ -713,26 +706,28 @@ export class Agent {
     async attemptApiRequest(retryAttempt: number = 0) {
 
         try {
-            console.debug(`Starting API request attempt ${retryAttempt + 1}`);
-
             const systemPrompt = await this.getSystemPrompt();
-            console.log('[DEBUG] System prompt obtained, length:', systemPrompt.length);
-
             const workspaceContext = await this.workspace.render();
-            console.log('[DEBUG] Workspace context obtained, length:', workspaceContext.length);
 
             // Build clean conversation history and convert to string array for BAML
             const cleanConversationHistory = this.buildCleanConversationHistory(
                 this._conversationHistory,
             );
-            console.log('[DEBUG] Clean conversation history built, messages:', cleanConversationHistory.length);
 
             // Convert conversation history to string array format for BAML
+            // Enhanced to clearly mark workspace context updates
             const memoryContext = cleanConversationHistory.map((msg) => {
-                const role = msg.role === 'user' ? 'user' : 'assistant';
-                const content = typeof msg.content === 'string'
-                    ? msg.content
-                    : msg.content.map((block) => {
+                let role = msg.role === 'user' ? 'user' : 'assistant';
+                let content = '';
+
+                // Special handling for system messages containing workspace context
+                if (msg.role === 'system' && typeof msg.content === 'string') {
+                    role = 'system';
+                    content = `<workspace_context_update>\n${msg.content}\n</workspace_context_update>`;
+                } else if (typeof msg.content === 'string') {
+                    content = msg.content;
+                } else {
+                    content = msg.content.map((block) => {
                         if (block.type === 'text') {
                             return block.text;
                         } else if (block.type === 'tool_use') {
@@ -742,23 +737,17 @@ export class Agent {
                         }
                         return '';
                     }).join('\n');
+                }
+
                 return `<${role}>\n${content}\n</${role}>`;
             });
-            console.log('[DEBUG] Memory context converted to string array, length:', memoryContext.length);
-
             try {
-                console.log('[DEBUG] Calling b.ApiRequest...');
-                console.log('[DEBUG] Setting up timeout:', this.config.apiRequestTimeout, 'ms');
-
                 // Use Promise.race for timeout (more reliable than AbortController for BAML)
                 const timeoutPromise = new Promise<never>((_, reject) => {
                     setTimeout(() => {
-                        console.error(`[DEBUG] Timeout triggered after ${this.config.apiRequestTimeout}ms`);
                         reject(new Error(`API request timed out after ${this.config.apiRequestTimeout}ms`));
                     }, this.config.apiRequestTimeout);
                 });
-
-                console.log('[DEBUG] About to call b.ApiRequest with Promise.race...');
 
                 try {
                     // Race between BAML request and timeout
@@ -776,18 +765,15 @@ export class Agent {
 
 
                 } catch (error) {
-                    console.log('[DEBUG] Error caught');
-                    console.log('[DEBUG] Error name:', error instanceof Error ? error.name : 'unknown');
-                    console.log('[DEBUG] Error message:', error instanceof Error ? error.message : String(error));
                     throw error;
                 }
 
             } catch (error) {
-                console.error('[DEBUG] Error in BAML request:', error);
+                console.error(`BAML request failed:`, error);
                 throw error;
             }
         } catch (error) {
-            console.error(`[DEBUG] API request attempt ${retryAttempt + 1} failed:`, error);
+            console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
             throw error;
         }
     }

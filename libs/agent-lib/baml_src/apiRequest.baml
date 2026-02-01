@@ -17,11 +17,27 @@ function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContex
 
         {{systemPrompt}}
 
+        ---
+        CURRENT WORKSPACE CONTEXT
+        ---
         {{workspaceContext}}
+        ---
+        END WORKSPACE CONTEXT
+        ---
 
+        ---
+        CONVERSATION HISTORY
+        ---
         {% for message in memoryContext %}
             {{message}}
         {% endfor %}
+        ---
+        END CONVERSATION HISTORY
+        ---
+
+        IMPORTANT: Review the CURRENT WORKSPACE CONTEXT above to understand the current state of all components.
+        Then review the CONVERSATION HISTORY to see previous actions and results.
+        Based on this information, decide your next action.
 
         {{ ctx.output_format }}
     "#
