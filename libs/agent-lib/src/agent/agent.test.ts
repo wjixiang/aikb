@@ -80,6 +80,20 @@ describe(Agent, () => {
             })
         })
 
+        it.only('should add workspace context into history', async () => {
+            agent = new Agent(defaultAgentConfig, defaultApiConfig, mockWorkspace)
+            agent.addSystemMessageToHistory('WORKSPACE CONTEXT')
+            const history = agent.getConversationHistory().map(e => JSON.stringify(e.content)).join('\n')
+            console.log(history)
+            expect(history).include('WORKSPACE CONTEXT')
+
+            const cleanHistory = agent.buildCleanConversationHistory(agent.getConversationHistory()).map(e => JSON.stringify(e.content)).join('\n')
+            console.log(cleanHistory)
+            expect(cleanHistory).include('WORKSPACE CONTEXT')
+
+
+        })
+
         it('should initialize with workspace components', () => {
             agent = new Agent(defaultAgentConfig, defaultApiConfig, mockWorkspace)
 

@@ -602,7 +602,7 @@ export class Agent {
     /**
      * Add workspace context into history
      */
-    private addSystemMessageToHistory(workspaceContext: string): void {
+    addSystemMessageToHistory(workspaceContext: string): void {
         this.addToConversationHistory({
             role: 'system',
             content: workspaceContext
@@ -643,6 +643,10 @@ export class Agent {
             }
         });
         this._conversationHistory.push(messageWithTs as ApiMessage);
+    }
+
+    getConversationHistory() {
+        return this._conversationHistory
     }
 
     // ==================== Tool Execution ====================
@@ -793,12 +797,12 @@ export class Agent {
      */
     buildCleanConversationHistory(
         history: ApiMessage[],
-    ): Anthropic.MessageParam[] {
+    ): ApiMessage[] {
         return history
-            .filter((msg): msg is ApiMessage & { role: 'user' | 'assistant' } =>
-                msg.role === 'user' || msg.role === 'assistant'
+            .filter((msg): msg is ApiMessage & { role: 'user' | 'assistant' | 'system' } =>
+                msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system'
             )
-            .map((msg): Anthropic.MessageParam => {
+            .map((msg) => {
                 if (typeof msg.content === 'string') {
                     return {
                         role: msg.role,

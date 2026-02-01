@@ -18,7 +18,7 @@ When you need to perform an action:
    - toolName: The name of the tool to call
    - toolParams: A JSON string containing the parameters for the tool
 2. The tool will be executed on the component
-3. If successful, the component's state will be updated and re-rendered.
+3. If successful, the component's state will be updated and re-rendered
 4. If the tool call fails, you will receive an error message
 
 \`\`\`
