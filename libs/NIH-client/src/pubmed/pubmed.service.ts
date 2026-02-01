@@ -211,18 +211,7 @@ export class PubmedService {
         }
 
         // Get total pages
-        const totalPagesResult = $('div.page-number-wrapper').find('label.of-total-pages').text().replace('of ', '')
-        let convertedTotalPagesResult = null;
-        try {
-            convertedTotalPagesResult = z.coerce.number().parse(totalPagesResult);
-            // Handle NaN case - when parsing fails or returns NaN, set to null
-            if (Number.isNaN(convertedTotalPagesResult)) {
-                convertedTotalPagesResult = null;
-            }
-        } catch (error) {
-            // Silently handle parsing errors - set to null
-            convertedTotalPagesResult = null;
-        }
+        let convertedTotalPagesResult = this.getTotalPages($)
 
         // Get article profile list
         const articleProfiles = this.getArticleProfileList($);
@@ -254,6 +243,22 @@ export class PubmedService {
             params.filter.forEach(e => urlParams.append('filter', e))
         }
         return `?${urlParams.toString()}`
+    }
+
+    getTotalPages($: cheerio.CheerioAPI) {
+        const totalPagesResult = $('div.page-number-wrapper').first().find('label.of-total-pages').text().replace('of ', '')
+        let convertedTotalPagesResult = null;
+        try {
+            convertedTotalPagesResult = z.coerce.number().parse(totalPagesResult);
+            // Handle NaN case - when parsing fails or returns NaN, set to null
+            if (Number.isNaN(convertedTotalPagesResult)) {
+                convertedTotalPagesResult = null;
+            }
+        } catch (error) {
+            // Silently handle parsing errors - set to null
+            convertedTotalPagesResult = null;
+        }
+        return convertedTotalPagesResult
     }
 
     getArticleProfileList($: cheerio.CheerioAPI): ArticleProfile[] {

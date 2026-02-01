@@ -54,15 +54,15 @@ describe('PubmedService', () => {
     expect(articles[0]).toHaveProperty('snippet')
 
     // Verify first article data
-    expect(articles[0].pmid).toBe('35910428')
-    expect(articles[0].title).toContain('Food')
+    expect(articles[0].pmid).toBe('34601963')
+    expect(articles[0].title).toContain('Circadian')
     expect(articles[0].title).toContain('Hypertension')
-    expect(articles[0].authors).toContain('Rusmevichientong')
-    expect(articles[0].journalCitation).toContain('Int J Public')
-    expect(articles[0].snippet).toContain('food choices')
+    expect(articles[0].authors).toContain('Gumz ML')
+    expect(articles[0].journalCitation).toContain('10.1161/HYPERTENSIONAHA.121.14519.')
+    expect(articles[0].snippet).toContain('Circadian rhythms')
   })
 
-  it.only('load article detail page, scrape basic information', async () => {
+  it('load article detail page, scrape basic information', async () => {
     const spy = vi.spyOn(service, 'loadArticle').mockResolvedValue(cheerio.load(testDetailPageStr))
     const res = await service.getArticleDetail('37882686')
     expect(spy).toBeCalled()
@@ -72,8 +72,12 @@ describe('PubmedService', () => {
 
   })
 
-  it.todo('load article detail page', async () => {
+  it('should get total pages', async () => {
+    const $ = cheerio.load(testPubmedWebStr)
+    const totalPages = service.getTotalPages($)
 
+    console.log(totalPages)
+    expect(totalPages).toBe(184)
   })
 });
 
