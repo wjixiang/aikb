@@ -4,7 +4,7 @@
  * This module provides components, tools, and schemas for bibliography search functionality.
  */
 
-export { BibliographySearchComponent } from './bibliographySearchComponent'
+export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent'
 
 export {
     searchPubmedTool,
@@ -13,7 +13,7 @@ export {
     clearResultsTool,
     createBibliographySearchToolSet,
     bibliographySearchTools
-} from './bibliographySearchTools'
+} from './bibliographySearch/bibliographySearchTools'
 
 export {
     retrievalStrategySchema,
@@ -21,4 +21,4 @@ export {
     viewArticleParamsSchema,
     navigatePageParamsSchema,
     clearResultsParamsSchema
-} from './bibliographySearchSchemas'
+} from './bibliographySearch/bibliographySearchSchemas'

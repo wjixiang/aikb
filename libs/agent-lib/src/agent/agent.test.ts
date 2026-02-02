@@ -4,6 +4,7 @@ import { KmsWorkspace } from "./workspaces/KmsWorkspace";
 import { ToolComponent, Tool } from "statefulContext";
 import { z } from "zod";
 import { tdiv } from "statefulContext";
+import { PromptBuilder } from "./prompt/PromptBuilder";
 
 const testWorkspace = new VirtualWorkspace({
     id: 'id',
@@ -87,7 +88,12 @@ describe(Agent, () => {
             console.log(history)
             expect(history).include('WORKSPACE CONTEXT')
 
-            const cleanHistory = agent.buildCleanConversationHistory(agent.getConversationHistory()).map(e => JSON.stringify(e.content)).join('\n')
+            const cleanHistory = new PromptBuilder()
+                .setConversationHistory(agent.getConversationHistory())
+                .build()
+                .memoryContext
+                .map(e => JSON.stringify(e))
+                .join('\n')
             console.log(cleanHistory)
             expect(cleanHistory).include('WORKSPACE CONTEXT')
 

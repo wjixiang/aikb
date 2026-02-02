@@ -2,7 +2,7 @@ import { ToolName, ToolUsage } from '../../types';
 import { AssistantMessageContent, ToolUse } from '../../assistant-message/assistantMessageTypes';
 import Anthropic from '@anthropic-ai/sdk';
 import { randomUUID } from 'node:crypto';
-import { WorkspaceBase } from '../../agent/agentWorkspace';
+import { VirtualWorkspace } from 'statefulContext';
 
 /**
  * Result of executing tool calls
@@ -24,7 +24,7 @@ export class ToolExecutor {
     private toolUsage: ToolUsage = {};
 
     constructor(
-        private workspace: WorkspaceBase
+        private workspace: VirtualWorkspace
     ) { }
 
     /**
@@ -73,14 +73,6 @@ export class ToolExecutor {
                 didAttemptCompletion = true;
                 // Clear user message content to prevent further recursion
                 userMessageContent.length = 0;
-            }
-
-            if (toolUse.name === "update_workspace") {
-                console.log(
-                    `Tool call: update_workspace`
-                );
-                const input = toolUse.nativeArgs || toolUse.params;
-                await this.workspace.handleStateUpdateToolCall([input])
             }
         }
 

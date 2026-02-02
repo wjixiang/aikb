@@ -24,6 +24,7 @@ import {
     NoApiResponseError,
     NoToolsUsedError,
 } from '../task/task.errors';
+import { PromptBuilder, BamlPrompt } from './prompt/PromptBuilder';
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -709,38 +710,13 @@ export class Agent {
             const systemPrompt = await this.getSystemPrompt();
             const workspaceContext = await this.workspace.render();
 
-            // Build clean conversation history and convert to string array for BAML
-            const cleanConversationHistory = this.buildCleanConversationHistory(
-                this._conversationHistory,
-            );
+            // Build prompt using PromptBuilder
+            const prompt: BamlPrompt = new PromptBuilder()
+                .setSystemPrompt(systemPrompt)
+                .setWorkspaceContext(workspaceContext)
+                .setConversationHistory(this._conversationHistory)
+                .build();
 
-            // Convert conversation history to string array format for BAML
-            // Enhanced to clearly mark workspace context updates
-            const memoryContext = cleanConversationHistory.map((msg) => {
-                let role = msg.role;
-                let content = '';
-
-                // Special handling for system messages containing workspace context
-                if (msg.role === 'system' && typeof msg.content === 'string') {
-                    role = 'system';
-                    content = `<workspace_context_update>\n${msg.content}\n</workspace_context_update>`;
-                } else if (typeof msg.content === 'string') {
-                    content = msg.content;
-                } else {
-                    content = msg.content.map((block) => {
-                        if (block.type === 'text') {
-                            return block.text;
-                        } else if (block.type === 'tool_use') {
-                            return `<tool_use name="${block.name}" id="${block.id}">${JSON.stringify(block.input)}</tool_use>`;
-                        } else if (block.type === 'tool_result') {
-                            return `<tool_result tool_use_id="${block.tool_use_id}">${block.content}</tool_result>`;
-                        }
-                        return '';
-                    }).join('\n');
-                }
-
-                return `<${role}>\n${content}\n</${role}>`;
-            });
             try {
                 // Use Promise.race for timeout (more reliable than AbortController for BAML)
                 const timeoutPromise = new Promise<never>((_, reject) => {
@@ -753,9 +729,9 @@ export class Agent {
                     // Race between BAML request and timeout
                     const bamlResponse = await Promise.race([
                         b.ApiRequest(
-                            systemPrompt,
-                            workspaceContext,
-                            memoryContext
+                            prompt.systemPrompt,
+                            prompt.workspaceContext,
+                            prompt.memoryContext
                         ),
                         //     b.ApiRequest('test', 'hello', []),
                         //     timeoutPromise
@@ -776,36 +752,6 @@ export class Agent {
             console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
             throw error;
         }
-    }
-
-    /**
-     * Build clean conversation history
-     */
-    buildCleanConversationHistory(
-        history: ApiMessage[],
-    ): ApiMessage[] {
-        return history
-            .filter((msg): msg is ApiMessage & { role: 'user' | 'assistant' | 'system' } =>
-                msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system'
-            )
-            .map((msg) => {
-                if (typeof msg.content === 'string') {
-                    return {
-                        role: msg.role,
-                        content: msg.content,
-                    };
-                }
-
-                // Filter out custom ThinkingBlock and keep only Anthropic.ContentBlockParam
-                const content = (msg.content as Anthropic.ContentBlockParam[]).filter(
-                    (block) => block.type !== 'thinking'
-                ) as Anthropic.ContentBlockParam[];
-
-                return {
-                    role: msg.role,
-                    content,
-                };
-            });
     }
 
     // ==================== Helper Methods ====================

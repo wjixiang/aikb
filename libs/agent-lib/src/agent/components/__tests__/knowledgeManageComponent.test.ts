@@ -180,12 +180,12 @@ describe('KnowledgeManageComponent', () => {
 
     describe('Rendering', () => {
         it('should render component as TUIElement array', async () => {
-            const rendered = await component.render();
+            const rendered = await component.renderImply();
             expect(Array.isArray(rendered)).toBe(true);
         });
 
         it('should render with tool section', async () => {
-            const rendered = await component.render();
+            const rendered = await component.renderImply();
             expect(rendered.length).toBeGreaterThan(0);
         });
     });
@@ -206,7 +206,7 @@ describe('KnowledgeManageComponent', () => {
 
     describe('Integration Tests', () => {
         it('should render with all sections', async () => {
-            const rendered = await component.render();
+            const rendered = await component.renderImply();
             expect(Array.isArray(rendered)).toBe(true);
             expect(rendered.length).toBeGreaterThan(0);
         });

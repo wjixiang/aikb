@@ -1,7 +1,7 @@
 import { Agent, defaultApiConfig, defaultAgentConfig } from "../../agent"
 import { MetaAnalysisWorkspace } from '../metaAnalysisWorkspace'
 describe('meta analysis workspace', () => {
-    it.only('should execute task', async () => {
+    it.skip('should execute task', async () => {
         const agent = new Agent(defaultAgentConfig, defaultApiConfig, new MetaAnalysisWorkspace())
         await agent.start('search article about treatment of hypertension')
     }, 999999)

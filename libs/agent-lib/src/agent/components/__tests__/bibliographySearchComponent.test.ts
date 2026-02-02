@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { BibliographySearchComponent } from '../bibliographySearchComponent';
+import { BibliographySearchComponent } from '../bibliographySearch/bibliographySearchComponent';
 
-import { searchPubmedParamsType } from '../bibliographySearchSchemas';
+import { searchPubmedParamsType } from '../bibliographySearch/bibliographySearchSchemas';
 
 describe(BibliographySearchComponent, () => {
     let component: BibliographySearchComponent
