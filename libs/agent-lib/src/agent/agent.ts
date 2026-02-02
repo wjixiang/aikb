@@ -24,7 +24,7 @@ import {
     NoApiResponseError,
     NoToolsUsedError,
 } from '../task/task.errors';
-import { PromptBuilder, BamlPrompt } from './prompt/PromptBuilder';
+import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder';
 
 export interface AgentConfig {
     apiRequestTimeout: number;

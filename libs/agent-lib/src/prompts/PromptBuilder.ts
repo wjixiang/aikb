@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage, ThinkingBlock } from '../../task/task.type';
+import { ApiMessage, ThinkingBlock } from '../task/task.type';
 import { MessageFormatter } from './MessageFormatter';
 
 /**

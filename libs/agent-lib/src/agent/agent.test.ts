@@ -1,10 +1,10 @@
 import { VirtualWorkspace } from "@/libs/statefulContext/src";
 import { Agent, defaultAgentConfig, defaultApiConfig } from "./agent";
-import { KmsWorkspace } from "./workspaces/KmsWorkspace";
+import { KmsWorkspace } from "../workspaces/KmsWorkspace";
 import { ToolComponent, Tool } from "statefulContext";
 import { z } from "zod";
 import { tdiv } from "statefulContext";
-import { PromptBuilder } from "./prompt/PromptBuilder";
+import { PromptBuilder } from "../prompts/PromptBuilder";
 
 const testWorkspace = new VirtualWorkspace({
     id: 'id',

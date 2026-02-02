@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage } from '../../task/task.type';
+import { ApiMessage } from '../task/task.type';
 import { PromptTemplates } from './PromptTemplates';
 
 /**

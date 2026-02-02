@@ -1,4 +1,4 @@
-import { Agent, defaultApiConfig, defaultAgentConfig } from "../../agent"
+import { Agent, defaultApiConfig, defaultAgentConfig } from "../../agent/agent"
 import { MetaAnalysisWorkspace } from '../metaAnalysisWorkspace'
 describe('meta analysis workspace', () => {
     it.skip('should execute task', async () => {
