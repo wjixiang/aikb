@@ -5,4 +5,5 @@
  */
 
 export * from './types';
-export * from './storage';
+export * from './storage/storage';
+export * from './synchronizer/synchronizer';

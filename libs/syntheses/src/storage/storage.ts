@@ -17,7 +17,7 @@ import type {
     ReviewIndexStats,
     ExportResult,
     ExportOptions,
-} from './types.js';
+} from '../types.js';
 
 /**
  * Storage configuration options
