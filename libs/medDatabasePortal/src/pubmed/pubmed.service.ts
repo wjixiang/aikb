@@ -135,6 +135,7 @@ export interface Affiliation {
 
 export interface Author {
     name: string;
+    position?: number;
     affiliations: Affiliation[];
 }
 
@@ -350,12 +351,33 @@ export class PubmedService {
 
     private extractAuthors($: cheerio.CheerioAPI): Author[] {
         const authors: Author[] = [];
+        const seenNames = new Set<string>();
+
         $('div.authors-list').find('span.authors-list-item').each((index, element) => {
             const $author = $(element);
             const name = $author.find('a[data-ga-action="author"]').text().trim() ||
                 $author.text().trim();
 
             if (!name) return;
+
+            // Extract position numbers from the name (e.g., "1", "5\n\n6")
+            const positionMatch = name.match(/(\d+)(?:\s*\n*\s*(\d+))?\s*,?\s*$/);
+            let position: number | undefined;
+            if (positionMatch) {
+                // If there are two numbers (like "5\n\n6"), use the first one as primary position
+                position = parseInt(positionMatch[1], 10);
+            }
+
+            // Clean the name: remove extra whitespace, newlines, numeric suffixes, and trailing commas
+            const cleanedName = name
+                .replace(/\s+/g, ' ')           // Replace multiple whitespace with single space
+                .replace(/\s*\d+(?:\s*\n*\s*\d+)?\s*,?\s*$/g, '') // Remove numeric suffixes (e.g., "1", " 5\n\n6") at the end
+                .replace(/,\s*$/, '')           // Remove trailing comma
+                .trim();
+
+            // Skip if name is empty after cleaning or already seen
+            if (!cleanedName || seenNames.has(cleanedName)) return;
+            seenNames.add(cleanedName);
 
             const affiliations: Affiliation[] = [];
             $author.find('.affiliations').find('li').each((_, affElement) => {
@@ -370,7 +392,7 @@ export class PubmedService {
                 }
             });
 
-            authors.push({ name, affiliations });
+            authors.push({ name: cleanedName, position, affiliations });
         });
 
         if (authors.length === 0) {

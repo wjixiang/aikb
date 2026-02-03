@@ -40,7 +40,7 @@ describe('PubmedService', () => {
     expect(result).toBe('?term=%28hypertension%5BTitle%5D%29+AND+%28food%5BText+Word%5D%29')
   })
 
-  it.only('should get articles from search result page', async () => {
+  it('should get articles from search result page', async () => {
     const $ = cheerio.load(testPubmedWebStr)
     const articles = service.getArticleProfileList($)
     console.log(articles)
@@ -64,7 +64,7 @@ describe('PubmedService', () => {
 
   })
 
-  it('load article detail page, scrape basic information', async () => {
+  it.only('load article detail page, scrape basic information', async () => {
     const spy = vi.spyOn(service, 'loadArticle').mockResolvedValue(cheerio.load(testDetailPageStr))
     const res = await service.getArticleDetail('37882686')
     expect(spy).toBeCalled()
