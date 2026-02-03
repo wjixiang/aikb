@@ -610,6 +610,200 @@ export interface SyncConfig {
 
     /** Notification settings */
     notifications?: NotificationConfig;
+
+    /** Checkpoint configuration for resumable syncs */
+    checkpointConfig?: CheckpointConfig;
+}
+
+/**
+ * Checkpoint configuration for resumable synchronization
+ */
+export interface CheckpointConfig {
+    /** Whether checkpoint/recovery is enabled */
+    enabled: boolean;
+
+    /** Checkpoint interval (number of records between checkpoints) */
+    checkpointInterval?: number;
+
+    /** Maximum number of checkpoints to keep per database */
+    maxCheckpoints?: number;
+
+    /** Whether to automatically resume interrupted syncs */
+    autoResume?: boolean;
+
+    /** Checkpoint retention policy */
+    retentionPolicy?: CheckpointRetentionPolicy;
+}
+
+/**
+ * Checkpoint retention policy
+ */
+export interface CheckpointRetentionPolicy {
+    /** Maximum age of checkpoints to keep (in days) */
+    maxAgeDays?: number;
+
+    /** Whether to keep only the latest checkpoint */
+    keepLatestOnly?: boolean;
+
+    /** Whether to keep checkpoints for completed syncs */
+    keepCompleted?: boolean;
+}
+
+/**
+ * Sync checkpoint for tracking progress and enabling resume
+ */
+export interface SyncCheckpoint {
+    /** Unique checkpoint identifier */
+    id: string;
+
+    /** Database source this checkpoint is for */
+    database: DatabaseSource;
+
+    /** Sync job ID this checkpoint belongs to */
+    jobId: string;
+
+    /** Checkpoint status */
+    status: CheckpointStatus;
+
+    /** Position in the sync process */
+    position: CheckpointPosition;
+
+    /** Number of records processed so far */
+    processedCount: number;
+
+    /** Total number of records to process (if known) */
+    totalCount?: number;
+
+    /** Timestamp when checkpoint was created */
+    createdAt: Date;
+
+    /** Timestamp when checkpoint was last updated */
+    updatedAt: Date;
+
+    /** Timestamp when sync completed (if applicable) */
+    completedAt?: Date;
+
+    /** Error information if sync failed */
+    error?: string;
+
+    /** Additional metadata */
+    metadata?: CheckpointMetadata;
+}
+
+/**
+ * Checkpoint status
+ */
+export enum CheckpointStatus {
+    /** Checkpoint is active and sync is in progress */
+    ACTIVE = 'ACTIVE',
+    /** Sync completed successfully */
+    COMPLETED = 'COMPLETED',
+    /** Sync failed and can be resumed */
+    FAILED = 'FAILED',
+    /** Sync was cancelled */
+    CANCELLED = 'CANCELLED',
+    /** Checkpoint is expired and should not be used */
+    EXPIRED = 'EXPIRED',
+}
+
+/**
+ * Checkpoint position - represents where in the sync process we are
+ */
+export interface CheckpointPosition {
+    /** Type of position marker */
+    type: PositionType;
+
+    /** Offset for pagination-based sync */
+    offset?: number;
+
+    /** Last processed source ID for ID-based sync */
+    lastSourceId?: string;
+
+    /** Timestamp for time-based incremental sync */
+    lastTimestamp?: Date;
+
+    /** Page number for page-based sync */
+    page?: number;
+
+    /** Custom position data for database-specific implementations */
+    customData?: Record<string, unknown>;
+}
+
+/**
+ * Position type determines how the checkpoint tracks progress
+ */
+export enum PositionType {
+    /** Offset-based pagination */
+    OFFSET = 'OFFSET',
+    /** Page-based pagination */
+    PAGE = 'PAGE',
+    /** ID-based cursor (using last processed ID) */
+    CURSOR_ID = 'CURSOR_ID',
+    /** Timestamp-based incremental sync */
+    TIMESTAMP = 'TIMESTAMP',
+    /** Custom position type */
+    CUSTOM = 'CUSTOM',
+}
+
+/**
+ * Checkpoint metadata
+ */
+export interface CheckpointMetadata {
+    /** Sync options used when creating this checkpoint */
+    syncOptions?: {
+        limit?: number;
+        dateRange?: {
+            start?: Date;
+            end?: Date;
+        };
+        queryParams?: Record<string, unknown>;
+    };
+
+    /** Performance metrics */
+    metrics?: {
+        /** Records processed per second */
+        recordsPerSecond?: number;
+        /** Average processing time per record (in milliseconds) */
+        avgProcessingTime?: number;
+        /** Estimated time remaining (in seconds) */
+        estimatedTimeRemaining?: number;
+    };
+
+    /** Data quality metrics */
+    qualityMetrics?: {
+        /** Number of records that failed transformation */
+        failedTransformations?: number;
+        /** Number of duplicates detected */
+        duplicatesDetected?: number;
+        /** Number of records with quality issues */
+        qualityIssues?: number;
+    };
+}
+
+/**
+ * Checkpoint summary for listing checkpoints
+ */
+export interface CheckpointSummary {
+    /** Checkpoint ID */
+    id: string;
+
+    /** Database source */
+    database: DatabaseSource;
+
+    /** Job ID */
+    jobId: string;
+
+    /** Status */
+    status: CheckpointStatus;
+
+    /** Progress percentage */
+    progress: number;
+
+    /** Created at */
+    createdAt: Date;
+
+    /** Updated at */
+    updatedAt: Date;
 }
 
 /**

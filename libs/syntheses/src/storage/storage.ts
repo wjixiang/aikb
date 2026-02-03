@@ -17,6 +17,12 @@ import type {
     ReviewIndexStats,
     ExportResult,
     ExportOptions,
+    SyncCheckpoint,
+    CheckpointStatus,
+    CheckpointPosition,
+    CheckpointSummary,
+    CheckpointMetadata,
+    PositionType,
 } from '../types.js';
 
 /**
@@ -809,8 +815,285 @@ export interface ISyncConfigStorage {
 }
 
 /**
+ * Storage interface for SyncCheckpoint operations
+ * This interface manages checkpoint tracking for resumable synchronization
+ */
+export interface ICheckpointStorage {
+    /**
+     * Create a new checkpoint
+     * @param checkpoint The checkpoint data to create (without id, createdAt, updatedAt)
+     * @returns Promise resolving to the created checkpoint with generated ID
+     */
+    create(checkpoint: Omit<SyncCheckpoint, 'id' | 'createdAt' | 'updatedAt'>): Promise<SyncCheckpoint>;
+
+    /**
+     * Retrieve a checkpoint by ID
+     * @param id The checkpoint ID
+     * @returns Promise resolving to the checkpoint or null if not found
+     */
+    findById(id: string): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Update an existing checkpoint
+     * @param id The checkpoint ID to update
+     * @param updates Partial checkpoint data to update
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    update(id: string, updates: Partial<Omit<SyncCheckpoint, 'id' | 'createdAt'>>): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Delete a checkpoint
+     * @param id The checkpoint ID to delete
+     * @returns Promise resolving to true if deleted, false if not found
+     */
+    delete(id: string): Promise<boolean>;
+
+    /**
+     * Find the latest checkpoint for a database
+     * @param database The database source
+     * @param options Optional filters
+     * @returns Promise resolving to the latest checkpoint or null if none found
+     */
+    findLatestByDatabase(
+        database: DatabaseSource,
+        options?: {
+            /** Filter by status */
+            status?: CheckpointStatus;
+            /** Filter by job ID */
+            jobId?: string;
+        },
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Find checkpoints by job ID
+     * @param jobId The job ID
+     * @returns Promise resolving to array of checkpoints for that job
+     */
+    findByJob(jobId: string): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Find checkpoints by database source
+     * @param database The database source
+     * @param options Optional filters and pagination
+     * @returns Promise resolving to array of checkpoints
+     */
+    findByDatabase(
+        database: DatabaseSource,
+        options?: {
+            /** Filter by status */
+            status?: CheckpointStatus;
+            /** Limit number of results */
+            limit?: number;
+            /** Offset for pagination */
+            offset?: number;
+        },
+    ): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Find checkpoints by status
+     * @param status The checkpoint status
+     * @param options Optional filters
+     * @returns Promise resolving to array of checkpoints
+     */
+    findByStatus(
+        status: CheckpointStatus,
+        options?: {
+            /** Database filter */
+            database?: DatabaseSource;
+            /** Limit number of results */
+            limit?: number;
+        },
+    ): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Find active checkpoints that can be resumed
+     * @param database Optional database filter
+     * @returns Promise resolving to array of active checkpoints
+     */
+    findActiveCheckpoints(database?: DatabaseSource): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Find failed checkpoints that can be resumed
+     * @param database Optional database filter
+     * @returns Promise resolving to array of failed checkpoints
+     */
+    findFailedCheckpoints(database?: DatabaseSource): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Get checkpoint summaries for listing
+     * @param options Options for listing
+     * @returns Promise resolving to array of checkpoint summaries
+     */
+    listSummaries(options?: {
+        /** Database filter */
+        database?: DatabaseSource;
+        /** Status filter */
+        status?: CheckpointStatus;
+        /** Job ID filter */
+        jobId?: string;
+        /** Limit number of results */
+        limit?: number;
+        /** Offset for pagination */
+        offset?: number;
+    }): Promise<CheckpointSummary[]>;
+
+    /**
+     * Count checkpoints by status
+     * @returns Promise resolving to count of checkpoints by status
+     */
+    countByStatus(): Promise<Record<CheckpointStatus, number>>;
+
+    /**
+     * Count checkpoints by database
+     * @returns Promise resolving to count of checkpoints by database
+     */
+    countByDatabase(): Promise<Record<DatabaseSource, number>>;
+
+    /**
+     * Mark a checkpoint as completed
+     * @param id The checkpoint ID
+     * @param finalMetrics Optional final metrics to record
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    markAsCompleted(id: string, finalMetrics?: CheckpointMetadata['metrics']): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Mark a checkpoint as failed
+     * @param id The checkpoint ID
+     * @param error The error message
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    markAsFailed(id: string, error: string): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Mark a checkpoint as cancelled
+     * @param id The checkpoint ID
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    markAsCancelled(id: string): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Update checkpoint position
+     * @param id The checkpoint ID
+     * @param position The new position
+     * @param processedCount Updated processed count
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    updatePosition(
+        id: string,
+        position: CheckpointPosition,
+        processedCount: number,
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Update checkpoint metadata
+     * @param id The checkpoint ID
+     * @param metadata The metadata to update
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    updateMetadata(id: string, metadata: Partial<CheckpointMetadata>): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Increment processed count
+     * @param id The checkpoint ID
+     * @param increment Amount to increment by (default: 1)
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    incrementProcessedCount(id: string, increment?: number): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Delete old checkpoints
+     * @param options Options for cleanup
+     * @returns Promise resolving to number of checkpoints deleted
+     */
+    deleteOldCheckpoints(options?: {
+        /** Delete checkpoints older than this date */
+        olderThan?: Date;
+        /** Delete only checkpoints with specific statuses */
+        statuses?: CheckpointStatus[];
+        /** Delete checkpoints for specific database */
+        database?: DatabaseSource;
+        /** Keep only the latest N checkpoints per database */
+        keepLatest?: number;
+    }): Promise<number>;
+
+    /**
+     * Delete checkpoints by job ID
+     * @param jobId The job ID
+     * @returns Promise resolving to number of checkpoints deleted
+     */
+    deleteByJob(jobId: string): Promise<number>;
+
+    /**
+     * Get checkpoint statistics
+     * @returns Promise resolving to checkpoint statistics
+     */
+    getStats(): Promise<{
+        /** Total number of checkpoints */
+        total: number;
+
+        /** Number of checkpoints by status */
+        byStatus: Record<CheckpointStatus, number>;
+
+        /** Number of checkpoints by database */
+        byDatabase: Record<DatabaseSource, number>;
+
+        /** Number of checkpoints by position type */
+        byPositionType: Record<PositionType, number>;
+
+        /** Average progress percentage across active checkpoints */
+        avgActiveProgress?: number;
+
+        /** Number of resumable checkpoints (active or failed) */
+        resumableCount: number;
+    }>;
+
+    /**
+     * Get checkpoint history for a database
+     * @param database The database source
+     * @param options Options for retrieving history
+     * @returns Promise resolving to checkpoint history
+     */
+    getHistory(
+        database: DatabaseSource,
+        options?: {
+            /** Start date */
+            start?: Date;
+            /** End date */
+            end?: Date;
+            /** Limit number of results */
+            limit?: number;
+        },
+    ): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Validate checkpoint integrity
+     * @param id The checkpoint ID
+     * @returns Promise resolving to validation result
+     */
+    validateCheckpoint(id: string): Promise<{
+        /** Whether checkpoint is valid */
+        valid: boolean;
+
+        /** Issues found (if any) */
+        issues?: string[];
+
+        /** Whether checkpoint can be resumed */
+        resumable: boolean;
+    }>;
+
+    /**
+     * Clone a checkpoint (for resuming from a specific point)
+     * @param id The checkpoint ID to clone
+     * @param newJobId The new job ID for the cloned checkpoint
+     * @returns Promise resolving to the cloned checkpoint or null if not found
+     */
+    cloneCheckpoint(id: string, newJobId: string): Promise<SyncCheckpoint | null>;
+}
+
+/**
  * Main storage interface that combines all storage operations
- * Implementations should provide all three storage interfaces
+ * Implementations should provide all storage interfaces
  */
 export interface ISynthesesStorage {
     /** Review storage operations */
@@ -821,6 +1104,9 @@ export interface ISynthesesStorage {
 
     /** Sync config storage operations */
     syncConfig: ISyncConfigStorage;
+
+    /** Checkpoint storage operations */
+    checkpoints: ICheckpointStorage;
 
     /**
      * Initialize all storage components

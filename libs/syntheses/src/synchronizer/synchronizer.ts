@@ -19,6 +19,13 @@ import type {
     QualityAssessment,
     RelatedReview,
     ReviewRelationship,
+    SyncCheckpoint,
+    CheckpointStatus,
+    CheckpointPosition,
+    CheckpointSummary,
+    CheckpointMetadata,
+    PositionType,
+    CheckpointConfig,
 } from '../types.js';
 import {
     UrlType,
@@ -570,6 +577,212 @@ export interface ISynchronizer {
         /** Number of active jobs */
         activeJobs: number;
     }>;
+
+    // ============================================================================
+    // Checkpoint Management Methods
+    // ============================================================================
+
+    /**
+     * Create a new checkpoint for a sync job
+     * @param database The database source
+     * @param jobId The sync job ID
+     * @param position The initial position
+     * @param options Checkpoint options
+     * @returns Promise resolving to the created checkpoint
+     */
+    createCheckpoint(
+        database: DatabaseSource,
+        jobId: string,
+        position: CheckpointPosition,
+        options?: {
+            /** Total count if known */
+            totalCount?: number;
+
+            /** Sync options used */
+            syncOptions?: CheckpointMetadata['syncOptions'];
+        },
+    ): Promise<SyncCheckpoint>;
+
+    /**
+     * Update checkpoint position and progress
+     * @param checkpointId The checkpoint ID
+     * @param position The new position
+     * @param processedCount Updated processed count
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    updateCheckpoint(
+        checkpointId: string,
+        position: CheckpointPosition,
+        processedCount: number,
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Save checkpoint at current position (called periodically during sync)
+     * @param checkpointId The checkpoint ID
+     * @param position The current position
+     * @param processedCount Number of records processed
+     * @param metrics Optional metrics to update
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    saveCheckpoint(
+        checkpointId: string,
+        position: CheckpointPosition,
+        processedCount: number,
+        metrics?: CheckpointMetadata['metrics'],
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Mark checkpoint as completed
+     * @param checkpointId The checkpoint ID
+     * @param finalMetrics Optional final metrics
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    completeCheckpoint(
+        checkpointId: string,
+        finalMetrics?: CheckpointMetadata['metrics'],
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Mark checkpoint as failed
+     * @param checkpointId The checkpoint ID
+     * @param error The error message
+     * @returns Promise resolving to the updated checkpoint or null if not found
+     */
+    failCheckpoint(checkpointId: string, error: string): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Get checkpoint by ID
+     * @param checkpointId The checkpoint ID
+     * @returns Promise resolving to the checkpoint or null if not found
+     */
+    getCheckpoint(checkpointId: string): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Get latest checkpoint for a database
+     * @param database The database source
+     * @param options Optional filters
+     * @returns Promise resolving to the latest checkpoint or null if none found
+     */
+    getLatestCheckpoint(
+        database: DatabaseSource,
+        options?: {
+            /** Filter by status */
+            status?: CheckpointStatus;
+
+            /** Filter by job ID */
+            jobId?: string;
+        },
+    ): Promise<SyncCheckpoint | null>;
+
+    /**
+     * Get checkpoints that can be resumed (active or failed)
+     * @param database Optional database filter
+     * @returns Promise resolving to array of resumable checkpoints
+     */
+    getResumableCheckpoints(database?: DatabaseSource): Promise<SyncCheckpoint[]>;
+
+    /**
+     * Resume sync from a checkpoint
+     * @param checkpointId The checkpoint ID to resume from
+     * @param options Resume options
+     * @returns Promise resolving to sync result
+     */
+    resumeFromCheckpoint(
+        checkpointId: string,
+        options?: {
+            /** Whether to create a new checkpoint for the resumed sync */
+            createNewCheckpoint?: boolean;
+
+            /** Progress callback */
+            onProgress?: SyncProgressCallback;
+        },
+    ): Promise<DatabaseSyncResult>;
+
+    /**
+     * List checkpoints with optional filters
+     * @param options List options
+     * @returns Promise resolving to array of checkpoint summaries
+     */
+    listCheckpoints(options?: {
+        /** Database filter */
+        database?: DatabaseSource;
+
+        /** Status filter */
+        status?: CheckpointStatus;
+
+        /** Job ID filter */
+        jobId?: string;
+
+        /** Limit number of results */
+        limit?: number;
+
+        /** Offset for pagination */
+        offset?: number;
+    }): Promise<CheckpointSummary[]>;
+
+    /**
+     * Delete a checkpoint
+     * @param checkpointId The checkpoint ID
+     * @returns Promise resolving to true if deleted successfully
+     */
+    deleteCheckpoint(checkpointId: string): Promise<boolean>;
+
+    /**
+     * Delete old checkpoints based on retention policy
+     * @param database Optional database filter
+     * @returns Promise resolving to number of checkpoints deleted
+     */
+    cleanupOldCheckpoints(database?: DatabaseSource): Promise<number>;
+
+    /**
+     * Get checkpoint statistics
+     * @returns Promise resolving to checkpoint statistics
+     */
+    getCheckpointStats(): Promise<{
+        /** Total number of checkpoints */
+        total: number;
+
+        /** Number of checkpoints by status */
+        byStatus: Record<CheckpointStatus, number>;
+
+        /** Number of checkpoints by database */
+        byDatabase: Record<DatabaseSource, number>;
+
+        /** Number of resumable checkpoints */
+        resumable: number;
+
+        /** Average progress of active checkpoints */
+        avgActiveProgress: number;
+    }>;
+
+    /**
+     * Validate checkpoint integrity
+     * @param checkpointId The checkpoint ID
+     * @returns Promise resolving to validation result
+     */
+    validateCheckpoint(checkpointId: string): Promise<{
+        /** Whether checkpoint is valid */
+        valid: boolean;
+
+        /** Issues found (if any) */
+        issues?: string[];
+
+        /** Whether checkpoint can be resumed */
+        resumable: boolean;
+    }>;
+
+    /**
+     * Enable or disable checkpoint functionality
+     * @param enabled Whether to enable checkpoints
+     * @param config Optional checkpoint configuration
+     */
+    setCheckpointEnabled(enabled: boolean, config?: Partial<CheckpointConfig>): void;
+
+    /**
+     * Get checkpoint configuration
+     * @returns The checkpoint configuration
+     */
+    getCheckpointConfig(): CheckpointConfig | null;
 
     /**
      * Get configuration
