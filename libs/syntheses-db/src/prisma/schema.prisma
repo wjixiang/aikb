@@ -1,0 +1,580 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// Review Index Tables
+// ============================================================================
+
+/// Main table for storing systematic review and meta-analysis indexes
+model review_index {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title              String   @db.VarChar(1000)
+  alternative_titles String[] @default([])
+
+  review_type        review_type_enum
+  publication_status publication_status_enum
+
+  doi         String? @unique @db.VarChar(255)
+  pmid        String? @unique @db.VarChar(50)
+  cochrane_id String? @unique @db.VarChar(100)
+
+  publication_date  DateTime? @db.Timestamptz(6)
+  last_updated_date DateTime? @db.Timestamptz(6)
+
+  abstract   String?  @db.Text
+  keywords   String[] @default([])
+  mesh_terms String[] @default([])
+
+  research_questions String[] @default([])
+  conclusions        String?  @db.Text
+
+  included_studies_count   Int?
+  total_participants_count Int?
+
+  evidence_quality evidence_quality_enum?
+
+  funding               String[] @default([])
+  conflicts_of_interest String?  @db.Text
+
+  custom_metadata Json?
+
+  content_hash String? @db.VarChar(64)
+
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  authors              review_author[]
+  database_ids         review_database_id[]
+  journal              review_journal?
+  eligibility_criteria review_eligibility_criteria?
+  pico                 review_pico?
+  sync_metadata        review_sync_metadata?
+  quality_assessment   review_quality_assessment?
+  urls                 review_url[]
+  related_reviews      review_related_review[]      @relation("ReviewToRelated")
+  related_by           review_related_review[]      @relation("RelatedToReview")
+  versions             review_version[]
+
+  @@index([review_type])
+  @@index([publication_status])
+  @@index([evidence_quality])
+  @@index([publication_date])
+  @@index([created_at])
+  @@index([content_hash])
+}
+
+/// Review type enumeration
+enum review_type_enum {
+  SYSTEMATIC_REVIEW
+  META_ANALYSIS
+  SYSTEMATIC_REVIEW_WITH_META_ANALYSIS
+  OVERVIEW_OF_REVIEWS
+  SCOPING_REVIEW
+  RAPID_REVIEW
+  NETWORK_META_ANALYSIS
+  LIVING_SYSTEMATIC_REVIEW
+}
+
+/// Publication status enumeration
+enum publication_status_enum {
+  PUBLISHED
+  PREPRINT
+  IN_PROGRESS
+  WITHDRAWN
+  PROTOCOL
+}
+
+/// Evidence quality enumeration (GRADE)
+enum evidence_quality_enum {
+  HIGH
+  MODERATE
+  LOW
+  VERY_LOW
+  NOT_ASSESSED
+}
+
+/// Authors of systematic reviews
+model review_author {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id   String           @db.Uuid
+  name        String           @db.VarChar(500)
+  initials    String?          @db.VarChar(50)
+  affiliation String?          @db.Text
+  orcid       String?          @db.VarChar(100)
+  role        author_role_enum
+  position    Int? // For preserving author order
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id])
+}
+
+/// Author role enumeration
+enum author_role_enum {
+  PRIMARY
+  CORRESPONDING
+  CO_AUTHOR
+  REVIEWER
+}
+
+/// Database identifiers for reviews (cross-database linking)
+model review_database_id {
+  id        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id String               @db.Uuid
+  source    database_source_enum
+  source_id String               @db.VarChar(255) // The actual ID (PMID, DOI, etc.)
+  version   String?              @db.VarChar(100)
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@unique([source, source_id])
+  @@index([review_id])
+  @@index([source])
+}
+
+/// Database source enumeration
+enum database_source_enum {
+  PUBMED
+  COCHRANE
+  EMBASE
+  WEB_OF_SCIENCE
+  SCOPUS
+  PSYCINFO
+  CINAHL
+  CUSTOM
+}
+
+/// Journal information for reviews
+model review_journal {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id      String  @unique @db.Uuid
+  name           String  @db.VarChar(500)
+  abbreviation   String? @db.VarChar(255)
+  issn           String? @db.VarChar(50)
+  eissn          String? @db.VarChar(50)
+  publisher      String? @db.VarChar(500)
+  volume         String? @db.VarChar(50)
+  issue          String? @db.VarChar(50)
+  pages          String? @db.VarChar(100)
+  article_number String? @db.VarChar(100)
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+}
+
+/// Eligibility criteria for reviews
+model review_eligibility_criteria {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id          String   @unique @db.Uuid
+  inclusion_criteria String[] @default([])
+  exclusion_criteria String[] @default([])
+  study_designs      String[] @default([])
+  population         String?  @db.Text
+  intervention       String?  @db.Text
+  comparison         String?  @db.Text
+  outcomes           String[] @default([])
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+}
+
+/// PICO framework elements
+model review_pico {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id    String  @unique @db.Uuid
+  population   String? @db.Text
+  intervention String? @db.Text
+  comparison   String? @db.Text
+  outcome      String? @db.Text
+  study_design String? @db.Text
+  timeframe    String? @db.Text
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+}
+
+/// Synchronization metadata
+model review_sync_metadata {
+  id               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id        String                 @unique @db.Uuid
+  first_synced_at  DateTime               @default(now()) @db.Timestamptz(6)
+  last_synced_at   DateTime               @default(now()) @db.Timestamptz(6)
+  status           sync_status_enum
+  synced_databases database_source_enum[]
+  sync_version     Int                    @default(1)
+  primary_source   database_source_enum
+
+  review       review_index         @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  failed_syncs review_failed_sync[]
+
+  @@index([status])
+  @@index([primary_source])
+}
+
+/// Sync status enumeration
+enum sync_status_enum {
+  SYNCED
+  SYNCING
+  FAILED
+  PARTIAL
+  PENDING
+  STALE
+}
+
+/// Failed sync attempts
+model review_failed_sync {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sync_metadata_id String               @db.Uuid
+  database         database_source_enum
+  error            String               @db.Text
+  failed_at        DateTime             @default(now()) @db.Timestamptz(6)
+  retry_count      Int                  @default(0)
+
+  sync_metadata review_sync_metadata @relation(fields: [sync_metadata_id], references: [id], onDelete: Cascade)
+
+  @@index([sync_metadata_id])
+  @@index([database])
+}
+
+/// Quality assessment for reviews
+model review_quality_assessment {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id     String               @unique @db.Uuid
+  tool          String?              @db.VarChar(100)
+  overall_score Int?
+  max_score     Int?
+  rating        quality_rating_enum?
+  assessed_at   DateTime?            @db.Timestamptz(6)
+  comments      String?              @db.Text
+
+  review        review_index          @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  domain_scores review_domain_score[]
+}
+
+/// Quality rating enumeration
+enum quality_rating_enum {
+  HIGH
+  MODERATE
+  LOW
+  CRITICALLY_LOW
+}
+
+/// Quality assessment domain scores
+model review_domain_score {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessment_id String  @db.Uuid
+  domain        String  @db.VarChar(255)
+  score         Int
+  max_score     Int
+  comments      String? @db.Text
+
+  assessment review_quality_assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  @@index([assessment_id])
+}
+
+/// URLs associated with reviews
+model review_url {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id   String            @db.Uuid
+  type        url_type_enum
+  url         String            @db.VarChar(1000)
+  description String?           @db.Text
+  access      access_level_enum
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id])
+}
+
+/// URL type enumeration
+enum url_type_enum {
+  FULL_TEXT
+  ABSTRACT
+  DATABASE_ENTRY
+  SUPPLEMENTARY
+  PROTOCOL
+  PREPRINT
+  PUBLISHER
+}
+
+/// Access level enumeration
+enum access_level_enum {
+  OPEN
+  SUBSCRIPTION
+  PAY_PER_VIEW
+  UNKNOWN
+}
+
+/// Related reviews (duplicates, updates, etc.)
+model review_related_review {
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id    String                   @db.Uuid
+  related_id   String                   @db.Uuid
+  relationship review_relationship_enum
+  description  String?                  @db.Text
+
+  review         review_index @relation("ReviewToRelated", fields: [review_id], references: [id], onDelete: Cascade)
+  related_review review_index @relation("RelatedToReview", fields: [related_id], references: [id], onDelete: Cascade)
+
+  @@unique([review_id, related_id])
+  @@index([review_id])
+  @@index([related_id])
+  @@index([relationship])
+}
+
+/// Review relationship enumeration
+enum review_relationship_enum {
+  UPDATE
+  PREVIOUS_VERSION
+  DUPLICATE
+  SIMILAR_TOPIC
+  COMPANION
+  CORRECTION
+  WITHDRAWN_BY
+}
+
+/// Version history for reviews
+model review_version {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id     String   @db.Uuid
+  version       String   @db.VarChar(100)
+  review_data   Json // Store complete review data as JSON
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  change_reason String?  @db.Text
+  changed_by    String?  @db.VarChar(255)
+
+  review review_index @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@unique([review_id, version])
+  @@index([review_id])
+  @@index([created_at])
+}
+
+// ============================================================================
+// Sync Job Tables
+// ============================================================================
+
+/// Synchronization job tracking
+model sync_job {
+  id                       String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  database                 database_source_enum
+  status                   sync_job_status_enum
+  created_at               DateTime             @default(now()) @db.Timestamptz(6)
+  started_at               DateTime?            @db.Timestamptz(6)
+  completed_at             DateTime?            @db.Timestamptz(6)
+  records_processed        Int                  @default(0)
+  new_records              Int                  @default(0)
+  updated_records          Int                  @default(0)
+  failed_records           Int                  @default(0)
+  error                    String?              @db.Text
+  progress                 Int                  @default(0) // 0-100
+  estimated_time_remaining Int?
+
+  checkpoints sync_checkpoint[]
+
+  @@index([database])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Sync job status enumeration
+enum sync_job_status_enum {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// Checkpoint Tables
+// ============================================================================
+
+/// Checkpoints for resumable synchronization
+model sync_checkpoint {
+  id                      String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  database                database_source_enum
+  job_id                  String                 @db.VarChar(255)
+  status                  checkpoint_status_enum
+  position_type           position_type_enum
+  position_offset         Int?
+  position_last_source_id String?                @db.VarChar(255)
+  position_last_timestamp DateTime?              @db.Timestamptz(6)
+  position_page           Int?
+  position_custom_data    Json?
+
+  processed_count Int  @default(0)
+  total_count     Int?
+
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at DateTime? @db.Timestamptz(6)
+
+  error String? @db.Text
+
+  // Metadata stored as JSON
+  sync_options                     Json?
+  metrics_records_per_second       Float?
+  metrics_avg_processing_time      Int?
+  metrics_estimated_time_remaining Int?
+  quality_failed_transformations   Int?
+  quality_duplicates_detected      Int?
+  quality_quality_issues           Int?
+
+  job sync_job? @relation(fields: [job_id], references: [id], onDelete: SetNull)
+
+  @@index([database])
+  @@index([job_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Checkpoint status enumeration
+enum checkpoint_status_enum {
+  ACTIVE
+  COMPLETED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+/// Position type enumeration
+enum position_type_enum {
+  OFFSET
+  PAGE
+  CURSOR_ID
+  TIMESTAMP
+  CUSTOM
+}
+
+// ============================================================================
+// Sync Configuration Tables
+// ============================================================================
+
+/// Database-specific sync configuration
+model database_sync_config {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source         database_source_enum @unique
+  enabled        Boolean              @default(true)
+  endpoint       String?              @db.VarChar(500)
+  api_key        String?              @db.VarChar(255)
+  sync_schedule  String?              @db.VarChar(100) // Cron expression
+  batch_size     Int                  @default(100)
+  timeout        Int                  @default(30000) // milliseconds
+  rate_limit     Int? // requests per minute
+  query_params   Json?
+  field_mappings Json?
+
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([enabled])
+}
+
+/// Overall sync configuration
+model sync_config {
+  id                        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sync_version              Int     @default(1)
+  enable_deduplication      Boolean @default(true)
+  deduplication_threshold   Float?
+  enable_quality_assessment Boolean @default(true)
+  default_quality_tool      String? @db.VarChar(100)
+
+  // Retention policy
+  retention_max_versions Int?
+  retention_max_age_days Int?
+  retention_archive_old  Boolean @default(false)
+
+  // Notification settings
+  notification_email_enabled    Boolean  @default(false)
+  notification_email_recipients String[]
+  notification_email_events     String[]
+  notification_webhook_enabled  Boolean  @default(false)
+  notification_webhook_url      String?  @db.VarChar(500)
+  notification_webhook_events   String[]
+  notification_webhook_secret   String?  @db.VarChar(255)
+
+  // Checkpoint configuration
+  checkpoint_enabled                    Boolean @default(false)
+  checkpoint_interval                   Int?
+  checkpoint_max_checkpoints            Int?
+  checkpoint_auto_resume                Boolean @default(false)
+  checkpoint_retention_max_age_days     Int?
+  checkpoint_retention_keep_latest_only Boolean @default(false)
+  checkpoint_retention_keep_completed   Boolean @default(true)
+
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  config_versions sync_config_version[]
+}
+
+/// Configuration version history
+model sync_config_version {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  config_id   String   @db.Uuid
+  version     Int
+  config_data Json // Store complete config as JSON
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_by  String?  @db.VarChar(255)
+
+  sync_config sync_config @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@unique([config_id, version])
+  @@index([config_id])
+  @@index([updated_at])
+}
+
+// ============================================================================
+// Export Tables
+// ============================================================================
+
+/// Export job tracking
+model export_job {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  format       export_format_enum
+  record_count Int                @default(0)
+  file_size    BigInt             @default(0)
+  download_url String             @db.VarChar(1000)
+  created_at   DateTime           @default(now()) @db.Timestamptz(6)
+  expires_at   DateTime           @db.Timestamptz(6)
+
+  // Export options stored as JSON
+  options Json?
+
+  @@index([created_at])
+  @@index([expires_at])
+}
+
+/// Export format enumeration
+enum export_format_enum {
+  JSON
+  CSV
+  EXCEL
+  XML
+  BIBTEX
+  RIS
+}
+
+// ============================================================================
+// Duplicate Detection Tables
+// ============================================================================
+
+/// Duplicate review pairs
+model duplicate_review_pair {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review1_id String   @db.Uuid
+  review2_id String   @db.Uuid
+  similarity Float // 0-1
+  confidence Float // 0-1
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([review1_id, review2_id])
+  @@index([similarity])
+  @@index([created_at])
+}
