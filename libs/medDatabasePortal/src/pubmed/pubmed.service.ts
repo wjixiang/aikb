@@ -117,12 +117,12 @@ export interface PubmedSearchParams {
 }
 
 export interface ArticleProfile {
+    doi: string | null;
     pmid: string;
     title: string;
     authors: string;
     journalCitation: string;
     snippet: string;
-    docsumLink: string;
     position?: number;
 }
 
@@ -212,7 +212,7 @@ export class PubmedService {
 
         // Get total pages
         let convertedTotalPagesResult = this.getTotalPages($)
-        console.log('convertedTotalPagesResult', convertedTotalPagesResult)
+        // console.log('convertedTotalPagesResult', convertedTotalPagesResult)
 
         // Get article profile list
         const articleProfiles = this.getArticleProfileList($);
@@ -271,6 +271,7 @@ export class PubmedService {
             articleElements.each((index, element) => {
                 const $article = cheerio.load(element);
 
+
                 // Extract PMID from checkbox value or docsum-pmid
                 const checkbox = $article('input.search-result-selector');
                 const pmidFromCheckbox = checkbox.attr('value');
@@ -290,26 +291,31 @@ export class PubmedService {
                 const shortJournal = $article('.docsum-journal-citation.short-journal-citation').text().trim();
                 const journalCitation = fullJournal || shortJournal || '';
 
+                const doiMatch = journalCitation.match(/10\.\d{4}\/[^\s]+(?<![.,;:!?)(\]\'])/)
+                let doi;
+                if (!doiMatch) {
+                    doi = null
+                    // throw new Error('parse search result failed: cannot extract doi from full Journal from: ' + journalCitation)
+                } else {
+                    doi = doiMatch[0]
+                }
+
                 // Extract snippet (prefer full view, fallback to short view)
                 const fullSnippet = $article('.full-view-snippet').text().trim();
                 const shortSnippet = $article('.short-view-snippet').text().trim();
                 const snippet = fullSnippet || shortSnippet || '';
-
-                // Extract docsum link
-                const docsumLinkElement = $article('a.docsum-title');
-                const docsumLink = docsumLinkElement.attr('href') || '';
 
                 // Extract position number
                 const positionText = $article('.position-number').text().trim();
                 const position = positionText ? parseInt(positionText, 10) : undefined;
 
                 articleProfiles.push({
+                    doi,
                     pmid,
                     title,
                     authors,
                     journalCitation,
                     snippet,
-                    docsumLink,
                     position
                 });
             });
@@ -325,7 +331,7 @@ export class PubmedService {
     async loadArticle(pmid: string): Promise<cheerio.CheerioAPI> {
         try {
             const response = await this.axiosClient.get(`/${pmid}`)
-            console.log(response.data)
+            // console.log(response.data)
             const $ = cheerio.load(response.data)
             return $
         } catch (error) {

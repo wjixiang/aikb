@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import { vi, type Mock } from 'vitest';
 import {
   UmlsService,
   UmlsInputType,
@@ -43,7 +44,7 @@ describe('UmlsService', () => {
 
   beforeEach(async () => {
     const mockHttpService = {
-      get: jest.fn(),
+      get: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -69,7 +70,7 @@ describe('UmlsService', () => {
         apiKey: mockApiKey,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result$ = service.search(params);
       result$.subscribe((response) => {
@@ -98,11 +99,11 @@ describe('UmlsService', () => {
         pageSize: 100,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       service.search(params).subscribe();
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('inputType=code');
       expect(calledUrl).toContain('searchType=exact');
       expect(calledUrl).toContain('returnIdType=code');
@@ -121,7 +122,7 @@ describe('UmlsService', () => {
         apiKey: mockApiKey,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result = await service.searchFirstPage(params);
       expect(result).toEqual(mockResponse.data);
@@ -133,7 +134,7 @@ describe('UmlsService', () => {
         apiKey: mockApiKey,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(of(undefined as any));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(undefined as any));
 
       await expect(service.searchFirstPage(params)).rejects.toThrow(
         'No response received from UMLS API',
@@ -143,25 +144,25 @@ describe('UmlsService', () => {
 
   describe('searchByTerm', () => {
     it('should search for CUIs by term', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result = await service.searchByTerm('fracture', mockApiKey);
       expect(result).toEqual(mockResponse.data);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('string=fracture');
       expect(calledUrl).toContain('returnIdType=concept');
     });
 
     it('should accept additional options', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service.searchByTerm('fracture', mockApiKey, {
         searchType: UmlsSearchType.EXACT,
         sabs: ['SNOMEDCT_US'],
       });
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('searchType=exact');
       expect(calledUrl).toContain('sabs=SNOMEDCT_US');
     });
@@ -169,24 +170,24 @@ describe('UmlsService', () => {
 
   describe('searchForCodes', () => {
     it('should search for source-asserted identifiers', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result = await service.searchForCodes('fracture', mockApiKey, [
         'SNOMEDCT_US',
       ]);
       expect(result).toEqual(mockResponse.data);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('returnIdType=code');
       expect(calledUrl).toContain('sabs=SNOMEDCT_US');
     });
 
     it('should work with empty sabs array', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service.searchForCodes('fracture', mockApiKey);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('returnIdType=code');
       expect(calledUrl).not.toContain('sabs=');
     });
@@ -194,7 +195,7 @@ describe('UmlsService', () => {
 
   describe('mapCodeToCui', () => {
     it('should map source code to UMLS CUI', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result = await service.mapCodeToCui(
         '9468002',
@@ -203,7 +204,7 @@ describe('UmlsService', () => {
       );
       expect(result).toEqual(mockResponse.data);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('string=9468002');
       expect(calledUrl).toContain('inputType=sourceUi');
       expect(calledUrl).toContain('searchType=exact');
@@ -214,7 +215,7 @@ describe('UmlsService', () => {
 
   describe('mapCuiToCodes', () => {
     it('should map UMLS CUI to source codes', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       const result = await service.mapCuiToCodes(
         'C0009044',
@@ -223,7 +224,7 @@ describe('UmlsService', () => {
       );
       expect(result).toEqual(mockResponse.data);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('string=C0009044');
       expect(calledUrl).toContain('sabs=SNOMEDCT_US');
       expect(calledUrl).toContain('returnIdType=code');
@@ -232,18 +233,18 @@ describe('UmlsService', () => {
 
   describe('URL building', () => {
     it('should use correct base URL and version', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service.searchByTerm('test', mockApiKey);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain(
         'https://uts-ws.nlm.nih.gov/rest/search/current',
       );
     });
 
     it('should use custom version when specified', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service
         .search({
@@ -253,27 +254,27 @@ describe('UmlsService', () => {
         })
         .subscribe();
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain(
         'https://uts-ws.nlm.nih.gov/rest/search/2023AB',
       );
     });
 
     it('should use default pageSize of 200 when not specified', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service.searchByTerm('test', mockApiKey);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('pageSize=200');
     });
 
     it('should properly encode special characters in search string', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
+      vi.spyOn(httpService, 'get').mockReturnValue(of(mockResponse));
 
       await service.searchByTerm('fracture of carpal bone', mockApiKey);
 
-      const calledUrl = (httpService.get as jest.Mock).mock.calls[0][0];
+      const calledUrl = (httpService.get as Mock).mock.calls[0][0];
       expect(calledUrl).toContain('string=fracture+of+carpal+bone');
     });
   });

@@ -40,7 +40,7 @@ describe('PubmedService', () => {
     expect(result).toBe('?term=%28hypertension%5BTitle%5D%29+AND+%28food%5BText+Word%5D%29')
   })
 
-  it('should get articles', async () => {
+  it.only('should get articles from search result page', async () => {
     const $ = cheerio.load(testPubmedWebStr)
     const articles = service.getArticleProfileList($)
     console.log(articles)
@@ -60,6 +60,8 @@ describe('PubmedService', () => {
     expect(articles[0].authors).toContain('Gumz ML')
     expect(articles[0].journalCitation).toContain('10.1161/HYPERTENSIONAHA.121.14519.')
     expect(articles[0].snippet).toContain('Circadian rhythms')
+    expect(articles[0].doi).toBe('10.1161/HYPERTENSIONAHA.121.14519')
+
   })
 
   it('load article detail page, scrape basic information', async () => {
@@ -72,7 +74,7 @@ describe('PubmedService', () => {
 
   })
 
-  it.only('should get total pages', async () => {
+  it('should get total pages', async () => {
     const $ = cheerio.load(testPubmedWebStr)
     const totalPages = service.getTotalPages($)
 

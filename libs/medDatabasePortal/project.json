@@ -1,7 +1,7 @@
 {
-  "name": "NIH-client",
+  "name": "medDatabasePortal",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/NIH-client/src",
+  "sourceRoot": "libs/medDatabasePortal/src",
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project meSH-client --web",
@@ -10,7 +10,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "options": {
-        "jestConfig": "libs/NIH-client/jest.config.e2e.js",
+        "jestConfig": "libs/medDatabasePortal/jest.config.e2e.js",
         "passWithNoTests": true
       }
     },
@@ -18,7 +18,7 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../../coverage/libs/NIH-client"
+        "reportsDirectory": "../../coverage/libs/medDatabasePortal"
       }
     }
   }
