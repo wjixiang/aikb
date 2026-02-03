@@ -2,7 +2,7 @@ import * as z from 'zod'
 import {
     FieldConstraint,
     RetrivalStrategy
-} from 'nih-client'
+} from '@/libs/medDatabasePortal/src'
 
 /**
  * Recursive schema for retrieval strategy

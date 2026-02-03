@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { BibliographySearchComponent } from '../bibliographySearch/bibliographySearchComponent';
+import { BibliographySearchComponent } from '../bibliographySearchComponent';
 
-import { searchPubmedParamsType } from '../bibliographySearch/bibliographySearchSchemas';
+import { searchPubmedParamsType } from '../bibliographySearchSchemas';
 
 describe(BibliographySearchComponent, () => {
     let component: BibliographySearchComponent
@@ -36,5 +36,10 @@ describe(BibliographySearchComponent, () => {
         // console.log((await component.render()).render())
         const renderedSearchResult = component.renderSearchResults().render()
         console.log(renderedSearchResult)
+    })
+
+    it('should render tool box correctly', async () => {
+        const toolbox = component.renderToolSection().render()
+        console.log(toolbox)
     })
 })

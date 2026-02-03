@@ -64,7 +64,7 @@
         "libs/knowledgeBase/knowledgeBase-lib/src/index.ts"
       ],
       "knowledgeBase-db": ["libs/knowledgeBase/knowledge-db/src/index.ts"],
-      "nih-client": ["libs/NIH-client/src/index.ts"],
+      "medDatabasePortal": ["libs/medDatabasePortal/src/index.ts"],
       "EmbeddingModule": ["libs/EmbeddingModule/src/index.ts"],
       "entity-db": ["libs/knowledgeBase/knowledge-db/entity-db/src/index.ts"],
       "property-db": [

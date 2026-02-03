@@ -9,7 +9,7 @@ import {
     FullTextSource,
     renderRetrivalStrategy,
     RetrivalStrategy
-} from 'nih-client'
+} from '@/libs/medDatabasePortal/src'
 import { createBibliographySearchToolSet } from './bibliographySearchTools'
 
 export class BibliographySearchComponent extends ToolComponent {
