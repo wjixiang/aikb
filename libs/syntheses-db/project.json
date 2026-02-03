@@ -1,0 +1,70 @@
+{
+  "name": "syntheses-db",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/syntheses-db/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project syntheses-db --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/syntheses-db",
+        "main": "libs/syntheses-db/src/index.ts",
+        "tsConfig": "libs/syntheses-db/tsconfig.lib.json",
+        "assets": ["libs/syntheses-db/*.md"]
+      },
+      "dependsOn": ["gen-client"]
+    },
+    "db-pull": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "gen-client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma generate --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "reset-db": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "migrate-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma studio",
+        "cwd": "libs/syntheses-db"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate deploy",
+        "cwd": "libs/syntheses-db"
+      }
+    }
+  }
+}

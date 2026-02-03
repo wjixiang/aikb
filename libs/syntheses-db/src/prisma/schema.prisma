@@ -374,8 +374,8 @@ model sync_job {
   error                    String?              @db.Text
   progress                 Int                  @default(0) // 0-100
   estimated_time_remaining Int?
-
-  checkpoints sync_checkpoint[]
+  checkpoints              SyncCheckpoint[]     @relation("JobCheckpoints")
+  syncCheckpoints          SyncCheckpoint[]     @relation("SyncJobCheckpoints")
 
   @@index([database])
   @@index([status])
@@ -396,10 +396,10 @@ enum sync_job_status_enum {
 // ============================================================================
 
 /// Checkpoints for resumable synchronization
-model sync_checkpoint {
+model SyncCheckpoint {
   id                      String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   database                database_source_enum
-  job_id                  String                 @db.VarChar(255)
+  job_id                  String                 @db.Uuid
   status                  checkpoint_status_enum
   position_type           position_type_enum
   position_offset         Int?
@@ -426,7 +426,9 @@ model sync_checkpoint {
   quality_duplicates_detected      Int?
   quality_quality_issues           Int?
 
-  job sync_job? @relation(fields: [job_id], references: [id], onDelete: SetNull)
+  job        sync_job? @relation("JobCheckpoints", fields: [job_id], references: [id], onDelete: SetNull)
+  syncJob    sync_job? @relation("SyncJobCheckpoints", fields: [sync_jobId], references: [id])
+  sync_jobId String?   @db.Uuid
 
   @@index([database])
   @@index([job_id])
