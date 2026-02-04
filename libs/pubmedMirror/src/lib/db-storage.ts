@@ -5,6 +5,11 @@ import { XMLParser } from 'fast-xml-parser';
 import { PrismaClient } from '../generated/prisma/client.js';
 import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import {
+    createArticleRepository,
+    IArticleRepository,
+    type SyncArticleResult,
+} from './article-repository.js';
 
 const gunzip = promisify(zlib.gunzip);
 
@@ -303,23 +308,14 @@ const transformPubMedData = (pmid: number, data?: PubMedData) => {
 // ============================================================================
 
 /**
- * Result of syncing a single article
- */
-interface SyncArticleResult {
-    pmid: number;
-    success: boolean;
-    error?: string;
-}
-
-/**
  * Sync a single PubmedArticle to the database
  * @param article - The PubmedArticle to sync
- * @param prisma - The Prisma client instance
+ * @param repository - The article repository instance
  * @returns Result of the sync operation
  */
 const syncSingleArticle = async (
     article: PubmedArticle,
-    prisma: PrismaClient
+    repository: IArticleRepository
 ): Promise<SyncArticleResult> => {
     const medlineCitation = article.MedlineCitation;
     if (!medlineCitation) {
@@ -342,109 +338,28 @@ const syncSingleArticle = async (
     }
 
     try {
-        // Use transaction to ensure data consistency
-        await prisma.$transaction(async (tx) => {
-            // Upsert MedlineCitation
-            const citationData = transformMedlineCitation(medlineCitation);
-            await tx.medlineCitation.upsert({
-                where: { pmid },
-                create: citationData,
-                update: citationData,
-            });
+        // Transform all data
+        const citationData = transformMedlineCitation(medlineCitation);
+        const articleData = transformArticle(pmid, medlineCitation.Article);
+        const authors = transformAuthors(0, medlineCitation.Article?.AuthorList); // articleId will be set by repository
+        const grants = transformGrants(0, medlineCitation.Article?.GrantList); // articleId will be set by repository
+        const journalInfoData = transformMedlineJournalInfo(pmid, medlineCitation.MedlineJournalInfo);
+        const chemicals = transformChemicals(pmid, medlineCitation.ChemicalList);
+        const meshHeadings = transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
+        const pubmedData = transformPubMedData(pmid, article.PubmedData);
 
-            // Upsert Article
-            const articleData = transformArticle(pmid, medlineCitation.Article);
-            if (articleData) {
-                const existingArticle = await tx.article.findUnique({
-                    where: { pmid },
-                });
-
-                let articleId: number;
-                if (existingArticle) {
-                    await tx.article.update({
-                        where: { pmid },
-                        data: articleData,
-                    });
-
-                    // Delete and recreate authors and grants
-                    await tx.author.deleteMany({
-                        where: { articleId: existingArticle.id },
-                    });
-                    await tx.grant.deleteMany({
-                        where: { articleId: existingArticle.id },
-                    });
-                    articleId = existingArticle.id;
-                } else {
-                    const created = await tx.article.create({
-                        data: articleData,
-                    });
-                    articleId = created.id;
-                }
-
-                // Create authors
-                const authors = transformAuthors(articleId, medlineCitation.Article?.AuthorList);
-                if (authors.length > 0) {
-                    await tx.author.createMany({
-                        data: authors,
-                        skipDuplicates: true,
-                    });
-                }
-
-                // Create grants
-                const grants = transformGrants(articleId, medlineCitation.Article?.GrantList);
-                if (grants.length > 0) {
-                    await tx.grant.createMany({
-                        data: grants,
-                        skipDuplicates: true,
-                    });
-                }
-            }
-
-            // Upsert MedlineJournalInfo
-            const journalInfoData = transformMedlineJournalInfo(pmid, medlineCitation.MedlineJournalInfo);
-            if (journalInfoData) {
-                await tx.medlineJournalInfo.upsert({
-                    where: { pmid },
-                    create: journalInfoData,
-                    update: journalInfoData,
-                });
-            }
-
-            // Delete and recreate chemicals
-            await tx.chemical.deleteMany({ where: { pmid } });
-            const chemicals = transformChemicals(pmid, medlineCitation.ChemicalList);
-            if (chemicals.length > 0) {
-                await tx.chemical.createMany({
-                    data: chemicals,
-                    skipDuplicates: true,
-                });
-            }
-
-            // Delete and recreate mesh headings
-            await tx.meshHeading.deleteMany({ where: { pmid } });
-            const meshHeadings = transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
-            if (meshHeadings.length > 0) {
-                await tx.meshHeading.createMany({
-                    data: meshHeadings,
-                    skipDuplicates: true,
-                });
-            }
-
-            // Upsert PubMedData
-            const pubmedData = transformPubMedData(pmid, article.PubmedData);
-            if (pubmedData) {
-                await tx.pubMedData.upsert({
-                    where: { pmid },
-                    create: pubmedData,
-                    update: pubmedData,
-                });
-            }
-        });
-
-        return {
+        // Use repository to sync all data
+        return await repository.syncArticle(
             pmid,
-            success: true,
-        };
+            citationData,
+            articleData,
+            authors,
+            grants,
+            journalInfoData,
+            chemicals,
+            meshHeadings,
+            pubmedData
+        );
     } catch (error) {
         return {
             pmid,
@@ -462,6 +377,7 @@ const syncSingleArticle = async (
  */
 export const syncFileToDb = async (year: string, fileName: string) => {
     const prisma = getPrismaClient();
+    const repository = createArticleRepository(prisma);
 
     // Download and decompress the file
     const buffer = await downloadBaselineFile(fileName, year);
@@ -497,7 +413,7 @@ export const syncFileToDb = async (year: string, fileName: string) => {
         const batch = pubmedArticles.slice(i, i + batchSize);
 
         for (const article of batch) {
-            const result = await syncSingleArticle(article, prisma);
+            const result = await syncSingleArticle(article, repository);
 
             // Skip articles without valid PMID
             if (result.pmid === 0 && !result.success) {
