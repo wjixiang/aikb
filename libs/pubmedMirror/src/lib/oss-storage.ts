@@ -52,6 +52,7 @@ const createS3Client = (): S3Client => {
             secretAccessKey: config.s3SecretAccessKey || '',
         },
         region: config.s3Region,
+        maxAttempts: 3,
     };
 
     return new S3Client(clientConfig);

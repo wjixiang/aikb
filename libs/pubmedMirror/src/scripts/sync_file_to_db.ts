@@ -1,8 +1,43 @@
 import { config } from 'dotenv';
 import { syncFileToDb, closePrismaClient } from '../lib/db-storage.js';
+import { fileExistsInOSS } from '../lib/oss-storage.js';
 
 // Load environment variables
 config();
+
+/**
+ * Test if file exists in OSS
+ */
+async function checkFileExists(year: string, fileName: string): Promise<boolean> {
+    try {
+        console.log(`Checking if file exists in OSS: baseline/${year}/${fileName}`);
+        const exists = await fileExistsInOSS(fileName, year);
+        if (exists) {
+            console.log(`✓ File found in OSS`);
+            return true;
+        } else {
+            console.error(`✗ File not found in OSS: baseline/${year}/${fileName}`);
+            console.error('\nTroubleshooting tips:');
+            console.error('  1. Verify the filename is correct');
+            console.error('  2. Check if the file has been synced to OSS');
+            console.error('  3. Use sync_baseline.ts to sync from FTP first');
+            return false;
+        }
+    } catch (error) {
+        console.error('✗ OSS connection failed:');
+        if (error instanceof Error) {
+            console.error(`  Error: ${error.message}`);
+            if ('code' in error) {
+                console.error(`  Code: ${(error as any).code}`);
+            }
+        }
+        console.error('\nTroubleshooting tips:');
+        console.error('  1. Check if S3_ENDPOINT is correct in .env file');
+        console.error('  2. Verify network connectivity from devcontainer');
+        console.error('  3. Check if OSS credentials are valid');
+        return false;
+    }
+}
 
 /**
  * Main function to sync a single OSS file to database
@@ -26,6 +61,13 @@ async function main() {
 
     console.log(`Starting sync of ${fileName} from OSS to database...`);
     console.log('========================================');
+
+    // Check if file exists first
+    const fileExists = await checkFileExists(year, fileName);
+    if (!fileExists) {
+        process.exit(1);
+    }
+    console.log();
 
     try {
         const results = await syncFileToDb(year, fileName);
