@@ -188,18 +188,26 @@ export class PrismaArticleRepository implements IArticleRepository {
                         articleId = created.id;
                     }
 
-                    // Create authors
+                    // Create authors with correct articleId
                     if (authors.length > 0) {
+                        const authorsWithCorrectId = authors.map(author => ({
+                            ...author,
+                            articleId,
+                        }));
                         await tx.author.createMany({
-                            data: authors,
+                            data: authorsWithCorrectId,
                             skipDuplicates: true,
                         });
                     }
 
-                    // Create grants
+                    // Create grants with correct articleId
                     if (grants.length > 0) {
+                        const grantsWithCorrectId = grants.map(grant => ({
+                            ...grant,
+                            articleId,
+                        }));
                         await tx.grant.createMany({
-                            data: grants,
+                            data: grantsWithCorrectId,
                             skipDuplicates: true,
                         });
                     }
