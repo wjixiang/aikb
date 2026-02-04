@@ -1,15 +1,16 @@
 import { Client, FileInfo } from 'basic-ftp';
-import {
-    S3Client,
-    PutObjectCommand,
-    ListObjectsV2Command,
-    HeadObjectCommand,
-    S3ClientConfig,
-} from '@aws-sdk/client-s3';
 import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
 import { SyncResult } from './types';
+import {
+    getS3Client,
+    uploadToOSS,
+    listSyncedFiles,
+    fileExistsInOSS,
+    getBucketName,
+} from './oss-storage';
+import Bottleneck from 'bottleneck'
 
 // ============================================================================
 // Configuration
@@ -18,28 +19,12 @@ import { SyncResult } from './types';
 interface PubmedMirrorConfig {
     ftpHost: string;
     ftpBaselinePath: string;
-    bucketName: string;
-    s3Endpoint?: string;
-    s3AccessKeyId?: string;
-    s3SecretAccessKey?: string;
-    s3Region?: string;
 }
 
 const createConfig = (): PubmedMirrorConfig => {
-    const bucketName = process.env['MIRROR_BUCKET_NAME'] || 'pubmed-mirror';
-    const s3Endpoint = process.env['S3_ENDPOINT'];
-    const s3AccessKeyId = process.env['S3_ACCESS_KEY_ID'];
-    const s3SecretAccessKey = process.env['S3_SECRET_ACCESS_KEY'];
-    const s3Region = process.env['S3_REGION'] || 'oss-cn-beijing';
-
     return {
         ftpHost: 'ftp.ncbi.nlm.nih.gov',
         ftpBaselinePath: 'pubmed/baseline',
-        bucketName,
-        s3Endpoint,
-        s3AccessKeyId,
-        s3SecretAccessKey,
-        s3Region,
     };
 };
 
@@ -57,36 +42,10 @@ const getCurrentYear = (): string => new Date().getFullYear().toString();
 /**
  * Create and configure a new FTP client
  */
-const createFtpClient = (verbose = true): Client => {
+const createFtpClient = (verbose = false): Client => {
     const client = new Client();
     client.ftp.verbose = verbose;
     return client;
-};
-
-/**
- * Create S3 client with configuration
- */
-const createS3Client = (): S3Client => {
-    const clientConfig: S3ClientConfig = {
-        endpoint: config.s3Endpoint,
-        credentials: {
-            accessKeyId: config.s3AccessKeyId || '',
-            secretAccessKey: config.s3SecretAccessKey || '',
-        },
-        region: config.s3Region,
-    };
-
-    return new S3Client(clientConfig);
-};
-
-// S3 client singleton
-let s3ClientInstance: S3Client | null = null;
-
-const getS3Client = (): S3Client => {
-    if (!s3ClientInstance) {
-        s3ClientInstance = createS3Client();
-    }
-    return s3ClientInstance;
 };
 
 // ============================================================================
@@ -120,85 +79,25 @@ export const listPubmedAnnualIndexViaFtp = async (): Promise<FileInfo[]> => {
 };
 
 // ============================================================================
-// S3/OSS Operations
-// ============================================================================
-
-/**
- * Upload file buffer to OSS
- */
-const uploadToOSS = async (key: string, buffer: Buffer, year: string): Promise<void> => {
-    const command = new PutObjectCommand({
-        Bucket: config.bucketName,
-        Key: `baseline/${year}/${key}`,
-        Body: buffer,
-        ContentType: 'application/gzip',
-    });
-
-    await getS3Client().send(command);
-};
-
-/**
- * List all files already synced to OSS for a specific year
- */
-const listSyncedFiles = async (year: string): Promise<string[]> => {
-    const files: string[] = [];
-    let continuationToken: string | undefined = undefined;
-
-    do {
-        const command = new ListObjectsV2Command({
-            Bucket: config.bucketName,
-            Prefix: `baseline/${year}`,
-            ContinuationToken: continuationToken,
-        });
-
-        const response = await getS3Client().send(command);
-
-        if (response.Contents) {
-            for (const object of response.Contents) {
-                if (object.Key) {
-                    // Remove 'baseline/{year}' prefix to get filename
-                    const filename = object.Key.replace(`baseline/${year}`, '');
-                    if (filename) {
-                        files.push(filename);
-                    }
-                }
-            }
-        }
-
-        continuationToken = response.NextContinuationToken as string | undefined;
-    } while (continuationToken);
-
-    return files;
-};
-
-/**
- * Check if a file exists in OSS
- */
-const fileExistsInOSS = async (filename: string, year: string): Promise<boolean> => {
-    try {
-        const command = new HeadObjectCommand({
-            Bucket: config.bucketName,
-            Key: `baseline/${year}/${filename}`,
-        });
-
-        await getS3Client().send(command);
-        return true;
-    } catch {
-        return false;
-    }
-};
-
-// ============================================================================
 // File Sync Operations
 // ============================================================================
 
 /**
- * Download a file from FTP and upload it to OSS
+ * Sleep for a specified number of milliseconds
+ */
+const sleep = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+/**
+ * Download a file from FTP and upload it to OSS with retry logic
  */
 const downloadAndUploadFile = async (
     ftpClient: Client,
     filename: string,
     year: string,
+    attempt: number = 1,
+    maxAttempts: number = 3,
 ): Promise<void> => {
     const tempDir = tmpdir();
     const tempFilePath = path.join(tempDir, filename);
@@ -212,6 +111,24 @@ const downloadAndUploadFile = async (
 
         // Upload to OSS with year prefix
         await uploadToOSS(filename, buffer, year);
+    } catch (error) {
+        if (attempt < maxAttempts) {
+            // Exponential backoff: 2^attempt seconds
+            const backoffTime = Math.pow(2, attempt) * 1000;
+            console.warn(
+                `Attempt ${attempt}/${maxAttempts} failed for ${filename}. ` +
+                `Retrying in ${backoffTime}ms... Error: ${error}`
+            );
+            await sleep(backoffTime);
+
+            // Clean up temp file before retry
+            if (fs.existsSync(tempFilePath)) {
+                fs.unlinkSync(tempFilePath);
+            }
+
+            return downloadAndUploadFile(ftpClient, filename, year, attempt + 1, maxAttempts);
+        }
+        throw error;
     } finally {
         // Clean up temporary file
         if (fs.existsSync(tempFilePath)) {
@@ -220,12 +137,21 @@ const downloadAndUploadFile = async (
     }
 };
 
+interface FileSyncTask {
+    file: FileInfo;
+    retry: number;
+}
+
 /**
  * Sync all pending annual PubMed baseline files from FTP to OSS
  * @param year - The year to sync files for (defaults to current year)
+ * @param maxRetries - Maximum number of retry attempts per file (default: 3)
  * @returns Sync result with total, success, and error counts
  */
-export const syncAnnualPubmedIndexFiles = async (year?: string): Promise<SyncResult> => {
+export const syncAnnualPubmedIndexFiles = async (
+    year?: string,
+    maxRetries: number = 3,
+): Promise<SyncResult> => {
     const targetYear = year || getCurrentYear();
     const ftpClient = createFtpClient();
 
@@ -242,35 +168,95 @@ export const syncAnnualPubmedIndexFiles = async (year?: string): Promise<SyncRes
         const syncedFileNames = new Set(syncedFiles);
 
         // Filter files that need to be synced
-        const filesToSync = files.filter((file) => {
+        const initialFilesToSync = files.filter((file) => {
             if (!file.name.endsWith('.gz')) return false;
             return !syncedFileNames.has(file.name);
         });
 
         console.log(
-            `Need to sync ${filesToSync.length} files (${files.length - filesToSync.length} already synced)`,
+            `Need to sync ${initialFilesToSync.length} files (${files.length - initialFilesToSync.length} already synced)`,
         );
 
-        // Sync files
+        // Sync files with retry mechanism
         let successCount = 0;
         let errorCount = 0;
+        const totalFiles = initialFilesToSync.length;
 
-        for (const file of filesToSync) {
-            try {
-                console.log(`Downloading and uploading ${file.name}...`);
-                await downloadAndUploadFile(ftpClient, file.name, targetYear);
-                successCount++;
-                console.log(`Successfully synced ${file.name}`);
-            } catch (error) {
-                errorCount++;
-                console.error(`Failed to sync ${file.name}:`, error);
+        // Create a queue for files to sync
+        let filesToSync: FileSyncTask[] = initialFilesToSync.map((file) => ({
+            file,
+            retry: 0,
+        }));
+
+        const limiter = new Bottleneck({
+            minTime: 333,
+            maxConcurrent: 5,
+        });
+
+        // Process files until queue is empty
+        while (filesToSync.length > 0) {
+            const currentBatch = [...filesToSync];
+            filesToSync = []; // Clear the queue
+
+            const syncPromises = currentBatch.map((task) =>
+                limiter.schedule(async () => {
+                    const { file, retry } = task;
+                    console.log(
+                        `[${retry + 1}/${maxRetries}] Downloading and uploading ${file.name}...`,
+                    );
+
+                    const client = createFtpClient();
+                    try {
+                        await connectToFtpBaseline(client);
+                        await downloadAndUploadFile(
+                            client,
+                            file.name,
+                            targetYear,
+                            retry + 1,
+                            maxRetries,
+                        );
+                        successCount++;
+                        console.log(`Successfully synced ${file.name}`);
+                    } catch (error) {
+                        if (retry < maxRetries - 1) {
+                            console.warn(
+                                `Failed to sync ${file.name}, queuing for retry (${retry + 1}/${maxRetries}):`,
+                                error,
+                            );
+                            // Re-queue for retry
+                            filesToSync.push({
+                                file,
+                                retry: retry + 1,
+                            });
+                        } else {
+                            errorCount++;
+                            console.error(
+                                `Failed to sync ${file.name} after ${maxRetries} attempts:`,
+                                error,
+                            );
+                        }
+                    } finally {
+                        client.close();
+                    }
+                }),
+            );
+
+            // Wait for all sync operations in this batch to complete
+            await Promise.all(syncPromises);
+
+            if (filesToSync.length > 0) {
+                console.log(
+                    `${filesToSync.length} files remaining, starting retry batch...`,
+                );
             }
         }
 
-        console.log(`Sync complete: ${successCount} succeeded, ${errorCount} failed`);
+        console.log(
+            `Sync complete: ${successCount} succeeded, ${errorCount} failed out of ${totalFiles} total`,
+        );
 
         return {
-            total: filesToSync.length,
+            total: totalFiles,
             success: successCount,
             error: errorCount,
         };
@@ -329,23 +315,35 @@ export const PubmedMirror = {
     /**
      * Sync all pending files from FTP to OSS for a specific year
      * @param year - The year to sync files for (defaults to current year)
+     * @param maxRetries - Maximum number of retry attempts per file (default: 3)
      */
-    async sync(year?: string): Promise<SyncResult> {
-        return syncAnnualPubmedIndexFiles(year);
+    async sync(year?: string, maxRetries: number = 3): Promise<SyncResult> {
+        return syncAnnualPubmedIndexFiles(year, maxRetries);
     },
 
     /**
      * Sync a specific file from FTP to OSS for a specific year
      * @param filename - The filename to sync
      * @param year - The year to sync the file for (defaults to current year)
+     * @param maxRetries - Maximum number of retry attempts (default: 3)
      */
-    async syncFile(filename: string, year?: string): Promise<void> {
+    async syncFile(
+        filename: string,
+        year?: string,
+        maxRetries: number = 3,
+    ): Promise<void> {
         const targetYear = year || getCurrentYear();
         const ftpClient = createFtpClient();
 
         try {
             await connectToFtpBaseline(ftpClient);
-            await downloadAndUploadFile(ftpClient, filename, targetYear);
+            await downloadAndUploadFile(
+                ftpClient,
+                filename,
+                targetYear,
+                1,
+                maxRetries,
+            );
             console.log(`Successfully synced ${filename}`);
         } finally {
             ftpClient.close();
@@ -357,7 +355,7 @@ export const PubmedMirror = {
 /**
  * @deprecated Use PubmedMirror instead
  */
-export const PumpedMirror = PubmedMirror;
+export const PubmedMirrorDeprecated = PubmedMirror;
 
 // Export S3 client for advanced use cases
 export const ossClient = getS3Client();
