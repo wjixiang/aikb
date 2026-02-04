@@ -17,8 +17,8 @@ import type * as Prisma from "./prismaNamespace.js"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.3.0",
-  "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
+  "clientVersion": "7.0.0",
+  "engineVersion": "0c19ccc313cf9911a90d99d2ac2eb0280c76c513",
   "activeProvider": "postgresql",
   "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// Main citation model - represents a MedlineCitation\nmodel MedlineCitation {\n  pmid           Int       @id\n  dateCompleted  DateTime?\n  dateRevised    DateTime\n  citationSubset String?\n  createdAt      DateTime  @default(now())\n  updatedAt      DateTime  @updatedAt\n\n  // Relations\n  article            Article?\n  medlineJournalInfo MedlineJournalInfo?\n  chemicals          Chemical[]\n  meshHeadings       MeshHeading[]\n  pubmedData         PubMedData?\n\n  @@index([dateCompleted])\n  @@index([dateRevised])\n  @@map(\"medline_citations\")\n}\n\n// Article information\nmodel Article {\n  id               Int      @id @default(autoincrement())\n  pmid             Int      @unique\n  journal          Json // Stores Journal info as JSON\n  articleTitle     String   @db.Text\n  pagination       Json? // Stores MedlinePgn\n  language         String?\n  publicationTypes Json // Stores PublicationType array\n  createdAt        DateTime @default(now())\n  updatedAt        DateTime @updatedAt\n\n  // Relations\n  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)\n  authors         Author[]\n  grants          Grant[]\n\n  @@index([pmid])\n  @@map(\"articles\")\n}\n\n// Author information\nmodel Author {\n  id          Int      @id @default(autoincrement())\n  articleId   Int\n  lastName    String?\n  foreName    String?\n  initials    String?\n  affiliation String?  @db.Text\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  // Relations\n  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  @@index([articleId])\n  @@map(\"authors\")\n}\n\n// Grant information\nmodel Grant {\n  id        Int      @id @default(autoincrement())\n  articleId Int\n  grantId   String?\n  acronym   String?\n  agency    String?\n  country   String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  // Relations\n  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  @@index([articleId])\n  @@map(\"grants\")\n}\n\nmodel Journal {\n  id                  Int                  @id @default(autoincrement())\n  country             String?\n  medlineTA           String\n  nlmUniqueId         Int                  @unique\n  issnLinking         String?\n  medlineJournalInfos MedlineJournalInfo[]\n}\n\n// Medline Journal Info\nmodel MedlineJournalInfo {\n  id        Int      @id @default(autoincrement())\n  pmid      Int      @unique\n  journal   Journal  @relation(fields: [journalId], references: [id])\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  // Relations\n  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)\n  journalId       Int\n\n  @@index([pmid])\n  @@map(\"medline_journal_info\")\n}\n\n// Chemical information\nmodel Chemical {\n  id              Int      @id @default(autoincrement())\n  pmid            Int\n  registryNumber  String\n  nameOfSubstance String\n  createdAt       DateTime @default(now())\n  updatedAt       DateTime @updatedAt\n\n  // Relations\n  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)\n\n  @@index([pmid])\n  @@index([registryNumber])\n  @@map(\"chemicals\")\n}\n\n// MeSH Heading\nmodel MeshHeading {\n  id             Int      @id @default(autoincrement())\n  pmid           Int\n  descriptorName String\n  qualifierNames Json // Stores array of qualifier names\n  createdAt      DateTime @default(now())\n  updatedAt      DateTime @updatedAt\n\n  // Relations\n  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)\n\n  @@index([pmid])\n  @@index([descriptorName])\n  @@map(\"mesh_headings\")\n}\n\n// PubMed Data\nmodel PubMedData {\n  id                Int      @id @default(autoincrement())\n  pmid              Int      @unique\n  publicationStatus String?\n  articleIds        Json // Stores ArticleId array\n  history           Json // Stores PubMedPubDate array\n  createdAt         DateTime @default(now())\n  updatedAt         DateTime @updatedAt\n\n  // Relations\n  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)\n\n  @@index([pmid])\n  @@map(\"pubmed_data\")\n}\n\n// Sync tracking for baseline files\nmodel BaselineSync {\n  id           Int      @id @default(autoincrement())\n  fileName     String   @unique\n  fileDate     String\n  recordsCount Int\n  syncedAt     DateTime @default(now())\n  status       String   @default(\"completed\") // completed, failed, in_progress\n  errorMessage String?  @db.Text\n  createdAt    DateTime @default(now())\n  updatedAt    DateTime @updatedAt\n\n  @@index([fileDate])\n  @@index([status])\n  @@map(\"baseline_syncs\")\n}\n",
   "runtimeDataModel": {
@@ -37,14 +37,12 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs")
     return await decodeBase64AsWasm(wasm)
-  },
-
-  importName: "./query_compiler_fast_bg.js"
+  }
 }
 
 
@@ -64,7 +62,7 @@ export interface PrismaClientConstructor {
    * const medlineCitations = await prisma.medlineCitation.findMany()
    * ```
    * 
-   * Read more in our [docs](https://pris.ly/d/client).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
    */
 
   new <
@@ -86,7 +84,7 @@ export interface PrismaClientConstructor {
  * const medlineCitations = await prisma.medlineCitation.findMany()
  * ```
  * 
- * Read more in our [docs](https://pris.ly/d/client).
+ * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
  */
 
 export interface PrismaClient<
@@ -115,7 +113,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -127,7 +125,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -138,7 +136,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -150,7 +148,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 
