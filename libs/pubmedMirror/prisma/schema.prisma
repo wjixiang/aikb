@@ -88,6 +88,14 @@ model Grant {
   @@map("grants")
 }
 
+model Journal {
+  id          Int     @id @default(autoincrement())
+  country     String?
+  medlineTA   String
+  nlmUniqueId Int
+  issnLinking String?
+}
+
 // Medline Journal Info
 model MedlineJournalInfo {
   id          Int      @id @default(autoincrement())

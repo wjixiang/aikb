@@ -14,6 +14,59 @@ import {
 const gunzip = promisify(zlib.gunzip);
 
 // ============================================================================
+// Dependency Interfaces (按职责分层)
+// ============================================================================
+
+/**
+ * OSS-related dependencies
+ */
+export interface OSSDependencies {
+    downloadFile: (fileName: string, year: string) => Promise<Buffer>;
+    listFiles: (year: string) => Promise<string[]>;
+}
+
+/**
+ * XML 解析相关依赖
+ */
+export interface XMLDependencies {
+    decompress: (buffer: Buffer) => Promise<Buffer>;
+    parse: (xml: string) => any;
+}
+
+/**
+ * Gunzip function type
+ */
+type GunzipFunction = (buffer: Buffer) => Promise<Buffer>;
+
+/**
+ * Completed syncing dependencies
+ */
+export interface SyncDependencies {
+    oss: OSSDependencies;
+    xml: XMLDependencies;
+}
+
+/**
+ * 默认依赖实现（生产环境使用）
+ */
+export const defaultDependencies: SyncDependencies = {
+    oss: {
+        downloadFile: downloadBaselineFile,
+        listFiles: listSyncedBaselineFiles,
+    },
+    xml: {
+        decompress: gunzip as GunzipFunction,
+        parse: (xml: string) => {
+            const parser = new XMLParser({
+                ignoreAttributes: false,
+                attributeNamePrefix: '@_',
+            });
+            return parser.parse(xml);
+        },
+    },
+};
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -374,26 +427,24 @@ const syncSingleArticle = async (
  * @param year - The year of the baseline file
  * @param fileName - The filename of the baseline file
  * @param repository - The article repository instance (optional, will create default if not provided)
+ * @param dependencies - The dependencies for OSS and XML operations (optional, uses default if not provided)
  * @returns The parsed and synced articles
  */
 export const syncFileToDb = async (
     year: string,
     fileName: string,
-    repository?: IArticleRepository
-) => {
+    repository?: IArticleRepository,
+    dependencies: SyncDependencies = defaultDependencies
+): Promise<SyncArticleResult[]> => {
     // Use provided repository or create default one
     const repo = repository ?? createArticleRepository(getPrismaClient());
 
-    // Download and decompress the file
-    const buffer = await downloadBaselineFile(fileName, year);
-    const decompressed = (await gunzip(buffer)).toString('utf8');
+    // Download and decompress the file using injected dependencies
+    const buffer = await dependencies.oss.downloadFile(fileName, year);
+    const decompressed = (await dependencies.xml.decompress(buffer)).toString('utf8');
 
-    // Parse XML
-    const parser = new XMLParser({
-        ignoreAttributes: false,
-        attributeNamePrefix: '@_',
-    });
-    const parsedResult = parser.parse(decompressed);
+    // Parse XML using injected dependencies
+    const parsedResult = dependencies.xml.parse(decompressed);
 
     // Get PubmedArticle array (handle both single object and array)
     let pubmedArticles: PubmedArticle[];
@@ -447,13 +498,15 @@ export const syncFileToDb = async (
  * Sync all baseline files for a given year to the database
  * @param year - The year to sync
  * @param repository - The article repository instance (optional, will create default if not provided)
+ * @param dependencies - The dependencies for OSS and XML operations (optional, uses default if not provided)
  * @returns Summary of sync operation
  */
 export const syncBaselineFileToDb = async (
     year: string,
-    repository?: IArticleRepository
+    repository?: IArticleRepository,
+    dependencies: SyncDependencies = defaultDependencies
 ) => {
-    const syncedFiles = await listSyncedBaselineFiles(year);
+    const syncedFiles = await dependencies.oss.listFiles(year);
     console.log(`Found ${syncedFiles.length} files for year ${year}`);
 
     const summary = {
@@ -467,7 +520,7 @@ export const syncBaselineFileToDb = async (
     for (const fileName of syncedFiles) {
         console.log(`\nProcessing ${fileName}...`);
         try {
-            const results = await syncFileToDb(year, fileName, repository);
+            const results = await syncFileToDb(year, fileName, repository, dependencies);
             summary.processedFiles++;
             summary.totalArticles += results.length;
             summary.successArticles += results.filter(r => r.success).length;
