@@ -373,11 +373,16 @@ const syncSingleArticle = async (
  * Sync a single baseline file to the database
  * @param year - The year of the baseline file
  * @param fileName - The filename of the baseline file
+ * @param repository - The article repository instance (optional, will create default if not provided)
  * @returns The parsed and synced articles
  */
-export const syncFileToDb = async (year: string, fileName: string) => {
-    const prisma = getPrismaClient();
-    const repository = createArticleRepository(prisma);
+export const syncFileToDb = async (
+    year: string,
+    fileName: string,
+    repository?: IArticleRepository
+) => {
+    // Use provided repository or create default one
+    const repo = repository ?? createArticleRepository(getPrismaClient());
 
     // Download and decompress the file
     const buffer = await downloadBaselineFile(fileName, year);
@@ -413,7 +418,7 @@ export const syncFileToDb = async (year: string, fileName: string) => {
         const batch = pubmedArticles.slice(i, i + batchSize);
 
         for (const article of batch) {
-            const result = await syncSingleArticle(article, repository);
+            const result = await syncSingleArticle(article, repo);
 
             // Skip articles without valid PMID
             if (result.pmid === 0 && !result.success) {
@@ -441,9 +446,13 @@ export const syncFileToDb = async (year: string, fileName: string) => {
 /**
  * Sync all baseline files for a given year to the database
  * @param year - The year to sync
+ * @param repository - The article repository instance (optional, will create default if not provided)
  * @returns Summary of sync operation
  */
-export const syncBaselineFileToDb = async (year: string) => {
+export const syncBaselineFileToDb = async (
+    year: string,
+    repository?: IArticleRepository
+) => {
     const syncedFiles = await listSyncedBaselineFiles(year);
     console.log(`Found ${syncedFiles.length} files for year ${year}`);
 
@@ -458,7 +467,7 @@ export const syncBaselineFileToDb = async (year: string) => {
     for (const fileName of syncedFiles) {
         console.log(`\nProcessing ${fileName}...`);
         try {
-            const results = await syncFileToDb(year, fileName);
+            const results = await syncFileToDb(year, fileName, repository);
             summary.processedFiles++;
             summary.totalArticles += results.length;
             summary.successArticles += results.filter(r => r.success).length;
