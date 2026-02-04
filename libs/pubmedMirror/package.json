@@ -5,6 +5,10 @@
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "scripts": {
+    "sync:oss-to-db": "npx tsx src/scripts/sync_oss_to_db.ts",
+    "sync:file-to-db": "npx tsx src/scripts/sync_file_to_db.ts"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",
     "@prisma/adapter-pg": "^7.0.0",
