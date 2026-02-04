@@ -125,6 +125,7 @@
     "antd": "^5.26.7",
     "apollo-server-express": "^3.13.0",
     "axios": "^1.12.2",
+    "basic-ftp": "^5.1.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "chalk": "^5.6.2",
