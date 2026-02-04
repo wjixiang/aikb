@@ -156,9 +156,9 @@ export const listSyncedBaselineFiles = async (year: string): Promise<string[]> =
         if (response.Contents) {
             for (const object of response.Contents) {
                 if (object.Key) {
-                    // Remove 'baseline/{year}' prefix to get filename
-                    const filename = object.Key.replace(`baseline/${year}`, '');
-                    if (filename) {
+                    // Remove 'baseline/{year}/' prefix to get filename
+                    const filename = object.Key.replace(`baseline/${year}/`, '');
+                    if (filename && filename !== '') {
                         files.push(filename);
                     }
                 }
