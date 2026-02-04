@@ -1,4 +1,4 @@
-import { listPubmedAnnualIndexViaFtp, PubmedMirror, syncAnnualPubmedIndexFiles } from './pubmed-mirror';
+import { listPubmedAnnualIndexViaFtp, PubmedMirror, syncAnnualPubmedIndexFiles } from './pubmed-mirror.js';
 
 describe('pubmedMirror', () => {
   it.skip('integrated: should list annual index files via ftp', async () => {

@@ -3,6 +3,7 @@ import {
     PutObjectCommand,
     ListObjectsV2Command,
     HeadObjectCommand,
+    GetObjectCommand,
     S3ClientConfig,
 } from '@aws-sdk/client-s3';
 
@@ -105,11 +106,40 @@ export const uploadToOSS = async (
 };
 
 /**
+ * Download a baseline file from OSS
+ * @param filename - The filename to download
+ * @param year - The year prefix for the object key
+ * @returns The file content as a Buffer
+ */
+export const downloadBaselineFile = async (
+    filename: string,
+    year: string,
+): Promise<Buffer> => {
+    const command = new GetObjectCommand({
+        Bucket: config.bucketName,
+        Key: `baseline/${year}/${filename}`,
+    });
+
+    const response = await getS3Client().send(command);
+
+    // Convert the stream to a Buffer
+    const chunks: Uint8Array[] = [];
+    if (response.Body) {
+        // @ts-expect-error - Body is a readable stream in Node.js
+        for await (const chunk of response.Body) {
+            chunks.push(chunk);
+        }
+    }
+
+    return Buffer.concat(chunks);
+};
+
+/**
  * List all files already synced to OSS for a specific year
  * @param year - The year to list files for
  * @returns Array of filenames (without prefix)
  */
-export const listSyncedFiles = async (year: string): Promise<string[]> => {
+export const listSyncedBaselineFiles = async (year: string): Promise<string[]> => {
     const files: string[] = [];
     let continuationToken: string | undefined = undefined;
 

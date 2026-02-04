@@ -2,14 +2,14 @@ import { Client, FileInfo } from 'basic-ftp';
 import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
-import { SyncResult } from './types';
+import { SyncResult } from './types.js';
 import {
     getS3Client,
     uploadToOSS,
-    listSyncedFiles,
+    listSyncedBaselineFiles,
     fileExistsInOSS,
     getBucketName,
-} from './oss-storage';
+} from './oss-storage.js';
 import Bottleneck from 'bottleneck'
 
 // ============================================================================
@@ -164,7 +164,7 @@ export const syncAnnualPubmedIndexFiles = async (
         console.log(`Found ${files.length} files in baseline directory`);
 
         // Get list of already synced files from OSS for the specific year
-        const syncedFiles = await listSyncedFiles(targetYear);
+        const syncedFiles = await listSyncedBaselineFiles(targetYear);
         const syncedFileNames = new Set(syncedFiles);
 
         // Filter files that need to be synced
@@ -284,8 +284,8 @@ export const PubmedMirror = {
      * List all synced files from OSS for a specific year
      * @param year - The year to list synced files for (defaults to current year)
      */
-    async listSyncedFiles(year?: string): Promise<string[]> {
-        return listSyncedFiles(year || getCurrentYear());
+    async listSyncedBaselineFiles(year?: string): Promise<string[]> {
+        return listSyncedBaselineFiles(year || getCurrentYear());
     },
 
     /**
@@ -299,7 +299,7 @@ export const PubmedMirror = {
     }> {
         const targetYear = year || getCurrentYear();
         const ftpFiles = await listPubmedAnnualIndexViaFtp();
-        const syncedFiles = await listSyncedFiles(targetYear);
+        const syncedFiles = await listSyncedBaselineFiles(targetYear);
         const syncedFileSet = new Set(syncedFiles);
 
         const gzFiles = ftpFiles.filter((f) => f.name.endsWith('.gz'));
