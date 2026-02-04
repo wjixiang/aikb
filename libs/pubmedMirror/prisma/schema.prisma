@@ -89,26 +89,25 @@ model Grant {
 }
 
 model Journal {
-  id          Int     @id @default(autoincrement())
-  country     String?
-  medlineTA   String
-  nlmUniqueId Int
-  issnLinking String?
+  id                  Int                  @id @default(autoincrement())
+  country             String?
+  medlineTA           String
+  nlmUniqueId         Int                  @unique
+  issnLinking         String?
+  medlineJournalInfos MedlineJournalInfo[]
 }
 
 // Medline Journal Info
 model MedlineJournalInfo {
-  id          Int      @id @default(autoincrement())
-  pmid        Int      @unique
-  country     String?
-  medlineTA   String?
-  nlmUniqueId Int?
-  issnLinking String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  pmid      Int      @unique
+  journal   Journal  @relation(fields: [journalId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
+  journalId       Int
 
   @@index([pmid])
   @@map("medline_journal_info")

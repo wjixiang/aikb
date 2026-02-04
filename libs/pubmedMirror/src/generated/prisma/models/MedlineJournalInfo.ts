@@ -29,46 +29,37 @@ export type AggregateMedlineJournalInfo = {
 export type MedlineJournalInfoAvgAggregateOutputType = {
   id: number | null
   pmid: number | null
-  nlmUniqueId: number | null
+  journalId: number | null
 }
 
 export type MedlineJournalInfoSumAggregateOutputType = {
   id: number | null
   pmid: number | null
-  nlmUniqueId: number | null
+  journalId: number | null
 }
 
 export type MedlineJournalInfoMinAggregateOutputType = {
   id: number | null
   pmid: number | null
-  country: string | null
-  medlineTA: string | null
-  nlmUniqueId: number | null
-  issnLinking: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type MedlineJournalInfoMaxAggregateOutputType = {
   id: number | null
   pmid: number | null
-  country: string | null
-  medlineTA: string | null
-  nlmUniqueId: number | null
-  issnLinking: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type MedlineJournalInfoCountAggregateOutputType = {
   id: number
   pmid: number
-  country: number
-  medlineTA: number
-  nlmUniqueId: number
-  issnLinking: number
   createdAt: number
   updatedAt: number
+  journalId: number
   _all: number
 }
 
@@ -76,46 +67,37 @@ export type MedlineJournalInfoCountAggregateOutputType = {
 export type MedlineJournalInfoAvgAggregateInputType = {
   id?: true
   pmid?: true
-  nlmUniqueId?: true
+  journalId?: true
 }
 
 export type MedlineJournalInfoSumAggregateInputType = {
   id?: true
   pmid?: true
-  nlmUniqueId?: true
+  journalId?: true
 }
 
 export type MedlineJournalInfoMinAggregateInputType = {
   id?: true
   pmid?: true
-  country?: true
-  medlineTA?: true
-  nlmUniqueId?: true
-  issnLinking?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type MedlineJournalInfoMaxAggregateInputType = {
   id?: true
   pmid?: true
-  country?: true
-  medlineTA?: true
-  nlmUniqueId?: true
-  issnLinking?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type MedlineJournalInfoCountAggregateInputType = {
   id?: true
   pmid?: true
-  country?: true
-  medlineTA?: true
-  nlmUniqueId?: true
-  issnLinking?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
   _all?: true
 }
 
@@ -208,12 +190,9 @@ export type MedlineJournalInfoGroupByArgs<ExtArgs extends runtime.Types.Extensio
 export type MedlineJournalInfoGroupByOutputType = {
   id: number
   pmid: number
-  country: string | null
-  medlineTA: string | null
-  nlmUniqueId: number | null
-  issnLinking: string | null
   createdAt: Date
   updatedAt: Date
+  journalId: number
   _count: MedlineJournalInfoCountAggregateOutputType | null
   _avg: MedlineJournalInfoAvgAggregateOutputType | null
   _sum: MedlineJournalInfoSumAggregateOutputType | null
@@ -242,24 +221,20 @@ export type MedlineJournalInfoWhereInput = {
   NOT?: Prisma.MedlineJournalInfoWhereInput | Prisma.MedlineJournalInfoWhereInput[]
   id?: Prisma.IntFilter<"MedlineJournalInfo"> | number
   pmid?: Prisma.IntFilter<"MedlineJournalInfo"> | number
-  country?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
-  medlineTA?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
-  nlmUniqueId?: Prisma.IntNullableFilter<"MedlineJournalInfo"> | number | null
-  issnLinking?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineJournalInfo"> | number
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   medlineCitation?: Prisma.XOR<Prisma.MedlineCitationScalarRelationFilter, Prisma.MedlineCitationWhereInput>
 }
 
 export type MedlineJournalInfoOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  country?: Prisma.SortOrderInput | Prisma.SortOrder
-  medlineTA?: Prisma.SortOrderInput | Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrderInput | Prisma.SortOrder
-  issnLinking?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
+  journal?: Prisma.JournalOrderByWithRelationInput
   medlineCitation?: Prisma.MedlineCitationOrderByWithRelationInput
 }
 
@@ -269,24 +244,19 @@ export type MedlineJournalInfoWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.MedlineJournalInfoWhereInput | Prisma.MedlineJournalInfoWhereInput[]
   OR?: Prisma.MedlineJournalInfoWhereInput[]
   NOT?: Prisma.MedlineJournalInfoWhereInput | Prisma.MedlineJournalInfoWhereInput[]
-  country?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
-  medlineTA?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
-  nlmUniqueId?: Prisma.IntNullableFilter<"MedlineJournalInfo"> | number | null
-  issnLinking?: Prisma.StringNullableFilter<"MedlineJournalInfo"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineJournalInfo"> | number
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   medlineCitation?: Prisma.XOR<Prisma.MedlineCitationScalarRelationFilter, Prisma.MedlineCitationWhereInput>
 }, "id" | "pmid">
 
 export type MedlineJournalInfoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  country?: Prisma.SortOrderInput | Prisma.SortOrder
-  medlineTA?: Prisma.SortOrderInput | Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrderInput | Prisma.SortOrder
-  issnLinking?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
   _count?: Prisma.MedlineJournalInfoCountOrderByAggregateInput
   _avg?: Prisma.MedlineJournalInfoAvgOrderByAggregateInput
   _max?: Prisma.MedlineJournalInfoMaxOrderByAggregateInput
@@ -300,72 +270,50 @@ export type MedlineJournalInfoScalarWhereWithAggregatesInput = {
   NOT?: Prisma.MedlineJournalInfoScalarWhereWithAggregatesInput | Prisma.MedlineJournalInfoScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"MedlineJournalInfo"> | number
   pmid?: Prisma.IntWithAggregatesFilter<"MedlineJournalInfo"> | number
-  country?: Prisma.StringNullableWithAggregatesFilter<"MedlineJournalInfo"> | string | null
-  medlineTA?: Prisma.StringNullableWithAggregatesFilter<"MedlineJournalInfo"> | string | null
-  nlmUniqueId?: Prisma.IntNullableWithAggregatesFilter<"MedlineJournalInfo"> | number | null
-  issnLinking?: Prisma.StringNullableWithAggregatesFilter<"MedlineJournalInfo"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MedlineJournalInfo"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MedlineJournalInfo"> | Date | string
+  journalId?: Prisma.IntWithAggregatesFilter<"MedlineJournalInfo"> | number
 }
 
 export type MedlineJournalInfoCreateInput = {
-  country?: string | null
-  medlineTA?: string | null
-  nlmUniqueId?: number | null
-  issnLinking?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineJournalInfosInput
   medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutMedlineJournalInfoInput
 }
 
 export type MedlineJournalInfoUncheckedCreateInput = {
   id?: number
   pmid: number
-  country?: string | null
-  medlineTA?: string | null
-  nlmUniqueId?: number | null
-  issnLinking?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
 }
 
 export type MedlineJournalInfoUpdateInput = {
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineJournalInfosNestedInput
   medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutMedlineJournalInfoNestedInput
 }
 
 export type MedlineJournalInfoUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type MedlineJournalInfoCreateManyInput = {
   id?: number
   pmid: number
-  country?: string | null
-  medlineTA?: string | null
-  nlmUniqueId?: number | null
-  issnLinking?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
 }
 
 export type MedlineJournalInfoUpdateManyMutationInput = {
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -373,12 +321,9 @@ export type MedlineJournalInfoUpdateManyMutationInput = {
 export type MedlineJournalInfoUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type MedlineJournalInfoNullableScalarRelationFilter = {
@@ -386,49 +331,50 @@ export type MedlineJournalInfoNullableScalarRelationFilter = {
   isNot?: Prisma.MedlineJournalInfoWhereInput | null
 }
 
+export type MedlineJournalInfoListRelationFilter = {
+  every?: Prisma.MedlineJournalInfoWhereInput
+  some?: Prisma.MedlineJournalInfoWhereInput
+  none?: Prisma.MedlineJournalInfoWhereInput
+}
+
+export type MedlineJournalInfoOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
 export type MedlineJournalInfoCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  country?: Prisma.SortOrder
-  medlineTA?: Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrder
-  issnLinking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineJournalInfoAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineJournalInfoMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  country?: Prisma.SortOrder
-  medlineTA?: Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrder
-  issnLinking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineJournalInfoMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  country?: Prisma.SortOrder
-  medlineTA?: Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrder
-  issnLinking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineJournalInfoSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  nlmUniqueId?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput = {
@@ -463,31 +409,59 @@ export type MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInpu
   update?: Prisma.XOR<Prisma.XOR<Prisma.MedlineJournalInfoUpdateToOneWithWhereWithoutMedlineCitationInput, Prisma.MedlineJournalInfoUpdateWithoutMedlineCitationInput>, Prisma.MedlineJournalInfoUncheckedUpdateWithoutMedlineCitationInput>
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type MedlineJournalInfoCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput> | Prisma.MedlineJournalInfoCreateWithoutJournalInput[] | Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput | Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.MedlineJournalInfoCreateManyJournalInputEnvelope
+  connect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+}
+
+export type MedlineJournalInfoUncheckedCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput> | Prisma.MedlineJournalInfoCreateWithoutJournalInput[] | Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput | Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.MedlineJournalInfoCreateManyJournalInputEnvelope
+  connect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+}
+
+export type MedlineJournalInfoUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput> | Prisma.MedlineJournalInfoCreateWithoutJournalInput[] | Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput | Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.MedlineJournalInfoUpsertWithWhereUniqueWithoutJournalInput | Prisma.MedlineJournalInfoUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.MedlineJournalInfoCreateManyJournalInputEnvelope
+  set?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  disconnect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  delete?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  connect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  update?: Prisma.MedlineJournalInfoUpdateWithWhereUniqueWithoutJournalInput | Prisma.MedlineJournalInfoUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.MedlineJournalInfoUpdateManyWithWhereWithoutJournalInput | Prisma.MedlineJournalInfoUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.MedlineJournalInfoScalarWhereInput | Prisma.MedlineJournalInfoScalarWhereInput[]
+}
+
+export type MedlineJournalInfoUncheckedUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput> | Prisma.MedlineJournalInfoCreateWithoutJournalInput[] | Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput | Prisma.MedlineJournalInfoCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.MedlineJournalInfoUpsertWithWhereUniqueWithoutJournalInput | Prisma.MedlineJournalInfoUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.MedlineJournalInfoCreateManyJournalInputEnvelope
+  set?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  disconnect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  delete?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  connect?: Prisma.MedlineJournalInfoWhereUniqueInput | Prisma.MedlineJournalInfoWhereUniqueInput[]
+  update?: Prisma.MedlineJournalInfoUpdateWithWhereUniqueWithoutJournalInput | Prisma.MedlineJournalInfoUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.MedlineJournalInfoUpdateManyWithWhereWithoutJournalInput | Prisma.MedlineJournalInfoUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.MedlineJournalInfoScalarWhereInput | Prisma.MedlineJournalInfoScalarWhereInput[]
 }
 
 export type MedlineJournalInfoCreateWithoutMedlineCitationInput = {
-  country?: string | null
-  medlineTA?: string | null
-  nlmUniqueId?: number | null
-  issnLinking?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineJournalInfosInput
 }
 
 export type MedlineJournalInfoUncheckedCreateWithoutMedlineCitationInput = {
   id?: number
-  country?: string | null
-  medlineTA?: string | null
-  nlmUniqueId?: number | null
-  issnLinking?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
 }
 
 export type MedlineJournalInfoCreateOrConnectWithoutMedlineCitationInput = {
@@ -507,20 +481,91 @@ export type MedlineJournalInfoUpdateToOneWithWhereWithoutMedlineCitationInput = 
 }
 
 export type MedlineJournalInfoUpdateWithoutMedlineCitationInput = {
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineJournalInfosNestedInput
 }
 
 export type MedlineJournalInfoUncheckedUpdateWithoutMedlineCitationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  medlineTA?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nlmUniqueId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  issnLinking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
+}
+
+export type MedlineJournalInfoCreateWithoutJournalInput = {
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutMedlineJournalInfoInput
+}
+
+export type MedlineJournalInfoUncheckedCreateWithoutJournalInput = {
+  id?: number
+  pmid: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type MedlineJournalInfoCreateOrConnectWithoutJournalInput = {
+  where: Prisma.MedlineJournalInfoWhereUniqueInput
+  create: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput>
+}
+
+export type MedlineJournalInfoCreateManyJournalInputEnvelope = {
+  data: Prisma.MedlineJournalInfoCreateManyJournalInput | Prisma.MedlineJournalInfoCreateManyJournalInput[]
+  skipDuplicates?: boolean
+}
+
+export type MedlineJournalInfoUpsertWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.MedlineJournalInfoWhereUniqueInput
+  update: Prisma.XOR<Prisma.MedlineJournalInfoUpdateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedUpdateWithoutJournalInput>
+  create: Prisma.XOR<Prisma.MedlineJournalInfoCreateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedCreateWithoutJournalInput>
+}
+
+export type MedlineJournalInfoUpdateWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.MedlineJournalInfoWhereUniqueInput
+  data: Prisma.XOR<Prisma.MedlineJournalInfoUpdateWithoutJournalInput, Prisma.MedlineJournalInfoUncheckedUpdateWithoutJournalInput>
+}
+
+export type MedlineJournalInfoUpdateManyWithWhereWithoutJournalInput = {
+  where: Prisma.MedlineJournalInfoScalarWhereInput
+  data: Prisma.XOR<Prisma.MedlineJournalInfoUpdateManyMutationInput, Prisma.MedlineJournalInfoUncheckedUpdateManyWithoutJournalInput>
+}
+
+export type MedlineJournalInfoScalarWhereInput = {
+  AND?: Prisma.MedlineJournalInfoScalarWhereInput | Prisma.MedlineJournalInfoScalarWhereInput[]
+  OR?: Prisma.MedlineJournalInfoScalarWhereInput[]
+  NOT?: Prisma.MedlineJournalInfoScalarWhereInput | Prisma.MedlineJournalInfoScalarWhereInput[]
+  id?: Prisma.IntFilter<"MedlineJournalInfo"> | number
+  pmid?: Prisma.IntFilter<"MedlineJournalInfo"> | number
+  createdAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"MedlineJournalInfo"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineJournalInfo"> | number
+}
+
+export type MedlineJournalInfoCreateManyJournalInput = {
+  id?: number
+  pmid: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type MedlineJournalInfoUpdateWithoutJournalInput = {
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutMedlineJournalInfoNestedInput
+}
+
+export type MedlineJournalInfoUncheckedUpdateWithoutJournalInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type MedlineJournalInfoUncheckedUpdateManyWithoutJournalInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -530,75 +575,67 @@ export type MedlineJournalInfoUncheckedUpdateWithoutMedlineCitationInput = {
 export type MedlineJournalInfoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  country?: boolean
-  medlineTA?: boolean
-  nlmUniqueId?: boolean
-  issnLinking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medlineJournalInfo"]>
 
 export type MedlineJournalInfoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  country?: boolean
-  medlineTA?: boolean
-  nlmUniqueId?: boolean
-  issnLinking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medlineJournalInfo"]>
 
 export type MedlineJournalInfoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  country?: boolean
-  medlineTA?: boolean
-  nlmUniqueId?: boolean
-  issnLinking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medlineJournalInfo"]>
 
 export type MedlineJournalInfoSelectScalar = {
   id?: boolean
   pmid?: boolean
-  country?: boolean
-  medlineTA?: boolean
-  nlmUniqueId?: boolean
-  issnLinking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
 }
 
-export type MedlineJournalInfoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pmid" | "country" | "medlineTA" | "nlmUniqueId" | "issnLinking" | "createdAt" | "updatedAt", ExtArgs["result"]["medlineJournalInfo"]>
+export type MedlineJournalInfoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pmid" | "createdAt" | "updatedAt" | "journalId", ExtArgs["result"]["medlineJournalInfo"]>
 export type MedlineJournalInfoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }
 export type MedlineJournalInfoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }
 export type MedlineJournalInfoIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }
 
 export type $MedlineJournalInfoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MedlineJournalInfo"
   objects: {
+    journal: Prisma.$JournalPayload<ExtArgs>
     medlineCitation: Prisma.$MedlineCitationPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     pmid: number
-    country: string | null
-    medlineTA: string | null
-    nlmUniqueId: number | null
-    issnLinking: string | null
     createdAt: Date
     updatedAt: Date
+    journalId: number
   }, ExtArgs["result"]["medlineJournalInfo"]>
   composites: {}
 }
@@ -993,6 +1030,7 @@ readonly fields: MedlineJournalInfoFieldRefs;
  */
 export interface Prisma__MedlineJournalInfoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  journal<T extends Prisma.JournalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JournalDefaultArgs<ExtArgs>>): Prisma.Prisma__JournalClient<runtime.Types.Result.GetResult<Prisma.$JournalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   medlineCitation<T extends Prisma.MedlineCitationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitationDefaultArgs<ExtArgs>>): Prisma.Prisma__MedlineCitationClient<runtime.Types.Result.GetResult<Prisma.$MedlineCitationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1025,12 +1063,9 @@ export interface Prisma__MedlineJournalInfoClient<T, Null = never, ExtArgs exten
 export interface MedlineJournalInfoFieldRefs {
   readonly id: Prisma.FieldRef<"MedlineJournalInfo", 'Int'>
   readonly pmid: Prisma.FieldRef<"MedlineJournalInfo", 'Int'>
-  readonly country: Prisma.FieldRef<"MedlineJournalInfo", 'String'>
-  readonly medlineTA: Prisma.FieldRef<"MedlineJournalInfo", 'String'>
-  readonly nlmUniqueId: Prisma.FieldRef<"MedlineJournalInfo", 'Int'>
-  readonly issnLinking: Prisma.FieldRef<"MedlineJournalInfo", 'String'>
   readonly createdAt: Prisma.FieldRef<"MedlineJournalInfo", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MedlineJournalInfo", 'DateTime'>
+  readonly journalId: Prisma.FieldRef<"MedlineJournalInfo", 'Int'>
 }
     
 

@@ -38,6 +38,11 @@ export type Author = Prisma.AuthorModel
  */
 export type Grant = Prisma.GrantModel
 /**
+ * Model Journal
+ * 
+ */
+export type Journal = Prisma.JournalModel
+/**
  * Model MedlineJournalInfo
  * 
  */

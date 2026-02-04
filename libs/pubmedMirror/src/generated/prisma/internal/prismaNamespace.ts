@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.0.0
- * Query Engine version: 0c19ccc313cf9911a90d99d2ac2eb0280c76c513
+ * Prisma Client JS version: 7.3.0
+ * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.0.0",
-  engine: "0c19ccc313cf9911a90d99d2ac2eb0280c76c513"
+  client: "7.3.0",
+  engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735"
 }
 
 /**
@@ -388,6 +388,7 @@ export const ModelName = {
   Article: 'Article',
   Author: 'Author',
   Grant: 'Grant',
+  Journal: 'Journal',
   MedlineJournalInfo: 'MedlineJournalInfo',
   Chemical: 'Chemical',
   MeshHeading: 'MeshHeading',
@@ -408,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "medlineCitation" | "article" | "author" | "grant" | "medlineJournalInfo" | "chemical" | "meshHeading" | "pubMedData" | "baselineSync"
+    modelProps: "medlineCitation" | "article" | "author" | "grant" | "journal" | "medlineJournalInfo" | "chemical" | "meshHeading" | "pubMedData" | "baselineSync"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -705,6 +706,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GrantCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GrantCountAggregateOutputType> | number
+        }
+      }
+    }
+    Journal: {
+      payload: Prisma.$JournalPayload<ExtArgs>
+      fields: Prisma.JournalFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.JournalFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.JournalFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        findFirst: {
+          args: Prisma.JournalFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.JournalFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        findMany: {
+          args: Prisma.JournalFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>[]
+        }
+        create: {
+          args: Prisma.JournalCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        createMany: {
+          args: Prisma.JournalCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.JournalCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>[]
+        }
+        delete: {
+          args: Prisma.JournalDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        update: {
+          args: Prisma.JournalUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        deleteMany: {
+          args: Prisma.JournalDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.JournalUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.JournalUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>[]
+        }
+        upsert: {
+          args: Prisma.JournalUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JournalPayload>
+        }
+        aggregate: {
+          args: Prisma.JournalAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateJournal>
+        }
+        groupBy: {
+          args: Prisma.JournalGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JournalGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.JournalCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JournalCountAggregateOutputType> | number
         }
       }
     }
@@ -1172,15 +1247,23 @@ export const GrantScalarFieldEnum = {
 export type GrantScalarFieldEnum = (typeof GrantScalarFieldEnum)[keyof typeof GrantScalarFieldEnum]
 
 
-export const MedlineJournalInfoScalarFieldEnum = {
+export const JournalScalarFieldEnum = {
   id: 'id',
-  pmid: 'pmid',
   country: 'country',
   medlineTA: 'medlineTA',
   nlmUniqueId: 'nlmUniqueId',
-  issnLinking: 'issnLinking',
+  issnLinking: 'issnLinking'
+} as const
+
+export type JournalScalarFieldEnum = (typeof JournalScalarFieldEnum)[keyof typeof JournalScalarFieldEnum]
+
+
+export const MedlineJournalInfoScalarFieldEnum = {
+  id: 'id',
+  pmid: 'pmid',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  journalId: 'journalId'
 } as const
 
 export type MedlineJournalInfoScalarFieldEnum = (typeof MedlineJournalInfoScalarFieldEnum)[keyof typeof MedlineJournalInfoScalarFieldEnum]
@@ -1410,7 +1493,7 @@ export type PrismaClientOptions = ({
    *  { emit: 'stdout', level: 'error' }
    * 
    * ```
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/logging#the-log-option).
+   * Read more in our [docs](https://pris.ly/d/logging).
    */
   log?: (LogLevel | LogDefinition)[]
   /**
@@ -1438,12 +1521,29 @@ export type PrismaClientOptions = ({
    * ```
    */
   omit?: GlobalOmitConfig
+  /**
+   * SQL commenter plugins that add metadata to SQL queries as comments.
+   * Comments follow the sqlcommenter format: https://google.github.io/sqlcommenter/
+   * 
+   * @example
+   * ```
+   * const prisma = new PrismaClient({
+   *   adapter,
+   *   comments: [
+   *     traceContext(),
+   *     queryInsights(),
+   *   ],
+   * })
+   * ```
+   */
+  comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
   medlineCitation?: Prisma.MedlineCitationOmit
   article?: Prisma.ArticleOmit
   author?: Prisma.AuthorOmit
   grant?: Prisma.GrantOmit
+  journal?: Prisma.JournalOmit
   medlineJournalInfo?: Prisma.MedlineJournalInfoOmit
   chemical?: Prisma.ChemicalOmit
   meshHeading?: Prisma.MeshHeadingOmit

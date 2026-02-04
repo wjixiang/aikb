@@ -207,10 +207,70 @@ export class PrismaArticleRepository implements IArticleRepository {
 
                 // Upsert MedlineJournalInfo
                 if (journalInfoData) {
+                    // Find or create Journal
+                    let journalId: number;
+
+                    if (journalInfoData.nlmUniqueId !== null) {
+                        // Try to find existing journal by nlmUniqueId
+                        const existingJournal = await tx.journal.findUnique({
+                            where: { nlmUniqueId: journalInfoData.nlmUniqueId },
+                        });
+
+                        if (existingJournal) {
+                            journalId = existingJournal.id;
+                        } else {
+                            // Create new journal with nlmUniqueId
+                            const newJournal = await tx.journal.create({
+                                data: {
+                                    country: journalInfoData.country,
+                                    medlineTA: journalInfoData.medlineTA ?? '',
+                                    nlmUniqueId: journalInfoData.nlmUniqueId,
+                                    issnLinking: journalInfoData.issnLinking,
+                                },
+                            });
+                            journalId = newJournal.id;
+                        }
+                    } else if (journalInfoData.medlineTA !== null) {
+                        // If nlmUniqueId is null, try to find by medlineTA
+                        const journalsByTA = await tx.journal.findMany({
+                            where: { medlineTA: journalInfoData.medlineTA },
+                        });
+
+                        if (journalsByTA.length > 0) {
+                            // Use the first matching journal
+                            journalId = journalsByTA[0].id;
+                        } else {
+                            // Generate a unique negative ID for journals without nlmUniqueId
+                            // This ensures uniqueness while allowing creation
+                            const generatedNlmUniqueId = -Math.abs(
+                                journalInfoData.medlineTA.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+                            );
+
+                            const newJournal = await tx.journal.create({
+                                data: {
+                                    country: journalInfoData.country,
+                                    medlineTA: journalInfoData.medlineTA,
+                                    nlmUniqueId: generatedNlmUniqueId,
+                                    issnLinking: journalInfoData.issnLinking,
+                                },
+                            });
+                            journalId = newJournal.id;
+                        }
+                    } else {
+                        // Skip MedlineJournalInfo creation if both nlmUniqueId and medlineTA are null
+                        return;
+                    }
+
+                    // Upsert MedlineJournalInfo with journalId
                     await tx.medlineJournalInfo.upsert({
                         where: { pmid },
-                        create: journalInfoData,
-                        update: journalInfoData,
+                        create: {
+                            pmid: journalInfoData.pmid,
+                            journalId,
+                        },
+                        update: {
+                            journalId,
+                        },
                     });
                 }
 
