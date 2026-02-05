@@ -562,6 +562,14 @@ export const syncSingleArticle = async (
         const meshHeadings = deps.transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
         const pubmedData = deps.transformPubMedData(pmid, article.PubmedData);
 
+        // Check article existence
+        if (await repository.isArticleExist(pmid)) {
+            return {
+                pmid: pmid,
+                success: true
+            }
+        }
+
         // Use repository to sync all data
         return await repository.syncArticle(
             pmid,
@@ -595,7 +603,8 @@ export const syncFileToDb = async (
     year: string,
     fileName: string,
     repository?: IArticleRepository,
-    dependencies: SyncDependencies = defaultDependencies
+    dependencies: SyncDependencies = defaultDependencies,
+    batchSize: number = 1000
 ): Promise<SyncArticleResult[]> => {
     // Use provided repository or create default one
     const repo = repository ?? createArticleRepository(getPrismaClient());
@@ -625,22 +634,17 @@ export const syncFileToDb = async (
 
     // Process each article
     const results: SyncArticleResult[] = [];
-    const batchSize = 100;
 
     for (let i = 0; i < pubmedArticles.length; i += batchSize) {
         const batch = pubmedArticles.slice(i, i + batchSize);
+        const batchResult = batch.map(async (article) => {
 
-        for (const article of batch) {
             const result = await syncSingleArticle(article, repo, defaultDataTransformDependencies);
 
             // Skip articles without valid PMID
             if (result.pmid === 0 && !result.success) {
                 console.error('Error syncing article:', result.error);
-                continue;
             }
-
-            results.push(result);
-
             if (result.success && results.length % 100 === 0) {
                 console.log(`Synced ${results.filter(r => r.success).length}/${pubmedArticles.length} articles...`);
             }
@@ -648,7 +652,10 @@ export const syncFileToDb = async (
             if (!result.success) {
                 console.error(`Error syncing PMID ${result.pmid}:`, result.error);
             }
-        }
+            return result
+
+        })
+        results.push(...await Promise.all(batchResult))
     }
 
     console.log(`Completed syncing ${fileName}. Success: ${results.filter(r => r.success).length}, Failed: ${results.filter(r => !r.success).length}`);
@@ -668,11 +675,18 @@ export const syncBaselineFileToDb = async (
     repository?: IArticleRepository,
     dependencies: SyncDependencies = defaultDependencies
 ) => {
+    // Use provided repository or create default one
+    const repo = repository ?? createArticleRepository(getPrismaClient());
     const syncedFiles = await dependencies.oss.listFiles(year);
     console.log(`Found ${syncedFiles.length} files for year ${year}`);
 
+    // Get already synced files to resume from where we left off
+    const syncedFileNames = await repo.getSyncedBaselineFiles(syncedFiles);
+    console.log(`Skipping ${syncedFileNames.size} already synced files`);
+
     const summary = {
         totalFiles: syncedFiles.length,
+        skippedFiles: syncedFileNames.size,
         processedFiles: 0,
         totalArticles: 0,
         successArticles: 0,
@@ -680,20 +694,46 @@ export const syncBaselineFileToDb = async (
     };
 
     for (const fileName of syncedFiles) {
+        // Skip already synced files
+        if (syncedFileNames.has(fileName)) {
+            console.log(`Skipping ${fileName} (already synced)`);
+            continue;
+        }
+
         console.log(`\nProcessing ${fileName}...`);
+
+        // Mark as in_progress
         try {
-            const results = await syncFileToDb(year, fileName, repository, dependencies);
+            await repo.markBaselineFileInProgress(fileName, year);
+        } catch (error) {
+            console.error(`Error marking ${fileName} as in_progress:`, error);
+        }
+
+        try {
+            const results = await syncFileToDb(year, fileName, repo, dependencies);
             summary.processedFiles++;
             summary.totalArticles += results.length;
             summary.successArticles += results.filter(r => r.success).length;
             summary.failedArticles += results.filter(r => !r.success).length;
+
+            // Mark as completed
+            await repo.markBaselineFileCompleted(fileName, year, results.length);
         } catch (error) {
             console.error(`Error processing ${fileName}:`, error);
+
+            // Mark as failed
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            try {
+                await repo.markBaselineFileFailed(fileName, year, errorMessage);
+            } catch (upsertError) {
+                console.error(`Error marking ${fileName} as failed:`, upsertError);
+            }
         }
     }
 
     console.log('\n=== Sync Summary ===');
     console.log(`Total Files: ${summary.totalFiles}`);
+    console.log(`Skipped Files: ${summary.skippedFiles}`);
     console.log(`Processed Files: ${summary.processedFiles}`);
     console.log(`Total Articles: ${summary.totalArticles}`);
     console.log(`Success: ${summary.successArticles}`);
@@ -701,3 +741,4 @@ export const syncBaselineFileToDb = async (
 
     return summary;
 };
+

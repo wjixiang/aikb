@@ -94,7 +94,8 @@
       "statefulContext": ["libs/statefulContext/src/index.ts"],
       "syntheses": ["libs/syntheses/src/index.ts"],
       "syntheses-db": ["libs/syntheses-db/src/index.ts"],
-      "pubmedMirror": ["/libs/pubmedMirror/src/index.ts"]
+      "pubmedMirror": ["/libs/pubmedMirror/src/index.ts"],
+      "autoReview": ["apps/autoReview/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

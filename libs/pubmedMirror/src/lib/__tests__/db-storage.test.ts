@@ -3,17 +3,11 @@ import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vites
 import {
     syncFileToDb,
     syncBaselineFileToDb,
-    getPrismaClient,
-    closePrismaClient,
     type OSSDependencies,
     type XMLDependencies,
     type SyncDependencies,
-    defaultDependencies,
     syncSingleArticle,
-    type DataTransformDependencies,
-    defaultDataTransformDependencies,
 } from '../db-storage.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
 import type { IArticleRepository } from '../article-repository.js';
 import { readFileSync } from 'node:fs';
 
@@ -27,6 +21,16 @@ import { readFileSync } from 'node:fs';
 const createMockRepository = (overrides?: Partial<IArticleRepository>): IArticleRepository => {
     return {
         syncArticle: vi.fn().mockResolvedValue({
+            pmid: 12345,
+            success: true,
+        }),
+        getSyncedBaselineFiles: vi.fn().mockResolvedValue(new Set<string>()),
+        markBaselineFileInProgress: vi.fn().mockResolvedValue(undefined),
+        markBaselineFileCompleted: vi.fn().mockResolvedValue(undefined),
+        markBaselineFileFailed: vi.fn().mockResolvedValue(undefined),
+        findArticleWithoutAbstract: vi.fn().mockResolvedValue([]),
+        isArticleExist: vi.fn().mockResolvedValue(false),
+        syncArticleDetail: vi.fn().mockResolvedValue({
             pmid: 12345,
             success: true,
         }),
@@ -47,6 +51,7 @@ describe('db-storage tests', () => {
                     pmid: 12345,
                     success: true,
                 }),
+                isArticleExist: vi.fn().mockResolvedValue(false),
             } as unknown as IArticleRepository;
 
             // Mock OSS dependencies
@@ -167,6 +172,7 @@ describe('db-storage tests', () => {
                     pmid: 12345,
                     success: true,
                 }),
+                isArticleExist: vi.fn().mockResolvedValue(false),
             } as unknown as IArticleRepository;
 
             // This should not throw a type error
@@ -244,6 +250,16 @@ describe('db-storage tests', () => {
                     pmid: 12345,
                     success: true,
                 }),
+                getSyncedBaselineFiles: vi.fn().mockResolvedValue(new Set<string>()),
+                markBaselineFileInProgress: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileCompleted: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileFailed: vi.fn().mockResolvedValue(undefined),
+                findArticleWithoutAbstract: vi.fn().mockResolvedValue([]),
+                isArticleExist: vi.fn().mockResolvedValue(false),
+                syncArticleDetail: vi.fn().mockResolvedValue({
+                    pmid: 12345,
+                    success: true,
+                }),
             } as unknown as IArticleRepository;
 
             mockDependencies = {
@@ -284,6 +300,7 @@ describe('db-storage tests', () => {
 
             expect(summary).toEqual({
                 totalFiles: 2,
+                skippedFiles: 0,
                 processedFiles: 2,
                 totalArticles: 0,
                 successArticles: 0,
@@ -304,6 +321,16 @@ describe('db-storage tests', () => {
         it('should allow partial mocking of OSS dependencies only', async () => {
             const mockRepo = {
                 syncArticle: vi.fn().mockResolvedValue({
+                    pmid: 12345,
+                    success: true,
+                }),
+                getSyncedBaselineFiles: vi.fn().mockResolvedValue(new Set<string>()),
+                markBaselineFileInProgress: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileCompleted: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileFailed: vi.fn().mockResolvedValue(undefined),
+                findArticleWithoutAbstract: vi.fn().mockResolvedValue([]),
+                isArticleExist: vi.fn().mockResolvedValue(false),
+                syncArticleDetail: vi.fn().mockResolvedValue({
                     pmid: 12345,
                     success: true,
                 }),
@@ -329,6 +356,16 @@ describe('db-storage tests', () => {
         it('should allow partial mocking of XML dependencies only', async () => {
             const mockRepo = {
                 syncArticle: vi.fn().mockResolvedValue({
+                    pmid: 12345,
+                    success: true,
+                }),
+                getSyncedBaselineFiles: vi.fn().mockResolvedValue(new Set<string>()),
+                markBaselineFileInProgress: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileCompleted: vi.fn().mockResolvedValue(undefined),
+                markBaselineFileFailed: vi.fn().mockResolvedValue(undefined),
+                findArticleWithoutAbstract: vi.fn().mockResolvedValue([]),
+                isArticleExist: vi.fn().mockResolvedValue(false),
+                syncArticleDetail: vi.fn().mockResolvedValue({
                     pmid: 12345,
                     success: true,
                 }),

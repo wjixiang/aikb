@@ -269,11 +269,45 @@ export interface IArticleRepository {
         lastPmid: number
     ): Promise<number[]>
 
+    isArticleExist(
+        pmid: number
+    ): Promise<boolean>
+
     /**
      * Sync article detail data from PubMed detail page
      * @param data - All article detail data
      */
     syncArticleDetail(data: ArticleDetailSyncData): Promise<SyncArticleResult>
+
+    /**
+     * Get list of already synced baseline file names
+     * @param fileNames - List of file names to check
+     * @returns Set of file names that have been successfully synced
+     */
+    getSyncedBaselineFiles(fileNames: string[]): Promise<Set<string>>
+
+    /**
+     * Mark a baseline file as in progress
+     * @param fileName - The file name
+     * @param fileDate - The file date (year)
+     */
+    markBaselineFileInProgress(fileName: string, fileDate: string): Promise<void>
+
+    /**
+     * Mark a baseline file as completed
+     * @param fileName - The file name
+     * @param fileDate - The file date (year)
+     * @param recordsCount - Number of records synced
+     */
+    markBaselineFileCompleted(fileName: string, fileDate: string, recordsCount: number): Promise<void>
+
+    /**
+     * Mark a baseline file as failed
+     * @param fileName - The file name
+     * @param fileDate - The file date (year)
+     * @param errorMessage - Error message
+     */
+    markBaselineFileFailed(fileName: string, fileDate: string, errorMessage: string): Promise<void>
 }
 
 

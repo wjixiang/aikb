@@ -46,7 +46,7 @@ export class BibliographicDataCollectWorker extends EventEmitter {
         this.options = {
             batchSize: options.batchSize ?? 100,
             concurrency: options.concurrency ?? 5,
-            minTime: options.minTime ?? 200,
+            minTime: options.minTime ?? 20,
             maxRetries: options.maxRetries ?? 3,
         };
 

@@ -10,6 +10,13 @@ import { ArticleCreateData, ArticleDetailAffiliationCreateData, ArticleDetailAut
  */
 export class PrismaArticleRepository implements IArticleRepository {
     constructor(private readonly prisma: PrismaClient) { }
+    async isArticleExist(pmid: number): Promise<boolean> {
+        const article = await this.prisma.article.findUnique({
+            where: { pmid },
+            select: { pmid: true },
+        });
+        return article !== null;
+    }
 
     async findArticleWithoutAbstract(lastPmid: number, take: number = 100): Promise<number[]> {
         // Find articles that either:
@@ -247,6 +254,7 @@ export class PrismaArticleRepository implements IArticleRepository {
         }
     }
 
+
     async syncArticleDetail(data: ArticleDetailSyncData): Promise<SyncArticleResult> {
         const { detail, authors, affiliations, keywords, similarArticles, references, publicationTypes, meshTerms, relatedInformation, fullTextSources, journalInfo } = data;
 
@@ -469,5 +477,65 @@ export class PrismaArticleRepository implements IArticleRepository {
                 error: error instanceof Error ? error.message : String(error),
             };
         }
+    }
+
+    async getSyncedBaselineFiles(fileNames: string[]): Promise<Set<string>> {
+        const existingSyncs = await this.prisma.baselineSync.findMany({
+            where: {
+                fileName: { in: fileNames },
+                status: 'completed',
+            },
+            select: {
+                fileName: true,
+            },
+        });
+        return new Set(existingSyncs.map(s => s.fileName));
+    }
+
+    async markBaselineFileInProgress(fileName: string, fileDate: string): Promise<void> {
+        await this.prisma.baselineSync.upsert({
+            where: { fileName },
+            update: { status: 'in_progress', errorMessage: null },
+            create: {
+                fileName,
+                fileDate,
+                recordsCount: 0,
+                status: 'in_progress',
+            },
+        });
+    }
+
+    async markBaselineFileCompleted(fileName: string, fileDate: string, recordsCount: number): Promise<void> {
+        await this.prisma.baselineSync.upsert({
+            where: { fileName },
+            update: {
+                status: 'completed',
+                recordsCount,
+                errorMessage: null,
+            },
+            create: {
+                fileName,
+                fileDate,
+                recordsCount,
+                status: 'completed',
+            },
+        });
+    }
+
+    async markBaselineFileFailed(fileName: string, fileDate: string, errorMessage: string): Promise<void> {
+        await this.prisma.baselineSync.upsert({
+            where: { fileName },
+            update: {
+                status: 'failed',
+                errorMessage,
+            },
+            create: {
+                fileName,
+                fileDate,
+                recordsCount: 0,
+                status: 'failed',
+                errorMessage,
+            },
+        });
     }
 }
