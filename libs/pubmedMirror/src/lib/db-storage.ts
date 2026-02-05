@@ -374,14 +374,89 @@ const transformPubMedData = (pmid: number, data?: PubMedData) => {
 // ============================================================================
 
 /**
+ * Data transformation dependencies for syncSingleArticle
+ */
+export interface DataTransformDependencies {
+    extractPMID: (input: string | number | Record<string, any>) => number;
+    transformMedlineCitation: (data: MedlineCitationData) => {
+        pmid: number;
+        dateCompleted: Date | null;
+        dateRevised: Date;
+        citationSubset: string;
+    };
+    transformArticle: (pmid: number, data?: ArticleData) => {
+        pmid: number;
+        journalId: number;
+        articleTitle: string;
+        pagination: { MedlinePgn?: string } | undefined;
+        language: string | null;
+        publicationTypes: string[];
+    } | null;
+    transformAuthors: (articleId: number, authorList?: { Author?: AuthorData[] }) => Array<{
+        articleId: number;
+        lastName: string | null;
+        foreName: string | null;
+        initials: string | null;
+        affiliation: string | null;
+    }>;
+    transformGrants: (articleId: number, grantList?: { Grant?: GrantData[] }) => Array<{
+        articleId: number;
+        grantId: string | null;
+        acronym: string | null;
+        agency: string | null;
+        country: string | null;
+    }>;
+    transformMedlineJournalInfo: (pmid: number, data?: MedlineJournalInfoData) => {
+        pmid: number;
+        country: string | null;
+        medlineTA: string | null;
+        nlmUniqueId: number | null;
+        issnLinking: string | null;
+    } | null;
+    transformChemicals: (pmid: number, chemicalList?: { Chemical?: ChemicalData[] }) => Array<{
+        pmid: number;
+        registryNumber: string;
+        nameOfSubstance: string;
+    }>;
+    transformMeshHeadings: (pmid: number, meshHeadingList?: { MeshHeading?: MeshHeadingData[] }) => Array<{
+        pmid: number;
+        descriptorName: string;
+        qualifierNames: string[];
+    }>;
+    transformPubMedData: (pmid: number, data?: PubMedData) => {
+        pmid: number;
+        publicationStatus: string | null;
+        articleIds: any;
+        history: any;
+    } | null;
+}
+
+/**
+ * Default data transformation dependencies
+ */
+export const defaultDataTransformDependencies: DataTransformDependencies = {
+    extractPMID,
+    transformMedlineCitation,
+    transformArticle,
+    transformAuthors,
+    transformGrants,
+    transformMedlineJournalInfo,
+    transformChemicals,
+    transformMeshHeadings,
+    transformPubMedData,
+};
+
+/**
  * Sync a single PubmedArticle to the database
  * @param article - The PubmedArticle to sync
  * @param repository - The article repository instance
+ * @param deps - Data transformation dependencies (optional, uses default if not provided)
  * @returns Result of the sync operation
  */
-const syncSingleArticle = async (
+export const syncSingleArticle = async (
     article: PubmedArticle,
-    repository: IArticleRepository
+    repository: IArticleRepository,
+    deps: DataTransformDependencies = defaultDataTransformDependencies
 ): Promise<SyncArticleResult> => {
     const medlineCitation = article.MedlineCitation;
     if (!medlineCitation) {
@@ -394,7 +469,7 @@ const syncSingleArticle = async (
 
     let pmid: number;
     try {
-        pmid = extractPMID(medlineCitation.PMID);
+        pmid = deps.extractPMID(medlineCitation.PMID);
     } catch (error) {
         return {
             pmid: 0,
@@ -404,15 +479,15 @@ const syncSingleArticle = async (
     }
 
     try {
-        // Transform all data
-        const citationData = transformMedlineCitation(medlineCitation);
-        const articleData = transformArticle(pmid, medlineCitation.Article);
-        const authors = transformAuthors(0, medlineCitation.Article?.AuthorList); // articleId will be set by repository
-        const grants = transformGrants(0, medlineCitation.Article?.GrantList); // articleId will be set by repository
-        const journalInfoData = transformMedlineJournalInfo(pmid, medlineCitation.MedlineJournalInfo);
-        const chemicals = transformChemicals(pmid, medlineCitation.ChemicalList);
-        const meshHeadings = transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
-        const pubmedData = transformPubMedData(pmid, article.PubmedData);
+        // Transform all data using injected dependencies
+        const citationData = deps.transformMedlineCitation(medlineCitation);
+        const articleData = deps.transformArticle(pmid, medlineCitation.Article);
+        const authors = deps.transformAuthors(0, medlineCitation.Article?.AuthorList); // articleId will be set by repository
+        const grants = deps.transformGrants(0, medlineCitation.Article?.GrantList); // articleId will be set by repository
+        const journalInfoData = deps.transformMedlineJournalInfo(pmid, medlineCitation.MedlineJournalInfo);
+        const chemicals = deps.transformChemicals(pmid, medlineCitation.ChemicalList);
+        const meshHeadings = deps.transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
+        const pubmedData = deps.transformPubMedData(pmid, article.PubmedData);
 
         // Use repository to sync all data
         return await repository.syncArticle(
@@ -483,7 +558,7 @@ export const syncFileToDb = async (
         const batch = pubmedArticles.slice(i, i + batchSize);
 
         for (const article of batch) {
-            const result = await syncSingleArticle(article, repo);
+            const result = await syncSingleArticle(article, repo, defaultDataTransformDependencies);
 
             // Skip articles without valid PMID
             if (result.pmid === 0 && !result.success) {
