@@ -13,6 +13,7 @@ export interface MedlineCitationCreateData {
     dateCompleted: Date | null;
     dateRevised: Date;
     citationSubset: string;
+    // journalId: number;
 }
 
 /**
@@ -22,7 +23,7 @@ export interface ArticleCreateData {
     pmid: number;
     journalId: number;
     articleTitle: string;
-    pagination?: { MedlinePgn?: string };
+    pagination?: string;
     language: string | null;
     publicationTypes: string[];
 }
@@ -55,7 +56,9 @@ export interface GrantCreateData {
 export interface MedlineJournalInfoCreateData {
     pmid: number;
     country: string | null;
+    title: string | null;
     medlineTA: string | null;
+    ISOAbbreviation: string | null;
     nlmUniqueId: number | null;
     issnLinking: string | null;
 }

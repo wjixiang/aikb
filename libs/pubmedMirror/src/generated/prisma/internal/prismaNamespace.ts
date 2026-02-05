@@ -389,7 +389,6 @@ export const ModelName = {
   Author: 'Author',
   Grant: 'Grant',
   Journal: 'Journal',
-  MedlineJournalInfo: 'MedlineJournalInfo',
   Chemical: 'Chemical',
   MeshHeading: 'MeshHeading',
   PubMedData: 'PubMedData',
@@ -409,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "medlineCitation" | "article" | "author" | "grant" | "journal" | "medlineJournalInfo" | "chemical" | "meshHeading" | "pubMedData" | "baselineSync"
+    modelProps: "medlineCitation" | "article" | "author" | "grant" | "journal" | "chemical" | "meshHeading" | "pubMedData" | "baselineSync"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -783,80 +782,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    MedlineJournalInfo: {
-      payload: Prisma.$MedlineJournalInfoPayload<ExtArgs>
-      fields: Prisma.MedlineJournalInfoFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.MedlineJournalInfoFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.MedlineJournalInfoFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        findFirst: {
-          args: Prisma.MedlineJournalInfoFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.MedlineJournalInfoFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        findMany: {
-          args: Prisma.MedlineJournalInfoFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>[]
-        }
-        create: {
-          args: Prisma.MedlineJournalInfoCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        createMany: {
-          args: Prisma.MedlineJournalInfoCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.MedlineJournalInfoCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>[]
-        }
-        delete: {
-          args: Prisma.MedlineJournalInfoDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        update: {
-          args: Prisma.MedlineJournalInfoUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        deleteMany: {
-          args: Prisma.MedlineJournalInfoDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.MedlineJournalInfoUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.MedlineJournalInfoUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>[]
-        }
-        upsert: {
-          args: Prisma.MedlineJournalInfoUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MedlineJournalInfoPayload>
-        }
-        aggregate: {
-          args: Prisma.MedlineJournalInfoAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateMedlineJournalInfo>
-        }
-        groupBy: {
-          args: Prisma.MedlineJournalInfoGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MedlineJournalInfoGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.MedlineJournalInfoCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MedlineJournalInfoCountAggregateOutputType> | number
-        }
-      }
-    }
     Chemical: {
       payload: Prisma.$ChemicalPayload<ExtArgs>
       fields: Prisma.ChemicalFieldRefs
@@ -1198,7 +1123,8 @@ export const MedlineCitationScalarFieldEnum = {
   dateRevised: 'dateRevised',
   citationSubset: 'citationSubset',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  journalId: 'journalId'
 } as const
 
 export type MedlineCitationScalarFieldEnum = (typeof MedlineCitationScalarFieldEnum)[keyof typeof MedlineCitationScalarFieldEnum]
@@ -1250,23 +1176,14 @@ export type GrantScalarFieldEnum = (typeof GrantScalarFieldEnum)[keyof typeof Gr
 export const JournalScalarFieldEnum = {
   id: 'id',
   country: 'country',
+  title: 'title',
   medlineTA: 'medlineTA',
+  ISOAbbreviation: 'ISOAbbreviation',
   nlmUniqueId: 'nlmUniqueId',
   issnLinking: 'issnLinking'
 } as const
 
 export type JournalScalarFieldEnum = (typeof JournalScalarFieldEnum)[keyof typeof JournalScalarFieldEnum]
-
-
-export const MedlineJournalInfoScalarFieldEnum = {
-  id: 'id',
-  pmid: 'pmid',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  journalId: 'journalId'
-} as const
-
-export type MedlineJournalInfoScalarFieldEnum = (typeof MedlineJournalInfoScalarFieldEnum)[keyof typeof MedlineJournalInfoScalarFieldEnum]
 
 
 export const ChemicalScalarFieldEnum = {
@@ -1327,14 +1244,6 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
-
-export const NullableJsonNullValueInput = {
-  DbNull: DbNull,
-  JsonNull: JsonNull
-} as const
-
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const JsonNullValueInput = {
@@ -1528,7 +1437,6 @@ export type GlobalOmitConfig = {
   author?: Prisma.AuthorOmit
   grant?: Prisma.GrantOmit
   journal?: Prisma.JournalOmit
-  medlineJournalInfo?: Prisma.MedlineJournalInfoOmit
   chemical?: Prisma.ChemicalOmit
   meshHeading?: Prisma.MeshHeadingOmit
   pubMedData?: Prisma.PubMedDataOmit

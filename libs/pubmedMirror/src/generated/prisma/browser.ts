@@ -43,11 +43,6 @@ export type Grant = Prisma.GrantModel
  */
 export type Journal = Prisma.JournalModel
 /**
- * Model MedlineJournalInfo
- * 
- */
-export type MedlineJournalInfo = Prisma.MedlineJournalInfoModel
-/**
  * Model Chemical
  * 
  */

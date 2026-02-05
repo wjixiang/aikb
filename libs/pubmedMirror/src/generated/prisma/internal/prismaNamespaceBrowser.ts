@@ -56,7 +56,6 @@ export const ModelName = {
   Author: 'Author',
   Grant: 'Grant',
   Journal: 'Journal',
-  MedlineJournalInfo: 'MedlineJournalInfo',
   Chemical: 'Chemical',
   MeshHeading: 'MeshHeading',
   PubMedData: 'PubMedData',
@@ -85,7 +84,8 @@ export const MedlineCitationScalarFieldEnum = {
   dateRevised: 'dateRevised',
   citationSubset: 'citationSubset',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  journalId: 'journalId'
 } as const
 
 export type MedlineCitationScalarFieldEnum = (typeof MedlineCitationScalarFieldEnum)[keyof typeof MedlineCitationScalarFieldEnum]
@@ -137,23 +137,14 @@ export type GrantScalarFieldEnum = (typeof GrantScalarFieldEnum)[keyof typeof Gr
 export const JournalScalarFieldEnum = {
   id: 'id',
   country: 'country',
+  title: 'title',
   medlineTA: 'medlineTA',
+  ISOAbbreviation: 'ISOAbbreviation',
   nlmUniqueId: 'nlmUniqueId',
   issnLinking: 'issnLinking'
 } as const
 
 export type JournalScalarFieldEnum = (typeof JournalScalarFieldEnum)[keyof typeof JournalScalarFieldEnum]
-
-
-export const MedlineJournalInfoScalarFieldEnum = {
-  id: 'id',
-  pmid: 'pmid',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  journalId: 'journalId'
-} as const
-
-export type MedlineJournalInfoScalarFieldEnum = (typeof MedlineJournalInfoScalarFieldEnum)[keyof typeof MedlineJournalInfoScalarFieldEnum]
 
 
 export const ChemicalScalarFieldEnum = {
@@ -214,14 +205,6 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
-
-export const NullableJsonNullValueInput = {
-  DbNull: 'DbNull',
-  JsonNull: 'JsonNull'
-} as const
-
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const JsonNullValueInput = {

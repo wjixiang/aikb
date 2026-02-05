@@ -28,10 +28,12 @@ export type AggregateMedlineCitation = {
 
 export type MedlineCitationAvgAggregateOutputType = {
   pmid: number | null
+  journalId: number | null
 }
 
 export type MedlineCitationSumAggregateOutputType = {
   pmid: number | null
+  journalId: number | null
 }
 
 export type MedlineCitationMinAggregateOutputType = {
@@ -41,6 +43,7 @@ export type MedlineCitationMinAggregateOutputType = {
   citationSubset: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type MedlineCitationMaxAggregateOutputType = {
@@ -50,6 +53,7 @@ export type MedlineCitationMaxAggregateOutputType = {
   citationSubset: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type MedlineCitationCountAggregateOutputType = {
@@ -59,16 +63,19 @@ export type MedlineCitationCountAggregateOutputType = {
   citationSubset: number
   createdAt: number
   updatedAt: number
+  journalId: number
   _all: number
 }
 
 
 export type MedlineCitationAvgAggregateInputType = {
   pmid?: true
+  journalId?: true
 }
 
 export type MedlineCitationSumAggregateInputType = {
   pmid?: true
+  journalId?: true
 }
 
 export type MedlineCitationMinAggregateInputType = {
@@ -78,6 +85,7 @@ export type MedlineCitationMinAggregateInputType = {
   citationSubset?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type MedlineCitationMaxAggregateInputType = {
@@ -87,6 +95,7 @@ export type MedlineCitationMaxAggregateInputType = {
   citationSubset?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type MedlineCitationCountAggregateInputType = {
@@ -96,6 +105,7 @@ export type MedlineCitationCountAggregateInputType = {
   citationSubset?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
   _all?: true
 }
 
@@ -192,6 +202,7 @@ export type MedlineCitationGroupByOutputType = {
   citationSubset: string | null
   createdAt: Date
   updatedAt: Date
+  journalId: number
   _count: MedlineCitationCountAggregateOutputType | null
   _avg: MedlineCitationAvgAggregateOutputType | null
   _sum: MedlineCitationSumAggregateOutputType | null
@@ -224,8 +235,9 @@ export type MedlineCitationWhereInput = {
   citationSubset?: Prisma.StringNullableFilter<"MedlineCitation"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineCitation"> | number
   article?: Prisma.XOR<Prisma.ArticleNullableScalarRelationFilter, Prisma.ArticleWhereInput> | null
-  medlineJournalInfo?: Prisma.XOR<Prisma.MedlineJournalInfoNullableScalarRelationFilter, Prisma.MedlineJournalInfoWhereInput> | null
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   chemicals?: Prisma.ChemicalListRelationFilter
   meshHeadings?: Prisma.MeshHeadingListRelationFilter
   pubmedData?: Prisma.XOR<Prisma.PubMedDataNullableScalarRelationFilter, Prisma.PubMedDataWhereInput> | null
@@ -238,8 +250,9 @@ export type MedlineCitationOrderByWithRelationInput = {
   citationSubset?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
   article?: Prisma.ArticleOrderByWithRelationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoOrderByWithRelationInput
+  journal?: Prisma.JournalOrderByWithRelationInput
   chemicals?: Prisma.ChemicalOrderByRelationAggregateInput
   meshHeadings?: Prisma.MeshHeadingOrderByRelationAggregateInput
   pubmedData?: Prisma.PubMedDataOrderByWithRelationInput
@@ -255,8 +268,9 @@ export type MedlineCitationWhereUniqueInput = Prisma.AtLeast<{
   citationSubset?: Prisma.StringNullableFilter<"MedlineCitation"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineCitation"> | number
   article?: Prisma.XOR<Prisma.ArticleNullableScalarRelationFilter, Prisma.ArticleWhereInput> | null
-  medlineJournalInfo?: Prisma.XOR<Prisma.MedlineJournalInfoNullableScalarRelationFilter, Prisma.MedlineJournalInfoWhereInput> | null
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   chemicals?: Prisma.ChemicalListRelationFilter
   meshHeadings?: Prisma.MeshHeadingListRelationFilter
   pubmedData?: Prisma.XOR<Prisma.PubMedDataNullableScalarRelationFilter, Prisma.PubMedDataWhereInput> | null
@@ -269,6 +283,7 @@ export type MedlineCitationOrderByWithAggregationInput = {
   citationSubset?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
   _count?: Prisma.MedlineCitationCountOrderByAggregateInput
   _avg?: Prisma.MedlineCitationAvgOrderByAggregateInput
   _max?: Prisma.MedlineCitationMaxOrderByAggregateInput
@@ -286,6 +301,7 @@ export type MedlineCitationScalarWhereWithAggregatesInput = {
   citationSubset?: Prisma.StringNullableWithAggregatesFilter<"MedlineCitation"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MedlineCitation"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MedlineCitation"> | Date | string
+  journalId?: Prisma.IntWithAggregatesFilter<"MedlineCitation"> | number
 }
 
 export type MedlineCitationCreateInput = {
@@ -296,7 +312,7 @@ export type MedlineCitationCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   article?: Prisma.ArticleCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineCitationsInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataCreateNestedOneWithoutMedlineCitationInput
@@ -309,8 +325,8 @@ export type MedlineCitationUncheckedCreateInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   article?: Prisma.ArticleUncheckedCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedCreateNestedOneWithoutMedlineCitationInput
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataUncheckedCreateNestedOneWithoutMedlineCitationInput
@@ -324,7 +340,7 @@ export type MedlineCitationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUpdateOneWithoutMedlineCitationNestedInput
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineCitationsNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
@@ -337,8 +353,8 @@ export type MedlineCitationUncheckedUpdateInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInput
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
@@ -351,6 +367,7 @@ export type MedlineCitationCreateManyInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
 }
 
 export type MedlineCitationUpdateManyMutationInput = {
@@ -369,6 +386,7 @@ export type MedlineCitationUncheckedUpdateManyInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type MedlineCitationCountOrderByAggregateInput = {
@@ -378,10 +396,12 @@ export type MedlineCitationCountOrderByAggregateInput = {
   citationSubset?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineCitationAvgOrderByAggregateInput = {
   pmid?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineCitationMaxOrderByAggregateInput = {
@@ -391,6 +411,7 @@ export type MedlineCitationMaxOrderByAggregateInput = {
   citationSubset?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineCitationMinOrderByAggregateInput = {
@@ -400,15 +421,27 @@ export type MedlineCitationMinOrderByAggregateInput = {
   citationSubset?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineCitationSumOrderByAggregateInput = {
   pmid?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type MedlineCitationScalarRelationFilter = {
   is?: Prisma.MedlineCitationWhereInput
   isNot?: Prisma.MedlineCitationWhereInput
+}
+
+export type MedlineCitationListRelationFilter = {
+  every?: Prisma.MedlineCitationWhereInput
+  some?: Prisma.MedlineCitationWhereInput
+  none?: Prisma.MedlineCitationWhereInput
+}
+
+export type MedlineCitationOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -445,18 +478,46 @@ export type MedlineCitationUpdateOneRequiredWithoutArticleNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MedlineCitationUpdateToOneWithWhereWithoutArticleInput, Prisma.MedlineCitationUpdateWithoutArticleInput>, Prisma.MedlineCitationUncheckedUpdateWithoutArticleInput>
 }
 
-export type MedlineCitationCreateNestedOneWithoutMedlineJournalInfoInput = {
-  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput>
-  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutMedlineJournalInfoInput
-  connect?: Prisma.MedlineCitationWhereUniqueInput
+export type MedlineCitationCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput> | Prisma.MedlineCitationCreateWithoutJournalInput[] | Prisma.MedlineCitationUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutJournalInput | Prisma.MedlineCitationCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.MedlineCitationCreateManyJournalInputEnvelope
+  connect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
 }
 
-export type MedlineCitationUpdateOneRequiredWithoutMedlineJournalInfoNestedInput = {
-  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput>
-  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutMedlineJournalInfoInput
-  upsert?: Prisma.MedlineCitationUpsertWithoutMedlineJournalInfoInput
-  connect?: Prisma.MedlineCitationWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.MedlineCitationUpdateToOneWithWhereWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUpdateWithoutMedlineJournalInfoInput>, Prisma.MedlineCitationUncheckedUpdateWithoutMedlineJournalInfoInput>
+export type MedlineCitationUncheckedCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput> | Prisma.MedlineCitationCreateWithoutJournalInput[] | Prisma.MedlineCitationUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutJournalInput | Prisma.MedlineCitationCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.MedlineCitationCreateManyJournalInputEnvelope
+  connect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+}
+
+export type MedlineCitationUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput> | Prisma.MedlineCitationCreateWithoutJournalInput[] | Prisma.MedlineCitationUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutJournalInput | Prisma.MedlineCitationCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.MedlineCitationUpsertWithWhereUniqueWithoutJournalInput | Prisma.MedlineCitationUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.MedlineCitationCreateManyJournalInputEnvelope
+  set?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  disconnect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  delete?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  connect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  update?: Prisma.MedlineCitationUpdateWithWhereUniqueWithoutJournalInput | Prisma.MedlineCitationUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.MedlineCitationUpdateManyWithWhereWithoutJournalInput | Prisma.MedlineCitationUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.MedlineCitationScalarWhereInput | Prisma.MedlineCitationScalarWhereInput[]
+}
+
+export type MedlineCitationUncheckedUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput> | Prisma.MedlineCitationCreateWithoutJournalInput[] | Prisma.MedlineCitationUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.MedlineCitationCreateOrConnectWithoutJournalInput | Prisma.MedlineCitationCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.MedlineCitationUpsertWithWhereUniqueWithoutJournalInput | Prisma.MedlineCitationUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.MedlineCitationCreateManyJournalInputEnvelope
+  set?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  disconnect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  delete?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  connect?: Prisma.MedlineCitationWhereUniqueInput | Prisma.MedlineCitationWhereUniqueInput[]
+  update?: Prisma.MedlineCitationUpdateWithWhereUniqueWithoutJournalInput | Prisma.MedlineCitationUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.MedlineCitationUpdateManyWithWhereWithoutJournalInput | Prisma.MedlineCitationUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.MedlineCitationScalarWhereInput | Prisma.MedlineCitationScalarWhereInput[]
 }
 
 export type MedlineCitationCreateNestedOneWithoutChemicalsInput = {
@@ -508,7 +569,7 @@ export type MedlineCitationCreateWithoutArticleInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  medlineJournalInfo?: Prisma.MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineCitationsInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataCreateNestedOneWithoutMedlineCitationInput
@@ -521,7 +582,7 @@ export type MedlineCitationUncheckedCreateWithoutArticleInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedCreateNestedOneWithoutMedlineCitationInput
+  journalId: number
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataUncheckedCreateNestedOneWithoutMedlineCitationInput
@@ -550,7 +611,7 @@ export type MedlineCitationUpdateWithoutArticleInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUpdateOneWithoutMedlineCitationNestedInput
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineCitationsNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
@@ -563,13 +624,13 @@ export type MedlineCitationUncheckedUpdateWithoutArticleInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInput
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
 }
 
-export type MedlineCitationCreateWithoutMedlineJournalInfoInput = {
+export type MedlineCitationCreateWithoutJournalInput = {
   pmid: number
   dateCompleted?: Date | string | null
   dateRevised: Date | string
@@ -582,7 +643,7 @@ export type MedlineCitationCreateWithoutMedlineJournalInfoInput = {
   pubmedData?: Prisma.PubMedDataCreateNestedOneWithoutMedlineCitationInput
 }
 
-export type MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput = {
+export type MedlineCitationUncheckedCreateWithoutJournalInput = {
   pmid: number
   dateCompleted?: Date | string | null
   dateRevised: Date | string
@@ -595,46 +656,43 @@ export type MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput = {
   pubmedData?: Prisma.PubMedDataUncheckedCreateNestedOneWithoutMedlineCitationInput
 }
 
-export type MedlineCitationCreateOrConnectWithoutMedlineJournalInfoInput = {
+export type MedlineCitationCreateOrConnectWithoutJournalInput = {
   where: Prisma.MedlineCitationWhereUniqueInput
-  create: Prisma.XOR<Prisma.MedlineCitationCreateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput>
+  create: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput>
 }
 
-export type MedlineCitationUpsertWithoutMedlineJournalInfoInput = {
-  update: Prisma.XOR<Prisma.MedlineCitationUpdateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedUpdateWithoutMedlineJournalInfoInput>
-  create: Prisma.XOR<Prisma.MedlineCitationCreateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedCreateWithoutMedlineJournalInfoInput>
-  where?: Prisma.MedlineCitationWhereInput
+export type MedlineCitationCreateManyJournalInputEnvelope = {
+  data: Prisma.MedlineCitationCreateManyJournalInput | Prisma.MedlineCitationCreateManyJournalInput[]
+  skipDuplicates?: boolean
 }
 
-export type MedlineCitationUpdateToOneWithWhereWithoutMedlineJournalInfoInput = {
-  where?: Prisma.MedlineCitationWhereInput
-  data: Prisma.XOR<Prisma.MedlineCitationUpdateWithoutMedlineJournalInfoInput, Prisma.MedlineCitationUncheckedUpdateWithoutMedlineJournalInfoInput>
+export type MedlineCitationUpsertWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.MedlineCitationWhereUniqueInput
+  update: Prisma.XOR<Prisma.MedlineCitationUpdateWithoutJournalInput, Prisma.MedlineCitationUncheckedUpdateWithoutJournalInput>
+  create: Prisma.XOR<Prisma.MedlineCitationCreateWithoutJournalInput, Prisma.MedlineCitationUncheckedCreateWithoutJournalInput>
 }
 
-export type MedlineCitationUpdateWithoutMedlineJournalInfoInput = {
-  pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateRevised?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
-  chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
-  meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
-  pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
+export type MedlineCitationUpdateWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.MedlineCitationWhereUniqueInput
+  data: Prisma.XOR<Prisma.MedlineCitationUpdateWithoutJournalInput, Prisma.MedlineCitationUncheckedUpdateWithoutJournalInput>
 }
 
-export type MedlineCitationUncheckedUpdateWithoutMedlineJournalInfoInput = {
-  pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateRevised?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
-  chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
-  meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
-  pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
+export type MedlineCitationUpdateManyWithWhereWithoutJournalInput = {
+  where: Prisma.MedlineCitationScalarWhereInput
+  data: Prisma.XOR<Prisma.MedlineCitationUpdateManyMutationInput, Prisma.MedlineCitationUncheckedUpdateManyWithoutJournalInput>
+}
+
+export type MedlineCitationScalarWhereInput = {
+  AND?: Prisma.MedlineCitationScalarWhereInput | Prisma.MedlineCitationScalarWhereInput[]
+  OR?: Prisma.MedlineCitationScalarWhereInput[]
+  NOT?: Prisma.MedlineCitationScalarWhereInput | Prisma.MedlineCitationScalarWhereInput[]
+  pmid?: Prisma.IntFilter<"MedlineCitation"> | number
+  dateCompleted?: Prisma.DateTimeNullableFilter<"MedlineCitation"> | Date | string | null
+  dateRevised?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
+  citationSubset?: Prisma.StringNullableFilter<"MedlineCitation"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"MedlineCitation"> | Date | string
+  journalId?: Prisma.IntFilter<"MedlineCitation"> | number
 }
 
 export type MedlineCitationCreateWithoutChemicalsInput = {
@@ -645,7 +703,7 @@ export type MedlineCitationCreateWithoutChemicalsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   article?: Prisma.ArticleCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineCitationsInput
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataCreateNestedOneWithoutMedlineCitationInput
 }
@@ -657,8 +715,8 @@ export type MedlineCitationUncheckedCreateWithoutChemicalsInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   article?: Prisma.ArticleUncheckedCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedCreateNestedOneWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataUncheckedCreateNestedOneWithoutMedlineCitationInput
 }
@@ -687,7 +745,7 @@ export type MedlineCitationUpdateWithoutChemicalsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUpdateOneWithoutMedlineCitationNestedInput
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineCitationsNestedInput
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
 }
@@ -699,8 +757,8 @@ export type MedlineCitationUncheckedUpdateWithoutChemicalsInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
 }
@@ -713,7 +771,7 @@ export type MedlineCitationCreateWithoutMeshHeadingsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   article?: Prisma.ArticleCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineCitationsInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataCreateNestedOneWithoutMedlineCitationInput
 }
@@ -725,8 +783,8 @@ export type MedlineCitationUncheckedCreateWithoutMeshHeadingsInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   article?: Prisma.ArticleUncheckedCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedCreateNestedOneWithoutMedlineCitationInput
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutMedlineCitationInput
   pubmedData?: Prisma.PubMedDataUncheckedCreateNestedOneWithoutMedlineCitationInput
 }
@@ -755,7 +813,7 @@ export type MedlineCitationUpdateWithoutMeshHeadingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUpdateOneWithoutMedlineCitationNestedInput
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineCitationsNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
 }
@@ -767,8 +825,8 @@ export type MedlineCitationUncheckedUpdateWithoutMeshHeadingsInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInput
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
   pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
 }
@@ -781,7 +839,7 @@ export type MedlineCitationCreateWithoutPubmedDataInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   article?: Prisma.ArticleCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoCreateNestedOneWithoutMedlineCitationInput
+  journal: Prisma.JournalCreateNestedOneWithoutMedlineCitationsInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutMedlineCitationInput
 }
@@ -793,8 +851,8 @@ export type MedlineCitationUncheckedCreateWithoutPubmedDataInput = {
   citationSubset?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   article?: Prisma.ArticleUncheckedCreateNestedOneWithoutMedlineCitationInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedCreateNestedOneWithoutMedlineCitationInput
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutMedlineCitationInput
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutMedlineCitationInput
 }
@@ -823,7 +881,7 @@ export type MedlineCitationUpdateWithoutPubmedDataInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUpdateOneWithoutMedlineCitationNestedInput
+  journal?: Prisma.JournalUpdateOneRequiredWithoutMedlineCitationsNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
 }
@@ -835,10 +893,54 @@ export type MedlineCitationUncheckedUpdateWithoutPubmedDataInput = {
   citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
-  medlineJournalInfo?: Prisma.MedlineJournalInfoUncheckedUpdateOneWithoutMedlineCitationNestedInput
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
+}
+
+export type MedlineCitationCreateManyJournalInput = {
+  pmid: number
+  dateCompleted?: Date | string | null
+  dateRevised: Date | string
+  citationSubset?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type MedlineCitationUpdateWithoutJournalInput = {
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateRevised?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  article?: Prisma.ArticleUpdateOneWithoutMedlineCitationNestedInput
+  chemicals?: Prisma.ChemicalUpdateManyWithoutMedlineCitationNestedInput
+  meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutMedlineCitationNestedInput
+  pubmedData?: Prisma.PubMedDataUpdateOneWithoutMedlineCitationNestedInput
+}
+
+export type MedlineCitationUncheckedUpdateWithoutJournalInput = {
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateRevised?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  article?: Prisma.ArticleUncheckedUpdateOneWithoutMedlineCitationNestedInput
+  chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutMedlineCitationNestedInput
+  meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutMedlineCitationNestedInput
+  pubmedData?: Prisma.PubMedDataUncheckedUpdateOneWithoutMedlineCitationNestedInput
+}
+
+export type MedlineCitationUncheckedUpdateManyWithoutJournalInput = {
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateRevised?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  citationSubset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -888,8 +990,9 @@ export type MedlineCitationSelect<ExtArgs extends runtime.Types.Extensions.Inter
   citationSubset?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
   article?: boolean | Prisma.MedlineCitation$articleArgs<ExtArgs>
-  medlineJournalInfo?: boolean | Prisma.MedlineCitation$medlineJournalInfoArgs<ExtArgs>
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   chemicals?: boolean | Prisma.MedlineCitation$chemicalsArgs<ExtArgs>
   meshHeadings?: boolean | Prisma.MedlineCitation$meshHeadingsArgs<ExtArgs>
   pubmedData?: boolean | Prisma.MedlineCitation$pubmedDataArgs<ExtArgs>
@@ -903,6 +1006,8 @@ export type MedlineCitationSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   citationSubset?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medlineCitation"]>
 
 export type MedlineCitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -912,6 +1017,8 @@ export type MedlineCitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   citationSubset?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medlineCitation"]>
 
 export type MedlineCitationSelectScalar = {
@@ -921,25 +1028,30 @@ export type MedlineCitationSelectScalar = {
   citationSubset?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
 }
 
-export type MedlineCitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"pmid" | "dateCompleted" | "dateRevised" | "citationSubset" | "createdAt" | "updatedAt", ExtArgs["result"]["medlineCitation"]>
+export type MedlineCitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"pmid" | "dateCompleted" | "dateRevised" | "citationSubset" | "createdAt" | "updatedAt" | "journalId", ExtArgs["result"]["medlineCitation"]>
 export type MedlineCitationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   article?: boolean | Prisma.MedlineCitation$articleArgs<ExtArgs>
-  medlineJournalInfo?: boolean | Prisma.MedlineCitation$medlineJournalInfoArgs<ExtArgs>
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   chemicals?: boolean | Prisma.MedlineCitation$chemicalsArgs<ExtArgs>
   meshHeadings?: boolean | Prisma.MedlineCitation$meshHeadingsArgs<ExtArgs>
   pubmedData?: boolean | Prisma.MedlineCitation$pubmedDataArgs<ExtArgs>
   _count?: boolean | Prisma.MedlineCitationCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type MedlineCitationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type MedlineCitationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type MedlineCitationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
+}
+export type MedlineCitationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
+}
 
 export type $MedlineCitationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MedlineCitation"
   objects: {
     article: Prisma.$ArticlePayload<ExtArgs> | null
-    medlineJournalInfo: Prisma.$MedlineJournalInfoPayload<ExtArgs> | null
+    journal: Prisma.$JournalPayload<ExtArgs>
     chemicals: Prisma.$ChemicalPayload<ExtArgs>[]
     meshHeadings: Prisma.$MeshHeadingPayload<ExtArgs>[]
     pubmedData: Prisma.$PubMedDataPayload<ExtArgs> | null
@@ -951,6 +1063,7 @@ export type $MedlineCitationPayload<ExtArgs extends runtime.Types.Extensions.Int
     citationSubset: string | null
     createdAt: Date
     updatedAt: Date
+    journalId: number
   }, ExtArgs["result"]["medlineCitation"]>
   composites: {}
 }
@@ -1346,7 +1459,7 @@ readonly fields: MedlineCitationFieldRefs;
 export interface Prisma__MedlineCitationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   article<T extends Prisma.MedlineCitation$articleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitation$articleArgs<ExtArgs>>): Prisma.Prisma__ArticleClient<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  medlineJournalInfo<T extends Prisma.MedlineCitation$medlineJournalInfoArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitation$medlineJournalInfoArgs<ExtArgs>>): Prisma.Prisma__MedlineJournalInfoClient<runtime.Types.Result.GetResult<Prisma.$MedlineJournalInfoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  journal<T extends Prisma.JournalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JournalDefaultArgs<ExtArgs>>): Prisma.Prisma__JournalClient<runtime.Types.Result.GetResult<Prisma.$JournalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   chemicals<T extends Prisma.MedlineCitation$chemicalsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitation$chemicalsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChemicalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   meshHeadings<T extends Prisma.MedlineCitation$meshHeadingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitation$meshHeadingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MeshHeadingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pubmedData<T extends Prisma.MedlineCitation$pubmedDataArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitation$pubmedDataArgs<ExtArgs>>): Prisma.Prisma__PubMedDataClient<runtime.Types.Result.GetResult<Prisma.$PubMedDataPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -1385,6 +1498,7 @@ export interface MedlineCitationFieldRefs {
   readonly citationSubset: Prisma.FieldRef<"MedlineCitation", 'String'>
   readonly createdAt: Prisma.FieldRef<"MedlineCitation", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MedlineCitation", 'DateTime'>
+  readonly journalId: Prisma.FieldRef<"MedlineCitation", 'Int'>
 }
     
 
@@ -1634,6 +1748,10 @@ export type MedlineCitationCreateManyAndReturnArgs<ExtArgs extends runtime.Types
    */
   data: Prisma.MedlineCitationCreateManyInput | Prisma.MedlineCitationCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MedlineCitationIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1704,6 +1822,10 @@ export type MedlineCitationUpdateManyAndReturnArgs<ExtArgs extends runtime.Types
    * Limit how many MedlineCitations to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MedlineCitationIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1789,25 +1911,6 @@ export type MedlineCitation$articleArgs<ExtArgs extends runtime.Types.Extensions
    */
   include?: Prisma.ArticleInclude<ExtArgs> | null
   where?: Prisma.ArticleWhereInput
-}
-
-/**
- * MedlineCitation.medlineJournalInfo
- */
-export type MedlineCitation$medlineJournalInfoArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the MedlineJournalInfo
-   */
-  select?: Prisma.MedlineJournalInfoSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the MedlineJournalInfo
-   */
-  omit?: Prisma.MedlineJournalInfoOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.MedlineJournalInfoInclude<ExtArgs> | null
-  where?: Prisma.MedlineJournalInfoWhereInput
 }
 
 /**

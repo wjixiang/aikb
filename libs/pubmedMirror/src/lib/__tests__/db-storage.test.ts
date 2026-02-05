@@ -8,25 +8,33 @@ import {
     type OSSDependencies,
     type XMLDependencies,
     type SyncDependencies,
-    defaultDependencies
+    defaultDependencies,
+    syncSingleArticle,
+    type DataTransformDependencies,
+    defaultDataTransformDependencies,
 } from '../db-storage.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import type { IArticleRepository } from '../article-repository.js';
+import { readFileSync } from 'node:fs';
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+/**
+ * Create a mock article repository for testing
+ */
+const createMockRepository = (overrides?: Partial<IArticleRepository>): IArticleRepository => {
+    return {
+        syncArticle: vi.fn().mockResolvedValue({
+            pmid: 12345,
+            success: true,
+        }),
+        ...overrides,
+    } as unknown as IArticleRepository;
+};
 
 describe('db-storage tests', () => {
-    let prisma: PrismaClient;
-
-    beforeAll(async () => {
-        // Set DATABASE_URL for tests
-        if (!process.env['DATABASE_URL']) {
-            process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/test';
-        }
-        prisma = getPrismaClient();
-    });
-
-    afterAll(async () => {
-        await closePrismaClient();
-    });
 
     describe('syncFileToDb with dependency injection', () => {
         let mockRepository: IArticleRepository;
@@ -187,6 +195,17 @@ describe('db-storage tests', () => {
 
             expect(result).toEqual([]);
             expect(mockRepository.syncArticle).not.toHaveBeenCalled();
+        });
+
+        it('should process article data', async () => {
+            const testArticleData = JSON.parse(readFileSync(__dirname + '/pubmedArticle1.json').toString());
+            const mockRepository = createMockRepository();
+            const spy = vi.spyOn(mockRepository, 'syncArticle')
+            const result = await syncSingleArticle(testArticleData, mockRepository);
+
+            console.log(spy.mock.calls)
+            expect(result.success).toBe(true);
+            expect(mockRepository.syncArticle).toHaveBeenCalled();
         });
 
         it('should handle single article (not array)', async () => {

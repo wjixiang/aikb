@@ -8,9 +8,10 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import {
     createArticleRepository,
     IArticleRepository,
+    MedlineJournalInfoCreateData,
     type SyncArticleResult,
 } from './article-repository.js';
-import { writeFileSync } from "fs";
+
 
 const gunzip = promisify(zlib.gunzip);
 
@@ -84,16 +85,34 @@ interface MedlineCitationData {
     DateCompleted?: MedlineDate;
     DateRevised?: MedlineDate;
     Article?: ArticleData;
-    MedlineJournalInfo?: MedlineJournalInfoData;
+    MedlineJournalInfo?: MedlineJournalInfo;
     ChemicalList?: { Chemical?: ChemicalData[] };
     CitationSubset?: string | string[];
     MeshHeadingList?: { MeshHeading?: MeshHeadingData[] };
 }
 
+// Same as original data structure
+interface MedlineJournalInfo {
+    Country: string;
+    MedlineTA: string;
+    NlmUniqueID: number;
+    ISSNLinking: string;
+}
+
+// Article > Journal structure
+interface ArticleJournal {
+    ISSN?: string | { '#text'?: string; '@_IssnType'?: string };
+    JournalIssue?: Record<string, any>;
+    Title?: string;
+    ISOAbbreviation?: string;
+}
+
 interface ArticleData {
-    Journal?: Record<string, any>;
+    Journal?: ArticleJournal | Record<string, any>;
     ArticleTitle?: string;
-    Pagination?: { MedlinePgn?: string };
+    Pagination?: {
+        MedlinePgn: string | number;
+    };
     AuthorList?: { Author?: AuthorData[] };
     Language?: string | string[];
     GrantList?: { Grant?: GrantData[] };
@@ -114,12 +133,12 @@ interface GrantData {
     Country?: string;
 }
 
-interface MedlineJournalInfoData {
-    Country?: string;
-    MedlineTA?: string;
-    NlmUniqueID?: string | number;
-    ISSNLinking?: string;
-}
+// interface JournalInfo {
+//     Country?: string;
+//     MedlineTA?: string;
+//     NlmUniqueID?: string | number;
+//     ISSNLinking?: string;
+// }
 
 interface ChemicalData {
     RegistryNumber?: string | number;
@@ -263,13 +282,26 @@ const transformArticle = (pmid: number, data?: ArticleData) => {
         }
     }
 
+    // Handle pagination - can be string, number, or object with #text
+    let pagination: string | undefined = undefined;
+    if (data.Pagination?.MedlinePgn) {
+        const pgnValue = data.Pagination.MedlinePgn;
+        if (typeof pgnValue === 'string') {
+            pagination = pgnValue;
+        } else if (typeof pgnValue === 'number') {
+            pagination = pgnValue.toString();
+        } else if (typeof pgnValue === 'object' && pgnValue !== null) {
+            pagination = extractText(pgnValue);
+        }
+    }
+
     return {
         pmid,
         journalId: 0, // Will be set by repository after journal is created/looked up
-        articleTitle: data.ArticleTitle || '',
-        pagination: data.Pagination || undefined,
+        articleTitle: extractText(data.ArticleTitle) || '',
+        pagination,
         language,
-        publicationTypes: toArray(data.PublicationTypeList?.PublicationType),
+        publicationTypes: toArray(data.PublicationTypeList?.PublicationType).map(pt => extractText(pt)),
     };
 };
 
@@ -304,21 +336,6 @@ const transformGrants = (articleId: number, grantList?: { Grant?: GrantData[] })
 };
 
 /**
- * Transform MedlineJournalInfo data to database format
- */
-const transformMedlineJournalInfo = (pmid: number, data?: MedlineJournalInfoData) => {
-    if (!data) return null;
-
-    return {
-        pmid,
-        country: data.Country || null,
-        medlineTA: data.MedlineTA || null,
-        nlmUniqueId: typeof data.NlmUniqueID === 'string' ? parseInt(data.NlmUniqueID, 10) : (data.NlmUniqueID || null),
-        issnLinking: data.ISSNLinking || null,
-    };
-};
-
-/**
  * Extract text value from various formats
  */
 const extractText = (value: string | Record<string, any> | undefined): string => {
@@ -328,6 +345,59 @@ const extractText = (value: string | Record<string, any> | undefined): string =>
     }
     return '';
 };
+
+/**
+ * Transform MedlineJournalInfo data to database format
+ * Combines data from both MedlineJournalInfo and Article > Journal
+ */
+const transformMedlineJournalInfo = (
+    pmid: number,
+    medlineJournalInfo?: MedlineJournalInfo,
+    articleJournal?: ArticleJournal | Record<string, any>
+): MedlineJournalInfoCreateData | null => {
+    if (!medlineJournalInfo && !articleJournal) return null;
+
+    // Extract ISSN from Article > Journal (can be string or object with #text)
+    let articleIssn: string | null = null;
+    if (articleJournal?.ISSN) {
+        const issnValue = articleJournal.ISSN;
+        if (typeof issnValue === 'string') {
+            articleIssn = issnValue;
+        } else if (typeof issnValue === 'object' && issnValue !== null) {
+            articleIssn = extractText(issnValue);
+        }
+    }
+
+    // Extract Title from Article > Journal
+    const articleTitle = articleJournal?.Title ? extractText(articleJournal.Title) : null;
+
+    // Extract ISOAbbreviation from Article > Journal
+    const articleISOAbbreviation = articleJournal?.ISOAbbreviation ? extractText(articleJournal.ISOAbbreviation) : null;
+
+    // Parse NlmUniqueID from MedlineJournalInfo
+    let nlmUniqueId: number | null = null;
+    if (medlineJournalInfo?.NlmUniqueID) {
+        if (typeof medlineJournalInfo.NlmUniqueID === 'number') {
+            nlmUniqueId = medlineJournalInfo.NlmUniqueID;
+        } else if (typeof medlineJournalInfo.NlmUniqueID === 'string') {
+            const parsed = parseInt(medlineJournalInfo.NlmUniqueID, 10);
+            if (!isNaN(parsed)) {
+                nlmUniqueId = parsed;
+            }
+        }
+    }
+
+    return {
+        pmid,
+        country: medlineJournalInfo?.Country || null,
+        title: articleTitle || null,
+        ISOAbbreviation: articleISOAbbreviation || null,
+        medlineTA: medlineJournalInfo?.MedlineTA || null,
+        nlmUniqueId: nlmUniqueId,
+        issnLinking: medlineJournalInfo?.ISSNLinking || articleIssn || null,
+    };
+};
+
 
 /**
  * Transform Chemical data to database format
@@ -388,7 +458,7 @@ export interface DataTransformDependencies {
         pmid: number;
         journalId: number;
         articleTitle: string;
-        pagination: { MedlinePgn?: string } | undefined;
+        pagination: string | undefined;
         language: string | null;
         publicationTypes: string[];
     } | null;
@@ -406,13 +476,12 @@ export interface DataTransformDependencies {
         agency: string | null;
         country: string | null;
     }>;
-    transformMedlineJournalInfo: (pmid: number, data?: MedlineJournalInfoData) => {
-        pmid: number;
-        country: string | null;
-        medlineTA: string | null;
-        nlmUniqueId: number | null;
-        issnLinking: string | null;
-    } | null;
+    /** Combine jounral infomation from `MedlineJournalInfo` and `Article > Journal` */
+    transformMedlineJournalInfo: (
+        pmid: number,
+        medlineJournalInfo?: MedlineJournalInfo,
+        articleJournal?: ArticleJournal | Record<string, any>
+    ) => MedlineJournalInfoCreateData | null;
     transformChemicals: (pmid: number, chemicalList?: { Chemical?: ChemicalData[] }) => Array<{
         pmid: number;
         registryNumber: string;
@@ -484,7 +553,11 @@ export const syncSingleArticle = async (
         const articleData = deps.transformArticle(pmid, medlineCitation.Article);
         const authors = deps.transformAuthors(0, medlineCitation.Article?.AuthorList); // articleId will be set by repository
         const grants = deps.transformGrants(0, medlineCitation.Article?.GrantList); // articleId will be set by repository
-        const journalInfoData = deps.transformMedlineJournalInfo(pmid, medlineCitation.MedlineJournalInfo);
+        const journalInfoData = deps.transformMedlineJournalInfo(
+            pmid,
+            medlineCitation.MedlineJournalInfo,
+            medlineCitation.Article?.Journal
+        );
         const chemicals = deps.transformChemicals(pmid, medlineCitation.ChemicalList);
         const meshHeadings = deps.transformMeshHeadings(pmid, medlineCitation.MeshHeadingList);
         const pubmedData = deps.transformPubMedData(pmid, article.PubmedData);

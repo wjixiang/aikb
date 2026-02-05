@@ -20,11 +20,12 @@ model MedlineCitation {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  article            Article?
-  medlineJournalInfo MedlineJournalInfo?
-  chemicals          Chemical[]
-  meshHeadings       MeshHeading[]
-  pubmedData         PubMedData?
+  article      Article?
+  journal      Journal       @relation(fields: [journalId], references: [id])
+  chemicals    Chemical[]
+  meshHeadings MeshHeading[]
+  pubmedData   PubMedData?
+  journalId    Int
 
   @@index([dateCompleted])
   @@index([dateRevised])
@@ -37,7 +38,7 @@ model Article {
   pmid             Int      @unique
   journal          Journal  @relation(fields: [journalId], references: [id])
   articleTitle     String   @db.Text
-  pagination       Json? // Stores MedlinePgn
+  pagination       String? // Stores MedlinePgn
   language         String?
   publicationTypes Json // Stores PublicationType array
   createdAt        DateTime @default(now())
@@ -90,30 +91,33 @@ model Grant {
 }
 
 model Journal {
-  id                  Int                  @id @default(autoincrement())
-  country             String?
-  medlineTA           String
-  nlmUniqueId         Int                  @unique
-  issnLinking         String?
-  medlineJournalInfos MedlineJournalInfo[]
-  articles            Article[]
+  id               Int               @id @default(autoincrement())
+  country          String?
+  title            String?
+  medlineTA        String?
+  ISOAbbreviation  String?
+  nlmUniqueId      Int               @unique
+  issnLinking      String?
+  // medlineJournalInfos MedlineJournalInfo[]
+  articles         Article[]
+  medlineCitations MedlineCitation[]
 }
 
-// Medline Journal Info
-model MedlineJournalInfo {
-  id        Int      @id @default(autoincrement())
-  pmid      Int      @unique
-  journal   Journal  @relation(fields: [journalId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// // Medline Journal Info
+// model MedlineJournalInfo {
+//   id        Int      @id @default(autoincrement())
+//   pmid      Int      @unique
+//   journal   Journal  @relation(fields: [journalId], references: [id])
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  // Relations
-  medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
-  journalId       Int
+//   // Relations
+//   medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
+//   journalId       Int
 
-  @@index([pmid])
-  @@map("medline_journal_info")
-}
+//   @@index([pmid])
+//   @@map("medline_journal_info")
+// }
 
 // Chemical information
 model Chemical {

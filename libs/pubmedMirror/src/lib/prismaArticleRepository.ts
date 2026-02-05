@@ -24,13 +24,6 @@ export class PrismaArticleRepository implements IArticleRepository {
     ): Promise<SyncArticleResult> {
         try {
             await this.prisma.$transaction(async (tx) => {
-                // Upsert MedlineCitation
-                await tx.medlineCitation.upsert({
-                    where: { pmid },
-                    create: citationData,
-                    update: citationData,
-                });
-
                 // Find or create Journal first (needed for Article)
                 let journalId: number | null = null;
                 if (journalInfoData) {
@@ -50,6 +43,8 @@ export class PrismaArticleRepository implements IArticleRepository {
                                     medlineTA: journalInfoData.medlineTA ?? '',
                                     nlmUniqueId: journalInfoData.nlmUniqueId,
                                     issnLinking: journalInfoData.issnLinking,
+                                    title: journalInfoData.title,
+                                    ISOAbbreviation: journalInfoData.ISOAbbreviation
                                 },
                             });
                             journalId = newJournal.id;
@@ -81,21 +76,18 @@ export class PrismaArticleRepository implements IArticleRepository {
                             journalId = newJournal.id;
                         }
                     }
-
-                    // Upsert MedlineJournalInfo with journalId
-                    if (journalId !== null) {
-                        await tx.medlineJournalInfo.upsert({
-                            where: { pmid },
-                            create: {
-                                pmid: journalInfoData.pmid,
-                                journalId,
-                            },
-                            update: {
-                                journalId,
-                            },
-                        });
-                    }
                 }
+
+                if (!journalId) throw new Error('Sync article failed: cannot indentify journal infomation')
+
+                // Upsert MedlineCitation
+                await tx.medlineCitation.upsert({
+                    where: { pmid },
+                    create: { ...citationData, journalId: journalId },
+                    update: citationData,
+                });
+
+
 
                 // Upsert Article (now that we have journalId)
                 if (articleData && journalId !== null) {

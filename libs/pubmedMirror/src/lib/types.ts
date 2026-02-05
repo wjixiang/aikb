@@ -9,3 +9,13 @@ export interface SyncResult {
 export interface FileInfoExtended extends FileInfo {
     synced?: boolean
 }
+
+export interface JournalInfo {
+    pmid: number;
+    country: string | null;
+    title: string | null;
+    ISOAbbreviation: string | null;
+    medlineTA: string | null;
+    nlmUniqueId: number | null;
+    issn: string | null;
+}

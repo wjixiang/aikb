@@ -85,7 +85,7 @@ importers:
         version: 7.8.6(@types/node@22.18.6)
       '@langchain/community':
         specifier: ^0.3.38
-        version: 0.3.57(1acaa7ee6b029ebbf64bb578630c78f4)
+        version: 0.3.57(ad5bab38239f98841473c5b459abbc89)
       '@langchain/core':
         specifier: ^0.3.42
         version: 0.3.79(@opentelemetry/api@1.9.0)(openai@5.23.2(ws@8.18.3)(zod@3.25.76))
@@ -1145,7 +1145,7 @@ importers:
         version: 0.71.2(zod@3.25.76)
       '@apollo/client':
         specifier: ^3.8.0
-        version: 3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))
+        version: 3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.19.0))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))
       '@lmstudio/sdk':
         specifier: ^1.5.0
         version: 1.5.0
@@ -1154,7 +1154,7 @@ importers:
         version: 16.12.0
       openai:
         specifier: ^5.10.1
-        version: 5.23.2(ws@8.18.3)(zod@3.25.76)
+        version: 5.23.2(ws@8.19.0)(zod@3.25.76)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -1318,7 +1318,10 @@ importers:
         version: 7.0.0
       '@prisma/client':
         specifier: ^7.0.0
-        version: 7.0.0(prisma@7.0.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
+        version: 7.0.0(prisma@7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
+      axios:
+        specifier: ^1.12.2
+        version: 1.13.4(debug@4.4.3)
       bottleneck:
         specifier: ^2.19.5
         version: 2.19.5
@@ -1342,8 +1345,8 @@ importers:
         specifier: ^8.15.6
         version: 8.15.6
       prisma:
-        specifier: ^7.0.0
-        version: 7.0.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)
+        specifier: ^7.3.0
+        version: 7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)
 
   libs/quiz-shared:
     dependencies:
@@ -1579,7 +1582,7 @@ packages:
   '@apollo/server@4.12.2':
     resolution: {integrity: sha512-jKRlf+sBMMdKYrjMoiWKne42Eb6paBfDOr08KJnUaeaiyWFj+/040FjVPQI7YGLfdwnYIsl1NUUqS2UdgezJDg==}
     engines: {node: '>=14.16.0'}
-    deprecated: Apollo Server v4 is deprecated and will transition to end-of-life on January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v5 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.
+    deprecated: Apollo Server v4 is end-of-life since January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v5 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.
     peerDependencies:
       graphql: ^16.6.0
 
@@ -2131,6 +2134,11 @@ packages:
 
   '@babel/parser@7.28.5':
     resolution: {integrity: sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  '@babel/parser@7.29.0':
+    resolution: {integrity: sha512-IyDgFV5GeDUVX4YdF/3CPULtVGSXXMLh1xVIgdCgxApktqnQV0r7/8Nqthg+8YLGaAtdyIlo2qIdZrbCv4+7ww==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2688,6 +2696,10 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/types@7.29.0':
+    resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
+    engines: {node: '>=6.9.0'}
+
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
@@ -2913,16 +2925,30 @@ packages:
     resolution: {integrity: sha512-fyqCifz1q2a24TwCIQi6sAYuGHY3hFdzVHB6WRtesM3Nl6rh+TDHa/39umOJpGXz1urxYvduIltBu1EcFzmd0g==}
     engines: {node: '>=20'}
 
+  '@electric-sql/pglite-socket@0.0.20':
+    resolution: {integrity: sha512-J5nLGsicnD9wJHnno9r+DGxfcZWh+YJMCe0q/aCgtG6XOm9Z7fKeite8IZSNXgZeGltSigM9U/vAWZQWdgcSFg==}
+    hasBin: true
+    peerDependencies:
+      '@electric-sql/pglite': 0.3.15
+
   '@electric-sql/pglite-socket@0.0.6':
     resolution: {integrity: sha512-6RjmgzphIHIBA4NrMGJsjNWK4pu+bCWJlEWlwcxFTVY3WT86dFpKwbZaGWZV6C5Rd7sCk1Z0CI76QEfukLAUXw==}
     hasBin: true
     peerDependencies:
       '@electric-sql/pglite': 0.3.2
 
+  '@electric-sql/pglite-tools@0.2.20':
+    resolution: {integrity: sha512-BK50ZnYa3IG7ztXhtgYf0Q7zijV32Iw1cYS8C+ThdQlwx12V5VZ9KRJ42y82Hyb4PkTxZQklVQA9JHyUlex33A==}
+    peerDependencies:
+      '@electric-sql/pglite': 0.3.15
+
   '@electric-sql/pglite-tools@0.2.7':
     resolution: {integrity: sha512-9dAccClqxx4cZB+Ar9B+FZ5WgxDc/Xvl9DPrTWv+dYTf0YNubLzi4wHHRGRGhrJv15XwnyKcGOZAP1VXSneSUg==}
     peerDependencies:
       '@electric-sql/pglite': 0.3.2
+
+  '@electric-sql/pglite@0.3.15':
+    resolution: {integrity: sha512-Cj++n1Mekf9ETfdc16TlDi+cDDQF0W7EcbyRHYOAeZdsAe8M/FJg18itDTSwyHfar2WIezawM9o0EKaRGVKygQ==}
 
   '@electric-sql/pglite@0.3.2':
     resolution: {integrity: sha512-zfWWa+V2ViDCY/cmUfRqeWY1yLto+EpxjXnZzenB1TyxsTiXaTWeZFIZw6mac52BsuQm0RjCnisjBtdBaXOI6w==}
@@ -3628,6 +3654,12 @@ packages:
 
   '@hono/node-server@1.14.2':
     resolution: {integrity: sha512-GHjpOeHYbr9d1vkID2sNUYkl5IxumyhDrUJB7wBp7jvqYwPFt+oNKsAPBRcdSbV7kIrXhouLE199ks1QcK4r7A==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+
+  '@hono/node-server@1.19.9':
+    resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -5123,6 +5155,10 @@ packages:
     resolution: {integrity: sha512-JwqeCQ1U3fvccttHZq7Tk0m/TMC6WcFAQZdukypW3AzlJYKYTGNVd1ANU2GuhKnv4UQuOFj3oAl0LLG/gxFN1w==}
     engines: {node: '>=16'}
 
+  '@mrleebo/prisma-ast@0.13.1':
+    resolution: {integrity: sha512-XyroGQXcHrZdvmrGJvsA9KNeOOgGMg1Vg9OlheUsBOSKznLMDl+YChxbkboRHvtFYJEMRYmlV3uoo/njCw05iw==}
+    engines: {node: '>=16'}
+
   '@mswjs/interceptors@0.39.8':
     resolution: {integrity: sha512-2+BzZbjRO7Ct61k8fMNHEtoKjeWI9pIlHFTqBwZ5icHpqszIgEZbjb1MW5Z0+bITTCTl3gk4PDBxs9tA/csXvA==}
     engines: {node: '>=18'}
@@ -6306,14 +6342,26 @@ packages:
   '@prisma/config@7.0.0':
     resolution: {integrity: sha512-TDASB57hyGUwHB0IPCSkoJcXFrJOKA1+R/1o4np4PbS+E0F5MiY5aAyUttO0mSuNQaX7t8VH/GkDemffF1mQzg==}
 
+  '@prisma/config@7.3.0':
+    resolution: {integrity: sha512-QyMV67+eXF7uMtKxTEeQqNu/Be7iH+3iDZOQZW5ttfbSwBamCSdwPszA0dum+Wx27I7anYTPLmRmMORKViSW1A==}
+
   '@prisma/debug@6.8.2':
     resolution: {integrity: sha512-4muBSSUwJJ9BYth5N8tqts8JtiLT8QI/RSAzEogwEfpbYGFo9mYsInsVo8dqXdPO2+Rm5OG5q0qWDDE3nyUbVg==}
 
   '@prisma/debug@7.0.0':
     resolution: {integrity: sha512-SdS3qzfMASHtWimywtkiRcJtrHzacbmMVhElko3DYUZSB0TTLqRYWpddRBJdeGgSLmy1FD55p7uGzIJ+MtfhMg==}
 
+  '@prisma/debug@7.2.0':
+    resolution: {integrity: sha512-YSGTiSlBAVJPzX4ONZmMotL+ozJwQjRmZweQNIq/ER0tQJKJynNkRB3kyvt37eOfsbMCXk3gnLF6J9OJ4QWftw==}
+
+  '@prisma/debug@7.3.0':
+    resolution: {integrity: sha512-yh/tHhraCzYkffsI1/3a7SHX8tpgbJu1NPnuxS4rEpJdWAUDHUH25F1EDo6PPzirpyLNkgPPZdhojQK804BGtg==}
+
   '@prisma/dev@0.13.0':
     resolution: {integrity: sha512-QMmF6zFeUF78yv1HYbHvod83AQnl7u6NtKyDhTRZOJup3h1icWs8R7RUVxBJZvM2tBXNAMpLQYYM/8kPlOPegA==}
+
+  '@prisma/dev@0.20.0':
+    resolution: {integrity: sha512-ovlBYwWor0OzG+yH4J3Ot+AneD818BttLA+Ii7wjbcLHUrnC4tbUPVGyNd3c/+71KETPKZfjhkTSpdS15dmXNQ==}
 
   '@prisma/driver-adapter-utils@7.0.0':
     resolution: {integrity: sha512-ZEvzFaIapnfNKFPgZu/Zy4g6jfO5C0ZmMp+IjO9hNKNDwVKrDlBKw7F3Y9oRK0U0kfb9lKWP4Dz7DgtKs4TTbA==}
@@ -6321,11 +6369,20 @@ packages:
   '@prisma/engines-version@6.20.0-16.next-0c19ccc313cf9911a90d99d2ac2eb0280c76c513':
     resolution: {integrity: sha512-7bzyN8Gp9GbDFbTDzVUH9nFcgRWvsWmjrGgBJvIC/zEoAuv/lx62gZXgAKfjn/HoPkxz/dS+TtsnduFx8WA+cw==}
 
+  '@prisma/engines-version@7.3.0-16.9d6ad21cbbceab97458517b147a6a09ff43aa735':
+    resolution: {integrity: sha512-IH2va2ouUHihyiTTRW889LjKAl1CusZOvFfZxCDNpjSENt7g2ndFsK0vdIw/72v7+jCN6YgkHmdAP/BI7SDgyg==}
+
   '@prisma/engines@7.0.0':
     resolution: {integrity: sha512-ojCL3OFLMCz33UbU9XwH32jwaeM+dWb8cysTuY8eK6ZlMKXJdy6ogrdG3MGB3meKLGdQBmOpUUGJ7eLIaxbrcg==}
 
+  '@prisma/engines@7.3.0':
+    resolution: {integrity: sha512-cWRQoPDXPtR6stOWuWFZf9pHdQ/o8/QNWn0m0zByxf5Kd946Q875XdEJ52pEsX88vOiXUmjuPG3euw82mwQNMg==}
+
   '@prisma/fetch-engine@7.0.0':
     resolution: {integrity: sha512-qcyWTeWDjVDaDQSrVIymZU1xCYlvmwCzjA395lIuFjUESOH3YQCb8i/hpd4vopfq3fUR4v6+MjjtIGvnmErQgw==}
+
+  '@prisma/fetch-engine@7.3.0':
+    resolution: {integrity: sha512-Mm0F84JMqM9Vxk70pzfNpGJ1lE4hYjOeLMu7nOOD1i83nvp8MSAcFYBnHqLvEZiA6onUR+m8iYogtOY4oPO5lQ==}
 
   '@prisma/get-platform@6.8.2':
     resolution: {integrity: sha512-vXSxyUgX3vm1Q70QwzwkjeYfRryIvKno1SXbIqwSptKwqKzskINnDUcx85oX+ys6ooN2ATGSD0xN2UTfg6Zcow==}
@@ -6333,11 +6390,27 @@ packages:
   '@prisma/get-platform@7.0.0':
     resolution: {integrity: sha512-zyhzrAa+y/GfyCzTnuk0D9lfkvDzo7IbsNyuhTqhPu/AN0txm0x26HAR4tJLismla/fHf5fBzYwSivYSzkpakg==}
 
+  '@prisma/get-platform@7.2.0':
+    resolution: {integrity: sha512-k1V0l0Td1732EHpAfi2eySTezyllok9dXb6UQanajkJQzPUGi3vO2z7jdkz67SypFTdmbnyGYxvEvYZdZsMAVA==}
+
+  '@prisma/get-platform@7.3.0':
+    resolution: {integrity: sha512-N7c6m4/I0Q6JYmWKP2RCD/sM9eWiyCPY98g5c0uEktObNSZnugW2U/PO+pwL0UaqzxqTXt7gTsYsb0FnMnJNbg==}
+
   '@prisma/query-plan-executor@6.18.0':
     resolution: {integrity: sha512-jZ8cfzFgL0jReE1R10gT8JLHtQxjWYLiQ//wHmVYZ2rVkFHoh0DT8IXsxcKcFlfKN7ak7k6j0XMNn2xVNyr5cA==}
 
+  '@prisma/query-plan-executor@7.2.0':
+    resolution: {integrity: sha512-EOZmNzcV8uJ0mae3DhTsiHgoNCuu1J9mULQpGCh62zN3PxPTd+qI9tJvk5jOst8WHKQNwJWR3b39t0XvfBB0WQ==}
+
   '@prisma/studio-core-licensed@0.8.0':
     resolution: {integrity: sha512-SXCcgFvo/SC6/11kEOaQghJgCWNEWZUvPYKn/gpvMB9HLSG/5M8If7dWZtEQHhchvl8bh9A89Hw6mEKpsXFimA==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+
+  '@prisma/studio-core@0.13.1':
+    resolution: {integrity: sha512-agdqaPEePRHcQ7CexEfkX1RvSH9uWDb6pXrZnhCRykhDFAV0/0P3d07WtfiY8hZWb7oRU4v+NkT4cGFHkQJIPg==}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
       react: ^18.0.0 || ^19.0.0
@@ -7765,6 +7838,9 @@ packages:
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@stomp/stompjs@7.2.1':
     resolution: {integrity: sha512-DLd/WeicnHS5SsWWSk3x6/pcivqchNaEvg9UEGVqAcfYEBVmS9D6980ckXjTtfpXLjdLDsd96M7IuX4w7nzq5g==}
@@ -9766,8 +9842,8 @@ packages:
   axios@1.12.2:
     resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
 
-  axios@1.13.2:
-    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
+  axios@1.13.4:
+    resolution: {integrity: sha512-1wVkUaAO6WyaYtCkcYCOx12ZgpGf9Zif+qXa4n+oYzK558YryKqiL6UWwd5DqiH3VRW0GYhTZQ/vlgJrCoNQlg==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -10300,6 +10376,9 @@ packages:
 
   citty@0.1.6:
     resolution: {integrity: sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==}
+
+  citty@0.2.0:
+    resolution: {integrity: sha512-8csy5IBFI2ex2hTVpaHN2j+LNE199AgiI7y4dMintrr8i0lQiFn+0AWMZrWdHKIgMOer65f8IThysYhoReqjWA==}
 
   cjs-module-lexer@2.1.0:
     resolution: {integrity: sha512-UX0OwmYRYQQetfrLEZeewIFFI+wSTofC+pMBLNuH3RUuu/xzG1oz84UCEDOSoQlN3fZ4+AzmV50ZYvGqkMh9yA==}
@@ -11936,6 +12015,9 @@ packages:
   exsolve@1.0.7:
     resolution: {integrity: sha512-VO5fQUzZtI6C+vx4w/4BWJpg3s/5l+6pRQEHzFRM8WFi4XffSP1Z+4qi7GbjWbvRQEbdIco5mIMq+zX4rPuLrw==}
 
+  exsolve@1.0.8:
+    resolution: {integrity: sha512-LmDxfWXwcTArk8fUEnOfSZpHOJ6zOMUJKOtFLFqJLoKJetuQG874Uc7/Kki7zFLzYybmZhp1M7+98pfMqeX8yA==}
+
   ext-list@2.2.2:
     resolution: {integrity: sha512-u+SQgsubraE6zItfVA0tBuCBhfU9ogSRnsvygI7wht9TS510oLkBRXBsqopeUG/GBOIQyKZO9wjTqIu/sf5zFA==}
     engines: {node: '>=0.10.0'}
@@ -12404,6 +12486,9 @@ packages:
   get-port-please@3.1.2:
     resolution: {integrity: sha512-Gxc29eLs1fbn6LQ4jSU4vXjlwyZhF5HsGuMAa7gqBP4Rw4yxxltyDUuF5MBclFzDTXO+ACchGQoeela4DSfzdQ==}
 
+  get-port-please@3.2.0:
+    resolution: {integrity: sha512-I9QVvBw5U/hw3RmWpYKRumUeaDgxTPd401x364rLmWBJcOQ753eov1eTgzDqRG9bqFIfDc7gfzcQEWrUri3o1A==}
+
   get-proto@1.0.1:
     resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
     engines: {node: '>= 0.4'}
@@ -12428,6 +12513,9 @@ packages:
 
   get-tsconfig@4.13.0:
     resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+
+  get-tsconfig@4.13.1:
+    resolution: {integrity: sha512-EoY1N2xCn44xU6750Sx7OjOIT59FkmstNc3X6y5xpz7D5cBtZRe/3pSlTkDJgqsOk3WwZPkWfonhhUJfttQo3w==}
 
   get-uri@6.0.5:
     resolution: {integrity: sha512-b1O07XYq8eRuVzBNgJLstU6FYc1tS6wnMtF1I1D9lE8LxZSOGZ7LhxN54yPP6mGw5f2CkXY2BQUL9Fx41qvcIg==}
@@ -12456,21 +12544,23 @@ packages:
 
   glob@10.4.5:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@11.0.3:
     resolution: {integrity: sha512-2Nim7dha1KVkaiF4q6Dj+ngPPMdfvLJEOpZk/jKiUAkqKebpGAWQXAq9z1xu9HKu5lWfqw/FASuccEjyznjPaA==}
     engines: {node: 20 || >=22}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   global-agent@3.0.0:
     resolution: {integrity: sha512-PT6XReJ+D07JvGoxQMkT6qji/jVNfX/h364XHZOWeRzy64sSFr+xJ5OX7LI3b4MPQzdL4H8Y8M0xzPpsVMwA8Q==}
@@ -12554,8 +12644,14 @@ packages:
   grammex@3.1.11:
     resolution: {integrity: sha512-HNwLkgRg9SqTAd1N3Uh/MnKwTBTzwBxTOPbXQ8pb0tpwydjk90k4zRE8JUn9fMUiRwKtXFZ1TWFmms3dZHN+Fg==}
 
+  grammex@3.1.12:
+    resolution: {integrity: sha512-6ufJOsSA7LcQehIJNCO7HIBykfM7DXQual0Ny780/DEcJIpBlHRvcqEBWGPYd7hrXL2GJ3oJI1MIhaXjWmLQOQ==}
+
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
+
+  graphmatch@1.1.0:
+    resolution: {integrity: sha512-0E62MaTW5rPZVRLyIJZG/YejmdA/Xr1QydHEw3Vt+qOKkMIOE8WDLc9ZX2bmAjtJFZcId4lEdrdmASsEy7D1QA==}
 
   graphql-request@6.1.0:
     resolution: {integrity: sha512-p+XPfS4q7aIpKVcgmnZKhMNqhltk20hfXtkaIkTfjjmiKMJ5xrt5c743cL03y/K7y1rg3WrIC49xGiEQ4mxdNw==}
@@ -12749,6 +12845,10 @@ packages:
   homedir-polyfill@1.0.3:
     resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
     engines: {node: '>=0.10.0'}
+
+  hono@4.11.4:
+    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+    engines: {node: '>=16.9.0'}
 
   hono@4.7.10:
     resolution: {integrity: sha512-QkACju9MiN59CKSY5JsGZCYmPZkA6sIW6OFCUp7qDjZu6S6KHtJHhAc9Uy9mV9F8PJ1/HQ3ybZF2yjCa/73fvQ==}
@@ -14173,6 +14273,9 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  lodash@4.17.23:
+    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
     engines: {node: '>=10'}
@@ -15168,9 +15271,9 @@ packages:
       '@swc/core':
         optional: true
 
-  nypm@0.6.2:
-    resolution: {integrity: sha512-7eM+hpOtrKrBDCh7Ypu2lJ9Z7PNZBdi/8AT3AX8xoCj43BBVHD0hPSTEvMtkMpfs8FCqBGhxB+uToIQimA111g==}
-    engines: {node: ^14.16.0 || >=16.10.0}
+  nypm@0.6.4:
+    resolution: {integrity: sha512-1TvCKjZyyklN+JJj2TS3P4uSQEInrM/HkkuSXsEzm1ApPgBffOn8gFguNnZf07r/1X6vlryfIqMUkJKQMzlZiw==}
+    engines: {node: '>=18'}
     hasBin: true
 
   oauth4webapi@3.8.2:
@@ -16243,6 +16346,19 @@ packages:
       typescript:
         optional: true
 
+  prisma@7.3.0:
+    resolution: {integrity: sha512-ApYSOLHfMN8WftJA+vL6XwAPOh/aZ0BgUyyKPwUFgjARmG6EBI9LzDPf6SWULQMSAxydV9qn5gLj037nPNlg2w==}
+    engines: {node: ^20.19 || ^22.12 || >=24.0}
+    hasBin: true
+    peerDependencies:
+      better-sqlite3: '>=9.0.0'
+      typescript: '>=5.4.0'
+    peerDependenciesMeta:
+      better-sqlite3:
+        optional: true
+      typescript:
+        optional: true
+
   prismjs@1.30.0:
     resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
     engines: {node: '>=6'}
@@ -17025,6 +17141,9 @@ packages:
 
   remeda@2.21.3:
     resolution: {integrity: sha512-XXrZdLA10oEOQhLLzEJEiFFSKi21REGAkHdImIb4rt/XXy8ORGXh5HCcpUOsElfPNDb+X6TA/+wkh+p2KffYmg==}
+
+  remeda@2.33.4:
+    resolution: {integrity: sha512-ygHswjlc/opg2VrtiYvUOPLjxjtdKvjGz1/plDhkG66hjNjFr1xmfrs2ClNFo/E6TyUFiwYNh53bKV26oBoMGQ==}
 
   renderkid@3.0.0:
     resolution: {integrity: sha512-q/7VIQA8lmM1hF+jn+sFSPWGlMkSAeNYcPLmDQx2zzuiDfaLrOmumR8iaUKlenFgh0XRPIUeSPlH3A+AW3Z5pg==}
@@ -18165,12 +18284,12 @@ packages:
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   tar@7.5.2:
     resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
     engines: {node: '>=18'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   tcp-port-used@1.0.2:
     resolution: {integrity: sha512-l7ar8lLUD3XS1V2lfoJlCBaeoaWo/2xfYt81hM7VlvR4RrMVFqfmzfhLVk40hAb368uitje5gPtBRL1m/DGvLA==}
@@ -18283,15 +18402,15 @@ packages:
   tldts-core@6.1.86:
     resolution: {integrity: sha512-Je6p7pkk+KMzMv2XXKmAE3McmolOQFdxkKw0R8EYNr7sELW46JqnNeTX8ybPiQgvg1ymCoF8LXs5fzFaZvJPTA==}
 
-  tldts-core@7.0.19:
-    resolution: {integrity: sha512-lJX2dEWx0SGH4O6p+7FPwYmJ/bu1JbcGJ8RLaG9b7liIgZ85itUVEPbMtWRVrde/0fnDPEPHW10ZsKW3kVsE9A==}
+  tldts-core@7.0.22:
+    resolution: {integrity: sha512-KgbTDC5wzlL6j/x6np6wCnDSMUq4kucHNm00KXPbfNzmllCmtmvtykJHfmgdHntwIeupW04y8s1N/43S1PkQDw==}
 
   tldts@6.1.86:
     resolution: {integrity: sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==}
     hasBin: true
 
-  tldts@7.0.19:
-    resolution: {integrity: sha512-8PWx8tvC4jDB39BQw1m4x8y5MH1BcQ5xHeL2n7UVFulMPH/3Q0uiamahFJ3lXA0zO2SUyRXuVVbWSDmstlt9YA==}
+  tldts@7.0.22:
+    resolution: {integrity: sha512-nqpKFC53CgopKPjT6Wfb6tpIcZXHcI6G37hesvikhx0EmUGPkZrujRyAjgnmp1SHNgpQfKVanZ+KfpANFt2Hxw==}
     hasBin: true
 
   tmp@0.0.33:
@@ -18916,6 +19035,14 @@ packages:
       typescript:
         optional: true
 
+  valibot@1.2.0:
+    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
@@ -19487,6 +19614,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
@@ -19589,6 +19728,9 @@ packages:
 
   zeptomatch@2.0.2:
     resolution: {integrity: sha512-H33jtSKf8Ijtb5BW6wua3G5DhnFjbFML36eFu+VdOoVY4HD9e7ggjqdM6639B+L87rjnR6Y+XeRzBXZdy52B/g==}
+
+  zeptomatch@2.1.0:
+    resolution: {integrity: sha512-KiGErG2J0G82LSpniV0CtIzjlJ10E04j02VOudJsPyPwNZgGnRKQy7I1R7GMyg/QswnE4l7ohSGrQbQbjXPPDA==}
 
   zip-stream@6.0.1:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
@@ -19791,7 +19933,7 @@ snapshots:
     dependencies:
       graphql: 16.12.0
 
-  '@apollo/client@3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))':
+  '@apollo/client@3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.19.0))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
       '@wry/caches': 1.0.1
@@ -19808,7 +19950,7 @@ snapshots:
       tslib: 2.8.1
       zen-observable-ts: 1.2.5
     optionalDependencies:
-      graphql-ws: 6.0.6(graphql@16.12.0)(ws@8.18.3)
+      graphql-ws: 6.0.6(graphql@16.12.0)(ws@8.19.0)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       subscriptions-transport-ws: 0.11.0(graphql@16.12.0)
@@ -21155,6 +21297,11 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
+  '@babel/parser@7.29.0':
+    dependencies:
+      '@babel/types': 7.29.0
+    optional: true
+
   '@babel/plugin-bugfix-firefox-class-in-computed-class-key@7.28.5(@babel/core@7.28.4)':
     dependencies:
       '@babel/core': 7.28.4
@@ -21840,6 +21987,12 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@babel/types@7.29.0':
+    dependencies:
+      '@babel/helper-string-parser': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
+    optional: true
+
   '@bcoe/v8-coverage@0.2.3': {}
 
   '@bcoe/v8-coverage@1.0.2': {}
@@ -21905,7 +22058,7 @@ snapshots:
       deepmerge: 4.3.1
       dotenv: 17.2.2
       openai: 5.23.2(ws@8.18.3)(zod@3.25.76)
-      ws: 8.18.3
+      ws: 8.19.0
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
     transitivePeerDependencies:
@@ -22106,13 +22259,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@electric-sql/pglite-socket@0.0.20(@electric-sql/pglite@0.3.15)':
+    dependencies:
+      '@electric-sql/pglite': 0.3.15
+
   '@electric-sql/pglite-socket@0.0.6(@electric-sql/pglite@0.3.2)':
     dependencies:
       '@electric-sql/pglite': 0.3.2
 
+  '@electric-sql/pglite-tools@0.2.20(@electric-sql/pglite@0.3.15)':
+    dependencies:
+      '@electric-sql/pglite': 0.3.15
+
   '@electric-sql/pglite-tools@0.2.7(@electric-sql/pglite@0.3.2)':
     dependencies:
       '@electric-sql/pglite': 0.3.2
+
+  '@electric-sql/pglite@0.3.15': {}
 
   '@electric-sql/pglite@0.3.2': {}
 
@@ -22661,6 +22824,10 @@ snapshots:
   '@hono/node-server@1.14.2(hono@4.7.10)':
     dependencies:
       hono: 4.7.10
+
+  '@hono/node-server@1.19.9(hono@4.11.4)':
+    dependencies:
+      hono: 4.11.4
 
   '@huggingface/jinja@0.5.1': {}
 
@@ -23549,7 +23716,7 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@langchain/community@0.3.57(1acaa7ee6b029ebbf64bb578630c78f4)':
+  '@langchain/community@0.3.57(ad5bab38239f98841473c5b459abbc89)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.56.1)(deepmerge@4.3.1)(dotenv@17.2.2)(encoding@0.1.13)(openai@5.23.2(ws@8.18.3)(zod@3.25.76))(zod@3.25.76)
       '@ibm-cloud/watsonx-ai': 1.7.2
@@ -23585,7 +23752,7 @@ snapshots:
       ioredis: 5.8.2
       jsdom: 22.1.0
       jsonwebtoken: 9.0.3
-      lodash: 4.17.21
+      lodash: 4.17.23
       mongodb: 6.20.0(@aws-sdk/credential-providers@3.948.0)(socks@2.8.7)
       mysql2: 3.15.3
       neo4j-driver: 5.28.2
@@ -23811,7 +23978,7 @@ snapshots:
     dependencies:
       '@swc/helpers': 0.5.17
       caniuse-lite: 1.0.30001751
-      lodash: 4.17.21
+      lodash: 4.17.23
       rslog: 1.3.0
 
   '@module-federation/bridge-react-webpack-plugin@0.18.4':
@@ -23880,7 +24047,7 @@ snapshots:
       '@module-federation/third-party-dts-extractor': 0.18.4
       adm-zip: 0.5.16
       ansi-colors: 4.1.3
-      axios: 1.12.2
+      axios: 1.13.4(debug@4.4.3)
       chalk: 3.0.0
       fs-extra: 9.1.0
       isomorphic-ws: 5.0.0(ws@8.18.0)
@@ -23905,7 +24072,7 @@ snapshots:
       '@module-federation/third-party-dts-extractor': 0.21.2
       adm-zip: 0.5.16
       ansi-colors: 4.1.3
-      axios: 1.13.2(debug@4.4.3)
+      axios: 1.13.4(debug@4.4.3)
       chalk: 3.0.0
       fs-extra: 9.1.0
       isomorphic-ws: 5.0.0(ws@8.18.0)
@@ -24155,6 +24322,11 @@ snapshots:
       sparse-bitfield: 3.0.3
 
   '@mrleebo/prisma-ast@0.12.1':
+    dependencies:
+      chevrotain: 10.5.0
+      lilconfig: 2.1.0
+
+  '@mrleebo/prisma-ast@0.13.1':
     dependencies:
       chevrotain: 10.5.0
       lilconfig: 2.1.0
@@ -26170,7 +26342,23 @@ snapshots:
       prisma: 7.0.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)
       typescript: 5.9.2
 
+  '@prisma/client@7.0.0(prisma@7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)':
+    dependencies:
+      '@prisma/client-runtime-utils': 7.0.0
+    optionalDependencies:
+      prisma: 7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2)
+      typescript: 5.9.2
+
   '@prisma/config@7.0.0(magicast@0.3.5)':
+    dependencies:
+      c12: 3.1.0(magicast@0.3.5)
+      deepmerge-ts: 7.1.5
+      effect: 3.18.4
+      empathic: 2.0.0
+    transitivePeerDependencies:
+      - magicast
+
+  '@prisma/config@7.3.0(magicast@0.3.5)':
     dependencies:
       c12: 3.1.0(magicast@0.3.5)
       deepmerge-ts: 7.1.5
@@ -26182,6 +26370,10 @@ snapshots:
   '@prisma/debug@6.8.2': {}
 
   '@prisma/debug@7.0.0': {}
+
+  '@prisma/debug@7.2.0': {}
+
+  '@prisma/debug@7.3.0': {}
 
   '@prisma/dev@0.13.0(typescript@5.9.2)':
     dependencies:
@@ -26205,11 +26397,35 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@prisma/dev@0.20.0(typescript@5.9.2)':
+    dependencies:
+      '@electric-sql/pglite': 0.3.15
+      '@electric-sql/pglite-socket': 0.0.20(@electric-sql/pglite@0.3.15)
+      '@electric-sql/pglite-tools': 0.2.20(@electric-sql/pglite@0.3.15)
+      '@hono/node-server': 1.19.9(hono@4.11.4)
+      '@mrleebo/prisma-ast': 0.13.1
+      '@prisma/get-platform': 7.2.0
+      '@prisma/query-plan-executor': 7.2.0
+      foreground-child: 3.3.1
+      get-port-please: 3.2.0
+      hono: 4.11.4
+      http-status-codes: 2.3.0
+      pathe: 2.0.3
+      proper-lockfile: 4.1.2
+      remeda: 2.33.4
+      std-env: 3.10.0
+      valibot: 1.2.0(typescript@5.9.2)
+      zeptomatch: 2.1.0
+    transitivePeerDependencies:
+      - typescript
+
   '@prisma/driver-adapter-utils@7.0.0':
     dependencies:
       '@prisma/debug': 7.0.0
 
   '@prisma/engines-version@6.20.0-16.next-0c19ccc313cf9911a90d99d2ac2eb0280c76c513': {}
+
+  '@prisma/engines-version@7.3.0-16.9d6ad21cbbceab97458517b147a6a09ff43aa735': {}
 
   '@prisma/engines@7.0.0':
     dependencies:
@@ -26218,11 +26434,24 @@ snapshots:
       '@prisma/fetch-engine': 7.0.0
       '@prisma/get-platform': 7.0.0
 
+  '@prisma/engines@7.3.0':
+    dependencies:
+      '@prisma/debug': 7.3.0
+      '@prisma/engines-version': 7.3.0-16.9d6ad21cbbceab97458517b147a6a09ff43aa735
+      '@prisma/fetch-engine': 7.3.0
+      '@prisma/get-platform': 7.3.0
+
   '@prisma/fetch-engine@7.0.0':
     dependencies:
       '@prisma/debug': 7.0.0
       '@prisma/engines-version': 6.20.0-16.next-0c19ccc313cf9911a90d99d2ac2eb0280c76c513
       '@prisma/get-platform': 7.0.0
+
+  '@prisma/fetch-engine@7.3.0':
+    dependencies:
+      '@prisma/debug': 7.3.0
+      '@prisma/engines-version': 7.3.0-16.9d6ad21cbbceab97458517b147a6a09ff43aa735
+      '@prisma/get-platform': 7.3.0
 
   '@prisma/get-platform@6.8.2':
     dependencies:
@@ -26232,9 +26461,25 @@ snapshots:
     dependencies:
       '@prisma/debug': 7.0.0
 
+  '@prisma/get-platform@7.2.0':
+    dependencies:
+      '@prisma/debug': 7.2.0
+
+  '@prisma/get-platform@7.3.0':
+    dependencies:
+      '@prisma/debug': 7.3.0
+
   '@prisma/query-plan-executor@6.18.0': {}
 
+  '@prisma/query-plan-executor@7.2.0': {}
+
   '@prisma/studio-core-licensed@0.8.0(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@types/react': 19.2.2
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+
+  '@prisma/studio-core@0.13.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@types/react': 19.2.2
       react: 19.2.3
@@ -27882,6 +28127,8 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@stomp/stompjs@7.2.1': {}
 
   '@storybook/addon-storyshots@7.6.17(@storybook/react@10.0.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(storybook@10.0.6(@testing-library/dom@10.4.0)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(prettier@3.6.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.1.7(@types/node@22.18.6)(jiti@2.4.2)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)))(typescript@5.9.2))(encoding@0.1.13)(jest@30.1.3(@types/node@22.18.6)(babel-plugin-macros@3.1.0)(esbuild-register@3.6.0(esbuild@0.18.20))(ts-node@10.9.2(@swc/core@1.5.29(@swc/helpers@0.5.17))(@types/node@22.18.6)(typescript@5.9.2)))(preact@10.27.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(rxjs@7.8.2)':
@@ -28905,7 +29152,7 @@ snapshots:
   '@types/node-fetch@2.6.13':
     dependencies:
       '@types/node': 22.18.6
-      form-data: 4.0.4
+      form-data: 4.0.5
 
   '@types/node-forge@1.3.14':
     dependencies:
@@ -29057,7 +29304,7 @@ snapshots:
       '@types/cookiejar': 2.1.5
       '@types/methods': 1.1.4
       '@types/node': 22.18.6
-      form-data: 4.0.4
+      form-data: 4.0.5
 
   '@types/supertest@6.0.3':
     dependencies:
@@ -29289,7 +29536,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.6)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
-      ws: 8.18.3
+      ws: 8.19.0
     optionalDependencies:
       playwright: 1.56.1
     transitivePeerDependencies:
@@ -30313,7 +30560,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  axios@1.13.2(debug@4.4.3):
+  axios@1.13.4(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
       form-data: 4.0.5
@@ -30729,9 +30976,9 @@ snapshots:
       confbox: 0.2.2
       defu: 6.1.4
       dotenv: 16.6.1
-      exsolve: 1.0.7
+      exsolve: 1.0.8
       giget: 2.0.0
-      jiti: 2.4.2
+      jiti: 2.6.1
       ohash: 2.0.11
       pathe: 2.0.3
       perfect-debounce: 1.0.0
@@ -30966,6 +31213,8 @@ snapshots:
   citty@0.1.6:
     dependencies:
       consola: 3.4.2
+
+  citty@0.2.0: {}
 
   cjs-module-lexer@2.1.0: {}
 
@@ -32168,7 +32417,7 @@ snapshots:
 
   effect@3.18.4:
     dependencies:
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
 
   ejs@3.1.10:
@@ -32914,6 +33163,8 @@ snapshots:
 
   exsolve@1.0.7: {}
 
+  exsolve@1.0.8: {}
+
   ext-list@2.2.2:
     dependencies:
       mime-db: 1.54.0
@@ -33179,7 +33430,7 @@ snapshots:
 
   firecrawl@4.3.6:
     dependencies:
-      axios: 1.12.2
+      axios: 1.13.4(debug@4.4.3)
       typescript-event-target: 1.1.1
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
@@ -33462,6 +33713,8 @@ snapshots:
 
   get-port-please@3.1.2: {}
 
+  get-port-please@3.2.0: {}
+
   get-proto@1.0.1:
     dependencies:
       dunder-proto: 1.0.1
@@ -33487,6 +33740,11 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
+  get-tsconfig@4.13.1:
+    dependencies:
+      resolve-pkg-maps: 1.0.0
+    optional: true
+
   get-uri@6.0.5:
     dependencies:
       basic-ftp: 5.1.0
@@ -33501,7 +33759,7 @@ snapshots:
       consola: 3.4.2
       defu: 6.1.4
       node-fetch-native: 1.6.7
-      nypm: 0.6.2
+      nypm: 0.6.4
       pathe: 2.0.3
 
   glob-parent@5.1.2:
@@ -33675,7 +33933,11 @@ snapshots:
 
   grammex@3.1.11: {}
 
+  grammex@3.1.12: {}
+
   graphemer@1.4.0: {}
+
+  graphmatch@1.1.0: {}
 
   graphql-request@6.1.0(encoding@0.1.13)(graphql@16.12.0):
     dependencies:
@@ -33714,6 +33976,13 @@ snapshots:
       graphql: 16.12.0
     optionalDependencies:
       ws: 8.18.3
+
+  graphql-ws@6.0.6(graphql@16.12.0)(ws@8.19.0):
+    dependencies:
+      graphql: 16.12.0
+    optionalDependencies:
+      ws: 8.19.0
+    optional: true
 
   graphql@16.12.0: {}
 
@@ -33962,6 +34231,8 @@ snapshots:
     dependencies:
       parse-passwd: 1.0.0
 
+  hono@4.11.4: {}
+
   hono@4.7.10: {}
 
   hosted-git-info@2.8.9: {}
@@ -34008,7 +34279,7 @@ snapshots:
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       pretty-error: 4.0.0
       tapable: 2.3.0
     optionalDependencies:
@@ -34174,7 +34445,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 18.19.130
       '@types/tough-cookie': 4.0.5
-      axios: 1.13.2(debug@4.4.3)
+      axios: 1.13.4(debug@4.4.3)
       camelcase: 6.3.0
       debug: 4.4.3
       dotenv: 16.6.1
@@ -34184,7 +34455,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.3
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.13.2(debug@4.4.3))
+      retry-axios: 2.6.0(axios@1.13.4(debug@4.4.3))
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -35675,6 +35946,8 @@ snapshots:
 
   lodash@4.17.21: {}
 
+  lodash@4.17.23: {}
+
   log-symbols@4.1.0:
     dependencies:
       chalk: 4.1.2
@@ -35780,8 +36053,8 @@ snapshots:
 
   magicast@0.3.5:
     dependencies:
-      '@babel/parser': 7.28.5
-      '@babel/types': 7.28.5
+      '@babel/parser': 7.29.0
+      '@babel/types': 7.29.0
       source-map-js: 1.2.1
     optional: true
 
@@ -36957,7 +37230,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.0-rc.46
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.13.2(debug@4.4.3)
+      axios: 1.13.4(debug@4.4.3)
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
@@ -37008,7 +37281,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.12.2
+      axios: 1.13.4(debug@4.4.3)
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
@@ -37061,7 +37334,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.12.2
+      axios: 1.13.4(debug@4.4.3)
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
@@ -37114,7 +37387,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.12.2
+      axios: 1.13.4(debug@4.4.3)
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
@@ -37161,12 +37434,10 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  nypm@0.6.2:
+  nypm@0.6.4:
     dependencies:
-      citty: 0.1.6
-      consola: 3.4.2
+      citty: 0.2.0
       pathe: 2.0.3
-      pkg-types: 2.3.0
       tinyexec: 1.0.2
 
   oauth4webapi@3.8.2: {}
@@ -37316,6 +37587,11 @@ snapshots:
   openai@5.23.2(ws@8.18.3)(zod@3.25.76):
     optionalDependencies:
       ws: 8.18.3
+      zod: 3.25.76
+
+  openai@5.23.2(ws@8.19.0)(zod@3.25.76):
+    optionalDependencies:
+      ws: 8.19.0
       zod: 3.25.76
 
   openapi-types@12.1.3: {}
@@ -38204,7 +38480,7 @@ snapshots:
 
   pretty-error@4.0.0:
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.17.23
       renderkid: 3.0.0
     optional: true
 
@@ -38246,6 +38522,22 @@ snapshots:
       '@prisma/dev': 0.13.0(typescript@5.9.2)
       '@prisma/engines': 7.0.0
       '@prisma/studio-core-licensed': 0.8.0(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      mysql2: 3.15.3
+      postgres: 3.4.7
+    optionalDependencies:
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - '@types/react'
+      - magicast
+      - react
+      - react-dom
+
+  prisma@7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2):
+    dependencies:
+      '@prisma/config': 7.3.0(magicast@0.3.5)
+      '@prisma/dev': 0.20.0(typescript@5.9.2)
+      '@prisma/engines': 7.3.0
+      '@prisma/studio-core': 0.13.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       mysql2: 3.15.3
       postgres: 3.4.7
     optionalDependencies:
@@ -39354,12 +39646,14 @@ snapshots:
     dependencies:
       type-fest: 4.41.0
 
+  remeda@2.33.4: {}
+
   renderkid@3.0.0:
     dependencies:
       css-select: 4.3.0
       dom-converter: 0.2.0
       htmlparser2: 6.1.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       strip-ansi: 6.0.1
     optional: true
 
@@ -39424,9 +39718,9 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.13.2(debug@4.4.3)):
+  retry-axios@2.6.0(axios@1.13.4(debug@4.4.3)):
     dependencies:
-      axios: 1.13.2(debug@4.4.3)
+      axios: 1.13.4(debug@4.4.3)
 
   retry@0.12.0: {}
 
@@ -40570,7 +40864,7 @@ snapshots:
       cookiejar: 2.1.4
       debug: 4.4.3
       fast-safe-stringify: 2.1.1
-      form-data: 4.0.4
+      form-data: 4.0.5
       formidable: 3.5.4
       methods: 1.1.2
       mime: 2.6.0
@@ -40832,16 +41126,16 @@ snapshots:
 
   tldts-core@6.1.86: {}
 
-  tldts-core@7.0.19:
+  tldts-core@7.0.22:
     optional: true
 
   tldts@6.1.86:
     dependencies:
       tldts-core: 6.1.86
 
-  tldts@7.0.19:
+  tldts@7.0.22:
     dependencies:
-      tldts-core: 7.0.19
+      tldts-core: 7.0.22
     optional: true
 
   tmp@0.0.33:
@@ -40896,7 +41190,7 @@ snapshots:
 
   tough-cookie@6.0.0:
     dependencies:
-      tldts: 7.0.19
+      tldts: 7.0.22
     optional: true
 
   tr46@0.0.3: {}
@@ -41069,7 +41363,7 @@ snapshots:
   tsx@4.20.6:
     dependencies:
       esbuild: 0.25.10
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.1
     optionalDependencies:
       fsevents: 2.3.3
     optional: true
@@ -41469,6 +41763,10 @@ snapshots:
       convert-source-map: 2.0.0
 
   valibot@1.1.0(typescript@5.9.2):
+    optionalDependencies:
+      typescript: 5.9.2
+
+  valibot@1.2.0(typescript@5.9.2):
     optionalDependencies:
       typescript: 5.9.2
 
@@ -42176,6 +42474,8 @@ snapshots:
 
   ws@8.18.3: {}
 
+  ws@8.19.0: {}
+
   wsl-utils@0.1.0:
     dependencies:
       is-wsl: 3.1.0
@@ -42262,6 +42562,11 @@ snapshots:
   zeptomatch@2.0.2:
     dependencies:
       grammex: 3.1.11
+
+  zeptomatch@2.1.0:
+    dependencies:
+      grammex: 3.1.12
+      graphmatch: 1.1.0
 
   zip-stream@6.0.1:
     dependencies:
