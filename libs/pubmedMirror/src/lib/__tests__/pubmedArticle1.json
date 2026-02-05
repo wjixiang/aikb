@@ -1,0 +1,308 @@
+{
+  "MedlineCitation": {
+    "PMID": {
+      "#text": 1,
+      "@_Version": "1"
+    },
+    "DateCompleted": {
+      "Year": 1976,
+      "Month": 1,
+      "Day": 16
+    },
+    "DateRevised": {
+      "Year": 2024,
+      "Month": 1,
+      "Day": 9
+    },
+    "Article": {
+      "Journal": {
+        "ISSN": {
+          "#text": "0006-2944",
+          "@_IssnType": "Print"
+        },
+        "JournalIssue": {
+          "Volume": 13,
+          "Issue": 2,
+          "PubDate": {
+            "Year": 1975,
+            "Month": "Jun"
+          },
+          "@_CitedMedium": "Print"
+        },
+        "Title": "Biochemical medicine",
+        "ISOAbbreviation": "Biochem Med"
+      },
+      "ArticleTitle": "Formate assay in body fluids: application in methanol poisoning.",
+      "Pagination": {
+        "MedlinePgn": "117-26"
+      },
+      "AuthorList": {
+        "Author": [
+          {
+            "LastName": "Makar",
+            "ForeName": "A B",
+            "Initials": "AB",
+            "@_ValidYN": "Y"
+          },
+          {
+            "LastName": "McMartin",
+            "ForeName": "K E",
+            "Initials": "KE",
+            "@_ValidYN": "Y"
+          },
+          {
+            "LastName": "Palese",
+            "ForeName": "M",
+            "Initials": "M",
+            "@_ValidYN": "Y"
+          },
+          {
+            "LastName": "Tephly",
+            "ForeName": "T R",
+            "Initials": "TR",
+            "@_ValidYN": "Y"
+          }
+        ],
+        "@_CompleteYN": "Y"
+      },
+      "Language": "eng",
+      "GrantList": {
+        "Grant": [
+          {
+            "GrantID": "F32 AG064886",
+            "Acronym": "AG",
+            "Agency": "NIA NIH HHS",
+            "Country": "United States"
+          },
+          {
+            "GrantID": "MC_UU_12013/5",
+            "Agency": "MRC",
+            "Country": "United Kingdom"
+          }
+        ],
+        "@_CompleteYN": "Y"
+      },
+      "PublicationTypeList": {
+        "PublicationType": [
+          {
+            "#text": "Journal Article",
+            "@_UI": "D016428"
+          },
+          {
+            "#text": "Research Support, U.S. Gov't, P.H.S.",
+            "@_UI": "D013487"
+          }
+        ]
+      },
+      "@_PubModel": "Print"
+    },
+    "MedlineJournalInfo": {
+      "Country": "United States",
+      "MedlineTA": "Biochem Med",
+      "NlmUniqueID": 151424,
+      "ISSNLinking": "0006-2944"
+    },
+    "ChemicalList": {
+      "Chemical": [
+        {
+          "RegistryNumber": 0,
+          "NameOfSubstance": {
+            "#text": "Formates",
+            "@_UI": "D005561"
+          }
+        },
+        {
+          "RegistryNumber": "142M471B3J",
+          "NameOfSubstance": {
+            "#text": "Carbon Dioxide",
+            "@_UI": "D002245"
+          }
+        },
+        {
+          "RegistryNumber": "EC 1.2.-",
+          "NameOfSubstance": {
+            "#text": "Aldehyde Oxidoreductases",
+            "@_UI": "D000445"
+          }
+        },
+        {
+          "RegistryNumber": "Y4S76JWI15",
+          "NameOfSubstance": {
+            "#text": "Methanol",
+            "@_UI": "D000432"
+          }
+        }
+      ]
+    },
+    "CitationSubset": "IM",
+    "MeshHeadingList": {
+      "MeshHeading": [
+        {
+          "DescriptorName": {
+            "#text": "Aldehyde Oxidoreductases",
+            "@_UI": "D000445",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": {
+            "#text": "metabolism",
+            "@_UI": "Q000378",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Animals",
+            "@_UI": "D000818",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Body Fluids",
+            "@_UI": "D001826",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": {
+            "#text": "analysis",
+            "@_UI": "Q000032",
+            "@_MajorTopicYN": "Y"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Carbon Dioxide",
+            "@_UI": "D002245",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": {
+            "#text": "blood",
+            "@_UI": "Q000097",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Formates",
+            "@_UI": "D005561",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": [
+            {
+              "#text": "blood",
+              "@_UI": "Q000097",
+              "@_MajorTopicYN": "N"
+            },
+            {
+              "#text": "poisoning",
+              "@_UI": "Q000506",
+              "@_MajorTopicYN": "Y"
+            }
+          ]
+        },
+        {
+          "DescriptorName": {
+            "#text": "Haplorhini",
+            "@_UI": "D000882",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Humans",
+            "@_UI": "D006801",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Hydrogen-Ion Concentration",
+            "@_UI": "D006863",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Kinetics",
+            "@_UI": "D007700",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Methanol",
+            "@_UI": "D000432",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": {
+            "#text": "blood",
+            "@_UI": "Q000097",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Methods",
+            "@_UI": "D008722",
+            "@_MajorTopicYN": "N"
+          }
+        },
+        {
+          "DescriptorName": {
+            "#text": "Pseudomonas",
+            "@_UI": "D011549",
+            "@_MajorTopicYN": "N"
+          },
+          "QualifierName": {
+            "#text": "enzymology",
+            "@_UI": "Q000201",
+            "@_MajorTopicYN": "N"
+          }
+        }
+      ]
+    },
+    "@_Status": "MEDLINE",
+    "@_IndexingMethod": "Manual",
+    "@_Owner": "NLM"
+  },
+  "PubmedData": {
+    "History": {
+      "PubMedPubDate": [
+        {
+          "Year": 1975,
+          "Month": 6,
+          "Day": 1,
+          "@_PubStatus": "pubmed"
+        },
+        {
+          "Year": 1975,
+          "Month": 6,
+          "Day": 1,
+          "Hour": 0,
+          "Minute": 1,
+          "@_PubStatus": "medline"
+        },
+        {
+          "Year": 1975,
+          "Month": 6,
+          "Day": 1,
+          "Hour": 0,
+          "Minute": 0,
+          "@_PubStatus": "entrez"
+        }
+      ]
+    },
+    "PublicationStatus": "ppublish",
+    "ArticleIdList": {
+      "ArticleId": [
+        {
+          "#text": 1,
+          "@_IdType": "pubmed"
+        },
+        {
+          "#text": "10.1016/0006-2944(75)90147-7",
+          "@_IdType": "doi"
+        }
+      ]
+    }
+  }
+}

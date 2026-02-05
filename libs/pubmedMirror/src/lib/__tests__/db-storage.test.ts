@@ -9,9 +9,9 @@ import {
     type XMLDependencies,
     type SyncDependencies,
     defaultDependencies
-} from './db-storage.js';
-import { PrismaClient } from '../generated/prisma/client.js';
-import type { IArticleRepository } from './article-repository.js';
+} from '../db-storage.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
+import type { IArticleRepository } from '../article-repository.js';
 
 describe('db-storage tests', () => {
     let prisma: PrismaClient;

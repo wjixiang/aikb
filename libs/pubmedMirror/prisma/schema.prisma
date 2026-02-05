@@ -35,7 +35,7 @@ model MedlineCitation {
 model Article {
   id               Int      @id @default(autoincrement())
   pmid             Int      @unique
-  journal          Json // Stores Journal info as JSON
+  journal          Journal  @relation(fields: [journalId], references: [id])
   articleTitle     String   @db.Text
   pagination       Json? // Stores MedlinePgn
   language         String?
@@ -47,6 +47,7 @@ model Article {
   medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
   authors         Author[]
   grants          Grant[]
+  journalId       Int
 
   @@index([pmid])
   @@map("articles")
@@ -95,6 +96,7 @@ model Journal {
   nlmUniqueId         Int                  @unique
   issnLinking         String?
   medlineJournalInfos MedlineJournalInfo[]
+  articles            Article[]
 }
 
 // Medline Journal Info

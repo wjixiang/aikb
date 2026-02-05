@@ -29,11 +29,13 @@ export type AggregateArticle = {
 export type ArticleAvgAggregateOutputType = {
   id: number | null
   pmid: number | null
+  journalId: number | null
 }
 
 export type ArticleSumAggregateOutputType = {
   id: number | null
   pmid: number | null
+  journalId: number | null
 }
 
 export type ArticleMinAggregateOutputType = {
@@ -43,6 +45,7 @@ export type ArticleMinAggregateOutputType = {
   language: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type ArticleMaxAggregateOutputType = {
@@ -52,18 +55,19 @@ export type ArticleMaxAggregateOutputType = {
   language: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  journalId: number | null
 }
 
 export type ArticleCountAggregateOutputType = {
   id: number
   pmid: number
-  journal: number
   articleTitle: number
   pagination: number
   language: number
   publicationTypes: number
   createdAt: number
   updatedAt: number
+  journalId: number
   _all: number
 }
 
@@ -71,11 +75,13 @@ export type ArticleCountAggregateOutputType = {
 export type ArticleAvgAggregateInputType = {
   id?: true
   pmid?: true
+  journalId?: true
 }
 
 export type ArticleSumAggregateInputType = {
   id?: true
   pmid?: true
+  journalId?: true
 }
 
 export type ArticleMinAggregateInputType = {
@@ -85,6 +91,7 @@ export type ArticleMinAggregateInputType = {
   language?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type ArticleMaxAggregateInputType = {
@@ -94,18 +101,19 @@ export type ArticleMaxAggregateInputType = {
   language?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
 }
 
 export type ArticleCountAggregateInputType = {
   id?: true
   pmid?: true
-  journal?: true
   articleTitle?: true
   pagination?: true
   language?: true
   publicationTypes?: true
   createdAt?: true
   updatedAt?: true
+  journalId?: true
   _all?: true
 }
 
@@ -198,13 +206,13 @@ export type ArticleGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type ArticleGroupByOutputType = {
   id: number
   pmid: number
-  journal: runtime.JsonValue
   articleTitle: string
   pagination: runtime.JsonValue | null
   language: string | null
   publicationTypes: runtime.JsonValue
   createdAt: Date
   updatedAt: Date
+  journalId: number
   _count: ArticleCountAggregateOutputType | null
   _avg: ArticleAvgAggregateOutputType | null
   _sum: ArticleSumAggregateOutputType | null
@@ -233,13 +241,14 @@ export type ArticleWhereInput = {
   NOT?: Prisma.ArticleWhereInput | Prisma.ArticleWhereInput[]
   id?: Prisma.IntFilter<"Article"> | number
   pmid?: Prisma.IntFilter<"Article"> | number
-  journal?: Prisma.JsonFilter<"Article">
   articleTitle?: Prisma.StringFilter<"Article"> | string
   pagination?: Prisma.JsonNullableFilter<"Article">
   language?: Prisma.StringNullableFilter<"Article"> | string | null
   publicationTypes?: Prisma.JsonFilter<"Article">
   createdAt?: Prisma.DateTimeFilter<"Article"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Article"> | Date | string
+  journalId?: Prisma.IntFilter<"Article"> | number
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   medlineCitation?: Prisma.XOR<Prisma.MedlineCitationScalarRelationFilter, Prisma.MedlineCitationWhereInput>
   authors?: Prisma.AuthorListRelationFilter
   grants?: Prisma.GrantListRelationFilter
@@ -248,13 +257,14 @@ export type ArticleWhereInput = {
 export type ArticleOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  journal?: Prisma.SortOrder
   articleTitle?: Prisma.SortOrder
   pagination?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrderInput | Prisma.SortOrder
   publicationTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
+  journal?: Prisma.JournalOrderByWithRelationInput
   medlineCitation?: Prisma.MedlineCitationOrderByWithRelationInput
   authors?: Prisma.AuthorOrderByRelationAggregateInput
   grants?: Prisma.GrantOrderByRelationAggregateInput
@@ -266,13 +276,14 @@ export type ArticleWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.ArticleWhereInput | Prisma.ArticleWhereInput[]
   OR?: Prisma.ArticleWhereInput[]
   NOT?: Prisma.ArticleWhereInput | Prisma.ArticleWhereInput[]
-  journal?: Prisma.JsonFilter<"Article">
   articleTitle?: Prisma.StringFilter<"Article"> | string
   pagination?: Prisma.JsonNullableFilter<"Article">
   language?: Prisma.StringNullableFilter<"Article"> | string | null
   publicationTypes?: Prisma.JsonFilter<"Article">
   createdAt?: Prisma.DateTimeFilter<"Article"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Article"> | Date | string
+  journalId?: Prisma.IntFilter<"Article"> | number
+  journal?: Prisma.XOR<Prisma.JournalScalarRelationFilter, Prisma.JournalWhereInput>
   medlineCitation?: Prisma.XOR<Prisma.MedlineCitationScalarRelationFilter, Prisma.MedlineCitationWhereInput>
   authors?: Prisma.AuthorListRelationFilter
   grants?: Prisma.GrantListRelationFilter
@@ -281,13 +292,13 @@ export type ArticleWhereUniqueInput = Prisma.AtLeast<{
 export type ArticleOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  journal?: Prisma.SortOrder
   articleTitle?: Prisma.SortOrder
   pagination?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrderInput | Prisma.SortOrder
   publicationTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
   _count?: Prisma.ArticleCountOrderByAggregateInput
   _avg?: Prisma.ArticleAvgOrderByAggregateInput
   _max?: Prisma.ArticleMaxOrderByAggregateInput
@@ -301,23 +312,23 @@ export type ArticleScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ArticleScalarWhereWithAggregatesInput | Prisma.ArticleScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Article"> | number
   pmid?: Prisma.IntWithAggregatesFilter<"Article"> | number
-  journal?: Prisma.JsonWithAggregatesFilter<"Article">
   articleTitle?: Prisma.StringWithAggregatesFilter<"Article"> | string
   pagination?: Prisma.JsonNullableWithAggregatesFilter<"Article">
   language?: Prisma.StringNullableWithAggregatesFilter<"Article"> | string | null
   publicationTypes?: Prisma.JsonWithAggregatesFilter<"Article">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Article"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Article"> | Date | string
+  journalId?: Prisma.IntWithAggregatesFilter<"Article"> | number
 }
 
 export type ArticleCreateInput = {
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutArticlesInput
   medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutArticleInput
   authors?: Prisma.AuthorCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
@@ -326,25 +337,25 @@ export type ArticleCreateInput = {
 export type ArticleUncheckedCreateInput = {
   id?: number
   pmid: number
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   authors?: Prisma.AuthorUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUpdateInput = {
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutArticlesNestedInput
   medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutArticleNestedInput
   authors?: Prisma.AuthorUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
@@ -353,13 +364,13 @@ export type ArticleUpdateInput = {
 export type ArticleUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   authors?: Prisma.AuthorUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
 }
@@ -367,17 +378,16 @@ export type ArticleUncheckedUpdateInput = {
 export type ArticleCreateManyInput = {
   id?: number
   pmid: number
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
 }
 
 export type ArticleUpdateManyMutationInput = {
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -389,13 +399,13 @@ export type ArticleUpdateManyMutationInput = {
 export type ArticleUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type ArticleNullableScalarRelationFilter = {
@@ -406,18 +416,19 @@ export type ArticleNullableScalarRelationFilter = {
 export type ArticleCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
-  journal?: Prisma.SortOrder
   articleTitle?: Prisma.SortOrder
   pagination?: Prisma.SortOrder
   language?: Prisma.SortOrder
   publicationTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type ArticleAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type ArticleMaxOrderByAggregateInput = {
@@ -427,6 +438,7 @@ export type ArticleMaxOrderByAggregateInput = {
   language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type ArticleMinOrderByAggregateInput = {
@@ -436,16 +448,28 @@ export type ArticleMinOrderByAggregateInput = {
   language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type ArticleSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   pmid?: Prisma.SortOrder
+  journalId?: Prisma.SortOrder
 }
 
 export type ArticleScalarRelationFilter = {
   is?: Prisma.ArticleWhereInput
   isNot?: Prisma.ArticleWhereInput
+}
+
+export type ArticleListRelationFilter = {
+  every?: Prisma.ArticleWhereInput
+  some?: Prisma.ArticleWhereInput
+  none?: Prisma.ArticleWhereInput
+}
+
+export type ArticleOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type ArticleCreateNestedOneWithoutMedlineCitationInput = {
@@ -512,27 +536,69 @@ export type ArticleUpdateOneRequiredWithoutGrantsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ArticleUpdateToOneWithWhereWithoutGrantsInput, Prisma.ArticleUpdateWithoutGrantsInput>, Prisma.ArticleUncheckedUpdateWithoutGrantsInput>
 }
 
+export type ArticleCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput> | Prisma.ArticleCreateWithoutJournalInput[] | Prisma.ArticleUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutJournalInput | Prisma.ArticleCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.ArticleCreateManyJournalInputEnvelope
+  connect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+}
+
+export type ArticleUncheckedCreateNestedManyWithoutJournalInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput> | Prisma.ArticleCreateWithoutJournalInput[] | Prisma.ArticleUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutJournalInput | Prisma.ArticleCreateOrConnectWithoutJournalInput[]
+  createMany?: Prisma.ArticleCreateManyJournalInputEnvelope
+  connect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+}
+
+export type ArticleUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput> | Prisma.ArticleCreateWithoutJournalInput[] | Prisma.ArticleUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutJournalInput | Prisma.ArticleCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.ArticleUpsertWithWhereUniqueWithoutJournalInput | Prisma.ArticleUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.ArticleCreateManyJournalInputEnvelope
+  set?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  disconnect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  delete?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  connect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  update?: Prisma.ArticleUpdateWithWhereUniqueWithoutJournalInput | Prisma.ArticleUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.ArticleUpdateManyWithWhereWithoutJournalInput | Prisma.ArticleUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.ArticleScalarWhereInput | Prisma.ArticleScalarWhereInput[]
+}
+
+export type ArticleUncheckedUpdateManyWithoutJournalNestedInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput> | Prisma.ArticleCreateWithoutJournalInput[] | Prisma.ArticleUncheckedCreateWithoutJournalInput[]
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutJournalInput | Prisma.ArticleCreateOrConnectWithoutJournalInput[]
+  upsert?: Prisma.ArticleUpsertWithWhereUniqueWithoutJournalInput | Prisma.ArticleUpsertWithWhereUniqueWithoutJournalInput[]
+  createMany?: Prisma.ArticleCreateManyJournalInputEnvelope
+  set?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  disconnect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  delete?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  connect?: Prisma.ArticleWhereUniqueInput | Prisma.ArticleWhereUniqueInput[]
+  update?: Prisma.ArticleUpdateWithWhereUniqueWithoutJournalInput | Prisma.ArticleUpdateWithWhereUniqueWithoutJournalInput[]
+  updateMany?: Prisma.ArticleUpdateManyWithWhereWithoutJournalInput | Prisma.ArticleUpdateManyWithWhereWithoutJournalInput[]
+  deleteMany?: Prisma.ArticleScalarWhereInput | Prisma.ArticleScalarWhereInput[]
+}
+
 export type ArticleCreateWithoutMedlineCitationInput = {
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutArticlesInput
   authors?: Prisma.AuthorCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutMedlineCitationInput = {
   id?: number
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   authors?: Prisma.AuthorUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
 }
@@ -554,38 +620,38 @@ export type ArticleUpdateToOneWithWhereWithoutMedlineCitationInput = {
 }
 
 export type ArticleUpdateWithoutMedlineCitationInput = {
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutArticlesNestedInput
   authors?: Prisma.AuthorUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutMedlineCitationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   authors?: Prisma.AuthorUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutAuthorsInput = {
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutArticlesInput
   medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
 }
@@ -593,13 +659,13 @@ export type ArticleCreateWithoutAuthorsInput = {
 export type ArticleUncheckedCreateWithoutAuthorsInput = {
   id?: number
   pmid: number
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
 }
 
@@ -620,13 +686,13 @@ export type ArticleUpdateToOneWithWhereWithoutAuthorsInput = {
 }
 
 export type ArticleUpdateWithoutAuthorsInput = {
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutArticlesNestedInput
   medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
 }
@@ -634,24 +700,24 @@ export type ArticleUpdateWithoutAuthorsInput = {
 export type ArticleUncheckedUpdateWithoutAuthorsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutGrantsInput = {
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journal: Prisma.JournalCreateNestedOneWithoutArticlesInput
   medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutArticleInput
   authors?: Prisma.AuthorCreateNestedManyWithoutArticleInput
 }
@@ -659,13 +725,13 @@ export type ArticleCreateWithoutGrantsInput = {
 export type ArticleUncheckedCreateWithoutGrantsInput = {
   id?: number
   pmid: number
-  journal: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle: string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: string | null
   publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  journalId: number
   authors?: Prisma.AuthorUncheckedCreateNestedManyWithoutArticleInput
 }
 
@@ -686,7 +752,108 @@ export type ArticleUpdateToOneWithWhereWithoutGrantsInput = {
 }
 
 export type ArticleUpdateWithoutGrantsInput = {
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneRequiredWithoutArticlesNestedInput
+  medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutArticleNestedInput
+  authors?: Prisma.AuthorUpdateManyWithoutArticleNestedInput
+}
+
+export type ArticleUncheckedUpdateWithoutGrantsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journalId?: Prisma.IntFieldUpdateOperationsInput | number
+  authors?: Prisma.AuthorUncheckedUpdateManyWithoutArticleNestedInput
+}
+
+export type ArticleCreateWithoutJournalInput = {
+  articleTitle: string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: string | null
+  publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  medlineCitation: Prisma.MedlineCitationCreateNestedOneWithoutArticleInput
+  authors?: Prisma.AuthorCreateNestedManyWithoutArticleInput
+  grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
+}
+
+export type ArticleUncheckedCreateWithoutJournalInput = {
+  id?: number
+  pmid: number
+  articleTitle: string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: string | null
+  publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  authors?: Prisma.AuthorUncheckedCreateNestedManyWithoutArticleInput
+  grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
+}
+
+export type ArticleCreateOrConnectWithoutJournalInput = {
+  where: Prisma.ArticleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput>
+}
+
+export type ArticleCreateManyJournalInputEnvelope = {
+  data: Prisma.ArticleCreateManyJournalInput | Prisma.ArticleCreateManyJournalInput[]
+  skipDuplicates?: boolean
+}
+
+export type ArticleUpsertWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.ArticleWhereUniqueInput
+  update: Prisma.XOR<Prisma.ArticleUpdateWithoutJournalInput, Prisma.ArticleUncheckedUpdateWithoutJournalInput>
+  create: Prisma.XOR<Prisma.ArticleCreateWithoutJournalInput, Prisma.ArticleUncheckedCreateWithoutJournalInput>
+}
+
+export type ArticleUpdateWithWhereUniqueWithoutJournalInput = {
+  where: Prisma.ArticleWhereUniqueInput
+  data: Prisma.XOR<Prisma.ArticleUpdateWithoutJournalInput, Prisma.ArticleUncheckedUpdateWithoutJournalInput>
+}
+
+export type ArticleUpdateManyWithWhereWithoutJournalInput = {
+  where: Prisma.ArticleScalarWhereInput
+  data: Prisma.XOR<Prisma.ArticleUpdateManyMutationInput, Prisma.ArticleUncheckedUpdateManyWithoutJournalInput>
+}
+
+export type ArticleScalarWhereInput = {
+  AND?: Prisma.ArticleScalarWhereInput | Prisma.ArticleScalarWhereInput[]
+  OR?: Prisma.ArticleScalarWhereInput[]
+  NOT?: Prisma.ArticleScalarWhereInput | Prisma.ArticleScalarWhereInput[]
+  id?: Prisma.IntFilter<"Article"> | number
+  pmid?: Prisma.IntFilter<"Article"> | number
+  articleTitle?: Prisma.StringFilter<"Article"> | string
+  pagination?: Prisma.JsonNullableFilter<"Article">
+  language?: Prisma.StringNullableFilter<"Article"> | string | null
+  publicationTypes?: Prisma.JsonFilter<"Article">
+  createdAt?: Prisma.DateTimeFilter<"Article"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Article"> | Date | string
+  journalId?: Prisma.IntFilter<"Article"> | number
+}
+
+export type ArticleCreateManyJournalInput = {
+  id?: number
+  pmid: number
+  articleTitle: string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: string | null
+  publicationTypes: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ArticleUpdateWithoutJournalInput = {
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -695,12 +862,12 @@ export type ArticleUpdateWithoutGrantsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medlineCitation?: Prisma.MedlineCitationUpdateOneRequiredWithoutArticleNestedInput
   authors?: Prisma.AuthorUpdateManyWithoutArticleNestedInput
+  grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
 }
 
-export type ArticleUncheckedUpdateWithoutGrantsInput = {
+export type ArticleUncheckedUpdateWithoutJournalInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   pmid?: Prisma.IntFieldUpdateOperationsInput | number
-  journal?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
   pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -708,6 +875,18 @@ export type ArticleUncheckedUpdateWithoutGrantsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authors?: Prisma.AuthorUncheckedUpdateManyWithoutArticleNestedInput
+  grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
+}
+
+export type ArticleUncheckedUpdateManyWithoutJournalInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  pmid?: Prisma.IntFieldUpdateOperationsInput | number
+  articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  pagination?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publicationTypes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -753,13 +932,14 @@ export type ArticleCountOutputTypeCountGrantsArgs<ExtArgs extends runtime.Types.
 export type ArticleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  journal?: boolean
   articleTitle?: boolean
   pagination?: boolean
   language?: boolean
   publicationTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
   authors?: boolean | Prisma.Article$authorsArgs<ExtArgs>
   grants?: boolean | Prisma.Article$grantsArgs<ExtArgs>
@@ -769,58 +949,64 @@ export type ArticleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type ArticleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  journal?: boolean
   articleTitle?: boolean
   pagination?: boolean
   language?: boolean
   publicationTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["article"]>
 
 export type ArticleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   pmid?: boolean
-  journal?: boolean
   articleTitle?: boolean
   pagination?: boolean
   language?: boolean
   publicationTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["article"]>
 
 export type ArticleSelectScalar = {
   id?: boolean
   pmid?: boolean
-  journal?: boolean
   articleTitle?: boolean
   pagination?: boolean
   language?: boolean
   publicationTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  journalId?: boolean
 }
 
-export type ArticleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pmid" | "journal" | "articleTitle" | "pagination" | "language" | "publicationTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["article"]>
+export type ArticleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pmid" | "articleTitle" | "pagination" | "language" | "publicationTypes" | "createdAt" | "updatedAt" | "journalId", ExtArgs["result"]["article"]>
 export type ArticleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
   authors?: boolean | Prisma.Article$authorsArgs<ExtArgs>
   grants?: boolean | Prisma.Article$grantsArgs<ExtArgs>
   _count?: boolean | Prisma.ArticleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ArticleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }
 export type ArticleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  journal?: boolean | Prisma.JournalDefaultArgs<ExtArgs>
   medlineCitation?: boolean | Prisma.MedlineCitationDefaultArgs<ExtArgs>
 }
 
 export type $ArticlePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Article"
   objects: {
+    journal: Prisma.$JournalPayload<ExtArgs>
     medlineCitation: Prisma.$MedlineCitationPayload<ExtArgs>
     authors: Prisma.$AuthorPayload<ExtArgs>[]
     grants: Prisma.$GrantPayload<ExtArgs>[]
@@ -828,13 +1014,13 @@ export type $ArticlePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     pmid: number
-    journal: runtime.JsonValue
     articleTitle: string
     pagination: runtime.JsonValue | null
     language: string | null
     publicationTypes: runtime.JsonValue
     createdAt: Date
     updatedAt: Date
+    journalId: number
   }, ExtArgs["result"]["article"]>
   composites: {}
 }
@@ -1229,6 +1415,7 @@ readonly fields: ArticleFieldRefs;
  */
 export interface Prisma__ArticleClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  journal<T extends Prisma.JournalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JournalDefaultArgs<ExtArgs>>): Prisma.Prisma__JournalClient<runtime.Types.Result.GetResult<Prisma.$JournalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   medlineCitation<T extends Prisma.MedlineCitationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedlineCitationDefaultArgs<ExtArgs>>): Prisma.Prisma__MedlineCitationClient<runtime.Types.Result.GetResult<Prisma.$MedlineCitationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   authors<T extends Prisma.Article$authorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$authorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuthorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   grants<T extends Prisma.Article$grantsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$grantsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1263,13 +1450,13 @@ export interface Prisma__ArticleClient<T, Null = never, ExtArgs extends runtime.
 export interface ArticleFieldRefs {
   readonly id: Prisma.FieldRef<"Article", 'Int'>
   readonly pmid: Prisma.FieldRef<"Article", 'Int'>
-  readonly journal: Prisma.FieldRef<"Article", 'Json'>
   readonly articleTitle: Prisma.FieldRef<"Article", 'String'>
   readonly pagination: Prisma.FieldRef<"Article", 'Json'>
   readonly language: Prisma.FieldRef<"Article", 'String'>
   readonly publicationTypes: Prisma.FieldRef<"Article", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Article", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Article", 'DateTime'>
+  readonly journalId: Prisma.FieldRef<"Article", 'Int'>
 }
     
 

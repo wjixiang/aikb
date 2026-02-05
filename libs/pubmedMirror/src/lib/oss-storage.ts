@@ -35,7 +35,15 @@ const createOSSConfig = (): OSSConfig => {
     };
 };
 
-const config = createOSSConfig();
+// Lazy-load config to ensure environment variables are loaded first
+let cachedConfig: OSSConfig | null = null;
+
+const getConfig = (): OSSConfig => {
+    if (!cachedConfig) {
+        cachedConfig = createOSSConfig();
+    }
+    return cachedConfig;
+};
 
 // ============================================================================
 // S3 Client
@@ -46,12 +54,12 @@ const config = createOSSConfig();
  */
 const createS3Client = (): S3Client => {
     const clientConfig: S3ClientConfig = {
-        endpoint: config.s3Endpoint,
+        endpoint: getConfig().s3Endpoint,
         credentials: {
-            accessKeyId: config.s3AccessKeyId || '',
-            secretAccessKey: config.s3SecretAccessKey || '',
+            accessKeyId: getConfig().s3AccessKeyId || '',
+            secretAccessKey: getConfig().s3SecretAccessKey || '',
         },
-        region: config.s3Region,
+        region: getConfig().s3Region,
         maxAttempts: 3,
     };
 
@@ -97,7 +105,7 @@ export const uploadToOSS = async (
     year: string,
 ): Promise<void> => {
     const command = new PutObjectCommand({
-        Bucket: config.bucketName,
+        Bucket: getConfig().bucketName,
         Key: `baseline/${year}/${key}`,
         Body: buffer,
         ContentType: 'application/gzip',
@@ -117,7 +125,7 @@ export const downloadBaselineFile = async (
     year: string,
 ): Promise<Buffer> => {
     const command = new GetObjectCommand({
-        Bucket: config.bucketName,
+        Bucket: getConfig().bucketName,
         Key: `baseline/${year}/${filename}`,
     });
 
@@ -146,7 +154,7 @@ export const listSyncedBaselineFiles = async (year: string): Promise<string[]> =
 
     do {
         const command = new ListObjectsV2Command({
-            Bucket: config.bucketName,
+            Bucket: getConfig().bucketName,
             Prefix: `baseline/${year}`,
             ContinuationToken: continuationToken,
         });
@@ -180,7 +188,7 @@ export const listSyncedBaselineFiles = async (year: string): Promise<string[]> =
 export const fileExistsInOSS = async (filename: string, year: string): Promise<boolean> => {
     try {
         const command = new HeadObjectCommand({
-            Bucket: config.bucketName,
+            Bucket: getConfig().bucketName,
             Key: `baseline/${year}/${filename}`,
         });
 
@@ -194,4 +202,4 @@ export const fileExistsInOSS = async (filename: string, year: string): Promise<b
 /**
  * Get the bucket name from configuration
  */
-export const getBucketName = (): string => config.bucketName;
+export const getBucketName = (): string => getConfig().bucketName;

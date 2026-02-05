@@ -10,6 +10,7 @@ import {
     IArticleRepository,
     type SyncArticleResult,
 } from './article-repository.js';
+import { writeFileSync } from "fs";
 
 const gunzip = promisify(zlib.gunzip);
 
@@ -94,7 +95,7 @@ interface ArticleData {
     ArticleTitle?: string;
     Pagination?: { MedlinePgn?: string };
     AuthorList?: { Author?: AuthorData[] };
-    Language?: string;
+    Language?: string | string[];
     GrantList?: { Grant?: GrantData[] };
     PublicationTypeList?: { PublicationType?: string[] };
 }
@@ -246,16 +247,28 @@ const transformMedlineCitation = (data: MedlineCitationData) => {
 
 /**
  * Transform Article data to database format
+ * Note: journalId will be set by the repository after journal is created/looked up
  */
 const transformArticle = (pmid: number, data?: ArticleData) => {
     if (!data) return null;
 
+    // Handle language - can be string or array of strings
+    let language: string | null = null;
+    if (data.Language) {
+        if (Array.isArray(data.Language)) {
+            // Join multiple languages with comma, or take first one
+            language = data.Language.length > 0 ? data.Language.join(', ') : null;
+        } else {
+            language = data.Language;
+        }
+    }
+
     return {
         pmid,
-        journal: data.Journal || {},
+        journalId: 0, // Will be set by repository after journal is created/looked up
         articleTitle: data.ArticleTitle || '',
         pagination: data.Pagination || undefined,
-        language: data.Language || null,
+        language,
         publicationTypes: toArray(data.PublicationTypeList?.PublicationType),
     };
 };
@@ -450,6 +463,7 @@ export const syncFileToDb = async (
     let pubmedArticles: PubmedArticle[];
     const pubmedArticleSet = parsedResult['PubmedArticleSet'];
     const pubmedArticle = pubmedArticleSet?.['PubmedArticle'];
+    // writeFileSync(__dirname + '/pubmedArticle1.json', JSON.stringify(pubmedArticle[0], null, 2))
 
     if (Array.isArray(pubmedArticle)) {
         pubmedArticles = pubmedArticle;
