@@ -1,6 +1,6 @@
-export * from './pubmed/pubmed.service';
+export * from './pubmed/pubmed.service.js';
 
-export * from './meSH/meSH-client.module';
-export * from './meSH/mesh-client.service';
-export * from './UMLS/umls.module';
-export * from './UMLS/umls.service';
+export * from './meSH/meSH-client.module.js';
+export * from './meSH/mesh-client.service.js';
+export * from './UMLS/umls.module.js';
+export * from './UMLS/umls.service.js';

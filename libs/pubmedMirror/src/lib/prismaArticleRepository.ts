@@ -3,13 +3,71 @@
 // ============================================================================
 
 import { PrismaClient } from "../generated/prisma/client.js";
-import { ArticleCreateData, AuthorCreateData, ChemicalCreateData, GrantCreateData, IArticleRepository, MedlineCitationCreateData, MedlineJournalInfoCreateData, MeshHeadingCreateData, PubMedDataCreateData, SyncArticleResult } from "./article-repository.js";
+import { ArticleCreateData, ArticleDetailAffiliationCreateData, ArticleDetailAuthorAffiliationCreateData, ArticleDetailAuthorCreateData, ArticleDetailCreateData, ArticleDetailFullTextSourceCreateData, ArticleDetailJournalInfoCreateData, ArticleDetailKeywordCreateData, ArticleDetailMeshTermCreateData, ArticleDetailPublicationTypeCreateData, ArticleDetailReferenceCreateData, ArticleDetailRelatedInformationCreateData, ArticleDetailSimilarArticleCreateData, ArticleDetailSyncData, AuthorCreateData, ChemicalCreateData, GrantCreateData, IArticleRepository, MedlineCitationCreateData, MedlineJournalInfoCreateData, MeshHeadingCreateData, PubMedDataCreateData, SyncArticleResult } from "./article-repository.js";
 
 /**
  * Prisma-based implementation of IArticleRepository
  */
 export class PrismaArticleRepository implements IArticleRepository {
     constructor(private readonly prisma: PrismaClient) { }
+
+    async findArticleWithoutAbstract(lastPmid: number, take: number = 100): Promise<number[]> {
+        // Find articles that either:
+        // 1. Have ArticleDetail but abstract is null
+        // 2. Have Article but no ArticleDetail record yet
+
+        // First, find ArticleDetail records with null abstract
+        const detailsWithoutAbstract = await this.prisma.articleDetail.findMany({
+            where: {
+                pmid: {
+                    gt: lastPmid,
+                },
+                abstract: {
+                    equals: null,
+                },
+            },
+            select: {
+                pmid: true,
+            },
+            orderBy: {
+                pmid: 'asc',
+            },
+            take,
+        });
+
+        const pmidsWithoutAbstract = new Set(detailsWithoutAbstract.map(a => a.pmid));
+
+        // Second, find Articles that don't have ArticleDetail yet
+        const articlesWithoutDetail = await this.prisma.article.findMany({
+            where: {
+                pmid: {
+                    gt: lastPmid,
+                },
+                articleDetail: {
+                    is: null,
+                },
+            },
+            select: {
+                pmid: true,
+            },
+            orderBy: {
+                pmid: 'asc',
+            },
+            take,
+        });
+
+        // Combine both sets and sort
+        const allPmids = new Set([
+            ...pmidsWithoutAbstract,
+            ...articlesWithoutDetail.map(a => a.pmid),
+        ]);
+
+        // Convert to sorted array
+        const sortedPmids = Array.from(allPmids).sort((a, b) => a - b);
+
+        // Return only the requested number of records
+        return sortedPmids.slice(0, take);
+    }
 
     async syncArticle(
         pmid: number,
@@ -183,6 +241,230 @@ export class PrismaArticleRepository implements IArticleRepository {
         } catch (error) {
             return {
                 pmid,
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+            };
+        }
+    }
+
+    async syncArticleDetail(data: ArticleDetailSyncData): Promise<SyncArticleResult> {
+        const { detail, authors, affiliations, keywords, similarArticles, references, publicationTypes, meshTerms, relatedInformation, fullTextSources, journalInfo } = data;
+
+        try {
+            await this.prisma.$transaction(async (tx) => {
+                // Upsert ArticleDetail
+                const existingDetail = await tx.articleDetail.findUnique({
+                    where: { pmid: detail.pmid },
+                });
+
+                let articleDetailId: number;
+                if (existingDetail) {
+                    await tx.articleDetail.update({
+                        where: { pmid: detail.pmid },
+                        data: {
+                            doi: detail.doi,
+                            title: detail.title,
+                            abstract: detail.abstract,
+                            conflictOfInterestStatement: detail.conflictOfInterestStatement,
+                        },
+                    });
+                    articleDetailId = existingDetail.id;
+
+                    // Delete existing related data
+                    await tx.articleDetailAuthor.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailAffiliation.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailKeyword.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailSimilarArticle.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailReference.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailPublicationType.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailMeshTerm.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailRelatedInformation.deleteMany({
+                        where: { articleDetailId },
+                    });
+                    await tx.articleDetailFullTextSource.deleteMany({
+                        where: { articleDetailId },
+                    });
+                } else {
+                    const created = await tx.articleDetail.create({
+                        data: {
+                            pmid: detail.pmid,
+                            doi: detail.doi,
+                            title: detail.title,
+                            abstract: detail.abstract,
+                            conflictOfInterestStatement: detail.conflictOfInterestStatement,
+                        },
+                    });
+                    articleDetailId = created.id;
+                }
+
+                // Create authors with their affiliations
+                for (const author of authors) {
+                    const createdAuthor = await tx.articleDetailAuthor.create({
+                        data: {
+                            articleDetailId,
+                            name: author.name,
+                            position: author.position,
+                        },
+                    });
+
+                    // Create author affiliations
+                    if (author.affiliations.length > 0) {
+                        await tx.articleDetailAuthorAffiliation.createMany({
+                            data: author.affiliations.map(aff => ({
+                                authorId: createdAuthor.id,
+                                institution: aff.institution,
+                                city: aff.city,
+                                country: aff.country,
+                                email: aff.email,
+                            })),
+                            skipDuplicates: true,
+                        });
+                    }
+                }
+
+                // Create article-level affiliations
+                if (affiliations.length > 0) {
+                    await tx.articleDetailAffiliation.createMany({
+                        data: affiliations.map(aff => ({
+                            articleDetailId,
+                            institution: aff.institution,
+                            city: aff.city,
+                            country: aff.country,
+                            email: aff.email,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create keywords
+                if (keywords.length > 0) {
+                    await tx.articleDetailKeyword.createMany({
+                        data: keywords.map(kw => ({
+                            articleDetailId,
+                            text: kw.text,
+                            isMeSH: kw.isMeSH ?? false,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create similar articles
+                if (similarArticles.length > 0) {
+                    await tx.articleDetailSimilarArticle.createMany({
+                        data: similarArticles.map(sa => ({
+                            articleDetailId,
+                            pmid: sa.pmid,
+                            title: sa.title,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create references
+                if (references.length > 0) {
+                    await tx.articleDetailReference.createMany({
+                        data: references.map(ref => ({
+                            articleDetailId,
+                            pmid: ref.pmid,
+                            citation: ref.citation,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create publication types
+                if (publicationTypes.length > 0) {
+                    await tx.articleDetailPublicationType.createMany({
+                        data: publicationTypes.map(pt => ({
+                            articleDetailId,
+                            type: pt.type,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create MeSH terms
+                if (meshTerms.length > 0) {
+                    await tx.articleDetailMeshTerm.createMany({
+                        data: meshTerms.map(mt => ({
+                            articleDetailId,
+                            text: mt.text,
+                            isMeSH: mt.isMeSH ?? true,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create related information
+                if (relatedInformation.length > 0) {
+                    await tx.articleDetailRelatedInformation.createMany({
+                        data: relatedInformation.map(ri => ({
+                            articleDetailId,
+                            category: ri.category,
+                            text: ri.text,
+                            url: ri.url,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Create full text sources
+                if (fullTextSources.length > 0) {
+                    await tx.articleDetailFullTextSource.createMany({
+                        data: fullTextSources.map(ft => ({
+                            articleDetailId,
+                            name: ft.name,
+                            url: ft.url,
+                            type: ft.type,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
+                // Upsert journal info
+                if (journalInfo) {
+                    await tx.articleDetailJournalInfo.upsert({
+                        where: { articleDetailId },
+                        create: {
+                            articleDetailId,
+                            title: journalInfo.title,
+                            volume: journalInfo.volume,
+                            issue: journalInfo.issue,
+                            pages: journalInfo.pages,
+                            pubDate: journalInfo.pubDate,
+                        },
+                        update: {
+                            title: journalInfo.title,
+                            volume: journalInfo.volume,
+                            issue: journalInfo.issue,
+                            pages: journalInfo.pages,
+                            pubDate: journalInfo.pubDate,
+                        },
+                    });
+                }
+            });
+
+            return {
+                pmid: detail.pmid,
+                success: true,
+            };
+        } catch (error) {
+            return {
+                pmid: detail.pmid,
                 success: false,
                 error: error instanceof Error ? error.message : String(error),
             };

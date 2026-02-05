@@ -2,6 +2,12 @@
 
 This library was generated with [Nx](https://nx.dev).
 
+## Function
+
+- Data Syncthing
+  - pubmed medline baseline data >> OSS
+  - OSS >> database
+
 ## Building
 
 Run `nx build pubmedMirror` to build the library.

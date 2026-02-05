@@ -80,6 +80,66 @@ export type MeshHeading = Prisma.MeshHeadingModel
  */
 export type PubMedData = Prisma.PubMedDataModel
 /**
+ * Model ArticleDetail
+ * 
+ */
+export type ArticleDetail = Prisma.ArticleDetailModel
+/**
+ * Model ArticleDetailAuthor
+ * 
+ */
+export type ArticleDetailAuthor = Prisma.ArticleDetailAuthorModel
+/**
+ * Model ArticleDetailAuthorAffiliation
+ * 
+ */
+export type ArticleDetailAuthorAffiliation = Prisma.ArticleDetailAuthorAffiliationModel
+/**
+ * Model ArticleDetailAffiliation
+ * 
+ */
+export type ArticleDetailAffiliation = Prisma.ArticleDetailAffiliationModel
+/**
+ * Model ArticleDetailKeyword
+ * 
+ */
+export type ArticleDetailKeyword = Prisma.ArticleDetailKeywordModel
+/**
+ * Model ArticleDetailSimilarArticle
+ * 
+ */
+export type ArticleDetailSimilarArticle = Prisma.ArticleDetailSimilarArticleModel
+/**
+ * Model ArticleDetailReference
+ * 
+ */
+export type ArticleDetailReference = Prisma.ArticleDetailReferenceModel
+/**
+ * Model ArticleDetailPublicationType
+ * 
+ */
+export type ArticleDetailPublicationType = Prisma.ArticleDetailPublicationTypeModel
+/**
+ * Model ArticleDetailMeshTerm
+ * 
+ */
+export type ArticleDetailMeshTerm = Prisma.ArticleDetailMeshTermModel
+/**
+ * Model ArticleDetailRelatedInformation
+ * 
+ */
+export type ArticleDetailRelatedInformation = Prisma.ArticleDetailRelatedInformationModel
+/**
+ * Model ArticleDetailFullTextSource
+ * 
+ */
+export type ArticleDetailFullTextSource = Prisma.ArticleDetailFullTextSourceModel
+/**
+ * Model ArticleDetailJournalInfo
+ * 
+ */
+export type ArticleDetailJournalInfo = Prisma.ArticleDetailJournalInfoModel
+/**
  * Model BaselineSync
  * 
  */

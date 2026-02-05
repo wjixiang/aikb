@@ -40,12 +40,13 @@ model Article {
   articleTitle     String   @db.Text
   pagination       String? // Stores MedlinePgn
   language         String?
-  publicationTypes Json // Stores PublicationType array
+  publicationTypes String[] // Stores PublicationType array as text strings
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Relations
   medlineCitation MedlineCitation @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
+  articleDetail   ArticleDetail?
   authors         Author[]
   grants          Grant[]
   journalId       Int
@@ -168,6 +169,224 @@ model PubMedData {
 
   @@index([pmid])
   @@map("pubmed_data")
+}
+
+// Article Detail from PubMed detail page
+model ArticleDetail {
+  id                          Int      @id @default(autoincrement())
+  pmid                        Int      @unique
+  doi                         String?
+  title                       String   @db.Text
+  abstract                    String?  @db.Text
+  conflictOfInterestStatement String?  @db.Text
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  // Relations
+  article            Article?                          @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
+  authors            ArticleDetailAuthor[]
+  affiliations       ArticleDetailAffiliation[]
+  keywords           ArticleDetailKeyword[]
+  similarArticles    ArticleDetailSimilarArticle[]
+  references         ArticleDetailReference[]
+  publicationTypes   ArticleDetailPublicationType[]
+  meshTerms          ArticleDetailMeshTerm[]
+  relatedInformation ArticleDetailRelatedInformation[]
+  fullTextSources    ArticleDetailFullTextSource[]
+  journalInfo        ArticleDetailJournalInfo?
+
+  @@index([pmid])
+  @@index([doi])
+  @@map("article_details")
+}
+
+// Author with detailed info from detail page
+model ArticleDetailAuthor {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  name            String
+  position        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail                    @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+  affiliations  ArticleDetailAuthorAffiliation[]
+
+  @@index([articleDetailId])
+  @@map("article_detail_authors")
+}
+
+// Affiliation linked to author
+model ArticleDetailAuthorAffiliation {
+  id          Int      @id @default(autoincrement())
+  authorId    Int
+  institution String?  @db.Text
+  city        String?
+  country     String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  author ArticleDetailAuthor @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@map("article_detail_author_affiliations")
+}
+
+// Affiliation from article level
+model ArticleDetailAffiliation {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  institution     String?  @db.Text
+  city            String?
+  country         String?
+  email           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@map("article_detail_affiliations")
+}
+
+// Keyword from detail page
+model ArticleDetailKeyword {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  text            String
+  isMeSH          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@index([text])
+  @@map("article_detail_keywords")
+}
+
+// Similar article
+model ArticleDetailSimilarArticle {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  pmid            String
+  title           String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@index([pmid])
+  @@map("article_detail_similar_articles")
+}
+
+// Reference
+model ArticleDetailReference {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  pmid            String?
+  citation        String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@map("article_detail_references")
+}
+
+// Publication type
+model ArticleDetailPublicationType {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  type            String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@map("article_detail_publication_types")
+}
+
+// MeSH term
+model ArticleDetailMeshTerm {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  text            String
+  isMeSH          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@index([text])
+  @@map("article_detail_mesh_terms")
+}
+
+// Related information (key-value pairs)
+model ArticleDetailRelatedInformation {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  category        String
+  text            String
+  url             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@index([category])
+  @@map("article_detail_related_information")
+}
+
+// Full text source
+model ArticleDetailFullTextSource {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int
+  name            String
+  url             String
+  type            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@map("article_detail_full_text_sources")
+}
+
+// Journal info from detail page
+model ArticleDetailJournalInfo {
+  id              Int      @id @default(autoincrement())
+  articleDetailId Int      @unique
+  title           String?
+  volume          String?
+  issue           String?
+  pages           String?
+  pubDate         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  articleDetail ArticleDetail @relation(fields: [articleDetailId], references: [id], onDelete: Cascade)
+
+  @@index([articleDetailId])
+  @@map("article_detail_journal_info")
 }
 
 // Sync tracking for baseline files

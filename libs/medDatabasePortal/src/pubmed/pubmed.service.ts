@@ -395,10 +395,7 @@ export class PubmedService {
             authors.push({ name: cleanedName, position, affiliations });
         });
 
-        if (authors.length === 0) {
-            throw new Error('Failed to extract article authors');
-        }
-
+        // Return empty array instead of throwing error
         return authors;
     }
 
@@ -417,10 +414,7 @@ export class PubmedService {
             }
         });
 
-        if (affiliations.length === 0) {
-            throw new Error('Failed to extract affiliations');
-        }
-
+        // Return empty array instead of throwing error
         return affiliations;
     }
 
@@ -462,10 +456,7 @@ export class PubmedService {
             });
         }
 
-        if (keywords.length === 0) {
-            throw new Error('Failed to extract article keywords');
-        }
-
+        // Return empty array instead of throwing error
         return keywords;
     }
 
@@ -474,10 +465,7 @@ export class PubmedService {
             $('.conflict-of-interest-statement').text().trim() ||
             $('div[data-section="conflict-of-interest"]').text().trim();
 
-        if (!statement) {
-            throw new Error('Failed to extract conflict of interest statement');
-        }
-
+        // Return empty string instead of throwing error
         return statement;
     }
 
@@ -492,10 +480,7 @@ export class PubmedService {
             }
         });
 
-        if (similarArticles.length === 0) {
-            throw new Error('Failed to extract similar articles');
-        }
-
+        // Return empty array instead of throwing error
         return similarArticles;
     }
 
@@ -510,10 +495,7 @@ export class PubmedService {
             }
         });
 
-        if (references.length === 0) {
-            throw new Error('Failed to extract article references');
-        }
-
+        // Return empty array instead of throwing error
         return references;
     }
 
@@ -526,10 +508,7 @@ export class PubmedService {
             }
         });
 
-        if (types.length === 0) {
-            throw new Error('Failed to extract publication types');
-        }
-
+        // Return empty array instead of throwing error
         return types;
     }
 
@@ -543,10 +522,7 @@ export class PubmedService {
             }
         });
 
-        if (meshTerms.length === 0) {
-            throw new Error('Failed to extract MeSH terms');
-        }
-
+        // Return empty array instead of throwing error
         return meshTerms;
     }
 
@@ -566,10 +542,7 @@ export class PubmedService {
             }
         });
 
-        if (Object.keys(relatedInfo).length === 0) {
-            throw new Error('Failed to extract related information');
-        }
-
+        // Return empty object instead of throwing error
         return relatedInfo;
     }
 
@@ -585,10 +558,7 @@ export class PubmedService {
             }
         });
 
-        if (sources.length === 0) {
-            throw new Error('Failed to extract full text sources');
-        }
-
+        // Return empty array instead of throwing error
         return sources;
     }
 
@@ -617,23 +587,19 @@ export class PubmedService {
         const pages = $('.pages').text().trim();
         const pubDate = $('.pub-date').text().trim();
 
-        if (!title && !volume && !issue && !pages && !pubDate) {
-            throw new Error('Failed to extract journal information');
-        }
-
+        // Return object with available fields instead of throwing error
         return {
-            title,
-            volume,
-            issue,
-            pages,
-            pubDate
+            title: title || undefined,
+            volume: volume || undefined,
+            issue: issue || undefined,
+            pages: pages || undefined,
+            pubDate: pubDate || undefined
         };
     }
 
     private extractDOI($: cheerio.CheerioAPI, pmid: string): string {
         const DOI = $('span.identifier.doi > a.id-link').first().text().trim()
-        if (DOI.length < 1) throw new Error(`Get article detail failed: failed to find DOI of pmid ${pmid}`)
-        console.log(DOI)
+        // Return empty string instead of throwing error
         return DOI
     }
 

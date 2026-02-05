@@ -392,6 +392,18 @@ export const ModelName = {
   Chemical: 'Chemical',
   MeshHeading: 'MeshHeading',
   PubMedData: 'PubMedData',
+  ArticleDetail: 'ArticleDetail',
+  ArticleDetailAuthor: 'ArticleDetailAuthor',
+  ArticleDetailAuthorAffiliation: 'ArticleDetailAuthorAffiliation',
+  ArticleDetailAffiliation: 'ArticleDetailAffiliation',
+  ArticleDetailKeyword: 'ArticleDetailKeyword',
+  ArticleDetailSimilarArticle: 'ArticleDetailSimilarArticle',
+  ArticleDetailReference: 'ArticleDetailReference',
+  ArticleDetailPublicationType: 'ArticleDetailPublicationType',
+  ArticleDetailMeshTerm: 'ArticleDetailMeshTerm',
+  ArticleDetailRelatedInformation: 'ArticleDetailRelatedInformation',
+  ArticleDetailFullTextSource: 'ArticleDetailFullTextSource',
+  ArticleDetailJournalInfo: 'ArticleDetailJournalInfo',
   BaselineSync: 'BaselineSync'
 } as const
 
@@ -408,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "medlineCitation" | "article" | "author" | "grant" | "journal" | "chemical" | "meshHeading" | "pubMedData" | "baselineSync"
+    modelProps: "medlineCitation" | "article" | "author" | "grant" | "journal" | "chemical" | "meshHeading" | "pubMedData" | "articleDetail" | "articleDetailAuthor" | "articleDetailAuthorAffiliation" | "articleDetailAffiliation" | "articleDetailKeyword" | "articleDetailSimilarArticle" | "articleDetailReference" | "articleDetailPublicationType" | "articleDetailMeshTerm" | "articleDetailRelatedInformation" | "articleDetailFullTextSource" | "articleDetailJournalInfo" | "baselineSync"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1004,6 +1016,894 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ArticleDetail: {
+      payload: Prisma.$ArticleDetailPayload<ExtArgs>
+      fields: Prisma.ArticleDetailFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetail>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailAuthor: {
+      payload: Prisma.$ArticleDetailAuthorPayload<ExtArgs>
+      fields: Prisma.ArticleDetailAuthorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailAuthorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailAuthorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailAuthorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailAuthorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailAuthorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailAuthorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailAuthorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailAuthorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailAuthorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailAuthorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailAuthorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailAuthorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailAuthorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailAuthorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailAuthorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailAuthor>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailAuthorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAuthorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailAuthorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAuthorCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailAuthorAffiliation: {
+      payload: Prisma.$ArticleDetailAuthorAffiliationPayload<ExtArgs>
+      fields: Prisma.ArticleDetailAuthorAffiliationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailAuthorAffiliationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailAuthorAffiliationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailAuthorAffiliationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailAuthorAffiliationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailAuthorAffiliationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailAuthorAffiliationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailAuthorAffiliationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailAuthorAffiliationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailAuthorAffiliationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailAuthorAffiliationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailAuthorAffiliationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailAuthorAffiliationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailAuthorAffiliationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailAuthorAffiliationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAuthorAffiliationPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailAuthorAffiliationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailAuthorAffiliation>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailAuthorAffiliationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAuthorAffiliationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailAuthorAffiliationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAuthorAffiliationCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailAffiliation: {
+      payload: Prisma.$ArticleDetailAffiliationPayload<ExtArgs>
+      fields: Prisma.ArticleDetailAffiliationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailAffiliationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailAffiliationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailAffiliationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailAffiliationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailAffiliationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailAffiliationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailAffiliationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailAffiliationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailAffiliationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailAffiliationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailAffiliationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailAffiliationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailAffiliationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailAffiliationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailAffiliationPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailAffiliationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailAffiliation>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailAffiliationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAffiliationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailAffiliationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailAffiliationCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailKeyword: {
+      payload: Prisma.$ArticleDetailKeywordPayload<ExtArgs>
+      fields: Prisma.ArticleDetailKeywordFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailKeywordFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailKeywordFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailKeywordFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailKeywordFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailKeywordFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailKeywordCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailKeywordCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailKeywordCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailKeywordDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailKeywordUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailKeywordDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailKeywordUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailKeywordUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailKeywordUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailKeywordPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailKeywordAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailKeyword>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailKeywordGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailKeywordGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailKeywordCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailKeywordCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailSimilarArticle: {
+      payload: Prisma.$ArticleDetailSimilarArticlePayload<ExtArgs>
+      fields: Prisma.ArticleDetailSimilarArticleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailSimilarArticleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailSimilarArticleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailSimilarArticleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailSimilarArticleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailSimilarArticleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailSimilarArticleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailSimilarArticleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailSimilarArticleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailSimilarArticleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailSimilarArticleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailSimilarArticleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailSimilarArticleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailSimilarArticleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailSimilarArticleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailSimilarArticlePayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailSimilarArticleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailSimilarArticle>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailSimilarArticleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailSimilarArticleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailSimilarArticleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailSimilarArticleCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailReference: {
+      payload: Prisma.$ArticleDetailReferencePayload<ExtArgs>
+      fields: Prisma.ArticleDetailReferenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailReferenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailReferenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailReferenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailReferenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailReferenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailReferenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailReferenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailReferenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailReferenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailReferenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailReferenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailReferenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailReferenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailReferenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailReferencePayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailReferenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailReference>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailReferenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailReferenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailReferenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailReferenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailPublicationType: {
+      payload: Prisma.$ArticleDetailPublicationTypePayload<ExtArgs>
+      fields: Prisma.ArticleDetailPublicationTypeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailPublicationTypeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailPublicationTypeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailPublicationTypeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailPublicationTypeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailPublicationTypeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailPublicationTypeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailPublicationTypeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailPublicationTypeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailPublicationTypeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailPublicationTypeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailPublicationTypeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailPublicationTypeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailPublicationTypeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailPublicationTypeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailPublicationTypePayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailPublicationTypeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailPublicationType>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailPublicationTypeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailPublicationTypeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailPublicationTypeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailPublicationTypeCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailMeshTerm: {
+      payload: Prisma.$ArticleDetailMeshTermPayload<ExtArgs>
+      fields: Prisma.ArticleDetailMeshTermFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailMeshTermFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailMeshTermFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailMeshTermFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailMeshTermFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailMeshTermFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailMeshTermCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailMeshTermCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailMeshTermCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailMeshTermDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailMeshTermUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailMeshTermDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailMeshTermUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailMeshTermUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailMeshTermUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailMeshTermPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailMeshTermAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailMeshTerm>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailMeshTermGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailMeshTermGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailMeshTermCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailMeshTermCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailRelatedInformation: {
+      payload: Prisma.$ArticleDetailRelatedInformationPayload<ExtArgs>
+      fields: Prisma.ArticleDetailRelatedInformationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailRelatedInformationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailRelatedInformationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailRelatedInformationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailRelatedInformationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailRelatedInformationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailRelatedInformationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailRelatedInformationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailRelatedInformationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailRelatedInformationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailRelatedInformationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailRelatedInformationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailRelatedInformationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailRelatedInformationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailRelatedInformationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailRelatedInformationPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailRelatedInformationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailRelatedInformation>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailRelatedInformationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailRelatedInformationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailRelatedInformationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailRelatedInformationCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailFullTextSource: {
+      payload: Prisma.$ArticleDetailFullTextSourcePayload<ExtArgs>
+      fields: Prisma.ArticleDetailFullTextSourceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailFullTextSourceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailFullTextSourceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailFullTextSourceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailFullTextSourceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailFullTextSourceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailFullTextSourceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailFullTextSourceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailFullTextSourceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailFullTextSourceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailFullTextSourceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailFullTextSourceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailFullTextSourceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailFullTextSourceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailFullTextSourceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailFullTextSourcePayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailFullTextSourceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailFullTextSource>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailFullTextSourceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailFullTextSourceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailFullTextSourceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailFullTextSourceCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArticleDetailJournalInfo: {
+      payload: Prisma.$ArticleDetailJournalInfoPayload<ExtArgs>
+      fields: Prisma.ArticleDetailJournalInfoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleDetailJournalInfoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleDetailJournalInfoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleDetailJournalInfoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleDetailJournalInfoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleDetailJournalInfoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleDetailJournalInfoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleDetailJournalInfoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleDetailJournalInfoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleDetailJournalInfoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        update: {
+          args: Prisma.ArticleDetailJournalInfoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleDetailJournalInfoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleDetailJournalInfoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleDetailJournalInfoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleDetailJournalInfoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleDetailJournalInfoPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleDetailJournalInfoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleDetailJournalInfo>
+        }
+        groupBy: {
+          args: Prisma.ArticleDetailJournalInfoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailJournalInfoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleDetailJournalInfoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleDetailJournalInfoCountAggregateOutputType> | number
+        }
+      }
+    }
     BaselineSync: {
       payload: Prisma.$BaselineSyncPayload<ExtArgs>
       fields: Prisma.BaselineSyncFieldRefs
@@ -1223,6 +2123,160 @@ export const PubMedDataScalarFieldEnum = {
 export type PubMedDataScalarFieldEnum = (typeof PubMedDataScalarFieldEnum)[keyof typeof PubMedDataScalarFieldEnum]
 
 
+export const ArticleDetailScalarFieldEnum = {
+  id: 'id',
+  pmid: 'pmid',
+  doi: 'doi',
+  title: 'title',
+  abstract: 'abstract',
+  conflictOfInterestStatement: 'conflictOfInterestStatement',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailScalarFieldEnum = (typeof ArticleDetailScalarFieldEnum)[keyof typeof ArticleDetailScalarFieldEnum]
+
+
+export const ArticleDetailAuthorScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  name: 'name',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAuthorScalarFieldEnum = (typeof ArticleDetailAuthorScalarFieldEnum)[keyof typeof ArticleDetailAuthorScalarFieldEnum]
+
+
+export const ArticleDetailAuthorAffiliationScalarFieldEnum = {
+  id: 'id',
+  authorId: 'authorId',
+  institution: 'institution',
+  city: 'city',
+  country: 'country',
+  email: 'email',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAuthorAffiliationScalarFieldEnum = (typeof ArticleDetailAuthorAffiliationScalarFieldEnum)[keyof typeof ArticleDetailAuthorAffiliationScalarFieldEnum]
+
+
+export const ArticleDetailAffiliationScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  institution: 'institution',
+  city: 'city',
+  country: 'country',
+  email: 'email',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAffiliationScalarFieldEnum = (typeof ArticleDetailAffiliationScalarFieldEnum)[keyof typeof ArticleDetailAffiliationScalarFieldEnum]
+
+
+export const ArticleDetailKeywordScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  text: 'text',
+  isMeSH: 'isMeSH',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailKeywordScalarFieldEnum = (typeof ArticleDetailKeywordScalarFieldEnum)[keyof typeof ArticleDetailKeywordScalarFieldEnum]
+
+
+export const ArticleDetailSimilarArticleScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  pmid: 'pmid',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailSimilarArticleScalarFieldEnum = (typeof ArticleDetailSimilarArticleScalarFieldEnum)[keyof typeof ArticleDetailSimilarArticleScalarFieldEnum]
+
+
+export const ArticleDetailReferenceScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  pmid: 'pmid',
+  citation: 'citation',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailReferenceScalarFieldEnum = (typeof ArticleDetailReferenceScalarFieldEnum)[keyof typeof ArticleDetailReferenceScalarFieldEnum]
+
+
+export const ArticleDetailPublicationTypeScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  type: 'type',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailPublicationTypeScalarFieldEnum = (typeof ArticleDetailPublicationTypeScalarFieldEnum)[keyof typeof ArticleDetailPublicationTypeScalarFieldEnum]
+
+
+export const ArticleDetailMeshTermScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  text: 'text',
+  isMeSH: 'isMeSH',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailMeshTermScalarFieldEnum = (typeof ArticleDetailMeshTermScalarFieldEnum)[keyof typeof ArticleDetailMeshTermScalarFieldEnum]
+
+
+export const ArticleDetailRelatedInformationScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  category: 'category',
+  text: 'text',
+  url: 'url',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailRelatedInformationScalarFieldEnum = (typeof ArticleDetailRelatedInformationScalarFieldEnum)[keyof typeof ArticleDetailRelatedInformationScalarFieldEnum]
+
+
+export const ArticleDetailFullTextSourceScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  name: 'name',
+  url: 'url',
+  type: 'type',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailFullTextSourceScalarFieldEnum = (typeof ArticleDetailFullTextSourceScalarFieldEnum)[keyof typeof ArticleDetailFullTextSourceScalarFieldEnum]
+
+
+export const ArticleDetailJournalInfoScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  title: 'title',
+  volume: 'volume',
+  issue: 'issue',
+  pages: 'pages',
+  pubDate: 'pubDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailJournalInfoScalarFieldEnum = (typeof ArticleDetailJournalInfoScalarFieldEnum)[keyof typeof ArticleDetailJournalInfoScalarFieldEnum]
+
+
 export const BaselineSyncScalarFieldEnum = {
   id: 'id',
   fileName: 'fileName',
@@ -1341,6 +2395,13 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1440,6 +2501,18 @@ export type GlobalOmitConfig = {
   chemical?: Prisma.ChemicalOmit
   meshHeading?: Prisma.MeshHeadingOmit
   pubMedData?: Prisma.PubMedDataOmit
+  articleDetail?: Prisma.ArticleDetailOmit
+  articleDetailAuthor?: Prisma.ArticleDetailAuthorOmit
+  articleDetailAuthorAffiliation?: Prisma.ArticleDetailAuthorAffiliationOmit
+  articleDetailAffiliation?: Prisma.ArticleDetailAffiliationOmit
+  articleDetailKeyword?: Prisma.ArticleDetailKeywordOmit
+  articleDetailSimilarArticle?: Prisma.ArticleDetailSimilarArticleOmit
+  articleDetailReference?: Prisma.ArticleDetailReferenceOmit
+  articleDetailPublicationType?: Prisma.ArticleDetailPublicationTypeOmit
+  articleDetailMeshTerm?: Prisma.ArticleDetailMeshTermOmit
+  articleDetailRelatedInformation?: Prisma.ArticleDetailRelatedInformationOmit
+  articleDetailFullTextSource?: Prisma.ArticleDetailFullTextSourceOmit
+  articleDetailJournalInfo?: Prisma.ArticleDetailJournalInfoOmit
   baselineSync?: Prisma.BaselineSyncOmit
 }
 

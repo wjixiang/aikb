@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UmlsService } from './umls.service';
+import { UmlsService } from './umls.service.js';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
@@ -13,4 +13,4 @@ import { HttpModule } from '@nestjs/axios';
   providers: [UmlsService],
   exports: [UmlsService],
 })
-export class UmlsModule {}
+export class UmlsModule { }

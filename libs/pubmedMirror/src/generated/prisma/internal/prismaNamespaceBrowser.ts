@@ -59,6 +59,18 @@ export const ModelName = {
   Chemical: 'Chemical',
   MeshHeading: 'MeshHeading',
   PubMedData: 'PubMedData',
+  ArticleDetail: 'ArticleDetail',
+  ArticleDetailAuthor: 'ArticleDetailAuthor',
+  ArticleDetailAuthorAffiliation: 'ArticleDetailAuthorAffiliation',
+  ArticleDetailAffiliation: 'ArticleDetailAffiliation',
+  ArticleDetailKeyword: 'ArticleDetailKeyword',
+  ArticleDetailSimilarArticle: 'ArticleDetailSimilarArticle',
+  ArticleDetailReference: 'ArticleDetailReference',
+  ArticleDetailPublicationType: 'ArticleDetailPublicationType',
+  ArticleDetailMeshTerm: 'ArticleDetailMeshTerm',
+  ArticleDetailRelatedInformation: 'ArticleDetailRelatedInformation',
+  ArticleDetailFullTextSource: 'ArticleDetailFullTextSource',
+  ArticleDetailJournalInfo: 'ArticleDetailJournalInfo',
   BaselineSync: 'BaselineSync'
 } as const
 
@@ -182,6 +194,160 @@ export const PubMedDataScalarFieldEnum = {
 } as const
 
 export type PubMedDataScalarFieldEnum = (typeof PubMedDataScalarFieldEnum)[keyof typeof PubMedDataScalarFieldEnum]
+
+
+export const ArticleDetailScalarFieldEnum = {
+  id: 'id',
+  pmid: 'pmid',
+  doi: 'doi',
+  title: 'title',
+  abstract: 'abstract',
+  conflictOfInterestStatement: 'conflictOfInterestStatement',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailScalarFieldEnum = (typeof ArticleDetailScalarFieldEnum)[keyof typeof ArticleDetailScalarFieldEnum]
+
+
+export const ArticleDetailAuthorScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  name: 'name',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAuthorScalarFieldEnum = (typeof ArticleDetailAuthorScalarFieldEnum)[keyof typeof ArticleDetailAuthorScalarFieldEnum]
+
+
+export const ArticleDetailAuthorAffiliationScalarFieldEnum = {
+  id: 'id',
+  authorId: 'authorId',
+  institution: 'institution',
+  city: 'city',
+  country: 'country',
+  email: 'email',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAuthorAffiliationScalarFieldEnum = (typeof ArticleDetailAuthorAffiliationScalarFieldEnum)[keyof typeof ArticleDetailAuthorAffiliationScalarFieldEnum]
+
+
+export const ArticleDetailAffiliationScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  institution: 'institution',
+  city: 'city',
+  country: 'country',
+  email: 'email',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailAffiliationScalarFieldEnum = (typeof ArticleDetailAffiliationScalarFieldEnum)[keyof typeof ArticleDetailAffiliationScalarFieldEnum]
+
+
+export const ArticleDetailKeywordScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  text: 'text',
+  isMeSH: 'isMeSH',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailKeywordScalarFieldEnum = (typeof ArticleDetailKeywordScalarFieldEnum)[keyof typeof ArticleDetailKeywordScalarFieldEnum]
+
+
+export const ArticleDetailSimilarArticleScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  pmid: 'pmid',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailSimilarArticleScalarFieldEnum = (typeof ArticleDetailSimilarArticleScalarFieldEnum)[keyof typeof ArticleDetailSimilarArticleScalarFieldEnum]
+
+
+export const ArticleDetailReferenceScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  pmid: 'pmid',
+  citation: 'citation',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailReferenceScalarFieldEnum = (typeof ArticleDetailReferenceScalarFieldEnum)[keyof typeof ArticleDetailReferenceScalarFieldEnum]
+
+
+export const ArticleDetailPublicationTypeScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  type: 'type',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailPublicationTypeScalarFieldEnum = (typeof ArticleDetailPublicationTypeScalarFieldEnum)[keyof typeof ArticleDetailPublicationTypeScalarFieldEnum]
+
+
+export const ArticleDetailMeshTermScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  text: 'text',
+  isMeSH: 'isMeSH',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailMeshTermScalarFieldEnum = (typeof ArticleDetailMeshTermScalarFieldEnum)[keyof typeof ArticleDetailMeshTermScalarFieldEnum]
+
+
+export const ArticleDetailRelatedInformationScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  category: 'category',
+  text: 'text',
+  url: 'url',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailRelatedInformationScalarFieldEnum = (typeof ArticleDetailRelatedInformationScalarFieldEnum)[keyof typeof ArticleDetailRelatedInformationScalarFieldEnum]
+
+
+export const ArticleDetailFullTextSourceScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  name: 'name',
+  url: 'url',
+  type: 'type',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailFullTextSourceScalarFieldEnum = (typeof ArticleDetailFullTextSourceScalarFieldEnum)[keyof typeof ArticleDetailFullTextSourceScalarFieldEnum]
+
+
+export const ArticleDetailJournalInfoScalarFieldEnum = {
+  id: 'id',
+  articleDetailId: 'articleDetailId',
+  title: 'title',
+  volume: 'volume',
+  issue: 'issue',
+  pages: 'pages',
+  pubDate: 'pubDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleDetailJournalInfoScalarFieldEnum = (typeof ArticleDetailJournalInfoScalarFieldEnum)[keyof typeof ArticleDetailJournalInfoScalarFieldEnum]
 
 
 export const BaselineSyncScalarFieldEnum = {

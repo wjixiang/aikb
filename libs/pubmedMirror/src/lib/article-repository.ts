@@ -100,6 +100,131 @@ export interface SyncArticleResult {
     error?: string;
 }
 
+/**
+ * Transformed data for ArticleDetail from detail page
+ */
+export interface ArticleDetailCreateData {
+    pmid: number;
+    doi?: string;
+    title: string;
+    abstract?: string;
+    conflictOfInterestStatement?: string;
+}
+
+/**
+ * Transformed data for ArticleDetailAuthor
+ */
+export interface ArticleDetailAuthorCreateData {
+    name: string;
+    position?: number;
+    affiliations: ArticleDetailAuthorAffiliationCreateData[];
+}
+
+/**
+ * Transformed data for ArticleDetailAuthorAffiliation
+ */
+export interface ArticleDetailAuthorAffiliationCreateData {
+    institution?: string;
+    city?: string;
+    country?: string;
+    email?: string;
+}
+
+/**
+ * Transformed data for ArticleDetailAffiliation (article level)
+ */
+export interface ArticleDetailAffiliationCreateData {
+    institution?: string;
+    city?: string;
+    country?: string;
+    email?: string;
+}
+
+/**
+ * Transformed data for ArticleDetailKeyword
+ */
+export interface ArticleDetailKeywordCreateData {
+    text: string;
+    isMeSH?: boolean;
+}
+
+/**
+ * Transformed data for ArticleDetailSimilarArticle
+ */
+export interface ArticleDetailSimilarArticleCreateData {
+    pmid: string;
+    title: string;
+}
+
+/**
+ * Transformed data for ArticleDetailReference
+ */
+export interface ArticleDetailReferenceCreateData {
+    pmid?: string;
+    citation: string;
+}
+
+/**
+ * Transformed data for ArticleDetailPublicationType
+ */
+export interface ArticleDetailPublicationTypeCreateData {
+    type: string;
+}
+
+/**
+ * Transformed data for ArticleDetailMeshTerm
+ */
+export interface ArticleDetailMeshTermCreateData {
+    text: string;
+    isMeSH?: boolean;
+}
+
+/**
+ * Transformed data for ArticleDetailRelatedInformation
+ */
+export interface ArticleDetailRelatedInformationCreateData {
+    category: string;
+    text: string;
+    url?: string;
+}
+
+/**
+ * Transformed data for ArticleDetailFullTextSource
+ */
+export interface ArticleDetailFullTextSourceCreateData {
+    name: string;
+    url: string;
+    type?: string;
+}
+
+/**
+ * Transformed data for ArticleDetailJournalInfo
+ */
+export interface ArticleDetailJournalInfoCreateData {
+    title?: string;
+    volume?: string;
+    issue?: string;
+    pages?: string;
+    pubDate?: string;
+}
+
+/**
+ * All data for syncing article detail
+ */
+export interface ArticleDetailSyncData {
+    detail: ArticleDetailCreateData;
+    authors: ArticleDetailAuthorCreateData[];
+    affiliations: ArticleDetailAffiliationCreateData[];
+    keywords: ArticleDetailKeywordCreateData[];
+    similarArticles: ArticleDetailSimilarArticleCreateData[];
+    references: ArticleDetailReferenceCreateData[];
+    publicationTypes: ArticleDetailPublicationTypeCreateData[];
+    meshTerms: ArticleDetailMeshTermCreateData[];
+    relatedInformation: ArticleDetailRelatedInformationCreateData[];
+    fullTextSources: ArticleDetailFullTextSourceCreateData[];
+    journalInfo: ArticleDetailJournalInfoCreateData | null;
+}
+
 // ============================================================================
 // Repository Interface
 // ============================================================================
@@ -132,6 +257,23 @@ export interface IArticleRepository {
         meshHeadings: MeshHeadingCreateData[],
         pubmedData: PubMedDataCreateData | null
     ): Promise<SyncArticleResult>;
+
+    /**
+     * Find all articles without Abstract record
+     * @param take The number of returned results per request
+     * @param lastPmid Cursor for pagination
+     * @returns Array of PubMed ID
+     */
+    findArticleWithoutAbstract(
+        take: number,
+        lastPmid: number
+    ): Promise<number[]>
+
+    /**
+     * Sync article detail data from PubMed detail page
+     * @param data - All article detail data
+     */
+    syncArticleDetail(data: ArticleDetailSyncData): Promise<SyncArticleResult>
 }
 
 
