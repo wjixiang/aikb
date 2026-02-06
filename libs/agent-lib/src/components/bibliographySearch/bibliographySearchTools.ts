@@ -4,7 +4,7 @@ import {
     viewArticleParamsSchema,
     navigatePageParamsSchema,
     clearResultsParamsSchema
-} from './bibliographySearchSchemas'
+} from './bibliographySearchSchemas.js'
 
 /**
  * Tool for searching PubMed articles
@@ -12,7 +12,7 @@ import {
  */
 export const searchPubmedTool: Tool = {
     toolName: 'search_pubmed',
-    desc: 'Search PubMed articles using retrieval strategy or simple term',
+    desc: 'Search PubMed articles using retrieval  term',
     paramsSchema: searchPubmedParamsSchema
 };
 

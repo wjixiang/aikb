@@ -154,7 +154,7 @@ export class ttext extends TUIElement {
 
         // Apply bold (uppercase for terminal)
         if (this.metadata.bold) {
-            result = result.toUpperCase();
+            // result = result.toUpperCase();
         }
 
         // Apply underline

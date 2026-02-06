@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'statefulContext'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'stateful-context'
 import {
     PubmedService,
     PubmedSearchParams,
@@ -9,7 +9,7 @@ import {
     FullTextSource,
     renderRetrivalStrategy,
     RetrivalStrategy
-} from 'medDatabasePortal'
+} from 'med_database_portal'
 import { createBibliographySearchToolSet } from './bibliographySearchTools.js'
 
 export class BibliographySearchComponent extends ToolComponent {
@@ -20,7 +20,8 @@ export class BibliographySearchComponent extends ToolComponent {
     currentResults: { totalResults: number | null; totalPages: number | null; articleProfiles: ArticleProfile[] } | null = null;
     currentArticleDetail: ArticleDetail | null = null;
     currentPage: number = 1;
-    retrivalStrategkes: RetrivalStrategy[] = []
+    currentRetrivalStrategy: RetrivalStrategy | null = null;
+    currentSearchParams: PubmedSearchParams | null = null;
 
     constructor() {
         super();
@@ -76,6 +77,70 @@ export class BibliographySearchComponent extends ToolComponent {
             styles: { showBorder: true }
         });
 
+        container.addChild(new tdiv({
+            content: 'Search Result',
+            styles: {
+                align: 'center'
+            }
+        }))
+
+        // Add retrieval strategy if available
+        if (this.currentRetrivalStrategy) {
+            const strategyDiv = new tdiv({
+                styles: { showBorder: true, padding: { vertical: 1 } }
+            });
+            strategyDiv.addChild(new tp({
+                content: 'Retrieval Strategy:',
+                indent: 1,
+                textStyle: { bold: true }
+            }));
+            strategyDiv.addChild(new tp({
+                content: renderRetrivalStrategy(this.currentRetrivalStrategy),
+                indent: 1
+            }));
+            container.addChild(strategyDiv);
+        }
+
+        // Add search parameters if available
+        if (this.currentSearchParams) {
+            const paramsDiv = new tdiv({
+                styles: { showBorder: true, padding: { vertical: 1 } }
+            });
+            paramsDiv.addChild(new tp({
+                content: 'Search Parameters:',
+                indent: 1,
+                textStyle: { bold: true }
+            }));
+
+            // Display search term
+            paramsDiv.addChild(new tp({
+                content: `  Term: ${this.currentSearchParams.term}`,
+                indent: 1
+            }));
+
+            // Display sort order
+            paramsDiv.addChild(new tp({
+                content: `  Sort: ${this.currentSearchParams.sort} (${this.currentSearchParams.sortOrder === 'dsc' ? 'Descending' : 'Ascending'})`,
+                indent: 1
+            }));
+
+            // Display filters if any
+            if (this.currentSearchParams.filter && this.currentSearchParams.filter.length > 0) {
+                paramsDiv.addChild(new tp({
+                    content: `  Filters: ${this.currentSearchParams.filter.join(', ')}`,
+                    indent: 1
+                }));
+            }
+
+            // Display page info
+            paramsDiv.addChild(new tp({
+                content: `  Page: ${this.currentSearchParams.page}`,
+                indent: 1
+            }));
+
+            container.addChild(paramsDiv);
+        }
+
         // Add summary
         const summary = this.currentResults!.totalResults !== null
             ? `Found ${this.currentResults!.totalResults} articles (Page ${this.currentPage}${this.currentResults!.totalPages ? ` of ${this.currentResults!.totalPages}` : ''})`
@@ -126,6 +191,7 @@ export class BibliographySearchComponent extends ToolComponent {
 
     private renderArticleDetail(article: ArticleDetail): TUIElement {
         const container = new tdiv({
+            content: 'Article Detail',
             styles: { showBorder: true }
         });
 
@@ -134,7 +200,6 @@ export class BibliographySearchComponent extends ToolComponent {
             content: article.title,
             level: 2,
             underline: true,
-            textStyle: { bold: true }
         }));
 
         container.addChild(new tp({ content: '' }));
@@ -249,12 +314,11 @@ export class BibliographySearchComponent extends ToolComponent {
         let searchTerm: string;
 
         // Build search term from strategy or use simple term
-        if (params.strategy) {
-            searchTerm = renderRetrivalStrategy(params.strategy);
-        } else if (params.simpleTerm) {
-            searchTerm = params.simpleTerm;
+        if (params.term) {
+            searchTerm = params.term;
+            this.currentRetrivalStrategy = null;
         } else {
-            throw new Error('Either strategy or simpleTerm must be provided');
+            throw new Error('term must be provided');
         }
 
         const searchParams: PubmedSearchParams = {
@@ -264,6 +328,9 @@ export class BibliographySearchComponent extends ToolComponent {
             filter: params.filter || [],
             page: params.page || 1
         };
+
+        // Store search parameters for display
+        this.currentSearchParams = searchParams;
 
         try {
             const results = await this.pubmedService.searchByPattern(searchParams);
@@ -327,5 +394,7 @@ export class BibliographySearchComponent extends ToolComponent {
         this.currentResults = null;
         this.currentArticleDetail = null;
         this.currentPage = 1;
+        this.currentRetrivalStrategy = null;
+        this.currentSearchParams = null;
     }
 }

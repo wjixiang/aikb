@@ -170,7 +170,7 @@ export class th extends TUIElement {
 
         if (style.bold) {
             // Terminal doesn't support bold, but we can use uppercase for emphasis
-            result = result.toUpperCase();
+            // result = result.toUpperCase();
         }
 
         if (style.italic) {

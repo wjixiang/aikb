@@ -1,4 +1,4 @@
-import { Agent, AgentConfig, defaultAgentConfig, defaultApiConfig } from './agent.js';
+import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig, defaultApiConfig } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from 'statefulContext';
 import { ApiClient, ApiClientFactory } from '../api-client/index.js';
@@ -63,6 +63,7 @@ export class AgentFactory {
      */
     static create(
         workspace: VirtualWorkspace,
+        agentPrompt: AgentPrompt,
         options: AgentFactoryOptions = {}
     ): Agent {
         const {
@@ -93,6 +94,7 @@ export class AgentFactory {
             config,
             apiConfiguration,
             workspace,
+            agentPrompt,
             taskId,
             client,
         );
@@ -119,9 +121,10 @@ export class AgentFactory {
     static createWithCustomClient(
         workspace: VirtualWorkspace,
         apiClient: ApiClient,
+        agentPrompt: AgentPrompt,
         options: Omit<AgentFactoryOptions, 'apiClient'> = {}
     ): Agent {
-        return AgentFactory.create(workspace, {
+        return AgentFactory.create(workspace, agentPrompt, {
             ...options,
             apiClient,
         });

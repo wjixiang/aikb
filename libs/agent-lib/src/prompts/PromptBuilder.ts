@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage, ThinkingBlock } from '../task/task.type';
-import { MessageFormatter } from './MessageFormatter';
+import { ApiMessage, ThinkingBlock } from '../task/task.type.js';
+import { MessageFormatter } from './MessageFormatter.js';
 
 /**
  * Interface for the structured prompt used by BAML.

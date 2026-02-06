@@ -242,7 +242,31 @@ export class PubmedService {
             urlParams.append('page', String(params.page))
         }
         if (params.filter && params.filter.length > 0) {
-            params.filter.forEach(e => urlParams.append('filter', e))
+
+            params.filter.forEach(e => {
+                switch (e.toLocaleLowerCase()) {
+                    case 'books and documents':
+                        urlParams.append('filter', "pubt.booksdocs")
+                        break;
+                    case 'clinical trial':
+                        urlParams.append('filter', "pubt.clinicaltrial")
+                        break;
+                    case 'meta-analysis':
+                        urlParams.append('filter', "pubt.meta-analysis")
+                        break;
+                    case 'randomized controlled trial':
+                        urlParams.append('filter', "pubt.randomizedcontrolledtrial")
+                        break;
+                    case 'review':
+                        urlParams.append('filter', "pubt.review")
+                        break;
+                    case 'systematic review':
+                        urlParams.append('filter', "pubt.systematicreview")
+                        break;
+                    default:
+                        throw new Error(`Parse Pubmed search filter failed: unsupported filter "${e}"`)
+                }
+            })
         }
         return `?${urlParams.toString()}`
     }

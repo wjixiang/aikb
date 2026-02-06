@@ -24,6 +24,7 @@ export default defineConfig(() => ({
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['{src,tests}/**/*.integrated.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
+    setupFiles: ['./src/test-setup.ts'],
     coverage: {
       reportsDirectory: '../../coverage/libs/agent-lib',
       provider: 'v8' as const,
@@ -37,6 +38,7 @@ export default defineConfig(() => ({
     root: __dirname,
     include: ['{src,tests}/**/*.integrated.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
+    setupFiles: ['./src/test-setup.ts'],
     coverage: {
       reportsDirectory: '../../coverage/libs/agent-lib',
       provider: 'v8' as const,

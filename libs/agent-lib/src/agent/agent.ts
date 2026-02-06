@@ -23,6 +23,7 @@ import {
 import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { ApiClientFactory } from '../api-client/index.js';
+import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -77,6 +78,11 @@ interface MessageProcessingState {
     cachedModel?: { id: string; info: any };
 }
 
+export interface AgentPrompt {
+    capability: string;
+    direction: string;
+}
+
 export class Agent {
     workspace: VirtualWorkspace;
     private _status: TaskStatus = 'idle';
@@ -110,6 +116,7 @@ export class Agent {
         public config: AgentConfig = defaultAgentConfig,
         public apiConfiguration: ProviderSettings = defaultApiConfig,
         workspace: VirtualWorkspace,
+        private agentPrompt: AgentPrompt,
         taskId?: string,
         apiClient?: ApiClient,
     ) {
@@ -641,6 +648,21 @@ export class Agent {
         return false;
     }
 
+    renderAgentPrompt() {
+        return `
+------------
+Capabilities
+------------
+${this.agentPrompt.capability}
+
+--------------
+Work Direction
+--------------
+${this.agentPrompt.direction}
+
+`
+    }
+
     // ==================== Agent-Specific Methods ====================
 
     /**
@@ -648,11 +670,10 @@ export class Agent {
      * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
-        const { SYSTEM_PROMPT } = await import("../prompts/system.js");
         return `
-${await SYSTEM_PROMPT()}
+${generateWorkspaceGuide()}
+${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
-
         `;
     }
 }

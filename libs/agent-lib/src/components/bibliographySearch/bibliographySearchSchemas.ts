@@ -2,7 +2,7 @@ import * as z from 'zod'
 import {
     FieldConstraint,
     RetrivalStrategy
-} from '@/libs/medDatabasePortal/src'
+} from 'med_database_portal'
 
 /**
  * Recursive schema for retrieval strategy
@@ -23,13 +23,12 @@ export const retrievalStrategySchema: z.ZodType<RetrivalStrategy> = z.lazy(() =>
  * Schema for search_pubmed tool parameters
  */
 export const searchPubmedParamsSchema = z.object({
-    strategy: retrievalStrategySchema.optional().describe('Retrieval strategy with term, field constraints, and logical operators (AND/OR/NOT)'),
-    simpleTerm: z.string().optional().describe('Simple search term (alternative to strategy)'),
+    term: z.string().optional().describe('- Simple search term (alternative to strategy)\n- Retrieval with term, field constraints, and logical operators (AND/OR/NOT)'),
     sort: z.enum(['match', 'date', 'pubdate', 'fauth', 'jour']).optional().describe('Sort order: match (relevance), date, pubdate, fauth (first author), jour (journal)'),
     sortOrder: z.enum(['asc', 'dsc']).optional().describe('Sort direction: asc (ascending), dsc (descending)'),
-    filter: z.array(z.string()).optional().describe('Filters to apply (e.g., publication dates, article types)'),
+    filter: z.array(z.string()).optional().describe('Filters to apply (e.g., publication dates, article types)\nSupported Filter types:\n1. Books and Documents\n2. Clinical Trial\n3. Meta-Analysis\n4. Randomized Controlled Trial\n5. Review\n 6. Systematic Review'),
     page: z.number().optional().describe('Page number to retrieve')
-}).refine(data => data.strategy || data.simpleTerm, {
+}).refine(data => data.term, {
     message: 'Either strategy or simpleTerm must be provided'
 });
 

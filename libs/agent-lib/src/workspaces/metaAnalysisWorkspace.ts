@@ -3,8 +3,8 @@
  * Virtual workspace for managing and searching through bookshelf content
  */
 
-import { VirtualWorkspace, ComponentRegistration } from 'statefulContext';
-import { BibliographySearchComponent } from '../components';
+import { VirtualWorkspace, ComponentRegistration } from 'stateful-context';
+import { BibliographySearchComponent } from '../components/index.js';
 
 /**
  * Knowledge Management Workspace
