@@ -46,5 +46,8 @@ export * from './api-client';
 export { AgentFactory } from './agent/AgentFactory';
 export type { AgentFactoryOptions } from './agent/AgentFactory';
 
+// Export ObservableAgent (Proxy-based observer pattern)
+export * from './agent/ObservableAgent';
+
 // Re-export from statefulContext library
 // export * from 'statefulContext';

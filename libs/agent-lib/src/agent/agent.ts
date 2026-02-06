@@ -4,10 +4,6 @@ import {
     TaskStatus,
     ExtendedApiMessage,
     ThinkingBlock,
-    MessageAddedCallback,
-    TaskStatusChangedCallback,
-    TaskCompletedCallback,
-    TaskAbortedCallback,
 } from "../task/task.type";
 import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
@@ -97,12 +93,6 @@ export class Agent {
     private _consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
     private _collectedErrors: string[] = [];
 
-    // Observer callbacks
-    private messageAddedCallbacks: MessageAddedCallback[] = [];
-    private statusChangedCallbacks: TaskStatusChangedCallback[] = [];
-    private taskCompletedCallbacks: TaskCompletedCallback[] = [];
-    private taskAbortedCallbacks: TaskAbortedCallback[] = [];
-
     // Helper classes
     private tokenUsageTracker: TokenUsageTracker;
     private responseProcessor: ResponseProcessor;
@@ -135,8 +125,6 @@ export class Agent {
 
         // Initialize API client - use injected client or create default
         this.apiClient = apiClient || ApiClientFactory.create(this.apiConfiguration);
-
-        // Note: Message added callback for debugging can be registered externally
     }
 
     // ==================== Public API ====================
@@ -211,101 +199,6 @@ export class Agent {
         this._consecutiveMistakeCountForApplyDiff = map;
     }
 
-    // ==================== Observer Registration ====================
-
-    /**
-     * Register message added observer
-     */
-    onMessageAdded(callback: MessageAddedCallback): () => void {
-        this.messageAddedCallbacks.push(callback);
-        return () => {
-            const index = this.messageAddedCallbacks.indexOf(callback);
-            if (index > -1) {
-                this.messageAddedCallbacks.splice(index, 1);
-            }
-        };
-    }
-
-    /**
-     * Register status changed observer
-     */
-    onStatusChanged(callback: TaskStatusChangedCallback): () => void {
-        this.statusChangedCallbacks.push(callback);
-        return () => {
-            const index = this.statusChangedCallbacks.indexOf(callback);
-            if (index > -1) {
-                this.statusChangedCallbacks.splice(index, 1);
-            }
-        };
-    }
-
-    /**
-     * Register task completed observer
-     */
-    onTaskCompleted(callback: TaskCompletedCallback): () => void {
-        this.taskCompletedCallbacks.push(callback);
-        return () => {
-            const index = this.taskCompletedCallbacks.indexOf(callback);
-            if (index > -1) {
-                this.taskCompletedCallbacks.splice(index, 1);
-            }
-        };
-    }
-
-    /**
-     * Register task aborted observer
-     */
-    onTaskAborted(callback: TaskAbortedCallback): () => void {
-        this.taskAbortedCallbacks.push(callback);
-        return () => {
-            const index = this.taskAbortedCallbacks.indexOf(callback);
-            if (index > -1) {
-                this.taskAbortedCallbacks.splice(index, 1);
-            }
-        };
-    }
-
-    // ==================== Notification Methods ====================
-
-    /**
-     * Notify all observers of status change
-     */
-    private notifyStatusChanged(status: TaskStatus): void {
-        this.statusChangedCallbacks.forEach((callback) => {
-            try {
-                callback(this._taskId, status);
-            } catch (error) {
-                console.error('Error in status changed callback:', error);
-            }
-        });
-    }
-
-    /**
-     * Notify all observers of task completion
-     */
-    private notifyTaskCompleted(): void {
-        this.taskCompletedCallbacks.forEach((callback) => {
-            try {
-                callback(this._taskId);
-            } catch (error) {
-                console.error('Error in task completed callback:', error);
-            }
-        });
-    }
-
-    /**
-     * Notify all observers of task abortion
-     */
-    private notifyTaskAborted(abortReason?: string): void {
-        this.taskAbortedCallbacks.forEach((callback) => {
-            try {
-                callback(this._taskId, abortReason || 'Task aborted');
-            } catch (error) {
-                console.error('Error in task aborted callback:', error);
-            }
-        });
-    }
-
     // ==================== Lifecycle Methods ====================
 
     /**
@@ -313,7 +206,6 @@ export class Agent {
      */
     async start(query: string): Promise<Agent> {
         this._status = 'running';
-        this.notifyStatusChanged('running');
 
         // Add initial user message to history
         this._conversationHistory.push({
@@ -331,8 +223,6 @@ export class Agent {
      */
     complete(tokenUsage?: TokenUsage, toolUsage?: ToolUsage): void {
         this._status = 'completed';
-        this.notifyStatusChanged('completed');
-        this.notifyTaskCompleted();
     }
 
     /**
@@ -340,8 +230,6 @@ export class Agent {
      */
     abort(abortReason?: string): void {
         this._status = 'aborted';
-        this.notifyStatusChanged('aborted');
-        this.notifyTaskAborted(abortReason);
     }
 
     // ==================== Error Handling ====================
@@ -639,13 +527,6 @@ export class Agent {
             messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
         }
 
-        this.messageAddedCallbacks.forEach((callback) => {
-            try {
-                callback(this._taskId, messageWithTs as ApiMessage);
-            } catch (error) {
-                console.error('Error in message added callback:', error);
-            }
-        });
         this._conversationHistory.push(messageWithTs as ApiMessage);
     }
 

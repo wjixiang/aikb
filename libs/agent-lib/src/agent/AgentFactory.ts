@@ -3,6 +3,7 @@ import { ProviderSettings } from '../types/provider-settings';
 import { VirtualWorkspace } from 'statefulContext';
 import type { ApiClient } from '../api-client';
 import { ApiClientFactory } from '../api-client';
+import { createObservableAgent, ObservableAgentCallbacks } from './ObservableAgent';
 
 /**
  * Configuration options for creating an Agent
@@ -16,26 +17,37 @@ export interface AgentFactoryOptions {
     apiClient?: ApiClient;
     /** Optional task ID */
     taskId?: string;
+    /** Optional observer callbacks for automatic observation */
+    observers?: ObservableAgentCallbacks;
 }
 
 /**
  * Factory class for creating Agent instances
- * 
+ *
  * This factory provides a convenient way to create Agent instances with
- * proper dependency injection. It handles the creation of the ApiClient
- * and merges default configurations with provided options.
- * 
+ * proper dependency injection. It handles the creation of the ApiClient,
+ * merges default configurations with provided options, and optionally
+ * wraps the agent in an ObservableAgent proxy for automatic observation.
+ *
  * @example
  * ```ts
  * // Create with default configuration
  * const agent = AgentFactory.create(workspace);
- * 
+ *
  * // Create with custom configuration
  * const agent = AgentFactory.create(workspace, {
  *   config: { apiRequestTimeout: 60000 },
  *   apiConfiguration: { apiModelId: 'custom-model' }
  * });
- * 
+ *
+ * // Create with observers (automatic notification)
+ * const agent = AgentFactory.create(workspace, {
+ *   observers: {
+ *     onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
+ *     onTaskCompleted: (taskId) => console.log('Task completed!')
+ *   }
+ * });
+ *
  * // Create with custom API client
  * const agent = AgentFactory.create(workspace, {
  *   apiClient: new MockApiClient()
@@ -59,6 +71,7 @@ export class AgentFactory {
             apiConfiguration: apiConfigPartial = {},
             apiClient,
             taskId,
+            observers,
         } = options;
 
         // Merge default config with provided config
@@ -76,14 +89,21 @@ export class AgentFactory {
         // Create API client if not provided
         const client = apiClient || ApiClientFactory.create(apiConfiguration);
 
-        // Create and return the Agent
-        return new Agent(
+        // Create the Agent
+        const agent = new Agent(
             config,
             apiConfiguration,
             workspace,
             taskId,
             client,
         );
+
+        // Wrap in ObservableAgent if observers are provided
+        if (observers && Object.keys(observers).length > 0) {
+            return createObservableAgent(agent, observers);
+        }
+
+        return agent;
     }
 
     /**
