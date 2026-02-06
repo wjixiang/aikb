@@ -4,25 +4,25 @@ import {
     TaskStatus,
     ExtendedApiMessage,
     ThinkingBlock,
-} from "../task/task.type";
-import { ProviderSettings } from "../types/provider-settings";
-import { ToolName, TokenUsage, ToolUsage } from "../types";
+} from "../task/task.type.js";
+import { ProviderSettings } from "../types/provider-settings.js";
+import { TokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "statefulContext";
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
-import { AttemptCompletion, ToolCall } from '../baml_client'
-import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
-import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
-import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
-import TooCallingParser from '../tools/toolCallingParser/toolCallingParser';
-import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt';
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
+import { AttemptCompletion, ToolCall } from '../baml_client/types.js'
+import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
+import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor.js';
+import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker.js';
+import TooCallingParser from '../tools/toolCallingParser/toolCallingParser.js';
+import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt.js';
 import {
     ConsecutiveMistakeError,
     NoApiResponseError,
     NoToolsUsedError,
-} from '../task/task.errors';
-import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder';
-import type { ApiClient } from '../api-client';
-import { ApiClientFactory } from '../api-client';
+} from '../task/task.errors.js';
+import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder.js';
+import type { ApiClient } from '../api-client/index.js';
+import { ApiClientFactory } from '../api-client/index.js';
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -308,13 +308,13 @@ export class Agent {
 
                 // Cache model info once per API request
                 // Using BAML client (GLM47_coder) which uses glm-4.7 model
-                this.messageState.cachedModel = {
-                    id: this.apiConfiguration.apiModelId || 'glm-4.7',
-                    info: {
-                        supportsNativeTools: false, // BAML uses XML protocol
-                        defaultToolProtocol: 'xml',
-                    }
-                };
+                // this.messageState.cachedModel = {
+                //     id: this.apiConfiguration.apiModelId || 'glm-4.7',
+                //     info: {
+                //         supportsNativeTools: false, // BAML uses XML protocol
+                //         defaultToolProtocol: 'xml',
+                //     }
+                // };
 
                 // Collect complete response from stream
 

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Agent, defaultAgentConfig, defaultApiConfig } from './agent';
+import { Agent, defaultAgentConfig, defaultApiConfig } from './agent.js';
 import {
     createObservableAgent,
     ObservableAgentFactory,
     observeAgent,
     type ObservableAgentCallbacks,
-} from './ObservableAgent';
-import { TaskStatus } from '../task/task.type';
+} from './ObservableAgent.js';
+import { TaskStatus } from '../task/task.type.js';
 import { VirtualWorkspace } from 'statefulContext';
 
 // Mock VirtualWorkspace

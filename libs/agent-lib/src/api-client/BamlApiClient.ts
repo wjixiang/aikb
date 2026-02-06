@@ -1,5 +1,5 @@
-import { b } from '../baml_client';
-import { ApiClient, ApiTimeoutConfig, ApiResponse } from './ApiClient.interface';
+import { b } from '../baml_client/index.js';
+import { ApiClient, ApiTimeoutConfig, ApiResponse } from './ApiClient.interface.js';
 
 /**
  * BAML-based implementation of the ApiClient interface

@@ -1,3 +1,3 @@
-export type { ApiClient, ApiTimeoutConfig, ApiResponse } from './ApiClient.interface';
-export { BamlApiClient } from './BamlApiClient';
-export { ApiClientFactory } from './ApiClientFactory';
+export type { ApiClient, ApiTimeoutConfig, ApiResponse } from './ApiClient.interface.js';
+export { BamlApiClient } from './BamlApiClient.js';
+export { ApiClientFactory } from './ApiClientFactory.js';

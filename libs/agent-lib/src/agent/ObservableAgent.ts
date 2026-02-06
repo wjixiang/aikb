@@ -1,4 +1,4 @@
-import { Agent } from './agent';
+import { Agent } from './agent.js';
 import {
     ApiMessage,
     TaskStatus,
@@ -6,7 +6,7 @@ import {
     TaskStatusChangedCallback,
     TaskCompletedCallback,
     TaskAbortedCallback,
-} from '../task/task.type';
+} from '../task/task.type.js';
 
 /**
  * Observer callbacks for ObservableAgent

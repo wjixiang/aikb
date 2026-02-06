@@ -5,7 +5,7 @@ import {
   NativeToolArgs,
   ToolParamName,
   toolParamNames,
-} from './assistantMessageTypes';
+} from './assistantMessageTypes.js';
 // Simplified JSON parser for our standalone version
 function parseJSON(jsonString: string): any {
   try {

@@ -1,6 +1,6 @@
-import { ApiClient } from './ApiClient.interface';
-import { BamlApiClient } from './BamlApiClient';
-import { ProviderSettings } from '../types/provider-settings';
+import { ApiClient } from './ApiClient.interface.js';
+import { BamlApiClient } from './BamlApiClient.js';
+import { ProviderSettings } from '../types/provider-settings.js';
 
 /**
  * Factory type for creating ApiClient instances

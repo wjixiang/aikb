@@ -89,7 +89,7 @@ export class SecureExecutionContext {
             if (delay > this.config.maxExecutionTime!) {
                 throw new Error(`Timeout exceeds maximum allowed time of ${this.config.maxExecutionTime}ms`);
             }
-            return globalThis.setTimeout(callback, delay);
+            return globalThis.setTimeout(callback as () => void, delay);
         };
 
         // Override setInterval for iteration counting
@@ -98,7 +98,7 @@ export class SecureExecutionContext {
             if (delay < 10) {
                 throw new Error('Interval too short, may cause performance issues');
             }
-            return originalSetInterval(callback, delay);
+            return originalSetInterval(callback as () => void, delay);
         };
 
         // Add safe console

@@ -1,4 +1,14 @@
-import { AttemptCompletion, ToolCall } from '../baml_client';
+export interface AttemptCompletion {
+    toolName: "attempt_completion"
+    toolParams: string
+
+}
+
+export interface ToolCall {
+    toolName: string
+    toolParams: string
+
+}
 
 /**
  * Response type from API client

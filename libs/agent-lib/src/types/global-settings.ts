@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-import { type Keys } from './type-fu';
+import { type Keys } from './type-fu.js';
 import {
   type ProviderSettings,
   PROVIDER_SETTINGS_KEYS,
-  providerSettingsEntrySchema,
   providerSettingsSchema,
 } from './provider-settings.js';
 
@@ -43,7 +42,6 @@ export const DEFAULT_CHECKPOINT_TIMEOUT_SECONDS = 15;
 
 export const globalSettingsSchema = z.object({
   currentApiConfigName: z.string().optional(),
-  listApiConfigMeta: z.array(providerSettingsEntrySchema).optional(),
   pinnedApiConfigs: z.record(z.string(), z.boolean()).optional(),
 
   lastShownAnnouncementId: z.string().optional(),
@@ -274,9 +272,7 @@ export const isGlobalStateKey = (key: string): key is Keys<GlobalState> =>
 
 // Default settings when running evals (unless overridden).
 export const EVALS_SETTINGS: RooCodeSettings = {
-  apiProvider: 'openrouter',
-  openRouterUseMiddleOutTransform: false,
-
+  apiProvider: 'openai-native',
   lastShownAnnouncementId: 'jul-09-2025-3-23-0',
 
   pinnedApiConfigs: {},

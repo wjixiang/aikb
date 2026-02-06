@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { clineMessageSchema, tokenUsageSchema } from './message.type';
-import { toolNamesSchema, toolUsageSchema } from './tool';
+import { clineMessageSchema, tokenUsageSchema } from './message.type.js';
+import { toolNamesSchema, toolUsageSchema } from './tool.js';
 
 /**
  * RooCodeEventName

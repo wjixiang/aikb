@@ -2,9 +2,13 @@
   "name": "agent-lib",
   "version": "0.0.1",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "scripts": {
+    "test": "vitest --config vite.config.mts",
+    "test:integrated": "vitest --config vite.config.integrated.mts"
+  },
   "dependencies": {
     "tslib": "^2.3.0",
     "@anthropic-ai/sdk": "^0.71.2",
@@ -12,6 +16,18 @@
     "openai": "^5.10.1",
     "@apollo/client": "^3.8.0",
     "graphql": "^16.8.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.67",
+    "@boundaryml/baml": "^0.218.1",
+    "tiktoken": "^1.0.22",
+    "winston": "^3.17.0",
+    "winston-transport": "^4.9.0",
+    "stateful-context": "workspace:",
+    "med_database_portal": "workspace:"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.0",
+    "vitest": "^4.0.0",
+    "vite": "^6.0.0",
+    "typescript": "^5.7.3"
   }
 }

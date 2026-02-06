@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
@@ -10,9 +10,13 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "composite": true,
+    "declarationMap": true,
+    "rootDir": ".",
+    "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo"
   },
-  "include": ["src/**/*.ts", "../statefulContext/src/scriptSecurity.test.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "jest.config.ts",
     "src/**/*.spec.ts",
@@ -27,5 +31,6 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
-  ]
+  ],
+  "references": [{ "path": "../statefulContext/tsconfig.lib.json" }]
 }

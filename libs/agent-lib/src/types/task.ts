@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { RooCodeEventName } from './event.type';
-import type { RooCodeSettings } from './global-settings';
-import type { ClineMessage, QueuedMessage, TokenUsage } from './message.type';
-import type { ToolUsage, ToolName } from './tool';
-import type { TodoItem } from './todo';
+import { RooCodeEventName } from './event.type.js';
+import type { RooCodeSettings } from './global-settings.js';
+import type { ClineMessage, QueuedMessage, TokenUsage } from './message.type.js';
+import type { ToolUsage, ToolName } from './tool.js';
+import type { TodoItem } from './todo.js';
 
 /**
  * TaskProviderLike

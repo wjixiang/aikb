@@ -1,6 +1,6 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import workerpool from 'workerpool';
-import { tiktoken } from './tiktoken';
+import { tiktoken } from './tiktoken.js';
 import { z } from 'zod';
 
 export const countTokensResultSchema = z.discriminatedUnion('success', [

@@ -32,7 +32,16 @@ export const toolUsageSchema = z.record(
   }),
 );
 
-export type ToolUsage = z.infer<typeof toolUsageSchema>;
+/**
+ * Tool usage tracking interface
+ * Records usage statistics for each tool by name
+ */
+export type ToolUsage = Record<string, {
+  /** Number of times the tool was attempted */
+  attempts: number;
+  /** Number of times the tool execution failed */
+  failures: number;
+}>;
 
 /**
  * Tool protocol constants
