@@ -14,9 +14,10 @@
     "composite": true,
     "declarationMap": true,
     "rootDir": ".",
-    "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo"
+    "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo",
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "prisma.config.ts"],
   "exclude": [
     "jest.config.ts",
     "src/**/*.spec.ts",

@@ -20,6 +20,55 @@
         "reportsDirectory": "../../coverage/libs/agent-lib",
         "config": "libs/agent-lib/vite.config.integrated.mts"
       }
+    },
+    "db-pull": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db pull --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma db push --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "gen-client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma generate --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "reset-db": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate reset --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "migrate-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate dev --schema ./src/prisma/schema.prisma",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma studio",
+        "cwd": "libs/agent-lib"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate deploy",
+        "cwd": "libs/agent-lib"
+      }
     }
   }
 }

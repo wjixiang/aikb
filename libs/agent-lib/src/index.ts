@@ -1,39 +1,26 @@
 // Export from existing agent-lib modules
-import { Agent, AgentConfig, defaultAgentConfig, defaultApiConfig } from './agent/agent';
-import { NativeToolCallParser } from './assistant-message/NativeToolCallParser';
+import { Agent, AgentConfig, defaultAgentConfig, defaultApiConfig } from './agent/agent.js';
+import { NativeToolCallParser } from './assistant-message/NativeToolCallParser.js';
 
-export * from './agent-lib.module';
+// Export from merged agent-db
+import { prisma, AgentDBPrismaService } from './prisma.js';
+import { AgentDBModule as AgentDBModuleExport } from './agent-db.module.js';
+
+export * from './agent-lib.module.js';
 export { NativeToolCallParser };
+export { prisma, AgentDBPrismaService, AgentDBModuleExport as AgentDBModule };
 
 
 
 // Export from merged llm-api (includes reasoning functions)
 // export * from './api';
 
-// Export from merged llm-shared (excluding duplicates from api)
-export * from './shared/array';
-export * from './shared/browserUtils';
-export * from './shared/combineApiRequests';
-export * from './shared/combineCommandSequences';
-export * from './shared/context-mentions';
-export * from './shared/cost';
-export * from './shared/embeddingModels';
-export * from './shared/getApiMetrics';
-export * from './shared/globalFileNames';
-export * from './shared/language';
-export * from './shared/mcp';
-export * from './shared/requesty';
-export * from './shared/safeJsonParse';
-export * from './shared/support-prompt';
-export * from './shared/todo';
-export * from './shared/tools';
 
-// Export from merged llm-tools
-export * from './tools';
+
 
 // Export from merged llm-types
-export * from './types';
-export type { ApiMessage } from './task/task.type'
+export * from './types/index.js';
+export type { ApiMessage } from './task/task.type.js'
 
 // Export from agent v2 (virtual workspace) - re-exported from statefulContext
 // export * from './agent/virtualWorkspace';
@@ -42,12 +29,12 @@ export type { ApiMessage } from './task/task.type'
 export type { AgentConfig }
 
 // Export API client and factory
-export * from './api-client';
-export { AgentFactory } from './agent/AgentFactory';
-export type { AgentFactoryOptions } from './agent/AgentFactory';
+export * from './api-client/index.js';
+export { AgentFactory } from './agent/AgentFactory.js';
+export type { AgentFactoryOptions } from './agent/AgentFactory.js';
 
 // Export ObservableAgent (Proxy-based observer pattern)
-export * from './agent/ObservableAgent';
+export * from './agent/ObservableAgent.js';
 
 // Re-export from statefulContext library
 // export * from 'statefulContext';

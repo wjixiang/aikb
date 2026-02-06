@@ -85,7 +85,6 @@
       "llm-shared/*": ["libs/llm-shared/src/*"],
       "llm-types": ["libs/llm-types/src/index.ts"],
       "llm-tools": ["libs/llm-tools/src/index.ts"],
-      "agent-db": ["libs/agent-db/src/index.ts"],
       "testAuthHelper": ["libs/auth/auth-lib/src/lib/authTestHelper.ts"],
       "auth-ui": ["libs/auth-ui/src/index.ts"],
       "MedAgent-service": ["apps/MedAgent-service/src/index.ts"],
