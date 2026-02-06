@@ -1,6 +1,5 @@
 import { Agent } from './agent.js';
 import {
-    ApiMessage,
     TaskStatus,
     MessageAddedCallback,
     TaskStatusChangedCallback,

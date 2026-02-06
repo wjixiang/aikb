@@ -282,11 +282,6 @@ export class Agent {
                 throw new Error(`Consecutive mistake limit reached`);
             }
 
-            // Determine API protocol based on provider configuration
-            // Since we're using BAML with GLM47_coder client, use the configured tool protocol
-            const toolProtocol = this.apiConfiguration.toolProtocol || 'xml';
-
-            const shouldUseXmlParser = toolProtocol === 'xml';
 
             // Add user message to conversation history if needed
             const isEmptyUserContent = currentUserContent.length === 0;
@@ -305,16 +300,6 @@ export class Agent {
             try {
                 // Reset message processing state for each new API request
                 this.resetMessageState();
-
-                // Cache model info once per API request
-                // Using BAML client (GLM47_coder) which uses glm-4.7 model
-                // this.messageState.cachedModel = {
-                //     id: this.apiConfiguration.apiModelId || 'glm-4.7',
-                //     info: {
-                //         supportsNativeTools: false, // BAML uses XML protocol
-                //         defaultToolProtocol: 'xml',
-                //     }
-                // };
 
                 // Collect complete response from stream
 

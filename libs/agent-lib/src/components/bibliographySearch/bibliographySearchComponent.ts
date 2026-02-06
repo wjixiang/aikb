@@ -9,8 +9,8 @@ import {
     FullTextSource,
     renderRetrivalStrategy,
     RetrivalStrategy
-} from '@/libs/medDatabasePortal/src'
-import { createBibliographySearchToolSet } from './bibliographySearchTools'
+} from 'medDatabasePortal'
+import { createBibliographySearchToolSet } from './bibliographySearchTools.js'
 
 export class BibliographySearchComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;

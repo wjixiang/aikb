@@ -1,0 +1,86 @@
+# GraphQL Schema for Medical Portal
+
+scalar DateTime
+
+type Author {
+  id: ID!
+  name: String!
+  email: String
+  affiliation: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Article {
+  id: ID!
+  title: String!
+  abstract: String
+  content: String
+  doi: String
+  pmid: String
+  publishedDate: DateTime
+  authors: [Author!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Query {
+  # Get articles with filter
+  articles(
+    filter: ArticleFilterInput
+    limit: Int = 10
+    offset: Int = 0
+  ): [Article!]!
+
+  # Get a single article by ID
+  article(id: ID!): Article
+
+  # Get authors with filter
+  authors(
+    filter: AuthorFilterInput
+    limit: Int = 10
+    offset: Int = 0
+  ): [Author!]!
+
+  # Get a single author by ID
+  author(id: ID!): Author
+}
+
+# String operators
+input StringFilterInput {
+  equals: String
+  in: [String!]
+  contains: String
+  startsWith: String
+  endsWith: String
+}
+
+# Int operators
+input IntFilterInput {
+  equals: Int
+  in: [Int!]
+  gt: Int
+  gte: Int
+  lt: Int
+  lte: Int
+}
+
+input ArticleFilterInput {
+  id: StringFilterInput
+  pmid: IntFilterInput
+  doi: StringFilterInput
+  title: StringFilterInput
+  and: [ArticleFilterInput!]
+  or: [ArticleFilterInput!]
+  not: ArticleFilterInput
+}
+
+input AuthorFilterInput {
+  id: StringFilterInput
+  name: StringFilterInput
+  email: StringFilterInput
+  affiliation: StringFilterInput
+  and: [AuthorFilterInput!]
+  or: [AuthorFilterInput!]
+  not: AuthorFilterInput
+}
