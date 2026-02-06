@@ -277,7 +277,6 @@ export class Agent {
                 this._consecutiveMistakeCount > 0 &&
                 this._consecutiveMistakeCount >= this.config.consecutiveMistakeLimit
             ) {
-                console.error('Consecutive mistake limit reached');
                 this._consecutiveMistakeCount = 0;
                 throw new Error(`Consecutive mistake limit reached`);
             }
@@ -605,11 +604,9 @@ export class Agent {
                 return response;
 
             } catch (error) {
-                console.error(`API request failed:`, error);
                 throw error;
             }
         } catch (error) {
-            console.error(`API request attempt ${retryAttempt + 1} failed:`, error);
             throw error;
         }
     }
