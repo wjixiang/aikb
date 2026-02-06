@@ -13,7 +13,7 @@ import { ProviderSettings } from "../types/provider-settings";
 import { ToolName, TokenUsage, ToolUsage } from "../types";
 import { VirtualWorkspace } from "statefulContext";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types";
-import { AttemptCompletion, b, ToolCall } from '../baml_client'
+import { AttemptCompletion, ToolCall } from '../baml_client'
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker';
@@ -25,6 +25,8 @@ import {
     NoToolsUsedError,
 } from '../task/task.errors';
 import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder';
+import type { ApiClient } from '../api-client';
+import { ApiClientFactory } from '../api-client';
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -111,11 +113,15 @@ export class Agent {
         cachedModel: undefined,
     };
 
+    // API client (dependency injected)
+    private apiClient: ApiClient;
+
     constructor(
         public config: AgentConfig = defaultAgentConfig,
         public apiConfiguration: ProviderSettings = defaultApiConfig,
         workspace: VirtualWorkspace,
         taskId?: string,
+        apiClient?: ApiClient,
     ) {
         this.workspace = workspace;
         this._taskId = taskId || crypto.randomUUID();
@@ -126,6 +132,9 @@ export class Agent {
             this.tokenUsageTracker,
             new TooCallingParser(),
         );
+
+        // Initialize API client - use injected client or create default
+        this.apiClient = apiClient || ApiClientFactory.create(this.apiConfiguration);
 
         // Note: Message added callback for debugging can be registered externally
     }
@@ -703,6 +712,7 @@ export class Agent {
 
     /**
      * Attempt API request with timeout
+     * Uses the injected ApiClient for making requests
      */
     async attemptApiRequest(retryAttempt: number = 0) {
 
@@ -718,34 +728,18 @@ export class Agent {
                 .build();
 
             try {
-                // Use Promise.race for timeout (more reliable than AbortController for BAML)
-                const timeoutPromise = new Promise<never>((_, reject) => {
-                    setTimeout(() => {
-                        reject(new Error(`API request timed out after ${this.config.apiRequestTimeout}ms`));
-                    }, this.config.apiRequestTimeout);
-                });
+                // Use the injected ApiClient to make the request
+                const response = await this.apiClient.makeRequest(
+                    prompt.systemPrompt,
+                    prompt.workspaceContext,
+                    prompt.memoryContext,
+                    { timeout: this.config.apiRequestTimeout }
+                );
 
-                try {
-                    // Race between BAML request and timeout
-                    const bamlResponse = await Promise.race([
-                        b.ApiRequest(
-                            prompt.systemPrompt,
-                            prompt.workspaceContext,
-                            prompt.memoryContext
-                        ),
-                        //     b.ApiRequest('test', 'hello', []),
-                        //     timeoutPromise
-                    ]);
-
-                    return bamlResponse;
-
-
-                } catch (error) {
-                    throw error;
-                }
+                return response;
 
             } catch (error) {
-                console.error(`BAML request failed:`, error);
+                console.error(`API request failed:`, error);
                 throw error;
             }
         } catch (error) {

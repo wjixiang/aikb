@@ -8,7 +8,7 @@ export { NativeToolCallParser };
 
 
 // Export from merged llm-api (includes reasoning functions)
-export * from './api';
+// export * from './api';
 
 // Export from merged llm-shared (excluding duplicates from api)
 export * from './shared/array';
@@ -36,10 +36,15 @@ export * from './types';
 export type { ApiMessage } from './task/task.type'
 
 // Export from agent v2 (virtual workspace) - re-exported from statefulContext
-export * from './agent/virtualWorkspace';
-export * from './agent/statefulComponent';
-export { Agent, defaultAgentConfig, defaultApiConfig }
+// export * from './agent/virtualWorkspace';
+// export * from './agent/statefulComponent';
+// export { Agent, defaultAgentConfig, defaultApiConfig }
 export type { AgentConfig }
+
+// Export API client and factory
+export * from './api-client';
+export { AgentFactory } from './agent/AgentFactory';
+export type { AgentFactoryOptions } from './agent/AgentFactory';
 
 // Re-export from statefulContext library
 // export * from 'statefulContext';
