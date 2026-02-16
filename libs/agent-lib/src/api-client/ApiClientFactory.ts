@@ -58,14 +58,21 @@ export class ApiClientFactory {
      * @throws Error if no factory is registered for the provider
      */
     static create(config: ProviderSettings): ApiClient {
+        console.log('[ApiClientFactory.create] Creating API client for provider:', config.apiProvider);
         const provider = config.apiProvider || 'zai';
+        console.log('[ApiClientFactory.create] Provider resolved to:', provider);
         const factory = ApiClientFactory.factoryRegistry.get(provider);
+        console.log('[ApiClientFactory.create] Factory found:', !!factory);
 
         if (!factory) {
+            console.error('[ApiClientFactory.create] No factory registered for provider:', provider);
             throw new Error(`No ApiClient factory registered for provider: ${provider}`);
         }
 
-        return factory(config);
+        console.log('[ApiClientFactory.create] Calling factory function...');
+        const client = factory(config);
+        console.log('[ApiClientFactory.create] Client created:', client.constructor.name);
+        return client;
     }
 
     /**

@@ -1,6 +1,6 @@
-import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig, defaultApiConfig } from './agent.js';
+import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
-import { VirtualWorkspace } from 'statefulContext';
+import { VirtualWorkspace } from 'stateful-context';
 import { ApiClient, ApiClientFactory } from '../api-client/index.js';
 import { createObservableAgent, ObservableAgentCallbacks } from './ObservableAgent.js';
 
@@ -66,10 +66,13 @@ export class AgentFactory {
         agentPrompt: AgentPrompt,
         options: AgentFactoryOptions = {}
     ): Agent {
+        // Log options without serializing apiClient (contains circular references)
+        const { apiClient, ...loggableOptions } = options;
+        console.log('[AgentFactory.create] Creating agent with options:', JSON.stringify(loggableOptions, null, 2));
+
         const {
             config: configPartial = {},
             apiConfiguration: apiConfigPartial = {},
-            apiClient,
             taskId,
             observers,
         } = options;
@@ -79,31 +82,42 @@ export class AgentFactory {
             ...defaultAgentConfig,
             ...configPartial,
         };
+        console.log('[AgentFactory.create] Merged config:', JSON.stringify(config, null, 2));
 
         // Merge default API config with provided config
         const apiConfiguration: ProviderSettings = {
-            ...defaultApiConfig,
+            apiProvider: 'zai',
+            apiKey: process.env['GLM_API_KEY'],
+            apiModelId: 'glm-4.7',
+            toolProtocol: 'xml',
+            zaiApiLine: 'china_coding',
             ...apiConfigPartial,
         };
+        console.log('[AgentFactory.create] API configuration, provider:', apiConfiguration.apiProvider, 'model:', apiConfiguration.apiModelId, 'hasApiKey:', !!apiConfiguration.apiKey);
 
         // Create API client if not provided
+        console.log('[AgentFactory.create] Creating API client...');
         const client = apiClient || ApiClientFactory.create(apiConfiguration);
+        console.log('[AgentFactory.create] API client created');
 
         // Create the Agent
+        console.log('[AgentFactory.create] Creating Agent instance...');
         const agent = new Agent(
             config,
-            apiConfiguration,
             workspace,
             agentPrompt,
-            taskId,
             client,
+            taskId,
         );
+        console.log('[AgentFactory.create] Agent instance created, taskId:', agent.getTaskId);
 
         // Wrap in ObservableAgent if observers are provided
         if (observers && Object.keys(observers).length > 0) {
+            console.log('[AgentFactory.create] Wrapping agent with observers');
             return createObservableAgent(agent, observers);
         }
 
+        console.log('[AgentFactory.create] Returning agent');
         return agent;
     }
 

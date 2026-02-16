@@ -1,5 +1,5 @@
 // Export from existing agent-lib modules
-import { Agent, AgentConfig, defaultAgentConfig, defaultApiConfig } from './agent/agent.js';
+import { Agent, AgentConfig, defaultAgentConfig } from './agent/agent.js';
 import { NativeToolCallParser } from './assistant-message/NativeToolCallParser.js';
 
 // Export from merged agent-db
@@ -25,7 +25,7 @@ export type { ApiMessage } from './task/task.type.js'
 // Export from agent v2 (virtual workspace) - re-exported from statefulContext
 // export * from './agent/virtualWorkspace';
 // export * from './agent/statefulComponent';
-// export { Agent, defaultAgentConfig, defaultApiConfig }
+// export { Agent, defaultAgentConfig }
 export type { AgentConfig }
 
 // Export API client and factory

@@ -5,11 +5,11 @@ import {
     ExtendedApiMessage,
     ThinkingBlock,
 } from "../task/task.type.js";
-import { ProviderSettings } from "../types/provider-settings.js";
 import { TokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "stateful-context";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
-import type { ApiResponse, AttemptCompletion, ToolCall } from '../api-client/index.js';
+import type { ApiResponse, ToolCall } from '../api-client/index.js';
+import { DefaultToolCallConverter } from '../api-client/index.js';
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor.js';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker.js';
@@ -22,7 +22,6 @@ import {
 } from '../task/task.errors.js';
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
-import { ApiClientFactory } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
 
 export interface AgentConfig {
@@ -37,13 +36,6 @@ export const defaultAgentConfig: AgentConfig = {
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 };
 
-export const defaultApiConfig: ProviderSettings = {
-    apiProvider: 'zai',
-    apiKey: process.env['GLM_API_KEY'],
-    apiModelId: 'glm-4.7',
-    toolProtocol: 'xml',
-    zaiApiLine: 'china_coding',
-};
 
 /**
  * Agent class that uses VirtualWorkspace for context management
@@ -114,11 +106,10 @@ export class Agent {
 
     constructor(
         public config: AgentConfig = defaultAgentConfig,
-        public apiConfiguration: ProviderSettings = defaultApiConfig,
         workspace: VirtualWorkspace,
         private agentPrompt: AgentPrompt,
+        apiClient: ApiClient,
         taskId?: string,
-        apiClient?: ApiClient,
     ) {
         this.workspace = workspace;
         this._taskId = taskId || crypto.randomUUID();
@@ -130,8 +121,8 @@ export class Agent {
             new TooCallingParser(),
         );
 
-        // Initialize API client - use injected client or create default
-        this.apiClient = apiClient || ApiClientFactory.create(this.apiConfiguration);
+        // Use injected API client
+        this.apiClient = apiClient;
     }
 
     // ==================== Public API ====================
@@ -212,16 +203,21 @@ export class Agent {
      * Start agent with a user query
      */
     async start(query: string): Promise<Agent> {
+        console.log('[Agent.start] Starting agent with query:', query);
         this._status = 'running';
+        console.log('[Agent.start] Status set to running');
 
         // Add initial user message to history
         this._conversationHistory.push({
             role: 'user',
             content: `<task>${query}</task>`,
         });
+        console.log('[Agent.start] Initial user message added to history');
 
         // Start request loop
+        console.log('[Agent.start] About to call requestLoop...');
         await this.requestLoop(query);
+        console.log('[Agent.start] requestLoop completed');
         return this;
     }
 
@@ -262,6 +258,7 @@ export class Agent {
      * Implements stack-based retry mechanism with error handling
      */
     protected async requestLoop(query: string): Promise<boolean> {
+        console.log('[Agent.requestLoop] Starting request loop');
         // Reset collected errors for this new operation
         this.resetCollectedErrors();
 
@@ -269,13 +266,17 @@ export class Agent {
             { type: 'text', text: `<task>${query}</task>` }
         ];
         const stack: StackItem[] = [{ sender: 'user', content: userContent, retryAttempt: 0 }];
+        console.log('[Agent.requestLoop] Initial stack created with', stack.length, 'items');
 
         while (stack.length > 0) {
+            console.log('[Agent.requestLoop] Loop iteration, stack size:', stack.length);
             const currentItem = stack.pop()!;
             const currentUserContent = currentItem.content;
+            console.log('[Agent.requestLoop] Current item sender:', currentItem.sender, 'retryAttempt:', currentItem.retryAttempt);
             let didEndLoop = false;
 
             if (this.isAborted()) {
+                console.log('[Agent.requestLoop] Agent is aborted, exiting loop');
                 stack.length = 0;
                 return false;
             }
@@ -302,28 +303,34 @@ export class Agent {
             });
 
             const oldWorkspaceContext = await this.workspace.render();
+            console.log('[Agent.requestLoop] Workspace context rendered, length:', oldWorkspaceContext.length);
 
             try {
+                console.log('[Agent.requestLoop] About to call attemptApiRequest...');
                 // Reset message processing state for each new API request
                 this.resetMessageState();
 
                 // Collect complete response from stream
 
                 const response = await this.attemptApiRequest();
+                console.log('[Agent.requestLoop] API response received, tool calls:', response.toolCalls.length);
 
                 if (!response) {
+                    console.error('[Agent.requestLoop] No response received from API');
                     throw new NoApiResponseError(1);
                 }
 
 
-                // Convert BAML response to assistant message content and get tool use ID
-                const toolUseId = this.convertBamlResponseToAssistantMessage(response);
+                console.log('[Agent.requestLoop] Converting API response to assistant message...');
+                // Convert API response to assistant message content
+                this.convertApiResponseToAssistantMessage(response);
+                console.log('[Agent.requestLoop] Assistant message content:', this.messageState.assistantMessageContent.length, 'items');
 
                 // Execute tool calls and build response
+                console.log('[Agent.requestLoop] Executing tool calls...');
                 // This will update workspace states
                 const executionResult = await this.executeToolCalls(
                     response,
-                    toolUseId,
                     () => this.isAborted(),
                 );
 
@@ -346,9 +353,11 @@ export class Agent {
                 this.addSystemMessageToHistory(oldWorkspaceContext);
 
                 // Check if we should continue recursion
+                console.log('[Agent.requestLoop] didAttemptCompletion:', this.messageState.didAttemptCompletion);
                 if (
                     !this.messageState.didAttemptCompletion
                 ) {
+                    console.log('[Agent.requestLoop] Task not completed, pushing to stack for continuation');
                     stack.push({
                         sender: 'system',
                         content: [{
@@ -361,6 +370,7 @@ export class Agent {
                 // For debugging: avoid stuck in loop for some tests
                 // didEndLoop = true;
             } catch (error) {
+                console.error('[Agent.requestLoop] Error occurred:', error);
                 const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
                 // Handle error using error handler logic
@@ -368,8 +378,10 @@ export class Agent {
 
                 // Format error as prompt and add to user content
                 const errorPrompt = ErrorHandlerPrompt.formatErrorPrompt(error as any, currentRetryAttempt);
+                console.log('[Agent.requestLoop] Error prompt formatted, shouldAbort:', shouldAbort);
 
                 if (shouldAbort) {
+                    console.log('[Agent.requestLoop] Aborting due to error');
                     this.abort('Max retry attempts exceeded or non-retryable error');
                 } else {
                     // Push the same content with error prompt back onto the stack to retry
@@ -384,6 +396,7 @@ export class Agent {
                         ],
                         retryAttempt: currentRetryAttempt + 1,
                     });
+                    console.log('[Agent.requestLoop] Pushing retry to stack, attempt:', currentRetryAttempt + 1);
                 }
             }
 
@@ -392,7 +405,9 @@ export class Agent {
             }
         }
 
+        console.log('[Agent.requestLoop] Loop completed, calling complete()');
         this.complete();
+        console.log('[Agent.requestLoop] Returning from requestLoop');
         return false;
     }
 
@@ -408,32 +423,34 @@ export class Agent {
     }
 
     /**
-     * Convert BAML response to assistant message content
-     * Returns the tool_use_id for use in the tool result
+     * Convert API response to assistant message content
+     * Handles multiple tool calls in a single response
      */
-    private convertBamlResponseToAssistantMessage(response: AttemptCompletion | ToolCall): string {
-        const toolUseId = crypto.randomUUID();
+    private convertApiResponseToAssistantMessage(response: ApiResponse): void {
+        const toolUseBlocks: ToolUse[] = [];
 
-        if (response.toolName === 'attempt_completion') {
+        for (const toolCall of response.toolCalls) {
+            // Parse arguments from JSON string
+            let parsedArgs: any = {};
+            try {
+                parsedArgs = JSON.parse(toolCall.arguments);
+            } catch (e) {
+                console.error('Failed to parse tool call arguments:', e);
+                parsedArgs = { raw: toolCall.arguments };
+            }
+
             const toolUse: ToolUse = {
                 type: 'tool_use',
-                name: response.toolName,
-                id: toolUseId,
-                params: { data: response.toolParams },
-                nativeArgs: { data: response.toolParams },
+                name: toolCall.name,
+                id: toolCall.id,
+                params: parsedArgs,
+                nativeArgs: parsedArgs,
             };
-            this.messageState.assistantMessageContent = [toolUse];
-        } else if (response.toolName === 'call_tool') {
-            const toolUse: ToolUse = {
-                type: 'tool_use',
-                name: response.toolName,
-                id: toolUseId,
-                params: JSON.parse(response.toolParams)
-            };
-            this.messageState.assistantMessageContent = [toolUse];
+
+            toolUseBlocks.push(toolUse);
         }
 
-        return toolUseId;
+        this.messageState.assistantMessageContent = toolUseBlocks;
     }
 
     /**
@@ -529,91 +546,134 @@ export class Agent {
 
     /**
      * Execute tool calls and build response
+     * Supports multiple tool calls in a single response
      */
     private async executeToolCalls(
-        toolCall: AttemptCompletion | ToolCall,
-        toolUseId: string,
+        response: ApiResponse,
         isAborted: () => boolean,
     ): Promise<{ userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>, didAttemptCompletion: boolean }> {
         const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
         let didAttemptCompletion = false;
 
-        try {
-            let result: any;
-
-            if (toolCall.toolName === 'attempt_completion') {
-                didAttemptCompletion = true;
-                const completionResult = toolCall.toolParams;
-                result = { success: true, result: completionResult };
-            } else {
-                // Parse tool params
-                let parsedParams: any = {};
-                try {
-                    parsedParams = JSON.parse(toolCall.toolParams);
-                } catch (e) {
-                    parsedParams = toolCall.toolParams;
-                }
-
-
-                // Call the tool on the VirtualWorkspace component
-                result = await this.workspace.handleToolCall(
-                    toolCall.toolName,
-                    parsedParams
-                );
+        for (const toolCall of response.toolCalls) {
+            if (isAborted()) {
+                break;
             }
 
-            userMessageContent.push({
-                type: 'tool_result',
-                tool_use_id: toolUseId,
-                content: JSON.stringify(result),
-            });
-        } catch (error) {
-            userMessageContent.push({
-                type: 'tool_result',
-                tool_use_id: toolUseId,
-                content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-            });
-        }
+            try {
+                let result: any;
 
+                // Check if this is attempt_completion
+                if (toolCall.name === 'attempt_completion') {
+                    didAttemptCompletion = true;
+                    // Parse arguments to get the completion result
+                    let completionData: any = {};
+                    try {
+                        completionData = JSON.parse(toolCall.arguments);
+                    } catch (e) {
+                        completionData = { result: toolCall.arguments };
+                    }
+                    result = { success: true, result: completionData.result || completionData };
+                } else {
+                    // Parse tool arguments
+                    let parsedParams: any = {};
+                    try {
+                        parsedParams = JSON.parse(toolCall.arguments);
+                    } catch (e) {
+                        parsedParams = { raw: toolCall.arguments };
+                    }
+
+                    // Call the tool on the VirtualWorkspace component
+                    result = await this.workspace.handleToolCall(
+                        toolCall.name,
+                        parsedParams
+                    );
+                }
+
+                userMessageContent.push({
+                    type: 'tool_result',
+                    tool_use_id: toolCall.id,
+                    content: JSON.stringify(result),
+                });
+            } catch (error) {
+                userMessageContent.push({
+                    type: 'tool_result',
+                    tool_use_id: toolCall.id,
+                    content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+                });
+            }
+        }
 
         return { userMessageContent, didAttemptCompletion };
     }
 
     // ==================== API Request Handling ====================
 
+    /**
+     * Convert Workspace tools to OpenAI format
+     * @returns Array of OpenAI-compatible tool definitions
+     */
+    private convertWorkspaceToolsToOpenAI(): any[] {
+        // Get all tools from workspace
+        const allTools = this.workspace.getAllTools();
+        const tools = allTools.map(t => t.tool);
+
+        // Use the existing converter
+        const converter = new DefaultToolCallConverter();
+
+        return converter.convertTools(tools);
+    }
 
     /**
      * Attempt API request with timeout
      * Uses the injected ApiClient for making requests
      */
     async attemptApiRequest(retryAttempt: number = 0) {
+        console.log('[Agent.attemptApiRequest] Starting API request, retryAttempt:', retryAttempt);
 
         try {
+            console.log('[Agent.attemptApiRequest] Getting system prompt...');
             const systemPrompt = await this.getSystemPrompt();
+            console.log('[Agent.attemptApiRequest] System prompt length:', systemPrompt.length);
+
+            console.log('[Agent.attemptApiRequest] Getting workspace context...');
             const workspaceContext = await this.workspace.render();
+            console.log('[Agent.attemptApiRequest] Workspace context length:', workspaceContext.length);
 
             // Build prompt using PromptBuilder
+            console.log('[Agent.attemptApiRequest] Building prompt...');
             const prompt: FullPrompt = new PromptBuilder()
                 .setSystemPrompt(systemPrompt)
                 .setWorkspaceContext(workspaceContext)
                 .setConversationHistory(this._conversationHistory)
                 .build();
+            console.log('[Agent.attemptApiRequest] Prompt built, conversation history length:', this._conversationHistory.length);
 
             try {
+                // Get tools from workspace and convert to OpenAI format
+                console.log('[Agent.attemptApiRequest] Converting workspace tools...');
+                const tools = this.convertWorkspaceToolsToOpenAI();
+                console.log('[Agent.attemptApiRequest] Tools converted, count:', tools.length);
+
                 // Use the injected ApiClient to make the request
+                console.log('[Agent.attemptApiRequest] Calling apiClient.makeRequest...');
                 const response = await this.apiClient.makeRequest(
                     prompt.systemPrompt,
                     prompt.workspaceContext,
                     prompt.memoryContext,
-                    { timeout: this.config.apiRequestTimeout }
+                    { timeout: this.config.apiRequestTimeout },
+                    tools  // Pass tools to API client
                 );
+                console.log('[Agent.attemptApiRequest] API response received, tool calls:', response.toolCalls.length);
 
                 return response;
 
             } catch (error) {
+                console.error('[Agent.attemptApiRequest] Error in API request:', error);
                 throw error;
             }
         } catch (error) {
+            console.error('[Agent.attemptApiRequest] Error in attemptApiRequest:', error);
             throw error;
         }
     }

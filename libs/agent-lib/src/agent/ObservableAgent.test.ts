@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Agent, defaultAgentConfig, defaultApiConfig } from './agent.js';
+import { Agent, defaultAgentConfig } from './agent.js';
 import {
     createObservableAgent,
     ObservableAgentFactory,
@@ -7,7 +7,8 @@ import {
     type ObservableAgentCallbacks,
 } from './ObservableAgent.js';
 import { TaskStatus } from '../task/task.type.js';
-import { VirtualWorkspace } from 'statefulContext';
+import { VirtualWorkspace } from 'stateful-context';
+import { ApiClientFactory } from '../api-client/index.js';
 
 // Mock VirtualWorkspace
 vi.mock('statefulContext', () => ({
@@ -18,13 +19,30 @@ vi.mock('statefulContext', () => ({
     },
 }));
 
+// Helper function to create a mock API client
+function createMockApiClient() {
+    return ApiClientFactory.create({
+        apiProvider: 'zai',
+        apiKey: 'test-key',
+        apiModelId: 'glm-4.7',
+        toolProtocol: 'xml',
+        zaiApiLine: 'china_coding',
+    });
+}
+
 describe('ObservableAgent', () => {
     let mockWorkspace: VirtualWorkspace;
     let agent: Agent;
 
     beforeEach(() => {
         mockWorkspace = new VirtualWorkspace({ id: 'test-workspace' } as any);
-        agent = new Agent(defaultAgentConfig, defaultApiConfig, mockWorkspace);
+        const apiClient = createMockApiClient();
+        agent = new Agent(
+            defaultAgentConfig,
+            mockWorkspace,
+            { capability: 'test', direction: 'test' },
+            apiClient
+        );
     });
 
     describe('createObservableAgent', () => {
@@ -190,8 +208,9 @@ describe('ObservableAgent', () => {
             // Create an agent that will throw
             const errorAgent = new Agent(
                 defaultAgentConfig,
-                defaultApiConfig,
-                new VirtualWorkspace({ id: 'error-workspace' } as any)
+                new VirtualWorkspace({ id: 'error-workspace' } as any),
+                { capability: 'test', direction: 'test' },
+                createMockApiClient()
             ) as any;
             errorAgent.throwError = () => {
                 throw new Error('Test error');

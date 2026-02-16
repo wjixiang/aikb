@@ -1,6 +1,7 @@
 import { ToolComponent } from './toolComponent';
-import { ComponentRegistration, VirtualWorkspaceConfig } from './types';
-import { tdiv, th, Tool, TUIElement } from './ui';
+import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types';
+import { tdiv, th, TUIElement } from './ui';
+import { z } from 'zod';
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
@@ -16,11 +17,31 @@ export class VirtualWorkspace {
     private toolSet = new Map<string, {
         tool: Tool;
         componentKey: string;
-    }>;
+    }>();
+
+    /**
+     * Global shared tools available to all components
+     */
+    private globalTools = new Map<string, Tool>();
 
     constructor(config: VirtualWorkspaceConfig) {
         this.config = config;
         this.components = new Map();
+        this.initializeGlobalTools();
+    }
+
+    /**
+     * Initialize global shared tools
+     */
+    private initializeGlobalTools(): void {
+        // Add attempt_completion tool
+        this.globalTools.set('attempt_completion', {
+            toolName: 'attempt_completion',
+            paramsSchema: z.object({
+                result: z.string().describe('The final result message to present to the user')
+            }),
+            desc: 'Complete the task and return final result to the user. This should be called when the task is fully accomplished.'
+        });
     }
 
     /**
@@ -75,6 +96,27 @@ export class VirtualWorkspace {
         //         align: 'center'
         //     }
         // }))
+
+        // Add global tools section
+        if (this.globalTools.size > 0) {
+            const globalToolsArray: Tool[] = [];
+            this.globalTools.forEach((tool) => globalToolsArray.push(tool));
+            const globalToolsSection = new tdiv({
+                content: 'GLOBAL TOOLS',
+                styles: {
+                    showBorder: true,
+                    align: 'center'
+                }
+            });
+            globalToolsArray.forEach(tool => {
+                globalToolsSection.addChild(new tdiv({
+                    content: `- ${tool.toolName}: ${tool.desc}`,
+                    styles: { showBorder: false }
+                }));
+            });
+            container.addChild(globalToolsSection);
+        }
+
         this.components.forEach(e => {
             container.addChild(e.component.renderToolSection())
         })
@@ -197,6 +239,11 @@ export class VirtualWorkspace {
         // }
 
         try {
+            // Check if it's a global tool
+            if (this.globalTools.has(toolName)) {
+                return await this.handleGlobalToolCall(toolName, params);
+            }
+
             const toolToExecute = this.toolSet.get(toolName)
             if (!toolToExecute) throw new Error(`Tool not found: ${toolName}`)
 
@@ -212,12 +259,43 @@ export class VirtualWorkspace {
     }
 
     /**
+     * Handle global tool calls
+     */
+    private async handleGlobalToolCall(toolName: string, params: any): Promise<any> {
+        switch (toolName) {
+            case 'attempt_completion':
+                return await this.attemptCompletion(params.result);
+            default:
+                throw new Error(`Unknown global tool: ${toolName}`);
+        }
+    }
+
+    /**
+     * Complete the task and return final result
+     */
+    private async attemptCompletion(result: string): Promise<any> {
+        // This method can be overridden or extended to handle completion
+        // For now, it returns the result
+        return {
+            success: true,
+            completed: true,
+            result
+        };
+    }
+
+    /**
      * Get all available tools from all components
      * @returns Array of tool definitions with component information
      */
     getAllTools(): Array<{ componentKey: string; toolName: string; tool: any }> {
         const tools: Array<{ componentKey: string; toolName: string; tool: any }> = [];
 
+        // Add global tools first
+        for (const [toolName, tool] of this.globalTools.entries()) {
+            tools.push({ componentKey: 'global', toolName, tool });
+        }
+
+        // Add component tools
         for (const [key, registration] of this.components.entries()) {
             for (const [toolName, tool] of registration.component.toolSet.entries()) {
                 tools.push({ componentKey: key, toolName, tool });
@@ -225,6 +303,27 @@ export class VirtualWorkspace {
         }
 
         return tools;
+    }
+
+    /**
+     * Get all global tools
+     */
+    getGlobalTools(): Map<string, Tool> {
+        return new Map(this.globalTools);
+    }
+
+    /**
+     * Add a global tool
+     */
+    addGlobalTool(tool: Tool): void {
+        this.globalTools.set(tool.toolName, tool);
+    }
+
+    /**
+     * Remove a global tool
+     */
+    removeGlobalTool(toolName: string): boolean {
+        return this.globalTools.delete(toolName);
     }
 }
 export type { ComponentRegistration };

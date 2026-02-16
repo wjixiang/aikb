@@ -223,8 +223,10 @@ describe('VirtualWorkspace', () => {
     });
 
     describe('Tool Calls', () => {
-        it('should get all tools', async () => {
-
+        it.only('should get all tools', async () => {
+            workspace.registerComponent({ key: 'componentA', component: componentA })
+            const toolset = workspace.getAllTools()
+            console.log(toolset)
         })
 
         it('should handle tool calls on components', async () => {

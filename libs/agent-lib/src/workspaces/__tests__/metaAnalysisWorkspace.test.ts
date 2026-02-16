@@ -1,8 +1,24 @@
-import { Agent, defaultApiConfig, defaultAgentConfig } from "../../agent/agent"
+import { Agent, defaultAgentConfig } from "../../agent/agent"
 import { MetaAnalysisWorkspace } from '../metaAnalysisWorkspace'
+import { ApiClientFactory } from '../../api-client/index.js';
 describe('meta analysis workspace', () => {
     it.skip('should execute task', async () => {
-        const agent = new Agent(defaultAgentConfig, defaultApiConfig, new MetaAnalysisWorkspace())
+        const apiClient = ApiClientFactory.create({
+            apiProvider: 'zai',
+            apiKey: process.env['GLM_API_KEY'],
+            apiModelId: 'glm-4.7',
+            toolProtocol: 'xml',
+            zaiApiLine: 'china_coding',
+        });
+        const agent = new Agent(
+            defaultAgentConfig,
+            new MetaAnalysisWorkspace(),
+            {
+                capability: 'Search and analyze medical literature from PubMed',
+                direction: 'Help users find relevant articles about medical treatments and conditions'
+            },
+            apiClient
+        )
         await agent.start('search article about treatment of hypertension')
     }, 999999)
 

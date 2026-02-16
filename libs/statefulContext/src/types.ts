@@ -229,7 +229,7 @@ export interface ScriptExecutionResult {
 
 export interface Tool {
     toolName: string;
-    paramsSchema: z.ZodType<any>;
+    paramsSchema: z.ZodTypeAny;
     desc: string;
 }
 

@@ -1,15 +1,13 @@
-class AttemptCompletion {
-    toolName "attempt_completion"
-    toolParams string
-}
-
 class ToolCall {
-    toolName string
-    toolParams string
+    id string
+    call_id string
+    type "function_call"
+    name string
+    arguments string
 }
 
 
-function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContext: string[]) -> AttemptCompletion |  ToolCall{
+function ApiRequest(systemPrompt: string, workspaceContext: string, memoryContext: string[]) -> ToolCall[] {
     client GLM47_coder
     prompt #"
 

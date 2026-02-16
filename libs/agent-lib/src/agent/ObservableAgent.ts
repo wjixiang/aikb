@@ -34,8 +34,15 @@ export interface ObservableAgentCallbacks {
  * 
  * @example
  * ```typescript
+ * const apiClient = ApiClientFactory.create({
+ *     apiProvider: 'zai',
+ *     apiKey: 'your-api-key',
+ *     apiModelId: 'glm-4.7',
+ *     toolProtocol: 'xml',
+ *     zaiApiLine: 'china_coding',
+ * });
  * const agent = createObservableAgent(
- *     new Agent(config, apiConfig, workspace),
+ *     new Agent(config, workspace, agentPrompt, apiClient),
  *     {
  *         onStatusChanged: (taskId, status) => {
  *             console.log(`Status changed to: ${status}`);
@@ -45,7 +52,7 @@ export interface ObservableAgentCallbacks {
  *         }
  *     }
  * );
- * 
+ *
  * // Normal usage - notifications happen automatically
  * await agent.start("Write code");
  * ```
@@ -69,6 +76,40 @@ export function createObservableAgent<T extends Agent>(
         get(target, prop, receiver) {
             const value = Reflect.get(target, prop, receiver);
 
+            // Special handling for _conversationHistory to observe array mutations
+            if (prop === '_conversationHistory' && Array.isArray(value)) {
+                return new Proxy(value, {
+                    get(arrTarget, arrProp, arrReceiver) {
+                        const arrValue = Reflect.get(arrTarget, arrProp, arrReceiver);
+                        
+                        // Wrap array methods that modify the array
+                        if (typeof arrValue === 'function' &&
+                            ['push', 'splice', 'pop', 'shift', 'unshift'].includes(String(arrProp))) {
+                            return new Proxy(arrValue, {
+                                apply(fnTarget, thisArg, args) {
+                                    const methodName = String(arrProp);
+                                    const taskId = target.getTaskId;
+                                    
+                                    // Execute the original array method
+                                    const result = Reflect.apply(fnTarget, arrTarget, args);
+                                    
+                                    // Notify observers about message additions
+                                    if (methodName === 'push' || methodName === 'unshift') {
+                                        for (const arg of args) {
+                                            callbacks.onMessageAdded?.(taskId, arg);
+                                        }
+                                    }
+                                    
+                                    return result;
+                                }
+                            });
+                        }
+                        
+                        return arrValue;
+                    }
+                });
+            }
+
             // If the property is a function, wrap it to observe calls
             if (typeof value === 'function') {
                 return new Proxy(value, {
@@ -84,8 +125,9 @@ export function createObservableAgent<T extends Agent>(
                             // Notify method call (optional, for debugging)
                             callbacks.onMethodCall?.(methodName, args);
 
-                            // Execute the original method
-                            const result = Reflect.apply(fnTarget, thisArg, args);
+                            // Execute the original method with receiver as thisArg
+                            // This ensures internal property accesses go through the proxy
+                            const result = Reflect.apply(fnTarget, receiver, args);
 
                             // Handle Promise results (async methods)
                             if (result instanceof Promise) {
@@ -207,11 +249,18 @@ function checkAndNotifyStatus(
  * 
  * @example
  * ```typescript
+ * const apiClient = ApiClientFactory.create({
+ *     apiProvider: 'zai',
+ *     apiKey: 'your-api-key',
+ *     apiModelId: 'glm-4.7',
+ *     toolProtocol: 'xml',
+ *     zaiApiLine: 'china_coding',
+ * });
  * const agent = new ObservableAgentFactory()
  *     .onStatusChanged((taskId, status) => console.log(status))
  *     .onMessageAdded((taskId, msg) => console.log(msg))
  *     .onError((err, ctx) => console.error(err, ctx))
- *     .create(new Agent(config, apiConfig, workspace));
+ *     .create(new Agent(config, workspace, agentPrompt, apiClient));
  * ```
  */
 export class ObservableAgentFactory {
@@ -289,7 +338,14 @@ export class ObservableAgentFactory {
  * 
  * @example
  * ```typescript
- * const agent = observeAgent(new Agent(config, apiConfig, workspace), {
+ * const apiClient = ApiClientFactory.create({
+ *     apiProvider: 'zai',
+ *     apiKey: 'your-api-key',
+ *     apiModelId: 'glm-4.7',
+ *     toolProtocol: 'xml',
+ *     zaiApiLine: 'china_coding',
+ * });
+ * const agent = observeAgent(new Agent(config, workspace, agentPrompt, apiClient), {
  *     onStatusChanged: (taskId, status) => {
  *         console.log(`Agent ${taskId} is now ${status}`);
  *     }
