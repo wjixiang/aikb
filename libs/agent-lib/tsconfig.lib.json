@@ -1,9 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
     "declaration": true,
-    "target": "es2021",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictNullChecks": true,
@@ -13,7 +11,7 @@
     "noFallthroughCasesInSwitch": true,
     "composite": true,
     "declarationMap": true,
-    "rootDir": ".",
+    "rootDir": "./",
     "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo",
     "types": ["node"]
   },
@@ -33,5 +31,5 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
   ],
-  "references": [{ "path": "../statefulContext/tsconfig.lib.json" }]
+  // "references": [{ "path": "../statefulContext/tsconfig.lib.json" }]
 }

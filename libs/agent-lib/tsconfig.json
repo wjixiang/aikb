@@ -1,5 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "module": "nodenext",
+  "moduleResolution": "nodenext",
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "strict": true,

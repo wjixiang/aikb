@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { VirtualWorkspace, ComponentRegistration } from './virtualWorkspace';
-import { ToolComponent } from './toolComponent';
-import { Tool } from './types';
-import { tdiv } from './ui';
+import { VirtualWorkspace, ComponentRegistration } from '../virtualWorkspace.js';
+import { ToolComponent } from '../toolComponent.js';
+import { Tool } from '../types.js';
+import { tdiv } from '../ui/index.js';
 import * as z from 'zod';
 
 // Test component implementations using ToolComponent
@@ -223,6 +223,10 @@ describe('VirtualWorkspace', () => {
     });
 
     describe('Tool Calls', () => {
+        it('should get all tools', async () => {
+
+        })
+
         it('should handle tool calls on components', async () => {
             workspace.registerComponent({ key: 'componentA', component: componentA });
 

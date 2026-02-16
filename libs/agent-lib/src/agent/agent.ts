@@ -7,9 +7,9 @@ import {
 } from "../task/task.type.js";
 import { ProviderSettings } from "../types/provider-settings.js";
 import { TokenUsage, ToolUsage } from "../types/index.js";
-import { VirtualWorkspace } from "statefulContext";
+import { VirtualWorkspace } from "stateful-context";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
-import { AttemptCompletion, ToolCall } from '../baml_client/types.js'
+import type { ApiResponse, AttemptCompletion, ToolCall } from '../api-client/index.js';
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
 import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor.js';
 import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker.js';
@@ -20,7 +20,7 @@ import {
     NoApiResponseError,
     NoToolsUsedError,
 } from '../task/task.errors.js';
-import { PromptBuilder, BamlPrompt } from '../prompts/PromptBuilder.js';
+import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { ApiClientFactory } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
@@ -593,7 +593,7 @@ export class Agent {
             const workspaceContext = await this.workspace.render();
 
             // Build prompt using PromptBuilder
-            const prompt: BamlPrompt = new PromptBuilder()
+            const prompt: FullPrompt = new PromptBuilder()
                 .setSystemPrompt(systemPrompt)
                 .setWorkspaceContext(workspaceContext)
                 .setConversationHistory(this._conversationHistory)

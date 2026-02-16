@@ -6,8 +6,8 @@ import {
     ScriptSanitizer,
     createSecurityConfig,
     validateSecurityConfig,
-} from './scriptSecurity';
-import { DEFAULT_SECURITY_CONFIG, SecurityConfig } from './types';
+} from '../scriptSecurity.js';
+import { DEFAULT_SECURITY_CONFIG, SecurityConfig } from '../types.js';
 
 describe('Script Security Module', () => {
     describe('SecurityConfig', () => {

@@ -5,13 +5,13 @@
     "lib": ["ES2022"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "allowJs": false,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "removeComments": false,
     "strict": false,
     "noImplicitAny": false,
@@ -38,5 +38,15 @@
     "verbatimModuleSyntax": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts"
+  ],
+  "references": []
 }

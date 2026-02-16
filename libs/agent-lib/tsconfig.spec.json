@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "types": [
@@ -9,7 +9,8 @@
       "node",
       "vitest"
     ],
-    "composite": true
+    "composite": true,
+    "rootDir": "./"
   },
   "include": [
     "vite.config.ts",
@@ -25,6 +26,11 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
     "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts.snap"
   ],
   "references": [{ "path": "./tsconfig.lib.json" }]
 }

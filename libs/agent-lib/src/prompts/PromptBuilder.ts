@@ -8,7 +8,7 @@ import { MessageFormatter } from './MessageFormatter.js';
  * This interface represents the complete prompt structure that will be passed
  * to the BAML API request, containing all necessary context for the agent.
  */
-export interface BamlPrompt {
+export interface FullPrompt {
     /** The system prompt that defines the agent's behavior and instructions */
     systemPrompt: string;
     /** The workspace context containing current workspace state and information */
@@ -28,7 +28,7 @@ export interface BamlPrompt {
  * 1. Set the system prompt (agent's core instructions)
  * 2. Set the workspace context (current workspace state)
  * 3. Set the conversation history (previous interactions)
- * 4. Build the final BamlPrompt object
+ * 4. Build the final FullPrompt object
  * 
  * During the build process, the conversation history is:
  * - Filtered to only include relevant roles (user, assistant, system)
@@ -120,15 +120,15 @@ export class PromptBuilder {
     }
 
     /**
-     * Builds and returns the final BamlPrompt object.
+     * Builds and returns the final FullPrompt object.
      * 
      * This method performs the following operations:
      * 1. Cleans the conversation history by filtering out non-relevant roles
      * 2. Removes ThinkingBlock content from the history
      * 3. Formats each message using MessageFormatter
-     * 4. Constructs and returns the BamlPrompt object
+     * 4. Constructs and returns the FullPrompt object
      * 
-     * @returns A BamlPrompt object containing systemPrompt, workspaceContext, and memoryContext
+     * @returns A FullPrompt object containing systemPrompt, workspaceContext, and memoryContext
      * 
      * @example
      * ```ts
@@ -140,7 +140,7 @@ export class PromptBuilder {
      * // }
      * ```
      */
-    build(): BamlPrompt {
+    build(): FullPrompt {
         const cleanHistory = this.cleanConversationHistory(this._conversationHistory);
         const memoryContext = cleanHistory.map((msg) => MessageFormatter.formatToXml(msg));
 

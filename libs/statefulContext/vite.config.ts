@@ -15,6 +15,5 @@ export default defineConfig({
       reportsDirectory: './coverage',
       provider: 'v8' as const,
     },
-    root: '/workspace',
   },
 });

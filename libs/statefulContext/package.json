@@ -16,9 +16,9 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.lib.json",
-    "test": "vitest --root /workspace",
-    "test:ui": "vitest --root /workspace --ui",
-    "test:coverage": "vitest --root /workspace --coverage",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },

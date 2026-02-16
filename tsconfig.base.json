@@ -90,7 +90,6 @@
       "MedAgent-service": ["apps/MedAgent-service/src/index.ts"],
       "MedAgent-service/*": ["apps/MedAgent-service/src/*"],
       "wiki-db": ["libs/wiki-db/src/index.ts"],
-      "statefulContext": ["libs/statefulContext/src/index.ts"],
       "syntheses": ["libs/syntheses/src/index.ts"],
       "syntheses-db": ["libs/syntheses-db/src/index.ts"],
       "pubmedMirror": ["/libs/pubmedMirror/src/index.ts"],

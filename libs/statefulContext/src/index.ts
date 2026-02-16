@@ -6,8 +6,9 @@
  * terminal UI elements.
  */
 
+
 // Re-export all types
-export * from './types';
+export type { Tool } from './types';
 
 // Re-export tool component
 export { ToolComponent } from './toolComponent';
@@ -17,3 +18,4 @@ export { VirtualWorkspace } from './virtualWorkspace';
 
 // Re-export TUI elements
 export * from './ui';
+// export { tdiv } from './ui'

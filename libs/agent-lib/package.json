@@ -21,8 +21,8 @@
     "tiktoken": "^1.0.22",
     "winston": "^3.17.0",
     "winston-transport": "^4.9.0",
-    "stateful-context": "workspace:",
-    "med_database_portal": "workspace:",
+    "stateful-context": "workspace:*",
+    "med_database_portal": "workspace:*",
     "@nestjs/common": "^10.0.0",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0"

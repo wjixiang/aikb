@@ -1,0 +1,73 @@
+{
+  "name": "med-portal",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/med-portal/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nest build",
+        "cwd": "apps/med-portal"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nest start",
+        "cwd": "apps/med-portal"
+      },
+      "configurations": {
+        "development": {
+          "command": "nest start --watch"
+        },
+        "debug": {
+          "command": "nest start --debug --watch"
+        },
+        "production": {
+          "command": "node dist/main"
+        }
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest",
+        "cwd": "apps/med-portal"
+      },
+      "configurations": {
+        "watch": {
+          "command": "jest --watch"
+        },
+        "coverage": {
+          "command": "jest --coverage"
+        },
+        "e2e": {
+          "command": "jest --config ./test/jest-e2e.json"
+        }
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+        "cwd": "apps/med-portal"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "cwd": "apps/med-portal"
+      }
+    },
+    "gql:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx src/scripts/generate-types.ts",
+        "cwd": "apps/med-portal"
+      }
+    }
+  }
+}
