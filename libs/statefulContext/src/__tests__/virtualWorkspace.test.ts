@@ -202,8 +202,8 @@ describe('VirtualWorkspace', () => {
 
             const context = await workspace.render();
             expect(context).toContain('Test Workspace');
-            expect(context).toContain('componentA');
-            expect(context).toContain('componentB');
+            expect(context).toContain('Search Query');
+            expect(context).toContain('Counter');
         });
 
         it('should render components in priority order', async () => {
@@ -223,7 +223,7 @@ describe('VirtualWorkspace', () => {
     });
 
     describe('Tool Calls', () => {
-        it.only('should get all tools', async () => {
+        it('should get all tools', async () => {
             workspace.registerComponent({ key: 'componentA', component: componentA })
             const toolset = workspace.getAllTools()
             console.log(toolset)

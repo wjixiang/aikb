@@ -11,7 +11,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "removeComments": false,
     "strict": false,
     "noImplicitAny": false,
@@ -49,5 +48,6 @@
     "vitest.config.ts",
     "vitest.config.mts"
   ],
-  "references": []
+  "references": [],
+  "types": ["module"],
 }

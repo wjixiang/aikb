@@ -1,7 +1,9 @@
 import { ToolComponent } from './toolComponent';
 import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types';
 import { tdiv, th, TUIElement } from './ui';
-import { z } from 'zod';
+import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools'
+import { SkillManager, Skill, SkillSummary, SkillActivationResult } from 'skills';
+
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
@@ -10,23 +12,25 @@ import { z } from 'zod';
 export class VirtualWorkspace {
     private config: VirtualWorkspaceConfig;
     private components: Map<string, ComponentRegistration>;
+    private skillManager: SkillManager;
 
     /**
-     * Combine all avaliable tools from each components.
+     * Combine all available tools from each components and global tools.
      */
     private toolSet = new Map<string, {
         tool: Tool;
         componentKey: string;
     }>();
 
-    /**
-     * Global shared tools available to all components
-     */
-    private globalTools = new Map<string, Tool>();
+    /** Track skill-added tools for cleanup */
+    private skillToolNames: Set<string> = new Set();
 
     constructor(config: VirtualWorkspaceConfig) {
         this.config = config;
         this.components = new Map();
+        this.skillManager = new SkillManager({
+            onSkillChange: (skill) => this.handleSkillChange(skill)
+        });
         this.initializeGlobalTools();
     }
 
@@ -34,14 +38,130 @@ export class VirtualWorkspace {
      * Initialize global shared tools
      */
     private initializeGlobalTools(): void {
-        // Add attempt_completion tool
-        this.globalTools.set('attempt_completion', {
-            toolName: 'attempt_completion',
-            paramsSchema: z.object({
-                result: z.string().describe('The final result message to present to the user')
-            }),
-            desc: 'Complete the task and return final result to the user. This should be called when the task is fully accomplished.'
+        // Add attempt_completion tool to toolSet with 'global' componentKey
+        this.toolSet.set('attempt_completion', {
+            tool: attempt_completion,
+            componentKey: 'global'
         });
+
+        this.toolSet.set('get_skill', {
+            tool: get_skill,
+            componentKey: 'global'
+        });
+
+        this.toolSet.set('list_skills', {
+            tool: list_skills,
+            componentKey: 'global'
+        });
+
+        this.toolSet.set('deactivate_skill', {
+            tool: deactivate_skill,
+            componentKey: 'global'
+        });
+    }
+
+    // ==================== Skill Management ====================
+
+    /**
+     * Register skills with the workspace
+     */
+    registerSkills(skills: Skill[]): void {
+        this.skillManager.registerAll(skills);
+    }
+
+    /**
+     * Register a single skill
+     */
+    registerSkill(skill: Skill): void {
+        this.skillManager.register(skill);
+    }
+
+    /**
+     * Get the skill manager instance
+     */
+    getSkillManager(): SkillManager {
+        return this.skillManager;
+    }
+
+    /**
+     * Get active skill's prompt enhancement
+     */
+    getSkillPrompt(): { capability: string; direction: string } | null {
+        return this.skillManager.getActivePrompt();
+    }
+
+    /**
+     * Get available skills summary
+     */
+    getAvailableSkills(): SkillSummary[] {
+        return this.skillManager.getAvailableSkills();
+    }
+
+    /**
+     * Handle skill change - add/remove skill tools
+     */
+    private handleSkillChange(skill: Skill | null): void {
+        // Remove previous skill tools
+        for (const toolName of this.skillToolNames) {
+            this.toolSet.delete(toolName);
+        }
+        this.skillToolNames.clear();
+
+        // Add new skill tools
+        if (skill?.tools) {
+            for (const tool of skill.tools) {
+                this.toolSet.set(tool.toolName, {
+                    tool,
+                    componentKey: 'skill'
+                });
+                this.skillToolNames.add(tool.toolName);
+            }
+        }
+    }
+
+    /**
+     * Render skills section for LLM context
+     */
+    renderSkillsSection(): TUIElement {
+        const skills = this.skillManager.getAvailableSkills();
+        const activeSkill = this.skillManager.getActiveSkill();
+
+        const container = new tdiv({
+            content: 'AVAILABLE SKILLS',
+            styles: {
+                showBorder: true,
+                align: 'center'
+            }
+        });
+
+        if (skills.length === 0) {
+            container.addChild(new tdiv({
+                content: 'No skills registered',
+                styles: { showBorder: false }
+            }));
+            return container;
+        }
+
+        // Show active skill indicator
+        if (activeSkill) {
+            container.addChild(new tdiv({
+                content: `Active: ${activeSkill.displayName}`,
+                styles: { showBorder: false }
+            }));
+        }
+
+        // List all skills
+        for (const skill of skills) {
+            const isActive = skill.name === activeSkill?.name;
+            const marker = isActive ? '→ ' : '  ';
+            const triggers = skill.triggers?.length ? ` [${skill.triggers.join(', ')}]` : '';
+            container.addChild(new tdiv({
+                content: `${marker}${skill.name}: ${skill.description}${triggers}`,
+                styles: { showBorder: false }
+            }));
+        }
+
+        return container;
     }
 
     /**
@@ -98,9 +218,11 @@ export class VirtualWorkspace {
         // }))
 
         // Add global tools section
-        if (this.globalTools.size > 0) {
-            const globalToolsArray: Tool[] = [];
-            this.globalTools.forEach((tool) => globalToolsArray.push(tool));
+        const globalTools = Array.from(this.toolSet.entries())
+            .filter(([, value]) => value.componentKey === 'global')
+            .map(([, value]) => value.tool);
+
+        if (globalTools.length > 0) {
             const globalToolsSection = new tdiv({
                 content: 'GLOBAL TOOLS',
                 styles: {
@@ -108,7 +230,7 @@ export class VirtualWorkspace {
                     align: 'center'
                 }
             });
-            globalToolsArray.forEach(tool => {
+            globalTools.forEach(tool => {
                 globalToolsSection.addChild(new tdiv({
                     content: `- ${tool.toolName}: ${tool.desc}`,
                     styles: { showBorder: false }
@@ -167,20 +289,14 @@ export class VirtualWorkspace {
 
         for (const [key, registration] of sortedComponents) {
             // Render component header using tdiv
-            // const componentHeader = new tdiv({
-            //     content: `Component: ${key}`,
-            //     styles: {
-
-            //         showBorder: true,
-            //         border: { line: 'single' },
-            //         align: 'center'
-            //     }
-            // });
-            // container.addChild(componentHeader);
-
             // ToolComponent.render() returns TUIElement (a container), so we add it directly
+            const componentContainer = new tdiv({
+                content: key,
+                styles: { showBorder: true }
+            });
             const componentRender = await registration.component.render();
-            container.addChild(componentRender);
+            componentContainer.addChild(componentRender);
+            container.addChild(componentContainer);
         }
 
         return container;
@@ -239,15 +355,15 @@ export class VirtualWorkspace {
         // }
 
         try {
+            const toolToExecute = this.toolSet.get(toolName);
+            if (!toolToExecute) throw new Error(`Tool not found: ${toolName}`);
+
             // Check if it's a global tool
-            if (this.globalTools.has(toolName)) {
+            if (toolToExecute.componentKey === 'global') {
                 return await this.handleGlobalToolCall(toolName, params);
             }
 
-            const toolToExecute = this.toolSet.get(toolName)
-            if (!toolToExecute) throw new Error(`Tool not found: ${toolName}`)
-
-            const component = this.components.get(toolToExecute?.componentKey)
+            const component = this.components.get(toolToExecute.componentKey);
             await component?.component.handleToolCall(toolName, params);
             return { success: true };
         } catch (error) {
@@ -265,9 +381,41 @@ export class VirtualWorkspace {
         switch (toolName) {
             case 'attempt_completion':
                 return await this.attemptCompletion(params.result);
+            case 'get_skill':
+                return await this.handleGetSkill(params.skill_name);
+            case 'list_skills':
+                return await this.handleListSkills();
+            case 'deactivate_skill':
+                return await this.handleDeactivateSkill();
             default:
                 throw new Error(`Unknown global tool: ${toolName}`);
         }
+    }
+
+    /**
+     * Handle get_skill tool call
+     */
+    private async handleGetSkill(skillName: string): Promise<SkillActivationResult> {
+        return await this.skillManager.activateSkill(skillName);
+    }
+
+    /**
+     * Handle list_skills tool call
+     */
+    private async handleListSkills(): Promise<{ skills: SkillSummary[]; activeSkill: string | null }> {
+        const skills = this.skillManager.getAvailableSkills();
+        const activeSkill = this.skillManager.getActiveSkill();
+        return {
+            skills,
+            activeSkill: activeSkill?.name ?? null
+        };
+    }
+
+    /**
+     * Handle deactivate_skill tool call
+     */
+    private async handleDeactivateSkill(): Promise<{ success: boolean; message: string }> {
+        return await this.skillManager.deactivateSkill();
     }
 
     /**
@@ -290,16 +438,9 @@ export class VirtualWorkspace {
     getAllTools(): Array<{ componentKey: string; toolName: string; tool: any }> {
         const tools: Array<{ componentKey: string; toolName: string; tool: any }> = [];
 
-        // Add global tools first
-        for (const [toolName, tool] of this.globalTools.entries()) {
-            tools.push({ componentKey: 'global', toolName, tool });
-        }
-
-        // Add component tools
-        for (const [key, registration] of this.components.entries()) {
-            for (const [toolName, tool] of registration.component.toolSet.entries()) {
-                tools.push({ componentKey: key, toolName, tool });
-            }
+        // Add all tools from toolSet (includes both global and component tools)
+        for (const [toolName, value] of this.toolSet.entries()) {
+            tools.push({ componentKey: value.componentKey, toolName, tool: value.tool });
         }
 
         return tools;
@@ -309,22 +450,35 @@ export class VirtualWorkspace {
      * Get all global tools
      */
     getGlobalTools(): Map<string, Tool> {
-        return new Map(this.globalTools);
+        const globalToolsMap = new Map<string, Tool>();
+        for (const [toolName, value] of this.toolSet.entries()) {
+            if (value.componentKey === 'global') {
+                globalToolsMap.set(toolName, value.tool);
+            }
+        }
+        return globalToolsMap;
     }
 
     /**
      * Add a global tool
      */
     addGlobalTool(tool: Tool): void {
-        this.globalTools.set(tool.toolName, tool);
+        this.toolSet.set(tool.toolName, {
+            tool,
+            componentKey: 'global'
+        });
     }
 
     /**
      * Remove a global tool
      */
     removeGlobalTool(toolName: string): boolean {
-        return this.globalTools.delete(toolName);
+        const toolEntry = this.toolSet.get(toolName);
+        if (toolEntry && toolEntry.componentKey === 'global') {
+            return this.toolSet.delete(toolName);
+        }
+        return false;
     }
 }
-export type { ComponentRegistration };
+export type { ComponentRegistration, Skill, SkillSummary };
 

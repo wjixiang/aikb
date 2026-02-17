@@ -233,21 +233,6 @@ export interface Tool {
     desc: string;
 }
 
-
-/**
- * Common tools available to LLM for interacting with virtual workspace
- */
-export interface CommonTools {
-    /**
-     * Execute a script to mutate states
-     */
-    execute_script: (script: string) => Promise<ScriptExecutionResult>;
-    /**
-     * Complete the task and return final result
-     */
-    attempt_completion: (result: string) => Promise<void>;
-}
-
 /**
  * Security configuration options
  */
