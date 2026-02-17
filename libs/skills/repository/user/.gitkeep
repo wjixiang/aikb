@@ -1,0 +1,21 @@
+# User-created skills
+
+This directory contains skills created by users.
+
+Files in this directory are gitignored to avoid conflicts.
+
+## Usage
+
+Create your custom skills here following the skill markdown format.
+
+Example:
+```bash
+# Create a new skill
+touch my-custom-skill.skill.md
+
+# Edit the skill
+# ... add your skill definition ...
+
+# Load and test
+npm run test:skill my-custom-skill
+```
