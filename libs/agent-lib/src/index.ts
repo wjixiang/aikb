@@ -22,6 +22,7 @@ export { prisma, AgentDBPrismaService, AgentDBModuleExport as AgentDBModule };
 export * from './types/index.js';
 export type { ApiMessage } from './task/task.type.js'
 export { MessageBuilder } from './task/task.type.js'
+export { MessageContentFormatter } from './task/MessageFormatter.util.js'
 
 // Export from agent v2 (virtual workspace) - re-exported from statefulContext
 // export * from './agent/virtualWorkspace';

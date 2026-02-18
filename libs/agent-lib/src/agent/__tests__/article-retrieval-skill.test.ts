@@ -6,30 +6,7 @@ import { ObservableAgentFactory } from '../ObservableAgent.js'
 import { MetaAnalysisWorkspace } from '../../workspaces/metaAnalysisWorkspace.js'
 import { SkillRegistry } from '../../skills/index.js'
 import { join } from 'path'
-import type { ApiMessage } from '../../task/task.type.js'
-
-/**
- * Format message content for console output
- */
-function formatMessageContent(message: ApiMessage): string {
-    return message.content
-        .map((block) => {
-            if (block.type === 'text') {
-                return block.text;
-            } else if (block.type === 'tool_use') {
-                return `[Tool Use: ${block.name}] ID: ${block.id}`;
-            } else if (block.type === 'tool_result') {
-                const content = typeof block.content === 'string'
-                    ? block.content
-                    : JSON.stringify(block.content);
-                return `[Tool Result: ${block.tool_use_id}]\n${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`;
-            } else if (block.type === 'thinking') {
-                return `[Thinking]\n${block.thinking.substring(0, 200)}${block.thinking.length > 200 ? '...' : ''}`;
-            }
-            return `[Unknown block type: ${(block as any).type}]`;
-        })
-        .join('\n');
-}
+import { MessageContentFormatter } from '../../task/MessageFormatter.util.js'
 
 describe("Article Retrieval Skill Integration", () => {
     it('should use article-retrieval skill for literature search', async () => {
@@ -87,15 +64,11 @@ describe("Article Retrieval Skill Integration", () => {
                     console.log(`[ArticleRetrieval] Task ${taskId} status changed to: ${status}`);
                 })
                 .onMessageAdded((taskId, message) => {
-                    const roleColors = {
-                        'user': '\x1b[36m',
-                        'assistant': '\x1b[32m',
-                        'system': '\x1b[33m',
-                    };
-                    const roleColor = roleColors[message.role as keyof typeof roleColors] || '\x1b[37m';
-                    const timestamp = message.ts ? new Date(message.ts).toISOString() : new Date().toISOString();
-                    console.log(`\n${roleColor}[${message.role.toUpperCase()}]${'\x1b[0m'} ${timestamp}`);
-                    console.log(formatMessageContent(message));
+                    console.log(MessageContentFormatter.formatForLogging(message, {
+                        maxLength: 200,
+                        includeMetadata: true,
+                        colorize: true
+                    }));
                 })
                 .onTaskCompleted((taskId) => {
                     console.log(`[ArticleRetrieval] Task ${taskId} completed successfully`);
