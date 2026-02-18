@@ -2,7 +2,7 @@ import { ToolComponent } from './toolComponent';
 import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types';
 import { tdiv, th, TUIElement } from './ui';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools'
-import { SkillManager, Skill, SkillSummary, SkillActivationResult } from 'skills';
+import { SkillManager, Skill, SkillSummary, SkillActivationResult } from '../skills/index.js';
 import { renderToolSection } from './section/renderToolSection';
 
 
@@ -42,7 +42,7 @@ export class VirtualWorkspace {
     private initializeSkills(): void {
         try {
             // Dynamically import SkillRegistry to avoid circular dependencies
-            import('skills').then(({ SkillRegistry }) => {
+            import('../skills/index.js').then(({ SkillRegistry }) => {
                 const skillRegistry = new SkillRegistry();
                 const skills = skillRegistry.getAll();
 

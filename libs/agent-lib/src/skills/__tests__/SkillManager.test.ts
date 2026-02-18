@@ -171,8 +171,8 @@ describe('SkillManager', () => {
 
             testManager.register(testSkill1);
             await testManager.activateSkill('test-skill-1');
-            expect(typeof testManager).toBe('SkillManager')
-            // expect(changedSkill?.name).toBe('test-skill-1');
+            expect(testManager).toBeInstanceOf(SkillManager);
+            expect(changedSkill?.name).toBe('test-skill-1');
         });
 
         it('should call onSkillChange with null when deactivated', async () => {

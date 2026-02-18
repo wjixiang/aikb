@@ -4,7 +4,7 @@ config()
 import { AgentFactory } from '../../agent/AgentFactory.js'
 import { ObservableAgentFactory } from '../../agent/ObservableAgent.js'
 import { MetaAnalysisWorkspace } from '../../workspaces/metaAnalysisWorkspace.js'
-import { SkillRegistry } from 'skills'
+import { SkillRegistry } from '../../skills/index.js'
 import { join } from 'path'
 
 describe("Article Retrieval Skill Integration", () => {

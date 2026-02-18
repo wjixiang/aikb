@@ -8,7 +8,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
             const registry = new SkillRegistry();
 
             // Load from builtin directory
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
             const skills = registry.loadFromDirectory(repositoryPath);
 
             // Verify skills were loaded
@@ -18,7 +18,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should load meta-analysis-search skill', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -32,7 +32,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should load systematic-literature-review skill', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -45,7 +45,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should load paper-analysis skill', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -58,7 +58,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should get all loaded skills', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -76,7 +76,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should get skill statistics', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -89,7 +89,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should search skills by category', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -99,7 +99,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
         it('should search skills by tag', () => {
             const registry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
 
             registry.loadFromDirectory(repositoryPath);
 
@@ -119,7 +119,7 @@ describe('SkillRegistry Auto-Load from Directory', () => {
 
     describe('constructor with auto-load', () => {
         it('should auto-load skills when repository path is provided', () => {
-            const repositoryPath = join(__dirname, '../../repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
             const registry = new SkillRegistry(repositoryPath);
 
             // Skills should be auto-loaded

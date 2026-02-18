@@ -4,7 +4,7 @@
 
 import { MetaAnalysisWorkspace } from './workspaces/metaAnalysisWorkspace';
 import { Agent, AgentConfig, defaultAgentConfig } from './agent/agent';
-import { SkillRegistry, SkillLoader } from 'skills';
+import { SkillRegistry, SkillLoader } from '../skills/index.js';
 import { ApiClient } from './api-client';
 
 async function runSystematicReview() {

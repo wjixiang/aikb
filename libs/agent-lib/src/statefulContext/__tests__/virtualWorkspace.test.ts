@@ -4,7 +4,7 @@ import { ToolComponent } from '../toolComponent.js';
 import { Tool } from '../types.js';
 import { tdiv } from '../ui/index.js';
 import * as z from 'zod';
-import { SkillRegistry } from 'skills';
+import { SkillRegistry } from '../../skills/index.js';
 import { join } from 'path';
 
 // Test component implementations using ToolComponent

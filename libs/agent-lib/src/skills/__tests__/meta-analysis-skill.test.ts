@@ -16,7 +16,7 @@ describe('Meta-Analysis Search Skill', () => {
     describe('skill loading', () => {
         it('should load meta-analysis-search skill from markdown file', () => {
             // Load skill from repository
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             // Parse and load skill
@@ -31,7 +31,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should register loaded skill with SkillManager', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             const skill = skillRegistry.loadFromContent(skillContent, skillPath);
@@ -43,7 +43,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should activate meta-analysis-search skill', async () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             const skill = skillRegistry.loadFromContent(skillContent, skillPath);
@@ -61,7 +61,7 @@ describe('Meta-Analysis Search Skill', () => {
 
     describe('skill properties', () => {
         beforeEach(async () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
             const skill = skillRegistry.loadFromContent(skillContent, skillPath);
             skillManager.register(skill);
@@ -107,7 +107,7 @@ describe('Meta-Analysis Search Skill', () => {
 
     describe('skill lifecycle', () => {
         it('should call onActivate when skill is activated', async () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
             const skill = skillRegistry.loadFromContent(skillContent, skillPath);
             skillManager.register(skill);
@@ -121,7 +121,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should deactivate skill', async () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
             const skill = skillRegistry.loadFromContent(skillContent, skillPath);
             skillManager.register(skill);
@@ -137,13 +137,13 @@ describe('Meta-Analysis Search Skill', () => {
 
         it('should switch between skills', async () => {
             // Load meta-analysis-search skill
-            const skillPath1 = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath1 = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent1 = readFileSync(skillPath1, 'utf-8');
             const skill1 = skillRegistry.loadFromContent(skillContent1, skillPath1);
             skillManager.register(skill1);
 
             // Load another skill
-            const skillPath2 = join(__dirname, '../../repository/builtin/paper-analysis.skill.md');
+            const skillPath2 = join(__dirname, '../../../repository/builtin/paper-analysis.skill.md');
             const skillContent2 = readFileSync(skillPath2, 'utf-8');
             const skill2 = skillRegistry.loadFromContent(skillContent2, skillPath2);
             skillManager.register(skill2);
@@ -160,7 +160,7 @@ describe('Meta-Analysis Search Skill', () => {
 
     describe('skill registry integration', () => {
         it('should retrieve skill from registry', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             skillRegistry.loadFromContent(skillContent, skillPath);
@@ -173,7 +173,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should get parsed skill data', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             skillRegistry.loadFromContent(skillContent, skillPath);
@@ -188,7 +188,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should search skills by category', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             skillRegistry.loadFromContent(skillContent, skillPath);
@@ -200,7 +200,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should search skills by tag', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             skillRegistry.loadFromContent(skillContent, skillPath);
@@ -212,7 +212,7 @@ describe('Meta-Analysis Search Skill', () => {
         });
 
         it('should get skill statistics', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             skillRegistry.loadFromContent(skillContent, skillPath);
@@ -227,7 +227,7 @@ describe('Meta-Analysis Search Skill', () => {
 
     describe('skill validation', () => {
         it('should validate meta-analysis-search skill content', () => {
-            const skillPath = join(__dirname, '../../repository/builtin/meta-analysis-search.skill.md');
+            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
             const skillContent = readFileSync(skillPath, 'utf-8');
 
             const validation = skillRegistry.validate(skillContent);
