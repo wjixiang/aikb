@@ -10,7 +10,8 @@
       "vitest"
     ],
     "composite": true,
-    "rootDir": "./"
+    "rootDir": "${configDir}",
+    "paths": {}
   },
   "include": [
     "vite.config.ts",

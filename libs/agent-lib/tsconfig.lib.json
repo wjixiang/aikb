@@ -11,11 +11,12 @@
     "noFallthroughCasesInSwitch": true,
     "composite": true,
     "declarationMap": true,
-    "rootDir": "./",
+    "rootDir": "${configDir}/src",
     "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo",
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {}
   },
-  "include": ["src/**/*.ts", "prisma.config.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "jest.config.ts",
     "src/**/*.spec.ts",

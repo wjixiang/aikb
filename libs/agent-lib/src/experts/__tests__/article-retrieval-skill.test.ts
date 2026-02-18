@@ -5,6 +5,7 @@ import { AgentFactory } from '../../agent/AgentFactory.js'
 import { ObservableAgentFactory } from '../../agent/ObservableAgent.js'
 import { MetaAnalysisWorkspace } from '../../workspaces/metaAnalysisWorkspace.js'
 import { SkillRegistry } from 'skills'
+import { join } from 'path'
 
 describe("Article Retrieval Skill Integration", () => {
     it('should use article-retrieval skill for literature search', async () => {
@@ -20,9 +21,12 @@ describe("Article Retrieval Skill Integration", () => {
             // Create workspace
             const workspace = new MetaAnalysisWorkspace();
 
-            // Register skills
-            const skillRegistry = new SkillRegistry();
+            // Register skills - provide repository path to auto-load skills
+            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
+            console.log('Loading skills from:', repositoryPath);
+            const skillRegistry = new SkillRegistry(repositoryPath);
             const skills = skillRegistry.getAll();
+            console.log(`Loaded ${skills.length} skills:`, skills.map(s => s.name));
             workspace.registerSkills(skills);
 
             // Create base agent with minimal prompt (skill will provide enhancement)

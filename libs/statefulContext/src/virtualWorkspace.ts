@@ -3,6 +3,7 @@ import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types';
 import { tdiv, th, TUIElement } from './ui';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools'
 import { SkillManager, Skill, SkillSummary, SkillActivationResult } from 'skills';
+import { renderToolSection } from './section/renderToolSection';
 
 
 /**
@@ -276,20 +277,9 @@ export class VirtualWorkspace {
             .map(([, value]) => value.tool);
 
         if (globalTools.length > 0) {
-            const globalToolsSection = new tdiv({
-                content: 'GLOBAL TOOLS',
-                styles: {
-                    showBorder: true,
-                    align: 'center'
-                }
-            });
-            globalTools.forEach(tool => {
-                globalToolsSection.addChild(new tdiv({
-                    content: `- ${tool.toolName}: ${tool.desc}`,
-                    styles: { showBorder: false }
-                }));
-            });
+            const globalToolsSection = renderToolSection(globalTools)
             container.addChild(globalToolsSection);
+
         }
 
         this.components.forEach(e => {
