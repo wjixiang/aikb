@@ -16,26 +16,62 @@ export interface ThinkingBlock {
 export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock;
 
 /**
- * Simplified task persistence types
- * Extracted from core/task-persistence/index.ts
+ * Unified message type for conversation history
+ * Content is always an array of content blocks for consistency
  */
 export interface ApiMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string | Anthropic.ContentBlockParam[] | ExtendedContentBlock[];
+  content: ExtendedContentBlock[];
   ts?: number;
 }
 
 /**
- * Extended message type with reasoning support and timestamp
- * This type represents a message that has been processed and includes:
- * - The original message content
- * - Optional reasoning for assistant messages
- * - Timestamp for tracking
+ * Helper class for building ApiMessage objects
+ * Provides convenient factory methods for common message types
  */
-export interface ExtendedApiMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: Array<Anthropic.ContentBlockParam | ThinkingBlock>;
-  ts: number;
+export class MessageBuilder {
+  /**
+   * Create a text message
+   */
+  static text(role: 'user' | 'assistant' | 'system', text: string): ApiMessage {
+    return {
+      role,
+      content: [{ type: 'text', text }],
+      ts: Date.now(),
+    };
+  }
+
+  /**
+   * Create a system message
+   */
+  static system(context: string): ApiMessage {
+    return this.text('system', context);
+  }
+
+  /**
+   * Create a user message
+   */
+  static user(text: string): ApiMessage {
+    return this.text('user', text);
+  }
+
+  /**
+   * Create an assistant message
+   */
+  static assistant(text: string): ApiMessage {
+    return this.text('assistant', text);
+  }
+
+  /**
+   * Create a message with custom content blocks
+   */
+  static custom(role: 'user' | 'assistant' | 'system', content: ExtendedContentBlock[]): ApiMessage {
+    return {
+      role,
+      content,
+      ts: Date.now(),
+    };
+  }
 }
 
 /**

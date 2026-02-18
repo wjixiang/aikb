@@ -21,6 +21,7 @@ export { prisma, AgentDBPrismaService, AgentDBModuleExport as AgentDBModule };
 // Export from merged llm-types
 export * from './types/index.js';
 export type { ApiMessage } from './task/task.type.js'
+export { MessageBuilder } from './task/task.type.js'
 
 // Export from agent v2 (virtual workspace) - re-exported from statefulContext
 // export * from './agent/virtualWorkspace';

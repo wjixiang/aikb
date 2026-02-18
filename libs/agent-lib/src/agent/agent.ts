@@ -2,8 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
     ApiMessage,
     TaskStatus,
-    ExtendedApiMessage,
     ThinkingBlock,
+    MessageBuilder,
 } from "../task/task.type.js";
 import { TokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "../statefulContext/index.js";
@@ -208,10 +208,9 @@ export class Agent {
         console.log('[Agent.start] Status set to running');
 
         // Add initial user message to history
-        this._conversationHistory.push({
-            role: 'user',
-            content: `<task>${query}</task>`,
-        });
+        this._conversationHistory.push(
+            MessageBuilder.user(`<task>${query}</task>`)
+        );
         console.log('[Agent.start] Initial user message added to history');
 
         // Start request loop
@@ -297,10 +296,11 @@ export class Agent {
                 (((currentItem.retryAttempt ?? 0) === 0 && !isEmptyUserContent) ||
                     currentItem.userMessageWasRemoved) && currentItem.sender === 'user';
 
-            if (shouldAddUserMessage) await this.addToConversationHistory({
-                role: 'user',
-                content: currentUserContent,
-            });
+            if (shouldAddUserMessage) {
+                await this.addToConversationHistory(
+                    MessageBuilder.custom('user', currentUserContent)
+                );
+            }
 
             const oldWorkspaceContext = await this.workspace.render();
             console.log('[Agent.requestLoop] Workspace context rendered, length:', oldWorkspaceContext.length);
@@ -343,10 +343,9 @@ export class Agent {
 
                 // Add user message (tool result) to conversation history
                 if (this.messageState.userMessageContent.length > 0) {
-                    await this.addToConversationHistory({
-                        role: 'user',
-                        content: this.messageState.userMessageContent,
-                    });
+                    await this.addToConversationHistory(
+                        MessageBuilder.custom('user', this.messageState.userMessageContent)
+                    );
                 }
 
                 // Add workspace context to conversation history
@@ -503,10 +502,9 @@ export class Agent {
      * Add workspace context into history
      */
     addSystemMessageToHistory(workspaceContext: string): void {
-        this.addToConversationHistory({
-            role: 'system',
-            content: workspaceContext
-        });
+        this.addToConversationHistory(
+            MessageBuilder.system(workspaceContext)
+        );
     }
 
     /**
@@ -516,13 +514,9 @@ export class Agent {
         message: ApiMessage,
         reasoning?: string,
     ): Promise<void> {
-        const messageWithTs: ExtendedApiMessage = {
+        const messageWithTs: ApiMessage = {
             role: message.role,
-            content: Array.isArray(message.content)
-                ? ([...message.content] as Array<
-                    Anthropic.ContentBlockParam | ThinkingBlock
-                >)
-                : [{ type: 'text' as const, text: message.content as string }],
+            content: [...message.content],
             ts: Date.now(),
         };
 
@@ -535,7 +529,7 @@ export class Agent {
             messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
         }
 
-        this._conversationHistory.push(messageWithTs as ApiMessage);
+        this._conversationHistory.push(messageWithTs);
     }
 
     getConversationHistory() {

@@ -7,12 +7,12 @@ import {
 import {
     ApiMessage,
     TaskStatus,
-    ExtendedApiMessage,
     ThinkingBlock,
     MessageAddedCallback,
     TaskStatusChangedCallback,
     TaskCompletedCallback,
     TaskAbortedCallback,
+    MessageBuilder,
 } from '../task.type';
 import {
     ConsecutiveMistakeError,
@@ -497,13 +497,9 @@ export class TaskExecutor {
         message: ApiMessage,
         reasoning?: string,
     ): Promise<void> {
-        const messageWithTs: ExtendedApiMessage = {
+        const messageWithTs: ApiMessage = {
             role: message.role,
-            content: Array.isArray(message.content)
-                ? ([...message.content] as Array<
-                    Anthropic.ContentBlockParam | ThinkingBlock
-                >)
-                : [{ type: 'text' as const, text: message.content as string }],
+            content: [...message.content],
             ts: Date.now(),
         };
 
@@ -516,8 +512,8 @@ export class TaskExecutor {
             messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
         }
 
-        this.observers.notifyMessageAdded(this.taskId, messageWithTs as ApiMessage);
-        this.conversationHistory.push(messageWithTs as ApiMessage);
+        this.observers.notifyMessageAdded(this.taskId, messageWithTs);
+        this.conversationHistory.push(messageWithTs);
     }
 
     // ==================== API Request Handling ====================
@@ -638,17 +634,10 @@ export class TaskExecutor {
                 msg.role === 'user' || msg.role === 'assistant'
             )
             .map((msg): Anthropic.MessageParam => {
-                if (typeof msg.content === 'string') {
-                    return {
-                        role: msg.role,
-                        content: msg.content,
-                    };
-                }
-
                 // Filter out custom ThinkingBlock and keep only Anthropic.ContentBlockParam
-                const content = (msg.content as Anthropic.ContentBlockParam[]).filter(
-                    (block) => block.type !== 'thinking'
-                ) as Anthropic.ContentBlockParam[];
+                const content = msg.content.filter(
+                    (block): block is Anthropic.ContentBlockParam => block.type !== 'thinking'
+                );
 
                 return {
                     role: msg.role,

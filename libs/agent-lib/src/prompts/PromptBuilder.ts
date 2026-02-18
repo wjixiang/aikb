@@ -153,15 +153,15 @@ export class PromptBuilder {
 
     /**
      * Cleans the conversation history by filtering and transforming messages.
-     * 
+     *
      * This method:
      * - Filters out messages with non-relevant roles (only keeps user, assistant, system)
      * - Removes ThinkingBlock content from messages that have content blocks
      * - Returns a cleaned array of ApiMessage objects
-     * 
+     *
      * @param history - The raw conversation history to clean
      * @returns A cleaned array of ApiMessage objects
-     * 
+     *
      * @private
      */
     private cleanConversationHistory(history: ApiMessage[]): ApiMessage[] {
@@ -170,17 +170,10 @@ export class PromptBuilder {
                 msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system'
             )
             .map((msg) => {
-                if (typeof msg.content === 'string') {
-                    return {
-                        role: msg.role,
-                        content: msg.content,
-                    };
-                }
-
                 // Filter out custom ThinkingBlock and keep only Anthropic.ContentBlockParam
-                const content = (msg.content as Anthropic.ContentBlockParam[]).filter(
+                const content = msg.content.filter(
                     (block): block is Anthropic.ContentBlockParam => block.type !== 'thinking'
-                ) as Anthropic.ContentBlockParam[];
+                );
 
                 return {
                     role: msg.role,

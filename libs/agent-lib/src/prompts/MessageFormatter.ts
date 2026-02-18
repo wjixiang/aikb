@@ -20,20 +20,19 @@ import { PromptTemplates } from './PromptTemplates';
 export class MessageFormatter {
     /**
      * Formats a single ApiMessage to an XML string.
-     * 
+     *
      * This method handles different message content types and formats them appropriately:
-     * - System messages with string content are wrapped in workspace context tags
-     * - Messages with string content are used as-is
+     * - System messages are wrapped in workspace context tags
      * - Messages with content blocks are processed block by block
-     * 
+     *
      * @param msg - The ApiMessage to format
      * @returns The formatted message as an XML string
-     * 
+     *
      * @example
      * ```ts
      * const msg: ApiMessage = {
      *   role: 'system',
-     *   content: 'Some context'
+     *   content: [{ type: 'text', text: 'Some context' }]
      * };
      * const formatted = MessageFormatter.formatToXml(msg);
      * // Returns: '<system>\n<workspace_context_update>\nSome context\n</workspace_context_update>\n</system>'
@@ -41,40 +40,40 @@ export class MessageFormatter {
      */
     static formatToXml(msg: ApiMessage): string {
         const role = msg.role;
-        let content = '';
+
+        // Handle content blocks
+        const content = msg.content
+            .map((block) => {
+                if (block.type === 'text') {
+                    return block.text;
+                } else if (block.type === 'tool_use') {
+                    return PromptTemplates.wrapToolUse(
+                        block.name,
+                        block.id,
+                        block.input,
+                    );
+                } else if (block.type === 'tool_result') {
+                    const content = typeof block.content === 'string'
+                        ? block.content
+                        : JSON.stringify(block.content);
+                    return PromptTemplates.wrapToolResult(
+                        block.tool_use_id,
+                        content,
+                    );
+                } else if (block.type === 'thinking') {
+                    // Skip thinking blocks in XML output
+                    return '';
+                }
+                return '';
+            })
+            .join('\n');
 
         // Special handling for system messages containing workspace context
-        if (msg.role === 'system' && typeof msg.content === 'string') {
-            content = PromptTemplates.wrapWorkspaceContext(msg.content);
-        } else if (typeof msg.content === 'string') {
-            content = msg.content;
-        } else {
-            // Handle content blocks
-            content = msg.content
-                .map((block) => {
-                    if (block.type === 'text') {
-                        return block.text;
-                    } else if (block.type === 'tool_use') {
-                        return PromptTemplates.wrapToolUse(
-                            block.name,
-                            block.id,
-                            block.input,
-                        );
-                    } else if (block.type === 'tool_result') {
-                        const content = typeof block.content === 'string'
-                            ? block.content
-                            : JSON.stringify(block.content);
-                        return PromptTemplates.wrapToolResult(
-                            block.tool_use_id,
-                            content,
-                        );
-                    }
-                    return '';
-                })
-                .join('\n');
-        }
+        const wrappedContent = msg.role === 'system'
+            ? PromptTemplates.wrapWorkspaceContext(content)
+            : content;
 
-        return PromptTemplates.wrapMessage(role, content);
+        return PromptTemplates.wrapMessage(role, wrappedContent);
     }
 
     /**
