@@ -1,20 +1,9 @@
-// Core
-export * from './core/Skill.interface.js';
-export * from './core/SkillRegistry.js';
-export * from './core/SkillLoader.js';
+// Core types
+export * from './types.js';
 
-// Parser
-export * from './parser/SkillParser.js';
-export * from './parser/SkillSerializer.js';
+// Skill management
+export * from './SkillManager.js';
 
-// Builder
-export * from './builder/SkillBuilder.js';
-export * from './builder/SkillEvaluator.js';
-export * from './builder/FeedbackCollector.js';
-export * from './builder/SkillOptimizer.js';
-export * from './builder/AutoSkillDeveloper.js';
-
-// Testing
-export * from './testing/TestCase.js';
-export * from './testing/assertions.js';
-export * from './testing/SkillTestRunner.js';
+// Markdown skill loading
+export * from './SkillLoader.js';
+export * from './SkillRegistry.js';

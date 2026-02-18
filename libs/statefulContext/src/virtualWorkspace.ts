@@ -32,6 +32,29 @@ export class VirtualWorkspace {
             onSkillChange: (skill) => this.handleSkillChange(skill)
         });
         this.initializeGlobalTools();
+        this.initializeSkills();
+    }
+
+    /**
+     * Initialize skills from repository
+     */
+    private initializeSkills(): void {
+        try {
+            // Dynamically import SkillRegistry to avoid circular dependencies
+            import('skills').then(({ SkillRegistry }) => {
+                const skillRegistry = new SkillRegistry();
+                const skills = skillRegistry.getAll();
+
+                if (skills.length > 0) {
+                    this.skillManager.registerAll(skills);
+                    console.log(`[VirtualWorkspace] Auto-loaded ${skills.length} skills from repository`);
+                }
+            }).catch(error => {
+                console.warn('[VirtualWorkspace] Failed to auto-load skills:', error);
+            });
+        } catch (error) {
+            console.warn('[VirtualWorkspace] Skills module not available:', error);
+        }
     }
 
     /**
@@ -99,24 +122,31 @@ export class VirtualWorkspace {
 
     /**
      * Handle skill change - add/remove skill tools
+     *
+     * NOTE: Temporarily disabled - skill changes no longer affect tool state
+     * Skills only provide prompt enhancement, not tool modifications
      */
     private handleSkillChange(skill: Skill | null): void {
-        // Remove previous skill tools
-        for (const toolName of this.skillToolNames) {
-            this.toolSet.delete(toolName);
-        }
-        this.skillToolNames.clear();
+        // TODO: Re-enable if skill-based tool management is needed
+        // // Remove previous skill tools
+        // for (const toolName of this.skillToolNames) {
+        //     this.toolSet.delete(toolName);
+        // }
+        // this.skillToolNames.clear();
 
-        // Add new skill tools
-        if (skill?.tools) {
-            for (const tool of skill.tools) {
-                this.toolSet.set(tool.toolName, {
-                    tool,
-                    componentKey: 'skill'
-                });
-                this.skillToolNames.add(tool.toolName);
-            }
-        }
+        // // Add new skill tools
+        // if (skill?.tools) {
+        //     for (const tool of skill.tools) {
+        //         this.toolSet.set(tool.toolName, {
+        //             tool,
+        //             componentKey: 'skill'
+        //         });
+        //         this.skillToolNames.add(tool.toolName);
+        //     }
+        // }
+
+        // Skill changes now only affect prompt enhancement, not tool availability
+        // Tools remain stable regardless of skill activation/deactivation
     }
 
     /**
@@ -127,15 +157,38 @@ export class VirtualWorkspace {
         const activeSkill = this.skillManager.getActiveSkill();
 
         const container = new tdiv({
-            content: 'AVAILABLE SKILLS',
             styles: {
                 showBorder: true,
-                align: 'center'
+                // align: 'center'
             }
         });
 
+        container.addChild(new tdiv({
+            content: 'SKILLS',
+            styles: {
+                align: 'center'
+            }
+        }))
+
+        const availableSkillContainer = new tdiv({
+            styles: {
+                showBorder: true
+            }
+        })
+        const activeSkillContainer = new tdiv({})
+
+        container.addChild(availableSkillContainer)
+        container.addChild(activeSkillContainer)
+
+        availableSkillContainer.addChild(new tdiv({
+            content: 'AVAILABLE SKILLS',
+            styles: {
+                align: 'center',
+            }
+        }))
+
         if (skills.length === 0) {
-            container.addChild(new tdiv({
+            availableSkillContainer.addChild(new tdiv({
                 content: 'No skills registered',
                 styles: { showBorder: false }
             }));
@@ -144,7 +197,7 @@ export class VirtualWorkspace {
 
         // Show active skill indicator
         if (activeSkill) {
-            container.addChild(new tdiv({
+            activeSkillContainer.addChild(new tdiv({
                 content: `Active: ${activeSkill.displayName}`,
                 styles: { showBorder: false }
             }));
@@ -153,9 +206,9 @@ export class VirtualWorkspace {
         // List all skills
         for (const skill of skills) {
             const isActive = skill.name === activeSkill?.name;
-            const marker = isActive ? '→ ' : '  ';
+            const marker = isActive ? '→ ' : '- ';
             const triggers = skill.triggers?.length ? ` [${skill.triggers.join(', ')}]` : '';
-            container.addChild(new tdiv({
+            availableSkillContainer.addChild(new tdiv({
                 content: `${marker}${skill.name}: ${skill.description}${triggers}`,
                 styles: { showBorder: false }
             }));
@@ -277,6 +330,9 @@ export class VirtualWorkspace {
                 styles: { showBorder: false, margin: { bottom: 1 } }
             }));
         }
+
+        // Add skills section
+        container.addChild(this.renderSkillsSection());
 
         // container.addChild(new tdiv({
         //     content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,

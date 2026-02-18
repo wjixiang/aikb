@@ -4,6 +4,8 @@ import { ToolComponent } from '../toolComponent.js';
 import { Tool } from '../types.js';
 import { tdiv } from '../ui/index.js';
 import * as z from 'zod';
+import { SkillRegistry } from 'skills';
+import { join } from 'path';
 
 // Test component implementations using ToolComponent
 class TestToolComponentA extends ToolComponent {
@@ -249,6 +251,79 @@ describe('VirtualWorkspace', () => {
             expect(componentB.getCounter()).toBe(5);
         });
     });
+
+    describe('Skills', () => {
+        it('should display skills section in workspace render', async () => {
+            // Manually load skills for testing
+            const skillRegistry = new SkillRegistry();
+            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const skills = skillRegistry.loadFromDirectory(repositoryPath);
+            workspace.registerSkills(skills);
+
+            const result = await workspace.render();
+            console.log(result)
+
+            // Check that skills section is included
+            expect(result).toContain('AVAILABLE SKILLS');
+        });
+
+        it('should display available skills with their descriptions', async () => {
+            // Manually load skills for testing
+            const skillRegistry = new SkillRegistry();
+            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const skills = skillRegistry.loadFromDirectory(repositoryPath);
+            workspace.registerSkills(skills);
+
+            const result = await workspace.render();
+            console.log(result)
+
+            // Check that skill information is displayed
+            const availableSkills = workspace.getAvailableSkills();
+            expect(availableSkills.length).toBeGreaterThan(0);
+
+            // Verify at least one skill is shown
+            const firstSkill = availableSkills[0];
+            expect(result).toContain(firstSkill.name);
+            expect(result).toContain(firstSkill.description);
+        });
+
+        it('should get available skills summary', async () => {
+            // Manually load skills for testing
+            const skillRegistry = new SkillRegistry();
+            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const skills = skillRegistry.loadFromDirectory(repositoryPath);
+            workspace.registerSkills(skills);
+
+            const availableSkills = workspace.getAvailableSkills();
+
+            expect(Array.isArray(availableSkills)).toBe(true);
+            expect(availableSkills.length).toBeGreaterThan(0);
+
+            // Verify skill structure
+            const firstSkill = availableSkills[0];
+            expect(firstSkill).toHaveProperty('name');
+            expect(firstSkill).toHaveProperty('displayName');
+            expect(firstSkill).toHaveProperty('description');
+        });
+
+        it('should show active skill indicator in render', async () => {
+            // Manually load skills for testing
+            const skillRegistry = new SkillRegistry();
+            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const skills = skillRegistry.loadFromDirectory(repositoryPath);
+            workspace.registerSkills(skills);
+
+            // Activate a skill
+            const skillManager = workspace.getSkillManager();
+            await skillManager.activateSkill(skills[0].name);
+
+            const result = await workspace.render();
+            console.log(result)
+            // Check that active skill is shown
+            expect(result).toContain('Active:');
+            expect(result).toContain(skills[0].displayName);
+        });
+    })
 });
 
 describe('Integration Tests', () => {

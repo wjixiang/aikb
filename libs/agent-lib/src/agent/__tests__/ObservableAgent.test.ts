@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Agent, defaultAgentConfig } from './agent.js';
+import { Agent, defaultAgentConfig } from '../agent.js';
 import {
     createObservableAgent,
     ObservableAgentFactory,
     observeAgent,
     type ObservableAgentCallbacks,
-} from './ObservableAgent.js';
-import { TaskStatus } from '../task/task.type.js';
+} from '../ObservableAgent.js';
+import { TaskStatus } from '../../task/task.type.js';
 import { VirtualWorkspace } from 'stateful-context';
-import { ApiClientFactory } from '../api-client/index.js';
+import { ApiClientFactory } from '../../api-client/index.js';
 
 // Mock VirtualWorkspace
 vi.mock('statefulContext', () => ({

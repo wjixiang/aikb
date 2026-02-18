@@ -709,16 +709,28 @@ export class Agent {
     }
 
     renderAgentPrompt() {
+        // Get skill prompt enhancement if available
+        const skillPrompt = this.workspace.getSkillPrompt();
+
+        // Merge base prompt with skill prompt
+        const capability = skillPrompt?.capability
+            ? `${this.agentPrompt.capability}\n\n--- Skill Enhancement ---\n${skillPrompt.capability}`
+            : this.agentPrompt.capability;
+
+        const direction = skillPrompt?.direction
+            ? `${this.agentPrompt.direction}\n\n--- Skill Guidance ---\n${skillPrompt.direction}`
+            : this.agentPrompt.direction;
+
         return `
 ------------
 Capabilities
 ------------
-${this.agentPrompt.capability}
+${capability}
 
 --------------
 Work Direction
 --------------
-${this.agentPrompt.direction}
+${direction}
 
 `
     }
@@ -730,10 +742,15 @@ ${this.agentPrompt.direction}
      * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
+        const skillsSection = this.workspace.getAvailableSkills().length > 0
+            ? this.workspace.renderSkillsSection().render()
+            : '';
+
         return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
+${skillsSection}
         `;
     }
 }
