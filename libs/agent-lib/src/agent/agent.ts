@@ -11,7 +11,7 @@ import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
-import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt.js';
+import { ErrorHandlerPrompt } from '../task/error/ErrorHandlerPrompt.js';
 import {
     ConsecutiveMistakeError,
     NoApiResponseError,
