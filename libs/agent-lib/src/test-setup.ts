@@ -6,6 +6,7 @@
  */
 
 import { beforeAll, afterAll, vi } from 'vitest';
+import { config } from 'dotenv'
 
 // Store original environment variables for cleanup
 let originalEnv: NodeJS.ProcessEnv;
@@ -17,12 +18,10 @@ let originalEnv: NodeJS.ProcessEnv;
 async function loadTestEnv() {
     try {
         // Dynamic import of dotenv to avoid issues if it's not installed
-        const { default: dotenv } = await import('dotenv');
+        config()
 
         // Try to load .test.env first, fall back to .env
-        const result = dotenv.config({ path: '.test.env' });
 
-        dotenv.config({ path: '.env' });
 
     } catch (error) {
         // dotenv not available, continue without it
@@ -36,17 +35,17 @@ async function loadTestEnv() {
  */
 function setDefaultTestEnv() {
     // Set test mode flag
-    process.env.NODE_ENV = 'test';
-    process.env.TEST_MODE = 'true';
+    process.env['NODE_ENV'] = 'test';
+    process.env['TEST_MODE'] = 'true';
 
     // Set default log level for tests (can be overridden)
-    if (!process.env.LOG_LEVEL) {
-        process.env.LOG_LEVEL = 'error'; // Only show errors in tests by default
+    if (!process.env['LOG_LEVEL']) {
+        process.env['LOG_LEVEL'] = 'error'; // Only show errors in tests by default
     }
 
     // Set test database URLs if not already set
-    if (!process.env.AGENT_DATABASE_URL) {
-        process.env.AGENT_DATABASE_URL = 'postgresql://user:password@localhost:5432/test_db?schema=agent_test';
+    if (!process.env['AGENT_DATABASE_URL']) {
+        process.env['AGENT_DATABASE_URL'] = 'postgresql://user:password@localhost:5432/test_db?schema=agent_test';
     }
 }
 

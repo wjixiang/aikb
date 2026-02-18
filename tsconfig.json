@@ -1,9 +1,0 @@
-{
-  "files": [],
-  "references": [
-    { "path": "./libs/skills" },
-    { "path": "./libs/agent-lib" },
-    { "path": "./libs/statefulContext" },
-    { "path": "./libs/shared-types" }
-  ]
-}
