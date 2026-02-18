@@ -72,9 +72,11 @@ export class OpenaiCompatibleApiClient implements ApiClient {
 
             // Calculate request time
             const requestTime = Date.now() - startTime;
+            const resposne = this.convertOpenAIResponse(completion, requestTime);
+            console.log(resposne)
 
             // Convert OpenAI response to unified format
-            return this.convertOpenAIResponse(completion, requestTime);
+            return resposne
         } catch (error) {
             console.error('OpenAI-compatible API request failed:', error);
             throw error;

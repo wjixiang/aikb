@@ -11,9 +11,6 @@ import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
 import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
-import { ResponseProcessor, ProcessedResponse } from '../task/response/ResponseProcessor.js';
-import { TokenUsageTracker } from '../task/token-usage/TokenUsageTracker.js';
-import TooCallingParser from '../tools/toolCallingParser/toolCallingParser.js';
 import { ErrorHandlerPrompt } from '../task/error-prompt/ErrorHandlerPrompt.js';
 import {
     ConsecutiveMistakeError,
@@ -23,17 +20,24 @@ import {
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
+import { ThinkingProcessor, ToolResult } from './ThinkingProcessor.js';
 
 export interface AgentConfig {
     apiRequestTimeout: number;
     maxRetryAttempts: number;
     consecutiveMistakeLimit: number;
+    // Thinking phase configuration (always enabled)
+    thinkingStrategy?: 'sliding-window' | 'semantic' | 'token-budget';
+    compressionThreshold?: number; // tokens threshold for compression
 }
 
 export const defaultAgentConfig: AgentConfig = {
     apiRequestTimeout: 40000,
     maxRetryAttempts: 3,
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
+    // Thinking phase is always enabled as part of the framework
+    thinkingStrategy: 'sliding-window',
+    compressionThreshold: 8000, // compress when history exceeds 8K tokens
 };
 
 
@@ -91,9 +95,7 @@ export class Agent {
     private _consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
     private _collectedErrors: string[] = [];
 
-    // Helper classes
-    private tokenUsageTracker: TokenUsageTracker;
-    private responseProcessor: ResponseProcessor;
+    // Message processing state
     private messageState: MessageProcessingState = {
         assistantMessageContent: [],
         userMessageContent: [],
@@ -113,13 +115,6 @@ export class Agent {
     ) {
         this.workspace = workspace;
         this._taskId = taskId || crypto.randomUUID();
-
-        // Initialize helper classes
-        this.tokenUsageTracker = new TokenUsageTracker();
-        this.responseProcessor = new ResponseProcessor(
-            this.tokenUsageTracker,
-            new TooCallingParser(),
-        );
 
         // Use injected API client
         this.apiClient = apiClient;
@@ -203,20 +198,15 @@ export class Agent {
      * Start agent with a user query
      */
     async start(query: string): Promise<Agent> {
-        console.log('[Agent.start] Starting agent with query:', query);
         this._status = 'running';
-        console.log('[Agent.start] Status set to running');
 
         // Add initial user message to history
         this._conversationHistory.push(
             MessageBuilder.user(`<task>${query}</task>`)
         );
-        console.log('[Agent.start] Initial user message added to history');
 
         // Start request loop
-        console.log('[Agent.start] About to call requestLoop...');
         await this.requestLoop(query);
-        console.log('[Agent.start] requestLoop completed');
         return this;
     }
 
@@ -257,25 +247,29 @@ export class Agent {
      * Implements stack-based retry mechanism with error handling
      */
     protected async requestLoop(query: string): Promise<boolean> {
-        console.log('[Agent.requestLoop] Starting request loop');
         // Reset collected errors for this new operation
         this.resetCollectedErrors();
+
+        // Initialize thinking processor (always enabled as part of the framework)
+        const thinkingProcessor = new ThinkingProcessor({
+            strategy: this.config.thinkingStrategy || 'sliding-window',
+            compressionThreshold: this.config.compressionThreshold || 8000,
+            slidingWindowSize: 10,
+        });
+
+        let lastToolResults: ToolResult[] = [];
 
         const userContent: Anthropic.Messages.ContentBlockParam[] = [
             { type: 'text', text: `<task>${query}</task>` }
         ];
         const stack: StackItem[] = [{ sender: 'user', content: userContent, retryAttempt: 0 }];
-        console.log('[Agent.requestLoop] Initial stack created with', stack.length, 'items');
 
         while (stack.length > 0) {
-            console.log('[Agent.requestLoop] Loop iteration, stack size:', stack.length);
             const currentItem = stack.pop()!;
             const currentUserContent = currentItem.content;
-            console.log('[Agent.requestLoop] Current item sender:', currentItem.sender, 'retryAttempt:', currentItem.retryAttempt);
             let didEndLoop = false;
 
             if (this.isAborted()) {
-                console.log('[Agent.requestLoop] Agent is aborted, exiting loop');
                 stack.length = 0;
                 return false;
             }
@@ -302,32 +296,42 @@ export class Agent {
                 );
             }
 
-            const oldWorkspaceContext = await this.workspace.render();
-            console.log('[Agent.requestLoop] Workspace context rendered, length:', oldWorkspaceContext.length);
+            const currentWorkspaceContext = await this.workspace.render();
 
             try {
-                console.log('[Agent.requestLoop] About to call attemptApiRequest...');
                 // Reset message processing state for each new API request
                 this.resetMessageState();
 
-                // Collect complete response from stream
+                // THINKING PHASE: Always analyze and compress context (framework feature)
+                const thinkingResult = await thinkingProcessor.performThinking(
+                    this._conversationHistory,
+                    currentWorkspaceContext,
+                    lastToolResults
+                );
 
+                const effectiveHistory = thinkingResult.compressedHistory;
+
+                // Track thinking tokens
+                this._tokenUsage.contextTokens += thinkingResult.thinkingTokens;
+
+                // Add thinking summary to history for observability
+                if (thinkingResult.summary) {
+                    await this.addSystemMessageToHistory(
+                        `[Thinking Phase]\n${thinkingResult.summary}\n\nInsights: ${thinkingResult.insights.join(' ')}\n\nNext: ${thinkingResult.nextActions}`
+                    );
+                }
+
+                // Collect complete response from stream
                 const response = await this.attemptApiRequest();
-                console.log('[Agent.requestLoop] API response received, tool calls:', response.toolCalls.length);
 
                 if (!response) {
-                    console.error('[Agent.requestLoop] No response received from API');
                     throw new NoApiResponseError(1);
                 }
 
-
-                console.log('[Agent.requestLoop] Converting API response to assistant message...');
                 // Convert API response to assistant message content
                 this.convertApiResponseToAssistantMessage(response);
-                console.log('[Agent.requestLoop] Assistant message content:', this.messageState.assistantMessageContent.length, 'items');
 
                 // Execute tool calls and build response
-                console.log('[Agent.requestLoop] Executing tool calls...');
                 // This will update workspace states
                 const executionResult = await this.executeToolCalls(
                     response,
@@ -348,15 +352,27 @@ export class Agent {
                     );
                 }
 
-                // Add workspace context to conversation history
-                this.addSystemMessageToHistory(oldWorkspaceContext);
+                // Store tool results for next thinking phase
+                lastToolResults = response.toolCalls.map(tc => {
+                    const toolResult = executionResult.userMessageContent.find(
+                        m => m.type === 'tool_result' && m.tool_use_id === tc.id
+                    );
+                    return {
+                        toolName: tc.name,
+                        success: true, // TODO: Determine from executionResult
+                        result: toolResult && 'content' in toolResult ? toolResult.content : '',
+                        timestamp: Date.now(),
+                    };
+                });
+
+                // NOTE: Workspace context is NOT added to conversation history
+                // It is always passed fresh via workspaceContext parameter in attemptApiRequest()
+                // This prevents token explosion from duplicating workspace state in history
 
                 // Check if we should continue recursion
-                console.log('[Agent.requestLoop] didAttemptCompletion:', this.messageState.didAttemptCompletion);
                 if (
                     !this.messageState.didAttemptCompletion
                 ) {
-                    console.log('[Agent.requestLoop] Task not completed, pushing to stack for continuation');
                     stack.push({
                         sender: 'system',
                         content: [{
@@ -369,7 +385,6 @@ export class Agent {
                 // For debugging: avoid stuck in loop for some tests
                 // didEndLoop = true;
             } catch (error) {
-                console.error('[Agent.requestLoop] Error occurred:', error);
                 const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
                 // Handle error using error handler logic
@@ -377,10 +392,8 @@ export class Agent {
 
                 // Format error as prompt and add to user content
                 const errorPrompt = ErrorHandlerPrompt.formatErrorPrompt(error as any, currentRetryAttempt);
-                console.log('[Agent.requestLoop] Error prompt formatted, shouldAbort:', shouldAbort);
 
                 if (shouldAbort) {
-                    console.log('[Agent.requestLoop] Aborting due to error');
                     this.abort('Max retry attempts exceeded or non-retryable error');
                 } else {
                     // Push the same content with error prompt back onto the stack to retry
@@ -395,7 +408,6 @@ export class Agent {
                         ],
                         retryAttempt: currentRetryAttempt + 1,
                     });
-                    console.log('[Agent.requestLoop] Pushing retry to stack, attempt:', currentRetryAttempt + 1);
                 }
             }
 
@@ -404,9 +416,7 @@ export class Agent {
             }
         }
 
-        console.log('[Agent.requestLoop] Loop completed, calling complete()');
         this.complete();
-        console.log('[Agent.requestLoop] Returning from requestLoop');
         return false;
     }
 
@@ -499,11 +509,17 @@ export class Agent {
     }
 
     /**
-     * Add workspace context into history
+     * Add a system message to conversation history
+     *
+     * NOTE: This method is NOT used for workspace context anymore.
+     * Workspace context is always passed fresh via workspaceContext parameter.
+     * Use this method for other system messages like thinking summaries, etc.
+     *
+     * @param message - The system message content to add
      */
-    addSystemMessageToHistory(workspaceContext: string): void {
+    addSystemMessageToHistory(message: string): void {
         this.addToConversationHistory(
-            MessageBuilder.system(workspaceContext)
+            MessageBuilder.system(message)
         );
     }
 
@@ -623,34 +639,22 @@ export class Agent {
      * Uses the injected ApiClient for making requests
      */
     async attemptApiRequest(retryAttempt: number = 0) {
-        console.log('[Agent.attemptApiRequest] Starting API request, retryAttempt:', retryAttempt);
-
         try {
-            console.log('[Agent.attemptApiRequest] Getting system prompt...');
             const systemPrompt = await this.getSystemPrompt();
-            console.log('[Agent.attemptApiRequest] System prompt length:', systemPrompt.length);
-
-            console.log('[Agent.attemptApiRequest] Getting workspace context...');
             const workspaceContext = await this.workspace.render();
-            console.log('[Agent.attemptApiRequest] Workspace context length:', workspaceContext.length);
 
             // Build prompt using PromptBuilder
-            console.log('[Agent.attemptApiRequest] Building prompt...');
             const prompt: FullPrompt = new PromptBuilder()
                 .setSystemPrompt(systemPrompt)
                 .setWorkspaceContext(workspaceContext)
                 .setConversationHistory(this._conversationHistory)
                 .build();
-            console.log('[Agent.attemptApiRequest] Prompt built, conversation history length:', this._conversationHistory.length);
 
             try {
                 // Get tools from workspace and convert to OpenAI format
-                console.log('[Agent.attemptApiRequest] Converting workspace tools...');
                 const tools = this.convertWorkspaceToolsToOpenAI();
-                console.log('[Agent.attemptApiRequest] Tools converted, count:', tools.length);
 
                 // Use the injected ApiClient to make the request
-                console.log('[Agent.attemptApiRequest] Calling apiClient.makeRequest...');
                 const response = await this.apiClient.makeRequest(
                     prompt.systemPrompt,
                     prompt.workspaceContext,
@@ -658,16 +662,13 @@ export class Agent {
                     { timeout: this.config.apiRequestTimeout },
                     tools  // Pass tools to API client
                 );
-                console.log('[Agent.attemptApiRequest] API response received, tool calls:', response.toolCalls.length);
 
                 return response;
 
             } catch (error) {
-                console.error('[Agent.attemptApiRequest] Error in API request:', error);
                 throw error;
             }
         } catch (error) {
-            console.error('[Agent.attemptApiRequest] Error in attemptApiRequest:', error);
             throw error;
         }
     }

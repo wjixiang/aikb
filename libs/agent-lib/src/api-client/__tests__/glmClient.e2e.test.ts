@@ -19,7 +19,7 @@ describe("Test GLM API", () => {
         console.log(result)
     }, 50000)
 
-    it.only('should handle function calling', async () => {
+    it('should handle function calling', async () => {
         const tools = [
             {
                 type: 'function' as const,

@@ -273,7 +273,7 @@ describe('ObservableAgent', () => {
             const observableAgent = createObservableAgent(agent, callbacks);
 
             const newHistory = [
-                { role: 'user' as const, content: 'test message' },
+                { role: 'user' as const, content: [{ type: 'text' as const, text: 'test message' }] },
             ];
             observableAgent.conversationHistory = newHistory;
 
