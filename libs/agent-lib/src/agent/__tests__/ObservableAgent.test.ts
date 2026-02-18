@@ -22,11 +22,9 @@ vi.mock('statefulContext', () => ({
 // Helper function to create a mock API client
 function createMockApiClient() {
     return ApiClientFactory.create({
-        apiProvider: 'zai',
+        apiProvider: 'openai',
         apiKey: 'test-key',
-        apiModelId: 'glm-4.7',
-        toolProtocol: 'xml',
-        zaiApiLine: 'china_coding',
+        apiModelId: 'gpt-4',
     });
 }
 

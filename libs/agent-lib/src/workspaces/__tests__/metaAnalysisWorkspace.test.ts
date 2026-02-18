@@ -4,11 +4,9 @@ import { ApiClientFactory } from '../../api-client/index.js';
 describe('meta analysis workspace', () => {
     it.skip('should execute task', async () => {
         const apiClient = ApiClientFactory.create({
-            apiProvider: 'zai',
-            apiKey: process.env['GLM_API_KEY'],
-            apiModelId: 'glm-4.7',
-            toolProtocol: 'xml',
-            zaiApiLine: 'china_coding',
+            apiProvider: 'openai',
+            apiKey: process.env['OPENAI_API_KEY'] || 'test-key',
+            apiModelId: 'gpt-4',
         });
         const agent = new Agent(
             defaultAgentConfig,

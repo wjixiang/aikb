@@ -1,86 +1,80 @@
 import { ApiClient } from './ApiClient.interface.js';
-import { BamlApiClient } from './BamlApiClient.js';
+import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 
 /**
- * Factory type for creating ApiClient instances
- * 
- * This function type defines the contract for factory functions that create
- * ApiClient instances based on provider configuration.
- */
-export type ApiClientFactoryFunction = (config: ProviderSettings) => ApiClient;
-
-/**
  * Factory class for creating ApiClient instances
- * 
- * This factory provides a centralized way to create ApiClient instances
- * based on the provider configuration. It supports different API providers
- * and protocols through a registry of factory functions.
- * 
+ *
+ * Simplified factory that creates OpenAI-compatible API clients based on provider configuration.
+ *
  * @example
  * ```ts
  * const config: ProviderSettings = {
- *   apiProvider: 'zai',
+ *   apiProvider: 'openai',
  *   apiKey: 'your-key',
- *   apiModelId: 'glm-4.7',
- *   toolProtocol: 'xml',
- *   zaiApiLine: 'china_coding',
+ *   apiModelId: 'gpt-4',
  * };
  * const client = ApiClientFactory.create(config);
  * ```
  */
 export class ApiClientFactory {
     /**
-     * Registry of factory functions by provider name
-     */
-    private static factoryRegistry: Map<string, ApiClientFactoryFunction> = new Map([
-        ['zai', () => new BamlApiClient()],
-        ['anthropic', () => new BamlApiClient()],
-        ['openai', () => new BamlApiClient()],
-        // Add more providers as needed
-    ]);
-
-    /**
-     * Register a custom factory function for a provider
-     * 
-     * @param provider - The provider name
-     * @param factory - The factory function
-     */
-    static registerFactory(provider: string, factory: ApiClientFactoryFunction): void {
-        ApiClientFactory.factoryRegistry.set(provider, factory);
-    }
-
-    /**
      * Create an ApiClient instance based on provider configuration
-     * 
+     *
      * @param config - The provider settings
-     * @returns An ApiClient instance
-     * @throws Error if no factory is registered for the provider
+     * @returns An OpenaiCompatibleApiClient instance
+     * @throws Error if required configuration is missing
      */
     static create(config: ProviderSettings): ApiClient {
         console.log('[ApiClientFactory.create] Creating API client for provider:', config.apiProvider);
-        const provider = config.apiProvider || 'zai';
-        console.log('[ApiClientFactory.create] Provider resolved to:', provider);
-        const factory = ApiClientFactory.factoryRegistry.get(provider);
-        console.log('[ApiClientFactory.create] Factory found:', !!factory);
 
-        if (!factory) {
-            console.error('[ApiClientFactory.create] No factory registered for provider:', provider);
-            throw new Error(`No ApiClient factory registered for provider: ${provider}`);
+        const apiKey = config.apiKey;
+        if (!apiKey) {
+            throw new Error('API key is required');
         }
 
-        console.log('[ApiClientFactory.create] Calling factory function...');
-        const client = factory(config);
-        console.log('[ApiClientFactory.create] Client created:', client.constructor.name);
-        return client;
-    }
+        const model = config.apiModelId;
+        if (!model) {
+            throw new Error('Model ID is required');
+        }
 
-    /**
-     * Create a BAML API client (default implementation)
-     * 
-     * @returns A BamlApiClient instance
-     */
-    static createBamlClient(): ApiClient {
-        return new BamlApiClient();
+        // Determine base URL based on provider
+        let baseURL: string | undefined;
+        const provider = config.apiProvider || 'openai';
+
+        switch (provider) {
+            case 'openai':
+            case 'openai-native':
+                baseURL = config.openAiBaseUrl || config.openAiNativeBaseUrl || 'https://api.openai.com/v1';
+                break;
+            case 'anthropic':
+                baseURL = config.anthropicBaseUrl || 'https://api.anthropic.com/v1';
+                break;
+            case 'ollama':
+                baseURL = config.ollamaBaseUrl || 'http://localhost:11434/v1';
+                break;
+            case 'lmstudio':
+                baseURL = config.lmStudioBaseUrl || 'http://localhost:1234/v1';
+                break;
+            case 'zai':
+                // ZAI uses different endpoints based on line
+                const line = config.zaiApiLine || 'china_coding';
+                baseURL = line === 'international_coding'
+                    ? 'https://open.bigmodel.cn/api/paas/v4'
+                    : 'https://open.bigmodel.cn/api/paas/v4';
+                break;
+            default:
+                baseURL = undefined;
+        }
+
+        console.log('[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:', model, 'baseURL:', baseURL);
+
+        return new OpenaiCompatibleApiClient({
+            apiKey,
+            model,
+            baseURL,
+            temperature: config.modelTemperature ?? undefined,
+            maxTokens: config.modelMaxTokens,
+        });
     }
 }

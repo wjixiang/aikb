@@ -1,8 +1,8 @@
 import { config } from 'dotenv'
 config()
 
-import { AgentFactory } from '../../agent/AgentFactory.js'
-import { ObservableAgentFactory } from '../../agent/ObservableAgent.js'
+import { AgentFactory } from '../AgentFactory.js'
+import { ObservableAgentFactory } from '../ObservableAgent.js'
 import { MetaAnalysisWorkspace } from '../../workspaces/metaAnalysisWorkspace.js'
 import { SkillRegistry } from '../../skills/index.js'
 import { join } from 'path'
@@ -22,7 +22,7 @@ describe("Article Retrieval Skill Integration", () => {
             const workspace = new MetaAnalysisWorkspace();
 
             // Register skills - provide repository path to auto-load skills
-            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
+            const repositoryPath = join(__dirname, '../../../repository/builtin');
             console.log('Loading skills from:', repositoryPath);
             const skillRegistry = new SkillRegistry(repositoryPath);
             const skills = skillRegistry.getAll();

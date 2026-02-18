@@ -26,7 +26,8 @@
     "winston": "^3.17.0",
     "winston-transport": "^4.9.0",
     "zod": "^3.25.67",
-    "zod-to-json-schema": "^3.25.1"
+    "zod-to-json-schema": "^3.25.1",
+    "med_database_portal":"workspace:"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.0",

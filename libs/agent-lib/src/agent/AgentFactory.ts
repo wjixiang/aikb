@@ -88,9 +88,7 @@ export class AgentFactory {
         const apiConfiguration: ProviderSettings = {
             apiProvider: 'zai',
             apiKey: process.env['GLM_API_KEY'],
-            apiModelId: 'glm-4.7',
-            toolProtocol: 'xml',
-            zaiApiLine: 'china_coding',
+            apiModelId: 'glm-4.5',
             ...apiConfigPartial,
         };
         console.log('[AgentFactory.create] API configuration, provider:', apiConfiguration.apiProvider, 'model:', apiConfiguration.apiModelId, 'hasApiKey:', !!apiConfiguration.apiKey);
