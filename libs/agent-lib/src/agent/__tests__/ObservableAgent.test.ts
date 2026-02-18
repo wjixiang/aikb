@@ -7,7 +7,7 @@ import {
     type ObservableAgentCallbacks,
 } from '../ObservableAgent.js';
 import { TaskStatus } from '../../task/task.type.js';
-import { VirtualWorkspace } from 'stateful-context';
+import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { ApiClientFactory } from '../../api-client/index.js';
 
 // Mock VirtualWorkspace

@@ -256,7 +256,7 @@ describe('VirtualWorkspace', () => {
         it('should display skills section in workspace render', async () => {
             // Manually load skills for testing
             const skillRegistry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
             const skills = skillRegistry.loadFromDirectory(repositoryPath);
             workspace.registerSkills(skills);
 
@@ -270,7 +270,7 @@ describe('VirtualWorkspace', () => {
         it('should display available skills with their descriptions', async () => {
             // Manually load skills for testing
             const skillRegistry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
             const skills = skillRegistry.loadFromDirectory(repositoryPath);
             workspace.registerSkills(skills);
 
@@ -290,7 +290,7 @@ describe('VirtualWorkspace', () => {
         it('should get available skills summary', async () => {
             // Manually load skills for testing
             const skillRegistry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
             const skills = skillRegistry.loadFromDirectory(repositoryPath);
             workspace.registerSkills(skills);
 
@@ -309,7 +309,7 @@ describe('VirtualWorkspace', () => {
         it('should show active skill indicator in render', async () => {
             // Manually load skills for testing
             const skillRegistry = new SkillRegistry();
-            const repositoryPath = join(__dirname, '../../../skills/repository/builtin');
+            const repositoryPath = join(__dirname, '../../../../skills/repository/builtin');
             const skills = skillRegistry.loadFromDirectory(repositoryPath);
             workspace.registerSkills(skills);
 

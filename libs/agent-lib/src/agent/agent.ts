@@ -6,7 +6,7 @@ import {
     ThinkingBlock,
 } from "../task/task.type.js";
 import { TokenUsage, ToolUsage } from "../types/index.js";
-import { VirtualWorkspace } from "stateful-context";
+import { VirtualWorkspace } from "../statefulContext/index.js";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';

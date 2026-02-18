@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { Tool } from 'stateful-context';
+import { Tool } from '../statefulContext/index.js';
 
 /**
  * Helper function to avoid deep type instantiation in zodToJsonSchema

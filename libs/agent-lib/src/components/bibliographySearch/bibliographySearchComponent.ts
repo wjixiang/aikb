@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'stateful-context'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../../statefulContext/index.js'
 import {
     PubmedService,
     PubmedSearchParams,

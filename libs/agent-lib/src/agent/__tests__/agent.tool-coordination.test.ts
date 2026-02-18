@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Agent } from '../agent';
-import { VirtualWorkspace } from 'stateful-context';
+import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { ApiClient, ApiResponse, ToolCall } from '../../api-client/ApiClient.interface';
 import { z } from 'zod';
 

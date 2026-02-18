@@ -36,5 +36,5 @@ export type { AgentFactoryOptions } from './agent/AgentFactory.js';
 // Export ObservableAgent (Proxy-based observer pattern)
 export * from './agent/ObservableAgent.js';
 
-// Re-export from statefulContext library
-// export * from 'statefulContext';
+// Re-export from statefulContext (now integrated into agent-lib)
+export * from './statefulContext/index.js';

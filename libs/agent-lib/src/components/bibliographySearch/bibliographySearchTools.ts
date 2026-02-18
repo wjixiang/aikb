@@ -1,4 +1,4 @@
-import type { Tool } from 'stateful-context';
+import type { Tool } from '../../statefulContext/index.js';
 import {
     searchPubmedParamsSchema,
     viewArticleParamsSchema,

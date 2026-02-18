@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { VirtualWorkspace } from 'stateful-context';
+import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { DefaultToolCallConverter } from '../../api-client/ToolCallConvert';
 import { z } from 'zod';
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Agent, AgentConfig, AgentPrompt } from '../agent.js';
-import { VirtualWorkspace, ComponentRegistration } from 'stateful-context';
-import { ToolComponent } from 'stateful-context';
-import { Tool } from 'stateful-context';
-import { tdiv } from 'stateful-context';
+import { VirtualWorkspace, ComponentRegistration } from '../../statefulContext/index.js';
+import { ToolComponent } from '../../statefulContext/index.js';
+import { Tool } from '../../statefulContext/index.js';
+import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
 import type { ApiClient } from '../../api-client/index.js';
 

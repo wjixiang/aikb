@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Tool definition interface
- * Re-exported from stateful-context for convenience
+ * Re-exported from agent-lib (formerly stateful-context) for convenience
  */
 export interface Tool {
     toolName: string;
