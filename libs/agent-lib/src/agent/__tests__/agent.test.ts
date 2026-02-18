@@ -126,6 +126,7 @@ describe('Agent Context Rendering', () => {
     describe('renderAgentPrompt', () => {
         it('should render base agent prompt without active skill', () => {
             const prompt = agent.renderAgentPrompt();
+            console.log(prompt)
 
             expect(prompt).toContain('Base agent capability - can perform general tasks');
             expect(prompt).toContain('Base agent direction - follow standard operating procedures');
@@ -133,11 +134,12 @@ describe('Agent Context Rendering', () => {
             expect(prompt).not.toContain('--- Skill Guidance ---');
         });
 
-        it('should include skill enhancement when skill is active', async () => {
+        it.only('should include skill enhancement when skill is active', async () => {
             // Activate the test skill
             await workspace.getSkillManager().activateSkill('test-skill');
 
             const prompt = agent.renderAgentPrompt();
+            console.log(prompt)
 
             expect(prompt).toContain('Base agent capability - can perform general tasks');
             expect(prompt).toContain('--- Skill Enhancement ---');
