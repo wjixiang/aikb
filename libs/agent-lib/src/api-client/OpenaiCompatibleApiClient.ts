@@ -73,8 +73,9 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             // Calculate request time
             const requestTime = Date.now() - startTime;
             const resposne = this.convertOpenAIResponse(completion, requestTime);
-            console.log(`systemPrompt:${systemPrompt}`)
-            console.log(`memoryContext:${memoryContext}`)
+            console.log(`systemPrompt:${systemPrompt}\n\n\n`)
+            console.log(`memoryContext:${memoryContext} \n\n\n`)
+            console.log(`workspaceContext:${workspaceContext}\n\n\n`)
             console.log(resposne)
 
             // Convert OpenAI response to unified format

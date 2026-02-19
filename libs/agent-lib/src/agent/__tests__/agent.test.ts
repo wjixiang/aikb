@@ -118,8 +118,7 @@ describe('Agent Context Rendering', () => {
             agentConfig,
             workspace,
             agentPrompt,
-            mockApiClient,
-            'test-task-id'
+            mockApiClient
         );
     });
 

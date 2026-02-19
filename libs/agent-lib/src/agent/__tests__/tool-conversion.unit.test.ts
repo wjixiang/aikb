@@ -61,8 +61,10 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 },
             });
 
-            expect(openaiTools[0].function.parameters).toHaveProperty('type', 'object');
-            expect(openaiTools[0].function.parameters).toHaveProperty('properties');
+            if (openaiTools[0].type === 'function') {
+                expect(openaiTools[0].function.parameters).toHaveProperty('type', 'object');
+                expect(openaiTools[0].function.parameters).toHaveProperty('properties');
+            }
         });
 
         it('should handle multiple tools from multiple components', () => {
@@ -135,8 +137,9 @@ describe('Agent Tool Coordination - Unit Tests', () => {
             const openaiTools = converter.convertTools(allTools.map(t => t.tool));
 
             expect(openaiTools).toHaveLength(2);
-            expect(openaiTools.map(t => t.function.name)).toContain('tool1');
-            expect(openaiTools.map(t => t.function.name)).toContain('tool2');
+            const functionTools = openaiTools.filter(t => t.type === 'function');
+            expect(functionTools.map(t => t.function.name)).toContain('tool1');
+            expect(functionTools.map(t => t.function.name)).toContain('tool2');
         });
 
         it('should handle empty workspace', () => {
@@ -172,16 +175,18 @@ describe('Agent Tool Coordination - Unit Tests', () => {
             // Verify structure
             expect(openaiTool).toHaveProperty('type', 'function');
             expect(openaiTool).toHaveProperty('function');
-            expect(openaiTool.function).toHaveProperty('name', 'calculate');
-            expect(openaiTool.function).toHaveProperty('description', 'Perform mathematical calculations');
-            expect(openaiTool.function).toHaveProperty('parameters');
+            if (openaiTool.type === 'function') {
+                expect(openaiTool.function).toHaveProperty('name', 'calculate');
+                expect(openaiTool.function).toHaveProperty('description', 'Perform mathematical calculations');
+                expect(openaiTool.function).toHaveProperty('parameters');
 
-            // Verify parameters structure
-            const params = openaiTool.function.parameters;
-            expect(params).toHaveProperty('type', 'object');
-            expect(params).toHaveProperty('properties');
-            expect(params.properties).toHaveProperty('expression');
-            expect(params.properties).toHaveProperty('precision');
+                // Verify parameters structure
+                const params = openaiTool.function.parameters;
+                expect(params).toHaveProperty('type', 'object');
+                expect(params).toHaveProperty('properties');
+                expect(params.properties).toHaveProperty('expression');
+                expect(params.properties).toHaveProperty('precision');
+            }
         });
 
         it('should handle complex nested schemas', () => {
@@ -202,10 +207,12 @@ describe('Agent Tool Coordination - Unit Tests', () => {
             const converter = new DefaultToolCallConverter();
             const openaiTool = converter.convertTool(mockTool);
 
-            expect(openaiTool.function.parameters.properties).toHaveProperty('simple');
-            expect(openaiTool.function.parameters.properties).toHaveProperty('nested');
-            expect(openaiTool.function.parameters.properties).toHaveProperty('array');
-            expect(openaiTool.function.parameters.properties).toHaveProperty('optional');
+            if (openaiTool.type === 'function') {
+                expect(openaiTool.function.parameters.properties).toHaveProperty('simple');
+                expect(openaiTool.function.parameters.properties).toHaveProperty('nested');
+                expect(openaiTool.function.parameters.properties).toHaveProperty('array');
+                expect(openaiTool.function.parameters.properties).toHaveProperty('optional');
+            }
         });
     });
 });

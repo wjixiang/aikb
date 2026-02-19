@@ -569,18 +569,18 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 ${previousSummaries}
 
 WORKSPACE CONTEXT:
-${workspaceContext.substring(0, 1000)}...
+${workspaceContext}
 
 THINKING ROUNDS:
-${thinkingRounds.map(r => `Round ${r.roundNumber}: ${r.content.substring(0, 500)}`).join('\n\n')}
+${thinkingRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 
 TOOL RESULTS:
 ${toolResults?.map(r => {
-    const resultStr = typeof r.result === 'object'
-        ? JSON.stringify(r.result).substring(0, 300)
-        : String(r.result).substring(0, 300);
-    return `${r.toolName}: ${r.success ? 'success' : 'failed'}\nResult: ${resultStr}`;
-}).join('\n\n') || 'None'}
+            const resultStr = typeof r.result === 'object'
+                ? JSON.stringify(r.result).substring(0, 300)
+                : String(r.result).substring(0, 300);
+            return `${r.toolName}: ${r.success ? 'success' : 'failed'}\nResult: ${resultStr}`;
+        }).join('\n\n') || 'None'}
 
 Generate a DETAILED summary (5-8 sentences) that includes:
 1. What specific actions were taken (be specific about tools used, parameters, search terms, etc.)
