@@ -20,24 +20,30 @@ import {
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
-import { ThinkingProcessor, ToolResult } from './ThinkingProcessor.js';
+import { MemoryModule, MemoryModuleConfig, defaultMemoryConfig } from '../memory/MemoryModule.js';
+
+/**
+ * Tool result from execution
+ */
+interface ToolResult {
+    toolName: string;
+    success: boolean;
+    result: any;
+    timestamp: number;
+}
 
 export interface AgentConfig {
     apiRequestTimeout: number;
     maxRetryAttempts: number;
     consecutiveMistakeLimit: number;
-    // Thinking phase configuration (always enabled)
-    thinkingStrategy?: 'sliding-window' | 'semantic' | 'token-budget';
-    compressionThreshold?: number; // tokens threshold for compression
+    // Memory module configuration (now required, with defaults)
+    memory?: Partial<MemoryModuleConfig>;
 }
 
 export const defaultAgentConfig: AgentConfig = {
     apiRequestTimeout: 40000,
     maxRetryAttempts: 3,
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
-    // Thinking phase is always enabled as part of the framework
-    thinkingStrategy: 'sliding-window',
-    compressionThreshold: 8000, // compress when history exceeds 8K tokens
 };
 
 
@@ -83,7 +89,6 @@ export class Agent {
     workspace: VirtualWorkspace;
     private _status: TaskStatus = 'idle';
     private _taskId: string;
-    private _conversationHistory: ApiMessage[] = [];
     private _tokenUsage: TokenUsage = {
         totalTokensIn: 0,
         totalTokensOut: 0,
@@ -106,11 +111,15 @@ export class Agent {
     // API client (dependency injected)
     private apiClient: ApiClient;
 
+    // Memory module (dependency injected, always present)
+    private memoryModule: MemoryModule;
+
     constructor(
         public config: AgentConfig = defaultAgentConfig,
         workspace: VirtualWorkspace,
         private agentPrompt: AgentPrompt,
         apiClient: ApiClient,
+        memoryModule?: MemoryModule,  // Optional injection for testing
         taskId?: string,
     ) {
         this.workspace = workspace;
@@ -118,6 +127,13 @@ export class Agent {
 
         // Use injected API client
         this.apiClient = apiClient;
+
+        // Initialize memory module (dependency injection or create new)
+        if (memoryModule) {
+            this.memoryModule = memoryModule;
+        } else {
+            this.memoryModule = new MemoryModule(apiClient, config.memory);
+        }
     }
 
     // ==================== Public API ====================
@@ -151,17 +167,17 @@ export class Agent {
     }
 
     /**
-     * Getter for conversation history
+     * Getter for conversation history (delegated to MemoryModule)
      */
     public get conversationHistory(): ApiMessage[] {
-        return this._conversationHistory;
+        return this.memoryModule.getConversationHistory();
     }
 
     /**
-     * Setter for conversation history (for restoring state)
+     * Setter for conversation history (delegated to MemoryModule)
      */
     public set conversationHistory(history: ApiMessage[]) {
-        this._conversationHistory = history;
+        this.memoryModule.setConversationHistory(history);
     }
 
     /**
@@ -192,6 +208,21 @@ export class Agent {
         this._consecutiveMistakeCountForApplyDiff = map;
     }
 
+    /**
+     * Get memory module (always available)
+     */
+    public getMemoryModule(): MemoryModule {
+        return this.memoryModule;
+    }
+
+    /**
+     * Check if memory module is enabled (always true now)
+     * @deprecated Memory module is always enabled
+     */
+    public hasMemoryModule(): boolean {
+        return true;
+    }
+
     // ==================== Lifecycle Methods ====================
 
     /**
@@ -200,10 +231,8 @@ export class Agent {
     async start(query: string): Promise<Agent> {
         this._status = 'running';
 
-        // Add initial user message to history
-        this._conversationHistory.push(
-            MessageBuilder.user(`<task>${query}</task>`)
-        );
+        // Add initial user message to history (via MemoryModule)
+        this.memoryModule.addUserMessage(`<task>${query}</task>`);
 
         // Start request loop
         await this.requestLoop(query);
@@ -250,13 +279,6 @@ export class Agent {
         // Reset collected errors for this new operation
         this.resetCollectedErrors();
 
-        // Initialize thinking processor (always enabled as part of the framework)
-        const thinkingProcessor = new ThinkingProcessor({
-            strategy: this.config.thinkingStrategy || 'sliding-window',
-            compressionThreshold: this.config.compressionThreshold || 8000,
-            slidingWindowSize: 10,
-        });
-
         let lastToolResults: ToolResult[] = [];
 
         const userContent: Anthropic.Messages.ContentBlockParam[] = [
@@ -291,7 +313,7 @@ export class Agent {
                     currentItem.userMessageWasRemoved) && currentItem.sender === 'user';
 
             if (shouldAddUserMessage) {
-                await this.addToConversationHistory(
+                this.memoryModule.addToConversationHistory(
                     MessageBuilder.custom('user', currentUserContent)
                 );
             }
@@ -302,24 +324,22 @@ export class Agent {
                 // Reset message processing state for each new API request
                 this.resetMessageState();
 
-                // THINKING PHASE: Always analyze and compress context (framework feature)
-                const thinkingResult = await thinkingProcessor.performThinking(
-                    this._conversationHistory,
+                // THINKING PHASE: Use MemoryModule (always enabled)
+                const memoryResult = await this.memoryModule.performThinkingPhase(
                     currentWorkspaceContext,
                     lastToolResults
                 );
 
-                const effectiveHistory = thinkingResult.compressedHistory;
-
-                // Track thinking tokens
-                this._tokenUsage.contextTokens += thinkingResult.thinkingTokens;
+                const thinkingTokens = memoryResult.tokensUsed;
 
                 // Add thinking summary to history for observability
-                if (thinkingResult.summary) {
-                    await this.addSystemMessageToHistory(
-                        `[Thinking Phase]\n${thinkingResult.summary}\n\nInsights: ${thinkingResult.insights.join(' ')}\n\nNext: ${thinkingResult.nextActions}`
-                    );
+                if (memoryResult.rounds.length > 0) {
+                    const thinkingSummary = this.formatMemoryThinkingSummary(memoryResult);
+                    this.memoryModule.addSystemMessage(thinkingSummary);
                 }
+
+                // Track thinking tokens
+                this._tokenUsage.contextTokens += thinkingTokens;
 
                 // Collect complete response from stream
                 const response = await this.attemptApiRequest();
@@ -343,11 +363,11 @@ export class Agent {
                 this.messageState.didAttemptCompletion = executionResult.didAttemptCompletion;
 
                 // Add assistant message to conversation history
-                await this.addAssistantMessageToHistory();
+                this.addAssistantMessageToHistory();
 
                 // Add user message (tool result) to conversation history
                 if (this.messageState.userMessageContent.length > 0) {
-                    await this.addToConversationHistory(
+                    this.memoryModule.addToConversationHistory(
                         MessageBuilder.custom('user', this.messageState.userMessageContent)
                     );
                 }
@@ -465,7 +485,7 @@ export class Agent {
     /**
      * Add assistant message to conversation history
      */
-    private async addAssistantMessageToHistory(reasoning?: string): Promise<void> {
+    private addAssistantMessageToHistory(reasoning?: string): void {
         const assistantContent: Array<
             Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
         > = [];
@@ -502,10 +522,21 @@ export class Agent {
             });
         }
 
-        await this.addToConversationHistory({
+        // Add to MemoryModule
+        const message: ApiMessage = {
             role: 'assistant',
             content: assistantContent,
-        }, reasoning);
+        };
+
+        if (reasoning) {
+            const reasoningBlock: ThinkingBlock = {
+                type: 'thinking',
+                thinking: reasoning,
+            };
+            message.content = [reasoningBlock, ...message.content];
+        }
+
+        this.memoryModule.addToConversationHistory(message);
     }
 
     /**
@@ -516,40 +547,37 @@ export class Agent {
      * Use this method for other system messages like thinking summaries, etc.
      *
      * @param message - The system message content to add
+     * @deprecated Use memoryModule.addSystemMessage() directly
      */
     addSystemMessageToHistory(message: string): void {
-        this.addToConversationHistory(
-            MessageBuilder.system(message)
-        );
+        this.memoryModule.addSystemMessage(message);
     }
 
     /**
      * Add message to conversation history with timestamp and optional reasoning
+     * @deprecated Use memoryModule methods directly
      */
-    private async addToConversationHistory(
+    private addToConversationHistory(
         message: ApiMessage,
         reasoning?: string,
-    ): Promise<void> {
-        const messageWithTs: ApiMessage = {
-            role: message.role,
-            content: [...message.content],
-            ts: Date.now(),
-        };
-
+    ): void {
         if (message.role === 'assistant' && reasoning) {
             const reasoningBlock: ThinkingBlock = {
                 type: 'thinking',
                 thinking: reasoning,
             };
-
-            messageWithTs.content = [reasoningBlock, ...messageWithTs.content];
+            message.content = [reasoningBlock, ...message.content];
         }
 
-        this._conversationHistory.push(messageWithTs);
+        this.memoryModule.addToConversationHistory(message);
     }
 
+    /**
+     * Get conversation history
+     * @deprecated Use conversationHistory getter or memoryModule.getConversationHistory()
+     */
     getConversationHistory() {
-        return this._conversationHistory
+        return this.memoryModule.getConversationHistory();
     }
 
     // ==================== Tool Execution ====================
@@ -641,13 +669,22 @@ export class Agent {
     async attemptApiRequest(retryAttempt: number = 0) {
         try {
             const systemPrompt = await this.getSystemPrompt();
-            const workspaceContext = await this.workspace.render();
+            let workspaceContext = await this.workspace.render();
+
+            // Inject accumulated summaries from MemoryModule
+            const accumulatedSummaries = this.memoryModule.getAccumulatedSummaries();
+            if (accumulatedSummaries) {
+                workspaceContext = `${accumulatedSummaries}\n\n=== CURRENT WORKSPACE CONTEXT ===\n${workspaceContext}`;
+            }
+
+            // Get compressed conversation history from MemoryModule
+            const compressedHistory = this.memoryModule.getCompressedHistory();
 
             // Build prompt using PromptBuilder
             const prompt: FullPrompt = new PromptBuilder()
                 .setSystemPrompt(systemPrompt)
                 .setWorkspaceContext(workspaceContext)
-                .setConversationHistory(this._conversationHistory)
+                .setConversationHistory(compressedHistory)
                 .build();
 
             try {
@@ -674,6 +711,31 @@ export class Agent {
     }
 
     // ==================== Helper Methods ====================
+
+    /**
+     * Format memory thinking summary for history
+     */
+    private formatMemoryThinkingSummary(result: any): string {
+        const rounds = result.rounds
+            .map((r: any) => {
+                const recalled = r.recalledContexts.length > 0
+                    ? `\n  Recalled: ${r.recalledContexts.map((c: any) => `Turn ${c.turnNumber}`).join(', ')}`
+                    : '';
+                return `  Round ${r.roundNumber}: ${r.content.substring(0, 100)}...${recalled}`;
+            })
+            .join('\n');
+
+        const contextInfo = result.contextSnapshot
+            ? `\nContext stored: Turn ${result.contextSnapshot.turnNumber} (ID: ${result.contextSnapshot.id})`
+            : '';
+
+        return `[Reflective Thinking Phase]
+Total rounds: ${result.rounds.length}
+Tokens used: ${result.tokensUsed}
+
+Thinking rounds:
+${rounds}${contextInfo}`;
+    }
 
     /**
      * Check if task is aborted
