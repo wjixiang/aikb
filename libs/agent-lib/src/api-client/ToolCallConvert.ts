@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../statefulContext/index.js';
+import { ChatCompletionTool, FunctionDefinition, FunctionParameters } from './ApiClient.interface.js';
 
 /**
  * Helper function to avoid deep type instantiation in zodToJsonSchema
@@ -22,14 +23,14 @@ export interface ToolCallConverter {
    * @param tool - The Tool interface to convert
    * @returns OpenAI ChatCompletionTool object
    */
-  convertTool(tool: Tool): any;
+  convertTool(tool: Tool): ChatCompletionTool;
 
   /**
    * Convert multiple Tools to OpenAI ChatCompletionTool array
    * @param tools - Array of Tool interfaces to convert
    * @returns Array of OpenAI ChatCompletionTool objects
    */
-  convertTools(tools: Tool[]): any[];
+  convertTools(tools: Tool[]): ChatCompletionTool[];
 }
 
 /**
@@ -49,7 +50,7 @@ export interface OpenAIFunctionCallingParams {
   /**
    * Array of tools available for the model to call
    */
-  tools?: any[];
+  tools?: ChatCompletionTool[];
 
   /**
    * Controls which (if any) tool is called by the model
@@ -72,7 +73,7 @@ export interface OpenAIFunctionCallingParams {
  * Converts statefulContext Tool interface to OpenAI ChatCompletionTool format
  */
 export class DefaultToolCallConverter implements ToolCallConverter {
-  convertTool(tool: Tool): any {
+  convertTool(tool: Tool): ChatCompletionTool {
     // Convert Zod schema to JSON Schema
     const jsonSchema = convertZodToJsonSchema(tool.paramsSchema);
 
@@ -84,12 +85,12 @@ export class DefaultToolCallConverter implements ToolCallConverter {
       function: {
         name: tool.toolName,
         description: tool.desc,
-        parameters: parameters as Record<string, unknown>,
+        parameters: parameters as FunctionParameters,
       },
-    };
+    } as ChatCompletionTool;
   }
 
-  convertTools(tools: Tool[]): any[] {
+  convertTools(tools: Tool[]): ChatCompletionTool[] {
     return tools.map(tool => this.convertTool(tool));
   }
 }

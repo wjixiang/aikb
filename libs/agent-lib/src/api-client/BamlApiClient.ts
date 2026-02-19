@@ -1,5 +1,5 @@
 import { b } from '../baml_client/index.js';
-import { ApiClient, ApiTimeoutConfig, ApiResponse, ToolCall, TokenUsage } from './ApiClient.interface.js';
+import { ApiClient, ApiTimeoutConfig, ApiResponse, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface.js';
 
 /**
  * Legacy BAML response format (for backward compatibility)
@@ -51,7 +51,7 @@ export class BamlApiClient implements ApiClient {
         workspaceContext: string,
         memoryContext: string[],
         timeoutConfig?: ApiTimeoutConfig,
-        tools?: any[]
+        tools?: ChatCompletionTool[]
     ): Promise<ApiResponse> {
         console.log('[BamlApiClient.makeRequest] Starting BAML API request');
         console.log('[BamlApiClient.makeRequest] System prompt length:', systemPrompt.length);

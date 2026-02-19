@@ -1,18 +1,16 @@
 /**
- * Turn-based MemoryModule - Manages conversation memory with Turn as the core unit
+ * Enhanced MemoryModule - Manages all conversation history and context
  *
- * This module manages:
- * 1. Turn lifecycle (start → thinking → acting → executing → complete)
- * 2. Messages within each turn
- * 3. Workspace context snapshots per turn
- * 4. Summaries and insights per turn
- * 5. Reflective thinking (optional)
+ * This module is now responsible for:
+ * 1. Conversation history (user/assistant/tool messages)
+ * 2. Workspace context snapshots
+ * 3. Summaries and insights
+ * 4. Reflective thinking
  */
 
 import { ApiMessage, MessageBuilder } from '../task/task.type.js';
-import { TurnMemoryStore } from './TurnMemoryStore.js';
-import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
-import type { ApiClient, ChatCompletionTool } from '../api-client/index.js';
+import { ContextMemoryStore, ContextSnapshot } from './ContextMemoryStore.js';
+import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 
 /**
  * Configuration for the memory module
@@ -44,7 +42,7 @@ export const defaultMemoryConfig: MemoryModuleConfig = {
     enableRecall: true,
     maxRecallContexts: 3,
     enableSummarization: true,
-    maxRecalledMessages: 20,
+    maxRecalledMessages: 20,  // 默认最多回忆 20 条消息
 };
 
 /**
@@ -57,37 +55,56 @@ export interface ThinkingPhaseResult {
     tokensUsed: number;
     /** Whether to continue to action phase */
     shouldProceedToAction: boolean;
-    /** Turn ID that was updated */
-    turnId: string;
+    /** Context snapshot created */
+    contextSnapshot?: ContextSnapshot;
     /** Summary generated */
     summary?: string;
+    /** Compressed conversation history */
+    compressedHistory: ApiMessage[];
 }
 
 /**
- * Turn-based MemoryModule
+ * Single thinking round
+ */
+export interface ThinkingRound {
+    roundNumber: number;
+    content: string;
+    continueThinking: boolean;
+    recalledContexts: ContextSnapshot[];
+    tokens: number;
+}
+
+/**
+ * Enhanced MemoryModule - Central memory management
+ *
+ * This module now manages:
+ * - Conversation history (replaces Agent._conversationHistory)
+ * - Workspace context snapshots
+ * - Summaries and insights
+ * - Reflective thinking
  */
 export class MemoryModule {
     private config: MemoryModuleConfig;
-    private turnStore: TurnMemoryStore;
+    private memoryStore: ContextMemoryStore;
     private apiClient: ApiClient;
 
-    // Current active turn
-    private currentTurn: Turn | null = null;
+    // Conversation history (moved from Agent)
+    private conversationHistory: ApiMessage[] = [];
 
-    // Recalled messages (temporary storage for next prompt)
+    // Recalled messages to inject in next prompt
     private recalledMessages: ApiMessage[] = [];
 
     constructor(apiClient: ApiClient, config: Partial<MemoryModuleConfig> = {}) {
         this.config = { ...defaultMemoryConfig, ...config };
-        this.turnStore = new TurnMemoryStore();
+        this.memoryStore = new ContextMemoryStore();
         this.apiClient = apiClient;
     }
 
     /**
-     * Get the turn store
+     * Get the memory store
      */
-    getTurnStore(): TurnMemoryStore {
-        return this.turnStore;
+    getMemoryStore(): ContextMemoryStore {
+        return this.memoryStore;
     }
 
     /**
@@ -104,163 +121,109 @@ export class MemoryModule {
         this.config = { ...this.config, ...config };
     }
 
-    // ==================== Turn Lifecycle Management ====================
+    // ==================== Conversation History Management ====================
 
     /**
-     * Start a new turn
-     */
-    startTurn(workspaceContext: string): Turn {
-        // Complete previous turn if exists
-        if (this.currentTurn && this.currentTurn.status !== TurnStatus.COMPLETED) {
-            console.warn(`Previous turn ${this.currentTurn.id} was not completed, completing now`);
-            this.completeTurn(workspaceContext);
-        }
-
-        // Create new turn
-        const turn = this.turnStore.createTurn(workspaceContext);
-        this.currentTurn = turn;
-
-        return turn;
-    }
-
-    /**
-     * Complete current turn
-     */
-    completeTurn(finalWorkspaceContext: string): void {
-        if (!this.currentTurn) {
-            console.warn('No active turn to complete');
-            return;
-        }
-
-        // Update workspace context (after)
-        this.turnStore.updateWorkspaceContext(this.currentTurn.id, finalWorkspaceContext);
-
-        // Update status
-        this.turnStore.updateTurnStatus(this.currentTurn.id, TurnStatus.COMPLETED);
-
-        // Clear current turn
-        this.currentTurn = null;
-    }
-
-    /**
-     * Get current turn
-     */
-    getCurrentTurn(): Turn | null {
-        return this.currentTurn;
-    }
-
-    // ==================== Message Management (through Turn) ====================
-
-    /**
-     * Add user message to current turn
-     */
-    addUserMessage(content: string | any[]): void {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        const message = typeof content === 'string'
-            ? MessageBuilder.user(content)
-            : MessageBuilder.custom('user', content);
-
-        this.turnStore.addMessageToTurn(this.currentTurn.id, message);
-    }
-
-    /**
-     * Add assistant message to current turn
-     */
-    addAssistantMessage(content: any[]): void {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        this.turnStore.addMessageToTurn(
-            this.currentTurn.id,
-            MessageBuilder.custom('assistant', content)
-        );
-    }
-
-    /**
-     * Add system message to current turn
-     */
-    addSystemMessage(content: string): void {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        this.turnStore.addMessageToTurn(
-            this.currentTurn.id,
-            MessageBuilder.system(content)
-        );
-    }
-
-    /**
-     * Add message to conversation history (legacy compatibility)
-     * @deprecated Use addUserMessage, addAssistantMessage, or addSystemMessage instead
-     */
-    addToConversationHistory(message: ApiMessage): void {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        this.turnStore.addMessageToTurn(this.currentTurn.id, message);
-    }
-
-    // ==================== History Retrieval ====================
-
-    /**
-     * Get all historical messages (flattened from all turns)
-     */
-    getAllMessages(): ApiMessage[] {
-        return this.turnStore.getAllMessages();
-    }
-
-    /**
-     * Get conversation history (alias for getAllMessages)
-     * @deprecated Use getAllMessages() instead
+     * Get conversation history
      */
     getConversationHistory(): ApiMessage[] {
-        return this.getAllMessages();
+        return [...this.conversationHistory];
     }
 
     /**
      * Set conversation history (for restoration)
-     * @deprecated This method is not compatible with Turn-based architecture
      */
     setConversationHistory(history: ApiMessage[]): void {
-        console.warn('setConversationHistory is deprecated in Turn-based architecture');
-        // For backward compatibility, we could create a single turn with all messages
-        // But this breaks the Turn concept, so we just warn
+        this.conversationHistory = [...history];
+    }
+
+    /**
+     * Add message to conversation history
+     */
+    addToConversationHistory(message: ApiMessage): void {
+        const messageWithTs: ApiMessage = {
+            ...message,
+            ts: Date.now(),
+        };
+        this.conversationHistory.push(messageWithTs);
+    }
+
+    /**
+     * Add user message
+     */
+    addUserMessage(content: string | any[]): void {
+        if (typeof content === 'string') {
+            this.addToConversationHistory(MessageBuilder.user(content));
+        } else {
+            this.addToConversationHistory(MessageBuilder.custom('user', content));
+        }
+    }
+
+    /**
+     * Add assistant message
+     */
+    addAssistantMessage(content: any[]): void {
+        this.addToConversationHistory(MessageBuilder.custom('assistant', content));
+    }
+
+    /**
+     * Add system message
+     */
+    addSystemMessage(content: string): void {
+        this.addToConversationHistory(MessageBuilder.system(content));
     }
 
     /**
      * Clear conversation history
-     * @deprecated Use clear() instead
      */
     clearConversationHistory(): void {
-        this.turnStore.clear();
-        this.currentTurn = null;
+        this.conversationHistory = [];
     }
 
     /**
-     * Get history for prompt injection (based on strategy)
+     * Get conversation history for prompt injection
+     * Returns only recalled messages (if any) - default is summary-only mode
      */
     getHistoryForPrompt(): ApiMessage[] {
-        // Return recalled messages if any, otherwise empty (summary-only mode)
+        // Return recalled messages if any, otherwise empty (summary-only)
         return [...this.recalledMessages];
     }
 
     /**
-     * Recall specific turns by turn numbers
+     * Recall specific conversation messages by turn numbers or message indices
+     * This allows LLM to explicitly request historical conversation context
      */
-    recallTurns(turnNumbers: number[]): ApiMessage[] {
+    recallConversation(options: {
+        turnNumbers?: number[];
+        messageIndices?: number[];
+        lastN?: number;
+    }): ApiMessage[] {
         const recalled: ApiMessage[] = [];
 
-        for (const turnNum of turnNumbers) {
-            const turn = this.turnStore.getTurnByNumber(turnNum);
-            if (turn) {
-                recalled.push(...turn.messages);
+        // Recall by turn numbers
+        if (options.turnNumbers && options.turnNumbers.length > 0) {
+            for (const turn of options.turnNumbers) {
+                // Find messages from this turn
+                // Assuming each turn has ~3 messages (user + assistant + tool_result)
+                const startIdx = (turn - 1) * 3;
+                const endIdx = Math.min(startIdx + 3, this.conversationHistory.length);
+                recalled.push(...this.conversationHistory.slice(startIdx, endIdx));
             }
+        }
+
+        // Recall by specific message indices
+        if (options.messageIndices && options.messageIndices.length > 0) {
+            for (const idx of options.messageIndices) {
+                if (idx >= 0 && idx < this.conversationHistory.length) {
+                    recalled.push(this.conversationHistory[idx]);
+                }
+            }
+        }
+
+        // Recall last N messages
+        if (options.lastN && options.lastN > 0) {
+            const lastN = Math.min(options.lastN, this.conversationHistory.length);
+            recalled.push(...this.conversationHistory.slice(-lastN));
         }
 
         // Limit to maxRecalledMessages
@@ -273,40 +236,26 @@ export class MemoryModule {
     }
 
     /**
-     * Recall conversation (legacy compatibility)
-     * @deprecated Use recallTurns() instead
-     */
-    recallConversation(options: {
-        turnNumbers?: number[];
-        messageIndices?: number[];
-        lastN?: number;
-    }): ApiMessage[] {
-        if (options.turnNumbers) {
-            return this.recallTurns(options.turnNumbers);
-        }
-
-        if (options.lastN) {
-            const messages = this.turnStore.getRecentMessages(options.lastN);
-            const limited = messages.slice(0, this.config.maxRecalledMessages);
-            this.recalledMessages = limited;
-            return limited;
-        }
-
-        return [];
-    }
-
-    /**
-     * Clear recalled messages
+     * Clear recalled messages (called after each API request)
      */
     clearRecalledMessages(): void {
         this.recalledMessages = [];
+    }
+
+    // ==================== Context Management ====================
+
+    /**
+     * Store current workspace context
+     */
+    storeContext(workspaceContext: string, toolCalls?: string[]): ContextSnapshot {
+        return this.memoryStore.storeContext(workspaceContext, toolCalls);
     }
 
     /**
      * Get accumulated summaries for prompt injection
      */
     getAccumulatedSummaries(): string {
-        const summaries = this.turnStore.getAllSummaries();
+        const summaries = this.memoryStore.getAllSummaries();
 
         if (summaries.length === 0) {
             return '';
@@ -330,26 +279,25 @@ ${summaryText}
     // ==================== Thinking Phase ====================
 
     /**
-     * Perform thinking phase (updates current turn)
+     * Perform thinking phase (if enabled)
      */
     async performThinkingPhase(
         workspaceContext: string,
         lastToolResults?: any[]
     ): Promise<ThinkingPhaseResult> {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        // Update turn status
-        this.turnStore.updateTurnStatus(this.currentTurn.id, TurnStatus.THINKING);
-
         if (!this.config.enableReflectiveThinking) {
-            // Skip thinking phase, just generate summary if enabled
+            // Skip thinking phase, just store context
+            const snapshot = this.storeContext(
+                workspaceContext,
+                lastToolResults?.map(r => r.toolName)
+            );
+
+            // Generate summary if enabled
             let summary: string | undefined;
             if (this.config.enableSummarization) {
                 summary = await this.generateSimpleSummary(workspaceContext, lastToolResults);
                 if (summary) {
-                    this.turnStore.storeSummary(this.currentTurn.id, summary, []);
+                    this.memoryStore.storeSummary(snapshot.id, summary, []);
                 }
             }
 
@@ -357,8 +305,9 @@ ${summaryText}
                 rounds: [],
                 tokensUsed: 0,
                 shouldProceedToAction: true,
-                turnId: this.currentTurn.id,
+                contextSnapshot: snapshot,
                 summary,
+                compressedHistory: [],  // No longer used - summary-only mode
             };
         }
 
@@ -386,8 +335,11 @@ ${summaryText}
             continueThinking = round.continueThinking;
         }
 
-        // Store thinking phase in turn
-        this.turnStore.storeThinkingPhase(this.currentTurn.id, rounds, totalTokens);
+        // Store context
+        const snapshot = this.storeContext(
+            workspaceContext,
+            lastToolResults?.map(r => r.toolName)
+        );
 
         // Generate summary if enabled
         let summary: string | undefined;
@@ -399,8 +351,8 @@ ${summaryText}
             );
 
             if (summary) {
-                this.turnStore.storeSummary(
-                    this.currentTurn.id,
+                this.memoryStore.storeSummary(
+                    snapshot.id,
                     summary,
                     this.extractInsights(rounds)
                 );
@@ -411,8 +363,9 @@ ${summaryText}
             rounds,
             tokensUsed: totalTokens,
             shouldProceedToAction: true,
-            turnId: this.currentTurn.id,
+            contextSnapshot: snapshot,
             summary,
+            compressedHistory: [],  // No longer used - summary-only mode
         };
     }
 
@@ -509,8 +462,7 @@ ${accumulatedSummaries}
 ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 `;
 
-        const allMessages = this.turnStore.getAllMessages();
-        const history = allMessages.map(msg => {
+        const history = this.conversationHistory.map(msg => {
             const role = msg.role;
             const content = msg.content
                 .filter(block => block.type === 'text')
@@ -585,52 +537,39 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
     /**
      * Handle context recall
      */
-    private handleRecall(request: any): Turn[] {
+    private handleRecall(request: any): ContextSnapshot[] {
         if (!this.config.enableRecall) {
             return [];
         }
 
-        const recalled: Turn[] = [];
+        const recalled: ContextSnapshot[] = [];
 
         if (request.turnNumbers) {
             for (const turn of request.turnNumbers) {
-                const t = this.turnStore.getTurnByNumber(turn);
-                if (t) recalled.push(t);
+                const ctx = this.memoryStore.getContextByTurn(turn);
+                if (ctx) recalled.push(ctx);
+            }
+        }
+
+        if (request.contextIds) {
+            for (const id of request.contextIds) {
+                const ctx = this.memoryStore.getContext(id);
+                if (ctx) recalled.push(ctx);
             }
         }
 
         if (request.keywords) {
             for (const keyword of request.keywords) {
-                const turns = this.turnStore.searchTurns(keyword);
-                recalled.push(...turns);
+                const summaries = this.memoryStore.searchSummaries(keyword);
+                for (const summary of summaries) {
+                    const ctx = this.memoryStore.getContext(summary.contextId);
+                    if (ctx) recalled.push(ctx);
+                }
             }
         }
 
         return recalled.slice(0, this.config.maxRecallContexts);
     }
-
-    // ==================== Tool Call Recording ====================
-
-    /**
-     * Record tool call result to current turn
-     */
-    recordToolCall(toolName: string, success: boolean, result: any): void {
-        if (!this.currentTurn) {
-            console.warn('No active turn to record tool call');
-            return;
-        }
-
-        const toolCall: ToolCallResult = {
-            toolName,
-            success,
-            result,
-            timestamp: Date.now(),
-        };
-
-        this.turnStore.addToolCallResult(this.currentTurn.id, toolCall);
-    }
-
-    // ==================== Summary Generation ====================
 
     /**
      * Generate simple summary (without thinking rounds)
@@ -721,15 +660,10 @@ Generate a concise summary (2-3 sentences) of what happened in this turn.`;
         return insights.slice(0, 5); // Keep top 5 insights
     }
 
-    // ==================== Helper Methods ====================
-
     /**
      * Extract content from API response
      */
-    private extractContent(response: any): string {
-        if (response.content) {
-            return response.content;
-        }
+    private extractContent(response: ApiResponse): string {
         if (response.textResponse) {
             return response.textResponse;
         }
@@ -781,49 +715,31 @@ Generate a concise summary (2-3 sentences) of what happened in this turn.`;
         return Math.ceil(text.length / 4);
     }
 
-    // ==================== Import/Export ====================
-
     /**
-     * Export memory state
+     * Export memory state (including conversation history)
      */
     export() {
-        return this.turnStore.export();
+        return {
+            ...this.memoryStore.export(),
+            conversationHistory: this.conversationHistory,
+        };
     }
 
     /**
-     * Import memory state
+     * Import memory state (including conversation history)
      */
     import(data: any) {
-        this.turnStore.import(data);
-        this.currentTurn = null;
+        this.memoryStore.import(data);
+        if (data.conversationHistory) {
+            this.conversationHistory = data.conversationHistory;
+        }
     }
 
     /**
-     * Clear all memory
+     * Clear all memory (including conversation history)
      */
     clear() {
-        this.turnStore.clear();
-        this.currentTurn = null;
-        this.recalledMessages = [];
-    }
-
-    // ==================== Legacy Compatibility ====================
-
-    /**
-     * Get memory store (legacy compatibility)
-     * @deprecated Use getTurnStore() instead
-     */
-    getMemoryStore(): any {
-        return this.turnStore;
-    }
-
-    /**
-     * Store context (legacy compatibility)
-     * @deprecated Context is now stored automatically in turns
-     */
-    storeContext(workspaceContext: string, toolCalls?: string[]): any {
-        console.warn('storeContext is deprecated. Context is stored automatically in turns.');
-        return this.currentTurn;
+        this.memoryStore.clear();
+        this.conversationHistory = [];
     }
 }
-

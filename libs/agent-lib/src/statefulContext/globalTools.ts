@@ -28,3 +28,13 @@ export const attempt_completion: Tool = {
     }),
     desc: 'Complete the task and return final result to the user. This should be called when the task is fully accomplished.'
 }
+
+export const recall_conversation: Tool = {
+    toolName: 'recall_conversation',
+    paramsSchema: z.object({
+        turn_numbers: z.array(z.number()).optional().describe('Specific turn numbers to recall (e.g., [1, 3, 5])'),
+        message_indices: z.array(z.number()).optional().describe('Specific message indices to recall'),
+        last_n: z.number().optional().describe('Recall the last N messages from conversation history')
+    }),
+    desc: 'Recall specific conversation messages from history. By default, only summaries are available in the prompt. Use this tool to explicitly retrieve detailed conversation context when needed. The recalled messages will be injected into the next API request.'
+}

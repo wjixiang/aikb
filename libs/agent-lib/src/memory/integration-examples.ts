@@ -20,7 +20,6 @@ async function example1_BasicMemory() {
 
         // Enable memory module
         memory: {
-            enableReflectiveThinking: true,
             maxThinkingRounds: 3,
             thinkingTokenBudget: 10000,
             enableRecall: true,
@@ -62,9 +61,9 @@ async function example1_BasicMemory() {
     // Access memory
     const memoryModule = agent.getMemoryModule();
     if (memoryModule) {
-        const memoryStore = memoryModule.getMemoryStore();
-        console.log(`Total turns: ${memoryStore.getCurrentTurn()}`);
-        console.log(`Total summaries: ${memoryStore.getAllSummaries().length}`);
+        const turnStore = memoryModule.getTurnStore();
+        console.log(`Total turns: ${turnStore.getCurrentTurnNumber()}`);
+        console.log(`Total summaries: ${turnStore.getAllSummaries().length}`);
     }
 }
 
@@ -79,7 +78,6 @@ async function example2_MemoryOperations() {
         maxRetryAttempts: 3,
         consecutiveMistakeLimit: 3,
         memory: {
-            enableReflectiveThinking: true,
             maxThinkingRounds: 5,
             thinkingTokenBudget: 15000,
             enableRecall: true,
@@ -108,29 +106,47 @@ async function example2_MemoryOperations() {
         return;
     }
 
-    const memoryStore = memoryModule.getMemoryStore();
+    const turnStore = memoryModule.getTurnStore();
 
     // Simulate multiple turns
     console.log('Simulating multiple turns...\n');
 
     // Turn 1
-    const ctx1 = memoryStore.storeContext('Context 1: Initial analysis', ['analyze']);
-    memoryStore.storeSummary(ctx1.id, 'Analyzed codebase structure', ['3 modules', 'Main entry']);
-    console.log(`Turn 1: Stored context ${ctx1.id}`);
+    memoryModule.startTurn('Context 1: Initial analysis');
+    memoryModule.addUserMessage('Analyze the codebase');
+    memoryModule.addAssistantMessage([{ type: 'text', text: 'Analyzed structure' }]);
+    memoryModule.completeTurn();
+    const turn1 = turnStore.getTurnByNumber(1);
+    if (turn1) {
+        turnStore.storeSummary(turn1.id, 'Analyzed codebase structure', ['3 modules', 'Main entry']);
+        console.log(`Turn 1: Stored turn ${turn1.id}`);
+    }
 
     // Turn 2
-    const ctx2 = memoryStore.storeContext('Context 2: Deep dive', ['search', 'read']);
-    memoryStore.storeSummary(ctx2.id, 'Found performance bottleneck', ['Bottleneck in utils', 'O(n²)']);
-    console.log(`Turn 2: Stored context ${ctx2.id}`);
+    memoryModule.startTurn('Context 2: Deep dive');
+    memoryModule.addUserMessage('Find bottlenecks');
+    memoryModule.addAssistantMessage([{ type: 'text', text: 'Found bottleneck' }]);
+    memoryModule.completeTurn();
+    const turn2 = turnStore.getTurnByNumber(2);
+    if (turn2) {
+        turnStore.storeSummary(turn2.id, 'Found performance bottleneck', ['Bottleneck in utils', 'O(n²)']);
+        console.log(`Turn 2: Stored turn ${turn2.id}`);
+    }
 
     // Turn 3
-    const ctx3 = memoryStore.storeContext('Context 3: Optimization', ['edit', 'test']);
-    memoryStore.storeSummary(ctx3.id, 'Implemented optimization', ['10x speedup', 'Tests passing']);
-    console.log(`Turn 3: Stored context ${ctx3.id}`);
+    memoryModule.startTurn('Context 3: Optimization');
+    memoryModule.addUserMessage('Optimize code');
+    memoryModule.addAssistantMessage([{ type: 'text', text: 'Optimized' }]);
+    memoryModule.completeTurn();
+    const turn3 = turnStore.getTurnByNumber(3);
+    if (turn3) {
+        turnStore.storeSummary(turn3.id, 'Implemented optimization', ['10x speedup', 'Tests passing']);
+        console.log(`Turn 3: Stored turn ${turn3.id}`);
+    }
 
     // Get recent summaries
     console.log('\nRecent summaries:');
-    const recentSummaries = memoryStore.getRecentSummaries(3);
+    const recentSummaries = turnStore.getAllSummaries().slice(-3);
     recentSummaries.forEach(s => {
         console.log(`  [Turn ${s.turnNumber}] ${s.summary}`);
         console.log(`    Insights: ${s.insights.join('; ')}`);
@@ -138,7 +154,7 @@ async function example2_MemoryOperations() {
 
     // Search by keyword
     console.log('\nSearch for "optimization":');
-    const searchResults = memoryStore.searchSummaries('optimization');
+    const searchResults = turnStore.searchSummaries('optimization');
     searchResults.forEach(s => {
         console.log(`  [Turn ${s.turnNumber}] ${s.summary}`);
     });
@@ -151,7 +167,7 @@ async function example2_MemoryOperations() {
     // Export memory
     console.log('\nExporting memory...');
     const exported = memoryModule.export();
-    console.log(`Exported ${exported.contexts.length} contexts and ${exported.summaries.length} summaries`);
+    console.log(`Exported ${exported.turns.length} turns and ${exported.summaries.length} summaries`);
 }
 
 /**
@@ -224,22 +240,21 @@ async function example3_DynamicConfig() {
 }
 
 /**
- * Example 4: Storage-only mode (no thinking)
+ * Example 4: Quick thinking mode (minimal rounds)
  */
-async function example4_StorageOnly() {
-    console.log('\n=== Example 4: Storage-Only Mode ===\n');
+async function example4_QuickThinking() {
+    console.log('\n=== Example 4: Quick Thinking Mode ===\n');
 
     const config: AgentConfig = {
         apiRequestTimeout: 40000,
         maxRetryAttempts: 3,
         consecutiveMistakeLimit: 3,
         memory: {
-            enableReflectiveThinking: false,  // Disable thinking
-            maxThinkingRounds: 0,
-            thinkingTokenBudget: 0,
+            maxThinkingRounds: 1,         // Minimal thinking - LLM can still decide to stop
+            thinkingTokenBudget: 2000,    // Low token budget
             enableRecall: true,
             maxRecallContexts: 3,
-            enableSummarization: true,        // Still generate summaries
+            enableSummarization: true,
         },
     };
 
@@ -258,10 +273,10 @@ async function example4_StorageOnly() {
     }, apiClient);
 
     console.log('Memory module enabled: ', agent.hasMemoryModule());
-    console.log('Reflective thinking: disabled');
-    console.log('Context storage: enabled');
-    console.log('Summarization: enabled');
-    console.log('\nThis mode stores contexts and generates summaries without multi-round thinking.');
+    console.log('Reflective thinking: always enabled');
+    console.log('Max thinking rounds: 1 (LLM controlled)');
+    console.log('Token budget: 2000 (low)');
+    console.log('\nThis mode performs minimal thinking for quick responses.');
 }
 
 /**
@@ -302,17 +317,33 @@ async function example5_Persistence() {
 
     const memoryModule1 = agent1.getMemoryModule();
     if (memoryModule1) {
-        const store = memoryModule1.getMemoryStore();
-        const ctx1 = store.storeContext('Context 1', ['tool1']);
-        store.storeSummary(ctx1.id, 'Summary 1', ['insight1']);
-        const ctx2 = store.storeContext('Context 2', ['tool2']);
-        store.storeSummary(ctx2.id, 'Summary 2', ['insight2']);
+        const turnStore = memoryModule1.getTurnStore();
 
-        console.log(`  Stored ${store.getCurrentTurn()} turns`);
+        // Create Turn 1
+        memoryModule1.startTurn('Context 1');
+        memoryModule1.addUserMessage('Task 1');
+        memoryModule1.recordToolCall('tool1', true, 'result1');
+        memoryModule1.completeTurn();
+        const turn1 = turnStore.getTurnByNumber(1);
+        if (turn1) {
+            turnStore.storeSummary(turn1.id, 'Summary 1', ['insight1']);
+        }
+
+        // Create Turn 2
+        memoryModule1.startTurn('Context 2');
+        memoryModule1.addUserMessage('Task 2');
+        memoryModule1.recordToolCall('tool2', true, 'result2');
+        memoryModule1.completeTurn();
+        const turn2 = turnStore.getTurnByNumber(2);
+        if (turn2) {
+            turnStore.storeSummary(turn2.id, 'Summary 2', ['insight2']);
+        }
+
+        console.log(`  Stored ${turnStore.getCurrentTurnNumber()} turns`);
 
         // Export memory
         const exported = memoryModule1.export();
-        console.log(`  Exported ${exported.contexts.length} contexts`);
+        console.log(`  Exported ${exported.turns.length} turns`);
 
         // Create second agent and import memory
         console.log('\nCreating second agent and importing memory...');
@@ -324,8 +355,8 @@ async function example5_Persistence() {
         const memoryModule2 = agent2.getMemoryModule();
         if (memoryModule2) {
             memoryModule2.import(exported);
-            const store2 = memoryModule2.getMemoryStore();
-            console.log(`  Imported ${store2.getCurrentTurn()} turns`);
+            const store2 = memoryModule2.getTurnStore();
+            console.log(`  Imported ${store2.getCurrentTurnNumber()} turns`);
             console.log(`  Summaries: ${store2.getAllSummaries().length}`);
         }
     }
@@ -339,7 +370,7 @@ async function runExamples() {
         await example1_BasicMemory();
         await example2_MemoryOperations();
         await example3_DynamicConfig();
-        await example4_StorageOnly();
+        await example4_QuickThinking();
         await example5_Persistence();
 
         console.log('\n=== All examples completed ===');
@@ -353,7 +384,7 @@ export {
     example1_BasicMemory,
     example2_MemoryOperations,
     example3_DynamicConfig,
-    example4_StorageOnly,
+    example4_QuickThinking,
     example5_Persistence,
     runExamples,
 };

@@ -1,3 +1,5 @@
+import OpenAI from 'openai';
+
 /**
  * Unified ToolCall interface compatible with OpenAI format
  * Supports both single and multiple tool calls in one response
@@ -14,6 +16,75 @@ export interface ToolCall {
     /** JSON string containing the function arguments */
     arguments: string;
 }
+
+/**
+ * Function parameters schema following JSON Schema format
+ * Used to define the structure of parameters for function calling
+ */
+export interface FunctionParameters {
+    /** JSON Schema type (e.g., "object", "string", "number") */
+    type?: string;
+    /** Property definitions for object types */
+    properties?: Record<string, FunctionParameters>;
+    /** Required property names */
+    required?: string[] | readonly string[];
+    /** Description of the parameter */
+    description?: string;
+    /** Enum values for the parameter */
+    enum?: unknown[] | readonly unknown[];
+    /** Array item schema */
+    items?: FunctionParameters;
+    /** Additional JSON Schema properties */
+    [key: string]: unknown;
+}
+
+/**
+ * Function definition for OpenAI-compatible function calling
+ */
+export interface FunctionDefinition {
+    /** The name of the function to be called */
+    name: string;
+    /** A description of what the function does */
+    description?: string;
+    /** The parameters the function accepts, described as a JSON Schema object */
+    parameters?: FunctionParameters;
+    /** Whether to enable strict schema adherence when generating the function call */
+    strict?: boolean | null;
+}
+
+/**
+ * Function tool definition for OpenAI-compatible API
+ */
+export interface ChatCompletionFunctionTool {
+    /** Function definition */
+    function: FunctionDefinition;
+    /** The type of the tool, always "function" */
+    type: 'function';
+}
+
+/**
+ * Custom tool definition for OpenAI-compatible API
+ * Used for custom tools beyond standard function calling
+ */
+export interface ChatCompletionCustomTool {
+    /** Properties of the custom tool */
+    custom: {
+        /** The name of the custom tool */
+        name: string;
+        /** Optional description of the custom tool */
+        description?: string;
+        /** Additional custom tool properties */
+        [key: string]: unknown;
+    };
+    /** The type of the custom tool, always "custom" */
+    type: 'custom';
+}
+
+/**
+ * Union type for all supported tool types
+ * Includes both function tools and custom tools
+ */
+export type ChatCompletionTool = ChatCompletionFunctionTool | ChatCompletionCustomTool;
 
 /**
  * Token usage information for API requests
@@ -68,7 +139,7 @@ export interface ApiClient {
      * @param workspaceContext - Current workspace state and information
      * @param memoryContext - Conversation history formatted as XML strings
      * @param timeoutConfig - Optional timeout configuration
-     * @param tools - Optional array of tool definitions in OpenAI format
+     * @param tools - Optional array of tool definitions in OpenAI ChatCompletionTool format
      * @returns Promise resolving to the API response (array of tool calls)
      * @throws Error if the request fails or times out
      */
@@ -77,6 +148,6 @@ export interface ApiClient {
         workspaceContext: string,
         memoryContext: string[],
         timeoutConfig?: ApiTimeoutConfig,
-        tools?: any[]
+        tools?: ChatCompletionTool[]
     ): Promise<ApiResponse>;
 }

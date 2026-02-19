@@ -1,4 +1,5 @@
 import { OpenAICompatibleConfig, OpenaiCompatibleApiClient } from "../OpenaiCompatibleApiClient";
+import { ChatCompletionFunctionTool } from "../ApiClient.interface";
 import { config } from "dotenv";
 config()
 
@@ -20,43 +21,43 @@ describe("Test GLM API", () => {
     }, 50000)
 
     it('should handle function calling', async () => {
-        const tools = [
+        const tools: ChatCompletionFunctionTool[] = [
             {
-                type: 'function' as const,
+                type: 'function',
                 function: {
                     name: 'get_weather',
                     description: 'Get the current weather for a location',
                     parameters: {
-                        type: 'object' as const,
+                        type: 'object',
                         properties: {
                             location: {
-                                type: 'string' as const,
+                                type: 'string',
                                 description: 'The city and state, e.g. San Francisco, CA',
                             },
                             unit: {
-                                type: 'string' as const,
-                                enum: ['celsius', 'fahrenheit'] as const,
+                                type: 'string',
+                                enum: ['celsius', 'fahrenheit'],
                                 description: 'The temperature unit',
                             },
                         },
-                        required: ['location'] as const,
+                        required: ['location'],
                     },
                 },
             },
             {
-                type: 'function' as const,
+                type: 'function',
                 function: {
                     name: 'calculate',
                     description: 'Perform a mathematical calculation',
                     parameters: {
-                        type: 'object' as const,
+                        type: 'object',
                         properties: {
                             expression: {
-                                type: 'string' as const,
+                                type: 'string',
                                 description: 'The mathematical expression to evaluate, e.g. "2 + 2"',
                             },
                         },
-                        required: ['expression'] as const,
+                        required: ['expression'],
                     },
                 },
             },

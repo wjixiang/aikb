@@ -57,7 +57,7 @@ Please use the execute_systematic-literature-review tool to conduct the full rev
   await agent.start(query);
 
   // 6. Get results
-  const history = agent.getConversationHistory();
+  const history = agent.conversationHistory;
   console.log('Review completed!');
   console.log(JSON.stringify(history, null, 2));
 }

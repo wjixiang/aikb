@@ -1,24 +1,24 @@
 /**
- * Enhanced MemoryModule - Manages all conversation history and context
+ * Turn-based MemoryModule - Manages conversation memory with Turn as the core unit
  *
- * This module is now responsible for:
- * 1. Conversation history (user/assistant/tool messages)
- * 2. Workspace context snapshots
- * 3. Summaries and insights
- * 4. Reflective thinking
+ * This module manages:
+ * 1. Turn lifecycle (start → thinking → acting → executing → complete)
+ * 2. Messages within each turn
+ * 3. Workspace context snapshots per turn
+ * 4. Summaries and insights per turn
+ * 5. Reflective thinking (optional)
  */
 
 import { ApiMessage, MessageBuilder } from '../task/task.type.js';
-import { ContextMemoryStore, ContextSnapshot } from './ContextMemoryStore.js';
-import type { ApiClient } from '../api-client/index.js';
+import { TurnMemoryStore } from './TurnMemoryStore.js';
+import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
+import type { ApiClient, ChatCompletionTool } from '../api-client/index.js';
 
 /**
  * Configuration for the memory module
  */
 export interface MemoryModuleConfig {
-    /** Enable reflective thinking */
-    enableReflectiveThinking: boolean;
-    /** Maximum thinking rounds per turn */
+    /** Maximum thinking rounds per turn (LLM controls actual rounds via continue_thinking) */
     maxThinkingRounds: number;
     /** Token budget for thinking phase */
     thinkingTokenBudget: number;
@@ -28,24 +28,20 @@ export interface MemoryModuleConfig {
     maxRecallContexts: number;
     /** Enable automatic summarization */
     enableSummarization: boolean;
-    /** History compression strategy */
-    compressionStrategy: 'sliding-window' | 'semantic' | 'token-budget';
-    /** Compression threshold (tokens) */
-    compressionThreshold: number;
+    /** Maximum recalled conversation messages to inject (default: 20) */
+    maxRecalledMessages: number;
 }
 
 /**
  * Default configuration
  */
 export const defaultMemoryConfig: MemoryModuleConfig = {
-    enableReflectiveThinking: false,
     maxThinkingRounds: 3,
     thinkingTokenBudget: 10000,
     enableRecall: true,
     maxRecallContexts: 3,
     enableSummarization: true,
-    compressionStrategy: 'sliding-window',
-    compressionThreshold: 8000,
+    maxRecalledMessages: 20,
 };
 
 /**
@@ -58,53 +54,37 @@ export interface ThinkingPhaseResult {
     tokensUsed: number;
     /** Whether to continue to action phase */
     shouldProceedToAction: boolean;
-    /** Context snapshot created */
-    contextSnapshot?: ContextSnapshot;
+    /** Turn ID that was updated */
+    turnId: string;
     /** Summary generated */
     summary?: string;
-    /** Compressed conversation history */
-    compressedHistory: ApiMessage[];
 }
 
 /**
- * Single thinking round
- */
-export interface ThinkingRound {
-    roundNumber: number;
-    content: string;
-    continueThinking: boolean;
-    recalledContexts: ContextSnapshot[];
-    tokens: number;
-}
-
-/**
- * Enhanced MemoryModule - Central memory management
- *
- * This module now manages:
- * - Conversation history (replaces Agent._conversationHistory)
- * - Workspace context snapshots
- * - Summaries and insights
- * - Reflective thinking
+ * Turn-based MemoryModule
  */
 export class MemoryModule {
     private config: MemoryModuleConfig;
-    private memoryStore: ContextMemoryStore;
+    private turnStore: TurnMemoryStore;
     private apiClient: ApiClient;
 
-    // Conversation history (moved from Agent)
-    private conversationHistory: ApiMessage[] = [];
+    // Current active turn
+    private currentTurn: Turn | null = null;
+
+    // Recalled messages (temporary storage for next prompt)
+    private recalledMessages: ApiMessage[] = [];
 
     constructor(apiClient: ApiClient, config: Partial<MemoryModuleConfig> = {}) {
         this.config = { ...defaultMemoryConfig, ...config };
-        this.memoryStore = new ContextMemoryStore();
+        this.turnStore = new TurnMemoryStore();
         this.apiClient = apiClient;
     }
 
     /**
-     * Get the memory store
+     * Get the turn store
      */
-    getMemoryStore(): ContextMemoryStore {
-        return this.memoryStore;
+    getTurnStore(): TurnMemoryStore {
+        return this.turnStore;
     }
 
     /**
@@ -121,86 +101,144 @@ export class MemoryModule {
         this.config = { ...this.config, ...config };
     }
 
-    // ==================== Conversation History Management ====================
+    // ==================== Turn Lifecycle Management ====================
 
     /**
-     * Get conversation history
+     * Start a new turn
      */
-    getConversationHistory(): ApiMessage[] {
-        return [...this.conversationHistory];
+    startTurn(workspaceContext: string, taskContext?: string): Turn {
+        // Complete previous turn if exists
+        if (this.currentTurn && this.currentTurn.status !== TurnStatus.COMPLETED) {
+            console.warn(`Previous turn ${this.currentTurn.id} was not completed, completing now`);
+            this.completeTurn();
+        }
+
+        // Create new turn with current workspace context and optional task context
+        const turn = this.turnStore.createTurn(workspaceContext, taskContext);
+        this.currentTurn = turn;
+
+        return turn;
     }
 
     /**
-     * Set conversation history (for restoration)
+     * Complete current turn (no parameters needed - workspace context is immutable)
      */
-    setConversationHistory(history: ApiMessage[]): void {
-        this.conversationHistory = [...history];
+    completeTurn(): void {
+        if (!this.currentTurn) {
+            console.warn('No active turn to complete');
+            return;
+        }
+
+        // Update status
+        this.turnStore.updateTurnStatus(this.currentTurn.id, TurnStatus.COMPLETED);
+
+        // Clear current turn
+        this.currentTurn = null;
     }
 
     /**
-     * Add message to conversation history
+     * Get current turn
      */
-    addToConversationHistory(message: ApiMessage): void {
-        const messageWithTs: ApiMessage = {
-            ...message,
-            ts: Date.now(),
-        };
-        this.conversationHistory.push(messageWithTs);
+    getCurrentTurn(): Turn | null {
+        return this.currentTurn;
     }
 
+    // ==================== Message Management (through Turn) ====================
+
     /**
-     * Add user message
+     * Add user message to current turn
      */
     addUserMessage(content: string | any[]): void {
-        if (typeof content === 'string') {
-            this.addToConversationHistory(MessageBuilder.user(content));
-        } else {
-            this.addToConversationHistory(MessageBuilder.custom('user', content));
+        if (!this.currentTurn) {
+            throw new Error('No active turn. Call startTurn() first.');
         }
+
+        const message = typeof content === 'string'
+            ? MessageBuilder.user(content)
+            : MessageBuilder.custom('user', content);
+
+        this.turnStore.addMessageToTurn(this.currentTurn.id, message);
     }
 
     /**
-     * Add assistant message
+     * Add assistant message to current turn
      */
     addAssistantMessage(content: any[]): void {
-        this.addToConversationHistory(MessageBuilder.custom('assistant', content));
+        if (!this.currentTurn) {
+            throw new Error('No active turn. Call startTurn() first.');
+        }
+
+        this.turnStore.addMessageToTurn(
+            this.currentTurn.id,
+            MessageBuilder.custom('assistant', content)
+        );
     }
 
     /**
-     * Add system message
+     * Add system message to current turn
      */
     addSystemMessage(content: string): void {
-        this.addToConversationHistory(MessageBuilder.system(content));
+        if (!this.currentTurn) {
+            throw new Error('No active turn. Call startTurn() first.');
+        }
+
+        this.turnStore.addMessageToTurn(
+            this.currentTurn.id,
+            MessageBuilder.system(content)
+        );
+    }
+
+    // ==================== History Retrieval ====================
+
+    /**
+     * Get all historical messages (flattened from all turns)
+     */
+    getAllMessages(): ApiMessage[] {
+        return this.turnStore.getAllMessages();
     }
 
     /**
-     * Clear conversation history
+     * Get history for prompt injection (based on strategy)
      */
-    clearConversationHistory(): void {
-        this.conversationHistory = [];
+    getHistoryForPrompt(): ApiMessage[] {
+        // Return recalled messages if any, otherwise empty (summary-only mode)
+        return [...this.recalledMessages];
     }
 
     /**
-     * Get compressed conversation history
+     * Recall specific turns by turn numbers
      */
-    getCompressedHistory(): ApiMessage[] {
-        return this.compressHistory(this.conversationHistory);
+    recallTurns(turnNumbers: number[]): ApiMessage[] {
+        const recalled: ApiMessage[] = [];
+
+        for (const turnNum of turnNumbers) {
+            const turn = this.turnStore.getTurnByNumber(turnNum);
+            if (turn) {
+                recalled.push(...turn.messages);
+            }
+        }
+
+        // Limit to maxRecalledMessages
+        const limited = recalled.slice(0, this.config.maxRecalledMessages);
+
+        // Store for next prompt
+        this.recalledMessages = limited;
+
+        return limited;
     }
 
-    // ==================== Context Management ====================
-
     /**
-     * Store current workspace context
+     * Clear recalled messages
      */
-    storeContext(workspaceContext: string, toolCalls?: string[]): ContextSnapshot {
-        return this.memoryStore.storeContext(workspaceContext, toolCalls);
+    clearRecalledMessages(): void {
+        this.recalledMessages = [];
     }
 
     /**
      * Get accumulated summaries for prompt injection
      */
     getAccumulatedSummaries(): string {
-        const summaries = this.memoryStore.getAllSummaries();
+        const summaries = this.turnStore.getAllSummaries();
 
         if (summaries.length === 0) {
             return '';
@@ -224,39 +262,21 @@ ${summaryText}
     // ==================== Thinking Phase ====================
 
     /**
-     * Perform thinking phase (if enabled)
+     * Perform thinking phase (updates current turn)
+     * Always performs reflective thinking - LLM controls rounds via continue_thinking tool
      */
     async performThinkingPhase(
         workspaceContext: string,
         lastToolResults?: any[]
     ): Promise<ThinkingPhaseResult> {
-        if (!this.config.enableReflectiveThinking) {
-            // Skip thinking phase, just store context
-            const snapshot = this.storeContext(
-                workspaceContext,
-                lastToolResults?.map(r => r.toolName)
-            );
-
-            // Generate summary if enabled
-            let summary: string | undefined;
-            if (this.config.enableSummarization) {
-                summary = await this.generateSimpleSummary(workspaceContext, lastToolResults);
-                if (summary) {
-                    this.memoryStore.storeSummary(snapshot.id, summary, []);
-                }
-            }
-
-            return {
-                rounds: [],
-                tokensUsed: 0,
-                shouldProceedToAction: true,
-                contextSnapshot: snapshot,
-                summary,
-                compressedHistory: this.getCompressedHistory(),
-            };
+        if (!this.currentTurn) {
+            throw new Error('No active turn. Call startTurn() first.');
         }
 
-        // Perform reflective thinking
+        // Update turn status
+        this.turnStore.updateTurnStatus(this.currentTurn.id, TurnStatus.THINKING);
+
+        // Perform reflective thinking - LLM controls when to stop
         const rounds: ThinkingRound[] = [];
         let totalTokens = 0;
         let continueThinking = true;
@@ -280,11 +300,8 @@ ${summaryText}
             continueThinking = round.continueThinking;
         }
 
-        // Store context
-        const snapshot = this.storeContext(
-            workspaceContext,
-            lastToolResults?.map(r => r.toolName)
-        );
+        // Store thinking phase in turn
+        this.turnStore.storeThinkingPhase(this.currentTurn.id, rounds, totalTokens);
 
         // Generate summary if enabled
         let summary: string | undefined;
@@ -296,8 +313,8 @@ ${summaryText}
             );
 
             if (summary) {
-                this.memoryStore.storeSummary(
-                    snapshot.id,
+                this.turnStore.storeSummary(
+                    this.currentTurn.id,
                     summary,
                     this.extractInsights(rounds)
                 );
@@ -308,16 +325,15 @@ ${summaryText}
             rounds,
             tokensUsed: totalTokens,
             shouldProceedToAction: true,
-            contextSnapshot: snapshot,
+            turnId: this.currentTurn.id,
             summary,
-            compressedHistory: this.getCompressedHistory(),
         };
     }
 
     /**
      * Perform a single thinking round
      */
-    private async performSingleThinkingRound(
+    async performSingleThinkingRound(
         roundNumber: number,
         workspaceContext: string,
         previousRounds: ThinkingRound[]
@@ -377,16 +393,18 @@ ${summaryText}
         const systemPrompt = `You are in the THINKING phase of an agent framework.
 
 Your task is to:
-1. Analyze the current situation based on conversation history and workspace context
-2. Review accumulated summaries from previous turns
-3. Decide whether to continue thinking or proceed to action
-4. Optionally recall historical contexts if needed
+1. Understand the user's overall task/goal
+2. Analyze the current situation based on conversation history and workspace context
+3. Review accumulated summaries from previous turns
+4. Decide whether to continue thinking or proceed to action
+5. Optionally recall historical contexts if needed
 
 You have access to these tools:
 - continue_thinking: Decide whether to continue thinking or proceed to action
 - recall_context: Recall historical workspace contexts by turn number, ID, or keyword
 
 Think deeply about:
+- What the user wants to accomplish (the overall goal)
 - What has been accomplished so far
 - What needs to be done next
 - What information is missing
@@ -397,7 +415,12 @@ Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}`;
 
         const accumulatedSummaries = this.getAccumulatedSummaries();
 
-        const context = `
+        // Get task context from current turn
+        const taskContext = this.currentTurn?.taskContext
+            ? `\n=== TASK CONTEXT ===\nUser's Goal: ${this.currentTurn.taskContext}\n`
+            : '';
+
+        const context = `${taskContext}
 === WORKSPACE CONTEXT ===
 ${workspaceContext}
 
@@ -407,7 +430,8 @@ ${accumulatedSummaries}
 ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 `;
 
-        const history = this.conversationHistory.map(msg => {
+        const allMessages = this.turnStore.getAllMessages();
+        const history = allMessages.map(msg => {
             const role = msg.role;
             const content = msg.content
                 .filter(block => block.type === 'text')
@@ -422,7 +446,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
     /**
      * Build thinking tools
      */
-    private buildThinkingTools(): any[] {
+    private buildThinkingTools(): ChatCompletionTool[] {
         return [
             {
                 type: 'function',
@@ -482,100 +506,104 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
     /**
      * Handle context recall
      */
-    private handleRecall(request: any): ContextSnapshot[] {
+    private handleRecall(request: any): Turn[] {
         if (!this.config.enableRecall) {
             return [];
         }
 
-        const recalled: ContextSnapshot[] = [];
+        const recalled: Turn[] = [];
 
         if (request.turnNumbers) {
             for (const turn of request.turnNumbers) {
-                const ctx = this.memoryStore.getContextByTurn(turn);
-                if (ctx) recalled.push(ctx);
-            }
-        }
-
-        if (request.contextIds) {
-            for (const id of request.contextIds) {
-                const ctx = this.memoryStore.getContext(id);
-                if (ctx) recalled.push(ctx);
+                const t = this.turnStore.getTurnByNumber(turn);
+                if (t) recalled.push(t);
             }
         }
 
         if (request.keywords) {
             for (const keyword of request.keywords) {
-                const summaries = this.memoryStore.searchSummaries(keyword);
-                for (const summary of summaries) {
-                    const ctx = this.memoryStore.getContext(summary.contextId);
-                    if (ctx) recalled.push(ctx);
-                }
+                const turns = this.turnStore.searchTurns(keyword);
+                recalled.push(...turns);
             }
         }
 
         return recalled.slice(0, this.config.maxRecallContexts);
     }
 
+    // ==================== Tool Call Recording ====================
+
     /**
-     * Generate simple summary (without thinking rounds)
+     * Record tool call result to current turn
      */
-    private async generateSimpleSummary(
-        workspaceContext: string,
-        toolResults?: any[]
-    ): Promise<string> {
-        const summaryPrompt = `Summarize the following workspace context in 2-3 sentences.
-
-WORKSPACE CONTEXT:
-${workspaceContext.substring(0, 1000)}...
-
-TOOL RESULTS:
-${toolResults?.map(r => `${r.toolName}: ${r.success ? 'success' : 'failed'}`).join('\n') || 'None'}
-
-Generate a concise summary (2-3 sentences).`;
-
-        try {
-            const response = await this.apiClient.makeRequest(
-                'You are a summarization assistant.',
-                summaryPrompt,
-                [],
-                { timeout: 20000 },
-                []
-            );
-
-            return this.extractContent(response);
-        } catch (error) {
-            console.error('Summary generation failed:', error);
-            return 'Summary generation failed';
+    recordToolCall(toolName: string, success: boolean, result: any): void {
+        if (!this.currentTurn) {
+            console.warn('No active turn to record tool call');
+            return;
         }
+
+        const toolCall: ToolCallResult = {
+            toolName,
+            success,
+            result,
+            timestamp: Date.now(),
+        };
+
+        this.turnStore.addToolCallResult(this.currentTurn.id, toolCall);
     }
 
+    // ==================== Summary Generation ====================
+
     /**
-     * Generate summary for current turn
+     * Generate summary for current turn (based on thinking rounds)
      */
     private async generateSummary(
         workspaceContext: string,
         thinkingRounds: ThinkingRound[],
         toolResults?: any[]
     ): Promise<string> {
-        const summaryPrompt = `Summarize the following workspace context and thinking process into a concise summary (2-3 sentences).
+        // Get previous summaries for context continuity
+        const previousSummaries = this.getAccumulatedSummaries();
+
+        const summaryPrompt = `Generate a DETAILED summary of what happened in this turn.
+
+${previousSummaries}
 
 WORKSPACE CONTEXT:
 ${workspaceContext.substring(0, 1000)}...
 
 THINKING ROUNDS:
-${thinkingRounds.map(r => `Round ${r.roundNumber}: ${r.content.substring(0, 200)}`).join('\n')}
+${thinkingRounds.map(r => `Round ${r.roundNumber}: ${r.content.substring(0, 500)}`).join('\n\n')}
 
 TOOL RESULTS:
-${toolResults?.map(r => `${r.toolName}: ${r.success ? 'success' : 'failed'}`).join('\n') || 'None'}
+${toolResults?.map(r => {
+    const resultStr = typeof r.result === 'object'
+        ? JSON.stringify(r.result).substring(0, 300)
+        : String(r.result).substring(0, 300);
+    return `${r.toolName}: ${r.success ? 'success' : 'failed'}\nResult: ${resultStr}`;
+}).join('\n\n') || 'None'}
 
-Generate a concise summary (2-3 sentences) of what happened in this turn.`;
+Generate a DETAILED summary (5-8 sentences) that includes:
+1. What specific actions were taken (be specific about tools used, parameters, search terms, etc.)
+2. What concrete results were obtained (include key numbers, counts, findings, data points)
+3. What decisions were made and the reasoning behind them
+4. What challenges or issues were encountered (if any)
+5. What the next steps or implications might be
+
+The summary should preserve important details like:
+- Specific search terms, keywords, or queries used
+- Exact numbers (article counts, data points, measurements)
+- Names of tools, databases, or resources accessed
+- Key findings or insights discovered
+- Specific actions taken and their outcomes
+
+If this turn builds upon previous turns, mention the connection and how it advances the overall task.`;
 
         try {
             const response = await this.apiClient.makeRequest(
-                'You are a summarization assistant. Generate concise summaries.',
+                'You are a detailed summarization assistant. Generate comprehensive summaries that preserve important details and maintain narrative continuity.',
                 summaryPrompt,
                 [],
-                { timeout: 20000 },
+                { timeout: 30000 },  // Increased timeout for longer summaries
                 []
             );
 
@@ -605,75 +633,7 @@ Generate a concise summary (2-3 sentences) of what happened in this turn.`;
         return insights.slice(0, 5); // Keep top 5 insights
     }
 
-    /**
-     * Compress conversation history
-     */
-    private compressHistory(history: ApiMessage[]): ApiMessage[] {
-        switch (this.config.compressionStrategy) {
-            case 'sliding-window':
-                return this.compressSlidingWindow(history);
-            case 'token-budget':
-                return this.compressTokenBudget(history);
-            case 'semantic':
-                // TODO: Implement semantic compression
-                return this.compressSlidingWindow(history);
-            default:
-                return history;
-        }
-    }
-
-    /**
-     * Sliding window compression
-     */
-    private compressSlidingWindow(history: ApiMessage[]): ApiMessage[] {
-        const windowSize = 10;
-        if (history.length <= windowSize + 1) {
-            return history;
-        }
-        // Keep first message and last N messages
-        return [history[0], ...history.slice(-windowSize)];
-    }
-
-    /**
-     * Token budget compression
-     */
-    private compressTokenBudget(history: ApiMessage[]): ApiMessage[] {
-        let compressed = [...history];
-        let tokenCount = 0;
-
-        while (compressed.length > 1 && tokenCount > this.config.compressionThreshold) {
-            tokenCount = 0;
-            for (const msg of compressed) {
-                tokenCount += this.estimateMessageTokens(msg);
-            }
-
-            if (tokenCount > this.config.compressionThreshold) {
-                // Remove second message (keep first as task context)
-                compressed = [compressed[0], ...compressed.slice(2)];
-            }
-        }
-
-        return compressed;
-    }
-
-    /**
-     * Estimate message tokens
-     */
-    private estimateMessageTokens(message: ApiMessage): number {
-        let text = '';
-
-        for (const block of message.content) {
-            if (block.type === 'text') {
-                text += block.text + ' ';
-            } else if (block.type === 'tool_use') {
-                text += JSON.stringify(block) + ' ';
-            } else if (block.type === 'tool_result') {
-                text += JSON.stringify(block) + ' ';
-            }
-        }
-
-        return Math.ceil(text.length / 4);
-    }
+    // ==================== Helper Methods ====================
 
     /**
      * Extract content from API response
@@ -681,6 +641,9 @@ Generate a concise summary (2-3 sentences) of what happened in this turn.`;
     private extractContent(response: any): string {
         if (response.content) {
             return response.content;
+        }
+        if (response.textResponse) {
+            return response.textResponse;
         }
         return 'No content';
     }
@@ -730,31 +693,30 @@ Generate a concise summary (2-3 sentences) of what happened in this turn.`;
         return Math.ceil(text.length / 4);
     }
 
+    // ==================== Import/Export ====================
+
     /**
-     * Export memory state (including conversation history)
+     * Export memory state
      */
     export() {
-        return {
-            ...this.memoryStore.export(),
-            conversationHistory: this.conversationHistory,
-        };
+        return this.turnStore.export();
     }
 
     /**
-     * Import memory state (including conversation history)
+     * Import memory state
      */
     import(data: any) {
-        this.memoryStore.import(data);
-        if (data.conversationHistory) {
-            this.conversationHistory = data.conversationHistory;
-        }
+        this.turnStore.import(data);
+        this.currentTurn = null;
     }
 
     /**
-     * Clear all memory (including conversation history)
+     * Clear all memory
      */
     clear() {
-        this.memoryStore.clear();
-        this.conversationHistory = [];
+        this.turnStore.clear();
+        this.currentTurn = null;
+        this.recalledMessages = [];
     }
 }
+

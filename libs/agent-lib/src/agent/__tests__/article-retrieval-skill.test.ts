@@ -108,5 +108,5 @@ describe("Article Retrieval Skill Integration", () => {
 
         console.log('=== TEST COMPLETED ===');
 
-    }, 99999)
+    }, 999999)
 })

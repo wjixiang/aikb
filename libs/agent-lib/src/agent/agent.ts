@@ -89,6 +89,7 @@ export class Agent {
     workspace: VirtualWorkspace;
     private _status: TaskStatus = 'idle';
     private _taskId: string;
+    private _initialQuery: string | null = null;  // Store initial user query for task context
     private _tokenUsage: TokenUsage = {
         totalTokensIn: 0,
         totalTokensOut: 0,
@@ -170,14 +171,16 @@ export class Agent {
      * Getter for conversation history (delegated to MemoryModule)
      */
     public get conversationHistory(): ApiMessage[] {
-        return this.memoryModule.getConversationHistory();
+        return this.memoryModule.getAllMessages();
     }
 
     /**
-     * Setter for conversation history (delegated to MemoryModule)
+     * Setter for conversation history (not supported in Turn-based architecture)
+     * @deprecated Turn-based architecture doesn't support setting history directly
      */
     public set conversationHistory(history: ApiMessage[]) {
-        this.memoryModule.setConversationHistory(history);
+        console.warn('Setting conversation history is not supported in Turn-based architecture');
+        // For backward compatibility, do nothing
     }
 
     /**
@@ -230,9 +233,10 @@ export class Agent {
      */
     async start(query: string): Promise<Agent> {
         this._status = 'running';
+        this._initialQuery = query;  // Save initial query for task context
 
-        // Add initial user message to history (via MemoryModule)
-        this.memoryModule.addUserMessage(`<task>${query}</task>`);
+        // Note: Initial user message will be added in requestLoop after startTurn()
+        // This ensures the message is properly associated with a Turn
 
         // Start request loop
         await this.requestLoop(query);
@@ -286,6 +290,9 @@ export class Agent {
         ];
         const stack: StackItem[] = [{ sender: 'user', content: userContent, retryAttempt: 0 }];
 
+        // Track if we need to start a new turn
+        let needsNewTurn = true;
+
         while (stack.length > 0) {
             const currentItem = stack.pop()!;
             const currentUserContent = currentItem.content;
@@ -304,6 +311,19 @@ export class Agent {
                 throw new Error(`Consecutive mistake limit reached`);
             }
 
+            // Get current workspace context
+            const currentWorkspaceContext = await this.workspace.render();
+
+            // Start new turn if needed
+            if (needsNewTurn) {
+                // Pass task context only for the first turn
+                const taskContext = this.memoryModule.getTurnStore().getCurrentTurnNumber() === 0
+                    ? this._initialQuery || undefined
+                    : undefined;
+
+                this.memoryModule.startTurn(currentWorkspaceContext, taskContext);
+                needsNewTurn = false;
+            }
 
             // Add user message to conversation history if needed
             const isEmptyUserContent = currentUserContent.length === 0;
@@ -313,12 +333,13 @@ export class Agent {
                     currentItem.userMessageWasRemoved) && currentItem.sender === 'user';
 
             if (shouldAddUserMessage) {
-                this.memoryModule.addToConversationHistory(
-                    MessageBuilder.custom('user', currentUserContent)
-                );
+                // Use the appropriate method based on content type
+                if (currentUserContent.length === 1 && currentUserContent[0].type === 'text') {
+                    this.memoryModule.addUserMessage((currentUserContent[0] as any).text);
+                } else {
+                    this.memoryModule.addUserMessage(currentUserContent);
+                }
             }
-
-            const currentWorkspaceContext = await this.workspace.render();
 
             try {
                 // Reset message processing state for each new API request
@@ -367,9 +388,7 @@ export class Agent {
 
                 // Add user message (tool result) to conversation history
                 if (this.messageState.userMessageContent.length > 0) {
-                    this.memoryModule.addToConversationHistory(
-                        MessageBuilder.custom('user', this.messageState.userMessageContent)
-                    );
+                    this.memoryModule.addUserMessage(this.messageState.userMessageContent);
                 }
 
                 // Store tool results for next thinking phase
@@ -377,10 +396,16 @@ export class Agent {
                     const toolResult = executionResult.userMessageContent.find(
                         m => m.type === 'tool_result' && m.tool_use_id === tc.id
                     );
+                    const success = toolResult && 'is_error' in toolResult ? !toolResult.is_error : true;
+                    const result = toolResult && 'content' in toolResult ? toolResult.content : '';
+
+                    // Record tool call to current turn
+                    this.memoryModule.recordToolCall(tc.name, success, result);
+
                     return {
                         toolName: tc.name,
-                        success: true, // TODO: Determine from executionResult
-                        result: toolResult && 'content' in toolResult ? toolResult.content : '',
+                        success,
+                        result,
                         timestamp: Date.now(),
                     };
                 });
@@ -393,6 +418,10 @@ export class Agent {
                 if (
                     !this.messageState.didAttemptCompletion
                 ) {
+                    // Complete current turn and prepare for next turn
+                    this.memoryModule.completeTurn();
+                    needsNewTurn = true;
+
                     stack.push({
                         sender: 'system',
                         content: [{
@@ -400,6 +429,9 @@ export class Agent {
                             text: 'WORKSPACE STATE UPDATED'
                         }],
                     });
+                } else {
+                    // Task completed, complete the turn
+                    this.memoryModule.completeTurn();
                 }
 
                 // For debugging: avoid stuck in loop for some tests
@@ -536,7 +568,7 @@ export class Agent {
             message.content = [reasoningBlock, ...message.content];
         }
 
-        this.memoryModule.addToConversationHistory(message);
+        this.memoryModule.addAssistantMessage(message.content);
     }
 
     /**
@@ -551,33 +583,6 @@ export class Agent {
      */
     addSystemMessageToHistory(message: string): void {
         this.memoryModule.addSystemMessage(message);
-    }
-
-    /**
-     * Add message to conversation history with timestamp and optional reasoning
-     * @deprecated Use memoryModule methods directly
-     */
-    private addToConversationHistory(
-        message: ApiMessage,
-        reasoning?: string,
-    ): void {
-        if (message.role === 'assistant' && reasoning) {
-            const reasoningBlock: ThinkingBlock = {
-                type: 'thinking',
-                thinking: reasoning,
-            };
-            message.content = [reasoningBlock, ...message.content];
-        }
-
-        this.memoryModule.addToConversationHistory(message);
-    }
-
-    /**
-     * Get conversation history
-     * @deprecated Use conversationHistory getter or memoryModule.getConversationHistory()
-     */
-    getConversationHistory() {
-        return this.memoryModule.getConversationHistory();
     }
 
     // ==================== Tool Execution ====================
@@ -612,6 +617,31 @@ export class Agent {
                         completionData = { result: toolCall.arguments };
                     }
                     result = { success: true, result: completionData.result || completionData };
+                } else if (toolCall.name === 'recall_conversation') {
+                    // Handle recall_conversation tool
+                    let recallParams: any = {};
+                    try {
+                        recallParams = JSON.parse(toolCall.arguments);
+                    } catch (e) {
+                        recallParams = {};
+                    }
+
+                    // Call MemoryModule to recall turns
+                    let recalled: ApiMessage[] = [];
+                    if (recallParams.turn_numbers && recallParams.turn_numbers.length > 0) {
+                        recalled = this.memoryModule.recallTurns(recallParams.turn_numbers);
+                    } else if (recallParams.last_n) {
+                        // Get recent messages from last N turns
+                        recalled = this.memoryModule.getTurnStore().getRecentMessages(recallParams.last_n);
+                        // Store for next prompt
+                        this.memoryModule['recalledMessages'] = recalled.slice(0, this.memoryModule.getConfig().maxRecalledMessages);
+                    }
+
+                    result = {
+                        success: true,
+                        recalled_messages: recalled.length,
+                        message: `Successfully recalled ${recalled.length} messages. They will be injected into the next API request.`,
+                    };
                 } else {
                     // Parse tool arguments
                     let parsedParams: any = {};
@@ -671,20 +701,28 @@ export class Agent {
             const systemPrompt = await this.getSystemPrompt();
             let workspaceContext = await this.workspace.render();
 
-            // Inject accumulated summaries from MemoryModule
+            // Inject task context and accumulated summaries from MemoryModule
+            const currentTurn = this.memoryModule.getCurrentTurn();
+            const taskContext = currentTurn?.taskContext
+                ? `=== TASK CONTEXT ===\nUser's Goal: ${currentTurn.taskContext}\n\n`
+                : '';
+
             const accumulatedSummaries = this.memoryModule.getAccumulatedSummaries();
-            if (accumulatedSummaries) {
-                workspaceContext = `${accumulatedSummaries}\n\n=== CURRENT WORKSPACE CONTEXT ===\n${workspaceContext}`;
+
+            if (taskContext || accumulatedSummaries) {
+                workspaceContext = `${taskContext}${accumulatedSummaries}\n\n=== CURRENT WORKSPACE CONTEXT ===\n${workspaceContext}`;
             }
 
-            // Get compressed conversation history from MemoryModule
-            const compressedHistory = this.memoryModule.getCompressedHistory();
+            // Get conversation history for prompt
+            // Default: summary-only mode (no history injected by default)
+            // History is only injected when LLM explicitly calls recall_conversation tool
+            const conversationHistory = this.memoryModule.getHistoryForPrompt();
 
             // Build prompt using PromptBuilder
             const prompt: FullPrompt = new PromptBuilder()
                 .setSystemPrompt(systemPrompt)
                 .setWorkspaceContext(workspaceContext)
-                .setConversationHistory(compressedHistory)
+                .setConversationHistory(conversationHistory)
                 .build();
 
             try {
@@ -699,6 +737,10 @@ export class Agent {
                     { timeout: this.config.apiRequestTimeout },
                     tools  // Pass tools to API client
                 );
+
+                // Clear recalled messages after API request
+                // They were injected into this request, so clear for next request
+                this.memoryModule.clearRecalledMessages();
 
                 return response;
 

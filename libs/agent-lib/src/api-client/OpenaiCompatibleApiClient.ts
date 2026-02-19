@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage } from './ApiClient.interface';
+import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface';
 
 /**
  * Configuration for OpenAI-compatible API client
@@ -40,7 +40,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         workspaceContext: string,
         memoryContext: string[],
         timeoutConfig?: ApiTimeoutConfig,
-        tools?: any[]
+        tools?: ChatCompletionTool[]
     ): Promise<ApiResponse> {
         const timeout = timeoutConfig?.timeout ?? 40000;
 
@@ -73,6 +73,8 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             // Calculate request time
             const requestTime = Date.now() - startTime;
             const resposne = this.convertOpenAIResponse(completion, requestTime);
+            console.log(`systemPrompt:${systemPrompt}`)
+            console.log(`memoryContext:${memoryContext}`)
             console.log(resposne)
 
             // Convert OpenAI response to unified format
