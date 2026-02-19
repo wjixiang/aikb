@@ -41,17 +41,16 @@ export class VirtualWorkspace {
      */
     private initializeSkills(): void {
         try {
-            // Dynamically import SkillRegistry to avoid circular dependencies
-            import('../skills/index.js').then(({ SkillRegistry }) => {
-                const skillRegistry = new SkillRegistry();
-                const skills = skillRegistry.getAll();
+            // Import built-in skills directly instead of scanning directories
+            import('../skills/builtin/index.js').then(({ getBuiltinSkills }) => {
+                const skills = getBuiltinSkills();
 
                 if (skills.length > 0) {
                     this.skillManager.registerAll(skills);
-                    console.log(`[VirtualWorkspace] Auto-loaded ${skills.length} skills from repository`);
+                    console.log(`[VirtualWorkspace] Registered ${skills.length} built-in skills`);
                 }
             }).catch(error => {
-                console.warn('[VirtualWorkspace] Failed to auto-load skills:', error);
+                console.warn('[VirtualWorkspace] Failed to load built-in skills:', error);
             });
         } catch (error) {
             console.warn('[VirtualWorkspace] Skills module not available:', error);
