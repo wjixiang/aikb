@@ -3,8 +3,8 @@
  */
 
 import { ToolCall, ApiResponse } from './ApiClient.interface';
-import { BamlApiClient } from './BamlApiClient';
-import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient';
+import { BamlApiClient } from './BamlApiClient.js';
+import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient.js';
 
 // ============================================================================
 // Example 1: Single Tool Call
@@ -148,7 +148,7 @@ async function exampleOpenAIClient() {
   console.log(`Tokens used: ${response.tokenUsage.totalTokens}`);
 
   const results = await Promise.all(
-    response.toolCalls.map(async (toolCall) => {
+    response.toolCalls.map(async (toolCall: ToolCall) => {
       const args = JSON.parse(toolCall.arguments);
       // Execute tool and return result
       return {

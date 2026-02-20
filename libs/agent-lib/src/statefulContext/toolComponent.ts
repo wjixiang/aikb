@@ -1,5 +1,6 @@
-import { renderToolSection } from "./section/renderToolSection";
-import { tdiv, Tool, TUIElement } from "./ui";
+import { renderToolSection } from "./section/renderToolSection.js";
+import { Tool } from "./types.js";
+import { tdiv, TUIElement } from "./ui/index.js";
 
 export abstract class ToolComponent {
     abstract toolSet: Map<string, Tool>;

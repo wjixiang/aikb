@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ApiMessage } from '../task/task.type';
-import { PromptTemplates } from './PromptTemplates';
+import { PromptTemplates } from './PromptTemplates.js';
 
 /**
  * Formats conversation history messages into XML strings for prompt building.
@@ -43,7 +43,7 @@ export class MessageFormatter {
 
         // Handle content blocks
         const content = msg.content
-            .map((block) => {
+            .map((block: any) => {
                 if (block.type === 'text') {
                     return block.text;
                 } else if (block.type === 'tool_use') {

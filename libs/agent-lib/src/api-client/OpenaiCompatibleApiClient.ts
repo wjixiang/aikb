@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface';
+import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface.js';
 
 /**
  * Configuration for OpenAI-compatible API client

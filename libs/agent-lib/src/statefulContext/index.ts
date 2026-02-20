@@ -8,13 +8,13 @@
 
 
 // Re-export all types
-export type { Tool } from './types';
+export type { Tool } from './types.js';
 
 // Re-export tool component
-export { ToolComponent } from './toolComponent';
+export { ToolComponent } from './toolComponent.js';
 
 // Re-export virtual workspace
-export { VirtualWorkspace } from './virtualWorkspace';
+export { VirtualWorkspace } from './virtualWorkspace.js';
 
 // Re-export TUI elements
-export * from './ui';
+export * from './ui/index.js';

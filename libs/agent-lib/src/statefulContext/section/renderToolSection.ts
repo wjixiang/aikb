@@ -1,7 +1,7 @@
-import { Tool } from "../ui";
-import { tdiv } from "../ui/tdiv";
-import { ttext } from "../ui/text/ttext";
-import { TUIElement } from "../ui/TUIElement";
+import { Tool } from "../types.js";
+import { tdiv } from "../ui/tdiv.js";
+import { ttext } from "../ui/text/ttext.js";
+import { TUIElement } from "../ui/TUIElement.js";
 import * as z from "zod";
 
 /**
@@ -76,7 +76,7 @@ export function renderZodSchema(schema: z.ZodTypeAny, indent: number = 0): strin
 
     // Handle ZodEnum
     if (schema instanceof z.ZodEnum) {
-        const values = schema.options.map(v => JSON.stringify(v)).join(" | ");
+        const values = schema.options.map((v: any) => JSON.stringify(v)).join(" | ");
         return `(${values})`;
     }
 

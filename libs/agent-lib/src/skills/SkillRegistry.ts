@@ -339,9 +339,9 @@ export class SkillRegistry {
 
                 // Check tags
                 if (s.type === 'markdown') {
-                    return s.parsed?.frontmatter.tags?.some(t => t.toLowerCase().includes(lowerQuery));
+                    return s.parsed?.frontmatter.tags?.some((t: string) => t.toLowerCase().includes(lowerQuery));
                 } else {
-                    return s.definition?.getMetadata().tags?.some(t => t.toLowerCase().includes(lowerQuery));
+                    return s.definition?.getMetadata().tags?.some((t: string) => t.toLowerCase().includes(lowerQuery));
                 }
             })
             .map(s => s.runtime);
@@ -367,9 +367,9 @@ export class SkillRegistry {
         const categories: Record<string, number> = {};
         const tags: Record<string, number> = {};
 
-        for (const source of this.skills.values()) {
+        for (const source of Array.from(this.skills.values())) {
             // Count by type
-            byType[source.type]++;
+            byType[source.type as SkillSourceType]++;
 
             // Get metadata based on type
             let category: string | undefined;

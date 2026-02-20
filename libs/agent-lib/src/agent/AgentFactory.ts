@@ -105,6 +105,7 @@ export class AgentFactory {
             workspace,
             agentPrompt,
             client,
+            undefined, // memoryModule - will be created internally by Agent
             taskId,
         );
         console.log('[AgentFactory.create] Agent instance created, taskId:', agent.getTaskId);

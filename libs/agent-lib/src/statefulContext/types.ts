@@ -374,7 +374,7 @@ export interface ComponentRegistration {
      * The tool component instance
      * Use type import to avoid circular dependency
      */
-    component: import('./toolComponent').ToolComponent;
+    component: import('./toolComponent.js').ToolComponent;
     /**
      * Optional priority for rendering (lower = earlier)
      */

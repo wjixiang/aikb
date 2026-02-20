@@ -1,9 +1,9 @@
-import { ToolComponent } from './toolComponent';
-import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types';
-import { tdiv, th, TUIElement } from './ui';
-import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools'
+import { ToolComponent } from './toolComponent.js';
+import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types.js';
+import { tdiv, th, TUIElement } from './ui/index.js';
+import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
 import { SkillManager, Skill, SkillSummary, SkillActivationResult } from '../skills/index.js';
-import { renderToolSection } from './section/renderToolSection';
+import { renderToolSection } from './section/renderToolSection.js';
 
 
 /**
@@ -222,7 +222,7 @@ export class VirtualWorkspace {
      */
     registerComponent(registration: ComponentRegistration): void {
         this.components.set(registration.key, registration);
-        registration.component.toolSet.forEach((value, key) => {
+        registration.component.toolSet.forEach((value: Tool, key: string) => {
             this.toolSet.set(value.toolName, {
                 tool: value,
                 componentKey: registration.key
@@ -235,7 +235,7 @@ export class VirtualWorkspace {
      */
     unregisterComponent(key: string): boolean {
         const componentToDelete = this.components.get(key);
-        componentToDelete?.component.toolSet.forEach((value, key) => {
+        componentToDelete?.component.toolSet.forEach((value: Tool, key: string) => {
             this.toolSet.delete(value.toolName)
         })
         return this.components.delete(key);

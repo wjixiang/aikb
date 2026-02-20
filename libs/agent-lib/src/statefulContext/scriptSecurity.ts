@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { SecurityConfig, ValidationResult, DEFAULT_SECURITY_CONFIG } from './types';
+import { SecurityConfig, ValidationResult, DEFAULT_SECURITY_CONFIG } from './types.js';
 
 /**
  * Script execution context with security constraints

@@ -1,4 +1,4 @@
-import { tdiv } from './index';
+import { tdiv } from './index.js';
 
 export function prettifyCodeContext(codeContext: string) {
     const lines = codeContext.split('\n')

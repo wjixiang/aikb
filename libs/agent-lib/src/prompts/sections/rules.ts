@@ -1,5 +1,5 @@
-import type { SystemPromptSettings } from '../types';
-import { getEffectiveProtocol, isNativeProtocol } from '../../types';
+import type { SystemPromptSettings } from '../types.js';
+import { getEffectiveProtocol, isNativeProtocol } from '../../types/index.js';
 
 function getVendorConfidentialitySection(): string {
   return `

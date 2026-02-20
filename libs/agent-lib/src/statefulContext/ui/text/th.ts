@@ -2,8 +2,8 @@
  * th (heading) element - similar to HTML <h1>-<h6>
  */
 
-import { TUIElement } from '../TUIElement';
-import { ElementMetadata, HeadingLevel, TextStyle } from '../../types';
+import { TUIElement } from '../TUIElement.js';
+import { ElementMetadata, HeadingLevel, TextStyle } from '../../types.js';
 
 /**
  * Metadata for th (heading) element
@@ -21,7 +21,7 @@ export interface thMetadata extends ElementMetadata {
  * th (heading) element - displays text as a heading
  */
 export class th extends TUIElement {
-    constructor(public override metadata: thMetadata) {
+    constructor(metadata: thMetadata) {
         super(metadata);
     }
 
@@ -37,7 +37,7 @@ export class th extends TUIElement {
      */
     override renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
-        const { content } = this.metadata;
+        const content = this.metadata.content;
         const level = this.metadata.level ?? 1;
         const underline = this.metadata.underline ?? false;
         const textStyle = this.metadata.textStyle ?? {};
@@ -188,12 +188,12 @@ export class th extends TUIElement {
      * Calculate content dimensions
      */
     protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
-        const { content } = this.metadata;
+        const content = this.metadata.content;
         const finalContent = content ?? '';
         const underline = this.metadata.underline ?? false;
 
         const lines = finalContent.split('\n');
-        const maxWidth = Math.max(...lines.map(line => line.length));
+        const maxWidth = Math.max(...lines.map((line: string) => line.length));
         const height = lines.length + (underline ? lines.length : 0);
 
         return {

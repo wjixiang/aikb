@@ -2,7 +2,7 @@
  * Turn-based Memory 测试示例
  */
 
-import { MemoryModule } from '../MemoryModule';
+import { MemoryModule } from '../MemoryModule.js';
 
 // 模拟 ApiClient
 const mockApiClient = {

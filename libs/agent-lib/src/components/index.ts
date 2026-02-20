@@ -1,10 +1,10 @@
 /**
  * Bibliography Search Module
- * 
+ *
  * This module provides components, tools, and schemas for bibliography search functionality.
  */
 
-export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent'
+export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent.js'
 
 export {
     searchPubmedTool,
@@ -13,7 +13,7 @@ export {
     clearResultsTool,
     createBibliographySearchToolSet,
     bibliographySearchTools
-} from './bibliographySearch/bibliographySearchTools'
+} from './bibliographySearch/bibliographySearchTools.js'
 
 export {
     retrievalStrategySchema,
@@ -21,4 +21,4 @@ export {
     viewArticleParamsSchema,
     navigatePageParamsSchema,
     clearResultsParamsSchema
-} from './bibliographySearch/bibliographySearchSchemas'
+} from './bibliographySearch/bibliographySearchSchemas.js'

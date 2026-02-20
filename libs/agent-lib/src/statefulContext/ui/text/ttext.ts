@@ -2,8 +2,8 @@
  * ttext (text) element - basic styled text
  */
 
-import { TUIElement } from '../TUIElement';
-import { ElementMetadata, TextStyle, TextColor } from '../../types';
+import { TUIElement } from '../TUIElement.js';
+import { ElementMetadata, TextColor } from '../../types.js';
 
 /**
  * Metadata for ttext (text) element
@@ -27,8 +27,11 @@ export interface ttextMetadata extends ElementMetadata {
  * ttext (text) element - displays styled text
  */
 export class ttext extends TUIElement {
-    constructor(public override metadata: ttextMetadata) {
+    declare metadata: ttextMetadata;
+
+    constructor(metadata: ttextMetadata) {
         super(metadata);
+        this.metadata = metadata;
     }
 
     /**
@@ -206,12 +209,12 @@ export class ttext extends TUIElement {
     /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+    protected override calculateContentDimensions(_availableWidth?: number): { width: number; height: number } {
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
         const lines = finalContent.split('\n');
-        const maxWidth = Math.max(...lines.map(line => line.length));
+        const maxWidth = Math.max(...lines.map((line: string) => line.length));
 
         // Add extra height for underline or strikethrough
         let extraHeight = 0;

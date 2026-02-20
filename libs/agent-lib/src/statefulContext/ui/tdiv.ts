@@ -3,11 +3,11 @@
  * Supports border, padding, margin, alignment, and children
  */
 
-import { TUIElement } from './TUIElement';
+import { TUIElement } from './TUIElement.js';
 import {
     ElementMetadata,
     ComputedStyles
-} from '../types';
+} from '../types.js';
 
 /**
  * Enhanced metadata for tdiv element
@@ -23,7 +23,9 @@ export interface tdivMetadata extends ElementMetadata {
  * Enhanced tdiv element - container with border, padding, margin, and alignment
  */
 export class tdiv extends TUIElement {
-    constructor(public override metadata: tdivMetadata, children?: TUIElement[]) {
+    declare metadata: tdivMetadata;
+
+    constructor(metadata: tdivMetadata, children?: TUIElement[]) {
         super(metadata, children);
     }
 
@@ -37,10 +39,10 @@ export class tdiv extends TUIElement {
     /**
      * Render the tdiv element with a specified available width
      */
-    override renderWithWidth(availableWidth: number | undefined): string {
+    renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
         // console.debug(styles)
-        const { content } = this.metadata;
+        const content = this.metadata.content;
         const finalContent = content ?? '';
 
         // Calculate inner content area dimensions
@@ -138,8 +140,8 @@ export class tdiv extends TUIElement {
     /**
      * Calculate content dimensions considering children
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
-        const { content } = this.metadata;
+    protected calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+        const content = this.metadata.content;
         const finalContent = content ?? '';
 
         let maxContentWidth = 0;
@@ -148,7 +150,7 @@ export class tdiv extends TUIElement {
         // Calculate from text content
         if (finalContent) {
             const lines = finalContent.split('\n');
-            maxContentWidth = Math.max(...lines.map(line => line.length));
+            maxContentWidth = Math.max(...lines.map((line: string) => line.length));
             maxContentHeight = lines.length;
         }
 
@@ -157,7 +159,7 @@ export class tdiv extends TUIElement {
             for (const child of this.children) {
                 const childRender = child.renderWithWidth(availableWidth);
                 const childLines = childRender.split('\n');
-                maxContentWidth = Math.max(maxContentWidth, ...childLines.map(line => line.length));
+                maxContentWidth = Math.max(maxContentWidth, ...childLines.map((line: string) => line.length));
                 maxContentHeight += childLines.length;
             }
         }

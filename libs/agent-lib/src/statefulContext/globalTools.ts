@@ -1,5 +1,5 @@
 import z from "zod";
-import { Tool } from "./ui";
+import { Tool } from "./types.js";
 
 export const get_skill: Tool = {
     toolName: "get_skill",

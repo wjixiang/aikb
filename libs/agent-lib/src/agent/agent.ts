@@ -684,7 +684,7 @@ export class Agent {
     private convertWorkspaceToolsToOpenAI(): any[] {
         // Get all tools from workspace
         const allTools = this.workspace.getAllTools();
-        const tools = allTools.map(t => t.tool);
+        const tools = allTools.map((t: { tool: any }) => t.tool);
 
         // Use the existing converter
         const converter = new DefaultToolCallConverter();

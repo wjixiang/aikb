@@ -1,6 +1,6 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import * as path from 'path';
-import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from '../types';
+import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from '../types/index.js';
 
 export const formatResponse = {
   toolDenied: (protocol?: ToolProtocol) => {
@@ -267,14 +267,14 @@ const formatImagesIntoBlocks = (
 ): Anthropic.ImageBlockParam[] => {
   return images
     ? images.map((dataUrl) => {
-        // data:image/png;base64,base64string
-        const [rest, base64] = dataUrl.split(',');
-        const mimeType = rest.split(':')[1].split(';')[0];
-        return {
-          type: 'image',
-          source: { type: 'base64', media_type: mimeType, data: base64 },
-        } as Anthropic.ImageBlockParam;
-      })
+      // data:image/png;base64,base64string
+      const [rest, base64] = dataUrl.split(',');
+      const mimeType = rest.split(':')[1].split(';')[0];
+      return {
+        type: 'image',
+        source: { type: 'base64', media_type: mimeType, data: base64 },
+      } as Anthropic.ImageBlockParam;
+    })
     : [];
 };
 

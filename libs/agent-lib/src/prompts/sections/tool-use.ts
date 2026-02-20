@@ -1,4 +1,4 @@
-import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from '../../types';
+import { ToolProtocol, TOOL_PROTOCOL, isNativeProtocol } from '../../types/index.js';
 
 export function getSharedToolUseSection(
   protocol: ToolProtocol = TOOL_PROTOCOL.XML,

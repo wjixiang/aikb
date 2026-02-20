@@ -16,6 +16,7 @@ import metaAnalysisArticleRetrievalSkill from './meta-analysis-article-retrieval
  * Add new skills to this array
  */
 export const builtinSkills: Skill[] = [
+    paperAnalysisSkill,
     metaAnalysisArticleRetrievalSkill,
 ];
 

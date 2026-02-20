@@ -1,4 +1,4 @@
-export { PromptTemplates } from './PromptTemplates';
-export { MessageFormatter } from './MessageFormatter';
-export { PromptBuilder } from './PromptBuilder';
-export type { FullPrompt } from './PromptBuilder';
+export { PromptTemplates } from './PromptTemplates.js';
+export { MessageFormatter } from './MessageFormatter.js';
+export { PromptBuilder } from './PromptBuilder.js';
+export type { FullPrompt } from './PromptBuilder.js';

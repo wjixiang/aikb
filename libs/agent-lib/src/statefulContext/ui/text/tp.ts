@@ -2,8 +2,8 @@
  * tp (paragraph) element - similar to HTML <p>
  */
 
-import { TUIElement } from '../TUIElement';
-import { ElementMetadata, TextStyle } from '../../types';
+import { TUIElement } from '../TUIElement.js';
+import { ElementMetadata, TextStyle } from '../../types.js';
 
 /**
  * Metadata for tp (paragraph) element
@@ -21,7 +21,9 @@ export interface tpMetadata extends ElementMetadata {
  * tp (paragraph) element - displays text as a paragraph
  */
 export class tp extends TUIElement {
-    constructor(public override metadata: tpMetadata) {
+    declare metadata: tpMetadata;
+
+    constructor(metadata: tpMetadata) {
         super(metadata);
     }
 
@@ -37,7 +39,7 @@ export class tp extends TUIElement {
      */
     override renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
-        const { content } = this.metadata;
+        const content = this.metadata.content;
         const indent = this.metadata.indent ?? 0;
         const lineHeight = this.metadata.lineHeight ?? 1;
         const textStyle = this.metadata.textStyle ?? {};
@@ -170,13 +172,13 @@ export class tp extends TUIElement {
      * Calculate content dimensions
      */
     protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
-        const { content } = this.metadata;
+        const content = this.metadata.content;
         const indent = this.metadata.indent ?? 0;
 
         const finalContent = content ?? '';
         const lines = finalContent.split('\n');
 
-        const maxWidth = Math.max(...lines.map(line => indent + line.length));
+        const maxWidth = Math.max(...lines.map((line: string) => indent + line.length));
         const height = lines.length;
 
         return {
