@@ -8,6 +8,7 @@ export const skillFrontmatterSchema = z.object({
     name: z.string().describe('Unique skill identifier (kebab-case)'),
     version: z.string().describe('Semantic version'),
     description: z.string().describe('Brief description of the skill'),
+    whenToUse: z.string().optional().describe('When to use this skill'),
     category: z.string().optional().describe('Skill category'),
     tags: z.array(z.string()).optional().describe('Tags for discovery')
 });
@@ -417,6 +418,7 @@ export class SkillLoader {
             name: parsed.frontmatter.name,
             displayName: parsed.title,
             description: parsed.frontmatter.description,
+            whenToUse: parsed.frontmatter.whenToUse,
             triggers: parsed.frontmatter.tags,
             prompt: {
                 capability: parsed.capabilities.length > 0

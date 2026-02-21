@@ -83,6 +83,9 @@ export function createObservableAgent<T extends Agent>(
                 return new Proxy(value, {
                     get(moduleTarget, moduleProp, moduleReceiver) {
                         const moduleValue = Reflect.get(moduleTarget, moduleProp, moduleReceiver);
+                        if (typeof moduleValue === 'object' && String(moduleProp) === 'turnStore') {
+
+                        }
 
                         // Wrap message addition methods to notify observers
                         if (typeof moduleValue === 'function') {

@@ -13,6 +13,8 @@ export interface SkillDefinitionConfig {
     displayName: string;
     /** Brief description for LLM to understand when to use this skill */
     description: string;
+    /** When to use this skill - guidance for LLM on appropriate contexts */
+    whenToUse?: string;
     /** Semantic version */
     version: string;
     /** Skill category */
@@ -61,6 +63,7 @@ export class SkillDefinition {
             name: this.config.name,
             displayName: this.config.displayName,
             description: this.config.description,
+            whenToUse: this.config.whenToUse,
             triggers: this.config.triggers ?? this.config.tags,
             prompt: {
                 capability: capabilityText,

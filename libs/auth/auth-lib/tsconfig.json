@@ -20,7 +20,7 @@
       "path": "./tsconfig.spec.json"
     },
     {
-      "path": "../../../auth-db/tsconfig.lib.json"
+      "path": "../../../libs/auth-db/tsconfig.lib.json"
     }
   ]
 }

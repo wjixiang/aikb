@@ -60,6 +60,8 @@ export interface Skill {
     displayName: string;
     /** Description for LLM to understand when to use this skill */
     description: string;
+    /** When to use this skill - guidance for LLM on appropriate contexts */
+    whenToUse?: string | undefined;
     /** Trigger keywords to help LLM match this skill */
     triggers?: string[] | undefined;
 
@@ -88,6 +90,7 @@ export interface SkillSummary {
     name: string;
     displayName: string;
     description: string;
+    whenToUse?: string | undefined;
     triggers?: string[] | undefined;
 }
 

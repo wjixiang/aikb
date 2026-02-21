@@ -101,10 +101,10 @@ export class MemoryModule implements IMemoryModule {
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.Logger) private logger: Logger,
         @inject(TYPES.MemoryModuleConfig) @optional() config: Partial<MemoryModuleConfig> = {},
-        @inject(TYPES.TurnMemoryStore) @optional() turnStore?: TurnMemoryStore,
+        @inject(TYPES.TurnMemoryStore) turnStore: TurnMemoryStore,
     ) {
         this.config = { ...defaultMemoryConfig, ...config };
-        this.turnStore = turnStore || new TurnMemoryStore();
+        this.turnStore = turnStore
         this.apiClient = apiClient;
     }
 
@@ -143,7 +143,6 @@ export class MemoryModule implements IMemoryModule {
 
         // Create new turn with current workspace context and optional task context
         const turn = this.turnStore.createTurn(workspaceContext, taskContext);
-        this.logger.debug(workspaceContext)
         this.currentTurn = turn;
 
         return turn;
@@ -454,6 +453,16 @@ You have access to these tools:
 
 ${toolsText}
 
+⚠️ CRITICAL INSTRUCTION ⚠️
+You MUST provide your thinking as TEXT FIRST, before calling any tools.
+Format your response as:
+1. Write your thinking/reasoning in plain text (this will be stored as the thinking content)
+2. Then call the continue_thinking tool with your decision
+
+Example format:
+"I need to analyze this clinical question. The P is adult patients with type 2 diabetes mellitus. Let me evaluate the available skills..."
+[Then call continue_thinking tool]
+
 Think deeply about:
 - What the user wants to accomplish (the overall goal)
 - What has been accomplished so far
@@ -722,11 +731,51 @@ If this turn builds upon previous turns, mention the connection and how it advan
 
     /**
      * Extract content from API response
+     *
+     * First tries to get textResponse from the LLM.
+     * If no text response, falls back to extracting reasoning from tool calls.
      */
     private extractContent(response: ApiResponse): string {
-        if (response.textResponse) {
+        // Primary: Use text response if available and non-empty
+        if (response.textResponse && response.textResponse.trim()) {
             return response.textResponse;
         }
+
+        // Fallback: Extract reasoning from continue_thinking tool call
+        if (response.toolCalls && response.toolCalls.length > 0) {
+            const continueThinkingCall = response.toolCalls.find(
+                (tc: any) => tc.name === 'continue_thinking'
+            );
+
+            if (continueThinkingCall) {
+                try {
+                    const args = JSON.parse(continueThinkingCall.arguments);
+                    const parts: string[] = [];
+
+                    // Add reason if available
+                    if (args.reason) {
+                        parts.push(`Reason: ${args.reason}`);
+                    }
+
+                    // Add nextFocus if available
+                    if (args.nextFocus) {
+                        parts.push(`Next Focus: ${args.nextFocus}`);
+                    }
+
+                    // Add summary if available (typically when stopping)
+                    if (args.summary) {
+                        parts.push(`Summary: ${args.summary}`);
+                    }
+
+                    // Return combined reasoning or a default message
+                    return parts.length > 0 ? parts.join('\n') : 'Tool call only - no reasoning provided';
+                } catch (e) {
+                    // If parsing fails, return a generic message
+                    return 'Tool call made (parsing failed)';
+                }
+            }
+        }
+
         return 'No content';
     }
 

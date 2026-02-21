@@ -358,10 +358,10 @@ export class Agent {
 
                 const thinkingTokens = memoryResult.tokensUsed;
 
-                // Debug: Log raw memory result
-                console.log('\n=== DEBUG: Raw Memory Result ===');
-                console.log('Rounds:', JSON.stringify(memoryResult.rounds, null, 2));
-                console.log('=== END DEBUG ===\n');
+                // // Debug: Log raw memory result
+                // console.log('\n=== DEBUG: Raw Memory Result ===');
+                // console.log('Rounds:', JSON.stringify(memoryResult.rounds, null, 2));
+                // console.log('=== END DEBUG ===\n');
 
                 // Add thinking summary to history for observability
                 if (memoryResult.rounds.length > 0) {

@@ -237,21 +237,27 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             return container;
         }
 
-        // Show active skill indicator
-        if (activeSkill) {
-            activeSkillContainer.addChild(new tdiv({
-                content: `Active: ${activeSkill.displayName}`,
+        // List all skills
+        for (const skill of skills) {
+            const isActive = skill.name === activeSkill?.name;
+            const statusBadge = isActive ? ' **[ACTIVE]**' : '';
+            const triggers = skill.triggers?.length ? `\n**Triggers:** ${skill.triggers.join(', ')}` : '';
+            const whenToUse = skill.whenToUse ? `\n**When to use:** ${skill.whenToUse}` : '';
+
+            availableSkillContainer.addChild(new tdiv({
+                content: `### ${skill.displayName}${statusBadge}\n**ID:** \`${skill.name}\`\n**Description:** ${skill.description}${whenToUse}${triggers}\n\n`,
+                styles: { showBorder: false }
+            }));
+            availableSkillContainer.addChild(new tdiv({
+                content: `\n\n---\n\n`,
                 styles: { showBorder: false }
             }));
         }
 
-        // List all skills
-        for (const skill of skills) {
-            const isActive = skill.name === activeSkill?.name;
-            const marker = isActive ? '→ ' : '- ';
-            const triggers = skill.triggers?.length ? ` [${skill.triggers.join(', ')}]` : '';
-            availableSkillContainer.addChild(new tdiv({
-                content: `${marker}${skill.name}: ${skill.description}${triggers}`,
+        // Show active skill indicator at the bottom
+        if (activeSkill) {
+            activeSkillContainer.addChild(new tdiv({
+                content: `**Currently Active:** \`${activeSkill.name}\` (${activeSkill.displayName})`,
                 styles: { showBorder: false }
             }));
         }

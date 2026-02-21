@@ -22,6 +22,7 @@ export default defineSkill({
     name: 'pico-extraction',
     displayName: 'PICO Extraction',
     description: 'Evidence-based medicine skill for extracting PICO elements from clinical text and formulating structured research questions',
+    whenToUse: 'Use this skill when working with evidence-based medicine tasks that involve extracting PICO (Patient, Intervention, Comparison, Outcome) elements from clinical text, formulating structured research questions, or preparing for systematic literature reviews. This includes tasks like: analyzing clinical studies, building search strategies for medical databases, validating clinical question formulations, or exporting PICO data for research purposes.',
     version: '1.0.0',
     category: 'medical-research',
     tags: ['PICO', 'evidence-based-medicine', 'clinical-research', 'systematic-review', 'literature-search'],

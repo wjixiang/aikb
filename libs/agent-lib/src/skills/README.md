@@ -72,6 +72,7 @@ export default defineSkill({
     name: 'my-skill',
     displayName: 'My Skill',
     description: 'Brief description for LLM',
+    whenToUse: 'Use this skill when...',
     version: '1.0.0',
     category: 'category-name',
     tags: ['tag1', 'tag2'],
@@ -193,6 +194,7 @@ const skill = registry.loadFromContent(content);
 
 ### Optional Fields
 
+- `whenToUse`: Guidance on when this skill should be used
 - `category`: Skill category for organization
 - `tags`: Tags for discovery
 - `triggers`: Keywords that help LLM match this skill
@@ -265,6 +267,7 @@ export default defineSkill({
     name: 'my-skill',
     displayName: 'My Skill',
     description: 'My skill description',
+    whenToUse: 'Use this skill when you need to...',
     version: '1.0.0',
     category: 'analysis',
     tags: ['tag1', 'tag2'],

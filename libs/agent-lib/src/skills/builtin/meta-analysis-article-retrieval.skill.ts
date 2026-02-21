@@ -8,32 +8,33 @@ import { defineSkill } from '../SkillDefinition.js';
  */
 
 export default defineSkill({
-    name: 'meta-analysis-article-retrieval',
-    displayName: 'Meta-Analysis Article Retrieval',
-    description: 'Systematic literature retrieval for meta-analysis, producing standardized search strategies and comprehensive article lists',
-    version: '1.0.0',
-    category: 'meta-analysis',
-    tags: ['meta-analysis', 'literature-retrieval', 'pubmed', 'systematic-review', 'search-strategy'],
-    triggers: [
-        'meta analysis retrieval',
-        'literature search',
-        'systematic search',
-        'pubmed search strategy',
-        'article retrieval'
-    ],
+   name: 'meta-analysis-article-retrieval',
+   displayName: 'Meta-Analysis Article Retrieval',
+   description: 'Systematic literature retrieval for meta-analysis, producing standardized search strategies and comprehensive article lists',
+   whenToUse: 'Use this skill when you need to conduct systematic literature searches for meta-analysis or systematic reviews. This includes tasks like: searching PubMed for clinical studies, building search strategies with MeSH terms and Boolean operators, retrieving comprehensive article lists, or conducting literature searches for evidence-based medicine research.',
+   version: '1.0.0',
+   category: 'meta-analysis',
+   tags: ['meta-analysis', 'literature-retrieval', 'pubmed', 'systematic-review', 'search-strategy'],
+   triggers: [
+      'meta analysis retrieval',
+      'literature search',
+      'systematic search',
+      'pubmed search strategy',
+      'article retrieval'
+   ],
 
-    capabilities: [
-        'Decompose broad clinical questions into focused sub-questions for manageable retrieval',
-        'Design and refine PubMed search strategies using Boolean operators and MeSH terms',
-        'Execute iterative searches to achieve appropriate result volumes (<100 per sub-question)',
-        'Retrieve comprehensive article lists without screening or filtering',
-        'Document standardized search formulas for reproducibility',
-        'Navigate and collect paginated search results',
-        'Aggregate results from multiple sub-question searches',
-        'Export complete bibliographic records for downstream analysis'
-    ],
+   capabilities: [
+      'Decompose broad clinical questions into focused sub-questions for manageable retrieval',
+      'Design and refine PubMed search strategies using Boolean operators and MeSH terms',
+      'Execute iterative searches to achieve appropriate result volumes (<100 per sub-question)',
+      'Retrieve comprehensive article lists without screening or filtering',
+      'Document standardized search formulas for reproducibility',
+      'Navigate and collect paginated search results',
+      'Aggregate results from multiple sub-question searches',
+      'Export complete bibliographic records for downstream analysis'
+   ],
 
-    workDirection: `You are conducting the literature retrieval phase of a meta-analysis. Your goal is to produce:
+   workDirection: `You are conducting the literature retrieval phase of a meta-analysis. Your goal is to produce:
 1. A standardized, reproducible search strategy (possibly decomposed into sub-questions)
 2. A comprehensive list of all retrieved articles (NO screening at this stage)
 
@@ -178,24 +179,24 @@ At completion, provide:
 
 Remember: This is RETRIEVAL only. Do not screen, filter, or assess quality at this stage.`,
 
-    onActivate: async () => {
-        console.log('[MetaAnalysisRetrieval] Skill activated - ready for systematic literature retrieval');
-    },
+   onActivate: async () => {
+      console.log('[MetaAnalysisRetrieval] Skill activated - ready for systematic literature retrieval');
+   },
 
-    onDeactivate: async () => {
-        console.log('[MetaAnalysisRetrieval] Skill deactivated - search strategy and article list should be documented');
-    },
+   onDeactivate: async () => {
+      console.log('[MetaAnalysisRetrieval] Skill deactivated - search strategy and article list should be documented');
+   },
 
-    metadata: {
-        author: 'AI Knowledge Base Team',
-        created: '2025-02-19',
-        updated: '2025-02-20',
-        complexity: 'Medium',
-        requiredWorkspace: 'MetaAnalysisWorkspace',
-        requiredTools: 'search_pubmed, view_article, navigate_page, clear_results',
-        phase: 'retrieval',
-        nextPhase: 'screening',
-        targetResultsPerSubQuestion: '<100',
-        decompositionStrategy: 'intervention-population-outcome'
-    }
+   metadata: {
+      author: 'AI Knowledge Base Team',
+      created: '2025-02-19',
+      updated: '2025-02-20',
+      complexity: 'Medium',
+      requiredWorkspace: 'MetaAnalysisWorkspace',
+      requiredTools: 'search_pubmed, view_article, navigate_page, clear_results',
+      phase: 'retrieval',
+      nextPhase: 'screening',
+      targetResultsPerSubQuestion: '<100',
+      decompositionStrategy: 'intervention-population-outcome'
+   }
 });

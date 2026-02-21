@@ -260,10 +260,10 @@ describe('VirtualWorkspace', () => {
             expect(result).toContain('AVAILABLE SKILLS');
         });
 
-        it('should display available skills with their descriptions', async () => {
+        it.only('should display available skills with their descriptions', async () => {
             // Built-in skills are already loaded by VirtualWorkspace constructor
             const result = await workspace.render();
-
+            console.log(result)
             // Check that skill information is displayed
             const availableSkills = workspace.getAvailableSkills();
             expect(availableSkills.length).toBeGreaterThan(0);

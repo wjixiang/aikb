@@ -75,6 +75,7 @@ export class SkillManager {
             name: s.name,
             displayName: s.displayName,
             description: s.description,
+            whenToUse: s.whenToUse,
             triggers: s.triggers ?? undefined
         }));
     }

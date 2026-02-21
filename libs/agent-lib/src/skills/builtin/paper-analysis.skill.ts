@@ -50,6 +50,7 @@ export default defineSkill({
     name: 'paper-analysis',
     displayName: 'Paper Analysis',
     description: 'Advanced paper analysis utilities for academic research',
+    whenToUse: 'Use this skill when you need to analyze academic papers, assess paper complexity, extract and rank citations, or compare multiple papers. This is useful for tasks like: evaluating technical depth of research papers, identifying key references, conducting comparative analysis between studies, or assessing novelty and contributions of academic work.',
     version: '2.0.0',
     category: 'analysis',
     tags: ['paper', 'analysis', 'statistics', 'research'],
