@@ -1,6 +1,7 @@
 import { ToolComponent } from './toolComponent.js';
-import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types.js';
-import { tdiv, th, TUIElement } from './ui/index.js';
+import type { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types.js';
+import { tdiv } from './ui/index.js';
+import type { TUIElement } from './ui/TUIElement.js';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
 import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource, ToolRegistration } from '../skills/index.js';
 import { renderToolSection } from '../utils/toolRendering.js';
@@ -138,7 +139,7 @@ export class VirtualWorkspace {
      */
     private handleSkillChange(skill: Skill | null): void {
         // First, disable ALL component tools
-        for (const [toolName, registration] of this.toolSet.entries()) {
+        for (const [, registration] of this.toolSet.entries()) {
             if (registration.source === ToolSource.COMPONENT) {
                 registration.enabled = false;
             }
@@ -159,7 +160,7 @@ export class VirtualWorkspace {
             }
         } else {
             // No skill active, enable all component tools
-            for (const [toolName, registration] of this.toolSet.entries()) {
+            for (const [, registration] of this.toolSet.entries()) {
                 if (registration.source === ToolSource.COMPONENT) {
                     registration.enabled = true;
                 }
@@ -223,6 +224,7 @@ export class VirtualWorkspace {
                 content: 'No skills registered',
                 styles: { showBorder: false }
             }));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return container;
         }
 
@@ -245,6 +247,7 @@ export class VirtualWorkspace {
             }));
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container;
     }
 
@@ -283,6 +286,7 @@ export class VirtualWorkspace {
         const toolSection = renderToolSection(enabledTools);
         container.addChild(toolSection);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container;
     }
 
@@ -291,13 +295,13 @@ export class VirtualWorkspace {
      */
     registerComponent(registration: ComponentRegistration): void {
         this.components.set(registration.key, registration);
-        registration.component.toolSet.forEach((value: Tool, key: string) => {
+        registration.component.toolSet.forEach((value: Tool) => {
             this.toolSet.set(value.toolName, {
                 tool: value,
                 source: ToolSource.COMPONENT,
                 componentKey: registration.key,
                 enabled: true,
-                handler: async (params: any) => {
+                handler: async (params: Record<string, unknown>) => {
                     await registration.component.handleToolCall(value.toolName, params);
                 }
             });
@@ -309,7 +313,7 @@ export class VirtualWorkspace {
      */
     unregisterComponent(key: string): boolean {
         const componentToDelete = this.components.get(key);
-        componentToDelete?.component.toolSet.forEach((value: Tool, key: string) => {
+        componentToDelete?.component.toolSet.forEach((value: Tool) => {
             this.toolSet.delete(value.toolName);
         })
         return this.components.delete(key);
@@ -357,6 +361,7 @@ export class VirtualWorkspace {
         // Note: Component tools are no longer rendered in TOOL BOX
         // They are rendered in their respective component sections in _render()
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container
 
     }
@@ -423,6 +428,7 @@ export class VirtualWorkspace {
             container.addChild(componentContainer);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container;
     }
 
@@ -472,7 +478,7 @@ export class VirtualWorkspace {
      * @param params - The parameters to pass to the tool
      * @returns Promise resolving to the tool result
      */
-    async handleToolCall(toolName: string, params: any): Promise<any> {
+    async handleToolCall(toolName: string, params: Record<string, unknown>): Promise<unknown> {
         // const component = this.getComponent(componentKey);
         // if (!component) {
         //     return { error: `Component not found: ${componentKey}` };
@@ -523,14 +529,14 @@ export class VirtualWorkspace {
     /**
      * Handle global tool calls
      */
-    private async handleGlobalToolCall(toolName: string, params: any): Promise<any> {
+    private async handleGlobalToolCall(toolName: string, params: Record<string, unknown>): Promise<unknown> {
         switch (toolName) {
             case 'attempt_completion':
-                return await this.attemptCompletion(params.result);
+                return this.attemptCompletion(typeof params['result'] === 'string' ? params['result'] : '');
             case 'get_skill':
-                return await this.handleGetSkill(params.skill_name);
+                return this.handleGetSkill(typeof params['skill_name'] === 'string' ? params['skill_name'] : '');
             case 'list_skills':
-                return await this.handleListSkills();
+                return this.handleListSkills();
             case 'deactivate_skill':
                 return await this.handleDeactivateSkill();
             default:
@@ -548,7 +554,7 @@ export class VirtualWorkspace {
     /**
      * Handle list_skills tool call
      */
-    private async handleListSkills(): Promise<{ skills: SkillSummary[]; activeSkill: string | null }> {
+    private handleListSkills(): { skills: SkillSummary[]; activeSkill: string | null } {
         const skills = this.skillManager.getAvailableSkills();
         const activeSkill = this.skillManager.getActiveSkill();
         return {
@@ -567,7 +573,7 @@ export class VirtualWorkspace {
     /**
      * Complete the task and return final result
      */
-    private async attemptCompletion(result: string): Promise<any> {
+    private attemptCompletion(result: string): { success: boolean; completed: boolean; result: string } {
         // This method can be overridden or extended to handle completion
         // For now, it returns the result
         return {
@@ -581,8 +587,8 @@ export class VirtualWorkspace {
      * Get all available tools from all components
      * @returns Array of tool definitions with component information
      */
-    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: any; source: ToolSource; enabled: boolean }> {
-        const tools: Array<{ componentKey: string | undefined; toolName: string; tool: any; source: ToolSource; enabled: boolean }> = [];
+    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: ToolSource; enabled: boolean }> {
+        const tools: Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: ToolSource; enabled: boolean }> = [];
 
         // Add all tools from toolSet (includes both global and component tools)
         for (const [toolName, value] of this.toolSet.entries()) {
