@@ -303,22 +303,30 @@ ${summaryText}
         // Store thinking phase in turn
         this.turnStore.storeThinkingPhase(this.currentTurn.id, rounds, totalTokens);
 
-        // Generate summary if enabled
+        // Extract summary from the last thinking round (if provided by LLM)
+        // Otherwise, fall back to generating summary separately
         let summary: string | undefined;
-        if (this.config.enableSummarization) {
+        const lastRound = rounds[rounds.length - 1];
+
+        if (lastRound?.summary) {
+            // LLM provided summary in the continue_thinking tool call
+            summary = lastRound.summary;
+        } else if (this.config.enableSummarization) {
+            // Fallback: generate summary using separate API call
             summary = await this.generateSummary(
                 workspaceContext,
                 rounds,
                 lastToolResults
             );
+        }
 
-            if (summary) {
-                this.turnStore.storeSummary(
-                    this.currentTurn.id,
-                    summary,
-                    this.extractInsights(rounds)
-                );
-            }
+        // Store summary if available
+        if (summary) {
+            this.turnStore.storeSummary(
+                this.currentTurn.id,
+                summary,
+                this.extractInsights(rounds)
+            );
         }
 
         return {
@@ -369,6 +377,7 @@ ${summaryText}
                 continueThinking: controlDecision?.continueThinking ?? false,
                 recalledContexts,
                 tokens: this.estimateTokens(content),
+                summary: controlDecision?.summary,
             };
         } catch (error) {
             console.error('Thinking round failed:', error);
@@ -411,6 +420,10 @@ Think deeply about:
 - Whether you need to recall any historical context
 - Whether you have enough understanding to take action
 
+IMPORTANT: When you decide to STOP thinking (continue_thinking with continueThinking=false),
+you MUST provide a detailed summary in the same tool call. This summary will be stored as
+the official record of this thinking phase.
+
 Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}`;
 
         const accumulatedSummaries = this.getAccumulatedSummaries();
@@ -452,7 +465,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                 type: 'function',
                 function: {
                     name: 'continue_thinking',
-                    description: 'Decide whether to continue thinking or proceed to action phase',
+                    description: 'Decide whether to continue thinking or proceed to action phase. IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST provide a detailed summary.',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -467,6 +480,10 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                             nextFocus: {
                                 type: 'string',
                                 description: 'What to focus on in the next thinking round (if continuing)',
+                            },
+                            summary: {
+                                type: 'string',
+                                description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks. Preserve important details like search terms, numbers, tool names, and key findings.',
                             },
                         },
                         required: ['continueThinking', 'reason'],
@@ -582,12 +599,18 @@ ${toolResults?.map(r => {
             return `${r.toolName}: ${r.success ? 'success' : 'failed'}\nResult: ${resultStr}`;
         }).join('\n\n') || 'None'}
 
-Generate a DETAILED summary (5-8 sentences) that includes:
-1. What specific actions were taken (be specific about tools used, parameters, search terms, etc.)
-2. What concrete results were obtained (include key numbers, counts, findings, data points)
-3. What decisions were made and the reasoning behind them
-4. What challenges or issues were encountered (if any)
-5. What the next steps or implications might be
+Generate a DETAILED summary with the following structure:
+
+## DONE
+- What specific actions were taken (be specific about tools used, parameters, search terms, etc.)
+- What concrete results were obtained (include key numbers, counts, findings, data points)
+- What decisions were made and the reasoning behind them
+- What challenges or issues were encountered and how they were resolved
+
+## TODO
+- What the next steps or actions should be
+- What information is still missing or needs to be gathered
+- What follow-up tasks are required
 
 The summary should preserve important details like:
 - Specific search terms, keywords, or queries used
@@ -651,7 +674,7 @@ If this turn builds upon previous turns, mention the connection and how it advan
     /**
      * Extract control decision from response
      */
-    private extractControlDecision(response: any): { continueThinking: boolean; reason: string } | null {
+    private extractControlDecision(response: any): { continueThinking: boolean; reason: string; summary?: string } | null {
         if (response.toolCalls) {
             const controlCall = response.toolCalls.find(
                 (tc: any) => tc.name === 'continue_thinking'

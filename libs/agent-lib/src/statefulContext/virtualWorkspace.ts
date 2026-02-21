@@ -4,6 +4,7 @@ import { tdiv, th, TUIElement } from './ui/index.js';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
 import { SkillManager, Skill, SkillSummary, SkillActivationResult } from '../skills/index.js';
 import { renderToolSection } from './section/renderToolSection.js';
+import { getBuiltinSkills } from '../skills/builtin/index.js';
 
 
 /**
@@ -41,19 +42,15 @@ export class VirtualWorkspace {
      */
     private initializeSkills(): void {
         try {
-            // Import built-in skills directly instead of scanning directories
-            import('../skills/builtin/index.js').then(({ getBuiltinSkills }) => {
-                const skills = getBuiltinSkills();
+            // Import built-in skills synchronously
+            const skills = getBuiltinSkills();
 
-                if (skills.length > 0) {
-                    this.skillManager.registerAll(skills);
-                    console.log(`[VirtualWorkspace] Registered ${skills.length} built-in skills`);
-                }
-            }).catch(error => {
-                console.warn('[VirtualWorkspace] Failed to load built-in skills:', error);
-            });
+            if (skills.length > 0) {
+                this.skillManager.registerAll(skills);
+                console.log(`[VirtualWorkspace] Registered ${skills.length} built-in skills`);
+            }
         } catch (error) {
-            console.warn('[VirtualWorkspace] Skills module not available:', error);
+            console.warn('[VirtualWorkspace] Failed to load built-in skills:', error);
         }
     }
 

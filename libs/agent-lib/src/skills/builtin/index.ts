@@ -10,14 +10,16 @@ import type { Skill } from '../types.js';
 // Import built-in skills
 import paperAnalysisSkill from './paper-analysis.skill.js';
 import metaAnalysisArticleRetrievalSkill from './meta-analysis-article-retrieval.skill.js';
+import picoExtractionSkill from './pico-extraction.skill.js';
 
 /**
  * All built-in skills
  * Add new skills to this array
  */
 export const builtinSkills: Skill[] = [
-    paperAnalysisSkill,
+    // paperAnalysisSkill,
     metaAnalysisArticleRetrievalSkill,
+    picoExtractionSkill,
 ];
 
 /**

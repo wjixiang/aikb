@@ -369,6 +369,10 @@ export class Agent {
                     throw new NoApiResponseError(1);
                 }
 
+                if (response.toolCalls.length === 0) {
+                    throw new NoToolsUsedError()
+                }
+
                 // Convert API response to assistant message content
                 this.convertApiResponseToAssistantMessage(response);
 

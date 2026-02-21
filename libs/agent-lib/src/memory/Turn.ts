@@ -28,6 +28,8 @@ export interface ThinkingRound {
     continueThinking: boolean;
     recalledContexts: any[];
     tokens: number;
+    /** Summary provided by LLM when deciding to stop thinking (continueThinking=false) */
+    summary?: string;
 }
 
 /**

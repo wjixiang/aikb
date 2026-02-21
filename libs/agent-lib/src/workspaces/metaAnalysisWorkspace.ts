@@ -3,8 +3,8 @@
  * Virtual workspace for managing and searching through bookshelf content
  */
 
-import { VirtualWorkspace, ComponentRegistration } from '../statefulContext/index.js';
-import { BibliographySearchComponent } from '../components/index.js';
+import { VirtualWorkspace } from '../statefulContext/index.js';
+import { BibliographySearchComponent, PicosComponent } from '../components/index.js';
 
 /**
  * Knowledge Management Workspace
@@ -18,11 +18,16 @@ export class MetaAnalysisWorkspace extends VirtualWorkspace {
             description: 'Workspace for viewing and searching through Pubmed'
         });
 
+        this.registerComponent({
+            key: 'PICO Templater',
+            component: new PicosComponent()
+        })
+
         // Register components
         this.registerComponent({
             key: 'Pubmed Search Engine',
             component: new BibliographySearchComponent(),
-            priority: 0
+            priority: 1
         });
     }
 }

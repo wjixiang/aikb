@@ -4,10 +4,11 @@
  */
 
 import { z } from 'zod';
-import { ToolComponent, Tool } from 'statefulContext';
-import { tdiv } from 'statefulContext';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
+import { ToolComponent } from '../statefulContext/toolComponent.js';
+import { Tool } from '../statefulContext/types.js';
+import { tdiv } from '../statefulContext/index.js';
 
 loadDevMessages();
 loadErrorMessages();
