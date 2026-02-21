@@ -43,6 +43,8 @@ export interface MemoryModuleConfig {
     enableSummarization: boolean;
     /** Maximum recalled conversation messages to inject (default: 20) */
     maxRecalledMessages: number;
+    /** API request timeout in milliseconds (default: 40000) */
+    apiRequestTimeout: number;
 }
 
 /**
@@ -55,6 +57,7 @@ export const defaultMemoryConfig: MemoryModuleConfig = {
     maxRecallContexts: 3,
     enableSummarization: true,
     maxRecalledMessages: 20,
+    apiRequestTimeout: 40000,
 };
 
 /**
@@ -382,7 +385,7 @@ ${summaryText}
                 prompt.systemPrompt,
                 prompt.context,
                 prompt.history,
-                { timeout: 30000 },
+                { timeout: this.config.apiRequestTimeout },
                 tools
             );
 
@@ -674,7 +677,7 @@ If this turn builds upon previous turns, mention the connection and how it advan
                 'You are a detailed summarization assistant. Generate comprehensive summaries that preserve important details, maintain narrative continuity, and include skill-related recommendations when relevant.',
                 summaryPrompt,
                 [],
-                { timeout: 30000 },  // Increased timeout for longer summaries
+                { timeout: this.config.apiRequestTimeout },  // Use configured timeout for summaries
                 []
             );
 

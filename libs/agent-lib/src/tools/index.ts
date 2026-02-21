@@ -5,4 +5,4 @@ export * from './tool.errors.js';
 export {
   convertOpenAIToolToAnthropic,
   convertOpenAIToolsToAnthropic,
-} from './native-tools/converters.js';
+} from './converters.js';

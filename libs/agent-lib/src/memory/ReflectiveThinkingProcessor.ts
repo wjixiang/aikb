@@ -70,6 +70,8 @@ export interface ReflectiveThinkingConfig {
     enableRecall: boolean;
     /** Maximum contexts to recall per request */
     maxRecallContexts: number;
+    /** API request timeout in milliseconds (default: 40000) */
+    apiRequestTimeout: number;
 }
 
 /**
@@ -191,7 +193,7 @@ export class ReflectiveThinkingProcessor {
             thinkingPrompt.systemPrompt,
             thinkingPrompt.context,
             thinkingPrompt.history,
-            { timeout: 30000 },
+            { timeout: this.config.apiRequestTimeout },
             thinkingTools
         );
 

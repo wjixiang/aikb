@@ -341,12 +341,6 @@ export class VirtualWorkspace {
                 showBorder: true
             }
         })
-        // container.addChild(new th({
-        //     content: "TOOL BOX",
-        //     styles: {
-        //         align: 'center'
-        //     }
-        // }))
 
         // Add global tools section
         const globalTools = Array.from(this.toolSet.entries())

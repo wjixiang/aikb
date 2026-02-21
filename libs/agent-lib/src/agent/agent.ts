@@ -134,7 +134,12 @@ export class Agent {
         if (memoryModule) {
             this.memoryModule = memoryModule;
         } else {
-            this.memoryModule = new MemoryModule(apiClient, config.memory);
+            // Pass apiRequestTimeout to memory module config
+            const memoryConfig = {
+                ...config.memory,
+                apiRequestTimeout: config.apiRequestTimeout,
+            };
+            this.memoryModule = new MemoryModule(apiClient, memoryConfig);
         }
     }
 
