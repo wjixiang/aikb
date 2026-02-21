@@ -44,7 +44,7 @@ describe('MemoryModule', () => {
         memoryModule = new MemoryModule(mockClient);
     });
 
-    it.only('should perform thinking phase single time', async () => {
+    it('should perform thinking phase single time', async () => {
         // Start a turn first
         memoryModule.startTurn('test_workspace');
 
@@ -90,5 +90,42 @@ describe('MemoryModule', () => {
 
         memoryModule.clear();
         expect(memoryModule.getAllMessages()).toHaveLength(0);
+    });
+
+    it('should build tool prompts for thinking phase', async () => {
+        const tools = memoryModule.buildThinkingTools();
+        expect(tools).toBeDefined();
+        expect(tools.length).toBeGreaterThan(0);
+        expect(tools[0].type).toBe('function');
+        if (tools[0].type === 'function') {
+            expect(tools[0].function.name).toBe('continue_thinking');
+        }
+    });
+
+    it('should render tools in thinking prompt', async () => {
+        // Start a turn
+        memoryModule.startTurn('test_workspace', 'test_task');
+
+        // Spy on makeRequest to capture the prompt
+        const spy = vi.spyOn(mockClient, 'makeRequest');
+
+        // Perform a thinking round
+        await memoryModule.performSingleThinkingRound(1, 'test_workspace', []);
+
+        // Verify makeRequest was called
+        expect(spy).toHaveBeenCalled();
+        const calls = spy.mock.calls;
+        expect(calls.length).toBeGreaterThan(0);
+
+        // Get the system prompt (first argument)
+        const systemPrompt = calls[0][0] as string;
+
+        // Verify tools are rendered in the system prompt
+        expect(systemPrompt).toContain('Tool Name:');
+        expect(systemPrompt).toContain('continue_thinking');
+        expect(systemPrompt).toContain('recall_context');
+        expect(systemPrompt).toContain('Parameters:');
+        expect(systemPrompt).toContain('continueThinking');
+        expect(systemPrompt).toContain('turnNumbers');
     });
 });

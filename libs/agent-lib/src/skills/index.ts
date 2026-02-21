@@ -1,6 +1,9 @@
 // Core types
 export * from './types.js';
 
+// Re-export ToolSource and ToolRegistration for convenience
+export { ToolSource, type ToolRegistration, type SkillToolState } from './types.js';
+
 // Skill management
 export * from './SkillManager.js';
 

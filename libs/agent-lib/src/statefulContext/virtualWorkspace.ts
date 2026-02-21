@@ -2,8 +2,8 @@ import { ToolComponent } from './toolComponent.js';
 import { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types.js';
 import { tdiv, th, TUIElement } from './ui/index.js';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
-import { SkillManager, Skill, SkillSummary, SkillActivationResult } from '../skills/index.js';
-import { renderToolSection } from './section/renderToolSection.js';
+import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource, ToolRegistration } from '../skills/index.js';
+import { renderToolSection } from '../utils/toolRendering.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
 
 
@@ -18,11 +18,9 @@ export class VirtualWorkspace {
 
     /**
      * Combine all available tools from each components and global tools.
+     * Uses ToolRegistration to track tool source and enabled state.
      */
-    private toolSet = new Map<string, {
-        tool: Tool;
-        componentKey: string;
-    }>();
+    private toolSet = new Map<string, ToolRegistration>();
 
     /** Track skill-added tools for cleanup */
     private skillToolNames: Set<string> = new Set();
@@ -61,22 +59,30 @@ export class VirtualWorkspace {
         // Add attempt_completion tool to toolSet with 'global' componentKey
         this.toolSet.set('attempt_completion', {
             tool: attempt_completion,
-            componentKey: 'global'
+            source: ToolSource.GLOBAL,
+            componentKey: 'global',
+            enabled: true
         });
 
         this.toolSet.set('get_skill', {
             tool: get_skill,
-            componentKey: 'global'
+            source: ToolSource.GLOBAL,
+            componentKey: 'global',
+            enabled: true
         });
 
         this.toolSet.set('list_skills', {
             tool: list_skills,
-            componentKey: 'global'
+            source: ToolSource.GLOBAL,
+            componentKey: 'global',
+            enabled: true
         });
 
         this.toolSet.set('deactivate_skill', {
             tool: deactivate_skill,
-            componentKey: 'global'
+            source: ToolSource.GLOBAL,
+            componentKey: 'global',
+            enabled: true
         });
     }
 
@@ -118,32 +124,60 @@ export class VirtualWorkspace {
     }
 
     /**
-     * Handle skill change - add/remove skill tools
+     * Handle skill change - enable/disable skill tools
      *
-     * NOTE: Temporarily disabled - skill changes no longer affect tool state
-     * Skills only provide prompt enhancement, not tool modifications
+     * All component tools are already in toolSet.
+     * Skills only control which tools are enabled (callable) and rendered.
+     *
+     * When a skill is activated:
+     * - All component tools are disabled first
+     * - Only tools defined in the skill are enabled
+     *
+     * When a skill is deactivated:
+     * - All component tools are re-enabled
      */
     private handleSkillChange(skill: Skill | null): void {
-        // TODO: Re-enable if skill-based tool management is needed
-        // // Remove previous skill tools
-        // for (const toolName of this.skillToolNames) {
-        //     this.toolSet.delete(toolName);
-        // }
-        // this.skillToolNames.clear();
+        // First, disable ALL component tools
+        for (const [toolName, registration] of this.toolSet.entries()) {
+            if (registration.source === ToolSource.COMPONENT) {
+                registration.enabled = false;
+            }
+        }
+        this.skillToolNames.clear();
 
-        // // Add new skill tools
-        // if (skill?.tools) {
-        //     for (const tool of skill.tools) {
-        //         this.toolSet.set(tool.toolName, {
-        //             tool,
-        //             componentKey: 'skill'
-        //         });
-        //         this.skillToolNames.add(tool.toolName);
-        //     }
-        // }
+        // If activating a new skill, enable only its tools
+        if (skill?.tools) {
+            for (const tool of skill.tools) {
+                const registration = this.toolSet.get(tool.toolName);
+                if (registration?.source === ToolSource.COMPONENT) {
+                    // Enable this tool
+                    registration.enabled = true;
+                    this.skillToolNames.add(tool.toolName);
+                } else {
+                    console.warn(`[VirtualWorkspace] Skill tool "${tool.toolName}" not found in component tools`);
+                }
+            }
+        } else {
+            // No skill active, enable all component tools
+            for (const [toolName, registration] of this.toolSet.entries()) {
+                if (registration.source === ToolSource.COMPONENT) {
+                    registration.enabled = true;
+                }
+            }
+        }
 
-        // Skill changes now only affect prompt enhancement, not tool availability
-        // Tools remain stable regardless of skill activation/deactivation
+        // Notify tool availability change
+        this.onToolAvailabilityChange?.();
+    }
+
+    /** Callback for when tool availability changes */
+    private onToolAvailabilityChange?: (() => void) | undefined;
+
+    /**
+     * Set callback for when tool availability changes
+     */
+    setOnToolAvailabilityChange(callback: () => void): void {
+        this.onToolAvailabilityChange = callback;
     }
 
     /**
@@ -215,6 +249,44 @@ export class VirtualWorkspace {
     }
 
     /**
+     * Render skill-specific tools section
+     * Shows only enabled tools from the active skill
+     */
+    renderSkillToolsSection(): TUIElement | null {
+        const activeSkill = this.skillManager.getActiveSkill();
+        if (!activeSkill?.tools || activeSkill.tools.length === 0) {
+            return null;
+        }
+
+        // Filter to only show enabled tools
+        const enabledTools = activeSkill.tools.filter(tool => {
+            const registration = this.toolSet.get(tool.toolName);
+            return registration?.enabled === true;
+        });
+
+        if (enabledTools.length === 0) {
+            return null;
+        }
+
+        const container = new tdiv({
+            styles: {
+                showBorder: true,
+                border: { line: 'double' }
+            }
+        });
+
+        container.addChild(new tdiv({
+            content: `SKILL TOOLS: ${activeSkill.displayName}`,
+            styles: { align: 'center' }
+        }));
+
+        const toolSection = renderToolSection(enabledTools);
+        container.addChild(toolSection);
+
+        return container;
+    }
+
+    /**
      * Register a component with the workspace
      */
     registerComponent(registration: ComponentRegistration): void {
@@ -222,8 +294,13 @@ export class VirtualWorkspace {
         registration.component.toolSet.forEach((value: Tool, key: string) => {
             this.toolSet.set(value.toolName, {
                 tool: value,
-                componentKey: registration.key
-            })
+                source: ToolSource.COMPONENT,
+                componentKey: registration.key,
+                enabled: true,
+                handler: async (params: any) => {
+                    await registration.component.handleToolCall(value.toolName, params);
+                }
+            });
         })
     }
 
@@ -233,7 +310,7 @@ export class VirtualWorkspace {
     unregisterComponent(key: string): boolean {
         const componentToDelete = this.components.get(key);
         componentToDelete?.component.toolSet.forEach((value: Tool, key: string) => {
-            this.toolSet.delete(value.toolName)
+            this.toolSet.delete(value.toolName);
         })
         return this.components.delete(key);
     }
@@ -269,18 +346,17 @@ export class VirtualWorkspace {
 
         // Add global tools section
         const globalTools = Array.from(this.toolSet.entries())
-            .filter(([, value]) => value.componentKey === 'global')
+            .filter(([, value]) => value.source === ToolSource.GLOBAL)
             .map(([, value]) => value.tool);
 
         if (globalTools.length > 0) {
             const globalToolsSection = renderToolSection(globalTools)
             container.addChild(globalToolsSection);
-
         }
 
-        this.components.forEach(e => {
-            container.addChild(e.component.renderToolSection())
-        })
+        // Note: Component tools are no longer rendered in TOOL BOX
+        // They are rendered in their respective component sections in _render()
+
         return container
 
     }
@@ -319,6 +395,12 @@ export class VirtualWorkspace {
 
         // Add skills section
         container.addChild(this.renderSkillsSection());
+
+        // Add skill tools section (if active skill has tools)
+        const skillToolsSection = this.renderSkillToolsSection();
+        if (skillToolsSection) {
+            container.addChild(skillToolsSection);
+        }
 
         // container.addChild(new tdiv({
         //     content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
@@ -397,17 +479,39 @@ export class VirtualWorkspace {
         // }
 
         try {
-            const toolToExecute = this.toolSet.get(toolName);
-            if (!toolToExecute) throw new Error(`Tool not found: ${toolName}`);
+            const toolRegistration = this.toolSet.get(toolName);
+            if (!toolRegistration) throw new Error(`Tool not found: ${toolName}`);
 
-            // Check if it's a global tool
-            if (toolToExecute.componentKey === 'global') {
+            // Check if tool is enabled
+            if (!toolRegistration.enabled) {
+                return {
+                    error: `Tool "${toolName}" is currently disabled`,
+                    success: false
+                };
+            }
+
+            // Use handler from ToolRegistration for direct execution
+            if (toolRegistration.handler) {
+                try {
+                    const result = await toolRegistration.handler(params);
+                    return { success: true, result };
+                } catch (error) {
+                    return {
+                        error: error instanceof Error ? error.message : String(error),
+                        success: false
+                    };
+                }
+            }
+
+            // Check if it's a global tool (no handler, use handleGlobalToolCall)
+            if (toolRegistration.source === ToolSource.GLOBAL) {
                 return await this.handleGlobalToolCall(toolName, params);
             }
 
-            const component = this.components.get(toolToExecute.componentKey);
-            await component?.component.handleToolCall(toolName, params);
-            return { success: true };
+            return {
+                error: `Unable to execute tool "${toolName}": no handler found`,
+                success: false
+            };
         } catch (error) {
             return {
                 error: error instanceof Error ? error.message : String(error),
@@ -477,12 +581,12 @@ export class VirtualWorkspace {
      * Get all available tools from all components
      * @returns Array of tool definitions with component information
      */
-    getAllTools(): Array<{ componentKey: string; toolName: string; tool: any }> {
-        const tools: Array<{ componentKey: string; toolName: string; tool: any }> = [];
+    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: any; source: ToolSource; enabled: boolean }> {
+        const tools: Array<{ componentKey: string | undefined; toolName: string; tool: any; source: ToolSource; enabled: boolean }> = [];
 
         // Add all tools from toolSet (includes both global and component tools)
         for (const [toolName, value] of this.toolSet.entries()) {
-            tools.push({ componentKey: value.componentKey, toolName, tool: value.tool });
+            tools.push({ componentKey: value.componentKey, toolName, tool: value.tool, source: value.source, enabled: value.enabled });
         }
 
         return tools;
@@ -494,7 +598,7 @@ export class VirtualWorkspace {
     getGlobalTools(): Map<string, Tool> {
         const globalToolsMap = new Map<string, Tool>();
         for (const [toolName, value] of this.toolSet.entries()) {
-            if (value.componentKey === 'global') {
+            if (value.source === ToolSource.GLOBAL) {
                 globalToolsMap.set(toolName, value.tool);
             }
         }
@@ -507,7 +611,9 @@ export class VirtualWorkspace {
     addGlobalTool(tool: Tool): void {
         this.toolSet.set(tool.toolName, {
             tool,
-            componentKey: 'global'
+            source: ToolSource.GLOBAL,
+            componentKey: 'global',
+            enabled: true
         });
     }
 
@@ -516,10 +622,40 @@ export class VirtualWorkspace {
      */
     removeGlobalTool(toolName: string): boolean {
         const toolEntry = this.toolSet.get(toolName);
-        if (toolEntry && toolEntry.componentKey === 'global') {
+        if (toolEntry && toolEntry.source === ToolSource.GLOBAL) {
             return this.toolSet.delete(toolName);
         }
         return false;
+    }
+
+    /**
+     * Check if a tool is currently available
+     */
+    isToolAvailable(toolName: string): boolean {
+        const registration = this.toolSet.get(toolName);
+        return registration?.enabled ?? false;
+    }
+
+    /**
+     * Get all currently available tools
+     */
+    getAvailableTools(): Tool[] {
+        return Array.from(this.toolSet.values())
+            .filter(reg => reg.enabled)
+            .map(reg => reg.tool);
+    }
+
+    /**
+     * Get tool source information
+     */
+    getToolSource(toolName: string): { source: ToolSource; owner: string } | null {
+        const registration = this.toolSet.get(toolName);
+        if (!registration) return null;
+
+        return {
+            source: registration.source,
+            owner: registration.componentKey ?? registration.skillName ?? 'global'
+        };
     }
 }
 export type { ComponentRegistration, Skill, SkillSummary };

@@ -1,4 +1,4 @@
-import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool } from './types.js';
+import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool, SkillToolState } from './types.js';
 
 /**
  * SkillManager - manages skill registration, activation, and lifecycle
@@ -226,5 +226,38 @@ export class SkillManager {
 
             return false;
         });
+    }
+
+    /**
+     * Get tools from the currently active skill
+     */
+    getActiveSkillTools(): Tool[] {
+        return this.activeSkill?.tools ?? [];
+    }
+
+    /**
+     * Get tool names from the currently active skill
+     */
+    getActiveSkillToolNames(): string[] {
+        return this.activeSkill?.tools?.map(t => t.toolName) ?? [];
+    }
+
+    /**
+     * Check if a tool name belongs to the active skill
+     */
+    isToolFromActiveSkill(toolName: string): boolean {
+        return this.getActiveSkillToolNames().includes(toolName);
+    }
+
+    /**
+     * Get tool state for all skills
+     */
+    getAllSkillToolStates(): SkillToolState[] {
+        return Array.from(this.registry.values()).map(skill => ({
+            skillName: skill.name,
+            tools: skill.tools ?? [],
+            active: this.activeSkill?.name === skill.name,
+            addedToolNames: skill.tools?.map(t => t.toolName) ?? []
+        }));
     }
 }

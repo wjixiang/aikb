@@ -1,5 +1,21 @@
 import OpenAI from 'openai';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface.js';
+import {
+    ApiClientError,
+    AuthenticationError,
+    RateLimitError,
+    TimeoutError,
+    NetworkError,
+    ValidationError,
+    ServiceUnavailableError,
+    QuotaExceededError,
+    ContentPolicyError,
+    ResponseParsingError,
+    ConfigurationError,
+    UnknownApiError,
+    parseError,
+    isRetryableError,
+} from './errors.js';
 
 /**
  * Configuration for OpenAI-compatible API client
@@ -15,6 +31,12 @@ export interface OpenAICompatibleConfig {
     temperature?: number;
     /** Optional max tokens */
     maxTokens?: number;
+    /** Maximum number of retry attempts for retryable errors */
+    maxRetries?: number;
+    /** Initial delay in ms for exponential backoff */
+    retryDelay?: number;
+    /** Enable/disable request logging */
+    enableLogging?: boolean;
 }
 
 /**
@@ -26,13 +48,61 @@ export interface OpenAICompatibleConfig {
 export class OpenaiCompatibleApiClient implements ApiClient {
     private client: OpenAI;
     private config: OpenAICompatibleConfig;
+    private requestCount = 0;
+    private lastError: ApiClientError | null = null;
 
     constructor(config: OpenAICompatibleConfig) {
-        this.config = config;
+        this.validateConfig(config);
+        this.config = {
+            maxRetries: 3,
+            retryDelay: 1000,
+            enableLogging: true,
+            ...config,
+        };
         this.client = new OpenAI({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
+            apiKey: this.config.apiKey,
+            baseURL: this.config.baseURL,
         });
+    }
+
+    /**
+     * Validate configuration parameters
+     */
+    private validateConfig(config: OpenAICompatibleConfig): void {
+        if (!config.apiKey || config.apiKey.trim() === '') {
+            throw new ConfigurationError('API key is required', 'apiKey');
+        }
+        if (!config.model || config.model.trim() === '') {
+            throw new ConfigurationError('Model name is required', 'model');
+        }
+        if (config.temperature !== undefined && (config.temperature < 0 || config.temperature > 2)) {
+            throw new ConfigurationError('Temperature must be between 0 and 2', 'temperature');
+        }
+        if (config.maxTokens !== undefined && config.maxTokens < 1) {
+            throw new ConfigurationError('Max tokens must be greater than 0', 'maxTokens');
+        }
+    }
+
+    /**
+     * Log request information if logging is enabled
+     */
+    private log(level: 'info' | 'warn' | 'error', message: string, data?: unknown): void {
+        if (!this.config.enableLogging) return;
+
+        const timestamp = new Date().toISOString();
+        const logMessage = `[${timestamp}] [OpenAI-API] [${level.toUpperCase()}] ${message}`;
+
+        switch (level) {
+            case 'info':
+                console.log(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
+                break;
+            case 'warn':
+                console.warn(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
+                break;
+            case 'error':
+                console.error(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
+                break;
+        }
     }
 
     async makeRequest(
@@ -42,16 +112,99 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         timeoutConfig?: ApiTimeoutConfig,
         tools?: ChatCompletionTool[]
     ): Promise<ApiResponse> {
+        this.requestCount++;
+        const requestId = `req-${this.requestCount}-${Date.now()}`;
         const timeout = timeoutConfig?.timeout ?? 40000;
+
+        // Validate input parameters
+        this.validateRequestInputs(systemPrompt, workspaceContext, memoryContext, tools);
 
         // Build messages array
         const messages = this.buildMessages(systemPrompt, workspaceContext, memoryContext);
 
+        this.log('info', `Starting request ${requestId}`, {
+            model: this.config.model,
+            timeout,
+            messageCount: messages.length,
+            hasTools: !!tools && tools.length > 0,
+            toolCount: tools?.length ?? 0,
+        });
+
+        // Store original inputs for error logging
+        const originalInputs = { systemPrompt, memoryContext, workspaceContext };
+
+        // Attempt request with retry logic
+        let lastError: ApiClientError | null = null;
+        const maxRetries = this.config.maxRetries ?? 3;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 0) {
+                    const delay = this.calculateRetryDelay(attempt);
+                    this.log('info', `Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay`, { requestId });
+                    await this.sleep(delay);
+                }
+
+                const response = await this.makeRequestInternal(requestId, messages, tools, timeout, originalInputs);
+
+                this.log('info', `Request ${requestId} completed successfully`, {
+                    attempt: attempt + 1,
+                    requestTime: response.requestTime,
+                    tokenUsage: response.tokenUsage,
+                });
+
+                this.lastError = null;
+                return response;
+            } catch (error) {
+                const apiError = parseError(error, { timeout });
+                lastError = apiError;
+                this.lastError = apiError;
+
+                this.log('error', `Request ${requestId} failed on attempt ${attempt + 1}`, {
+                    error: apiError.toJSON(),
+                    isRetryable: apiError.retryable,
+                    remainingAttempts: maxRetries - attempt,
+                });
+
+                // Don't retry if error is not retryable or we've exhausted retries
+                if (!apiError.retryable || attempt >= maxRetries) {
+                    break;
+                }
+
+                // Special handling for rate limit errors with retry-after header
+                if (apiError instanceof RateLimitError && apiError.retryAfter) {
+                    this.log('warn', `Rate limit detected, waiting ${apiError.retryAfter}s before retry`, { requestId });
+                    await this.sleep(apiError.retryAfter * 1000);
+                }
+            }
+        }
+
+        // All retries exhausted or non-retryable error
+        this.log('error', `Request ${requestId} failed after ${maxRetries + 1} attempts`, {
+            finalError: lastError?.toJSON(),
+        });
+
+        throw lastError ?? new UnknownApiError('Request failed with unknown error');
+    }
+
+    /**
+     * Internal method to make the actual API request with timeout
+     */
+    private async makeRequestInternal(
+        requestId: string,
+        messages: OpenAI.Chat.ChatCompletionMessageParam[],
+        tools: ChatCompletionTool[] | undefined,
+        timeout: number,
+        originalInputs: { systemPrompt: string; memoryContext: string[]; workspaceContext: string }
+    ): Promise<ApiResponse> {
         // Create timeout promise
         const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => {
-                reject(new Error(`API request timed out after ${timeout}ms`));
+            const timeoutId = setTimeout(() => {
+                reject(new TimeoutError(`API request timed out after ${timeout}ms`, timeout));
             }, timeout);
+
+            // Clear timeout on promise settlement
+            timeoutPromise.finally?.(() => clearTimeout(timeoutId));
         });
 
         try {
@@ -63,7 +216,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 this.client.chat.completions.create({
                     model: this.config.model,
                     messages,
-                    tools,  // Pass tools if provided
+                    tools,
                     temperature: this.config.temperature,
                     max_tokens: this.config.maxTokens,
                 }),
@@ -72,18 +225,105 @@ export class OpenaiCompatibleApiClient implements ApiClient {
 
             // Calculate request time
             const requestTime = Date.now() - startTime;
-            const resposne = this.convertOpenAIResponse(completion, requestTime);
-            console.log(`systemPrompt:${systemPrompt}\n\n\n`)
-            console.log(`memoryContext:${memoryContext} \n\n\n`)
-            console.log(`workspaceContext:${workspaceContext}\n\n\n`)
-            console.log(resposne)
 
-            // Convert OpenAI response to unified format
-            return resposne
+            // Validate response structure
+            if (!completion) {
+                throw new ResponseParsingError('Received empty response from API');
+            }
+
+            const response = this.convertOpenAIResponse(completion, requestTime);
+
+            // Log request details for debugging
+            this.log('info', `Request ${requestId} details`, {
+                systemPrompt: originalInputs.systemPrompt.substring(0, 200) + (originalInputs.systemPrompt.length > 200 ? '...' : ''),
+                memoryContextCount: originalInputs.memoryContext.length,
+                workspaceContextLength: originalInputs.workspaceContext.length,
+                response,
+            });
+
+            return response;
         } catch (error) {
-            console.error('OpenAI-compatible API request failed:', error);
-            throw error;
+            // Re-throw ApiClientError as-is
+            if (error instanceof ApiClientError) {
+                throw error;
+            }
+
+            // Parse and throw as appropriate error type
+            throw parseError(error, { timeout });
         }
+    }
+
+    /**
+     * Validate request input parameters
+     */
+    private validateRequestInputs(
+        systemPrompt: string,
+        workspaceContext: string,
+        memoryContext: string[],
+        tools?: ChatCompletionTool[]
+    ): void {
+        if (typeof systemPrompt !== 'string') {
+            throw new ValidationError('System prompt must be a string', 'systemPrompt');
+        }
+        if (typeof workspaceContext !== 'string') {
+            throw new ValidationError('Workspace context must be a string', 'workspaceContext');
+        }
+        if (!Array.isArray(memoryContext)) {
+            throw new ValidationError('Memory context must be an array', 'memoryContext');
+        }
+
+        // Validate tools if provided
+        if (tools) {
+            if (!Array.isArray(tools)) {
+                throw new ValidationError('Tools must be an array', 'tools');
+            }
+            for (let i = 0; i < tools.length; i++) {
+                const tool = tools[i];
+                if (!tool.type || (tool.type !== 'function' && tool.type !== 'custom')) {
+                    throw new ValidationError(`Tool at index ${i} has invalid type`, `tools[${i}].type`);
+                }
+                if (tool.type === 'function') {
+                    if (!tool.function?.name) {
+                        throw new ValidationError(`Tool at index ${i} is missing function name`, `tools[${i}].function.name`);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculate retry delay with exponential backoff
+     */
+    private calculateRetryDelay(attempt: number): number {
+        const baseDelay = this.config.retryDelay ?? 1000;
+        // Exponential backoff: baseDelay * 2^(attempt-1) with jitter
+        const exponentialDelay = baseDelay * Math.pow(2, attempt - 1);
+        const jitter = Math.random() * 0.3 * exponentialDelay; // Add up to 30% jitter
+        return Math.min(exponentialDelay + jitter, 30000); // Cap at 30 seconds
+    }
+
+    /**
+     * Sleep for specified milliseconds
+     */
+    private sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Get the last error that occurred
+     */
+    public getLastError(): ApiClientError | null {
+        return this.lastError;
+    }
+
+    /**
+     * Get statistics about the client
+     */
+    public getStats(): { requestCount: number; lastError: ApiClientError | null } {
+        return {
+            requestCount: this.requestCount,
+            lastError: this.lastError,
+        };
     }
 
     /**
@@ -120,47 +360,104 @@ export class OpenaiCompatibleApiClient implements ApiClient {
      * Convert OpenAI completion response to unified ApiResponse format
      */
     private convertOpenAIResponse(completion: OpenAI.Chat.ChatCompletion, requestTime: number): ApiResponse {
-        const choice = completion.choices[0];
-        if (!choice) {
-            throw new Error('No completion choice returned from API');
-        }
+        try {
+            // Validate completion structure
+            if (!completion.choices || completion.choices.length === 0) {
+                throw new ResponseParsingError('No completion choices returned from API', completion);
+            }
 
-        const message = choice.message;
-        const toolCalls: ToolCall[] = [];
-        let textResponse = '';
+            const choice = completion.choices[0];
+            if (!choice) {
+                throw new ResponseParsingError('First completion choice is undefined', completion);
+            }
 
-        // Handle tool calls if present
-        if (message.tool_calls && message.tool_calls.length > 0) {
-            for (const toolCall of message.tool_calls) {
-                if (toolCall.type === 'function') {
-                    toolCalls.push({
-                        id: toolCall.id,
-                        call_id: toolCall.id, // OpenAI uses same ID
-                        type: 'function_call',
-                        name: toolCall.function.name,
-                        arguments: toolCall.function.arguments,
-                    });
+            const message = choice.message;
+            if (!message) {
+                throw new ResponseParsingError('Completion message is undefined', choice);
+            }
+
+            const toolCalls: ToolCall[] = [];
+            let textResponse = '';
+
+            // Handle tool calls if present
+            if (message.tool_calls && message.tool_calls.length > 0) {
+                for (const toolCall of message.tool_calls) {
+                    // Validate tool call structure
+                    if (!toolCall.id) {
+                        this.log('warn', 'Tool call missing ID, skipping', { toolCall });
+                        continue;
+                    }
+
+                    if (toolCall.type === 'function') {
+                        if (!toolCall.function?.name) {
+                            this.log('warn', 'Function call missing name, skipping', { toolCall });
+                            continue;
+                        }
+
+                        // Validate function arguments
+                        let args = toolCall.function.arguments;
+                        if (args) {
+                            try {
+                                // Validate JSON format
+                                JSON.parse(args);
+                            } catch (e) {
+                                throw new ResponseParsingError(
+                                    `Invalid JSON in function arguments for ${toolCall.function.name}`,
+                                    { toolCall, parseError: e }
+                                );
+                            }
+                        }
+
+                        toolCalls.push({
+                            id: toolCall.id,
+                            call_id: toolCall.id,
+                            type: 'function_call',
+                            name: toolCall.function.name,
+                            arguments: args ?? '{}',
+                        });
+                    }
                 }
             }
+
+            // Capture text response if present
+            if (message.content) {
+                textResponse = message.content;
+            }
+
+            // Validate and extract token usage
+            const usage = completion.usage;
+            if (!usage) {
+                this.log('warn', 'Token usage not provided in response');
+            }
+
+            const tokenUsage: TokenUsage = {
+                promptTokens: usage?.prompt_tokens ?? 0,
+                completionTokens: usage?.completion_tokens ?? 0,
+                totalTokens: usage?.total_tokens ?? 0,
+            };
+
+            // Validate token counts are non-negative
+            if (tokenUsage.promptTokens < 0 || tokenUsage.completionTokens < 0 || tokenUsage.totalTokens < 0) {
+                throw new ResponseParsingError('Token counts cannot be negative', tokenUsage);
+            }
+
+            return {
+                toolCalls,
+                textResponse,
+                requestTime,
+                tokenUsage,
+            };
+        } catch (error) {
+            // Re-throw ApiClientError as-is
+            if (error instanceof ApiClientError) {
+                throw error;
+            }
+
+            // Wrap parsing errors
+            throw new ResponseParsingError(
+                `Failed to parse API response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                error instanceof Error ? { originalError: error.message, completion } : completion
+            );
         }
-
-        // Capture text response if present
-        if (message.content) {
-            textResponse = message.content;
-        }
-
-        // Extract token usage
-        const tokenUsage: TokenUsage = {
-            promptTokens: completion.usage?.prompt_tokens ?? 0,
-            completionTokens: completion.usage?.completion_tokens ?? 0,
-            totalTokens: completion.usage?.total_tokens ?? 0,
-        };
-
-        return {
-            toolCalls,
-            textResponse,
-            requestTime,
-            tokenUsage,
-        };
     }
 }

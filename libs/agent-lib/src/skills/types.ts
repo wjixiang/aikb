@@ -11,6 +11,50 @@ export interface Tool {
 }
 
 /**
+ * Tool source - where a tool originates from
+ */
+export enum ToolSource {
+    /** Always-available component tool */
+    COMPONENT = 'component',
+    /** Skill-scoped tool (only available when skill is active) */
+    SKILL = 'skill',
+    /** Global tool (always available) */
+    GLOBAL = 'global'
+}
+
+/**
+ * Extended tool registration with source tracking
+ */
+export interface ToolRegistration {
+    /** The tool definition */
+    tool: Tool;
+    /** Where this tool comes from */
+    source: ToolSource;
+    /** Component key (for component tools) */
+    componentKey?: string;
+    /** Skill name (for skill tools) */
+    skillName?: string;
+    /** Whether the tool is currently enabled/available */
+    enabled: boolean;
+    /** Handler function for executing the tool */
+    handler?: (params: any) => Promise<any>;
+}
+
+/**
+ * Skill tool state tracking
+ */
+export interface SkillToolState {
+    /** Name of the skill */
+    skillName: string;
+    /** Tools provided by this skill */
+    tools: Tool[];
+    /** Whether this skill is currently active */
+    active: boolean;
+    /** Tool names added to workspace */
+    addedToolNames: string[];
+}
+
+/**
  * Skill definition - provides specialized prompt and tools for specific tasks
  */
 export interface Skill {

@@ -64,7 +64,7 @@ export class BibliographySearchComponent extends ToolComponent {
         } else {
             // Render welcome message
             elements.push(new tdiv({
-                content: 'Welcome to Bibliography Search. Use the search_pubmed tool to find articles.',
+                content: 'Welcome to Bibliography Search. Activate related skill to find articles.',
 
             }));
         }

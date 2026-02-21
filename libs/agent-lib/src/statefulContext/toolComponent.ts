@@ -1,4 +1,4 @@
-import { renderToolSection } from "./section/renderToolSection.js";
+import { renderToolSection } from "../utils/toolRendering.js";
 import { Tool } from "./types.js";
 import { tdiv, TUIElement } from "./ui/index.js";
 

@@ -13,6 +13,7 @@ The skill system provides:
 - **Version Control**: Better diff tracking and code review
 - **Flexibility**: Support for complex logic in lifecycle hooks
 - **Backward Compatibility**: Markdown skills still supported for custom skills
+- **Skill-Based Tool Control**: Skills can now provide tools that are only available when the skill is active
 
 ## Quick Start
 
@@ -85,6 +86,7 @@ export default defineSkill({
     Instructions for how to use this skill...
     `,
 
+    // Skill-specific tools - only available when this skill is active
     tools: [
         createTool(
             'tool_name',
@@ -97,11 +99,13 @@ export default defineSkill({
     ],
 
     onActivate: async () => {
-        console.log('Skill activated');
+        // Tools are automatically added to the workspace when skill activates
+        console.log('Skill activated - tools now available');
     },
 
     onDeactivate: async () => {
-        console.log('Skill deactivated');
+        // Tools are automatically removed from the workspace when skill deactivates
+        console.log('Skill deactivated - tools removed');
     },
 
     metadata: {
@@ -192,9 +196,9 @@ const skill = registry.loadFromContent(content);
 - `category`: Skill category for organization
 - `tags`: Tags for discovery
 - `triggers`: Keywords that help LLM match this skill
-- `tools`: Skill-specific tools
-- `onActivate`: Initialization logic
-- `onDeactivate`: Cleanup logic
+- `tools`: Skill-specific tools (only available when skill is active)
+- `onActivate`: Initialization logic (tools are automatically added)
+- `onDeactivate`: Cleanup logic (tools are automatically removed)
 - `metadata`: Additional metadata
 
 ## Tool Definition
@@ -297,6 +301,34 @@ describe('MySkill', () => {
 });
 ```
 
+## Tool Control
+
+Skills can define tools that are only available when the skill is active. This allows for:
+
+1. **Context-Aware Tools**: Tools that are only relevant for specific tasks
+2. **Cleaner Interface**: The LLM only sees tools that are relevant to the current skill
+3. **Dynamic Tool Availability**: Tools are added/removed automatically on skill activation/deactivation
+
+### Tool Lifecycle
+
+When a skill is activated:
+1. The skill's `onActivate()` hook is called
+2. All tools defined in the skill's `tools` array are added to the workspace
+3. These tools become available for the LLM to use
+
+When a skill is deactivated:
+1. The skill's `onDeactivate()` hook is called
+2. All tools from this skill are removed from the workspace
+3. These tools are no longer available
+
+### Tool Sources
+
+The workspace tracks three types of tools:
+
+- **Global Tools**: Always available (e.g., `attempt_completion`, `get_skill`)
+- **Component Tools**: Always available from registered components
+- **Skill Tools**: Only available when their associated skill is active
+
 ## Best Practices
 
 1. **Use TypeScript**: Prefer TypeScript skills for new development
@@ -309,6 +341,8 @@ describe('MySkill', () => {
 8. **Lifecycle Hooks**: Use onActivate/onDeactivate for setup/cleanup
 9. **Error Handling**: Handle errors gracefully in lifecycle hooks
 10. **Naming**: Use kebab-case for skill names, descriptive display names
+11. **Tool Design**: Define tools that are specific to the skill's domain
+12. **Tool Reuse**: Consider using tools from components when appropriate
 
 ## Examples
 

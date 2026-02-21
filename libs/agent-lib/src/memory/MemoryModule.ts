@@ -13,6 +13,7 @@ import { ApiMessage, MessageBuilder } from '../task/task.type.js';
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { ApiClient, ChatCompletionTool } from '../api-client/index.js';
+import { formatChatCompletionTools } from '../utils/toolRendering.js';
 
 /**
  * Configuration for the memory module
@@ -391,6 +392,7 @@ ${summaryText}
         }
     }
 
+
     /**
      * Build thinking prompt
      */
@@ -399,6 +401,9 @@ ${summaryText}
         workspaceContext: string,
         previousRounds: ThinkingRound[]
     ): { systemPrompt: string; context: string; history: string[] } {
+        const tools = this.buildThinkingTools();
+        const toolsText = formatChatCompletionTools(tools);
+
         const systemPrompt = `You are in the THINKING phase of an agent framework.
 
 Your task is to:
@@ -409,8 +414,8 @@ Your task is to:
 5. Optionally recall historical contexts if needed
 
 You have access to these tools:
-- continue_thinking: Decide whether to continue thinking or proceed to action
-- recall_context: Recall historical workspace contexts by turn number, ID, or keyword
+
+${toolsText}
 
 Think deeply about:
 - What the user wants to accomplish (the overall goal)
@@ -459,7 +464,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
     /**
      * Build thinking tools
      */
-    private buildThinkingTools(): ChatCompletionTool[] {
+    buildThinkingTools(): ChatCompletionTool[] {
         return [
             {
                 type: 'function',
