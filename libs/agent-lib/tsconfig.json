@@ -10,7 +10,9 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true,
     "composite": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
   },
   "files": [],
   "include": [],

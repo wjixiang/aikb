@@ -1,9 +1,13 @@
+import 'reflect-metadata';
 import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/index.js';
 import { ApiClient } from '../api-client/index.js';
 import { createObservableAgent, ObservableAgentCallbacks } from './ObservableAgent.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
+import { getGlobalContainer, AgentContainer } from '../di/index.js';
+import { IVirtualWorkspace } from '../statefulContext/types.js';
+import { TYPES } from '../di/types.js';
 
 /**
  * Configuration options for creating an Agent
@@ -55,10 +59,37 @@ export interface AgentFactoryOptions {
  * ```
  */
 export class AgentFactory {
+    private static container: AgentContainer | null = null;
+
+    /**
+     * Get or create the singleton container instance
+     */
+    private static getContainer(): AgentContainer {
+        if (!this.container) {
+            this.container = getGlobalContainer();
+        }
+        return this.container;
+    }
+
+    /**
+     * Set a custom container (useful for testing)
+     */
+    static setContainer(container: AgentContainer): void {
+        this.container = container;
+    }
+
+    /**
+     * Reset the container (useful for testing)
+     */
+    static resetContainer(): void {
+        this.container = null;
+    }
+
     /**
      * Create an Agent instance with the provided options
-     * 
+     *
      * @param workspace - The VirtualWorkspace instance
+     * @param agentPrompt - The agent prompt configuration
      * @param options - Optional configuration for the agent
      * @returns A configured Agent instance
      */
@@ -78,38 +109,19 @@ export class AgentFactory {
             observers,
         } = options;
 
-        // Merge default config with provided config
-        const config: AgentConfig = {
-            ...defaultAgentConfig,
-            ...configPartial,
-        };
-        console.log('[AgentFactory.create] Merged config:', JSON.stringify(config, null, 2));
+        // Use the container to create the agent
+        const container = this.getContainer();
 
-        // Merge default API config with provided config
-        const apiConfiguration: ProviderSettings = {
-            apiProvider: 'zai',
-            apiKey: process.env['GLM_API_KEY'],
-            apiModelId: 'glm-4.5',
-            ...apiConfigPartial,
-        };
-        console.log('[AgentFactory.create] API configuration, provider:', apiConfiguration.apiProvider, 'model:', apiConfiguration.apiModelId, 'hasApiKey:', !!apiConfiguration.apiKey);
-
-        // Create API client if not provided
-        console.log('[AgentFactory.create] Creating API client...');
-        const client = apiClient || ApiClientFactory.create(apiConfiguration);
-        console.log('[AgentFactory.create] API client created');
-
-        // Create the Agent
-        console.log('[AgentFactory.create] Creating Agent instance...');
-        const agent = new Agent(
-            config,
-            workspace,
+        // Create agent with container, passing the workspace
+        const agent = container.createAgent({
+            config: configPartial,
+            apiConfiguration: apiConfigPartial,
             agentPrompt,
-            client,
-            undefined, // memoryModule - will be created internally by Agent
             taskId,
-        );
-        console.log('[AgentFactory.create] Agent instance created, taskId:', agent.getTaskId);
+            workspace, // Pass the workspace to container for backward compatibility
+        });
+
+        console.log('[AgentFactory.create] Agent instance created via container, taskId:', agent.getTaskId);
 
         // Wrap in ObservableAgent if observers are provided
         if (observers && Object.keys(observers).length > 0) {
@@ -118,6 +130,35 @@ export class AgentFactory {
         }
 
         console.log('[AgentFactory.create] Returning agent');
+        return agent;
+    }
+
+    /**
+     * Create an Agent using the DI container directly
+     * This is the recommended way for new code
+     *
+     * @param agentPrompt - The agent prompt configuration
+     * @param options - Optional configuration for the agent
+     * @returns A configured Agent instance
+     */
+    static createWithContainer(
+        agentPrompt: AgentPrompt,
+        options: Omit<AgentFactoryOptions, 'apiClient'> & { workspace?: VirtualWorkspace } = {}
+    ): Agent {
+        const container = this.getContainer();
+
+        const agent = container.createAgent({
+            config: options.config,
+            apiConfiguration: options.apiConfiguration,
+            agentPrompt,
+            taskId: options.taskId,
+            workspace: options.workspace,
+        });
+
+        if (options.observers) {
+            return createObservableAgent(agent, options.observers);
+        }
+
         return agent;
     }
 
@@ -138,9 +179,15 @@ export class AgentFactory {
         agentPrompt: AgentPrompt,
         options: Omit<AgentFactoryOptions, 'apiClient'> = {}
     ): Agent {
-        return AgentFactory.create(workspace, agentPrompt, {
-            ...options,
-            apiClient,
-        });
+        // For custom API client, we need to use the standard create method
+        // The container doesn't directly support overriding ApiClient after creation
+        // For now, delegate to the standard create method which will use the container
+        // Note: The custom apiClient parameter is currently ignored in the container-based approach
+        // If you need to use a custom ApiClient, consider using the container directly
+
+        // Log a warning that custom apiClient is not supported in container mode
+        console.warn('[AgentFactory.createWithCustomClient] Custom ApiClient is not directly supported in container-based mode. Using container-created ApiClient instead.');
+
+        return this.create(workspace, agentPrompt, options);
     }
 }

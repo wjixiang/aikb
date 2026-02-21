@@ -1,7 +1,55 @@
 import * as z from 'zod'
+import type { SkillManager, Skill, SkillSummary, ToolRegistration } from '../skills/index.js';
+
 /**
  * Core type definitions for stateful context library
  */
+
+/**
+ * Interface for VirtualWorkspace
+ * Defines the contract for workspace management and tool execution
+ */
+export interface IVirtualWorkspace {
+    /**
+     * Render the current workspace state as a string
+     */
+    render(): Promise<string>;
+
+    /**
+     * Handle a tool call by name with given parameters
+     */
+    handleToolCall(name: string, params: any): Promise<any>;
+
+    /**
+     * Get all registered tools
+     */
+    getAllTools(): ToolRegistration[];
+
+    /**
+     * Get the skill manager instance
+     */
+    getSkillManager(): SkillManager;
+
+    /**
+     * Get active skill's prompt enhancement
+     */
+    getSkillPrompt(): { capability: string; direction: string } | null;
+
+    /**
+     * Get available skills summary
+     */
+    getAvailableSkills(): SkillSummary[];
+
+    /**
+     * Register multiple skills
+     */
+    registerSkills(skills: Skill[]): void;
+
+    /**
+     * Register a single skill
+     */
+    registerSkill(skill: Skill): void;
+}
 
 /**
  * Base metadata for all TUI elements

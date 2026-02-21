@@ -5,6 +5,7 @@
  * Each turn encapsulates all messages, context, and metadata for that interaction cycle.
  */
 
+import { injectable } from 'inversify';
 import { ApiMessage } from '../task/task.type.js';
 import {
     Turn,
@@ -14,6 +15,7 @@ import {
     ToolCallResult
 } from './Turn.js';
 
+@injectable()
 export class TurnMemoryStore {
     private turns: Map<string, Turn> = new Map();
     private turnNumberToId: Map<number, string> = new Map();

@@ -1,6 +1,8 @@
+import { injectable, inject, optional } from 'inversify';
 import { ApiMessage } from '../task/task.type.js';
 import { ContextMemoryStore, ContextSnapshot } from './ContextMemoryStore.js';
 import type { ApiClient } from '../api-client/index.js';
+import { TYPES } from '../di/types.js';
 
 /**
  * Tool for LLM to control thinking flow
@@ -82,15 +84,16 @@ export interface ReflectiveThinkingConfig {
  * 2. Context summarization and accumulation
  * 3. Historical context recall mechanism
  */
+@injectable()
 export class ReflectiveThinkingProcessor {
     private config: ReflectiveThinkingConfig;
     private memoryStore: ContextMemoryStore;
     private apiClient: ApiClient;
 
     constructor(
-        config: ReflectiveThinkingConfig,
-        memoryStore: ContextMemoryStore,
-        apiClient: ApiClient
+        @inject(TYPES.MemoryModuleConfig) @optional() config: ReflectiveThinkingConfig,
+        @inject(TYPES.ContextMemoryStore) @optional() memoryStore: ContextMemoryStore,
+        @inject(TYPES.ApiClient) apiClient: ApiClient
     ) {
         this.config = config;
         this.memoryStore = memoryStore;

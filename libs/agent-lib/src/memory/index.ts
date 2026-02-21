@@ -25,3 +25,6 @@ export {
     ThinkingPhaseResult,
     RecallRequest as MemoryModuleRecallRequest,
 } from './MemoryModule.js';
+
+// Type exports (IMemoryModule interface)
+export type { IMemoryModule } from './types.js';

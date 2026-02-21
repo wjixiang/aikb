@@ -214,7 +214,8 @@ export const clineMessageSchema = z.object({
 export type ClineMessage = z.infer<typeof clineMessageSchema>;
 
 /**
- * TokenUsage
+ * MessageTokenUsage
+ * Detailed token usage tracking for messages including cost and cache information
  */
 
 export const tokenUsageSchema = z.object({
@@ -226,7 +227,7 @@ export const tokenUsageSchema = z.object({
   contextTokens: z.number(),
 });
 
-export type TokenUsage = z.infer<typeof tokenUsageSchema>;
+export type MessageTokenUsage = z.infer<typeof tokenUsageSchema>;
 
 /**
  * QueuedMessage

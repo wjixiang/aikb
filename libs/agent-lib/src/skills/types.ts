@@ -1,14 +1,10 @@
 import { z } from 'zod';
 
-/**
- * Tool definition interface
- * Re-exported from agent-lib (formerly stateful-context) for convenience
- */
-export interface Tool {
-    toolName: string;
-    paramsSchema: z.ZodType<any>;
-    desc: string;
-}
+// Import Tool from statefulContext for use within this file
+import type { Tool } from '../statefulContext/types.js';
+
+// Re-export Tool for external use
+export type { Tool } from '../statefulContext/types.js';
 
 /**
  * Tool source - where a tool originates from

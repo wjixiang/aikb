@@ -1,3 +1,4 @@
+import { injectable } from 'inversify';
 import OpenAI from 'openai';
 import pino from 'pino';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface.js';
@@ -48,6 +49,7 @@ export interface OpenAICompatibleConfig {
  * Supports OpenAI API and compatible endpoints (e.g., Azure OpenAI, local models)
  * Converts responses to the unified ToolCall[] format
  */
+@injectable()
 export class OpenaiCompatibleApiClient implements ApiClient {
     private client: OpenAI;
     private config: OpenAICompatibleConfig;

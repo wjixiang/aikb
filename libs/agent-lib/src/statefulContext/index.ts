@@ -8,7 +8,7 @@
 
 
 // Re-export all types
-export type { Tool } from './types.js';
+export type { Tool, IVirtualWorkspace } from './types.js';
 
 // Re-export tool component
 export { ToolComponent } from './toolComponent.js';

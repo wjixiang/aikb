@@ -1,4 +1,4 @@
-import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from '../types';
+import type { MessageTokenUsage, ToolUsage, ToolName, ClineMessage } from '../types/index.js';
 
 export type ParsedApiReqStartedTextType = {
   tokensIn: number;
@@ -27,7 +27,7 @@ export type ParsedApiReqStartedTextType = {
  * // Result: { totalTokensIn: 10, totalTokensOut: 20, totalCost: 0.005 }
  */
 export function getApiMetrics(messages: ClineMessage[]) {
-  const result: TokenUsage = {
+  const result: MessageTokenUsage = {
     totalTokensIn: 0,
     totalTokensOut: 0,
     totalCacheWrites: undefined,
@@ -122,14 +122,14 @@ export function getApiMetrics(messages: ClineMessage[]) {
  * @returns true if any relevant property has changed or snapshot is undefined
  */
 export function hasTokenUsageChanged(
-  current: TokenUsage,
-  snapshot?: TokenUsage,
+  current: MessageTokenUsage,
+  snapshot?: MessageTokenUsage,
 ): boolean {
   if (!snapshot) {
     return true;
   }
 
-  const keysToCompare: (keyof TokenUsage)[] = [
+  const keysToCompare: (keyof MessageTokenUsage)[] = [
     'totalTokensIn',
     'totalTokensOut',
     'totalCacheWrites',

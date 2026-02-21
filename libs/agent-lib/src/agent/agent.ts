@@ -1,3 +1,4 @@
+import { injectable, inject, optional } from 'inversify';
 import Anthropic from "@anthropic-ai/sdk";
 import {
     ApiMessage,
@@ -5,7 +6,7 @@ import {
     ThinkingBlock,
     MessageBuilder,
 } from "../task/task.type.js";
-import { TokenUsage, ToolUsage } from "../types/index.js";
+import { MessageTokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "../statefulContext/index.js";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
@@ -22,6 +23,9 @@ import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
 import { generateSkillsUsageGuidance } from "../prompts/sections/skillsUsageGuidance.js";
 import { MemoryModule, MemoryModuleConfig, ThinkingPhaseResult, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import { TYPES } from '../di/types.js';
+import type { IVirtualWorkspace } from '../statefulContext/types.js';
+import type { IMemoryModule } from '../memory/types.js';
 
 /**
  * Tool result from execution
@@ -86,12 +90,13 @@ export interface AgentPrompt {
     direction: string;
 }
 
+@injectable()
 export class Agent {
     workspace: VirtualWorkspace;
     private _status: TaskStatus = 'idle';
     private _taskId: string;
     private _initialQuery: string | null = null;  // Store initial user query for task context
-    private _tokenUsage: TokenUsage = {
+    private _tokenUsage: MessageTokenUsage = {
         totalTokensIn: 0,
         totalTokensOut: 0,
         totalCost: 0,
@@ -116,31 +121,25 @@ export class Agent {
     // Memory module (dependency injected, always present)
     private memoryModule: MemoryModule;
 
+    private agentPrompt: AgentPrompt;
+
     constructor(
-        public config: AgentConfig = defaultAgentConfig,
-        workspace: VirtualWorkspace,
-        private agentPrompt: AgentPrompt,
-        apiClient: ApiClient,
-        memoryModule?: MemoryModule,  // Optional injection for testing
-        taskId?: string,
+        @inject(TYPES.AgentConfig) @optional() public config: AgentConfig = defaultAgentConfig,
+        @inject(TYPES.IVirtualWorkspace) workspace: IVirtualWorkspace,
+        @inject(TYPES.AgentPrompt) agentPrompt: AgentPrompt,
+        @inject(TYPES.ApiClient) apiClient: ApiClient,
+        @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
+        @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
-        this.workspace = workspace;
+        this.workspace = workspace as VirtualWorkspace;
         this._taskId = taskId || crypto.randomUUID();
+        this.agentPrompt = agentPrompt;
 
         // Use injected API client
         this.apiClient = apiClient;
 
-        // Initialize memory module (dependency injection or create new)
-        if (memoryModule) {
-            this.memoryModule = memoryModule;
-        } else {
-            // Pass apiRequestTimeout to memory module config
-            const memoryConfig = {
-                ...config.memory,
-                apiRequestTimeout: config.apiRequestTimeout,
-            };
-            this.memoryModule = new MemoryModule(apiClient, memoryConfig);
-        }
+        // Use injected memory module (always provided via DI)
+        this.memoryModule = memoryModule as MemoryModule;
     }
 
     // ==================== Public API ====================
@@ -162,7 +161,7 @@ export class Agent {
     /**
      * Getter for token usage
      */
-    public get tokenUsage(): TokenUsage {
+    public get tokenUsage(): MessageTokenUsage {
         return this._tokenUsage;
     }
 
@@ -252,7 +251,7 @@ export class Agent {
     /**
      * Complete agent task
      */
-    complete(tokenUsage?: TokenUsage, toolUsage?: ToolUsage): void {
+    complete(tokenUsage?: MessageTokenUsage, toolUsage?: ToolUsage): void {
         this._status = 'completed';
     }
 

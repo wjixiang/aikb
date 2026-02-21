@@ -1,11 +1,11 @@
-import { TokenUsage } from '../../types';
-import type { ApiStreamChunk, ApiStreamUsageChunk } from '../../api';
+import { MessageTokenUsage } from '../../types/index.js';
+import type { ApiStreamChunk, ApiStreamUsageChunk } from '../../api-client/index.js';
 
 /**
  * Tracks and accumulates token usage from API responses
  */
 export class TokenUsageTracker {
-    private tokenUsage: TokenUsage = {
+    private tokenUsage: MessageTokenUsage = {
         totalTokensIn: 0,
         totalTokensOut: 0,
         totalCost: 0,
@@ -36,7 +36,7 @@ export class TokenUsageTracker {
     /**
      * Get current token usage
      */
-    getUsage(): TokenUsage {
+    getUsage(): MessageTokenUsage {
         return { ...this.tokenUsage };
     }
 

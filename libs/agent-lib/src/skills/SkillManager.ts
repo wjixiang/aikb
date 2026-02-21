@@ -1,3 +1,4 @@
+import { injectable } from 'inversify';
 import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool, SkillToolState } from './types.js';
 
 /**
@@ -6,6 +7,7 @@ import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, T
  * Allows LLM to dynamically select skills to optimize prompts and tools
  * for specific tasks.
  */
+@injectable()
 export class SkillManager {
     private registry = new Map<string, Skill>();
     private activeSkill: Skill | null = null;

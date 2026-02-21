@@ -9,11 +9,15 @@
  * 5. Reflective thinking (optional)
  */
 
+import { injectable, inject, optional } from 'inversify';
 import { ApiMessage, MessageBuilder } from '../task/task.type.js';
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { formatChatCompletionTools } from '../utils/toolRendering.js';
+import type { IMemoryModule } from './types.js';
+import { TYPES } from '../di/types.js';
+import { Logger } from 'pino';
 
 /**
  * Request parameters for recalling historical contexts
@@ -81,7 +85,8 @@ export interface ThinkingPhaseResult {
 /**
  * Turn-based MemoryModule
  */
-export class MemoryModule {
+@injectable()
+export class MemoryModule implements IMemoryModule {
     private config: MemoryModuleConfig;
     private turnStore: TurnMemoryStore;
     private apiClient: ApiClient;
@@ -92,9 +97,14 @@ export class MemoryModule {
     // Recalled messages (temporary storage for next prompt)
     private recalledMessages: ApiMessage[] = [];
 
-    constructor(apiClient: ApiClient, config: Partial<MemoryModuleConfig> = {}) {
+    constructor(
+        @inject(TYPES.ApiClient) apiClient: ApiClient,
+        @inject(TYPES.Logger) private logger: Logger,
+        @inject(TYPES.MemoryModuleConfig) @optional() config: Partial<MemoryModuleConfig> = {},
+        @inject(TYPES.TurnMemoryStore) @optional() turnStore?: TurnMemoryStore,
+    ) {
         this.config = { ...defaultMemoryConfig, ...config };
-        this.turnStore = new TurnMemoryStore();
+        this.turnStore = turnStore || new TurnMemoryStore();
         this.apiClient = apiClient;
     }
 
@@ -133,6 +143,7 @@ export class MemoryModule {
 
         // Create new turn with current workspace context and optional task context
         const turn = this.turnStore.createTurn(workspaceContext, taskContext);
+        this.logger.debug(workspaceContext)
         this.currentTurn = turn;
 
         return turn;

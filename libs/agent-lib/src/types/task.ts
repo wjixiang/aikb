@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { RooCodeEventName } from './event.type.js';
 import type { RooCodeSettings } from './global-settings.js';
-import type { ClineMessage, QueuedMessage, TokenUsage } from './message.type.js';
+import type { ClineMessage, QueuedMessage, MessageTokenUsage } from './message.type.js';
 import type { ToolUsage, ToolName } from './tool.js';
 import type { TodoItem } from './todo.js';
 
@@ -57,7 +57,7 @@ export type TaskProviderEvents = {
   [RooCodeEventName.TaskStarted]: [taskId: string];
   [RooCodeEventName.TaskCompleted]: [
     taskId: string,
-    tokenUsage: TokenUsage,
+    tokenUsage: MessageTokenUsage,
     toolUsage: ToolUsage,
   ];
   [RooCodeEventName.TaskAborted]: [taskId: string];
@@ -86,7 +86,7 @@ export type TaskProviderEvents = {
 
   [RooCodeEventName.TaskTokenUsageUpdated]: [
     taskId: string,
-    tokenUsage: TokenUsage,
+    tokenUsage: MessageTokenUsage,
     toolUsage: ToolUsage,
   ];
 
@@ -135,7 +135,7 @@ export interface TaskLike {
   readonly taskStatus: TaskStatus;
   readonly taskAsk: ClineMessage | undefined;
   readonly queuedMessages: QueuedMessage[];
-  readonly tokenUsage: TokenUsage | undefined;
+  readonly tokenUsage: MessageTokenUsage | undefined;
 
   on<K extends keyof TaskEvents>(
     event: K,
@@ -162,7 +162,7 @@ export type TaskEvents = {
   [RooCodeEventName.TaskStarted]: [];
   [RooCodeEventName.TaskCompleted]: [
     taskId: string,
-    tokenUsage: TokenUsage,
+    tokenUsage: MessageTokenUsage,
     toolUsage: ToolUsage,
   ];
   [RooCodeEventName.TaskAborted]: [];
@@ -194,7 +194,7 @@ export type TaskEvents = {
   ];
   [RooCodeEventName.TaskTokenUsageUpdated]: [
     taskId: string,
-    tokenUsage: TokenUsage,
+    tokenUsage: MessageTokenUsage,
     toolUsage: ToolUsage,
   ];
 };

@@ -1,18 +1,21 @@
+import { injectable, inject, optional } from 'inversify';
 import { ToolComponent } from './toolComponent.js';
-import type { ComponentRegistration, VirtualWorkspaceConfig, Tool } from './types.js';
+import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace } from './types.js';
 import { tdiv } from './ui/index.js';
 import type { TUIElement } from './ui/TUIElement.js';
 import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
 import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource, ToolRegistration } from '../skills/index.js';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
+import { TYPES } from '../di/types.js';
 
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
  * Uses tool calls for interaction instead of script execution
  */
-export class VirtualWorkspace {
+@injectable()
+export class VirtualWorkspace implements IVirtualWorkspace {
     private config: VirtualWorkspaceConfig;
     private components: Map<string, ComponentRegistration>;
     private skillManager: SkillManager;
@@ -26,8 +29,14 @@ export class VirtualWorkspace {
     /** Track skill-added tools for cleanup */
     private skillToolNames: Set<string> = new Set();
 
-    constructor(config: VirtualWorkspaceConfig) {
-        this.config = config;
+    constructor(
+        @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
+    ) {
+        this.config = {
+            id: config.id || 'default-workspace',
+            name: config.name || 'Default Workspace',
+            ...config,
+        };
         this.components = new Map();
         this.skillManager = new SkillManager({
             onSkillChange: (skill) => this.handleSkillChange(skill)
