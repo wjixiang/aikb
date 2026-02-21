@@ -1,8 +1,6 @@
 import { SkillLoader, type ParsedSkill } from './SkillLoader.js';
 import type { Skill } from './types.js';
 import type { SkillDefinition } from './SkillDefinition.js';
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, extname } from 'path';
 import { pathToFileURL } from 'url';
 
 /**
@@ -34,16 +32,12 @@ export interface SkillSource {
 export class SkillRegistry {
     private loader: SkillLoader;
     private skills: Map<string, SkillSource> = new Map();
-    private repositoryPath: string;
 
     constructor(repositoryPath?: string, autoLoad: boolean = false) {
         this.loader = new SkillLoader();
-        // Default repository path relative to this file
-        this.repositoryPath = repositoryPath || join(__dirname, '../../repository');
-
-        // Auto-load skills if autoLoad is true
-        if (autoLoad) {
-            this.loadFromDirectory(this.repositoryPath);
+        // Note: repositoryPath and autoLoad parameters are kept for backward compatibility but are no longer used
+        if (autoLoad && repositoryPath) {
+            console.warn('[SkillRegistry] autoLoad parameter is deprecated. Use registerSkills(), loadFromContent(), or loadFromDefinition() instead.');
         }
     }
 
@@ -178,67 +172,6 @@ export class SkillRegistry {
         return contents.map(({ content, sourcePath }) =>
             this.loadFromContent(content, sourcePath)
         );
-    }
-
-    /**
-     * Load all skills from a directory recursively
-     * Supports both .md (markdown) and .ts/.js (TypeScript) files
-     * @param directoryPath - Path to the directory containing skill files
-     * @returns Array of loaded skills
-     */
-    async loadFromDirectory(directoryPath: string): Promise<Skill[]> {
-        const loadedSkills: Skill[] = [];
-
-        try {
-            const entries = readdirSync(directoryPath, { withFileTypes: true });
-
-            for (const entry of entries) {
-                const fullPath = join(directoryPath, entry.name);
-
-                if (entry.isDirectory()) {
-                    // Recursively load from subdirectories
-                    const subSkills = await this.loadFromDirectory(fullPath);
-                    loadedSkills.push(...subSkills);
-                } else if (entry.isFile()) {
-                    const ext = extname(entry.name);
-
-                    // Load markdown skills
-                    if (ext === '.md') {
-                        try {
-                            const content = readFileSync(fullPath, 'utf-8');
-                            const skill = this.loadFromContent(content, fullPath);
-                            loadedSkills.push(skill);
-                            console.log(`[SkillRegistry] Loaded markdown skill: ${skill.name} from ${fullPath}`);
-                        } catch (error) {
-                            console.error(`[SkillRegistry] Failed to load markdown skill from ${fullPath}:`, error);
-                        }
-                    }
-                    // Load TypeScript/JavaScript skills
-                    else if (ext === '.ts' || ext === '.js') {
-                        // Skip test files and type definition files
-                        if (entry.name.endsWith('.test.ts') ||
-                            entry.name.endsWith('.test.js') ||
-                            entry.name.endsWith('.d.ts') ||
-                            entry.name.endsWith('.spec.ts') ||
-                            entry.name.endsWith('.spec.js')) {
-                            continue;
-                        }
-
-                        try {
-                            const skill = await this.loadFromTypeScriptFile(fullPath);
-                            loadedSkills.push(skill);
-                            console.log(`[SkillRegistry] Loaded TypeScript skill: ${skill.name} from ${fullPath}`);
-                        } catch (error) {
-                            console.error(`[SkillRegistry] Failed to load TypeScript skill from ${fullPath}:`, error);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`[SkillRegistry] Failed to read directory ${directoryPath}:`, error);
-        }
-
-        return loadedSkills;
     }
 
     /**
@@ -448,10 +381,4 @@ export class SkillRegistry {
         };
     }
 
-    /**
-     * Get the repository path
-     */
-    getRepositoryPath(): string {
-        return this.repositoryPath;
-    }
 }

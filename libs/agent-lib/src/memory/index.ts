@@ -23,4 +23,5 @@ export {
     MemoryModuleConfig,
     defaultMemoryConfig,
     ThinkingPhaseResult,
+    RecallRequest as MemoryModuleRecallRequest,
 } from './MemoryModule.js';

@@ -1,5 +1,6 @@
 import { MemoryModule } from "../MemoryModule";
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "../../api-client";
+import { ThinkingRound } from "../Turn";
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -62,6 +63,42 @@ describe('MemoryModule', () => {
         memoryModule.completeTurn()
         console.log(memoryModule.getTurnStore().getAllTurns())
     });
+
+    it.only('check if history thinking step has been rendered into prompt', async () => {
+        memoryModule.startTurn('test_workspace')
+        const spy = vi.spyOn(mockClient, 'makeRequest')
+        const testRounds: ThinkingRound[] = [
+            {
+                roundNumber: 1,
+                content: "First thinking round: Analyzing the user's request to understand the task requirements.",
+                continueThinking: true,
+                recalledContexts: [],
+                tokens: 50
+            },
+            {
+                roundNumber: 2,
+                content: "Second thinking round: Identified key components needed for the solution. Considering available tools and their capabilities.",
+                continueThinking: true,
+                recalledContexts: [
+                    { turnNumber: 1, relevanceScore: 0.8, content: "Previous similar task context" }
+                ],
+                tokens: 65
+            },
+            {
+                roundNumber: 3,
+                content: "Third thinking round: Formulating action plan. Ready to proceed with tool execution.",
+                continueThinking: true,
+                recalledContexts: [
+                    { turnNumber: 1, relevanceScore: 0.7, content: "Historical context from turn 1" },
+                    { turnNumber: 2, relevanceScore: 0.9, content: "Recent context from turn 2" }
+                ],
+                tokens: 55,
+                summary: "Completed analysis and formulated action plan for the requested task."
+            }
+        ]
+        const result = await memoryModule.performSingleThinkingRound(4, 'test_workspace', testRounds);
+        console.log(spy.mock.calls[0])
+    })
 
     // it('should render proper prompt for thinking phase', async () => {
 

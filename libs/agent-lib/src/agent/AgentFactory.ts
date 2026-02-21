@@ -1,8 +1,9 @@
 import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/index.js';
-import { ApiClient, ApiClientFactory } from '../api-client/index.js';
+import { ApiClient } from '../api-client/index.js';
 import { createObservableAgent, ObservableAgentCallbacks } from './ObservableAgent.js';
+import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 
 /**
  * Configuration options for creating an Agent

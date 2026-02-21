@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import pino from 'pino';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ToolCall, TokenUsage, ChatCompletionTool } from './ApiClient.interface.js';
 import {
     ApiClientError,
@@ -37,6 +38,8 @@ export interface OpenAICompatibleConfig {
     retryDelay?: number;
     /** Enable/disable request logging */
     enableLogging?: boolean;
+    /** Optional custom pino logger instance */
+    logger?: pino.Logger;
 }
 
 /**
@@ -50,6 +53,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
     private config: OpenAICompatibleConfig;
     private requestCount = 0;
     private lastError: ApiClientError | null = null;
+    private logger: pino.Logger;
 
     constructor(config: OpenAICompatibleConfig) {
         this.validateConfig(config);
@@ -59,6 +63,18 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             enableLogging: true,
             ...config,
         };
+
+        // Initialize pino logger
+        this.logger = config.logger ?? pino({
+            level: this.config.enableLogging ? 'info' : 'silent',
+            formatters: {
+                level: (label) => {
+                    return { level: label };
+                },
+            },
+            timestamp: pino.stdTimeFunctions.isoTime,
+        }).child({ component: 'OpenaiCompatibleApiClient' });
+
         this.client = new OpenAI({
             apiKey: this.config.apiKey,
             baseURL: this.config.baseURL,
@@ -83,27 +99,6 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         }
     }
 
-    /**
-     * Log request information if logging is enabled
-     */
-    private log(level: 'info' | 'warn' | 'error', message: string, data?: unknown): void {
-        if (!this.config.enableLogging) return;
-
-        const timestamp = new Date().toISOString();
-        const logMessage = `[${timestamp}] [OpenAI-API] [${level.toUpperCase()}] ${message}`;
-
-        switch (level) {
-            case 'info':
-                console.log(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
-                break;
-            case 'warn':
-                console.warn(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
-                break;
-            case 'error':
-                console.error(logMessage, data !== undefined ? JSON.stringify(data, null, 2) : '');
-                break;
-        }
-    }
 
     async makeRequest(
         systemPrompt: string,
@@ -122,13 +117,17 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         // Build messages array
         const messages = this.buildMessages(systemPrompt, workspaceContext, memoryContext);
 
-        this.log('info', `Starting request ${requestId}`, {
-            model: this.config.model,
-            timeout,
-            messageCount: messages.length,
-            hasTools: !!tools && tools.length > 0,
-            toolCount: tools?.length ?? 0,
-        });
+        this.logger.info(
+            {
+                requestId,
+                model: this.config.model,
+                timeout,
+                messageCount: messages.length,
+                hasTools: !!tools && tools.length > 0,
+                toolCount: tools?.length ?? 0,
+            },
+            'Starting request'
+        );
 
         // Store original inputs for error logging
         const originalInputs = { systemPrompt, memoryContext, workspaceContext };
@@ -141,17 +140,24 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             try {
                 if (attempt > 0) {
                     const delay = this.calculateRetryDelay(attempt);
-                    this.log('info', `Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay`, { requestId });
+                    this.logger.info(
+                        { requestId, attempt, maxRetries, delay },
+                        `Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay`
+                    );
                     await this.sleep(delay);
                 }
 
                 const response = await this.makeRequestInternal(requestId, messages, tools, timeout, originalInputs);
 
-                this.log('info', `Request ${requestId} completed successfully`, {
-                    attempt: attempt + 1,
-                    requestTime: response.requestTime,
-                    tokenUsage: response.tokenUsage,
-                });
+                this.logger.info(
+                    {
+                        requestId,
+                        attempt: attempt + 1,
+                        requestTime: response.requestTime,
+                        tokenUsage: response.tokenUsage,
+                    },
+                    'Request completed successfully'
+                );
 
                 this.lastError = null;
                 return response;
@@ -160,11 +166,16 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 lastError = apiError;
                 this.lastError = apiError;
 
-                this.log('error', `Request ${requestId} failed on attempt ${attempt + 1}`, {
-                    error: apiError.toJSON(),
-                    isRetryable: apiError.retryable,
-                    remainingAttempts: maxRetries - attempt,
-                });
+                this.logger.error(
+                    {
+                        requestId,
+                        attempt: attempt + 1,
+                        error: apiError.toJSON(),
+                        isRetryable: apiError.retryable,
+                        remainingAttempts: maxRetries - attempt,
+                    },
+                    'Request failed on attempt'
+                );
 
                 // Don't retry if error is not retryable or we've exhausted retries
                 if (!apiError.retryable || attempt >= maxRetries) {
@@ -173,16 +184,24 @@ export class OpenaiCompatibleApiClient implements ApiClient {
 
                 // Special handling for rate limit errors with retry-after header
                 if (apiError instanceof RateLimitError && apiError.retryAfter) {
-                    this.log('warn', `Rate limit detected, waiting ${apiError.retryAfter}s before retry`, { requestId });
+                    this.logger.warn(
+                        { requestId, retryAfter: apiError.retryAfter },
+                        'Rate limit detected, waiting before retry'
+                    );
                     await this.sleep(apiError.retryAfter * 1000);
                 }
             }
         }
 
         // All retries exhausted or non-retryable error
-        this.log('error', `Request ${requestId} failed after ${maxRetries + 1} attempts`, {
-            finalError: lastError?.toJSON(),
-        });
+        this.logger.error(
+            {
+                requestId,
+                attempts: maxRetries + 1,
+                finalError: lastError?.toJSON(),
+            },
+            'Request failed after all retry attempts'
+        );
 
         throw lastError ?? new UnknownApiError('Request failed with unknown error');
     }
@@ -198,14 +217,17 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         originalInputs: { systemPrompt: string; memoryContext: string[]; workspaceContext: string }
     ): Promise<ApiResponse> {
         // Create timeout promise
+        let timeoutId: NodeJS.Timeout | undefined;
         const timeoutPromise = new Promise<never>((_, reject) => {
-            const timeoutId = setTimeout(() => {
+            timeoutId = setTimeout(() => {
                 reject(new TimeoutError(`API request timed out after ${timeout}ms`, timeout));
             }, timeout);
-
-            // Clear timeout on promise settlement
-            timeoutPromise.finally?.(() => clearTimeout(timeoutId));
         });
+
+        // Clear timeout on promise settlement
+        if (timeoutId !== undefined) {
+            timeoutPromise.finally?.(() => clearTimeout(timeoutId));
+        }
 
         try {
             // Start timing
@@ -234,12 +256,16 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             const response = this.convertOpenAIResponse(completion, requestTime);
 
             // Log request details for debugging
-            this.log('info', `Request ${requestId} details`, {
-                systemPrompt: originalInputs.systemPrompt.substring(0, 200) + (originalInputs.systemPrompt.length > 200 ? '...' : ''),
-                memoryContextCount: originalInputs.memoryContext.length,
-                workspaceContextLength: originalInputs.workspaceContext.length,
-                response,
-            });
+            this.logger.debug(
+                {
+                    requestId,
+                    systemPrompt: originalInputs.systemPrompt.substring(0, 200) + (originalInputs.systemPrompt.length > 200 ? '...' : ''),
+                    memoryContextCount: originalInputs.memoryContext.length,
+                    workspaceContextLength: originalInputs.workspaceContext.length,
+                    response,
+                },
+                'Request details'
+            );
 
             return response;
         } catch (error) {
@@ -384,13 +410,13 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 for (const toolCall of message.tool_calls) {
                     // Validate tool call structure
                     if (!toolCall.id) {
-                        this.log('warn', 'Tool call missing ID, skipping', { toolCall });
+                        this.logger.warn({ toolCall }, 'Tool call missing ID, skipping');
                         continue;
                     }
 
                     if (toolCall.type === 'function') {
                         if (!toolCall.function?.name) {
-                            this.log('warn', 'Function call missing name, skipping', { toolCall });
+                            this.logger.warn({ toolCall }, 'Function call missing name, skipping');
                             continue;
                         }
 
@@ -427,7 +453,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             // Validate and extract token usage
             const usage = completion.usage;
             if (!usage) {
-                this.log('warn', 'Token usage not provided in response');
+                this.logger.warn('Token usage not provided in response');
             }
 
             const tokenUsage: TokenUsage = {

@@ -76,36 +76,38 @@ export function createObservableAgent<T extends Agent>(
         get(target, prop, receiver) {
             const value = Reflect.get(target, prop, receiver);
 
-            // Special handling for _conversationHistory to observe array mutations
-            if (prop === '_conversationHistory' && Array.isArray(value)) {
+            // Special handling for memoryModule to observe message additions
+            // This is needed because the new architecture uses MemoryModule instead of
+            // direct array manipulation for conversation history
+            if (prop === 'memoryModule' && value && typeof value === 'object') {
                 return new Proxy(value, {
-                    get(arrTarget, arrProp, arrReceiver) {
-                        const arrValue = Reflect.get(arrTarget, arrProp, arrReceiver);
-                        
-                        // Wrap array methods that modify the array
-                        if (typeof arrValue === 'function' &&
-                            ['push', 'splice', 'pop', 'shift', 'unshift'].includes(String(arrProp))) {
-                            return new Proxy(arrValue, {
-                                apply(fnTarget, thisArg, args) {
-                                    const methodName = String(arrProp);
-                                    const taskId = target.getTaskId;
-                                    
-                                    // Execute the original array method
-                                    const result = Reflect.apply(fnTarget, arrTarget, args);
-                                    
-                                    // Notify observers about message additions
-                                    if (methodName === 'push' || methodName === 'unshift') {
-                                        for (const arg of args) {
-                                            callbacks.onMessageAdded?.(taskId, arg);
-                                        }
+                    get(moduleTarget, moduleProp, moduleReceiver) {
+                        const moduleValue = Reflect.get(moduleTarget, moduleProp, moduleReceiver);
+
+                        // Wrap message addition methods to notify observers
+                        if (typeof moduleValue === 'function') {
+                            const methodName = String(moduleProp);
+                            const messageMethods = ['addUserMessage', 'addAssistantMessage', 'addSystemMessage'];
+
+                            if (messageMethods.includes(methodName)) {
+                                return new Proxy(moduleValue, {
+                                    apply(fnTarget, thisArg, args) {
+                                        // Execute the original method
+                                        // The method now returns the added message
+                                        const addedMessage = Reflect.apply(fnTarget, thisArg, args);
+
+                                        // Notify observers about message additions
+                                        // Use the returned message directly instead of calling getAllMessages
+                                        const taskId = target.getTaskId;
+                                        callbacks.onMessageAdded?.(taskId, addedMessage);
+
+                                        return addedMessage;
                                     }
-                                    
-                                    return result;
-                                }
-                            });
+                                });
+                            }
                         }
-                        
-                        return arrValue;
+
+                        return moduleValue;
                     }
                 });
             }

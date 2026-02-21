@@ -12,8 +12,20 @@
 import { ApiMessage, MessageBuilder } from '../task/task.type.js';
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
-import type { ApiClient, ChatCompletionTool } from '../api-client/index.js';
+import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { formatChatCompletionTools } from '../utils/toolRendering.js';
+
+/**
+ * Request parameters for recalling historical contexts
+ */
+export interface RecallRequest {
+    /** Turn numbers to recall */
+    turnNumbers?: number[];
+    /** Context IDs to recall */
+    contextIds?: string[];
+    /** Keywords to search in summaries */
+    keywords?: string[];
+}
 
 /**
  * Configuration for the memory module
@@ -59,6 +71,8 @@ export interface ThinkingPhaseResult {
     turnId: string;
     /** Summary generated */
     summary?: string;
+    /** Context snapshot stored during thinking phase */
+    contextSnapshot?: { turnNumber: number; id: string };
 }
 
 /**
@@ -148,8 +162,9 @@ export class MemoryModule {
 
     /**
      * Add user message to current turn
+     * @returns The added message
      */
-    addUserMessage(content: string | any[]): void {
+    addUserMessage(content: string | any[]): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
@@ -159,34 +174,41 @@ export class MemoryModule {
             : MessageBuilder.custom('user', content);
 
         this.turnStore.addMessageToTurn(this.currentTurn.id, message);
+        return message;
     }
 
     /**
      * Add assistant message to current turn
+     * @returns The added message
      */
-    addAssistantMessage(content: any[]): void {
+    addAssistantMessage(content: any[]): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
 
+        const message = MessageBuilder.custom('assistant', content);
         this.turnStore.addMessageToTurn(
             this.currentTurn.id,
-            MessageBuilder.custom('assistant', content)
+            message
         );
+        return message;
     }
 
     /**
      * Add system message to current turn
+     * @returns The added message
      */
-    addSystemMessage(content: string): void {
+    addSystemMessage(content: string): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
 
+        const message = MessageBuilder.system(content);
         this.turnStore.addMessageToTurn(
             this.currentTurn.id,
-            MessageBuilder.system(content)
+            message
         );
+        return message;
     }
 
     // ==================== History Retrieval ====================
@@ -404,14 +426,15 @@ ${summaryText}
         const tools = this.buildThinkingTools();
         const toolsText = formatChatCompletionTools(tools);
 
-        const systemPrompt = `You are in the THINKING phase of an agent framework.
+        const systemPrompt = `You are in the THINKING phase to plan and self-reflex.
 
 Your task is to:
 1. Understand the user's overall task/goal
 2. Analyze the current situation based on conversation history and workspace context
 3. Review accumulated summaries from previous turns
-4. Decide whether to continue thinking or proceed to action
-5. Optionally recall historical contexts if needed
+4. Evaluate whether a SKILL SWITCH would be beneficial for the current task
+5. Decide whether to continue thinking or proceed to action
+6. Optionally recall historical contexts if needed
 
 You have access to these tools:
 
@@ -424,6 +447,18 @@ Think deeply about:
 - What information is missing
 - Whether you need to recall any historical context
 - Whether you have enough understanding to take action
+
+⚡ SKILL SWITCHING GUIDANCE ⚡
+Before proceeding to action, CONSIDER if activating a specialized skill would improve task execution:
+
+When to CONSIDER switching skills:
+• The task requires specialized domain expertise (e.g., literature search, data analysis, PICO extraction)
+• You notice available skills in the workspace that match the current task type
+• The task involves complex workflows that skills are designed to handle
+• You want to optimize the prompt and toolset for specific task categories
+
+Remember: Skills provide specialized prompts, optimized tools, and task-specific guidance.
+Activating the right skill can significantly improve task execution quality.
 
 IMPORTANT: When you decide to STOP thinking (continue_thinking with continueThinking=false),
 you MUST provide a detailed summary in the same tool call. This summary will be stored as
@@ -470,7 +505,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                 type: 'function',
                 function: {
                     name: 'continue_thinking',
-                    description: 'Decide whether to continue thinking or proceed to action phase. IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST provide a detailed summary.',
+                    description: 'Decide whether to continue thinking or proceed to action phase. IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST provide a detailed summary. Consider whether activating a specialized skill would benefit the task before stopping.',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -480,15 +515,15 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                             },
                             reason: {
                                 type: 'string',
-                                description: 'Reason for the decision',
+                                description: 'Reason for the decision. If stopping to switch skills, mention which skill and why.',
                             },
                             nextFocus: {
                                 type: 'string',
-                                description: 'What to focus on in the next thinking round (if continuing)',
+                                description: 'What to focus on in the next thinking round (if continuing). Include skill evaluation if considering a switch.',
                             },
                             summary: {
                                 type: 'string',
-                                description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks. Preserve important details like search terms, numbers, tool names, and key findings.',
+                                description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks, recommended skill to activate (if applicable). Preserve important details like search terms, numbers, tool names, and key findings.',
                             },
                         },
                         required: ['continueThinking', 'reason'],
@@ -528,7 +563,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
     /**
      * Handle context recall
      */
-    private handleRecall(request: any): Turn[] {
+    private handleRecall(request: RecallRequest): Turn[] {
         if (!this.config.enableRecall) {
             return [];
         }
@@ -611,11 +646,18 @@ Generate a DETAILED summary with the following structure:
 - What concrete results were obtained (include key numbers, counts, findings, data points)
 - What decisions were made and the reasoning behind them
 - What challenges or issues were encountered and how they were resolved
+- Any skill activations or deactivations that occurred
 
 ## TODO
 - What the next steps or actions should be
 - What information is still missing or needs to be gathered
 - What follow-up tasks are required
+- Recommended skill to activate for the next phase (if applicable)
+
+## SKILL RECOMMENDATION (if applicable)
+- If a specialized skill would benefit the next phase, specify which skill and why
+- Consider skills that match the task type (e.g., literature search, data analysis, PICO extraction)
+- Mention any skills that were identified as potentially useful during thinking
 
 The summary should preserve important details like:
 - Specific search terms, keywords, or queries used
@@ -623,12 +665,13 @@ The summary should preserve important details like:
 - Names of tools, databases, or resources accessed
 - Key findings or insights discovered
 - Specific actions taken and their outcomes
+- Skill-related decisions and recommendations
 
 If this turn builds upon previous turns, mention the connection and how it advances the overall task.`;
 
         try {
             const response = await this.apiClient.makeRequest(
-                'You are a detailed summarization assistant. Generate comprehensive summaries that preserve important details and maintain narrative continuity.',
+                'You are a detailed summarization assistant. Generate comprehensive summaries that preserve important details, maintain narrative continuity, and include skill-related recommendations when relevant.',
                 summaryPrompt,
                 [],
                 { timeout: 30000 },  // Increased timeout for longer summaries
@@ -666,10 +709,7 @@ If this turn builds upon previous turns, mention the connection and how it advan
     /**
      * Extract content from API response
      */
-    private extractContent(response: any): string {
-        if (response.content) {
-            return response.content;
-        }
+    private extractContent(response: ApiResponse): string {
         if (response.textResponse) {
             return response.textResponse;
         }
@@ -679,7 +719,7 @@ If this turn builds upon previous turns, mention the connection and how it advan
     /**
      * Extract control decision from response
      */
-    private extractControlDecision(response: any): { continueThinking: boolean; reason: string; summary?: string } | null {
+    private extractControlDecision(response: ApiResponse): { continueThinking: boolean; reason: string; summary?: string } | null {
         if (response.toolCalls) {
             const controlCall = response.toolCalls.find(
                 (tc: any) => tc.name === 'continue_thinking'
@@ -698,14 +738,14 @@ If this turn builds upon previous turns, mention the connection and how it advan
     /**
      * Extract recall request from response
      */
-    private extractRecallRequest(response: any): any | null {
+    private extractRecallRequest(response: ApiResponse): RecallRequest | null {
         if (response.toolCalls) {
             const recallCall = response.toolCalls.find(
                 (tc: any) => tc.name === 'recall_context'
             );
             if (recallCall) {
                 try {
-                    return JSON.parse(recallCall.arguments);
+                    return JSON.parse(recallCall.arguments) as RecallRequest;
                 } catch (e) {
                     return null;
                 }

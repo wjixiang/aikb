@@ -20,7 +20,8 @@ import {
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
-import { MemoryModule, MemoryModuleConfig, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import { generateSkillsUsageGuidance } from "../prompts/sections/skillsUsageGuidance.js";
+import { MemoryModule, MemoryModuleConfig, ThinkingPhaseResult, defaultMemoryConfig } from '../memory/MemoryModule.js';
 
 /**
  * Tool result from execution
@@ -352,6 +353,11 @@ export class Agent {
                 );
 
                 const thinkingTokens = memoryResult.tokensUsed;
+
+                // Debug: Log raw memory result
+                console.log('\n=== DEBUG: Raw Memory Result ===');
+                console.log('Rounds:', JSON.stringify(memoryResult.rounds, null, 2));
+                console.log('=== END DEBUG ===\n');
 
                 // Add thinking summary to history for observability
                 if (memoryResult.rounds.length > 0) {
@@ -761,13 +767,16 @@ export class Agent {
     /**
      * Format memory thinking summary for history
      */
-    private formatMemoryThinkingSummary(result: any): string {
+    private formatMemoryThinkingSummary(result: ThinkingPhaseResult): string {
         const rounds = result.rounds
             .map((r: any) => {
                 const recalled = r.recalledContexts.length > 0
                     ? `\n  Recalled: ${r.recalledContexts.map((c: any) => `Turn ${c.turnNumber}`).join(', ')}`
                     : '';
-                return `  Round ${r.roundNumber}: ${r.content.substring(0, 100)}...${recalled}`;
+
+                // Use summary if available, otherwise use content
+                const content = r.summary || r.content || '';
+                return `  Round ${r.roundNumber}: ${content}...${recalled}`;
             })
             .join('\n');
 
@@ -849,11 +858,21 @@ ${direction}
             ? this.workspace.renderSkillsSection().render()
             : '';
 
+        const availableSkills = this.workspace.getAvailableSkills();
+        const activeSkill = this.workspace.getSkillManager().getActiveSkill();
+
+        // Build skills usage guidance using the section function
+        const skillsUsageGuidance = generateSkillsUsageGuidance({
+            availableSkills,
+            activeSkill,
+        });
+
         return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
 ${skillsSection}
+${skillsUsageGuidance}
         `;
     }
 }

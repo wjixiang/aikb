@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { config } from 'dotenv'
 config()
 
@@ -23,9 +24,7 @@ describe("Article Retrieval Skill Integration", () => {
             const workspace = new MetaAnalysisWorkspace();
 
             // Register skills - provide repository path to auto-load skills
-            const repositoryPath = join(__dirname, '../../../repository/builtin');
-            console.log('Loading skills from:', repositoryPath);
-            const skillRegistry = new SkillRegistry(repositoryPath);
+            const skillRegistry = new SkillRegistry();
             const skills = skillRegistry.getAll();
             console.log(`Loaded ${skills.length} skills:`, skills.map(s => s.name));
             workspace.registerSkills(skills);
@@ -64,8 +63,9 @@ describe("Article Retrieval Skill Integration", () => {
                     console.log(`[ArticleRetrieval] Task ${taskId} status changed to: ${status}`);
                 })
                 .onMessageAdded((taskId, message) => {
+                    console.log('message added')
                     console.log(MessageContentFormatter.formatForLogging(message, {
-                        maxLength: 200,
+                        maxLength: 99999,
                         includeMetadata: true,
                         colorize: true
                     }));
@@ -91,6 +91,16 @@ describe("Article Retrieval Skill Integration", () => {
             console.log('Tool usage:', result.toolUsage);
             console.log('Consecutive mistake count:', result.consecutiveMistakeCount);
             console.log('Collected errors:', result.getCollectedErrors());
+
+            // Debug: Check the conversation history for system messages with thinking summary
+            const systemMessages = result.conversationHistory.filter(m => m.role === 'system');
+            console.log('\n=== DEBUG: System Messages ===');
+            systemMessages.forEach((msg, idx) => {
+                const content = msg.content.find(b => b.type === 'text')?.text || '';
+                console.log(`\n--- System Message ${idx + 1} ---`);
+                console.log(content);
+                console.log(`--- End System Message ${idx + 1} ---\n`);
+            });
 
             // Check if article-retrieval skill was activated
             const activeSkill = workspace.getSkillManager().getActiveSkill();
