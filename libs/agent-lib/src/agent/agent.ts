@@ -21,7 +21,9 @@ import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
 import { generateSkillsUsageGuidance } from "../prompts/sections/skillsUsageGuidance.js";
-import { MemoryModule, MemoryModuleConfig, ThinkingPhaseResult, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import type { MemoryModuleConfig } from '../memory/types.js';
+import type { ThinkingPhaseResult, IThinkingModule } from '../thinking/types.js';
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -100,6 +102,9 @@ export class Agent {
     // Memory module (dependency injected, always present)
     private memoryModule: MemoryModule;
 
+    // Thinking module (dependency injected, always present)
+    private thinkingModule: IThinkingModule;
+
     private agentPrompt: AgentPrompt;
 
     constructor(
@@ -108,17 +113,17 @@ export class Agent {
         @inject(TYPES.AgentPrompt) agentPrompt: AgentPrompt,
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
+        @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
         @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
         this.workspace = workspace as VirtualWorkspace;
         this._taskId = taskId || crypto.randomUUID();
         this.agentPrompt = agentPrompt;
 
-        // Use injected API client
+        // Use injected dependencies
         this.apiClient = apiClient;
-
-        // Use injected memory module (always provided via DI)
         this.memoryModule = memoryModule as MemoryModule;
+        this.thinkingModule = thinkingModule;
     }
 
     // ==================== Public API ====================
@@ -328,22 +333,43 @@ export class Agent {
             }
 
             try {
-                // THINKING PHASE: Use MemoryModule (always enabled)
-                const memoryResult = await this.memoryModule.performThinkingPhase(
+                // THINKING PHASE: Use ThinkingModule directly
+                const currentTurn = this.memoryModule.getCurrentTurn();
+                const thinkingResult = await this.thinkingModule.performThinkingPhase(
                     currentWorkspaceContext,
+                    currentTurn?.taskContext,
+                    [],  // previousRounds - empty for new phase
                     lastToolResults
                 );
 
-                const thinkingTokens = memoryResult.tokensUsed;
+                const thinkingTokens = thinkingResult.tokensUsed;
 
-                // // Debug: Log raw memory result
-                // console.log('\n=== DEBUG: Raw Memory Result ===');
-                // console.log('Rounds:', JSON.stringify(memoryResult.rounds, null, 2));
+                // Store thinking phase in turn
+                if (currentTurn) {
+                    this.memoryModule.getTurnStore().storeThinkingPhase(
+                        currentTurn.id,
+                        thinkingResult.rounds,
+                        thinkingResult.tokensUsed
+                    );
+
+                    // Store summary if available
+                    if (thinkingResult.summary) {
+                        this.memoryModule.getTurnStore().storeSummary(
+                            currentTurn.id,
+                            thinkingResult.summary,
+                            []  // insights - extracted by ThinkingModule
+                        );
+                    }
+                }
+
+                // // Debug: Log raw thinking result
+                // console.log('\n=== DEBUG: Raw Thinking Result ===');
+                // console.log('Rounds:', JSON.stringify(thinkingResult.rounds, null, 2));
                 // console.log('=== END DEBUG ===\n');
 
                 // Add thinking summary to history for observability
-                if (memoryResult.rounds.length > 0) {
-                    const thinkingSummary = this.formatMemoryThinkingSummary(memoryResult);
+                if (thinkingResult.rounds.length > 0) {
+                    const thinkingSummary = this.formatMemoryThinkingSummary(thinkingResult);
                     const message = MessageBuilder.system(thinkingSummary);
                     this.memoryModule.addMessage(message);
                 }
@@ -694,7 +720,7 @@ export class Agent {
     private formatMemoryThinkingSummary(result: ThinkingPhaseResult): string {
         const rounds = result.rounds
             .map((r: any) => {
-                const recalled = r.recalledContexts.length > 0
+                const recalled = r.recalledContexts?.length > 0
                     ? `\n  Recalled: ${r.recalledContexts.map((c: any) => `Turn ${c.turnNumber}`).join(', ')}`
                     : '';
 
@@ -704,16 +730,12 @@ export class Agent {
             })
             .join('\n');
 
-        const contextInfo = result.contextSnapshot
-            ? `\nContext stored: Turn ${result.contextSnapshot.turnNumber} (ID: ${result.contextSnapshot.id})`
-            : '';
-
         return `[Reflective Thinking Phase]
 Total rounds: ${result.rounds.length}
 Tokens used: ${result.tokensUsed}
 
 Thinking rounds:
-${rounds}${contextInfo}`;
+${rounds}`;
     }
 
     /**

@@ -15,23 +15,12 @@ export {
 
 // Legacy exports (deprecated)
 export { ContextMemoryStore, ContextSnapshot, MemorySummary } from './ContextMemoryStore.js';
-export {
-    ReflectiveThinkingProcessor,
-    ReflectiveThinkingConfig,
-    ReflectiveThinkingResult,
-    ThinkingRound,
-    ThinkingControl,
-    RecallRequest,
-} from './ReflectiveThinkingProcessor.js';
 
 // MemoryModule (now Turn-based)
 export {
     MemoryModule,
-    MemoryModuleConfig,
     defaultMemoryConfig,
-    ThinkingPhaseResult,
-    RecallRequest as MemoryModuleRecallRequest,
 } from './MemoryModule.js';
 
-// Type exports (IMemoryModule interface)
-export type { IMemoryModule } from './types.js';
+// Type exports (IMemoryModule interface and related types)
+export type { IMemoryModule, MemoryModuleConfig, ThinkingPhaseResult } from './types.js';

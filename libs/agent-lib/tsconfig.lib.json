@@ -16,6 +16,7 @@
     "composite": true,
     "declarationMap": true,
     "rootDir": "${configDir}/src",
+    "outDir": "./dist",
     "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo",
     "types": ["node"],
     "paths": {}

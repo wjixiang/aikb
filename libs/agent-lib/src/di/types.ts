@@ -86,6 +86,7 @@ export const TYPES = {
     /**
      * ReflectiveThinkingProcessor for reflective thinking
      * @scope Request - Shared within an agent creation request
+     * @deprecated Use ThinkingModule instead
      */
     ReflectiveThinkingProcessor: Symbol('ReflectiveThinkingProcessor'),
 
@@ -94,6 +95,18 @@ export const TYPES = {
      * @scope Request - Shared within an agent creation request
      */
     ContextMemoryStore: Symbol('ContextMemoryStore'),
+
+    /**
+     * ThinkingModule for thinking phase management
+     * @scope Request - Shared within an agent creation request
+     */
+    ThinkingModule: Symbol('ThinkingModule'),
+
+    /**
+     * IThinkingModule interface
+     * @scope Request - Shared within an agent creation request
+     */
+    IThinkingModule: Symbol('IThinkingModule'),
 
     // ==================== Configuration ====================
 
@@ -116,9 +129,15 @@ export const TYPES = {
 
     /**
      * MemoryModuleConfig - Configuration for MemoryModule
-     * Contains maxThinkingRounds, thinkingTokenBudget, etc.
+     * Contains enableRecall, maxRecallContexts, etc.
      */
     MemoryModuleConfig: Symbol('MemoryModuleConfig'),
+
+    /**
+     * ThinkingModuleConfig - Configuration for ThinkingModule
+     * Contains maxThinkingRounds, thinkingTokenBudget, etc.
+     */
+    ThinkingModuleConfig: Symbol('ThinkingModuleConfig'),
 
     /**
      * ProviderSettings - API provider configuration

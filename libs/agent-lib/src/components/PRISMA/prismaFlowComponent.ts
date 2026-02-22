@@ -60,7 +60,7 @@ export class PrismaFlowComponent extends ToolComponent {
     }
 
     private renderValidationResult(): TUIElement {
-        const container = new tdiv();
+        const container = new tdiv({});
 
         const status = this.validationResult!.isValid ? 'VALID' : 'ISSUES FOUND';
 
@@ -88,7 +88,7 @@ export class PrismaFlowComponent extends ToolComponent {
     }
 
     private renderExportResult(): TUIElement {
-        const container = new tdiv();
+        const container = new tdiv({});
 
         container.addChild(new th({
             content: 'Export Result',
@@ -103,7 +103,7 @@ export class PrismaFlowComponent extends ToolComponent {
     }
 
     private renderFlowDiagramAsText(): TUIElement {
-        const container = new tdiv();
+        const container = new tdiv({});
 
         // Build structured text representation
         const lines: string[] = [];

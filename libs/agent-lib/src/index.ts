@@ -44,5 +44,8 @@ export * from './statefulContext/index.js';
 // Re-export from skills (now integrated into agent-lib)
 export * from './skills/index.js';
 
+// Export thinking module (refactored from MemoryModule)
+export * from './thinking/index.js';
+
 // Export DI (Dependency Injection) module
 export * from './di/index.js';

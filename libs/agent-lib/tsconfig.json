@@ -12,6 +12,7 @@
     "emitDecoratorMetadata": true,
     "declaration": true,
     "declarationDir": "./dist",
+    "outDir": "./dist",
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
