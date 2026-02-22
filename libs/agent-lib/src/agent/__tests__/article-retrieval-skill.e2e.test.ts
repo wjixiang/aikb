@@ -3,10 +3,8 @@ import { config } from 'dotenv'
 config()
 
 import { AgentFactory } from '../AgentFactory.js'
-import { ObservableAgentFactory } from '../ObservableAgent.js'
 import { MetaAnalysisWorkspace } from '../../workspaces/metaAnalysisWorkspace.js'
 import { SkillRegistry } from '../../skills/index.js'
-import { join } from 'path'
 import { MessageContentFormatter } from '../../task/MessageFormatter.util.js'
 
 describe("Article Retrieval Skill Integration", () => {
@@ -29,8 +27,8 @@ describe("Article Retrieval Skill Integration", () => {
             console.log(`Loaded ${skills.length} skills:`, skills.map(s => s.name));
             workspace.registerSkills(skills);
 
-            // Create base agent with minimal prompt (skill will provide enhancement)
-            const baseAgent = AgentFactory.create(
+            // Create agent with observers - the DI container handles wrapping automatically
+            const agent = AgentFactory.create(
                 workspace,
                 {
                     capability: 'You are a helpful AI assistant.',
@@ -42,7 +40,12 @@ describe("Article Retrieval Skill Integration", () => {
                             console.log(`[Agent] Task ${taskId} status changed to: ${status}`);
                         },
                         onMessageAdded: (taskId, message) => {
-                            console.log(`[Agent] Message added: ${message.role}`);
+                            console.log('message added')
+                            console.log(MessageContentFormatter.formatForLogging(message, {
+                                maxLength: 99999,
+                                includeMetadata: true,
+                                colorize: true
+                            }));
                         },
                         onTaskCompleted: (taskId) => {
                             console.log(`[Agent] Task ${taskId} completed successfully`);
@@ -52,34 +55,13 @@ describe("Article Retrieval Skill Integration", () => {
                         },
                         onError: (error, context) => {
                             console.error(`[Agent] Error in ${context}:`, error);
-                        }
+                        },
+                        onTurnCreated(turnId, turnNumber, workspaceContext, taskContext) {
+                            console.log(`observed turn created: ${workspaceContext}`)
+                        },
                     }
                 }
             );
-
-            // Wrap with ObservableAgentFactory for observation capabilities
-            const agent = new ObservableAgentFactory()
-                .onStatusChanged((taskId, status) => {
-                    console.log(`[ArticleRetrieval] Task ${taskId} status changed to: ${status}`);
-                })
-                .onMessageAdded((taskId, message) => {
-                    console.log('message added')
-                    console.log(MessageContentFormatter.formatForLogging(message, {
-                        maxLength: 99999,
-                        includeMetadata: true,
-                        colorize: true
-                    }));
-                })
-                .onTaskCompleted((taskId) => {
-                    console.log(`[ArticleRetrieval] Task ${taskId} completed successfully`);
-                })
-                .onTaskAborted((taskId, reason) => {
-                    console.error(`[ArticleRetrieval] Task ${taskId} aborted: ${reason}`);
-                })
-                .onError((error, context) => {
-                    console.error(`[ArticleRetrieval] Error in ${context}:`, error);
-                })
-                .create(baseAgent);
 
             console.log('Calling agent.start()...');
             const result = await agent.start(query);

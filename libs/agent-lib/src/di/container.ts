@@ -5,6 +5,7 @@ import { Agent } from '../agent/agent.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
+import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../memory/ObservableTurnMemoryStore.js';
 import { ReflectiveThinkingProcessor } from '../memory/ReflectiveThinkingProcessor.js';
 import { SkillManager } from '../skills/SkillManager.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
@@ -16,6 +17,8 @@ import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
+import { createObservableAgent } from '../agent/ObservableAgent.js';
+import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import pino from 'pino';
 import type { Logger, Level } from 'pino'
 
@@ -67,10 +70,10 @@ export interface AgentCreationOptions {
     virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
 
     /**
-     * Optional observers for monitoring
-     * Can be used to track agent behavior and events
+     * Optional observer callbacks for monitoring
+     * When provided, the agent will be automatically wrapped in an ObservableAgent proxy
      */
-    observers?: any;
+    observers?: ObservableAgentCallbacks;
 
     /**
      * Optional existing workspace instance
@@ -201,8 +204,11 @@ export class AgentContainer {
      * Creates a new container for each agent to ensure isolated scope.
      * This means each agent gets its own instances of Request-scoped services.
      *
+     * If observer callbacks are provided via options.observers, the agent
+     * will be automatically wrapped in an ObservableAgent proxy for monitoring.
+     *
      * @param options - Configuration options for the agent
-     * @returns A new Agent instance with all dependencies injected
+     * @returns A new Agent instance (optionally wrapped with ObservableAgent)
      *
      * @example
      * ```typescript
@@ -221,6 +227,17 @@ export class AgentContainer {
      *     }
      * });
      * ```
+     *
+     * @example With observers
+     * ```typescript
+     * const agent = container.createAgent({
+     *     agentPrompt: { capability: 'Test', direction: 'Test' },
+     *     observers: {
+     *         onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
+     *         onMessageAdded: (taskId, message) => console.log('New message:', message)
+     *     }
+     * });
+     * ```
      */
     public createAgent(options: AgentCreationOptions = {}): Agent {
         const agentContainer = new Container({
@@ -230,7 +247,16 @@ export class AgentContainer {
         // Setup all bindings for the agent container
         this.setupAgentBindings(agentContainer, options);
 
-        return agentContainer.get<Agent>(TYPES.Agent);
+        // Get the base agent instance
+        const agent = agentContainer.get<Agent>(TYPES.Agent);
+
+        // If observers are provided, wrap the agent in an ObservableAgent proxy
+        // This is now handled by the DI container instead of post-wrapping
+        if (options.observers && Object.keys(options.observers).length > 0) {
+            return createObservableAgent(agent, options.observers);
+        }
+
+        return agent;
     }
 
     /**
@@ -315,6 +341,12 @@ export class AgentContainer {
             agentContainer.bind<string>(TYPES.TaskId).toConstantValue(options.taskId);
         }
 
+        // Bind observer callbacks if provided
+        if (options.observers) {
+            agentContainer.bind<ObservableAgentCallbacks>(TYPES.ObservableAgentCallbacks)
+                .toConstantValue(options.observers);
+        }
+
         // Bind services
         agentContainer.bind(TYPES.Agent).to(Agent).inTransientScope();
 
@@ -344,7 +376,17 @@ export class AgentContainer {
 
         // Memory module and its dependencies
         agentContainer.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
-        agentContainer.bind(TYPES.TurnMemoryStore).to(TurnMemoryStore).inRequestScope();
+
+        // TurnMemoryStore - wrap with observer if turn-level callbacks are provided
+        if (options.observers && hasTurnLevelCallbacks(options.observers)) {
+            agentContainer.bind(TYPES.TurnMemoryStore).toDynamicValue(() => {
+                const baseStore = new TurnMemoryStore();
+                return createObservableTurnMemoryStore(baseStore, extractTurnCallbacks(options.observers!));
+            }).inRequestScope();
+        } else {
+            agentContainer.bind(TYPES.TurnMemoryStore).to(TurnMemoryStore).inRequestScope();
+        }
+
         agentContainer
             .bind(TYPES.ReflectiveThinkingProcessor)
             .to(ReflectiveThinkingProcessor)
@@ -467,4 +509,34 @@ export function getGlobalContainer(): AgentContainer {
  */
 export function resetGlobalContainer(): void {
     globalContainer = null;
+}
+
+/**
+ * Check if the observer callbacks include any turn-level callbacks
+ */
+function hasTurnLevelCallbacks(observers: ObservableAgentCallbacks): boolean {
+    return !!(
+        observers.onTurnCreated ||
+        observers.onTurnStatusChanged ||
+        observers.onTurnMessageAdded ||
+        observers.onThinkingPhaseCompleted ||
+        observers.onToolCallRecorded ||
+        observers.onTurnSummaryStored ||
+        observers.onTurnActionTokensUpdated
+    );
+}
+
+/**
+ * Extract turn-level callbacks from ObservableAgentCallbacks
+ */
+function extractTurnCallbacks(observers: ObservableAgentCallbacks): TurnStoreObserverCallbacks {
+    return {
+        onTurnCreated: observers.onTurnCreated,
+        onTurnStatusChanged: observers.onTurnStatusChanged,
+        onTurnMessageAdded: observers.onTurnMessageAdded,
+        onThinkingPhaseCompleted: observers.onThinkingPhaseCompleted,
+        onToolCallRecorded: observers.onToolCallRecorded,
+        onTurnSummaryStored: observers.onTurnSummaryStored,
+        onTurnActionTokensUpdated: observers.onTurnActionTokensUpdated,
+    };
 }

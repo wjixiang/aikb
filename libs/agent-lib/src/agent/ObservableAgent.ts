@@ -6,13 +6,22 @@ import {
     TaskCompletedCallback,
     TaskAbortedCallback,
 } from '../task/task.type.js';
+import { TurnStatus, ThinkingRound, ToolCallResult, Turn } from '../memory/Turn.js';
+import { ApiMessage } from '../task/task.type.js';
 
 /**
  * Observer callbacks for ObservableAgent
- * Provides the same interface as the original Observer pattern
- * but implemented using Proxy pattern
+ *
+ * These callbacks are used to monitor agent behavior and events.
+ * When provided via the DI container (AgentContainer.createAgent),
+ * the agent will be automatically wrapped in an ObservableAgent proxy.
+ *
+ * The callbacks provide the same interface as the original Observer pattern
+ * but implemented using Proxy pattern for non-invasive observation.
  */
 export interface ObservableAgentCallbacks {
+    // ==================== Task-level callbacks ====================
+
     onMessageAdded?: MessageAddedCallback;
     onStatusChanged?: TaskStatusChangedCallback;
     onTaskCompleted?: TaskCompletedCallback;
@@ -20,41 +29,111 @@ export interface ObservableAgentCallbacks {
     onMethodCall?: (methodName: string, args: any[]) => void;
     onPropertyChange?: (propertyName: string, newValue: any, oldValue: any) => void;
     onError?: (error: Error, context: string) => void;
+
+    // ==================== Turn-level callbacks ====================
+    // These callbacks monitor the turn-based memory system
+
+    /**
+     * Called when a new turn is created
+     * @param turnId - The unique ID of the created turn
+     * @param turnNumber - The sequential turn number
+     * @param workspaceContext - The workspace context snapshot
+     * @param taskContext - Optional task context (user's goal)
+     */
+    onTurnCreated?: (turnId: string, turnNumber: number, workspaceContext: string, taskContext?: string) => void;
+
+    /**
+     * Called when a turn's status changes
+     * @param turnId - The turn ID
+     * @param status - The new status
+     */
+    onTurnStatusChanged?: (turnId: string, status: TurnStatus) => void;
+
+    /**
+     * Called when a message is added to a turn
+     * @param turnId - The turn ID
+     * @param message - The message that was added
+     */
+    onTurnMessageAdded?: (turnId: string, message: ApiMessage) => void;
+
+    /**
+     * Called when the thinking phase completes for a turn
+     * @param turnId - The turn ID
+     * @param rounds - The thinking rounds performed
+     * @param tokensUsed - Total tokens used in thinking phase
+     */
+    onThinkingPhaseCompleted?: (turnId: string, rounds: ThinkingRound[], tokensUsed: number) => void;
+
+    /**
+     * Called when a tool call result is recorded
+     * @param turnId - The turn ID
+     * @param toolName - Name of the tool that was called
+     * @param success - Whether the tool call succeeded
+     * @param result - The result of the tool call
+     */
+    onToolCallRecorded?: (turnId: string, toolName: string, success: boolean, result: any) => void;
+
+    /**
+     * Called when a summary is stored for a turn
+     * @param turnId - The turn ID
+     * @param summary - The generated summary
+     * @param insights - Extracted insights
+     */
+    onTurnSummaryStored?: (turnId: string, summary: string, insights: string[]) => void;
+
+    /**
+     * Called when action phase token usage is updated
+     * @param turnId - The turn ID
+     * @param tokens - Number of tokens used in action phase
+     */
+    onTurnActionTokensUpdated?: (turnId: string, tokens: number) => void;
 }
 
 /**
  * Creates an observable Agent using Proxy pattern
- * 
+ *
  * This implementation intercepts property access and method calls
  * without requiring any modifications to the original Agent class.
- * 
+ *
+ * **Note:** With the new DI-based architecture, you typically don't need to
+ * call this function directly. Instead, pass observer callbacks to the
+ * AgentContainer.createAgent() method, which will automatically wrap
+ * the agent when observers are provided.
+ *
  * @param agent - The original Agent instance to wrap
  * @param callbacks - Observer callbacks to register
  * @returns A proxied Agent instance that automatically notifies observers
- * 
- * @example
+ *
+ * @example Direct usage (manual wrapping)
  * ```typescript
- * const apiClient = ApiClientFactory.create({
- *     apiProvider: 'zai',
- *     apiKey: 'your-api-key',
- *     apiModelId: 'glm-4.7',
- *     toolProtocol: 'xml',
- *     zaiApiLine: 'china_coding',
- * });
- * const agent = createObservableAgent(
- *     new Agent(config, workspace, agentPrompt, apiClient),
- *     {
- *         onStatusChanged: (taskId, status) => {
- *             console.log(`Status changed to: ${status}`);
- *         },
- *         onMessageAdded: (taskId, message) => {
- *             console.log('New message:', message);
- *         }
+ * import { createObservableAgent } from './ObservableAgent.js';
+ *
+ * const agent = createObservableAgent(baseAgent, {
+ *     onStatusChanged: (taskId, status) => {
+ *         console.log(`Status changed to: ${status}`);
+ *     },
+ *     onMessageAdded: (taskId, message) => {
+ *         console.log('New message:', message);
  *     }
- * );
+ * });
  *
  * // Normal usage - notifications happen automatically
  * await agent.start("Write code");
+ * ```
+ *
+ * @example Recommended usage (via DI container)
+ * ```typescript
+ * import { getGlobalContainer } from './di/index.js';
+ *
+ * const container = getGlobalContainer();
+ * const agent = container.createAgent({
+ *     agentPrompt: { capability: 'Test', direction: 'Test' },
+ *     observers: {
+ *         onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
+ *         onMessageAdded: (taskId, message) => console.log('New message:', message)
+ *     }
+ * });
+ * // Agent is automatically wrapped - no manual createObservableAgent call needed
  * ```
  */
 export function createObservableAgent<T extends Agent>(
@@ -79,13 +158,14 @@ export function createObservableAgent<T extends Agent>(
             // Special handling for memoryModule to observe message additions
             // This is needed because the new architecture uses MemoryModule instead of
             // direct array manipulation for conversation history
+            //
+            // Note: Turn-level observation is now handled at the DI container level
+            // via ObservableTurnMemoryStore. The turnStore injected into MemoryModule
+            // is already wrapped if turn-level callbacks are provided.
             if (prop === 'memoryModule' && value && typeof value === 'object') {
                 return new Proxy(value, {
                     get(moduleTarget, moduleProp, moduleReceiver) {
                         const moduleValue = Reflect.get(moduleTarget, moduleProp, moduleReceiver);
-                        if (typeof moduleValue === 'object' && String(moduleProp) === 'turnStore') {
-
-                        }
 
                         // Wrap message addition methods to notify observers
                         if (typeof moduleValue === 'function') {
@@ -251,21 +331,38 @@ function checkAndNotifyStatus(
 /**
  * Factory class for creating observable Agents
  * Provides a fluent API for registering callbacks
- * 
- * @example
+ *
+ * **Note:** With the new DI-based architecture, using the DI container
+ * directly is recommended over this factory class. The container handles
+ * observer wrapping automatically when callbacks are provided.
+ *
+ * This factory is still available for backward compatibility and for
+ * scenarios where you need to manually wrap an existing agent instance.
+ *
+ * @example Using the factory (legacy approach)
  * ```typescript
- * const apiClient = ApiClientFactory.create({
- *     apiProvider: 'zai',
- *     apiKey: 'your-api-key',
- *     apiModelId: 'glm-4.7',
- *     toolProtocol: 'xml',
- *     zaiApiLine: 'china_coding',
- * });
+ * import { ObservableAgentFactory } from './ObservableAgent.js';
+ *
  * const agent = new ObservableAgentFactory()
  *     .onStatusChanged((taskId, status) => console.log(status))
  *     .onMessageAdded((taskId, msg) => console.log(msg))
  *     .onError((err, ctx) => console.error(err, ctx))
- *     .create(new Agent(config, workspace, agentPrompt, apiClient));
+ *     .create(existingAgent);
+ * ```
+ *
+ * @example Recommended approach (via DI container)
+ * ```typescript
+ * import { getGlobalContainer } from './di/index.js';
+ *
+ * const container = getGlobalContainer();
+ * const agent = container.createAgent({
+ *     agentPrompt: { capability: 'Test', direction: 'Test' },
+ *     observers: {
+ *         onStatusChanged: (taskId, status) => console.log(status),
+ *         onMessageAdded: (taskId, msg) => console.log(msg),
+ *         onError: (err, ctx) => console.error(err, ctx)
+ *     }
+ * });
  * ```
  */
 export class ObservableAgentFactory {
@@ -340,19 +437,37 @@ export class ObservableAgentFactory {
 /**
  * Utility function to create an observable Agent with a subset of callbacks
  * Useful when you only need to observe specific events
- * 
- * @example
+ *
+ * **Note:** With the new DI-based architecture, you typically don't need to
+ * call this function directly. Pass observer callbacks to the DI container instead.
+ *
+ * This function is still available for:
+ * - Manually wrapping existing agent instances
+ * - Backward compatibility with existing code
+ * - Scenarios where you have an agent but didn't use the DI container
+ *
+ * @example Direct usage (manual wrapping)
  * ```typescript
- * const apiClient = ApiClientFactory.create({
- *     apiProvider: 'zai',
- *     apiKey: 'your-api-key',
- *     apiModelId: 'glm-4.7',
- *     toolProtocol: 'xml',
- *     zaiApiLine: 'china_coding',
- * });
- * const agent = observeAgent(new Agent(config, workspace, agentPrompt, apiClient), {
+ * import { observeAgent } from './ObservableAgent.js';
+ *
+ * const agent = observeAgent(existingAgent, {
  *     onStatusChanged: (taskId, status) => {
  *         console.log(`Agent ${taskId} is now ${status}`);
+ *     }
+ * });
+ * ```
+ *
+ * @example Recommended approach (via DI container)
+ * ```typescript
+ * import { getGlobalContainer } from './di/index.js';
+ *
+ * const container = getGlobalContainer();
+ * const agent = container.createAgent({
+ *     agentPrompt: { capability: 'Test', direction: 'Test' },
+ *     observers: {
+ *         onStatusChanged: (taskId, status) => {
+ *             console.log(`Agent ${taskId} is now ${status}`);
+ *         }
  *     }
  * });
  * ```

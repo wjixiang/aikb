@@ -58,6 +58,42 @@ const agent = container.createAgent({
 await agent.start('Help me write code');
 ```
 
+### Using Observables with DI
+
+The DI container now supports automatic agent observation. When you provide observer callbacks, the container automatically wraps the agent in an ObservableAgent proxy:
+
+```typescript
+import 'reflect-metadata';
+import { getGlobalContainer } from './di/index.js';
+
+const container = getGlobalContainer();
+const agent = container.createAgent({
+    agentPrompt: {
+        capability: 'You are a helpful assistant',
+        direction: 'Follow user instructions carefully'
+    },
+    observers: {
+        onStatusChanged: (taskId, status) => {
+            console.log(`Agent ${taskId} status changed to: ${status}`);
+        },
+        onMessageAdded: (taskId, message) => {
+            console.log(`New message in task ${taskId}:`, message);
+        },
+        onTaskCompleted: (taskId) => {
+            console.log(`Task ${taskId} completed!`);
+        },
+        onError: (error, context) => {
+            console.error(`Error in ${context}:`, error);
+        }
+    }
+});
+
+await agent.start('Help me write code');
+// All observer callbacks will be triggered automatically
+```
+
+**Note:** The container handles the ObservableAgent wrapping internally. You no longer need to manually call `createObservableAgent()` when using the DI container.
+
 ## Service Identifiers (TYPES)
 
 All services are registered with the container using these identifiers:
@@ -85,6 +121,7 @@ TYPES.VirtualWorkspaceConfig
 TYPES.MemoryModuleConfig
 TYPES.ProviderSettings
 TYPES.TaskId
+TYPES.ObservableAgentCallbacks  // Observer callbacks for agent monitoring
 ```
 
 ## Container Scopes
@@ -272,13 +309,113 @@ const agent = container.createAgent({
 });
 ```
 
+## ObservableAgent Integration
+
+The DI container now integrates with the ObservableAgent pattern. When you provide observer callbacks via the `observers` option, the container automatically wraps the agent in an ObservableAgent proxy.
+
+### Before (Manual Wrapping)
+
+```typescript
+import { createObservableAgent } from './agent/ObservableAgent.js';
+import { AgentFactory } from './agent/AgentFactory.js';
+
+const agent = AgentFactory.create(workspace, agentPrompt);
+const observableAgent = createObservableAgent(agent, {
+    onStatusChanged: (taskId, status) => console.log(status),
+    onMessageAdded: (taskId, message) => console.log(message)
+});
+```
+
+### After (Container Integration)
+
+```typescript
+import { getGlobalContainer } from './di/index.js';
+
+const container = getGlobalContainer();
+const agent = container.createAgent({
+    agentPrompt: { capability: 'Test', direction: 'Test' },
+    observers: {
+        onStatusChanged: (taskId, status) => console.log(status),
+        onMessageAdded: (taskId, message) => console.log(message)
+    }
+});
+// Agent is automatically wrapped - no manual wrapping needed
+```
+
+### Available Observer Callbacks
+
+#### Task-level Callbacks
+
+```typescript
+interface ObservableAgentCallbacks {
+    onMessageAdded?: (taskId: string, message: ApiMessage) => void;
+    onStatusChanged?: (taskId: string, status: TaskStatus) => void;
+    onTaskCompleted?: (taskId: string) => void;
+    onTaskAborted?: (taskId: string, reason: string) => void;
+    onMethodCall?: (methodName: string, args: any[]) => void;
+    onPropertyChange?: (propertyName: string, newValue: any, oldValue: any) => void;
+    onError?: (error: Error, context: string) => void;
+}
+```
+
+#### Turn-level Callbacks
+
+The ObservableAgent also supports detailed turn-based memory observation:
+
+```typescript
+interface ObservableAgentCallbacks {
+    // Turn lifecycle
+    onTurnCreated?: (turnId: string, turnNumber: number, workspaceContext: string, taskContext?: string) => void;
+    onTurnStatusChanged?: (turnId: string, status: TurnStatus) => void;
+    
+    // Turn messages
+    onTurnMessageAdded?: (turnId: string, message: ApiMessage) => void;
+    
+    // Thinking phase
+    onThinkingPhaseCompleted?: (turnId: string, rounds: ThinkingRound[], tokensUsed: number) => void;
+    
+    // Tool calls
+    onToolCallRecorded?: (turnId: string, toolName: string, success: boolean, result: any) => void;
+    
+    // Summary
+    onTurnSummaryStored?: (turnId: string, summary: string, insights: string[]) => void;
+    
+    // Token usage
+    onTurnActionTokensUpdated?: (turnId: string, tokens: number) => void;
+}
+```
+
+#### Example: Observing Turn-level Events
+
+```typescript
+const agent = container.createAgent({
+    agentPrompt: { capability: 'Test', direction: 'Test' },
+    observers: {
+        // Task-level
+        onStatusChanged: (taskId, status) => console.log(`Task ${taskId} status: ${status}`),
+        
+        // Turn-level
+        onTurnCreated: (turnId, turnNumber, workspaceContext, taskContext) => {
+            console.log(`Turn ${turnNumber} created: ${turnId}`);
+        },
+        onThinkingPhaseCompleted: (turnId, rounds, tokensUsed) => {
+            console.log(`Thinking phase: ${rounds.length} rounds, ${tokensUsed} tokens`);
+        },
+        onToolCallRecorded: (turnId, toolName, success, result) => {
+            console.log(`Tool ${toolName} ${success ? 'succeeded' : 'failed'}`);
+        }
+    }
+});
+```
+
 ## Best Practices
 
 1. **Always import 'reflect-metadata'** at the entry point of your application
 2. **Use the container** for creating agents rather than manual construction
-3. **Reset the global container** between tests to ensure isolation
-4. **Use interfaces** when injecting dependencies into your own classes
-5. **Keep configuration in one place** - prefer passing config to container over setting individual services
+3. **Use observer callbacks via the container** instead of manual wrapping for cleaner code
+4. **Reset the global container** between tests to ensure isolation
+5. **Use interfaces** when injecting dependencies into your own classes
+6. **Keep configuration in one place** - prefer passing config to container over setting individual services
 
 ## Troubleshooting
 

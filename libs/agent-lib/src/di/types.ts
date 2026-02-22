@@ -16,6 +16,13 @@
 export const TYPES = {
     Logger: Symbol('Logger'),
 
+    /**
+     * ObservableAgentCallbacks - Observer callbacks for agent monitoring
+     * When provided, the container will automatically wrap agents in an ObservableAgent proxy
+     * @scope Request - Shared within an agent creation request
+     */
+    ObservableAgentCallbacks: Symbol('ObservableAgentCallbacks'),
+
     // ==================== Core Services ====================
 
     /**

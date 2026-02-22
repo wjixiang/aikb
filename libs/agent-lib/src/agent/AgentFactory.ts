@@ -3,7 +3,7 @@ import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js'
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/index.js';
 import { ApiClient } from '../api-client/index.js';
-import { createObservableAgent, ObservableAgentCallbacks } from './ObservableAgent.js';
+import type { ObservableAgentCallbacks } from './ObservableAgent.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { getGlobalContainer, AgentContainer } from '../di/index.js';
 import { IVirtualWorkspace } from '../statefulContext/types.js';
@@ -29,33 +29,36 @@ export interface AgentFactoryOptions {
  * Factory class for creating Agent instances
  *
  * This factory provides a convenient way to create Agent instances with
- * proper dependency injection. It handles the creation of the ApiClient,
- * merges default configurations with provided options, and optionally
- * wraps the agent in an ObservableAgent proxy for automatic observation.
+ * proper dependency injection. It delegates to the DI container for agent
+ * creation, which handles all dependency resolution and optional observer
+ * wrapping automatically.
+ *
+ * The factory pattern is now simplified - the DI container handles:
+ * - Creating all dependencies (ApiClient, MemoryModule, VirtualWorkspace, etc.)
+ * - Merging configurations with defaults
+ * - Optionally wrapping agents in ObservableAgent when observers are provided
  *
  * @example
  * ```ts
  * // Create with default configuration
- * const agent = AgentFactory.create(workspace);
+ * const agent = AgentFactory.create(workspace, agentPrompt);
  *
  * // Create with custom configuration
- * const agent = AgentFactory.create(workspace, {
+ * const agent = AgentFactory.create(workspace, agentPrompt, {
  *   config: { apiRequestTimeout: 60000 },
  *   apiConfiguration: { apiModelId: 'custom-model' }
  * });
  *
- * // Create with observers (automatic notification)
- * const agent = AgentFactory.create(workspace, {
+ * // Create with observers (automatic notification via DI container)
+ * const agent = AgentFactory.create(workspace, agentPrompt, {
  *   observers: {
  *     onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
  *     onTaskCompleted: (taskId) => console.log('Task completed!')
  *   }
  * });
  *
- * // Create with custom API client
- * const agent = AgentFactory.create(workspace, {
- *   apiClient: new MockApiClient()
- * });
+ * // Create with custom API client (for testing)
+ * const agent = AgentFactory.createWithCustomClient(workspace, apiClient, agentPrompt);
  * ```
  */
 export class AgentFactory {
@@ -88,10 +91,13 @@ export class AgentFactory {
     /**
      * Create an Agent instance with the provided options
      *
+     * The DI container handles all dependency injection and optional observer wrapping.
+     * This factory method provides a convenient facade over the container.
+     *
      * @param workspace - The VirtualWorkspace instance
      * @param agentPrompt - The agent prompt configuration
      * @param options - Optional configuration for the agent
-     * @returns A configured Agent instance
+     * @returns A configured Agent instance (optionally wrapped with ObservableAgent)
      */
     static create(
         workspace: VirtualWorkspace,
@@ -110,26 +116,23 @@ export class AgentFactory {
         } = options;
 
         // Use the container to create the agent
+        // The container now handles observer wrapping internally
         const container = this.getContainer();
 
-        // Create agent with container, passing the workspace
+        // Create agent with container, passing the workspace and observers
         const agent = container.createAgent({
             config: configPartial,
             apiConfiguration: apiConfigPartial,
             agentPrompt,
             taskId,
             workspace, // Pass the workspace to container for backward compatibility
+            observers, // Pass observers to container - it will handle wrapping
         });
 
         console.log('[AgentFactory.create] Agent instance created via container, taskId:', agent.getTaskId);
 
-        // Wrap in ObservableAgent if observers are provided
-        if (observers && Object.keys(observers).length > 0) {
-            console.log('[AgentFactory.create] Wrapping agent with observers');
-            return createObservableAgent(agent, observers);
-        }
-
-        console.log('[AgentFactory.create] Returning agent');
+        // No need to wrap here - the container handles it now
+        console.log('[AgentFactory.create] Returning agent', observers ? '(with observers)' : '(without observers)');
         return agent;
     }
 
@@ -137,9 +140,11 @@ export class AgentFactory {
      * Create an Agent using the DI container directly
      * This is the recommended way for new code
      *
+     * The container handles all dependency injection and optional observer wrapping.
+     *
      * @param agentPrompt - The agent prompt configuration
      * @param options - Optional configuration for the agent
-     * @returns A configured Agent instance
+     * @returns A configured Agent instance (optionally wrapped with ObservableAgent)
      */
     static createWithContainer(
         agentPrompt: AgentPrompt,
@@ -147,19 +152,15 @@ export class AgentFactory {
     ): Agent {
         const container = this.getContainer();
 
-        const agent = container.createAgent({
+        // The container handles observer wrapping internally
+        return container.createAgent({
             config: options.config,
             apiConfiguration: options.apiConfiguration,
             agentPrompt,
             taskId: options.taskId,
             workspace: options.workspace,
+            observers: options.observers, // Pass observers to container
         });
-
-        if (options.observers) {
-            return createObservableAgent(agent, options.observers);
-        }
-
-        return agent;
     }
 
     /**

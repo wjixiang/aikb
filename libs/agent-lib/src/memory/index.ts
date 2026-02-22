@@ -6,6 +6,13 @@
 export { TurnMemoryStore } from './TurnMemoryStore.js';
 export { Turn, TurnStatus, ThinkingRound as TurnThinkingRound, ToolCallResult, TurnMemoryExport } from './Turn.js';
 
+// Observable TurnMemoryStore
+export {
+    createObservableTurnMemoryStore,
+    ObservableTurnMemoryStoreFactory,
+    TurnStoreObserverCallbacks
+} from './ObservableTurnMemoryStore.js';
+
 // Legacy exports (deprecated)
 export { ContextMemoryStore, ContextSnapshot, MemorySummary } from './ContextMemoryStore.js';
 export {
