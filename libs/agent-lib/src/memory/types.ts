@@ -2,7 +2,7 @@
  * Type definitions for memory module
  */
 
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage, ExtendedContentBlock } from '../task/task.type.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 
@@ -79,12 +79,12 @@ export interface IMemoryModule {
     /**
      * Add user message to current turn
      */
-    addUserMessage(content: string | any[]): ApiMessage;
+    addUserMessage(content: string | ExtendedContentBlock[]): ApiMessage;
 
     /**
      * Add assistant message to current turn
      */
-    addAssistantMessage(content: any[]): ApiMessage;
+    addAssistantMessage(content: string | ExtendedContentBlock[]): ApiMessage;
 
     /**
      * Add system message to current turn

@@ -1,6 +1,8 @@
 import { MemoryModule } from "../MemoryModule";
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "../../api-client";
 import { ThinkingRound } from "../Turn";
+import { Logger } from "pino";
+import { TurnMemoryStore } from "../TurnMemoryStore";
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -38,11 +40,26 @@ class MockApiClient implements ApiClient {
 
 const mockClient = new MockApiClient();
 
+// Mock Logger
+const mockLogger: Logger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    silent: vi.fn(),
+    child: vi.fn(() => mockLogger as any),
+} as any;
+
+// Mock TurnMemoryStore
+const mockTurnStore = new TurnMemoryStore();
+
 describe('MemoryModule', () => {
     let memoryModule: MemoryModule;
 
     beforeEach(() => {
-        memoryModule = new MemoryModule(mockClient);
+        memoryModule = new MemoryModule(mockClient, mockLogger, {}, mockTurnStore);
     });
 
     it('should perform thinking phase single time', async () => {
@@ -64,7 +81,7 @@ describe('MemoryModule', () => {
         console.log(memoryModule.getTurnStore().getAllTurns())
     });
 
-    it.only('check if history thinking step has been rendered into prompt', async () => {
+    it('check if history thinking step has been rendered into prompt', async () => {
         memoryModule.startTurn('test_workspace')
         const spy = vi.spyOn(mockClient, 'makeRequest')
         const testRounds: ThinkingRound[] = [
@@ -165,4 +182,17 @@ describe('MemoryModule', () => {
         expect(systemPrompt).toContain('continueThinking');
         expect(systemPrompt).toContain('turnNumbers');
     });
+
+    describe('message storage', () => {
+        it.only('should store assistant messages', async () => {
+            memoryModule.startTurn('turn1')
+            memoryModule.addAssistantMessage([{
+                type: 'text',
+                text: 'test assistant message',
+            }])
+
+            const result = memoryModule.getAllMessages()
+            console.log(result)
+        })
+    })
 });

@@ -6,6 +6,9 @@ import { Tool } from '../../statefulContext/index.js';
 import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
 import type { ApiClient } from '../../api-client/index.js';
+import { MemoryModule } from '../../memory/MemoryModule.js';
+import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
+import type { Logger } from 'pino';
 
 // Define Skill interface locally since agent-lib doesn't directly depend on skills
 interface Skill {
@@ -21,6 +24,18 @@ interface Skill {
     onActivate?: () => Promise<void>;
     onDeactivate?: () => Promise<void>;
 }
+
+// Mock Logger
+const mockLogger: Logger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    silent: vi.fn(),
+    child: vi.fn(() => mockLogger as any),
+} as any;
 
 // Mock ApiClient
 const mockApiClient: ApiClient = {
@@ -84,6 +99,7 @@ describe('Agent Context Rendering', () => {
     let agent: Agent;
     let workspace: VirtualWorkspace;
     let testComponent: TestToolComponent;
+    let memoryModule: MemoryModule;
     const agentPrompt: AgentPrompt = {
         capability: 'Base agent capability - can perform general tasks',
         direction: 'Base agent direction - follow standard operating procedures'
@@ -113,12 +129,17 @@ describe('Agent Context Rendering', () => {
         // Register test skill
         workspace.registerSkill(testSkill);
 
+        // Create memory module
+        const turnStore = new TurnMemoryStore();
+        memoryModule = new MemoryModule(mockApiClient, mockLogger, {}, turnStore);
+
         // Create agent
         agent = new Agent(
             agentConfig,
             workspace,
             agentPrompt,
-            mockApiClient
+            mockApiClient,
+            memoryModule
         );
     });
 

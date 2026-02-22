@@ -10,7 +10,7 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import { ApiMessage, MessageBuilder } from '../task/task.type.js';
+import { ApiMessage, ExtendedContentBlock, MessageBuilder } from '../task/task.type.js';
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
@@ -177,7 +177,7 @@ export class MemoryModule implements IMemoryModule {
      * Add user message to current turn
      * @returns The added message
      */
-    addUserMessage(content: string | any[]): ApiMessage {
+    addUserMessage(content: string | ExtendedContentBlock[]): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
@@ -194,12 +194,14 @@ export class MemoryModule implements IMemoryModule {
      * Add assistant message to current turn
      * @returns The added message
      */
-    addAssistantMessage(content: any[]): ApiMessage {
+    addAssistantMessage(content: string | ExtendedContentBlock[]): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
 
-        const message = MessageBuilder.custom('assistant', content);
+        const message = typeof content === 'string'
+            ? MessageBuilder.assistant(content)
+            : MessageBuilder.custom('assistant', content);
         this.turnStore.addMessageToTurn(
             this.currentTurn.id,
             message

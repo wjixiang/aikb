@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { MemoryModule } from '../MemoryModule';
 import { ApiClient, ApiResponse } from '../../api-client';
+import { TurnMemoryStore } from '../TurnMemoryStore';
+import { Logger } from 'pino';
 
 class MockClient implements ApiClient {
     async makeRequest(): Promise<ApiResponse> {
@@ -13,9 +15,21 @@ class MockClient implements ApiClient {
     }
 }
 
+// Mock Logger
+const mockLogger: Logger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    silent: vi.fn(),
+    child: vi.fn(() => mockLogger as any),
+} as any;
+
 describe('Workspace Context Retrieval', () => {
     it('demonstrates difference between getAllMessages and getAllTurns', () => {
-        const memoryModule = new MemoryModule(new MockClient());
+        const memoryModule = new MemoryModule(new MockClient(), mockLogger, {}, new TurnMemoryStore());
 
         // Create 2 turns with different contexts
         memoryModule.startTurn('Initial workspace: empty project');
@@ -59,7 +73,7 @@ describe('Workspace Context Retrieval', () => {
     });
 
     it('shows how to get messages WITH context', () => {
-        const memoryModule = new MemoryModule(new MockClient());
+        const memoryModule = new MemoryModule(new MockClient(), mockLogger, {}, new TurnMemoryStore());
 
         // Create a turn
         memoryModule.startTurn('Context: empty directory');

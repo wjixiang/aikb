@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryModule } from '../MemoryModule';
 import { TurnStatus } from '../Turn';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client';
+import { TurnMemoryStore } from '../TurnMemoryStore';
+import { Logger } from 'pino';
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -25,13 +27,27 @@ class MockApiClient implements ApiClient {
     }
 }
 
+// Mock Logger
+const mockLogger: Logger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    silent: vi.fn(),
+    child: vi.fn(() => mockLogger as any),
+} as any;
+
 describe('Turn-based Memory Integration', () => {
     let memoryModule: MemoryModule;
     let mockClient: MockApiClient;
+    let mockTurnStore: TurnMemoryStore;
 
     beforeEach(() => {
         mockClient = new MockApiClient();
-        memoryModule = new MemoryModule(mockClient);
+        mockTurnStore = new TurnMemoryStore();
+        memoryModule = new MemoryModule(mockClient, mockLogger, {}, mockTurnStore);
     });
 
     it('should manage complete turn lifecycle', async () => {
@@ -157,7 +173,7 @@ describe('Turn-based Memory Integration', () => {
         expect(exported.currentTurnNumber).toBe(2);
 
         // Import to new module
-        const newModule = new MemoryModule(mockClient);
+        const newModule = new MemoryModule(mockClient, mockLogger, {}, new TurnMemoryStore());
         newModule.import(exported);
 
         // Verify imported data
