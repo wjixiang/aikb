@@ -226,11 +226,6 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             }, timeout);
         });
 
-        // Clear timeout on promise settlement
-        if (timeoutId !== undefined) {
-            timeoutPromise.finally?.(() => clearTimeout(timeoutId));
-        }
-
         try {
             // Start timing
             const startTime = Date.now();
@@ -278,6 +273,11 @@ export class OpenaiCompatibleApiClient implements ApiClient {
 
             // Parse and throw as appropriate error type
             throw parseError(error, { timeout });
+        } finally {
+            // Always clear the timeout to prevent unhandled rejections
+            if (timeoutId !== undefined) {
+                clearTimeout(timeoutId);
+            }
         }
     }
 

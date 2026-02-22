@@ -168,26 +168,23 @@ export function createObservableAgent<T extends Agent>(
                         const moduleValue = Reflect.get(moduleTarget, moduleProp, moduleReceiver);
 
                         // Wrap message addition methods to notify observers
-                        if (typeof moduleValue === 'function') {
-                            const methodName = String(moduleProp);
-                            const messageMethods = ['addUserMessage', 'addAssistantMessage', 'addSystemMessage'];
+                        if (typeof moduleValue === 'function' && String(moduleProp) === 'addMessage') {
 
-                            if (messageMethods.includes(methodName)) {
-                                return new Proxy(moduleValue, {
-                                    apply(fnTarget, thisArg, args) {
-                                        // Execute the original method
-                                        // The method now returns the added message
-                                        const addedMessage = Reflect.apply(fnTarget, thisArg, args);
+                            return new Proxy(moduleValue, {
+                                apply(fnTarget, thisArg, args) {
+                                    // Execute the original method
+                                    // The method now returns the added message
+                                    const addedMessage = Reflect.apply(fnTarget, thisArg, args);
 
-                                        // Notify observers about message additions
-                                        // Use the returned message directly instead of calling getAllMessages
-                                        const taskId = target.getTaskId;
-                                        callbacks.onMessageAdded?.(taskId, addedMessage);
+                                    // Notify observers about message additions
+                                    // Use the returned message directly instead of calling getAllMessages
+                                    const taskId = target.getTaskId;
+                                    callbacks.onMessageAdded?.(taskId, addedMessage);
 
-                                        return addedMessage;
-                                    }
-                                });
-                            }
+                                    return addedMessage;
+                                }
+                            });
+
                         }
 
                         return moduleValue;

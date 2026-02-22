@@ -4,7 +4,7 @@
  */
 
 import { VirtualWorkspace } from '../statefulContext/index.js';
-import { BibliographySearchComponent, PicosComponent } from '../components/index.js';
+import { BibliographySearchComponent, PicosComponent, PrismaCheckListComponent, PrismaFlowComponent } from '../components/index.js';
 
 /**
  * Knowledge Management Workspace
@@ -23,11 +23,19 @@ export class MetaAnalysisWorkspace extends VirtualWorkspace {
             component: new PicosComponent()
         })
 
-        // Register components
+        this.registerComponent({
+            key: 'Prisma Check List',
+            component: new PrismaCheckListComponent()
+        })
+
+        this.registerComponent({
+            key: 'Prisma Workflow',
+            component: new PrismaFlowComponent()
+        })
+
         this.registerComponent({
             key: 'Pubmed Search Engine',
             component: new BibliographySearchComponent(),
-            priority: 1
         });
     }
 }

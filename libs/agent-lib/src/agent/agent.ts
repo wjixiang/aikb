@@ -3,15 +3,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
     ApiMessage,
     TaskStatus,
-    ThinkingBlock,
     MessageBuilder,
+    ExtendedContentBlock,
 } from "../task/task.type.js";
 import { MessageTokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "../statefulContext/index.js";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
-import { AssistantMessageContent, ToolUse } from '../assistant-message/assistantMessageTypes.js';
 import { ErrorHandlerPrompt } from '../task/error/ErrorHandlerPrompt.js';
 import {
     ConsecutiveMistakeError,
@@ -46,7 +45,7 @@ export interface AgentConfig {
 }
 
 export const defaultAgentConfig: AgentConfig = {
-    apiRequestTimeout: 40000,
+    apiRequestTimeout: 60000,
     maxRetryAttempts: 3,
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 };
@@ -71,20 +70,6 @@ interface StackItem {
     userMessageWasRemoved?: boolean;
 }
 
-/**
- * Interface for message processing state
- */
-interface MessageProcessingState {
-    assistantMessageContent: AssistantMessageContent[];
-    userMessageContent: (
-        | Anthropic.TextBlockParam
-        | Anthropic.ImageBlockParam
-        | Anthropic.ToolResultBlockParam
-    )[];
-    didAttemptCompletion: boolean;
-    cachedModel?: { id: string; info: any };
-}
-
 export interface AgentPrompt {
     capability: string;
     direction: string;
@@ -107,13 +92,7 @@ export class Agent {
     private _consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
     private _collectedErrors: string[] = [];
 
-    // Message processing state
-    private messageState: MessageProcessingState = {
-        assistantMessageContent: [],
-        userMessageContent: [],
-        didAttemptCompletion: false,
-        cachedModel: undefined,
-    };
+    private cachedModel?: { id: string; info: any };
 
     // API client (dependency injected)
     private apiClient: ApiClient;
@@ -340,16 +319,15 @@ export class Agent {
             if (shouldAddUserMessage) {
                 // Use the appropriate method based on content type
                 if (currentUserContent.length === 1 && currentUserContent[0].type === 'text') {
-                    this.memoryModule.addUserMessage((currentUserContent[0] as any).text);
+                    const message = MessageBuilder.user((currentUserContent[0] as any).text);
+                    this.memoryModule.addMessage(message);
                 } else {
-                    this.memoryModule.addUserMessage(currentUserContent);
+                    const message = MessageBuilder.custom('user', currentUserContent);
+                    this.memoryModule.addMessage(message);
                 }
             }
 
             try {
-                // Reset message processing state for each new API request
-                this.resetMessageState();
-
                 // THINKING PHASE: Use MemoryModule (always enabled)
                 const memoryResult = await this.memoryModule.performThinkingPhase(
                     currentWorkspaceContext,
@@ -366,7 +344,8 @@ export class Agent {
                 // Add thinking summary to history for observability
                 if (memoryResult.rounds.length > 0) {
                     const thinkingSummary = this.formatMemoryThinkingSummary(memoryResult);
-                    this.memoryModule.addSystemMessage(thinkingSummary);
+                    const message = MessageBuilder.system(thinkingSummary);
+                    this.memoryModule.addMessage(message);
                 }
 
                 // Track thinking tokens
@@ -384,7 +363,8 @@ export class Agent {
                 }
 
                 // Convert API response to assistant message content
-                this.convertApiResponseToAssistantMessage(response);
+                // const assistantMessageContent = this.convertApiResponseToAssistantMessage(response);
+                const assistantMessage = this.converApiResponseToApiMessage(response)
 
                 // Execute tool calls and build response
                 // This will update workspace states
@@ -393,16 +373,13 @@ export class Agent {
                     () => this.isAborted(),
                 );
 
-                // Update message state with execution result
-                this.messageState.userMessageContent = executionResult.userMessageContent;
-                this.messageState.didAttemptCompletion = executionResult.didAttemptCompletion;
 
-                // Add assistant message to conversation history
-                this.addAssistantMessageToHistory();
+                this.memoryModule.addMessage(assistantMessage);
 
                 // Add user message (tool result) to conversation history
-                if (this.messageState.userMessageContent.length > 0) {
-                    this.memoryModule.addUserMessage(this.messageState.userMessageContent);
+                if (executionResult.userMessageContent.length > 0) {
+                    const message = MessageBuilder.custom('system', executionResult.userMessageContent);
+                    this.memoryModule.addMessage(message);
                 }
 
                 // Store tool results for next thinking phase
@@ -430,7 +407,7 @@ export class Agent {
 
                 // Check if we should continue recursion
                 if (
-                    !this.messageState.didAttemptCompletion
+                    !executionResult.didAttemptCompletion
                 ) {
                     // Complete current turn and prepare for next turn
                     this.memoryModule.completeTurn();
@@ -488,22 +465,18 @@ export class Agent {
 
     // ==================== Message Processing ====================
 
-    /**
-     * Reset message processing state for each new API request
-     */
-    private resetMessageState(): void {
-        this.messageState.assistantMessageContent = [];
-        this.messageState.userMessageContent = [];
-        this.messageState.didAttemptCompletion = false;
-    }
+    private converApiResponseToApiMessage(response: ApiResponse): ApiMessage {
+        const content: ExtendedContentBlock[] = [];
 
-    /**
-     * Convert API response to assistant message content
-     * Handles multiple tool calls in a single response
-     */
-    private convertApiResponseToAssistantMessage(response: ApiResponse): void {
-        const toolUseBlocks: ToolUse[] = [];
+        // Add text response if available
+        if (response.textResponse) {
+            content.push({
+                type: 'text',
+                text: response.textResponse,
+            });
+        }
 
+        // Add tool use blocks for each tool call
         for (const toolCall of response.toolCalls) {
             // Parse arguments from JSON string
             let parsedArgs: any = {};
@@ -514,76 +487,22 @@ export class Agent {
                 parsedArgs = { raw: toolCall.arguments };
             }
 
-            const toolUse: ToolUse = {
-                type: 'tool_use',
-                name: toolCall.name,
-                id: toolCall.id,
-                params: parsedArgs,
-                nativeArgs: parsedArgs,
-            };
-
-            toolUseBlocks.push(toolUse);
-        }
-
-        this.messageState.assistantMessageContent = toolUseBlocks;
-    }
-
-    /**
-     * Add assistant message to conversation history
-     */
-    private addAssistantMessageToHistory(reasoning?: string): void {
-        const assistantContent: Array<
-            Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
-        > = [];
-
-        // Add text content if present
-        const textBlocks = this.messageState.assistantMessageContent.filter(
-            (block: AssistantMessageContent) => block.type === 'text',
-        );
-
-        for (const textBlock of textBlocks) {
-            assistantContent.push({
-                type: 'text' as const,
-                text: textBlock.content || '',
-            });
-        }
-
-        // Add tool use blocks
-        const toolUseBlocks = this.messageState.assistantMessageContent.filter(
-            (block: AssistantMessageContent) => block.type === 'tool_use',
-        );
-
-        for (const block of toolUseBlocks) {
-            const toolUse = block as ToolUse;
-            const input = toolUse.nativeArgs || toolUse.params;
-
-            // Use the tool call ID that was stored during executeToolCalls
-            const toolCallId = toolUse.id || crypto.randomUUID();
-
-            assistantContent.push({
+            content.push({
                 type: 'tool_use' as const,
-                id: toolCallId,
-                name: toolUse.name,
-                input,
+                id: toolCall.id,
+                name: toolCall.name,
+                input: parsedArgs,
             });
         }
 
-        // Add to MemoryModule
-        const message: ApiMessage = {
+        return {
             role: 'assistant',
-            content: assistantContent,
+            content,
+            ts: Date.now(),
         };
-
-        if (reasoning) {
-            const reasoningBlock: ThinkingBlock = {
-                type: 'thinking',
-                thinking: reasoning,
-            };
-            message.content = [reasoningBlock, ...message.content];
-        }
-
-        this.memoryModule.addAssistantMessage(message.content);
     }
+
+
 
     /**
      * Add a system message to conversation history
@@ -596,7 +515,8 @@ export class Agent {
      * @deprecated Use memoryModule.addSystemMessage() directly
      */
     addSystemMessageToHistory(message: string): void {
-        this.memoryModule.addSystemMessage(message);
+        const apiMessage = MessageBuilder.system(message);
+        this.memoryModule.addMessage(apiMessage);
     }
 
     // ==================== Tool Execution ====================

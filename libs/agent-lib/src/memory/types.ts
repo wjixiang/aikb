@@ -77,19 +77,9 @@ export interface IMemoryModule {
     performThinkingPhase(workspaceContext: string, toolResults?: ToolCallResult[]): Promise<ThinkingPhaseResult>;
 
     /**
-     * Add user message to current turn
+     * Add message to current turn
      */
-    addUserMessage(content: string | ExtendedContentBlock[]): ApiMessage;
-
-    /**
-     * Add assistant message to current turn
-     */
-    addAssistantMessage(content: string | ExtendedContentBlock[]): ApiMessage;
-
-    /**
-     * Add system message to current turn
-     */
-    addSystemMessage(message: string): ApiMessage;
+    addMessage(message: ApiMessage): ApiMessage;
 
     /**
      * Get all historical messages (flattened from all turns)

@@ -3,6 +3,7 @@ import { MemoryModule } from '../MemoryModule';
 import { ApiClient, ApiResponse } from '../../api-client';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import { Logger } from 'pino';
+import { MessageBuilder } from '../../task/task.type';
 
 class MockClient implements ApiClient {
     async makeRequest(): Promise<ApiResponse> {
@@ -33,13 +34,13 @@ describe('Workspace Context Retrieval', () => {
 
         // Create 2 turns with different contexts
         memoryModule.startTurn('Initial workspace: empty project');
-        memoryModule.addUserMessage('Create a file');
-        memoryModule.addAssistantMessage([{ type: 'text', text: 'Created file.txt' }]);
+        memoryModule.addMessage(MessageBuilder.user('Create a file'));
+        memoryModule.addMessage(MessageBuilder.assistant('Created file.txt'));
         memoryModule.completeTurn();
 
         memoryModule.startTurn('Updated workspace: file.txt exists');
-        memoryModule.addUserMessage('Add content to file');
-        memoryModule.addAssistantMessage([{ type: 'text', text: 'Added content' }]);
+        memoryModule.addMessage(MessageBuilder.user('Add content to file'));
+        memoryModule.addMessage(MessageBuilder.assistant('Added content'));
         memoryModule.completeTurn();
 
         console.log('\n=== Using getAllMessages() ===');
@@ -77,8 +78,8 @@ describe('Workspace Context Retrieval', () => {
 
         // Create a turn
         memoryModule.startTurn('Context: empty directory');
-        memoryModule.addUserMessage('List files');
-        memoryModule.addAssistantMessage([{ type: 'text', text: 'No files found' }]);
+        memoryModule.addMessage(MessageBuilder.user('List files'));
+        memoryModule.addMessage(MessageBuilder.assistant('No files found'));
         memoryModule.completeTurn();
 
         // Wrong way: only messages, no context

@@ -3,11 +3,7 @@
  * Extracted from core/assistant-message/index.ts
  */
 
-export interface AssistantMessageContent {
-  type: 'text' | 'tool_use';
-  content?: string;
-  partial?: boolean;
-}
+
 
 export interface TextContent {
   type: 'text';

@@ -12,7 +12,7 @@ import {
     border,
     BoxBorders,
     BoxBorderChars
-} from '../types';
+} from '../types.js';
 
 /**
  * Abstract base class for all TUI elements
@@ -23,8 +23,8 @@ export abstract class TUIElement {
     /** Default terminal width when no width is specified */
     protected static readonly DEFAULT_TERMINAL_WIDTH = 120;
 
-    constructor(metadata: ElementMetadata, children?: TUIElement[]) {
-        this.metadata = metadata;
+    constructor(metadata?: ElementMetadata, children?: TUIElement[]) {
+        this.metadata = metadata || {};
         this.children = children || [];
     }
 

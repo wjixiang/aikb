@@ -11,6 +11,8 @@ import type { Skill } from '../types.js';
 import paperAnalysisSkill from './paper-analysis.skill.js';
 import metaAnalysisArticleRetrievalSkill from './meta-analysis-article-retrieval.skill.js';
 import picoExtractionSkill from './pico-extraction.skill.js';
+import prismaChecklistSkill from './prisma-checklist.skill.js';
+import prismaFlowDiagramSkill from './prisma-flow-diagram.skill.js';
 
 /**
  * All built-in skills
@@ -20,6 +22,8 @@ export const builtinSkills: Skill[] = [
     // paperAnalysisSkill,
     metaAnalysisArticleRetrievalSkill,
     picoExtractionSkill,
+    prismaChecklistSkill,
+    prismaFlowDiagramSkill,
 ];
 
 /**

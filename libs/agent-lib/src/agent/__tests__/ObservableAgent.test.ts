@@ -8,7 +8,10 @@ import {
 } from '../ObservableAgent.js';
 import { TaskStatus } from '../../task/task.type.js';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
-import { ApiClientFactory } from '../../api-client/index.js';
+import { OpenaiCompatibleApiClient } from '../../api-client/OpenaiCompatibleApiClient.js';
+import { MemoryModule } from '../../memory/MemoryModule.js';
+import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
+import type { Logger } from 'pino';
 
 // Mock VirtualWorkspace
 vi.mock('statefulContext', () => ({
@@ -19,13 +22,31 @@ vi.mock('statefulContext', () => ({
     },
 }));
 
+// Mock Logger
+const mockLogger: Logger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    silent: vi.fn(),
+    child: vi.fn(() => mockLogger as any),
+} as any;
+
 // Helper function to create a mock API client
 function createMockApiClient() {
-    return ApiClientFactory.create({
-        apiProvider: 'openai',
+    return new OpenaiCompatibleApiClient({
         apiKey: 'test-key',
-        apiModelId: 'gpt-4',
+        model: 'gpt-4',
+        enableLogging: false,
     });
+}
+
+// Helper function to create a mock MemoryModule
+function createMockMemoryModule(apiClient: ReturnType<typeof createMockApiClient>) {
+    const turnStore = new TurnMemoryStore();
+    return new MemoryModule(apiClient, mockLogger, {}, turnStore);
 }
 
 describe('ObservableAgent', () => {
@@ -35,11 +56,13 @@ describe('ObservableAgent', () => {
     beforeEach(() => {
         mockWorkspace = new VirtualWorkspace({ id: 'test-workspace' } as any);
         const apiClient = createMockApiClient();
+        const memoryModule = createMockMemoryModule(apiClient);
         agent = new Agent(
             defaultAgentConfig,
             mockWorkspace,
             { capability: 'test', direction: 'test' },
-            apiClient
+            apiClient,
+            memoryModule
         );
     });
 
@@ -204,11 +227,13 @@ describe('ObservableAgent', () => {
             };
 
             // Create an agent that will throw
+            const errorApiClient = createMockApiClient();
             const errorAgent = new Agent(
                 defaultAgentConfig,
                 new VirtualWorkspace({ id: 'error-workspace' } as any),
                 { capability: 'test', direction: 'test' },
-                createMockApiClient()
+                errorApiClient,
+                createMockMemoryModule(errorApiClient)
             ) as any;
             errorAgent.throwError = () => {
                 throw new Error('Test error');

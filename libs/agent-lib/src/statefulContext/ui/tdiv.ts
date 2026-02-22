@@ -39,7 +39,7 @@ export class tdiv extends TUIElement {
     /**
      * Render the tdiv element with a specified available width
      */
-    renderWithWidth(availableWidth: number | undefined): string {
+    override renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
         // console.debug(styles)
         const content = this.metadata.content;
@@ -140,7 +140,7 @@ export class tdiv extends TUIElement {
     /**
      * Calculate content dimensions considering children
      */
-    protected calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
         const content = this.metadata.content;
         const finalContent = content ?? '';
 

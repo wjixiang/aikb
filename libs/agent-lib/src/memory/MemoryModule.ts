@@ -174,55 +174,15 @@ export class MemoryModule implements IMemoryModule {
     // ==================== Message Management (through Turn) ====================
 
     /**
-     * Add user message to current turn
+     * Add message to current turn
      * @returns The added message
      */
-    addUserMessage(content: string | ExtendedContentBlock[]): ApiMessage {
+    addMessage(message: ApiMessage): ApiMessage {
         if (!this.currentTurn) {
             throw new Error('No active turn. Call startTurn() first.');
         }
-
-        const message = typeof content === 'string'
-            ? MessageBuilder.user(content)
-            : MessageBuilder.custom('user', content);
 
         this.turnStore.addMessageToTurn(this.currentTurn.id, message);
-        return message;
-    }
-
-    /**
-     * Add assistant message to current turn
-     * @returns The added message
-     */
-    addAssistantMessage(content: string | ExtendedContentBlock[]): ApiMessage {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        const message = typeof content === 'string'
-            ? MessageBuilder.assistant(content)
-            : MessageBuilder.custom('assistant', content);
-        this.turnStore.addMessageToTurn(
-            this.currentTurn.id,
-            message
-        );
-        return message;
-    }
-
-    /**
-     * Add system message to current turn
-     * @returns The added message
-     */
-    addSystemMessage(content: string): ApiMessage {
-        if (!this.currentTurn) {
-            throw new Error('No active turn. Call startTurn() first.');
-        }
-
-        const message = MessageBuilder.system(content);
-        this.turnStore.addMessageToTurn(
-            this.currentTurn.id,
-            message
-        );
         return message;
     }
 

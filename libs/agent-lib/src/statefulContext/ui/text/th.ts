@@ -38,9 +38,10 @@ export class th extends TUIElement {
     override renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
         const content = this.metadata.content;
-        const level = this.metadata.level ?? 1;
-        const underline = this.metadata.underline ?? false;
-        const textStyle = this.metadata.textStyle ?? {};
+        const thMetadata = this.metadata as thMetadata;
+        const level = thMetadata.level ?? 1;
+        const underline = thMetadata.underline ?? false;
+        const textStyle = thMetadata.textStyle ?? {};
 
         const finalContent = content ?? '';
         const styledContent = this.applyTextStyle(finalContent, textStyle);
@@ -190,7 +191,8 @@ export class th extends TUIElement {
     protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
         const content = this.metadata.content;
         const finalContent = content ?? '';
-        const underline = this.metadata.underline ?? false;
+        const thMetadata = this.metadata as thMetadata;
+        const underline = thMetadata.underline ?? false;
 
         const lines = finalContent.split('\n');
         const maxWidth = Math.max(...lines.map((line: string) => line.length));

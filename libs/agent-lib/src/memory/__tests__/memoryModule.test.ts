@@ -3,6 +3,7 @@ import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "..
 import { ThinkingRound } from "../Turn";
 import { Logger } from "pino";
 import { TurnMemoryStore } from "../TurnMemoryStore";
+import { MessageBuilder } from "../../task/task.type";
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -125,8 +126,8 @@ describe('MemoryModule', () => {
         // Start a turn first
         memoryModule.startTurn('test_workspace');
 
-        memoryModule.addUserMessage('Hello');
-        memoryModule.addAssistantMessage([{ type: 'text', text: 'Hi there' }]);
+        memoryModule.addMessage(MessageBuilder.user('Hello'));
+        memoryModule.addMessage(MessageBuilder.assistant('Hi there'));
 
         const history = memoryModule.getAllMessages();
         console.log(history)
@@ -139,7 +140,7 @@ describe('MemoryModule', () => {
         // Start a turn first
         memoryModule.startTurn('test_workspace');
 
-        memoryModule.addUserMessage('Test message');
+        memoryModule.addMessage(MessageBuilder.user('Test message'));
         expect(memoryModule.getAllMessages()).toHaveLength(1);
 
         memoryModule.clear();
@@ -186,13 +187,10 @@ describe('MemoryModule', () => {
     describe('message storage', () => {
         it.only('should store assistant messages', async () => {
             memoryModule.startTurn('turn1')
-            memoryModule.addAssistantMessage([{
-                type: 'text',
-                text: 'test assistant message',
-            }])
+            memoryModule.addMessage(MessageBuilder.assistant('test assistant message'))
 
             const result = memoryModule.getAllMessages()
-            console.log(result)
+            console.log(JSON.stringify(result, null, 2))
         })
     })
 });

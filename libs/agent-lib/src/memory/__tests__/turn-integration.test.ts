@@ -4,6 +4,7 @@ import { TurnStatus } from '../Turn';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import { Logger } from 'pino';
+import { MessageBuilder } from '../../task/task.type';
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -58,8 +59,8 @@ describe('Turn-based Memory Integration', () => {
         expect(turn.workspaceContext).toBe('initial workspace context');
 
         // Add messages
-        memoryModule.addUserMessage('Hello');
-        memoryModule.addAssistantMessage([{ type: 'text', text: 'Hi there' }]);
+        memoryModule.addMessage(MessageBuilder.user('Hello'));
+        memoryModule.addMessage(MessageBuilder.assistant('Hi there'));
 
         // Perform thinking phase
         const thinkingResult = await memoryModule.performThinkingPhase(
@@ -85,17 +86,17 @@ describe('Turn-based Memory Integration', () => {
     it('should handle multiple turns', async () => {
         // Turn 1
         memoryModule.startTurn('context 1');
-        memoryModule.addUserMessage('First message');
+        memoryModule.addMessage(MessageBuilder.user('First message'));
         memoryModule.completeTurn();
 
         // Turn 2
         memoryModule.startTurn('context 2');
-        memoryModule.addUserMessage('Second message');
+        memoryModule.addMessage(MessageBuilder.user('Second message'));
         memoryModule.completeTurn();
 
         // Turn 3
         memoryModule.startTurn('context 3');
-        memoryModule.addUserMessage('Third message');
+        memoryModule.addMessage(MessageBuilder.user('Third message'));
         memoryModule.completeTurn();
 
         // Verify all turns
@@ -118,15 +119,15 @@ describe('Turn-based Memory Integration', () => {
     it('should recall messages from specific turns', () => {
         // Create 3 turns with messages
         memoryModule.startTurn('context 1');
-        memoryModule.addUserMessage('Message in turn 1');
+        memoryModule.addMessage(MessageBuilder.user('Message in turn 1'));
         memoryModule.completeTurn();
 
         memoryModule.startTurn('context 2');
-        memoryModule.addUserMessage('Message in turn 2');
+        memoryModule.addMessage(MessageBuilder.user('Message in turn 2'));
         memoryModule.completeTurn();
 
         memoryModule.startTurn('context 3');
-        memoryModule.addUserMessage('Message in turn 3');
+        memoryModule.addMessage(MessageBuilder.user('Message in turn 3'));
         memoryModule.completeTurn();
 
         // Recall turn 1 and 3
@@ -143,7 +144,7 @@ describe('Turn-based Memory Integration', () => {
     it('should auto-complete previous turn when starting new turn', () => {
         // Start turn 1 but don't complete it
         const turn1 = memoryModule.startTurn('context 1');
-        memoryModule.addUserMessage('Message 1');
+        memoryModule.addMessage(MessageBuilder.user('Message 1'));
 
         // Start turn 2 (should auto-complete turn 1)
         const turn2 = memoryModule.startTurn('context 2');
@@ -159,12 +160,12 @@ describe('Turn-based Memory Integration', () => {
     it('should export and import turn-based memory', () => {
         // Create some turns
         memoryModule.startTurn('context 1');
-        memoryModule.addUserMessage('Message 1');
+        memoryModule.addMessage(MessageBuilder.user('Message 1'));
         memoryModule.recordToolCall('tool1', true, 'result1');
         memoryModule.completeTurn();
 
         memoryModule.startTurn('context 2');
-        memoryModule.addUserMessage('Message 2');
+        memoryModule.addMessage(MessageBuilder.user('Message 2'));
         memoryModule.completeTurn();
 
         // Export
