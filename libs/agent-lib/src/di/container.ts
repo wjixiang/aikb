@@ -6,17 +6,20 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
 import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../memory/ObservableTurnMemoryStore.js';
-import { ReflectiveThinkingProcessor } from '../memory/ReflectiveThinkingProcessor.js';
+import { ThinkingModule } from '../thinking/ThinkingModule.js';
+import { defaultThinkingConfig } from '../thinking/types.js';
 import { SkillManager } from '../skills/SkillManager.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
-import type { MemoryModuleConfig } from '../memory/MemoryModule.js';
+import type { MemoryModuleConfig } from '../memory/types.js';
+import type { ThinkingModuleConfig } from '../thinking/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
+import type { IThinkingModule } from '../thinking/types.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import pino from 'pino';
@@ -165,12 +168,14 @@ export class AgentContainer {
         this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
         this.container.bind(TYPES.TurnMemoryStore).to(TurnMemoryStore).inRequestScope();
         this.container
-            .bind(TYPES.ReflectiveThinkingProcessor)
-            .to(ReflectiveThinkingProcessor)
+            .bind(TYPES.ThinkingModule)
+            .to(ThinkingModule)
             .inRequestScope();
 
-        // ContextMemoryStore for ReflectiveThinkingProcessor
-        // Note: This is created internally by ReflectiveThinkingProcessor if not injected
+        // ThinkingModule configuration
+        this.container
+            .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
+            .toConstantValue(defaultThinkingConfig);
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         this.container.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
@@ -388,9 +393,14 @@ export class AgentContainer {
         }
 
         agentContainer
-            .bind(TYPES.ReflectiveThinkingProcessor)
-            .to(ReflectiveThinkingProcessor)
+            .bind(TYPES.ThinkingModule)
+            .to(ThinkingModule)
             .inRequestScope();
+
+        // ThinkingModule configuration
+        agentContainer
+            .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
+            .toConstantValue(defaultThinkingConfig);
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         agentContainer.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
