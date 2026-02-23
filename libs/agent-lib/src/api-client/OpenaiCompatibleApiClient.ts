@@ -161,6 +161,8 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                     'Request completed successfully'
                 );
 
+                this.logger.info(response)
+
                 this.lastError = null;
                 return response;
             } catch (error) {

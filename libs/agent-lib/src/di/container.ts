@@ -22,6 +22,8 @@ import type { IMemoryModule } from '../memory/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
+import { TaskModule } from '../task/TaskModule.js';
+import type { ITaskModule } from '../task/types.js';
 import pino from 'pino';
 import type { Logger, Level } from 'pino'
 
@@ -149,6 +151,10 @@ export class AgentContainer {
         this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
         this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
         this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
+
+        // Task Module
+        this.container.bind<ITaskModule>(TYPES.ITaskModule).to(TaskModule).inRequestScope();
+        this.container.bind(TYPES.TaskModule).to(TaskModule).inRequestScope();
 
         // API Client - dynamic creation based on ProviderSettings
         this.container
@@ -377,6 +383,10 @@ export class AgentContainer {
             .bind<IMemoryModule>(TYPES.IMemoryModule)
             .to(MemoryModule)
             .inRequestScope();
+
+        // Task Module
+        agentContainer.bind<ITaskModule>(TYPES.ITaskModule).to(TaskModule).inRequestScope();
+        agentContainer.bind(TYPES.TaskModule).to(TaskModule).inRequestScope();
 
         // API Client - dynamic creation based on ProviderSettings
         agentContainer.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {

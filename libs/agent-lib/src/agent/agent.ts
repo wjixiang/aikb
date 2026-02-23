@@ -27,6 +27,7 @@ import type { ThinkingPhaseResult, IThinkingModule } from '../thinking/types.js'
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
+import type { ITaskModule } from '../task/types.js';
 
 /**
  * Tool result from execution
@@ -105,6 +106,9 @@ export class Agent {
     // Thinking module (dependency injected, always present)
     private thinkingModule: IThinkingModule;
 
+    // Task module (dependency injected, always present)
+    private taskModule: ITaskModule;
+
     private agentPrompt: AgentPrompt;
 
     constructor(
@@ -114,6 +118,7 @@ export class Agent {
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
+        @inject(TYPES.ITaskModule) taskModule: ITaskModule,
         @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
         this.workspace = workspace as VirtualWorkspace;
@@ -124,6 +129,7 @@ export class Agent {
         this.apiClient = apiClient;
         this.memoryModule = memoryModule as MemoryModule;
         this.thinkingModule = thinkingModule;
+        this.taskModule = taskModule;
     }
 
     // ==================== Public API ====================
@@ -213,6 +219,13 @@ export class Agent {
      */
     public hasMemoryModule(): boolean {
         return true;
+    }
+
+    /**
+     * Get task module (always available)
+     */
+    public getTaskModule(): ITaskModule {
+        return this.taskModule;
     }
 
     // ==================== Lifecycle Methods ====================
@@ -813,12 +826,17 @@ ${direction}
             activeSkill,
         });
 
+        // Get TODO list from task module
+        const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });
+
         return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
 ${skillsSection}
 ${skillsUsageGuidance}
+
+${todoList}
         `;
     }
 }

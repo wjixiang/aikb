@@ -5,6 +5,7 @@ import { Turn, TurnStatus, ThinkingRound, ToolCallResult, TurnMemoryExport } fro
 import { ApiMessage } from '../../task/task.type'
 import { vi } from 'vitest'
 import pino from 'pino'
+import { RecallRequest } from '../types'
 
 describe('ThinkingModule', () => {
     const mockedApiClient: ApiClient = {
@@ -48,14 +49,42 @@ describe('ThinkingModule', () => {
         )
     })
 
-    it('should perform single thinking round', async () => {
+    it.only('should store thinking message of each step correctly', async () => {
         const mockedResponse: ApiResponse = {
             toolCalls: [{
-                id: 'test_id',
-                call_id: 'test_call_id',
+                id: 'continue_id',
+                call_id: 'continue_call_id',
                 type: 'function_call',
-                name: 'test_function',
-                arguments: '{"param": "value"}'
+                name: 'continue_thinking',
+                arguments: JSON.stringify({
+                    continueThinking: true,
+                    reason: 'test_reason_abc',
+                    thoughtNumber: 1,
+                    totalThoughts: 2,
+                })
+            }],
+            textResponse: 'Test response text',
+            requestTime: 100,
+            tokenUsage: {
+                promptTokens: 10,
+                completionTokens: 20,
+                totalTokens: 30
+            }
+        }
+
+        const mockedResponse2: ApiResponse = {
+            toolCalls: [{
+                id: 'continue_id',
+                call_id: 'continue_call_id',
+                type: 'function_call',
+                name: 'continue_thinking',
+                arguments: JSON.stringify({
+                    continueThinking: false,
+                    reason: 'Recall completed',
+                    thoughtNumber: 1,
+                    totalThoughts: 1,
+                    summary: 'Test summary'
+                })
             }],
             textResponse: 'Test response text',
             requestTime: 100,
@@ -67,9 +96,260 @@ describe('ThinkingModule', () => {
         }
 
         // Mock the makeRequest to return the mockedResponse
-        vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+        vi.mocked(mockedApiClient.makeRequest)
+            .mockResolvedValueOnce(mockedResponse)
+            .mockResolvedValueOnce(mockedResponse2)
+
+        const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
         const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
         console.log(thinkingResult)
+        console.log(spy.mock.calls[1])
+        expect(JSON.stringify(spy.mock.calls[1])).toContain('test_reason_abc')
+    })
+
+    describe('handleRecall', () => {
+        it('should recall turns by turn numbers', async () => {
+            // Mock turns to be returned
+            const mockTurn1: Turn = {
+                id: 'turn-1',
+                turnNumber: 1,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'context 1',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+            const mockTurn2: Turn = {
+                id: 'turn-2',
+                turnNumber: 2,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'context 2',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+
+            // Mock getTurnByNumber to return turns
+            vi.mocked(mockedTurnMemoryStore.getTurnByNumber)
+                .mockReturnValueOnce(mockTurn1)
+                .mockReturnValueOnce(mockTurn2)
+
+            // Create API response with recall_context tool call
+            const recallRequest: RecallRequest = {
+                turnNumbers: [1, 2]
+            }
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'recall_id',
+                    call_id: 'recall_call_id',
+                    type: 'function_call',
+                    name: 'recall_context',
+                    arguments: JSON.stringify(recallRequest)
+                }, {
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Recall completed',
+                        thoughtNumber: 1,
+                        totalThoughts: 1,
+                        summary: 'Test summary'
+                    })
+                }],
+                textResponse: 'Recalling previous turns',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase which will trigger handleRecall
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+            console.log(spy.mock.calls[1])
+
+            // Verify that the recalled contexts are included in the thinking rounds
+            expect(thinkingResult.rounds.length).toBeGreaterThan(0)
+            const firstRound = thinkingResult.rounds[0]
+            expect(firstRound.recalledContexts).toEqual([mockTurn1, mockTurn2])
+            expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(1)
+            expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(2)
+        })
+
+        it('should recall turns by keywords', async () => {
+            // Mock turns to be returned from search
+            const mockTurn1: Turn = {
+                id: 'turn-1',
+                turnNumber: 1,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'search result 1',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+            const mockTurn2: Turn = {
+                id: 'turn-2',
+                turnNumber: 2,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'search result 2',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+
+            // Mock searchTurns to return turns
+            vi.mocked(mockedTurnMemoryStore.searchTurns)
+                .mockReturnValueOnce([mockTurn1])
+                .mockReturnValueOnce([mockTurn2])
+
+            // Create API response with recall_context tool call using keywords
+            const recallRequest: RecallRequest = {
+                keywords: ['diabetes', 'treatment']
+            }
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'recall_id',
+                    call_id: 'recall_call_id',
+                    type: 'function_call',
+                    name: 'recall_context',
+                    arguments: JSON.stringify(recallRequest)
+                }, {
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Recall completed',
+                        thoughtNumber: 1,
+                        totalThoughts: 1,
+                        summary: 'Test summary'
+                    })
+                }],
+                textResponse: 'Searching for relevant turns',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+
+            // Perform thinking phase which will trigger handleRecall
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that the recalled contexts are included in the thinking rounds
+            expect(thinkingResult.rounds.length).toBeGreaterThan(0)
+            const firstRound = thinkingResult.rounds[0]
+            expect(firstRound.recalledContexts).toEqual([mockTurn1, mockTurn2])
+            expect(vi.mocked(mockedTurnMemoryStore.searchTurns)).toHaveBeenCalledWith('diabetes')
+            expect(vi.mocked(mockedTurnMemoryStore.searchTurns)).toHaveBeenCalledWith('treatment')
+        })
+
+        it('should handle empty recall request gracefully', async () => {
+            // Create API response with empty recall_context tool call
+            const recallRequest: RecallRequest = {}
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'recall_id',
+                    call_id: 'recall_call_id',
+                    type: 'function_call',
+                    name: 'recall_context',
+                    arguments: JSON.stringify(recallRequest)
+                }, {
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Recall completed',
+                        thoughtNumber: 1,
+                        totalThoughts: 1,
+                        summary: 'Test summary'
+                    })
+                }],
+                textResponse: 'Empty recall request',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+
+            // Perform thinking phase which will trigger handleRecall
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that no contexts are recalled
+            expect(thinkingResult.rounds.length).toBeGreaterThan(0)
+            const firstRound = thinkingResult.rounds[0]
+            expect(firstRound.recalledContexts).toEqual([])
+        })
+
+        it('should handle missing turns gracefully', async () => {
+            // Mock getTurnByNumber to return undefined (turn not found)
+            vi.mocked(mockedTurnMemoryStore.getTurnByNumber).mockReturnValue(undefined)
+
+            // Create API response with recall_context tool call for non-existent turns
+            const recallRequest: RecallRequest = {
+                turnNumbers: [999, 1000]
+            }
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'recall_id',
+                    call_id: 'recall_call_id',
+                    type: 'function_call',
+                    name: 'recall_context',
+                    arguments: JSON.stringify(recallRequest)
+                }, {
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Recall completed',
+                        thoughtNumber: 1,
+                        totalThoughts: 1,
+                        summary: 'Test summary'
+                    })
+                }],
+                textResponse: 'Recalling non-existent turns',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+
+            // Perform thinking phase which will trigger handleRecall
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that no contexts are recalled when turns are not found
+            expect(thinkingResult.rounds.length).toBeGreaterThan(0)
+            const firstRound = thinkingResult.rounds[0]
+            expect(firstRound.recalledContexts).toEqual([])
+            expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(999)
+            expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(1000)
+        })
     })
 })

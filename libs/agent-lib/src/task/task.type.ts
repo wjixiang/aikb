@@ -1,5 +1,14 @@
+/**
+ * @deprecated This file is deprecated. Please import from './index.js' instead.
+ * This file is kept for backward compatibility.
+ *
+ * New code should use:
+ * import { TaskStatus, ApiMessage, MessageBuilder } from './index.js';
+ */
+
 import Anthropic from '@anthropic-ai/sdk';
 
+// Re-export TaskStatus from the new types module
 export type TaskStatus = 'idle' | 'running' | 'completed' | 'aborted';
 
 /**

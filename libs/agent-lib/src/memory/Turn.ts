@@ -30,6 +30,7 @@ export interface ThinkingRound {
     recalledContexts: any[];
     tokens: number;
     /** Summary provided by LLM when deciding to stop thinking (continueThinking=false) */
+    reason?: string;
     summary?: string;
 
     // Sequential Thinking properties (always available, defaults to standard mode)
