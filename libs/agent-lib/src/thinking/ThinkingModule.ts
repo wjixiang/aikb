@@ -250,9 +250,10 @@ export class ThinkingModule implements IThinkingModule {
             return {
                 roundNumber,
                 content,
-                continueThinking: controlDecision?.continueThinking ?? false,
+                continueThinking: (controlDecision?.continueThinking || recallRequest !== null) ?? false,
                 recalledContexts,
                 tokens: this.estimateTokens(content),
+                reason: controlDecision?.reason,
                 summary: controlDecision?.summary,
                 // Sequential Thinking properties
                 thoughtNumber: controlDecision?.thoughtNumber ?? this.sequentialState.thoughtNumber,
@@ -269,6 +270,7 @@ export class ThinkingModule implements IThinkingModule {
             this.logger.error({ error }, 'Thinking round failed');
             return {
                 roundNumber,
+                reason: '',
                 content: 'Thinking round failed',
                 continueThinking: false,
                 recalledContexts: [],
@@ -377,10 +379,59 @@ Estimated total thoughts: ${this.sequentialState.totalThoughts}`;
             ? `\n=== TASK CONTEXT ===\nUser's Goal: ${taskContext}\n`
             : '';
 
-        // Build previous rounds display with Sequential Thinking info
+        // Build previous rounds display with all ThinkingRound properties
         const previousRoundsText = previousRounds.map(r => {
-            const sequentialInfo = `Thought ${r.thoughtNumber}/${r.totalThoughts}${r.isRevision ? ` (revises thought ${r.revisesThought})` : ''}${r.branchId ? ` (branch: ${r.branchId})` : ''}${r.hypothesis ? ` [Hypothesis: ${r.hypothesis.substring(0, 50)}...]` : ''}`;
-            return `Round ${r.roundNumber} [${sequentialInfo}]: ${r.content}`;
+            const parts: string[] = [];
+
+            // Basic round info
+            parts.push(`## Round ${r.roundNumber}`);
+
+            // Sequential Thinking info
+            const sequentialParts: string[] = [];
+            sequentialParts.push(`Thought ${r.thoughtNumber}/${r.totalThoughts}`);
+            if (r.isRevision) {
+                sequentialParts.push(`(revises thought ${r.revisesThought})`);
+            }
+            if (r.branchId) {
+                sequentialParts.push(`(branch: ${r.branchId})`);
+                if (r.branchFromThought !== undefined) {
+                    sequentialParts.push(`from thought ${r.branchFromThought}`);
+                }
+            }
+            if (r.hypothesis) {
+                sequentialParts.push(`[Hypothesis: ${r.hypothesis.substring(0, 50)}...]`);
+            }
+            if (r.hypothesisVerified !== undefined) {
+                sequentialParts.push(`[Verified: ${r.hypothesisVerified}]`);
+            }
+            if (r.needsMoreThoughts) {
+                sequentialParts.push(`[Needs more thoughts]`);
+            }
+            parts.push(`[${sequentialParts.join(' ')}]`);
+
+            // Content and reasoning
+            parts.push(`- Log: ${r.content}`);
+            if (r.reason) {
+                parts.push(`- Reasoning: ${r.reason}`);
+            }
+
+            // Control decision
+            parts.push(`- Continue Thinking: ${r.continueThinking}`);
+
+            // Summary (if provided)
+            if (r.summary) {
+                parts.push(`- Summary: ${r.summary}`);
+            }
+
+            // Recalled contexts
+            if (r.recalledContexts && r.recalledContexts.length > 0) {
+                parts.push(`- Recalled Contexts: ${r.recalledContexts.length} items`);
+            }
+
+            // Token usage
+            parts.push(`- Tokens: ${r.tokens}`);
+
+            return parts.join('\n');
         }).join('\n\n');
 
         const context = `${taskContextSection}
