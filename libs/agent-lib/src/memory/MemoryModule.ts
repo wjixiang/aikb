@@ -11,7 +11,7 @@
 
 import { injectable, inject, optional } from 'inversify';
 import { ApiMessage, ExtendedContentBlock, MessageBuilder } from '../task/task.type.js';
-import { TurnMemoryStore } from './TurnMemoryStore.js';
+import type { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
@@ -37,7 +37,7 @@ export const defaultMemoryConfig: MemoryModuleConfig = {
 @injectable()
 export class MemoryModule implements IMemoryModule {
     private config: MemoryModuleConfig;
-    private turnStore: TurnMemoryStore;
+    private turnStore: ITurnMemoryStore;
     private thinkingModule: IThinkingModule;
 
     // Current active turn
@@ -49,7 +49,7 @@ export class MemoryModule implements IMemoryModule {
     constructor(
         @inject(TYPES.Logger) private logger: Logger,
         @inject(TYPES.MemoryModuleConfig) @optional() config: Partial<MemoryModuleConfig> = {},
-        @inject(TYPES.TurnMemoryStore) turnStore: TurnMemoryStore,
+        @inject(TYPES.ITurnMemoryStore) turnStore: ITurnMemoryStore,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
     ) {
         this.config = { ...defaultMemoryConfig, ...config };
@@ -60,7 +60,7 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Get the turn store
      */
-    getTurnStore(): TurnMemoryStore {
+    getTurnStore(): ITurnMemoryStore {
         return this.turnStore;
     }
 

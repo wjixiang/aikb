@@ -18,6 +18,7 @@
  */
 
 import { TurnMemoryStore } from './TurnMemoryStore.js';
+import { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult, TurnMemoryExport } from './Turn.js';
 import { ApiMessage } from '../task/task.type.js';
 
@@ -44,7 +45,7 @@ export interface TurnStoreObserverCallbacks {
 export function createObservableTurnMemoryStore(
     store: TurnMemoryStore,
     callbacks: TurnStoreObserverCallbacks
-): TurnMemoryStore {
+): ITurnMemoryStore {
     return new Proxy(store, {
         get(target, prop, receiver) {
             const value = Reflect.get(target, prop, receiver);
@@ -172,7 +173,7 @@ export class ObservableTurnMemoryStoreFactory {
         return this;
     }
 
-    create(store: TurnMemoryStore): TurnMemoryStore {
+    create(store: TurnMemoryStore): ITurnMemoryStore {
         return createObservableTurnMemoryStore(store, this.callbacks);
     }
 }

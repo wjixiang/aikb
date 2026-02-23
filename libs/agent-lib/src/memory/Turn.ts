@@ -21,6 +21,7 @@ export enum TurnStatus {
 
 /**
  * Thinking round in a turn
+ * Now supports Sequential Thinking mode with enhanced tracking
  */
 export interface ThinkingRound {
     roundNumber: number;
@@ -30,6 +31,26 @@ export interface ThinkingRound {
     tokens: number;
     /** Summary provided by LLM when deciding to stop thinking (continueThinking=false) */
     summary?: string;
+
+    // Sequential Thinking properties (always available, defaults to standard mode)
+    /** Current thought number in sequence */
+    thoughtNumber: number;
+    /** Estimated total thoughts needed */
+    totalThoughts: number;
+    /** Whether this thought revises previous thinking */
+    isRevision?: boolean;
+    /** Which thought number is being reconsidered */
+    revisesThought?: number;
+    /** Branching point thought number */
+    branchFromThought?: number;
+    /** Branch identifier */
+    branchId?: string;
+    /** If more thoughts are needed at the end */
+    needsMoreThoughts?: boolean;
+    /** Hypothesis generated (if any) */
+    hypothesis?: string;
+    /** Hypothesis verification result (if any) */
+    hypothesisVerified?: boolean;
 }
 
 /**

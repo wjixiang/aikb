@@ -14,9 +14,10 @@ import {
     ThinkingRound,
     ToolCallResult
 } from './Turn.js';
+import { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 
 @injectable()
-export class TurnMemoryStore {
+export class TurnMemoryStore implements ITurnMemoryStore {
     private turns: Map<string, Turn> = new Map();
     private turnNumberToId: Map<number, string> = new Map();
     private currentTurnNumber: number = 0;

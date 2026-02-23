@@ -166,7 +166,12 @@ export class AgentContainer {
 
         // Memory module and its dependencies
         this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
-        this.container.bind(TYPES.TurnMemoryStore).to(TurnMemoryStore).inRequestScope();
+        this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
+        this.container.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
+        this.container
+            .bind<IThinkingModule>(TYPES.IThinkingModule)
+            .to(ThinkingModule)
+            .inRequestScope();
         this.container
             .bind(TYPES.ThinkingModule)
             .to(ThinkingModule)
@@ -384,14 +389,18 @@ export class AgentContainer {
 
         // TurnMemoryStore - wrap with observer if turn-level callbacks are provided
         if (options.observers && hasTurnLevelCallbacks(options.observers)) {
-            agentContainer.bind(TYPES.TurnMemoryStore).toDynamicValue(() => {
+            agentContainer.bind(TYPES.ITurnMemoryStore).toDynamicValue(() => {
                 const baseStore = new TurnMemoryStore();
                 return createObservableTurnMemoryStore(baseStore, extractTurnCallbacks(options.observers!));
             }).inRequestScope();
         } else {
-            agentContainer.bind(TYPES.TurnMemoryStore).to(TurnMemoryStore).inRequestScope();
+            agentContainer.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
         }
 
+        agentContainer
+            .bind<IThinkingModule>(TYPES.IThinkingModule)
+            .to(ThinkingModule)
+            .inRequestScope();
         agentContainer
             .bind(TYPES.ThinkingModule)
             .to(ThinkingModule)

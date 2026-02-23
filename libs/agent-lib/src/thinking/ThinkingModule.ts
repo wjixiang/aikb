@@ -23,28 +23,43 @@ import {
     RecallRequest,
     defaultThinkingConfig,
 } from './types.js';
-import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
+import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
 
 /**
- * ThinkingModule - Implements thinking phase logic
+ * ThinkingModule - Implements thinking phase logic with Sequential Thinking support
  */
 @injectable()
 export class ThinkingModule implements IThinkingModule {
     private config: ThinkingModuleConfig;
     private apiClient: ApiClient;
     private logger: Logger;
-    private turnMemoryStore: TurnMemoryStore;
+    private turnMemoryStore: ITurnMemoryStore;
+
+    // Sequential Thinking state tracking
+    private sequentialState: {
+        thoughtNumber: number;
+        totalThoughts: number;
+        branches: Map<string, number[]>;
+        activeBranchId?: string;
+    };
 
     constructor(
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.Logger) logger: Logger,
         @inject(TYPES.ThinkingModuleConfig) @optional() config: Partial<ThinkingModuleConfig> = {},
-        @inject(TYPES.TurnMemoryStore) turnMemoryStore: TurnMemoryStore
+        @inject(TYPES.ITurnMemoryStore) turnMemoryStore: ITurnMemoryStore
     ) {
         this.config = { ...defaultThinkingConfig, ...config };
         this.apiClient = apiClient;
         this.logger = logger;
         this.turnMemoryStore = turnMemoryStore;
+
+        // Initialize Sequential Thinking state
+        this.sequentialState = {
+            thoughtNumber: 1,
+            totalThoughts: this.config.maxThinkingRounds,
+            branches: new Map(),
+        };
     }
 
     /**
@@ -62,8 +77,20 @@ export class ThinkingModule implements IThinkingModule {
     }
 
     /**
+     * Reset sequential thinking state for a new thinking phase
+     */
+    private resetSequentialState(): void {
+        this.sequentialState = {
+            thoughtNumber: 1,
+            totalThoughts: this.config.maxThinkingRounds,
+            branches: new Map(),
+        };
+    }
+
+    /**
      * Perform thinking phase
      * Always performs reflective thinking - LLM controls rounds via continue_thinking tool
+     * Now supports Sequential Thinking mode with enhanced tracking
      */
     async performThinkingPhase(
         workspaceContext: string,
@@ -71,6 +98,9 @@ export class ThinkingModule implements IThinkingModule {
         previousRounds: ThinkingRound[] = [],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult> {
+        // Reset sequential state for new thinking phase
+        this.resetSequentialState();
+
         // Get accumulated summaries from TurnMemoryStore
         const accumulatedSummaries = this.buildAccumulatedSummaries();
 
@@ -98,6 +128,9 @@ export class ThinkingModule implements IThinkingModule {
             rounds.push(round);
             totalTokens += round.tokens;
             continueThinking = round.continueThinking;
+
+            // Update sequential state based on round results
+            this.updateSequentialState(round);
         }
 
         // Extract summary from the last thinking round (if provided by LLM)
@@ -124,6 +157,56 @@ export class ThinkingModule implements IThinkingModule {
             tokensUsed: totalTokens,
             shouldProceedToAction: true,
             summary,
+        };
+    }
+
+    /**
+     * Update sequential thinking state based on round results
+     */
+    private updateSequentialState(round: ThinkingRound): void {
+        // Update thought number
+        this.sequentialState.thoughtNumber = round.thoughtNumber;
+
+        // Update total thoughts estimate
+        if (round.totalThoughts > 0) {
+            this.sequentialState.totalThoughts = round.totalThoughts;
+        }
+
+        // Handle branching
+        if (round.branchId && round.branchFromThought) {
+            if (!this.sequentialState.branches.has(round.branchId)) {
+                this.sequentialState.branches.set(round.branchId, []);
+            }
+            this.sequentialState.branches.get(round.branchId)!.push(round.thoughtNumber);
+            this.sequentialState.activeBranchId = round.branchId;
+        }
+    }
+
+    /**
+     * Perform sequential thinking phase
+     * Enhanced thinking mode with hypothesis generation and verification
+     */
+    async performSequentialThinkingPhase(
+        workspaceContext: string,
+        taskContext?: string,
+        initialState?: any
+    ): Promise<ThinkingPhaseResult & { sequentialState: any }> {
+        // Reset or initialize sequential state
+        if (initialState) {
+            this.sequentialState = initialState;
+        } else {
+            this.resetSequentialState();
+        }
+
+        // Perform thinking phase with sequential mode enabled
+        const result = await this.performThinkingPhase(
+            workspaceContext,
+            taskContext
+        );
+
+        return {
+            ...result,
+            sequentialState: { ...this.sequentialState },
         };
     }
 
@@ -171,6 +254,16 @@ export class ThinkingModule implements IThinkingModule {
                 recalledContexts,
                 tokens: this.estimateTokens(content),
                 summary: controlDecision?.summary,
+                // Sequential Thinking properties
+                thoughtNumber: controlDecision?.thoughtNumber ?? this.sequentialState.thoughtNumber,
+                totalThoughts: controlDecision?.totalThoughts ?? this.sequentialState.totalThoughts,
+                isRevision: controlDecision?.isRevision,
+                revisesThought: controlDecision?.revisesThought,
+                branchFromThought: controlDecision?.branchFromThought,
+                branchId: controlDecision?.branchId,
+                needsMoreThoughts: controlDecision?.needsMoreThoughts,
+                hypothesis: controlDecision?.hypothesis,
+                hypothesisVerified: controlDecision?.hypothesisVerified,
             };
         } catch (error) {
             this.logger.error({ error }, 'Thinking round failed');
@@ -180,12 +273,15 @@ export class ThinkingModule implements IThinkingModule {
                 continueThinking: false,
                 recalledContexts: [],
                 tokens: 0,
+                thoughtNumber: this.sequentialState.thoughtNumber,
+                totalThoughts: this.sequentialState.totalThoughts,
             };
         }
     }
 
     /**
      * Build thinking prompt
+     * Now includes Sequential Thinking guidance
      */
     private buildThinkingPrompt(
         roundNumber: number,
@@ -197,7 +293,7 @@ export class ThinkingModule implements IThinkingModule {
         const tools = this.buildThinkingTools();
         const toolsText = formatChatCompletionTools(tools);
 
-        const systemPrompt = `You are in the THINKING phase to plan and self-reflex.
+        const systemPrompt = `You are in the THINKING phase to plan and self-reflex using Sequential Thinking methodology.
 
 Your task is to:
 1. Understand the user's overall task/goal
@@ -207,6 +303,31 @@ Your task is to:
 5. Decide whether to continue thinking or proceed to action
 6. Optionally recall historical contexts if needed
 
+🧠 SEQUENTIAL THINKING MODE 🧠
+You are using Sequential Thinking - a dynamic and reflective problem-solving approach.
+
+Key Principles:
+- Break down complex problems into manageable steps
+- Each thought can build on, question, or revise previous insights
+- You can adjust your estimate of total thoughts as you progress
+- Generate and verify hypotheses before reaching conclusions
+- Feel free to branch into alternative approaches
+- Express uncertainty when present
+- Don't hesitate to add more thoughts even when you think you're done
+
+Sequential Thinking Process:
+1. Start with an initial estimate of thoughts needed (thoughtNumber=1, totalThoughts=N)
+2. For each thought:
+   - Provide your current thinking step
+   - Update thoughtNumber (incrementing)
+   - Adjust totalThoughts if needed (can increase or decrease)
+   - Mark if this is a revision (isRevision=true, revisesThought=N)
+   - Note if branching (branchFromThought=N, branchId="branch-name")
+   - Generate hypotheses when appropriate
+   - Verify hypotheses based on accumulated reasoning
+3. Continue until satisfied with the solution
+4. When done, provide a comprehensive summary
+
 You have access to these tools:
 
 ${toolsText}
@@ -215,11 +336,12 @@ ${toolsText}
 You MUST provide your thinking as TEXT FIRST, before calling any tools.
 Format your response as:
 1. Write your thinking/reasoning in plain text (this will be stored as the thinking content)
-2. Then call the continue_thinking tool with your decision
+2. Then call the continue_thinking tool with your decision and Sequential Thinking parameters
 
 Example format:
-"I need to analyze this clinical question. The P is adult patients with type 2 diabetes mellitus. Let me evaluate the available skills..."
-[Then call continue_thinking tool]
+"Thought 1: I need to analyze this clinical question. The P is adult patients with type 2 diabetes mellitus.
+Let me evaluate the available skills... I estimate I'll need about 5 thoughts to complete this analysis."
+[Then call continue_thinking with thoughtNumber=1, totalThoughts=5]
 
 Think deeply about:
 - What the user wants to accomplish (the overall goal)
@@ -228,6 +350,7 @@ Think deeply about:
 - What information is missing
 - Whether you need to recall any historical context
 - Whether you have enough understanding to take action
+- What hypotheses can be formed and how to verify them
 
 ⚡ SKILL SWITCHING GUIDANCE ⚡
 Before proceeding to action, CONSIDER if activating a specialized skill would improve task execution:
@@ -245,12 +368,20 @@ IMPORTANT: When you decide to STOP thinking (continue_thinking with continueThin
 you MUST provide a detailed summary in the same tool call. This summary will be stored as
 the official record of this thinking phase.
 
-Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}`;
+Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}
+Current thought number: ${this.sequentialState.thoughtNumber}
+Estimated total thoughts: ${this.sequentialState.totalThoughts}`;
 
         // Get task context if available
         const taskContextSection = taskContext
             ? `\n=== TASK CONTEXT ===\nUser's Goal: ${taskContext}\n`
             : '';
+
+        // Build previous rounds display with Sequential Thinking info
+        const previousRoundsText = previousRounds.map(r => {
+            const sequentialInfo = `Thought ${r.thoughtNumber}/${r.totalThoughts}${r.isRevision ? ` (revises thought ${r.revisesThought})` : ''}${r.branchId ? ` (branch: ${r.branchId})` : ''}${r.hypothesis ? ` [Hypothesis: ${r.hypothesis.substring(0, 50)}...]` : ''}`;
+            return `Round ${r.roundNumber} [${sequentialInfo}]: ${r.content}`;
+        }).join('\n\n');
 
         const context = `${taskContextSection}
 === WORKSPACE CONTEXT ===
@@ -259,7 +390,7 @@ ${workspaceContext}
 ${accumulatedSummaries}
 
 === PREVIOUS THINKING ROUNDS ===
-${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
+${previousRoundsText || 'None yet'}
 `;
 
         // Get conversation history from TurnMemoryStore
@@ -278,6 +409,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 
     /**
      * Build thinking tools
+     * Now supports Sequential Thinking mode with enhanced parameters
      */
     private buildThinkingTools(): ChatCompletionTool[] {
         return [
@@ -285,7 +417,51 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                 type: 'function',
                 function: {
                     name: 'continue_thinking',
-                    description: 'Decide whether to continue thinking or proceed to action phase. IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST provide a detailed summary. Consider whether activating a specialized skill would benefit the task before stopping.',
+                    description: `A detailed tool for dynamic and reflective problem-solving through thoughts.
+This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
+Each thought can build on, question, or revise previous insights as understanding deepens.
+
+When to use this tool:
+- Breaking down complex problems into steps
+- Planning and design with room for revision
+- Analysis that might need course correction
+- Problems where the full scope might not be clear initially
+- Problems that require a multi-step solution
+- Tasks that need to maintain context over multiple steps
+- Situations where irrelevant information needs to be filtered out
+
+Key features:
+- You can adjust total_thoughts up or down as you progress
+- You can question or revise previous thoughts
+- You can add more thoughts even after reaching what seemed like the end
+- You can express uncertainty and explore alternative approaches
+- Not every thought needs to build linearly - you can branch or backtrack
+- Generates a solution hypothesis
+- Verifies the hypothesis based on the Chain of Thought steps
+- Repeats the process until satisfied
+- Provides a correct answer
+
+Parameters explained:
+- thought: Your current thinking step, which can include:
+  * Regular analytical steps
+  * Revisions of previous thoughts
+  * Questions about previous decisions
+  * Realizations about needing more analysis
+  * Changes in approach
+  * Hypothesis generation
+  * Hypothesis verification
+- nextThoughtNeeded: True if you need more thinking, even if at what seemed like the end
+- thoughtNumber: Current number in sequence (can go beyond initial total if needed)
+- totalThoughts: Current estimate of thoughts needed (can be adjusted up/down)
+- isRevision: A boolean indicating if this thought revises previous thinking
+- revisesThought: If is_revision is true, which thought number is being reconsidered
+- branchFromThought: If branching, which thought number is the branching point
+- branchId: Identifier for the current branch (if any)
+- needsMoreThoughts: If reaching end but realizing more thoughts needed
+- hypothesis: A solution hypothesis generated during thinking
+- hypothesisVerified: Whether the hypothesis has been verified
+
+IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST provide a detailed summary.`,
                     parameters: {
                         type: 'object',
                         properties: {
@@ -297,6 +473,42 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                                 type: 'string',
                                 description: 'Reason for the decision. If stopping to switch skills, mention which skill and why.',
                             },
+                            thoughtNumber: {
+                                type: 'number',
+                                description: 'Current thought number (numeric value, e.g., 1, 2, 3)',
+                            },
+                            totalThoughts: {
+                                type: 'number',
+                                description: 'Estimated total thoughts needed (numeric value, e.g., 5, 10)',
+                            },
+                            isRevision: {
+                                type: 'boolean',
+                                description: 'Whether this thought revises previous thinking',
+                            },
+                            revisesThought: {
+                                type: 'number',
+                                description: 'Which thought number is being reconsidered',
+                            },
+                            branchFromThought: {
+                                type: 'number',
+                                description: 'Branching point thought number',
+                            },
+                            branchId: {
+                                type: 'string',
+                                description: 'Branch identifier',
+                            },
+                            needsMoreThoughts: {
+                                type: 'boolean',
+                                description: 'If more thoughts are needed at the end',
+                            },
+                            hypothesis: {
+                                type: 'string',
+                                description: 'A solution hypothesis generated during thinking',
+                            },
+                            hypothesisVerified: {
+                                type: 'boolean',
+                                description: 'Whether the hypothesis has been verified',
+                            },
                             nextFocus: {
                                 type: 'string',
                                 description: 'What to focus on in the next thinking round (if continuing). Include skill evaluation if considering a switch.',
@@ -306,7 +518,7 @@ ${previousRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
                                 description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks, recommended skill to activate (if applicable). Preserve important details like search terms, numbers, tool names, and key findings.',
                             },
                         },
-                        required: ['continueThinking', 'reason'],
+                        required: ['continueThinking', 'reason', 'thoughtNumber', 'totalThoughts'],
                     },
                 },
             },
@@ -534,8 +746,22 @@ If this turn builds upon previous turns, mention the connection and how it advan
 
     /**
      * Extract control decision from response
+     * Now supports Sequential Thinking parameters
      */
-    private extractControlDecision(response: ApiResponse): { continueThinking: boolean; reason: string; summary?: string } | null {
+    private extractControlDecision(response: ApiResponse): {
+        continueThinking: boolean;
+        reason: string;
+        summary?: string;
+        thoughtNumber?: number;
+        totalThoughts?: number;
+        isRevision?: boolean;
+        revisesThought?: number;
+        branchFromThought?: number;
+        branchId?: string;
+        needsMoreThoughts?: boolean;
+        hypothesis?: string;
+        hypothesisVerified?: boolean;
+    } | null {
         if (response.toolCalls) {
             const controlCall = response.toolCalls.find(
                 (tc: any) => tc.name === 'continue_thinking'

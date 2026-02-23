@@ -5,6 +5,16 @@
 import { Turn, ThinkingRound, ToolCallResult } from '../memory/Turn.js';
 
 /**
+ * Thinking mode types
+ */
+export enum ThinkingMode {
+    /** Standard reflective thinking mode */
+    STANDARD = 'standard',
+    /** Sequential thinking mode with hypothesis generation and verification */
+    SEQUENTIAL = 'sequential',
+}
+
+/**
  * Configuration for the thinking module
  */
 export interface ThinkingModuleConfig {
@@ -16,16 +26,19 @@ export interface ThinkingModuleConfig {
     enableSummarization: boolean;
     /** API request timeout in milliseconds (default: 40000) */
     apiRequestTimeout: number;
+    /** Thinking mode to use (standard or sequential) */
+    thinkingMode: ThinkingMode;
 }
 
 /**
  * Default configuration for ThinkingModule
  */
 export const defaultThinkingConfig: ThinkingModuleConfig = {
-    maxThinkingRounds: 3,
-    thinkingTokenBudget: 10000,
+    maxThinkingRounds: 10,
+    thinkingTokenBudget: 15000,
     enableSummarization: true,
     apiRequestTimeout: 40000,
+    thinkingMode: ThinkingMode.STANDARD,
 };
 
 /**
@@ -55,6 +68,70 @@ export interface RecallRequest {
 }
 
 /**
+ * Sequential Thinking specific types
+ */
+
+/**
+ * A single thought in the sequential thinking process
+ */
+export interface SequentialThought {
+    /** Thought content */
+    thought: string;
+    /** Current thought number */
+    thoughtNumber: number;
+    /** Estimated total thoughts */
+    totalThoughts: number;
+    /** Whether another thought is needed */
+    nextThoughtNeeded: boolean;
+    /** Whether this thought revises previous thinking */
+    isRevision?: boolean;
+    /** Which thought number is being reconsidered */
+    revisesThought?: number;
+    /** Branching point thought number */
+    branchFromThought?: number;
+    /** Branch identifier */
+    branchId?: string;
+    /** If more thoughts are needed at the end */
+    needsMoreThoughts?: boolean;
+    /** Hypothesis generated (if any) */
+    hypothesis?: string;
+    /** Hypothesis verification result (if any) */
+    hypothesisVerified?: boolean;
+}
+
+/**
+ * Sequential thinking state
+ */
+export interface SequentialThinkingState {
+    /** All thoughts in sequence */
+    thoughts: SequentialThought[];
+    /** Active branches */
+    branches: Map<string, SequentialThought[]>;
+    /** Current thought number */
+    currentThoughtNumber: number;
+    /** Current estimated total thoughts */
+    currentTotalThoughts: number;
+    /** Active branch ID */
+    activeBranchId?: string;
+}
+
+/**
+ * Hypothesis verification result
+ */
+export interface HypothesisVerification {
+    /** The hypothesis being verified */
+    hypothesis: string;
+    /** Whether the hypothesis is verified */
+    verified: boolean;
+    /** Confidence level (0-1) */
+    confidence: number;
+    /** Reasoning for verification */
+    reasoning: string;
+    /** Thoughts used for verification */
+    supportingThoughts: number[];
+}
+
+/**
  * Interface for ThinkingModule
  * Defines the contract for thinking phase management
  */
@@ -72,6 +149,18 @@ export interface IThinkingModule {
         previousRounds?: ThinkingRound[],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult>;
+
+    /**
+     * Perform sequential thinking phase
+     * @param workspaceContext - Current workspace state
+     * @param taskContext - Optional task context (user's goal)
+     * @param initialState - Optional initial state for sequential thinking
+     */
+    performSequentialThinkingPhase(
+        workspaceContext: string,
+        taskContext?: string,
+        initialState?: SequentialThinkingState
+    ): Promise<ThinkingPhaseResult & { sequentialState: SequentialThinkingState }>;
 
     /**
      * Get current configuration

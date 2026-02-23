@@ -4,6 +4,7 @@
 
 // Turn-based architecture (new)
 export { TurnMemoryStore } from './TurnMemoryStore.js';
+export type { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 export { Turn, TurnStatus, ThinkingRound as TurnThinkingRound, ToolCallResult, TurnMemoryExport } from './Turn.js';
 
 // Observable TurnMemoryStore

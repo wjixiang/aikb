@@ -4,7 +4,7 @@
 
 import { ApiMessage, ExtendedContentBlock } from '../task/task.type.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
-import { TurnMemoryStore } from './TurnMemoryStore.js';
+import { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 
 /**
  * Configuration for the memory module
@@ -63,7 +63,7 @@ export interface IMemoryModule {
     /**
      * Get the turn store
      */
-    getTurnStore(): TurnMemoryStore;
+    getTurnStore(): ITurnMemoryStore;
 
     /**
      * Get current configuration

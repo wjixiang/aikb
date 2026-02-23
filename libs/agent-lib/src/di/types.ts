@@ -84,6 +84,13 @@ export const TYPES = {
     TurnMemoryStore: Symbol('TurnMemoryStore'),
 
     /**
+     * ITurnMemoryStore interface
+     * Use this for dependency injection to enable loose coupling
+     * @scope Request - Shared within an agent creation request
+     */
+    ITurnMemoryStore: Symbol('ITurnMemoryStore'),
+
+    /**
      * ReflectiveThinkingProcessor for reflective thinking
      * @scope Request - Shared within an agent creation request
      * @deprecated Use ThinkingModule instead
