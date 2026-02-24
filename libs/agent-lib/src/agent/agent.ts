@@ -665,7 +665,6 @@ export class Agent {
 
         // Use the existing converter
         const converter = new DefaultToolCallConverter();
-
         return converter.convertTools(tools);
     }
 

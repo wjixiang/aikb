@@ -47,8 +47,42 @@ export class ToolManager implements IToolManager {
         }
 
         this.providers.set(provider.id, provider);
-        this.refreshToolsFromProvider(provider);
+
+        // IMPORTANT: Handle both sync and async getTools() properly
+        // Fire and forget for async, but for sync providers like ComponentToolProvider,
+        // we need to ensure tools are registered immediately
+        const toolsPromise = provider.getTools();
+
+        if (toolsPromise instanceof Promise) {
+            // Async provider - handle in background
+            toolsPromise.then(tools => this._registerToolsFromProvider(provider, tools))
+                .catch(error => console.error(`[ToolManager] Failed to refresh tools from provider "${provider.id}":`, error));
+        } else {
+            // Sync provider - register immediately
+            this._registerToolsFromProvider(provider, toolsPromise);
+        }
+
         this.notifyAvailabilityChange();
+    }
+
+    /**
+     * Internal method to register tools from a provider
+     * @param provider - The provider
+     * @param tools - The tools to register
+     */
+    private _registerToolsFromProvider(provider: IToolProvider, tools: any[]): void {
+        const source = this.inferSourceFromProvider(provider);
+
+        for (const tool of tools) {
+            this.toolRegistry.set(tool.toolName, {
+                tool,
+                source,
+                providerId: provider.id,
+                componentKey: this.extractComponentKey(provider.id),
+                enabled: true,
+                handler: async (params: any) => provider.executeTool(tool.toolName, params),
+            });
+        }
     }
 
     /**
@@ -72,30 +106,6 @@ export class ToolManager implements IToolManager {
         this.providers.delete(providerId);
         this.notifyAvailabilityChange();
         return true;
-    }
-
-    /**
-     * Refresh tools from a provider
-     * @param provider - The provider to refresh
-     */
-    private async refreshToolsFromProvider(provider: IToolProvider): Promise<void> {
-        try {
-            const tools = await provider.getTools();
-            const source = this.inferSourceFromProvider(provider);
-
-            for (const tool of tools) {
-                this.toolRegistry.set(tool.toolName, {
-                    tool,
-                    source,
-                    providerId: provider.id,
-                    componentKey: this.extractComponentKey(provider.id),
-                    enabled: true,
-                    handler: async (params: any) => provider.executeTool(tool.toolName, params),
-                });
-            }
-        } catch (error) {
-            console.error(`[ToolManager] Failed to refresh tools from provider "${provider.id}":`, error);
-        }
     }
 
     /**

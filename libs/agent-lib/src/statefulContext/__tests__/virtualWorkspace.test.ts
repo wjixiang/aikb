@@ -4,6 +4,7 @@ import { ToolComponent } from '../toolComponent.js';
 import { Tool } from '../types.js';
 import { tdiv } from '../ui/index.js';
 import * as z from 'zod';
+import { ToolManager } from '../../tools/index.js';
 
 // Test component implementations using ToolComponent
 class TestToolComponentA extends ToolComponent {
@@ -120,7 +121,8 @@ describe('VirtualWorkspace', () => {
             name: 'Test Workspace',
             description: 'A test workspace for unit testing'
         };
-        workspace = new VirtualWorkspace(config);
+        const toolManager = new ToolManager();
+        workspace = new VirtualWorkspace(config, toolManager);
         componentA = new TestToolComponentA();
         componentB = new TestToolComponentB();
     });
@@ -339,11 +341,12 @@ describe('VirtualWorkspace', () => {
 
 describe('Integration Tests', () => {
     it('should demonstrate complete workflow with multiple components', async () => {
+        const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'integration-test',
             name: 'Integration Test Workspace',
             description: 'Testing complete workflow'
-        });
+        }, toolManager);
 
         const componentA = new TestToolComponentA();
         const componentB = new TestToolComponentB();
@@ -376,10 +379,11 @@ describe('Integration Tests', () => {
     });
 
     it('should handle component replacement', async () => {
+        const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'replacement-test',
             name: 'Replacement Test Workspace'
-        });
+        }, toolManager);
 
         const componentA1 = new TestToolComponentA();
         const componentA2 = new TestToolComponentA();
@@ -396,10 +400,11 @@ describe('Integration Tests', () => {
     });
 
     it('should render updated component state after tool calls', async () => {
+        const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'render-test',
             name: 'Render Test Workspace'
-        });
+        }, toolManager);
 
         const componentA = new TestToolComponentA();
         workspace.registerComponent({ key: 'componentA', component: componentA });

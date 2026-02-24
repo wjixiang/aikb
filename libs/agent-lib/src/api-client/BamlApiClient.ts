@@ -33,7 +33,7 @@ export class BamlApiClient implements ApiClient {
     /**
      * Default timeout in milliseconds if not specified
      */
-    private static readonly DEFAULT_TIMEOUT = 40000;
+    private static readonly DEFAULT_TIMEOUT = 60000;
 
     /**
      * Make an API request using BAML client

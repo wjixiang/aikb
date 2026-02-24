@@ -10,7 +10,7 @@ import { getBuiltinSkills } from '../skills/builtin/index.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager, ToolRegistration as NewToolRegistration } from '../tools/index.js';
 import type { IToolStateManager } from '../tools/state/IToolStateManager.js';
-import { GlobalToolProvider, ComponentToolProvider } from '../tools/index.js';
+import { GlobalToolProvider, ComponentToolProvider, ToolManager } from '../tools/index.js';
 
 
 /**
@@ -43,8 +43,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     constructor(
         @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
-        @inject(TYPES.IToolManager) toolManager?: IToolManager,
-        @inject(TYPES.IToolStateManager) toolStateManager?: IToolStateManager,
+        @inject(TYPES.IToolManager) toolManager: IToolManager,
+        @inject(TYPES.IToolStateManager) @optional() toolStateManager?: IToolStateManager,
     ) {
         this.config = {
             id: config.id || 'default-workspace',
@@ -53,20 +53,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         };
         this.components = new Map();
 
-        // Initialize new tool management system if provided (for backward compatibility during transition)
-        this.toolManager = toolManager ?? new (class implements IToolManager {
-            registerProvider() { }
-            unregisterProvider() { return false; }
-            getAllTools() { return []; }
-            getAvailableTools() { return []; }
-            async executeTool() { throw new Error('Not implemented'); }
-            enableTool() { return false; }
-            disableTool() { return false; }
-            isToolEnabled() { return false; }
-            getToolSource() { return null; }
-            onAvailabilityChange() { return () => { }; }
-            notifyAvailabilityChange() { }
-        })();
+        // ToolManager is now required - no default instantiation
+        this.toolManager = toolManager;
 
         this.toolStateManager = toolStateManager ?? new (class implements IToolStateManager {
             getCurrentStrategy() {
@@ -91,6 +79,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.toolManager.registerProvider(this.globalToolProvider);
 
         this.initializeSkills();
+
+        // FIX: Call initializeGlobalTools() to populate legacy toolSet
+        // This ensures renderToolBox() can find global tools for rendering
+        this.initializeGlobalTools();
     }
 
     /**

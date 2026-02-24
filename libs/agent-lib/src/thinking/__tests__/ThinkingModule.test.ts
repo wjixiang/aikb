@@ -41,6 +41,9 @@ describe('ThinkingModule', () => {
     let thinkingModule: ThinkingModule
 
     beforeEach(() => {
+        // Clear all mock calls before each test
+        vi.clearAllMocks()
+
         thinkingModule = new ThinkingModule(
             mockedApiClient,
             mockedLogger,
@@ -49,7 +52,7 @@ describe('ThinkingModule', () => {
         )
     })
 
-    it.only('should store thinking message of each step correctly', async () => {
+    it('should store thinking message of each step correctly', async () => {
         const mockedResponse: ApiResponse = {
             toolCalls: [{
                 id: 'continue_id',
@@ -350,6 +353,120 @@ describe('ThinkingModule', () => {
             expect(firstRound.recalledContexts).toEqual([])
             expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(999)
             expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(1000)
+        })
+    })
+
+    describe('exit thinking phase via tool call', () => {
+        it('should exit thinking phase when continueThinking is false via tool call', async () => {
+            // Mock API response with continue_thinking tool call that has continueThinking: false
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Task analysis completed, ready to proceed to action phase',
+                        thoughtNumber: 1,
+                        totalThoughts: 1,
+                        summary: 'Analysis completed. The user wants to search for literature on diabetes treatment. Ready to proceed to action phase.'
+                    })
+                }],
+                textResponse: 'Thinking completed',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that only one API call was made (thinking phase exited after first round)
+            expect(spy).toHaveBeenCalledTimes(1)
+
+            // Verify that the thinking phase result indicates completion
+            expect(thinkingResult.shouldProceedToAction).toBe(true)
+            expect(thinkingResult.rounds.length).toBe(1)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+            expect(thinkingResult.rounds[0].reason).toBe('Task analysis completed, ready to proceed to action phase')
+            expect(thinkingResult.summary).toContain('Analysis completed')
+        })
+
+        it('should continue thinking when continueThinking is true and exit when false', async () => {
+            // Mock first response with continueThinking: true
+            const mockedResponse1: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_1',
+                    call_id: 'continue_call_id_1',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: true,
+                        reason: 'Need more analysis on skill requirements',
+                        thoughtNumber: 1,
+                        totalThoughts: 3,
+                        nextFocus: 'Evaluate available skills for literature search'
+                    })
+                }],
+                textResponse: 'Continuing analysis',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Mock second response with continueThinking: false
+            const mockedResponse2: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_2',
+                    call_id: 'continue_call_id_2',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        reason: 'Skill evaluation completed, ready to activate literature search skill',
+                        thoughtNumber: 2,
+                        totalThoughts: 3,
+                        summary: 'Completed skill evaluation. Recommend activating literature search skill for this task.'
+                    })
+                }],
+                textResponse: 'Thinking completed',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponse1)
+                .mockResolvedValueOnce(mockedResponse2)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that two API calls were made (continued thinking, then exited)
+            expect(spy).toHaveBeenCalledTimes(2)
+
+            // Verify the thinking rounds
+            expect(thinkingResult.rounds.length).toBe(2)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(true)
+            expect(thinkingResult.rounds[1].continueThinking).toBe(false)
+
+            // Verify the summary is from the last round
+            expect(thinkingResult.summary).toContain('Completed skill evaluation')
         })
     })
 })

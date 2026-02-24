@@ -128,7 +128,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 hasTools: !!tools && tools.length > 0,
                 toolCount: tools?.length ?? 0,
             },
-            'Starting request'
+            'Starting request \n'
         );
 
         // Store original inputs for error logging
@@ -151,15 +151,15 @@ export class OpenaiCompatibleApiClient implements ApiClient {
 
                 const response = await this.makeRequestInternal(requestId, messages, tools, timeout, originalInputs);
 
-                this.logger.info(
-                    {
-                        requestId,
-                        attempt: attempt + 1,
-                        requestTime: response.requestTime,
-                        tokenUsage: response.tokenUsage,
-                    },
-                    'Request completed successfully'
-                );
+                // this.logger.info(
+                //     {
+                //         requestId,
+                //         attempt: attempt + 1,
+                //         requestTime: response.requestTime,
+                //         tokenUsage: response.tokenUsage,
+                //     },
+                //     'Request completed successfully'
+                // );
 
                 this.logger.info(response)
 
