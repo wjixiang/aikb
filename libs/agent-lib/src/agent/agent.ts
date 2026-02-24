@@ -28,6 +28,7 @@ import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ITaskModule } from '../task/types.js';
+import type { IToolManager } from '../tools/IToolManager.js';
 
 /**
  * Tool result from execution
@@ -109,6 +110,9 @@ export class Agent {
     // Task module (dependency injected, always present)
     private taskModule: ITaskModule;
 
+    // Tool manager (dependency injected, obtained from workspace)
+    private toolManager: IToolManager;
+
     private agentPrompt: AgentPrompt;
 
     constructor(
@@ -130,6 +134,9 @@ export class Agent {
         this.memoryModule = memoryModule as MemoryModule;
         this.thinkingModule = thinkingModule;
         this.taskModule = taskModule;
+
+        // Get IToolManager from workspace (which has it injected)
+        this.toolManager = this.workspace.getToolManager();
     }
 
     // ==================== Public API ====================
@@ -624,11 +631,8 @@ export class Agent {
                         parsedParams = { raw: toolCall.arguments };
                     }
 
-                    // Call the tool on the VirtualWorkspace component
-                    result = await this.workspace.handleToolCall(
-                        toolCall.name,
-                        parsedParams
-                    );
+                    // Execute tool through IToolManager
+                    result = await this.toolManager.executeTool(toolCall.name, parsedParams);
                 }
 
                 userMessageContent.push({

@@ -1,22 +1,12 @@
 import { z } from 'zod';
 
-// Import Tool from statefulContext for use within this file
+// Import Tool and ToolSource from statefulContext for use within this file
 import type { Tool } from '../statefulContext/types.js';
+import { ToolSource } from '../tools/IToolProvider.js';
 
-// Re-export Tool for external use
+// Re-export Tool and ToolSource for external use (single source of truth)
 export type { Tool } from '../statefulContext/types.js';
-
-/**
- * Tool source - where a tool originates from
- */
-export enum ToolSource {
-    /** Always-available component tool */
-    COMPONENT = 'component',
-    /** Skill-scoped tool (only available when skill is active) */
-    SKILL = 'skill',
-    /** Global tool (always available) */
-    GLOBAL = 'global'
-}
+export { ToolSource } from '../tools/IToolProvider.js';
 
 /**
  * Extended tool registration with source tracking

@@ -171,4 +171,42 @@ export const TYPES = {
      * @scope Request - Shared within an agent creation request
      */
     ITaskModule: Symbol('ITaskModule'),
+
+    // ==================== Tool Management ====================
+
+    /**
+     * IToolManager - Central tool management
+     * @scope Singleton - Shared across all agents
+     */
+    IToolManager: Symbol('IToolManager'),
+
+    /**
+     * IToolProvider interface
+     * @scope Transient - New instance per registration
+     */
+    IToolProvider: Symbol('IToolProvider'),
+
+    /**
+     * IGlobalToolProvider concrete
+     * @scope Singleton - Shared across all agents
+     */
+    IGlobalToolProvider: Symbol('IGlobalToolProvider'),
+
+    /**
+     * IComponentToolProvider concrete
+     * @scope Transient - New instance per component
+     */
+    IComponentToolProvider: Symbol('IComponentToolProvider'),
+
+    /**
+     * IToolStateManager - Tool state management (skill-based)
+     * @scope Singleton - Shared across all agents
+     */
+    IToolStateManager: Symbol('IToolStateManager'),
+
+    /**
+     * IToolStateStrategy interface
+     * @scope Transient - New instance per strategy
+     */
+    IToolStateStrategy: Symbol('IToolStateStrategy'),
 } as const;

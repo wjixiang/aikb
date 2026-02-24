@@ -11,7 +11,7 @@ async function main() {
     console.log('=== SCRIPT STARTED ===');
     console.log('Timestamp:', new Date().toISOString());
 
-    const query = '请你对针对该选题进行meta分析: In adult patients with type 2 diabetes mellitus, do SGLT2 inhibitors compared to placebo or standard care reduce the incidence of major adverse cardiovascular events and hospitalization for heart failure?';
+    const query = '请你对针对该选题进行meta分析: Efficacy of mesenchymal stem cells injection for the management of knee osteoarthritis';
 
     console.log('Query:', query);
     console.log('Creating agent with article-retrieval skill...');
