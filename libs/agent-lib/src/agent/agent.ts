@@ -419,6 +419,10 @@ export class Agent {
                     () => this.isAborted(),
                 );
 
+                // IMPORTANT: Trigger workspace re-render after tool execution
+                // This ensures all components' renderImply() methods are called
+                // and the workspace state is updated for the next API request
+                await this.workspace.render();
 
                 this.memoryModule.addMessage(assistantMessage);
 
