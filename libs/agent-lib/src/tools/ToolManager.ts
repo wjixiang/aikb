@@ -14,14 +14,18 @@ import {
     ToolDisabledError,
     ProviderNotFoundError,
 } from './IToolManager.js';
+import type { Skill } from '../skills/types.js';
+import type { IToolStateStrategy, IToolStateStrategyFactory } from './state/IToolStateStrategy.js';
+import { NoSkillStrategy, ToolStateStrategyFactory } from './state/IToolStateStrategy.js';
 
 /**
  * Central tool manager implementation
- * 
+ *
  * This class is responsible for:
  * - Registering tool providers
  * - Maintaining a registry of all tools
  * - Managing tool enabled/disabled state
+ * - Managing tool state strategies (skill-based tool control)
  * - Executing tool calls
  * - Notifying subscribers of tool availability changes
  */
@@ -30,11 +34,16 @@ export class ToolManager implements IToolManager {
     private providers: Map<string, IToolProvider>;
     private toolRegistry: Map<string, ToolRegistration>;
     private availabilityCallbacks: Set<ToolAvailabilityCallback>;
+    private currentStrategy: IToolStateStrategy;
+    private strategyFactory: IToolStateStrategyFactory;
 
     constructor() {
         this.providers = new Map();
         this.toolRegistry = new Map();
         this.availabilityCallbacks = new Set();
+        // Default to no-skill strategy (all tools enabled)
+        this.currentStrategy = new NoSkillStrategy();
+        this.strategyFactory = new ToolStateStrategyFactory();
     }
 
     /**
@@ -276,5 +285,71 @@ export class ToolManager implements IToolManager {
             enabled: allTools.filter(t => t.enabled).length,
             disabled: allTools.filter(t => !t.enabled).length,
         };
+    }
+
+    // ==================== Strategy Management (merged from ToolStateManager) ====================
+
+    /**
+     * Get the current state strategy
+     * @returns The current tool state strategy
+     */
+    getCurrentStrategy(): IToolStateStrategy {
+        return this.currentStrategy;
+    }
+
+    /**
+     * Set strategy based on active skill
+     * This method replaces the separate ToolStateManager.setStrategy()
+     * @param skill - The active skill (null for no skill)
+     */
+    setStrategy(skill: Skill | null): void {
+        this.currentStrategy = this.strategyFactory.createStrategy(skill);
+        console.log(`[ToolManager] Strategy changed to: ${this.currentStrategy.strategyName}`);
+    }
+
+    /**
+     * Apply current strategy to enable/disable tools
+     * This method replaces the separate ToolStateManager.applyStrategy()
+     *
+     * This enables/disables component tools based on the strategy.
+     * Global tools are always left enabled.
+     */
+    applyStrategy(): void {
+        const allTools = this.getAllTools();
+
+        for (const registration of allTools) {
+            // Only apply strategy to component tools, not global tools
+            if (registration.source === ToolSource.COMPONENT) {
+                const toolName = registration.tool.toolName;
+                const shouldBeEnabled = this.currentStrategy.shouldEnableTool(toolName);
+
+                if (shouldBeEnabled && !registration.enabled) {
+                    registration.enabled = true;
+                    console.log(`[ToolManager] Enabled component tool: ${toolName}`);
+                } else if (!shouldBeEnabled && registration.enabled) {
+                    registration.enabled = false;
+                    console.log(`[ToolManager] Disabled component tool: ${toolName}`);
+                }
+            }
+        }
+
+        console.log(`[ToolManager] Strategy "${this.currentStrategy.strategyName}" applied`);
+        this.notifyAvailabilityChange();
+    }
+
+    /**
+     * Get the current strategy name (for debugging)
+     * @returns The name of the current strategy
+     */
+    getStrategyName(): string {
+        return this.currentStrategy.strategyName;
+    }
+
+    /**
+     * Set a custom strategy factory (for testing or advanced use cases)
+     * @param factory - The custom strategy factory to use
+     */
+    setStrategyFactory(factory: IToolStateStrategyFactory): void {
+        this.strategyFactory = factory;
     }
 }

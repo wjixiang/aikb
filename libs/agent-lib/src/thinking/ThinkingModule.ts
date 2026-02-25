@@ -445,15 +445,34 @@ ${previousRoundsText || 'None yet'}
 `;
 
         // Get conversation history from TurnMemoryStore
+        // Filter out action phase messages (tool_use, tool_result) to avoid confusing the thinking phase
+        // The thinking phase should only see:
+        // 1. User messages (the original task)
+        // 2. System messages with text content (thinking summaries, not tool results)
         const allMessages = this.turnMemoryStore.getAllMessages();
-        const history = allMessages.map(msg => {
-            const role = msg.role;
-            const content = msg.content
-                .filter(block => block.type === 'text')
-                .map(block => (block as any).text)
-                .join('\n');
-            return `<${role}>\n${content}\n</${role}>`;
-        });
+        const history = allMessages
+            .filter(msg => {
+                // Filter out messages that contain tool_use or tool_result blocks
+                const hasToolUse = msg.content.some(block => block.type === 'tool_use');
+                const hasToolResult = msg.content.some(block => block.type === 'tool_result');
+
+                // Skip messages with tool_use or tool_result (these are from action phase)
+                if (hasToolUse || hasToolResult) {
+                    return false;
+                }
+
+                // Only include messages with text content
+                const hasTextContent = msg.content.some(block => block.type === 'text');
+                return hasTextContent;
+            })
+            .map(msg => {
+                const role = msg.role;
+                const content = msg.content
+                    .filter(block => block.type === 'text')
+                    .map(block => (block as any).text)
+                    .join('\n');
+                return `<${role}>\n${content}\n</${role}>`;
+            });
 
         return { systemPrompt, context, history };
     }

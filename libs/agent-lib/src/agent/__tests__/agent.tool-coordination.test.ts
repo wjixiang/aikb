@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Agent } from '../agent';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
+import { ToolManager } from '../../tools/index.js';
 import { ApiClient, ApiResponse, ToolCall } from '../../api-client/ApiClient.interface';
 import { z } from 'zod';
 
@@ -8,7 +9,8 @@ describe('Agent Tool Coordination', () => {
     describe('convertWorkspaceToolsToOpenAI', () => {
         it('should convert workspace tools to OpenAI format', async () => {
             // Create a mock workspace with tools
-            const workspace = new VirtualWorkspace({
+            const toolManager = new ToolManager();
+            const workspace = new ToolManager(), new VirtualWorkspace({
                 id: 'test-workspace',
                 name: 'Test Workspace',
             });
@@ -84,7 +86,8 @@ describe('Agent Tool Coordination', () => {
         });
 
         it('should handle empty workspace', () => {
-            const workspace = new VirtualWorkspace({
+            const toolManager = new ToolManager();
+            const workspace = new ToolManager(), new VirtualWorkspace({
                 id: 'empty-workspace',
                 name: 'Empty Workspace',
             });
@@ -127,7 +130,8 @@ describe('Agent Tool Coordination', () => {
     describe('attemptApiRequest with tools', () => {
         it('should pass tools to API client', async () => {
             // Create mock workspace
-            const workspace = new VirtualWorkspace({
+            const toolManager = new ToolManager();
+            const workspace = new ToolManager(), new VirtualWorkspace({
                 id: 'test-workspace',
                 name: 'Test Workspace',
             });
@@ -183,7 +187,8 @@ describe('Agent Tool Coordination', () => {
 
         it('should convert workspace tools before passing to API client', async () => {
             // Create workspace with a tool
-            const workspace = new VirtualWorkspace({
+            const toolManager = new ToolManager();
+            const workspace = new ToolManager(), new VirtualWorkspace({
                 id: 'test-workspace',
                 name: 'Test Workspace',
             });
@@ -264,7 +269,8 @@ describe('Agent Tool Coordination', () => {
             // This test verifies the complete flow:
             // Workspace -> Agent -> ApiClient with tools
 
-            const workspace = new VirtualWorkspace({
+            const toolManager = new ToolManager();
+            const workspace = new ToolManager(), new VirtualWorkspace({
                 id: 'integration-workspace',
                 name: 'Integration Test Workspace',
             });

@@ -3,22 +3,22 @@ import { ToolComponent } from './toolComponent.js';
 import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace } from './types.js';
 import { tdiv } from './ui/index.js';
 import type { TUIElement } from './ui/TUIElement.js';
-import { attempt_completion, get_skill, list_skills, deactivate_skill } from './globalTools.js'
-import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource, ToolRegistration } from '../skills/index.js';
+import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource } from '../skills/index.js';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
 import { TYPES } from '../di/types.js';
-import type { IToolManager, ToolRegistration as NewToolRegistration } from '../tools/index.js';
-import type { IToolStateManager } from '../tools/state/IToolStateManager.js';
-import { GlobalToolProvider, ComponentToolProvider, ToolManager } from '../tools/index.js';
+import type { IToolManager } from '../tools/index.js';
+import { GlobalToolProvider, ComponentToolProvider } from '../tools/index.js';
+import { ToolManager } from '../tools/ToolManager.js';
 
 
 /**
  * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
  * Uses tool calls for interaction instead of script execution
  *
- * This class now delegates tool management to IToolManager and IToolStateManager.
- * Backward compatibility is maintained for existing APIs.
+ * This class delegates all tool management to IToolManager.
+ * All tools are managed by the singleton ToolManager instance.
+ * Tool state strategy management (skill-based tool control) is now integrated into ToolManager.
  */
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
@@ -26,25 +26,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     private components: Map<string, ComponentRegistration>;
     private skillManager: SkillManager;
 
-    // New tool management system (injected)
+    // Tool management system (injected)
     private toolManager: IToolManager;
-    private toolStateManager: IToolStateManager;
     private globalToolProvider: GlobalToolProvider;
-
-    /**
-     * Combine all available tools from each components and global tools.
-     * Uses ToolRegistration to track tool source and enabled state.
-     * @deprecated Use toolManager instead
-     */
-    private toolSet = new Map<string, ToolRegistration>();
-
-    /** Track skill-added tools for cleanup */
-    private skillToolNames: Set<string> = new Set();
 
     constructor(
         @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
-        @inject(TYPES.IToolManager) toolManager: IToolManager,
-        @inject(TYPES.IToolStateManager) @optional() toolStateManager?: IToolStateManager,
+        @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
     ) {
         this.config = {
             id: config.id || 'default-workspace',
@@ -53,36 +41,21 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         };
         this.components = new Map();
 
-        // ToolManager is now required - no default instantiation
-        this.toolManager = toolManager;
-
-        this.toolStateManager = toolStateManager ?? new (class implements IToolStateManager {
-            getCurrentStrategy() {
-                // Return a stub strategy that enables all tools
-                return {
-                    strategyName: 'stub',
-                    getEnabledTools: () => [],
-                    shouldEnableTool: () => true
-                };
-            }
-            setStrategy() { }
-            applyStrategy() { }
-            getStrategyName() { return 'stub'; }
-        })();
+        // ToolManager is injected when available, otherwise create a new instance
+        // This allows both DI container usage and direct instantiation
+        this.toolManager = toolManager ?? new ToolManager();
 
         this.skillManager = new SkillManager({
             onSkillChange: (skill) => this.handleSkillChange(skill)
         });
 
-        // Initialize global tool provider
-        this.globalToolProvider = new GlobalToolProvider();
+        // Initialize global tool provider with skillManager
+        this.globalToolProvider = new GlobalToolProvider(this.skillManager);
         this.toolManager.registerProvider(this.globalToolProvider);
 
         this.initializeSkills();
 
-        // FIX: Call initializeGlobalTools() to populate legacy toolSet
-        // This ensures renderToolBox() can find global tools for rendering
-        this.initializeGlobalTools();
+        // All tools are now managed by ToolManager
     }
 
     /**
@@ -100,40 +73,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         } catch (error) {
             console.warn('[VirtualWorkspace] Failed to load built-in skills:', error);
         }
-    }
-
-    /**
-     * Initialize global shared tools
-     */
-    private initializeGlobalTools(): void {
-        // Add attempt_completion tool to toolSet with 'global' componentKey
-        this.toolSet.set('attempt_completion', {
-            tool: attempt_completion,
-            source: ToolSource.GLOBAL,
-            componentKey: 'global',
-            enabled: true
-        });
-
-        this.toolSet.set('get_skill', {
-            tool: get_skill,
-            source: ToolSource.GLOBAL,
-            componentKey: 'global',
-            enabled: true
-        });
-
-        this.toolSet.set('list_skills', {
-            tool: list_skills,
-            source: ToolSource.GLOBAL,
-            componentKey: 'global',
-            enabled: true
-        });
-
-        this.toolSet.set('deactivate_skill', {
-            tool: deactivate_skill,
-            source: ToolSource.GLOBAL,
-            componentKey: 'global',
-            enabled: true
-        });
     }
 
     // ==================== Skill Management ====================
@@ -181,59 +120,20 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Get the IToolStateManager instance (for Agent integration)
-     */
-    getToolStateManager(): IToolStateManager {
-        return this.toolStateManager;
-    }
-
-    /**
      * Handle skill change - enable/disable skill tools
      *
-     * All component tools are already in toolSet.
-     * Skills only control which tools are enabled (callable) and rendered.
+     * Uses ToolManager's integrated strategy management to apply skill-based tool state strategy.
      *
      * When a skill is activated:
-     * - All component tools are disabled first
-     * - Only tools defined in the skill are enabled
+     * - ToolManager applies the skill's tool enable/disable strategy
      *
      * When a skill is deactivated:
-     * - All component tools are re-enabled
+     * - ToolManager reverts to default strategy
      */
     private handleSkillChange(skill: Skill | null): void {
-        // Use the new tool state management system
-        this.toolStateManager.setStrategy(skill);
-        this.toolStateManager.applyStrategy(this.toolManager);
-
-        // Keep backward compatibility by also updating legacy toolSet
-        // First, disable ALL component tools
-        for (const [, registration] of this.toolSet.entries()) {
-            if (registration.source === ToolSource.COMPONENT) {
-                registration.enabled = false;
-            }
-        }
-        this.skillToolNames.clear();
-
-        // If activating a new skill, enable only its tools
-        if (skill?.tools) {
-            for (const tool of skill.tools) {
-                const registration = this.toolSet.get(tool.toolName);
-                if (registration?.source === ToolSource.COMPONENT) {
-                    // Enable this tool
-                    registration.enabled = true;
-                    this.skillToolNames.add(tool.toolName);
-                } else {
-                    console.warn(`[VirtualWorkspace] Skill tool "${tool.toolName}" not found in component tools`);
-                }
-            }
-        } else {
-            // No skill active, enable all component tools
-            for (const [, registration] of this.toolSet.entries()) {
-                if (registration.source === ToolSource.COMPONENT) {
-                    registration.enabled = true;
-                }
-            }
-        }
+        // Use the tool manager's integrated strategy management
+        this.toolManager.setStrategy(skill);
+        this.toolManager.applyStrategy();
 
         // Notify tool availability change
         this.onToolAvailabilityChange?.();
@@ -335,10 +235,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             return null;
         }
 
-        // Filter to only show enabled tools
+        // Filter to only show enabled tools using toolManager
         const enabledTools = activeSkill.tools.filter(tool => {
-            const registration = this.toolSet.get(tool.toolName);
-            return registration?.enabled === true;
+            return this.toolManager.isToolEnabled(tool.toolName);
         });
 
         if (enabledTools.length === 0) {
@@ -370,22 +269,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     registerComponent(registration: ComponentRegistration): void {
         this.components.set(registration.key, registration);
 
-        // Create and register ComponentToolProvider with the new tool management system
+        // Create and register ComponentToolProvider with the tool management system
         const componentToolProvider = new ComponentToolProvider(registration.key, registration.component);
         this.toolManager.registerProvider(componentToolProvider);
-
-        // Keep backward compatibility by also adding to legacy toolSet
-        registration.component.toolSet.forEach((value: Tool) => {
-            this.toolSet.set(value.toolName, {
-                tool: value,
-                source: ToolSource.COMPONENT,
-                componentKey: registration.key,
-                enabled: true,
-                handler: async (params: Record<string, unknown>) => {
-                    await registration.component.handleToolCall(value.toolName, params);
-                }
-            });
-        })
     }
 
     /**
@@ -394,13 +280,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     unregisterComponent(key: string): boolean {
         const componentToDelete = this.components.get(key);
 
-        // Unregister ComponentToolProvider from the new tool management system
+        // Unregister ComponentToolProvider from the tool management system
         this.toolManager.unregisterProvider(`component:${key}`);
 
-        // Keep backward compatibility by also removing from legacy toolSet
-        componentToDelete?.component.toolSet.forEach((value: Tool) => {
-            this.toolSet.delete(value.toolName);
-        })
         return this.components.delete(key);
     }
 
@@ -427,10 +309,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             }
         })
 
-        // Add global tools section
-        const globalTools = Array.from(this.toolSet.entries())
-            .filter(([, value]) => value.source === ToolSource.GLOBAL)
-            .map(([, value]) => value.tool);
+        // Add global tools section using toolManager instead of deprecated toolSet
+        const allTools = this.toolManager.getAllTools();
+        const globalTools = allTools
+            .filter(reg => reg.source === ToolSource.GLOBAL)
+            .map(reg => reg.tool);
 
         if (globalTools.length > 0) {
             const globalToolsSection = renderToolSection(globalTools)
@@ -551,66 +434,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Handle tool call on a component
-     * @param componentKey - The key of the component to call
+     * Handle tool call
      * @param toolName - The name of the tool to call
      * @param params - The parameters to pass to the tool
      * @returns Promise resolving to the tool result
      */
     async handleToolCall(toolName: string, params: Record<string, unknown>): Promise<unknown> {
-        // Try to execute through the new tool management system first
+        // Execute through the tool management system
         try {
             const result = await this.toolManager.executeTool(toolName, params);
             return { success: true, result };
         } catch (error) {
-            // If tool manager throws, fall back to legacy toolSet for backward compatibility
-            if (error instanceof Error && error.message.includes('not found')) {
-                try {
-                    const toolRegistration = this.toolSet.get(toolName);
-                    if (!toolRegistration) {
-                        return {
-                            error: `Tool "${toolName}" not found`,
-                            success: false
-                        };
-                    }
-
-                    // Check if tool is enabled
-                    if (!toolRegistration.enabled) {
-                        return {
-                            error: `Tool "${toolName}" is currently disabled`,
-                            success: false
-                        };
-                    }
-
-                    // Use handler from ToolRegistration for direct execution
-                    if (toolRegistration.handler) {
-                        try {
-                            const result = await toolRegistration.handler(params);
-                            return { success: true, result };
-                        } catch (handlerError) {
-                            return {
-                                error: handlerError instanceof Error ? handlerError.message : String(handlerError),
-                                success: false
-                            };
-                        }
-                    }
-
-                    // Check if it's a global tool (no handler, use handleGlobalToolCall)
-                    if (toolRegistration.source === ToolSource.GLOBAL) {
-                        return await this.handleGlobalToolCall(toolName, params);
-                    }
-
-                    return {
-                        error: `Unable to execute tool "${toolName}": no handler found`,
-                        success: false
-                    };
-                } catch (fallbackError) {
-                    return {
-                        error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-                        success: false
-                    };
-                }
-            }
             return {
                 error: error instanceof Error ? error.message : String(error),
                 success: false
@@ -619,69 +453,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Handle global tool calls
-     */
-    private async handleGlobalToolCall(toolName: string, params: Record<string, unknown>): Promise<unknown> {
-        switch (toolName) {
-            case 'attempt_completion':
-                return this.attemptCompletion(typeof params['result'] === 'string' ? params['result'] : '');
-            case 'get_skill':
-                return this.handleGetSkill(typeof params['skill_name'] === 'string' ? params['skill_name'] : '');
-            case 'list_skills':
-                return this.handleListSkills();
-            case 'deactivate_skill':
-                return await this.handleDeactivateSkill();
-            default:
-                throw new Error(`Unknown global tool: ${toolName}`);
-        }
-    }
-
-    /**
-     * Handle get_skill tool call
-     */
-    private async handleGetSkill(skillName: string): Promise<SkillActivationResult> {
-        return await this.skillManager.activateSkill(skillName);
-    }
-
-    /**
-     * Handle list_skills tool call
-     */
-    private handleListSkills(): { skills: SkillSummary[]; activeSkill: string | null } {
-        const skills = this.skillManager.getAvailableSkills();
-        const activeSkill = this.skillManager.getActiveSkill();
-        return {
-            skills,
-            activeSkill: activeSkill?.name ?? null
-        };
-    }
-
-    /**
-     * Handle deactivate_skill tool call
-     */
-    private async handleDeactivateSkill(): Promise<{ success: boolean; message: string }> {
-        return await this.skillManager.deactivateSkill();
-    }
-
-    /**
-     * Complete the task and return final result
-     */
-    private attemptCompletion(result: string): { success: boolean; completed: boolean; result: string } {
-        // This method can be overridden or extended to handle completion
-        // For now, it returns the result
-        return {
-            success: true,
-            completed: true,
-            result
-        };
-    }
-
-    /**
      * Get all available tools from all components
      * @returns Array of tool definitions with component information
-     * @deprecated Use toolManager.getAllTools() instead
      */
     getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: ToolSource; enabled: boolean }> {
-        // Delegate to the new tool management system
         const registrations = this.toolManager.getAllTools();
         return registrations.map(reg => ({
             componentKey: reg.source === ToolSource.COMPONENT ? reg.providerId.replace('component:', '') : undefined,
@@ -697,70 +472,33 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      */
     getGlobalTools(): Map<string, Tool> {
         const globalToolsMap = new Map<string, Tool>();
-        for (const [toolName, value] of this.toolSet.entries()) {
-            if (value.source === ToolSource.GLOBAL) {
-                globalToolsMap.set(toolName, value.tool);
+        const allTools = this.toolManager.getAllTools();
+        for (const registration of allTools) {
+            if (registration.source === ToolSource.GLOBAL) {
+                globalToolsMap.set(registration.tool.toolName, registration.tool);
             }
         }
         return globalToolsMap;
     }
 
     /**
-     * Add a global tool
-     * @deprecated Use toolManager.registerProvider() with GlobalToolProvider instead
-     */
-    addGlobalTool(tool: Tool): void {
-        // Keep backward compatibility by adding to legacy toolSet
-        this.toolSet.set(tool.toolName, {
-            tool,
-            source: ToolSource.GLOBAL,
-            componentKey: 'global',
-            enabled: true
-        });
-    }
-
-    /**
-     * Remove a global tool
-     * @deprecated Use toolManager.unregisterProvider() instead
-     */
-    removeGlobalTool(toolName: string): boolean {
-        // Keep backward compatibility by removing from legacy toolSet
-        const toolEntry = this.toolSet.get(toolName);
-        if (toolEntry && toolEntry.source === ToolSource.GLOBAL) {
-            return this.toolSet.delete(toolName);
-        }
-        return false;
-    }
-
-    /**
      * Check if a tool is currently available
-     * @deprecated Use toolManager.isToolEnabled() instead
      */
     isToolAvailable(toolName: string): boolean {
-        // Try new tool manager first
-        if (this.toolManager.isToolEnabled(toolName)) {
-            return true;
-        }
-        // Fall back to legacy toolSet
-        const registration = this.toolSet.get(toolName);
-        return registration?.enabled ?? false;
+        return this.toolManager.isToolEnabled(toolName);
     }
 
     /**
      * Get all currently available tools
-     * @deprecated Use toolManager.getAvailableTools() instead
      */
     getAvailableTools(): Tool[] {
-        // Delegate to the new tool management system
         return this.toolManager.getAvailableTools();
     }
 
     /**
      * Get tool source information
-     * @deprecated Use toolManager.getToolSource() instead
      */
     getToolSource(toolName: string): { source: ToolSource; owner: string } | null {
-        // Try new tool manager first
         const source = this.toolManager.getToolSource(toolName);
         if (source) {
             return {
@@ -768,14 +506,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                 owner: source.providerId
             };
         }
-        // Fall back to legacy toolSet
-        const registration = this.toolSet.get(toolName);
-        if (!registration) return null;
-
-        return {
-            source: registration.source,
-            owner: registration.componentKey ?? registration.skillName ?? 'global'
-        };
+        return null;
     }
 }
 export type { ComponentRegistration, Skill, SkillSummary };

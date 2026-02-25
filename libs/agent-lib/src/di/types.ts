@@ -199,12 +199,6 @@ export const TYPES = {
     IComponentToolProvider: Symbol('IComponentToolProvider'),
 
     /**
-     * IToolStateManager - Tool state management (skill-based)
-     * @scope Singleton - Shared across all agents
-     */
-    IToolStateManager: Symbol('IToolStateManager'),
-
-    /**
      * IToolStateStrategy interface
      * @scope Transient - New instance per strategy
      */

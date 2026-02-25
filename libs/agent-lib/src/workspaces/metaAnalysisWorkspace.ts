@@ -4,19 +4,21 @@
  */
 
 import { VirtualWorkspace } from '../statefulContext/index.js';
+import { ToolManager } from '../tools/index.js';
 import { BibliographySearchComponent, PicosComponent, PrismaCheckListComponent, PrismaFlowComponent } from '../components/index.js';
 
 /**
  * Knowledge Management Workspace
- * 
+ *
  */
 export class MetaAnalysisWorkspace extends VirtualWorkspace {
     constructor() {
+        const toolManager = new ToolManager();
         super({
             id: 'bibliography-workspace',
             name: 'Medical Bibliography Searching workspace',
             description: 'Workspace for viewing and searching through Pubmed'
-        });
+        }, toolManager);
 
         this.registerComponent({
             key: 'PICO Templater',

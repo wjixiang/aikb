@@ -10,6 +10,7 @@ import { ThinkingModule } from '../thinking/ThinkingModule.js';
 import { defaultThinkingConfig } from '../thinking/types.js';
 import { SkillManager } from '../skills/SkillManager.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
+import { ToolManager } from '../tools/ToolManager.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
@@ -19,11 +20,12 @@ import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
+import type { ITaskModule } from '../task/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
+import type { IToolManager } from '../tools/index.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import { TaskModule } from '../task/TaskModule.js';
-import type { ITaskModule } from '../task/types.js';
 import pino from 'pino';
 import type { Logger, Level } from 'pino'
 
@@ -148,6 +150,11 @@ export class AgentContainer {
                 },
                 timestamp: pino.stdTimeFunctions.isoTime,
             }));
+
+        // Tool Manager - Singleton scope for sharing across all agents
+        // Strategy management is now integrated into ToolManager
+        this.container.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
+
         this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
         this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
         this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();

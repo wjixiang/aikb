@@ -8,9 +8,12 @@ import {
 } from '../ObservableAgent.js';
 import { TaskStatus } from '../../task/task.type.js';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
+import { ToolManager } from '../../tools/index.js';
 import { OpenaiCompatibleApiClient } from '../../api-client/OpenaiCompatibleApiClient.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
+import { ThinkingModule } from '../../thinking/ThinkingModule.js';
+import { TaskModule } from '../../task/TaskModule.js';
 import type { Logger } from 'pino';
 
 // Mock VirtualWorkspace
@@ -44,9 +47,9 @@ function createMockApiClient() {
 }
 
 // Helper function to create a mock MemoryModule
-function createMockMemoryModule(apiClient: ReturnType<typeof createMockApiClient>) {
+function createMockMemoryModule(apiClient: ReturnType<typeof createMockApiClient>, thinkingModule: ThinkingModule) {
     const turnStore = new TurnMemoryStore();
-    return new MemoryModule(apiClient, mockLogger, {}, turnStore);
+    return new MemoryModule(mockLogger, {}, turnStore, thinkingModule);
 }
 
 describe('ObservableAgent', () => {
@@ -54,15 +57,21 @@ describe('ObservableAgent', () => {
     let agent: Agent;
 
     beforeEach(() => {
-        mockWorkspace = new VirtualWorkspace({ id: 'test-workspace' } as any);
+        const toolManager = new ToolManager();
+        mockWorkspace = new VirtualWorkspace({ id: 'test-workspace' } as any, toolManager);
         const apiClient = createMockApiClient();
-        const memoryModule = createMockMemoryModule(apiClient);
+        const turnStore = new TurnMemoryStore();
+        const thinkingModule = new ThinkingModule(apiClient, mockLogger, {}, turnStore);
+        const memoryModule = createMockMemoryModule(apiClient, thinkingModule);
+        const taskModule = new TaskModule();
         agent = new Agent(
             defaultAgentConfig,
             mockWorkspace,
             { capability: 'test', direction: 'test' },
             apiClient,
-            memoryModule
+            memoryModule,
+            thinkingModule,
+            taskModule
         );
     });
 
@@ -227,13 +236,19 @@ describe('ObservableAgent', () => {
             };
 
             // Create an agent that will throw
+            const errorToolManager = new ToolManager();
             const errorApiClient = createMockApiClient();
+            const errorTurnStore = new TurnMemoryStore();
+            const errorThinkingModule = new ThinkingModule(errorApiClient, mockLogger, {}, errorTurnStore);
+            const errorTaskModule = new TaskModule();
             const errorAgent = new Agent(
                 defaultAgentConfig,
-                new VirtualWorkspace({ id: 'error-workspace' } as any),
+                new VirtualWorkspace({ id: 'error-workspace' } as any, errorToolManager),
                 { capability: 'test', direction: 'test' },
                 errorApiClient,
-                createMockMemoryModule(errorApiClient)
+                createMockMemoryModule(errorApiClient, errorThinkingModule),
+                errorThinkingModule,
+                errorTaskModule
             ) as any;
             errorAgent.throwError = () => {
                 throw new Error('Test error');

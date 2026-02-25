@@ -112,7 +112,7 @@ describe('Agent Context Rendering', () => {
 
     beforeEach(() => {
         // Create a new workspace for each test
-        workspace = new VirtualWorkspace({
+        workspace = new ToolManager(), new VirtualWorkspace({
             id: 'test-workspace',
             name: 'Test Workspace',
             description: 'A workspace for testing'

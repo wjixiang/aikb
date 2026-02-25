@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/virtualWorkspace.js';
+import { ToolManager } from '../../tools/index.js';
 
 describe("VirtualWorkspace Skills Rendering", () => {
     it('should render skills in workspace context', async () => {
-        // Create a simple workspace
+        // Create a simple workspace with ToolManager
+        const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'test-workspace',
             name: 'Test Workspace',
             description: 'Test workspace for skill rendering'
-        });
+        }, toolManager);
 
         // Get the available skills
         const availableSkills = workspace.getAvailableSkills();

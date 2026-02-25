@@ -1,7 +1,9 @@
-import { injectable } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 import type { Tool } from '../../statefulContext/types.js';
 import type { IToolProvider } from '../IToolProvider.js';
 import { ToolSource, BaseToolProvider } from '../IToolProvider.js';
+import type { SkillManager } from '../../skills/index.js';
+import { TYPES } from '../../di/types.js';
 
 // Import global tools
 import {
@@ -27,7 +29,9 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
 
     private tools: Map<string, Tool>;
 
-    constructor() {
+    constructor(
+        @inject(TYPES.SkillManager) @optional() private skillManager?: SkillManager
+    ) {
         super();
         this.tools = new Map();
         this.initializeTools();
@@ -65,10 +69,6 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
 
     /**
      * Execute a global tool
-     * 
-     * Note: Global tools have special handling and should be executed
-     * through the VirtualWorkspace which has access to the necessary
-     * context (SkillManager, etc.)
      */
     async executeTool(name: string, params: any): Promise<any> {
         const tool = this.tools.get(name);
@@ -76,12 +76,67 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
             throw new Error(`Global tool not found: ${name}`);
         }
 
-        // Global tools need special handling - they should be executed
-        // by the VirtualWorkspace which has the necessary context
-        // This is a placeholder that indicates the tool should be handled specially
-        throw new Error(
-            `Global tool "${name}" should be executed through VirtualWorkspace.handleGlobalToolCall()`
-        );
+        // Execute the appropriate global tool
+        switch (name) {
+            case 'attempt_completion':
+                return this.handleAttemptCompletion(params);
+            case 'get_skill':
+                return await this.handleGetSkill(params);
+            case 'list_skills':
+                return this.handleListSkills();
+            case 'deactivate_skill':
+                return await this.handleDeactivateSkill();
+            default:
+                throw new Error(`Unknown global tool: ${name}`);
+        }
+    }
+
+    /**
+     * Handle attempt_completion tool call
+     */
+    private handleAttemptCompletion(params: any): { success: boolean; completed: boolean; result: string } {
+        const result = typeof params?.result === 'string' ? params.result : '';
+        return {
+            success: true,
+            completed: true,
+            result
+        };
+    }
+
+    /**
+     * Handle get_skill tool call
+     */
+    private async handleGetSkill(params: any): Promise<any> {
+        if (!this.skillManager) {
+            throw new Error('SkillManager not available for get_skill operation');
+        }
+        const skillName = typeof params?.skill_name === 'string' ? params.skill_name : '';
+        return await this.skillManager.activateSkill(skillName);
+    }
+
+    /**
+     * Handle list_skills tool call
+     */
+    private handleListSkills(): { skills: any[]; activeSkill: string | null } {
+        if (!this.skillManager) {
+            throw new Error('SkillManager not available for list_skills operation');
+        }
+        const skills = this.skillManager.getAvailableSkills();
+        const activeSkill = this.skillManager.getActiveSkill();
+        return {
+            skills,
+            activeSkill: activeSkill?.name ?? null
+        };
+    }
+
+    /**
+     * Handle deactivate_skill tool call
+     */
+    private async handleDeactivateSkill(): Promise<{ success: boolean; message: string }> {
+        if (!this.skillManager) {
+            throw new Error('SkillManager not available for deactivate_skill operation');
+        }
+        return await this.skillManager.deactivateSkill();
     }
 
     /**

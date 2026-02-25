@@ -1,6 +1,8 @@
 import type { Tool } from '../statefulContext/types.js';
 import type { ToolSource } from './IToolProvider.js';
 import type { IToolProvider } from './IToolProvider.js';
+import type { Skill } from '../skills/types.js';
+import type { IToolStateStrategy, IToolStateStrategyFactory } from './state/IToolStateStrategy.js';
 
 /**
  * Extended tool registration with source tracking and state management
@@ -41,11 +43,12 @@ export type UnsubscribeFn = () => void;
 
 /**
  * Central tool management interface
- * 
+ *
  * The ToolManager is responsible for:
  * - Registering/unregistering tool providers
  * - Maintaining a registry of all tools
  * - Managing tool enabled/disabled state
+ * - Managing tool state strategies (skill-based tool control)
  * - Executing tool calls
  * - Notifying subscribers of tool availability changes
  */
@@ -123,6 +126,42 @@ export interface IToolManager {
      * Called internally when tools are added/removed/enabled/disabled
      */
     notifyAvailabilityChange(): void;
+
+    // ==================== Strategy Management (merged from ToolStateManager) ====================
+
+    /**
+     * Get the current state strategy
+     * @returns The current tool state strategy
+     */
+    getCurrentStrategy(): IToolStateStrategy;
+
+    /**
+     * Set strategy based on active skill
+     * This method replaces the separate ToolStateManager.setStrategy()
+     * @param skill - The active skill (null for no skill)
+     */
+    setStrategy(skill: Skill | null): void;
+
+    /**
+     * Apply current strategy to enable/disable tools
+     * This method replaces the separate ToolStateManager.applyStrategy()
+     *
+     * This enables/disables component tools based on the strategy.
+     * Global tools are always left enabled.
+     */
+    applyStrategy(): void;
+
+    /**
+     * Get the current strategy name (for debugging)
+     * @returns The name of the current strategy
+     */
+    getStrategyName(): string;
+
+    /**
+     * Set a custom strategy factory (for testing or advanced use cases)
+     * @param factory - The custom strategy factory to use
+     */
+    setStrategyFactory(factory: IToolStateStrategyFactory): void;
 }
 
 /**

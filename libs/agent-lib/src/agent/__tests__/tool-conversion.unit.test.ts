@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { DefaultToolCallConverter } from '../../api-client/ToolCallConvert';
+import { ToolManager } from '../../tools/index.js';
 import { z } from 'zod';
 
 describe('Agent Tool Coordination - Unit Tests', () => {
     describe('Workspace Tool Conversion', () => {
         it('should convert workspace tools to OpenAI format', () => {
-            // Create workspace
+            // Create workspace with ToolManager
+            const toolManager = new ToolManager();
             const workspace = new VirtualWorkspace({
                 id: 'test-workspace',
                 name: 'Test Workspace',
-            });
+            }, toolManager);
 
             // Create a mock tool component with proper structure
             const mockTool = {
@@ -27,12 +29,12 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 render: async () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 renderToolSection: () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 handleToolCall: async () => ({ success: true }),
             };
@@ -43,13 +45,15 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 priority: 1,
             });
 
-            // Get tools from workspace
+            // Get tools from workspace (includes global tools)
             const allTools = workspace.getAllTools();
-            expect(allTools).toHaveLength(1);
+            // Filter to only component tools for this test
+            const componentTools = allTools.filter(t => t.source === 'component');
+            expect(componentTools).toHaveLength(1);
 
-            // Convert to OpenAI format
+            // Convert to OpenAI format (only component tools)
             const converter = new DefaultToolCallConverter();
-            const openaiTools = converter.convertTools(allTools.map(t => t.tool));
+            const openaiTools = converter.convertTools(componentTools.map(t => t.tool));
 
             // Verify conversion
             expect(openaiTools).toHaveLength(1);
@@ -62,16 +66,18 @@ describe('Agent Tool Coordination - Unit Tests', () => {
             });
 
             if (openaiTools[0].type === 'function') {
-                expect(openaiTools[0].function.parameters).toHaveProperty('type', 'object');
-                expect(openaiTools[0].function.parameters).toHaveProperty('properties');
+                const params = openaiTools[0].function.parameters;
+                expect(params).toHaveProperty('type', 'object');
+                expect(params).toHaveProperty('properties');
             }
         });
 
         it('should handle multiple tools from multiple components', () => {
+            const toolManager = new ToolManager();
             const workspace = new VirtualWorkspace({
                 id: 'multi-workspace',
                 name: 'Multi Tool Workspace',
-            });
+            }, toolManager);
 
             // Component 1
             const component1 = {
@@ -85,12 +91,12 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 render: async () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 renderToolSection: () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 handleToolCall: async () => ({ success: true }),
             };
@@ -107,12 +113,12 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 render: async () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 renderToolSection: () => ({
                     render: () => '',
                     renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-                    addChild: () => {},
+                    addChild: () => { },
                 }),
                 handleToolCall: async () => ({ success: true }),
             };
@@ -129,12 +135,13 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 priority: 2,
             });
 
-            // Get and convert tools
+            // Get and convert tools (filter to only component tools)
             const allTools = workspace.getAllTools();
-            expect(allTools).toHaveLength(2);
+            const componentTools = allTools.filter(t => t.source === 'component');
+            expect(componentTools).toHaveLength(2);
 
             const converter = new DefaultToolCallConverter();
-            const openaiTools = converter.convertTools(allTools.map(t => t.tool));
+            const openaiTools = converter.convertTools(componentTools.map(t => t.tool));
 
             expect(openaiTools).toHaveLength(2);
             const functionTools = openaiTools.filter(t => t.type === 'function');
@@ -143,16 +150,19 @@ describe('Agent Tool Coordination - Unit Tests', () => {
         });
 
         it('should handle empty workspace', () => {
+            const toolManager = new ToolManager();
             const workspace = new VirtualWorkspace({
                 id: 'empty-workspace',
                 name: 'Empty Workspace',
-            });
+            }, toolManager);
 
             const allTools = workspace.getAllTools();
-            expect(allTools).toHaveLength(0);
+            // Filter to only component tools (global tools are always present)
+            const componentTools = allTools.filter(t => t.source === 'component');
+            expect(componentTools).toHaveLength(0);
 
             const converter = new DefaultToolCallConverter();
-            const openaiTools = converter.convertTools(allTools.map(t => t.tool));
+            const openaiTools = converter.convertTools(componentTools.map(t => t.tool));
 
             expect(openaiTools).toHaveLength(0);
         });
@@ -183,9 +193,8 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 // Verify parameters structure
                 const params = openaiTool.function.parameters;
                 expect(params).toHaveProperty('type', 'object');
-                expect(params).toHaveProperty('properties');
-                expect(params.properties).toHaveProperty('expression');
-                expect(params.properties).toHaveProperty('precision');
+                expect(params?.properties).toHaveProperty('expression');
+                expect(params?.properties).toHaveProperty('precision');
             }
         });
 
@@ -208,10 +217,11 @@ describe('Agent Tool Coordination - Unit Tests', () => {
             const openaiTool = converter.convertTool(mockTool);
 
             if (openaiTool.type === 'function') {
-                expect(openaiTool.function.parameters.properties).toHaveProperty('simple');
-                expect(openaiTool.function.parameters.properties).toHaveProperty('nested');
-                expect(openaiTool.function.parameters.properties).toHaveProperty('array');
-                expect(openaiTool.function.parameters.properties).toHaveProperty('optional');
+                const params = openaiTool.function.parameters;
+                expect(params?.properties).toHaveProperty('simple');
+                expect(params?.properties).toHaveProperty('nested');
+                expect(params?.properties).toHaveProperty('array');
+                expect(params?.properties).toHaveProperty('optional');
             }
         });
     });
