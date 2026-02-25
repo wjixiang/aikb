@@ -61,7 +61,7 @@ export class ApiClientFactory {
                 const line = config.zaiApiLine || 'china_coding';
                 baseURL = line === 'international_coding'
                     ? 'https://open.bigmodel.cn/api/paas/v4'
-                    : 'https://open.bigmodel.cn/api/paas/v4';
+                    : 'https://open.bigmodel.cn/api/coding/paas/v4';
                 break;
             default:
                 baseURL = undefined;

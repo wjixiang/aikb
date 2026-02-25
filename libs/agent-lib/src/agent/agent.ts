@@ -29,6 +29,7 @@ import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ITaskModule } from '../task/types.js';
 import type { IToolManager } from '../tools/IToolManager.js';
+import { ILogger } from '../utils/logging/types.js';
 
 /**
  * Tool result from execution
@@ -123,6 +124,7 @@ export class Agent {
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
         @inject(TYPES.ITaskModule) taskModule: ITaskModule,
+        @inject(TYPES.Logger) private logger: ILogger,
         @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
         this.workspace = workspace as VirtualWorkspace;
@@ -181,7 +183,7 @@ export class Agent {
      * @deprecated Turn-based architecture doesn't support setting history directly
      */
     public set conversationHistory(history: ApiMessage[]) {
-        console.warn('Setting conversation history is not supported in Turn-based architecture');
+        this.logger.warn('Setting conversation history is not supported in Turn-based architecture');
         // For backward compatibility, do nothing
     }
 
@@ -411,6 +413,7 @@ export class Agent {
                 // Convert API response to assistant message content
                 // const assistantMessageContent = this.convertApiResponseToAssistantMessage(response);
                 const assistantMessage = this.converApiResponseToApiMessage(response)
+                this.logger.info(`assistantMessage has been converted`)
 
                 // Execute tool calls and build response
                 // This will update workspace states
@@ -418,6 +421,10 @@ export class Agent {
                     response,
                     () => this.isAborted(),
                 );
+
+                this.logger.info(`Tool execution finished`, {
+                    result: executionResult
+                })
 
                 // IMPORTANT: Trigger workspace re-render after tool execution
                 // This ensures all components' renderImply() methods are called

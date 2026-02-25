@@ -8,6 +8,9 @@ import * as z from 'zod';
 import type { ApiClient } from '../../api-client/index.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
+import { ThinkingModule } from '../../thinking/ThinkingModule.js';
+import { TaskModule } from '../../task/TaskModule.js';
+import { ToolManager } from '../../tools/index.js';
 import type { Logger } from 'pino';
 
 // Define Skill interface locally since agent-lib doesn't directly depend on skills
@@ -26,7 +29,8 @@ interface Skill {
 }
 
 // Mock Logger
-const mockLogger: Logger = {
+const mockLogger: any = {
+    level: 'info',
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -34,7 +38,8 @@ const mockLogger: Logger = {
     trace: vi.fn(),
     fatal: vi.fn(),
     silent: vi.fn(),
-    child: vi.fn(() => mockLogger as any),
+    child: vi.fn(() => mockLogger),
+    close: vi.fn(),
 } as any;
 
 // Mock ApiClient
@@ -112,11 +117,12 @@ describe('Agent Context Rendering', () => {
 
     beforeEach(() => {
         // Create a new workspace for each test
-        workspace = new ToolManager(), new VirtualWorkspace({
+        const toolManager = new ToolManager();
+        workspace = new VirtualWorkspace({
             id: 'test-workspace',
             name: 'Test Workspace',
             description: 'A workspace for testing'
-        });
+        }, toolManager);
 
         // Create and register test component
         testComponent = new TestToolComponent();
@@ -131,15 +137,22 @@ describe('Agent Context Rendering', () => {
 
         // Create memory module
         const turnStore = new TurnMemoryStore();
-        memoryModule = new MemoryModule(mockApiClient, mockLogger, {}, turnStore);
+        const thinkingModule = new ThinkingModule(mockApiClient, mockLogger, {}, turnStore);
+        memoryModule = new MemoryModule(mockLogger, {}, turnStore, thinkingModule);
+
+        // Create task module
+        const taskModule = new TaskModule();
 
         // Create agent
         agent = new Agent(
             agentConfig,
             workspace,
             agentPrompt,
-            mockApiClient,
-            memoryModule
+            mockApiClient as ApiClient,
+            memoryModule,
+            thinkingModule,
+            taskModule,
+            mockLogger
         );
     });
 

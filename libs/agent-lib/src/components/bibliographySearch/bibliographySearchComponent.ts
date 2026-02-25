@@ -367,6 +367,10 @@ export class BibliographySearchComponent extends ToolComponent {
             throw new Error('No search results to navigate');
         }
 
+        if (!this.currentSearchParams) {
+            throw new Error('No search parameters available for navigation');
+        }
+
         const { direction } = params;
         const totalPages = this.currentResults.totalPages || 1;
 
@@ -384,10 +388,23 @@ export class BibliographySearchComponent extends ToolComponent {
             throw new Error('Invalid direction. Use "next" or "prev"');
         }
 
-        // Re-run search with new page
-        // Note: We need to store the last search parameters for this to work properly
-        // For now, this is a simplified implementation
-        throw new Error('Navigate page requires storing last search parameters (not implemented)');
+        // Re-run search with new page using stored search parameters
+        const searchParams: PubmedSearchParams = {
+            ...this.currentSearchParams,
+            page: this.currentPage
+        };
+
+        try {
+            const results = await this.pubmedService.searchByPattern(searchParams);
+            this.currentResults = {
+                totalResults: results.totalResults,
+                totalPages: results.totalPages,
+                articleProfiles: results.articleProfiles
+            };
+            this.currentArticleDetail = null;
+        } catch (error) {
+            throw new Error(`Navigation failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 
     private handleClearResults(): void {

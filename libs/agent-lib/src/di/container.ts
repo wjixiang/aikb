@@ -306,11 +306,13 @@ export class AgentContainer {
                 apiProvider: 'zai',
                 apiKey: process.env['GLM_API_KEY'] || '',
                 apiModelId: 'glm-4.5',
+                zaiApiLine: 'china_coding',
                 ...options.apiConfiguration,
             }
             : {
                 apiProvider: 'zai',
                 apiKey: process.env['GLM_API_KEY'] || '',
+                zaiApiLine: 'china_coding',
                 apiModelId: 'glm-4.5',
             };
 

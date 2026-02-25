@@ -10,4 +10,4 @@
  */
 
 export * from './types.js';
-export { ThinkingModule } from './ThinkingModule.js';
+export { ThinkingModule, ThinkingPhaseToolViolationError } from './ThinkingModule.js';

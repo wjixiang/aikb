@@ -1,4 +1,10 @@
 import { defineSkill } from '../SkillDefinition.js';
+import {
+   searchPubmedTool,
+   viewArticleTool,
+   navigatePageTool,
+   clearResultsTool
+} from '../../components/bibliographySearch/bibliographySearchTools.js';
 
 /**
  * Meta-Analysis Article Retrieval Skill
@@ -178,6 +184,14 @@ At completion, provide:
 7. **Retrieval Log**: Summary of all iterations and refinements
 
 Remember: This is RETRIEVAL only. Do not screen, filter, or assess quality at this stage.`,
+
+   // Define the tools that should be enabled when this skill is active
+   tools: [
+      searchPubmedTool,
+      viewArticleTool,
+      navigatePageTool,
+      clearResultsTool
+   ],
 
    onActivate: async () => {
       console.log('[MetaAnalysisRetrieval] Skill activated - ready for systematic literature retrieval');

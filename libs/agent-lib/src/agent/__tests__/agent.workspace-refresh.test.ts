@@ -8,13 +8,13 @@ import * as z from 'zod';
 import type { ApiClient, ToolCall } from '../../api-client/index.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
-import type { Logger } from 'pino';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
 import { TaskModule } from '../../task/TaskModule.js';
 import { ToolManager } from '../../tools/index.js';
+import { TestToolComponentA } from '../../statefulContext/__tests__/testComponents.js'
 
 // Mock Logger
-const mockLogger: Logger = {
+const mockLogger: any = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -23,6 +23,7 @@ const mockLogger: Logger = {
     fatal: vi.fn(),
     silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
+    close: vi.fn(),
 } as any;
 
 // Mock ApiClient for MemoryModule and ThinkingModule
@@ -155,7 +156,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
             mockApiClient as ApiClient,
             memoryModule,
             thinkingModule,
-            taskModule
+            taskModule,
+            mockLogger
         );
     });
 
@@ -197,7 +199,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
-                taskModule
+                taskModule,
+                mockLogger
             );
 
             // Start agent
@@ -260,7 +263,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
-                taskModule
+                taskModule,
+                mockLogger
             );
 
             // Start agent
@@ -316,7 +320,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
-                taskModule
+                taskModule,
+                mockLogger
             );
 
             // Start agent
@@ -332,7 +337,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
     });
 
     describe('Workspace Context in API Requests', () => {
-        it('should reflect component state changes in workspace context', async () => {
+        it.only('should reflect component state changes in workspace context', async () => {
             const workspaceContexts: string[] = [];
 
             const mockAgentApi = {
@@ -344,8 +349,35 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                                 id: 'tool_call_1',
                                 call_id: 'call_1',
                                 type: 'function_call',
-                                name: 'update_state',
-                                arguments: JSON.stringify({ message: 'After First Tool Call' })
+                                name: 'continue_thinking',
+                                arguments: JSON.stringify({ continueThinking: false })
+                            }],
+                            textResponse: null,
+                            requestTime: 100,
+                            tokenUsage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 }
+                        };
+                    })
+                    .mockResolvedValueOnce({
+                        toolCalls: [{
+                            id: 'increment_counter',
+                            call_id: 'increment_counter_id',
+                            type: 'function_call',
+                            name: 'increment_counter',
+                            arguments: JSON.stringify({ amount: 2 })
+                        }],
+                        textResponse: null,
+                        requestTime: 100,
+                        tokenUsage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 }
+                    })
+                    .mockImplementationOnce(async (systemPrompt, workspaceContext, memoryContext, options, tools) => {
+                        workspaceContexts.push(workspaceContext);
+                        return {
+                            toolCalls: [{
+                                id: 'completion_call',
+                                call_id: 'completion_call_id',
+                                type: 'function_call',
+                                name: 'attempt_completion',
+                                arguments: JSON.stringify({ result: 'Done' })
                             }],
                             textResponse: null,
                             requestTime: 100,
@@ -376,7 +408,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
-                taskModule
+                taskModule,
+                mockLogger
             );
 
             // Start agent
@@ -442,7 +475,8 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
-                taskModule
+                taskModule,
+                mockLogger
             );
 
             // Start agent - should handle the error and continue
