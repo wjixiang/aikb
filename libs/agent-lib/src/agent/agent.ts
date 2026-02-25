@@ -422,15 +422,15 @@ export class Agent {
                     () => this.isAborted(),
                 );
 
-                this.logger.info(`Tool execution finished`, {
-                    result: executionResult
+                this.logger.info(`Tool execution finished, ${JSON.stringify(executionResult)}`, {
+                    // result: executionResult
                 })
 
                 // IMPORTANT: Trigger workspace re-render after tool execution
                 // This ensures all components' renderImply() methods are called
                 // and the workspace state is updated for the next API request
-                await this.workspace.render();
-
+                // await this.workspace.render();
+                this.logger.info(await this.workspace.render())
                 this.memoryModule.addMessage(assistantMessage);
 
                 // Add user message (tool result) to conversation history
@@ -477,6 +477,8 @@ export class Agent {
                             text: 'WORKSPACE STATE UPDATED'
                         }],
                     });
+
+                    // this.logger.info(await this.workspace.render())
                 } else {
                     // Task completed, complete the turn
                     this.memoryModule.completeTurn();

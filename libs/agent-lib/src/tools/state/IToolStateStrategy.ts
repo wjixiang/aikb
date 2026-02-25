@@ -27,26 +27,28 @@ export interface IToolStateStrategy {
 }
 
 /**
- * No-skill strategy - all component tools are enabled
- * 
+ * No-skill strategy - component tools are disabled by default
+ *
  * This is the default strategy when no skill is active.
+ * Component tools are only enabled when their corresponding skill is activated.
  */
 export class NoSkillStrategy implements IToolStateStrategy {
     readonly strategyName = 'no-skill';
 
     /**
      * Get the list of tool names that should be enabled
-     * Empty array means "all tools"
+     * Empty array means "no component tools"
      */
     getEnabledTools(): string[] {
         return [];
     }
 
     /**
-     * All tools should be enabled when no skill is active
+     * Component tools are disabled when no skill is active
+     * They will only be enabled when their corresponding skill is activated
      */
     shouldEnableTool(_toolName: string): boolean {
-        return true;
+        return false;
     }
 }
 

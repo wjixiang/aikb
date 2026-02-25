@@ -83,12 +83,16 @@ export class ToolManager implements IToolManager {
         const source = this.inferSourceFromProvider(provider);
 
         for (const tool of tools) {
+            // Component tools are disabled by default and only enabled when their skill is active
+            // Global tools are always enabled
+            const enabledByDefault = source !== ToolSource.COMPONENT;
+
             this.toolRegistry.set(tool.toolName, {
                 tool,
                 source,
                 providerId: provider.id,
                 componentKey: this.extractComponentKey(provider.id),
-                enabled: true,
+                enabled: enabledByDefault,
                 handler: async (params: any) => provider.executeTool(tool.toolName, params),
             });
         }

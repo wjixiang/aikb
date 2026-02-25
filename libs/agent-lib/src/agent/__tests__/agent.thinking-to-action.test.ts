@@ -14,7 +14,6 @@ import { TaskModule } from '../../task/TaskModule.js';
 import { TYPES } from '../../di/types.js';
 import { Container } from 'inversify';
 import { ToolManager } from '../../tools/index.js';
-
 // Mock Logger
 const mockLogger: Logger = {
     info: vi.fn(),
@@ -25,6 +24,7 @@ const mockLogger: Logger = {
     fatal: vi.fn(),
     silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
+    close: vi.fn(),
 } as any;
 
 // Mock ApiClient for MemoryModule and ThinkingModule
@@ -151,7 +151,8 @@ describe('Agent Thinking to Action Phase Transition', () => {
             mockApiClientWithToolCalls,
             memoryModule,
             thinkingModule,
-            taskModule
+            taskModule,
+            mockLogger as any
         );
     });
 
@@ -165,7 +166,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Task analysis completed, ready to proceed to action',
                     summary: 'Analysis completed. Ready to proceed to action phase.',
                     thoughtNumber: 1,
                     totalThoughts: 1,
@@ -264,7 +264,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: true,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Need more analysis before action',
                     thoughtNumber: 1,
                     totalThoughts: 3,
                 }],
@@ -282,7 +281,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Analysis completed',
                     summary: 'Analysis completed.',
                     thoughtNumber: 2,
                     totalThoughts: 3,
@@ -326,7 +324,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                         continueThinking: true,
                         recalledContexts: [],
                         tokens: 50,
-                        reason: 'Need more analysis',
                         thoughtNumber: 1,
                         totalThoughts: 3,
                     }],
@@ -340,7 +337,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                         continueThinking: true,
                         recalledContexts: [],
                         tokens: 50,
-                        reason: 'Still need more analysis',
                         thoughtNumber: 2,
                         totalThoughts: 3,
                     }],
@@ -354,7 +350,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                         continueThinking: false,
                         recalledContexts: [],
                         tokens: 50,
-                        reason: 'Analysis complete',
                         summary: 'Analysis complete. Ready for action.',
                         thoughtNumber: 3,
                         totalThoughts: 3,
@@ -404,7 +399,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Ready',
                     summary: 'Ready to execute action.',
                     thoughtNumber: 1,
                     totalThoughts: 1,
@@ -440,7 +434,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Ready',
                     summary: 'Execute action.',
                     thoughtNumber: 1,
                     totalThoughts: 1,
@@ -493,7 +486,8 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 mockApiClientWithCompletion,
                 newMemoryModule,
                 newThinkingModule,
-                newTaskModule
+                newTaskModule,
+                mockLogger as any
             );
 
             // Mock thinking result
@@ -504,7 +498,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Ready to complete',
                     summary: 'Complete task.',
                     thoughtNumber: 1,
                     totalThoughts: 1,
@@ -593,7 +586,8 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 mockApiClientForCycle,
                 newMemoryModule,
                 newThinkingModule,
-                newTaskModule
+                newTaskModule,
+                mockLogger as any
             );
 
             // Mock thinking to return continueThinking: false for both cycles
@@ -604,7 +598,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                     continueThinking: false,
                     recalledContexts: [],
                     tokens: 50,
-                    reason: 'Ready',
                     summary: 'Execute action.',
                     thoughtNumber: 1,
                     totalThoughts: 1,

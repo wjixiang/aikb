@@ -58,6 +58,13 @@ async function main() {
                     onTurnCreated(turnId, turnNumber, workspaceContext, taskContext) {
                         console.log(`observed turn created: ${workspaceContext}`)
                     },
+                },
+                apiConfiguration: {
+                    zaiApiLine: 'international_coding',
+                    apiModelId: 'glm-4.5-flash',
+                },
+                config: {
+                    apiRequestTimeout: 90000
                 }
             }
         );

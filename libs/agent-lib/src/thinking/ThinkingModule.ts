@@ -269,7 +269,6 @@ export class ThinkingModule implements IThinkingModule {
                 continueThinking: (controlDecision?.continueThinking || recallRequest !== null) ?? false,
                 recalledContexts,
                 tokens: this.estimateTokens(content),
-                reason: controlDecision?.reason,
                 summary: controlDecision?.summary,
                 // Sequential Thinking properties
                 thoughtNumber: controlDecision?.thoughtNumber ?? this.sequentialState.thoughtNumber,
@@ -291,7 +290,6 @@ export class ThinkingModule implements IThinkingModule {
             this.logger.error({ error }, 'Thinking round failed');
             return {
                 roundNumber,
-                reason: '',
                 content: 'Thinking round failed',
                 continueThinking: false,
                 recalledContexts: [],
@@ -500,9 +498,6 @@ Estimated total thoughts: ${this.sequentialState.totalThoughts}`;
 
             // Content and reasoning
             parts.push(`- Log: ${r.content}`);
-            if (r.reason) {
-                parts.push(`- Reasoning: ${r.reason}`);
-            }
 
             // Control decision
             parts.push(`- Continue Thinking: ${r.continueThinking}`);
@@ -628,10 +623,6 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
                                 type: 'boolean',
                                 description: 'Whether to continue thinking (true) or proceed to action (false)',
                             },
-                            reason: {
-                                type: 'string',
-                                description: 'Reason for the decision. If stopping to switch skills, mention which skill and why.',
-                            },
                             thoughtNumber: {
                                 type: 'number',
                                 description: 'Current thought number (numeric value, e.g., 1, 2, 3)',
@@ -677,7 +668,7 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
                                 description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks, recommended skill to activate (if applicable). Preserve important details like search terms, numbers, tool names, and key findings.',
                             },
                         },
-                        required: ['continueThinking', 'reason', 'thoughtNumber', 'totalThoughts'],
+                        required: ['continueThinking', 'thoughtNumber', 'totalThoughts'],
                     },
                 },
             },
@@ -896,11 +887,6 @@ If this turn builds upon previous turns, mention the connection and how it advan
                     const args = JSON.parse(continueThinkingCall.arguments);
                     const parts: string[] = [];
 
-                    // Add reason if available
-                    if (args.reason) {
-                        parts.push(`Reason: ${args.reason}`);
-                    }
-
                     // Add nextFocus if available
                     if (args.nextFocus) {
                         parts.push(`Next Focus: ${args.nextFocus}`);
@@ -929,7 +915,6 @@ If this turn builds upon previous turns, mention the connection and how it advan
      */
     private extractControlDecision(response: ApiResponse): {
         continueThinking: boolean;
-        reason: string;
         summary?: string;
         thoughtNumber?: number;
         totalThoughts?: number;

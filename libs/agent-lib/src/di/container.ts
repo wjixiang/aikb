@@ -169,7 +169,7 @@ export class AgentContainer {
             .toConstantValue({
                 apiProvider: 'zai',
                 apiKey: process.env['GLM_API_KEY'] || '',
-                apiModelId: 'glm-4.5',
+                apiModelId: 'glm-4.5-flash',
             });
 
         this.container.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {

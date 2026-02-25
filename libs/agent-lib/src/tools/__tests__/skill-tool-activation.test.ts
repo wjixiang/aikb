@@ -105,17 +105,17 @@ describe('Skill-based Component Tool Activation', () => {
     });
 
     describe('Initial State (No Skill Active)', () => {
-        it('should have all component tools enabled when no skill is active', () => {
+        it('should have all component tools disabled when no skill is active', () => {
             const allTools = toolManager.getAllTools();
             const availableTools = toolManager.getAvailableTools();
 
             // All 3 component tools should be registered
             expect(allTools.length).toBeGreaterThanOrEqual(3);
 
-            // All component tools should be enabled (NoSkillStrategy)
-            expect(availableTools).toContainEqual(expect.objectContaining({ toolName: 'search' }));
-            expect(availableTools).toContainEqual(expect.objectContaining({ toolName: 'increment' }));
-            expect(availableTools).toContainEqual(expect.objectContaining({ toolName: 'toggle' }));
+            // Component tools should be disabled when no skill is active (NoSkillStrategy)
+            expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'search' }));
+            expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'increment' }));
+            expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'toggle' }));
         });
 
         it('should have global tools enabled regardless of skill state', () => {
@@ -187,7 +187,7 @@ describe('Skill-based Component Tool Activation', () => {
     });
 
     describe('Skill Deactivation', () => {
-        it('should re-enable all component tools when skill is deactivated', async () => {
+        it('should disable all component tools when skill is deactivated', async () => {
             skillManager.register(mockSkill);
 
             // Activate skill
@@ -201,10 +201,10 @@ describe('Skill-based Component Tool Activation', () => {
             // Should revert to NoSkillStrategy
             expect(toolManager.getCurrentStrategy().strategyName).toBe('no-skill');
 
-            // All component tools should be enabled again
-            expect(toolManager.isToolEnabled('search')).toBe(true);
-            expect(toolManager.isToolEnabled('increment')).toBe(true);
-            expect(toolManager.isToolEnabled('toggle')).toBe(true);
+            // All component tools should be disabled again
+            expect(toolManager.isToolEnabled('search')).toBe(false);
+            expect(toolManager.isToolEnabled('increment')).toBe(false);
+            expect(toolManager.isToolEnabled('toggle')).toBe(false);
         });
     });
 

@@ -108,7 +108,6 @@ function createThinkingResponse(continueThinking: boolean, summary?: string): Ap
             name: 'continue_thinking',
             arguments: JSON.stringify({
                 continueThinking,
-                reason: continueThinking ? 'Need more analysis' : 'Ready to proceed',
                 thoughtNumber: 1,
                 totalThoughts: 1,
                 summary: summary || 'Analysis complete'
@@ -496,7 +495,6 @@ describe('Agent Phase Context Isolation', () => {
                         name: 'continue_thinking',  // This is a valid thinking tool
                         arguments: JSON.stringify({
                             continueThinking: false,
-                            reason: 'Analysis complete',
                             thoughtNumber: 1,
                             totalThoughts: 1,
                             summary: 'Task analyzed'

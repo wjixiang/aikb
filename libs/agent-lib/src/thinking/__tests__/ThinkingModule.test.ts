@@ -61,7 +61,6 @@ describe('ThinkingModule', () => {
                 name: 'continue_thinking',
                 arguments: JSON.stringify({
                     continueThinking: true,
-                    reason: 'test_reason_abc',
                     thoughtNumber: 1,
                     totalThoughts: 2,
                 })
@@ -83,7 +82,6 @@ describe('ThinkingModule', () => {
                 name: 'continue_thinking',
                 arguments: JSON.stringify({
                     continueThinking: false,
-                    reason: 'Recall completed',
                     thoughtNumber: 1,
                     totalThoughts: 1,
                     summary: 'Test summary'
@@ -158,7 +156,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Recall completed',
                         thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
@@ -234,7 +231,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Recall completed',
                         thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
@@ -279,7 +275,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Recall completed',
                         thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
@@ -327,7 +322,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Recall completed',
                         thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
@@ -367,7 +361,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Task analysis completed, ready to proceed to action phase',
                         thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Analysis completed. The user wants to search for literature on diabetes treatment. Ready to proceed to action phase.'
@@ -395,7 +388,6 @@ describe('ThinkingModule', () => {
             expect(thinkingResult.shouldProceedToAction).toBe(true)
             expect(thinkingResult.rounds.length).toBe(1)
             expect(thinkingResult.rounds[0].continueThinking).toBe(false)
-            expect(thinkingResult.rounds[0].reason).toBe('Task analysis completed, ready to proceed to action phase')
             expect(thinkingResult.summary).toContain('Analysis completed')
         })
 
@@ -409,7 +401,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: true,
-                        reason: 'Need more analysis on skill requirements',
                         thoughtNumber: 1,
                         totalThoughts: 3,
                         nextFocus: 'Evaluate available skills for literature search'
@@ -433,7 +424,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: 'Skill evaluation completed, ready to activate literature search skill',
                         thoughtNumber: 2,
                         totalThoughts: 3,
                         summary: 'Completed skill evaluation. Recommend activating literature search skill for this task.'

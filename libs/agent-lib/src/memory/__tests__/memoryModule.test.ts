@@ -1,9 +1,11 @@
 import { MemoryModule } from "../MemoryModule";
+import { ThinkingModule } from "../../thinking/ThinkingModule";
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "../../api-client";
 import { ThinkingRound } from "../Turn";
 import { Logger } from "pino";
 import { TurnMemoryStore } from "../TurnMemoryStore";
 import { MessageBuilder } from "../../task/task.type";
+import { vi } from "vitest";
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {
@@ -24,7 +26,8 @@ class MockApiClient implements ApiClient {
                     name: "continue_thinking",
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        reason: "Mock test - ready to proceed"
+                        thoughtNumber: 1,
+                        totalThoughts: 1
                     })
                 }
             ],
@@ -41,15 +44,15 @@ class MockApiClient implements ApiClient {
 
 const mockClient = new MockApiClient();
 
-// Mock Logger
+// Mock Logger - using pino interface
 const mockLogger: Logger = {
+    level: 'info',
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
     debug: vi.fn(),
     trace: vi.fn(),
     fatal: vi.fn(),
-    silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
 } as any;
 
@@ -58,9 +61,13 @@ const mockTurnStore = new TurnMemoryStore();
 
 describe('MemoryModule', () => {
     let memoryModule: MemoryModule;
+    let thinkingModule: ThinkingModule;
 
     beforeEach(() => {
-        memoryModule = new MemoryModule(mockClient, mockLogger, {}, mockTurnStore);
+        // Create ThinkingModule first
+        thinkingModule = new ThinkingModule(mockClient, mockLogger, {}, mockTurnStore);
+        // Create MemoryModule with ThinkingModule dependency
+        memoryModule = new MemoryModule(mockLogger, {}, mockTurnStore, thinkingModule);
     });
 
     it('should perform thinking phase single time', async () => {
@@ -68,15 +75,14 @@ describe('MemoryModule', () => {
         memoryModule.startTurn('test_workspace');
 
         const spy = vi.spyOn(mockClient, 'makeRequest')
-        const result = await memoryModule.performSingleThinkingRound(1, 'test_workspace', []);
+        const result = await memoryModule.performThinkingPhase('test_workspace', []);
         console.log(result)
         console.log(spy.mock.calls)
 
         expect(result).toBeDefined();
-        expect(result.roundNumber).toBe(1);
-        expect(result.content).toBe("This is a mock thinking response for testing purposes.");
-        expect(result.continueThinking).toBe(false);
-        expect(result.tokens).toBeGreaterThan(0);
+        expect(result.rounds).toBeDefined();
+        expect(result.rounds.length).toBeGreaterThan(0);
+        expect(result.tokensUsed).toBeGreaterThan(0);
 
         memoryModule.completeTurn()
         console.log(memoryModule.getTurnStore().getAllTurns())
@@ -91,7 +97,9 @@ describe('MemoryModule', () => {
                 content: "First thinking round: Analyzing the user's request to understand the task requirements.",
                 continueThinking: true,
                 recalledContexts: [],
-                tokens: 50
+                tokens: 50,
+                thoughtNumber: 1,
+                totalThoughts: 3
             },
             {
                 roundNumber: 2,
@@ -100,7 +108,9 @@ describe('MemoryModule', () => {
                 recalledContexts: [
                     { turnNumber: 1, relevanceScore: 0.8, content: "Previous similar task context" }
                 ],
-                tokens: 65
+                tokens: 65,
+                thoughtNumber: 2,
+                totalThoughts: 3
             },
             {
                 roundNumber: 3,
@@ -111,10 +121,13 @@ describe('MemoryModule', () => {
                     { turnNumber: 2, relevanceScore: 0.9, content: "Recent context from turn 2" }
                 ],
                 tokens: 55,
-                summary: "Completed analysis and formulated action plan for the requested task."
+                summary: "Completed analysis and formulated action plan for the requested task.",
+                thoughtNumber: 3,
+                totalThoughts: 3
             }
         ]
-        const result = await memoryModule.performSingleThinkingRound(4, 'test_workspace', testRounds);
+        // Use performThinkingPhase instead of performSingleThinkingRound
+        const result = await memoryModule.performThinkingPhase('test_workspace', []);
         console.log(spy.mock.calls[0])
     })
 
@@ -147,16 +160,6 @@ describe('MemoryModule', () => {
         expect(memoryModule.getAllMessages()).toHaveLength(0);
     });
 
-    it('should build tool prompts for thinking phase', async () => {
-        const tools = memoryModule.buildThinkingTools();
-        expect(tools).toBeDefined();
-        expect(tools.length).toBeGreaterThan(0);
-        expect(tools[0].type).toBe('function');
-        if (tools[0].type === 'function') {
-            expect(tools[0].function.name).toBe('continue_thinking');
-        }
-    });
-
     it('should render tools in thinking prompt', async () => {
         // Start a turn
         memoryModule.startTurn('test_workspace', 'test_task');
@@ -164,8 +167,8 @@ describe('MemoryModule', () => {
         // Spy on makeRequest to capture the prompt
         const spy = vi.spyOn(mockClient, 'makeRequest');
 
-        // Perform a thinking round
-        await memoryModule.performSingleThinkingRound(1, 'test_workspace', []);
+        // Perform a thinking phase
+        await memoryModule.performThinkingPhase('test_workspace', []);
 
         // Verify makeRequest was called
         expect(spy).toHaveBeenCalled();
