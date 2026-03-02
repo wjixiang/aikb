@@ -203,4 +203,23 @@ export const TYPES = {
      * @scope Transient - New instance per strategy
      */
     IToolStateStrategy: Symbol('IToolStateStrategy'),
+
+    // ==================== Action Module ====================
+
+    /**
+     * ActionModule for action phase management
+     * @scope Request - Shared within an agent creation request
+     */
+    ActionModule: Symbol('ActionModule'),
+
+    /**
+     * IActionModule interface
+     * @scope Request - Shared within an agent creation request
+     */
+    IActionModule: Symbol('IActionModule'),
+
+    /**
+     * ActionModuleConfig - Configuration for ActionModule
+     */
+    ActionModuleConfig: Symbol('ActionModuleConfig'),
 } as const;

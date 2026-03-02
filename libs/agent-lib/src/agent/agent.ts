@@ -21,9 +21,11 @@ import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
 import { generateSkillsUsageGuidance } from "../prompts/sections/skillsUsageGuidance.js";
+import { generateActionPhaseGuidance } from "../prompts/sections/actionPhaseGuidance.js";
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ThinkingPhaseResult, IThinkingModule } from '../thinking/types.js';
+import type { IActionModule, ActionPhaseResult, ToolResult } from '../action/types.js';
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -31,15 +33,13 @@ import type { ITaskModule } from '../task/types.js';
 import type { IToolManager } from '../tools/IToolManager.js';
 import { ILogger } from '../utils/logging/types.js';
 
-/**
- * Tool result from execution
- */
-interface ToolResult {
-    toolName: string;
-    success: boolean;
-    result: any;
-    timestamp: number;
-}
+// Tool result from execution - now defined in action/types.ts
+// interface ToolResult {
+//     toolName: string;
+//     success: boolean;
+//     result: any;
+//     timestamp: number;
+// }
 
 export interface AgentConfig {
     apiRequestTimeout: number;
@@ -108,6 +108,9 @@ export class Agent {
     // Thinking module (dependency injected, always present)
     private thinkingModule: IThinkingModule;
 
+    // Action module (dependency injected, always present)
+    private actionModule: IActionModule;
+
     // Task module (dependency injected, always present)
     private taskModule: ITaskModule;
 
@@ -123,6 +126,7 @@ export class Agent {
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
+        @inject(TYPES.IActionModule) actionModule: IActionModule,
         @inject(TYPES.ITaskModule) taskModule: ITaskModule,
         @inject(TYPES.Logger) private logger: ILogger,
         @inject(TYPES.TaskId) @optional() taskId?: string,
@@ -135,6 +139,7 @@ export class Agent {
         this.apiClient = apiClient;
         this.memoryModule = memoryModule as MemoryModule;
         this.thinkingModule = thinkingModule;
+        this.actionModule = actionModule;
         this.taskModule = taskModule;
 
         // Get IToolManager from workspace (which has it injected)
@@ -399,73 +404,62 @@ export class Agent {
                 // Track thinking tokens
                 this._tokenUsage.contextTokens += thinkingTokens;
 
-                // Collect complete response from stream
-                const response = await this.attemptApiRequest();
+                // ACTION PHASE: Use ActionModule
+                const systemPrompt = await this.getSystemPrompt();
+                const conversationHistory = this.memoryModule.getHistoryForPrompt();
 
-                if (!response) {
-                    throw new NoApiResponseError(1);
-                }
+                // Convert tools to OpenAI format (inline utility)
+                const allTools = this.workspace.getAllTools();
+                const tools = allTools.map((t: { tool: any }) => t.tool);
+                const converter = new DefaultToolCallConverter();
+                const openaiTools = converter.convertTools(tools);
 
-                if (response.toolCalls.length === 0) {
-                    throw new NoToolsUsedError()
-                }
+                // Generate action phase guidance with thinking summary
+                const thinkingSummary = thinkingResult.rounds.length > 0
+                    ? this.formatMemoryThinkingSummary(thinkingResult)
+                    : undefined;
+                const actionPhaseGuidance = generateActionPhaseGuidance(thinkingSummary);
 
-                // Convert API response to assistant message content
-                // const assistantMessageContent = this.convertApiResponseToAssistantMessage(response);
-                const assistantMessage = this.converApiResponseToApiMessage(response)
-                this.logger.info(`assistantMessage has been converted`)
+                // Prepend action phase guidance to system prompt
+                const enhancedSystemPrompt = `${actionPhaseGuidance}\n\n${systemPrompt}`;
 
-                // Execute tool calls and build response
-                // This will update workspace states
-                const executionResult = await this.executeToolCalls(
-                    response,
+                const actionResult: ActionPhaseResult = await this.actionModule.performActionPhase(
+                    currentWorkspaceContext,
+                    enhancedSystemPrompt,
+                    conversationHistory,
+                    openaiTools,
                     () => this.isAborted(),
+                    this.workspace.getToolManager()  // Use workspace's toolManager to ensure tools are available
                 );
 
-                this.logger.info(`Tool execution finished, ${JSON.stringify(executionResult)}`, {
-                    // result: executionResult
-                })
+                // Update agent state from action result
+                this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
+                this._toolUsage = { ...this._toolUsage, ...actionResult.toolUsage };
 
-                // IMPORTANT: Trigger workspace re-render after tool execution
-                // This ensures all components' renderImply() methods are called
-                // and the workspace state is updated for the next API request
-                // await this.workspace.render();
-                this.logger.info(await this.workspace.render())
-                this.memoryModule.addMessage(assistantMessage);
-
-                // Add user message (tool result) to conversation history
-                if (executionResult.userMessageContent.length > 0) {
-                    const message = MessageBuilder.custom('system', executionResult.userMessageContent);
+                // Add messages to memory
+                this.memoryModule.addMessage(actionResult.assistantMessage);
+                if (actionResult.userMessageContent.length > 0) {
+                    const message = MessageBuilder.custom('system', actionResult.userMessageContent);
                     this.memoryModule.addMessage(message);
                 }
 
-                // Store tool results for next thinking phase
-                lastToolResults = response.toolCalls.map(tc => {
-                    const toolResult = executionResult.userMessageContent.find(
-                        m => m.type === 'tool_result' && m.tool_use_id === tc.id
+                // Record tool calls to turn
+                actionResult.toolResults.forEach(result => {
+                    this.memoryModule.recordToolCall(
+                        result.toolName,
+                        result.success,
+                        result.result
                     );
-                    const success = toolResult && 'is_error' in toolResult ? !toolResult.is_error : true;
-                    const result = toolResult && 'content' in toolResult ? toolResult.content : '';
-
-                    // Record tool call to current turn
-                    this.memoryModule.recordToolCall(tc.name, success, result);
-
-                    return {
-                        toolName: tc.name,
-                        success,
-                        result,
-                        timestamp: Date.now(),
-                    };
                 });
 
-                // NOTE: Workspace context is NOT added to conversation history
-                // It is always passed fresh via workspaceContext parameter in attemptApiRequest()
-                // This prevents token explosion from duplicating workspace state in history
+                // Store tool results for next thinking phase
+                lastToolResults = actionResult.toolResults;
+
+                // Trigger workspace re-render after tool execution
+                this.logger.info(await this.workspace.render());
 
                 // Check if we should continue recursion
-                if (
-                    !executionResult.didAttemptCompletion
-                ) {
+                if (!actionResult.didAttemptCompletion) {
                     // Complete current turn and prepare for next turn
                     this.memoryModule.completeTurn();
                     needsNewTurn = true;
@@ -477,8 +471,6 @@ export class Agent {
                             text: 'WORKSPACE STATE UPDATED'
                         }],
                     });
-
-                    // this.logger.info(await this.workspace.render())
                 } else {
                     // Task completed, complete the turn
                     this.memoryModule.completeTurn();
@@ -522,46 +514,7 @@ export class Agent {
         return false;
     }
 
-    // ==================== Message Processing ====================
-
-    private converApiResponseToApiMessage(response: ApiResponse): ApiMessage {
-        const content: ExtendedContentBlock[] = [];
-
-        // Add text response if available
-        if (response.textResponse) {
-            content.push({
-                type: 'text',
-                text: response.textResponse,
-            });
-        }
-
-        // Add tool use blocks for each tool call
-        for (const toolCall of response.toolCalls) {
-            // Parse arguments from JSON string
-            let parsedArgs: any = {};
-            try {
-                parsedArgs = JSON.parse(toolCall.arguments);
-            } catch (e) {
-                console.error('Failed to parse tool call arguments:', e);
-                parsedArgs = { raw: toolCall.arguments };
-            }
-
-            content.push({
-                type: 'tool_use' as const,
-                id: toolCall.id,
-                name: toolCall.name,
-                input: parsedArgs,
-            });
-        }
-
-        return {
-            role: 'assistant',
-            content,
-            ts: Date.now(),
-        };
-    }
-
-
+    // ==================== Message Processing (Deprecated - Now handled by ActionModule) ====================
 
     /**
      * Add a system message to conversation history
@@ -578,11 +531,12 @@ export class Agent {
         this.memoryModule.addMessage(apiMessage);
     }
 
-    // ==================== Tool Execution ====================
+    // ==================== Tool Execution (Deprecated - Now handled by ActionModule) ====================
 
     /**
      * Execute tool calls and build response
      * Supports multiple tool calls in a single response
+     * @deprecated This method is now handled by ActionModule. Kept for backward compatibility.
      */
     private async executeToolCalls(
         response: ApiResponse,
@@ -663,82 +617,6 @@ export class Agent {
         }
 
         return { userMessageContent, didAttemptCompletion };
-    }
-
-    // ==================== API Request Handling ====================
-
-    /**
-     * Convert Workspace tools to OpenAI format
-     * @returns Array of OpenAI-compatible tool definitions
-     */
-    private convertWorkspaceToolsToOpenAI(): any[] {
-        // Get all tools from workspace
-        const allTools = this.workspace.getAllTools();
-        const tools = allTools.map((t: { tool: any }) => t.tool);
-
-        // Use the existing converter
-        const converter = new DefaultToolCallConverter();
-        return converter.convertTools(tools);
-    }
-
-    /**
-     * Attempt API request with timeout
-     * Uses the injected ApiClient for making requests
-     */
-    async attemptApiRequest(retryAttempt: number = 0) {
-        try {
-            const systemPrompt = await this.getSystemPrompt();
-            let workspaceContext = await this.workspace.render();
-
-            // Inject task context and accumulated summaries from MemoryModule
-            const currentTurn = this.memoryModule.getCurrentTurn();
-            const taskContext = currentTurn?.taskContext
-                ? `=== TASK CONTEXT ===\nUser's Goal: ${currentTurn.taskContext}\n\n`
-                : '';
-
-            const accumulatedSummaries = this.memoryModule.getAccumulatedSummaries();
-
-            if (taskContext || accumulatedSummaries) {
-                workspaceContext = `${taskContext}${accumulatedSummaries}\n\n=== CURRENT WORKSPACE CONTEXT ===\n${workspaceContext}`;
-            }
-
-            // Get conversation history for prompt
-            // Default: summary-only mode (no history injected by default)
-            // History is only injected when LLM explicitly calls recall_conversation tool
-            const conversationHistory = this.memoryModule.getHistoryForPrompt();
-
-            // Build prompt using PromptBuilder
-            const prompt: FullPrompt = new PromptBuilder()
-                .setSystemPrompt(systemPrompt)
-                .setWorkspaceContext(workspaceContext)
-                .setConversationHistory(conversationHistory)
-                .build();
-
-            try {
-                // Get tools from workspace and convert to OpenAI format
-                const tools = this.convertWorkspaceToolsToOpenAI();
-
-                // Use the injected ApiClient to make the request
-                const response = await this.apiClient.makeRequest(
-                    prompt.systemPrompt,
-                    prompt.workspaceContext,
-                    prompt.memoryContext,
-                    { timeout: this.config.apiRequestTimeout },
-                    tools  // Pass tools to API client
-                );
-
-                // Clear recalled messages after API request
-                // They were injected into this request, so clear for next request
-                this.memoryModule.clearRecalledMessages();
-
-                return response;
-
-            } catch (error) {
-                throw error;
-            }
-        } catch (error) {
-            throw error;
-        }
     }
 
     // ==================== Helper Methods ====================

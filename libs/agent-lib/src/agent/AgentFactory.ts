@@ -8,6 +8,7 @@ import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { getGlobalContainer, AgentContainer } from '../di/index.js';
 import { IVirtualWorkspace } from '../statefulContext/types.js';
 import { TYPES } from '../di/types.js';
+import { overwrite_di, TestOverrides } from '../di/container.js';
 
 /**
  * Configuration options for creating an Agent
@@ -102,7 +103,8 @@ export class AgentFactory {
     static create(
         workspace: VirtualWorkspace,
         agentPrompt: AgentPrompt,
-        options: AgentFactoryOptions = {}
+        options: AgentFactoryOptions = {},
+        mocks?: TestOverrides
     ): Agent {
         // Log options without serializing apiClient (contains circular references)
         const { apiClient, ...loggableOptions } = options;
@@ -119,7 +121,8 @@ export class AgentFactory {
         // The container now handles observer wrapping internally
         const container = this.getContainer();
 
-        // Create agent with container, passing the workspace and observers
+        // Create agent with container, passing the workspace, observers, and mocks
+        // Mocks are now applied to the child container inside createAgent()
         const agent = container.createAgent({
             config: configPartial,
             apiConfiguration: apiConfigPartial,
@@ -127,6 +130,7 @@ export class AgentFactory {
             taskId,
             workspace, // Pass the workspace to container for backward compatibility
             observers, // Pass observers to container - it will handle wrapping
+            mocks, // Pass mocks to be applied to child container
         });
 
         console.log('[AgentFactory.create] Agent instance created via container, taskId:', agent.getTaskId);

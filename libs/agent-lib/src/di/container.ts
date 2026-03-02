@@ -8,6 +8,7 @@ import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
 import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../memory/ObservableTurnMemoryStore.js';
 import { ThinkingModule } from '../thinking/ThinkingModule.js';
 import { defaultThinkingConfig } from '../thinking/types.js';
+import { ActionModule, defaultActionConfig } from '../action/ActionModule.js';
 import { SkillManager } from '../skills/SkillManager.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
@@ -15,6 +16,7 @@ import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ThinkingModuleConfig } from '../thinking/types.js';
+import type { ActionModuleConfig } from '../action/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
@@ -22,12 +24,14 @@ import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ITaskModule } from '../task/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
+import type { IActionModule } from '../action/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import { TaskModule } from '../task/TaskModule.js';
 import pino from 'pino';
 import type { Logger, Level } from 'pino'
+import { object } from 'zod';
 
 /**
  * Options for creating an Agent instance through the DI container
@@ -88,6 +92,13 @@ export interface AgentCreationOptions {
      * VirtualWorkspace instances manually
      */
     workspace?: IVirtualWorkspace;
+
+    /**
+     * Optional mock overrides for dependency injection
+     * Used for testing to replace real implementations with mocks
+     * Applied to the child container created for this agent
+     */
+    mocks?: TestOverrides;
 }
 
 /**
@@ -190,10 +201,37 @@ export class AgentContainer {
             .to(ThinkingModule)
             .inRequestScope();
 
-        // ThinkingModule configuration
+        // ThinkingModule configuration - merge with apiRequestTimeout from AgentConfig
         this.container
             .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
-            .toConstantValue(defaultThinkingConfig);
+            .toDynamicValue(() => {
+                const config = this.container.get<AgentConfig>(TYPES.AgentConfig);
+                return {
+                    ...defaultThinkingConfig,
+                    apiRequestTimeout: config.apiRequestTimeout,
+                };
+            });
+
+        // Action Module
+        this.container
+            .bind<IActionModule>(TYPES.IActionModule)
+            .to(ActionModule)
+            .inRequestScope();
+        this.container
+            .bind(TYPES.ActionModule)
+            .to(ActionModule)
+            .inRequestScope();
+
+        // ActionModule configuration - merge with apiRequestTimeout from AgentConfig
+        this.container
+            .bind<ActionModuleConfig>(TYPES.ActionModuleConfig)
+            .toDynamicValue(() => {
+                const config = this.container.get<AgentConfig>(TYPES.AgentConfig);
+                return {
+                    ...defaultActionConfig,
+                    apiRequestTimeout: config.apiRequestTimeout,
+                };
+            });
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         this.container.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
@@ -269,6 +307,12 @@ export class AgentContainer {
 
         // Setup all bindings for the agent container
         this.setupAgentBindings(agentContainer, options);
+
+        // Apply mock overrides to child container if provided
+        // This must happen AFTER setupAgentBindings so mocks can override the default bindings
+        if (options.mocks) {
+            this.applyOverride(agentContainer, options.mocks);
+        }
 
         // Get the base agent instance
         const agent = agentContainer.get<Agent>(TYPES.Agent);
@@ -351,16 +395,10 @@ export class AgentContainer {
             .bind<VirtualWorkspaceConfig>(TYPES.VirtualWorkspaceConfig)
             .toConstantValue(workspaceConfig);
 
-        // MemoryModuleConfig - merge with apiRequestTimeout from AgentConfig
+        // MemoryModuleConfig
         agentContainer
             .bind<MemoryModuleConfig>(TYPES.MemoryModuleConfig)
-            .toDynamicValue(() => {
-                const config = agentContainer.get<AgentConfig>(TYPES.AgentConfig);
-                return {
-                    ...defaultMemoryConfig,
-                    apiRequestTimeout: config.apiRequestTimeout,
-                };
-            });
+            .toConstantValue(defaultMemoryConfig);
 
         if (options.taskId) {
             agentContainer.bind<string>(TYPES.TaskId).toConstantValue(options.taskId);
@@ -425,10 +463,40 @@ export class AgentContainer {
             .to(ThinkingModule)
             .inRequestScope();
 
-        // ThinkingModule configuration
+        // ThinkingModule configuration - merge with apiRequestTimeout from AgentConfig
         agentContainer
             .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
-            .toConstantValue(defaultThinkingConfig);
+            .toDynamicValue(() => {
+                const config = agentContainer.get<AgentConfig>(TYPES.AgentConfig);
+                return {
+                    ...defaultThinkingConfig,
+                    apiRequestTimeout: config.apiRequestTimeout,
+                };
+            });
+
+        // Action Module
+        agentContainer
+            .bind<IActionModule>(TYPES.IActionModule)
+            .to(ActionModule)
+            .inRequestScope();
+        agentContainer
+            .bind(TYPES.ActionModule)
+            .to(ActionModule)
+            .inRequestScope();
+
+        // ActionModule configuration - merge with apiRequestTimeout from AgentConfig
+        agentContainer
+            .bind<ActionModuleConfig>(TYPES.ActionModuleConfig)
+            .toDynamicValue(() => {
+                const config = agentContainer.get<AgentConfig>(TYPES.AgentConfig);
+                return {
+                    ...defaultActionConfig,
+                    apiRequestTimeout: config.apiRequestTimeout,
+                };
+            });
+
+        // Tool Manager - singleton service shared across all agents
+        agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         agentContainer.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
@@ -488,6 +556,44 @@ export class AgentContainer {
             defaultScope: 'Transient',
         });
         return childContainer;
+    }
+
+    public override(mocks: TestOverrides) {
+        const entries = Object.entries(mocks) as [keyof TestOverrides, any][];
+        for (const [key, mockInstance] of entries) {
+            const identifier = TYPES[key];
+            if (this.container.isBound(identifier)) {
+                this.container.unbind(identifier)
+            }
+
+            this.container.bind(identifier).to(mockInstance)
+        }
+    }
+
+    /**
+     * Apply mock overrides to a specific container (including child containers)
+     * This enables mocking dependencies for individual agent instances
+     *
+     * @param targetContainer - The container to apply overrides to
+     * @param mocks - The mock implementations to bind
+     *
+     * @example
+     * ```typescript
+     * const agentContainer = new Container();
+     * container.applyOverride(agentContainer, { ApiClient: mockApiClient });
+     * ```
+     */
+    public applyOverride(targetContainer: Container, mocks: TestOverrides) {
+        const entries = Object.entries(mocks) as [keyof TestOverrides, any][];
+        for (const [key, mockInstance] of entries) {
+            const identifier = TYPES[key];
+            if (targetContainer.isBound(identifier)) {
+                targetContainer.unbind(identifier)
+            }
+
+            targetContainer.bind(identifier).toConstantValue(mockInstance);
+            console.log(`[AgentContainer.applyOverride] Bound ${String(key)} to mock in child container`);
+        }
     }
 }
 
@@ -577,4 +683,20 @@ function extractTurnCallbacks(observers: ObservableAgentCallbacks): TurnStoreObs
         onTurnSummaryStored: observers.onTurnSummaryStored,
         onTurnActionTokensUpdated: observers.onTurnActionTokensUpdated,
     };
+}
+
+export type TestOverrides = {
+    [K in keyof typeof TYPES]?: any;
+};
+
+export function overwrite_di(overrides: TestOverrides, container: Container) {
+    const entries = Object.entries(overrides) as [keyof TestOverrides, any][];
+    for (const [key, mockInstance] of entries) {
+        const identifier = TYPES[key];
+        if (container.isBound(identifier)) {
+            container.unbind(identifier)
+        }
+
+        container.bind(identifier).to(mockInstance)
+    }
 }
