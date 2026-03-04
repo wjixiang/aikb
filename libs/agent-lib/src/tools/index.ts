@@ -23,3 +23,15 @@ export * from './providers/index.js';
 
 // State management (strategy interfaces)
 export * from './state/IToolStateStrategy.js';
+
+// Error classes from tool.errors.ts (with aliases to avoid conflicts with IToolManager.ts)
+export {
+    ToolError,
+    ToolNotFoundError,
+    ToolExecutionError,
+    ToolParameterError,
+    ToolTimeoutError,
+    ToolNotRegisteredError,
+    ToolDisabledError,
+    ProviderNotFoundError,
+} from './tool.errors.js';

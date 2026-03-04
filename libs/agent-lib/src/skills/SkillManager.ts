@@ -142,17 +142,42 @@ export class SkillManager {
         const activatedComponentIds: string[] = [];
         if (skill.components) {
             for (const componentDef of skill.components) {
-                this.activeComponents.set(componentDef.componentId, componentDef.instance);
+                let componentInstance: ToolComponent;
+
+                // Check if componentDef.instance is a factory function (sync or async)
+                if (typeof componentDef.instance === 'function') {
+                    // Call the factory function to get the component instance
+                    try {
+                        componentInstance = await componentDef.instance();
+                    } catch (factoryError) {
+                        console.error(`[SkillManager] Error calling factory for component "${componentDef.componentId}":`, factoryError);
+                        continue; // Skip this component if factory fails
+                    }
+
+                    // Extract tools from the component's toolSet and add to skill's tools
+                    if (componentInstance && 'toolSet' in componentInstance) {
+                        const toolSet = componentInstance.toolSet as Map<string, Tool>;
+                        const existingTools = skill.tools ?? [];
+                        const newTools = Array.from(toolSet.values());
+                        skill.tools = [...existingTools, ...newTools];
+                    }
+                } else {
+                    // Already an instance, use it directly
+                    componentInstance = componentDef.instance;
+                }
+
+                // Store the actual component instance
+                this.activeComponents.set(componentDef.componentId, componentInstance);
                 activatedComponentIds.push(componentDef.componentId);
 
                 try {
-                    await skill.onComponentActivate?.(componentDef.instance);
+                    await skill.onComponentActivate?.(componentInstance);
                 } catch (error) {
                     console.error(`[SkillManager] Error in skill's onComponentActivate for "${componentDef.componentId}":`, error);
                 }
 
                 try {
-                    await componentDef.instance.onActivate?.();
+                    await componentInstance.onActivate?.();
                 } catch (compError) {
                     console.error(`[SkillManager] Component "${componentDef.componentId}" error during activation:`, compError);
                 }

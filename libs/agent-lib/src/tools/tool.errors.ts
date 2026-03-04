@@ -7,7 +7,7 @@ export abstract class ToolError extends Error {
 
     constructor(
         message: string,
-        public readonly cause?: Error,
+        public override readonly cause?: Error,
     ) {
         super(message);
         this.name = this.constructor.name;
@@ -84,5 +84,29 @@ export class ToolNotRegisteredError extends ToolError {
 
     constructor(toolName: string, cause?: Error) {
         super(`Tool '${toolName}' is not registered in the tool set`, cause);
+    }
+}
+
+/**
+ * Error thrown when tool is disabled
+ */
+export class ToolDisabledError extends ToolError {
+    readonly code = 'TOOL_DISABLED';
+    readonly retryable = false;
+
+    constructor(toolName: string, cause?: Error) {
+        super(`Tool '${toolName}' is disabled`, cause);
+    }
+}
+
+/**
+ * Error thrown when provider is not found
+ */
+export class ProviderNotFoundError extends ToolError {
+    readonly code = 'PROVIDER_NOT_FOUND';
+    readonly retryable = false;
+
+    constructor(providerId: string, cause?: Error) {
+        super(`Provider '${providerId}' not found`, cause);
     }
 }

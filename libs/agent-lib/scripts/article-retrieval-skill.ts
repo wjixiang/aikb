@@ -34,7 +34,7 @@ async function main() {
                         console.log(`[Agent] Task ${taskId} status changed to: ${status}`);
                     },
                     onMessageAdded: (taskId, message) => {
-                        console.log('message added')
+                        // console.log('message added')
                         console.log(MessageContentFormatter.formatForLogging(message, {
                             maxLength: 99999,
                             includeMetadata: true,

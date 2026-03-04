@@ -83,6 +83,12 @@ export interface IToolManager {
      * @param name - The tool name to execute
      * @param params - The parameters to pass to the tool
      * @returns Promise resolving to the tool result
+     * @throws {ToolNotFoundError} When the tool is not found
+     * @throws {ToolDisabledError} When the tool is disabled
+     * @throws {ProviderNotFoundError} When the provider is not found
+     * @throws {ToolExecutionError} When tool execution fails
+     * @throws {ToolParameterError} When tool parameters are invalid
+     * @throws {ToolTimeoutError} When tool execution times out
      */
     executeTool(name: string, params: any): Promise<any>;
 
@@ -162,28 +168,4 @@ export interface IToolManager {
      * @param factory - The custom strategy factory to use
      */
     setStrategyFactory(factory: IToolStateStrategyFactory): void;
-}
-
-/**
- * Tool execution errors
- */
-export class ToolNotFoundError extends Error {
-    constructor(toolName: string) {
-        super(`Tool not found: ${toolName}`);
-        this.name = 'ToolNotFoundError';
-    }
-}
-
-export class ToolDisabledError extends Error {
-    constructor(toolName: string) {
-        super(`Tool is disabled: ${toolName}`);
-        this.name = 'ToolDisabledError';
-    }
-}
-
-export class ProviderNotFoundError extends Error {
-    constructor(providerId: string) {
-        super(`Provider not found: ${providerId}`);
-        this.name = 'ProviderNotFoundError';
-    }
 }

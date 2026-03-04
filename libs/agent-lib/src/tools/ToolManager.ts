@@ -13,7 +13,7 @@ import {
     ToolNotFoundError,
     ToolDisabledError,
     ProviderNotFoundError,
-} from './IToolManager.js';
+} from './tool.errors.js';
 import type { Skill } from '../skills/types.js';
 import type { IToolStateStrategy, IToolStateStrategyFactory } from './state/IToolStateStrategy.js';
 import { NoSkillStrategy, ToolStateStrategyFactory } from './state/IToolStateStrategy.js';

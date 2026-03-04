@@ -472,6 +472,7 @@ export class Agent {
                     () => this.isAborted(),
                     this.workspace.getToolManager()  // Use workspace's toolManager to ensure tools are available
                 );
+                this.logger.info(`Action phase successfully proformed`);
 
                 // Update agent state from action result
                 this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
@@ -497,7 +498,7 @@ export class Agent {
                 lastToolResults = actionResult.toolResults;
 
                 // Trigger workspace re-render after tool execution
-                this.logger.info(await this.workspace.render());
+                this.logger.info(`Tool-calling has been executed successfully`);
 
                 // Check if we should continue recursion
                 if (!actionResult.didAttemptCompletion) {

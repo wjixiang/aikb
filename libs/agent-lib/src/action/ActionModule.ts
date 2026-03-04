@@ -12,7 +12,6 @@ import { injectable, inject, optional } from 'inversify';
 import Anthropic from '@anthropic-ai/sdk';
 import {
     ApiMessage,
-    MessageBuilder,
     ExtendedContentBlock,
 } from '../task/task.type.js';
 import { ToolUsage } from '../types/index.js';
@@ -20,8 +19,8 @@ import type { ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { TYPES } from '../di/types.js';
 import type { Logger } from 'pino';
 import type { IToolManager } from '../tools/index.js';
-import type { IMemoryModule } from '../memory/types.js';
 import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
+import type { MemoryModuleConfig } from '../memory/types.js';
 import {
     IActionModule,
     ActionModuleConfig,
@@ -48,14 +47,14 @@ export class ActionModule implements IActionModule {
     private logger: Logger;
     private toolManager: IToolManager;
     private turnMemoryStore: ITurnMemoryStore;
-    private memoryModuleConfig: any; // MemoryModuleConfig
+    private memoryModuleConfig: MemoryModuleConfig;
 
     constructor(
         @inject(TYPES.ApiClient) apiClient: any,
         @inject(TYPES.Logger) logger: Logger,
         @inject(TYPES.IToolManager) toolManager: IToolManager,
         @inject(TYPES.ITurnMemoryStore) turnMemoryStore: ITurnMemoryStore,
-        @inject(TYPES.MemoryModuleConfig) memoryModuleConfig: any,
+        @inject(TYPES.MemoryModuleConfig) memoryModuleConfig: MemoryModuleConfig,
         @inject(TYPES.ActionModuleConfig) @optional() config: Partial<ActionModuleConfig> = {}
     ) {
         this.config = { ...defaultActionConfig, ...config };
