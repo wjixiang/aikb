@@ -1,14 +1,5 @@
-import { defineSkill } from '../SkillDefinition.js';
-import {
-    setChecklistItemTool,
-    setMultipleItemsTool,
-    filterChecklistTool,
-    exportChecklistTool,
-    validateChecklistTool,
-    clearChecklistTool,
-    getProgressTool,
-    setManuscriptMetadataTool
-} from '../../components/PRISMA/prismaTools.js';
+import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
+import { PrismaCheckListComponent } from '../../components/PRISMA/prismaCheckListComponent.js';
 
 /**
  * PRISMA Checklist Skill - TypeScript Definition
@@ -168,15 +159,13 @@ The PRISMA checklist skill integrates with:
 5. **Risk of Bias**: Assess bias for Items 11, 18
 6. **Data Synthesis**: Perform synthesis for Items 19-22`,
 
-    tools: [
-        setChecklistItemTool,
-        setMultipleItemsTool,
-        filterChecklistTool,
-        exportChecklistTool,
-        validateChecklistTool,
-        clearChecklistTool,
-        getProgressTool,
-        setManuscriptMetadataTool
+    components: [
+        createComponentDefinition(
+            'prisma-checklist',
+            'PRISMA Checklist',
+            'Manages PRISMA 2020 checklist compliance for systematic reviews',
+            new PrismaCheckListComponent()
+        )
     ],
 
     onActivate: async () => {

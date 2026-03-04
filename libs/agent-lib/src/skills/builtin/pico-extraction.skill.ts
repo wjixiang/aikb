@@ -1,11 +1,5 @@
-import { defineSkill } from '../SkillDefinition.js';
-import {
-    setPicosElementTool,
-    generateClinicalQuestionTool,
-    validatePicosTool,
-    clearPicosTool,
-    exportPicosTool
-} from '../../components/PICOS/picosTools.js';
+import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
+import { PicosComponent } from '../../components/PICOS/picosComponents.js';
 
 /**
  * PICO Extraction Skill - TypeScript Definition
@@ -125,12 +119,13 @@ After building a complete PICO formulation:
 2. Use the exported search terms with bibliography search tools
 3. Combine with MeSH terms for comprehensive database searches`,
 
-    tools: [
-        setPicosElementTool,
-        generateClinicalQuestionTool,
-        validatePicosTool,
-        clearPicosTool,
-        exportPicosTool
+    components: [
+        createComponentDefinition(
+            'pico-templater',
+            'PICO Templater',
+            'Formulates clinical research questions using PICO framework',
+            new PicosComponent()
+        )
     ],
 
     onActivate: async () => {

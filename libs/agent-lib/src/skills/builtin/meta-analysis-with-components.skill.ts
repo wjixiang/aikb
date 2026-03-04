@@ -1,40 +1,4 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import {
-    searchPubmedTool,
-    viewArticleTool,
-    navigatePageTool,
-    clearResultsTool
-} from '../../components/bibliographySearch/bibliographySearchTools.js';
-import {
-    setPicosElementTool,
-    generateClinicalQuestionTool,
-    validatePicosTool,
-    clearPicosTool,
-    exportPicosTool
-} from '../../components/PICOS/picosTools.js';
-import {
-    setChecklistItemTool,
-    setMultipleItemsTool,
-    filterChecklistTool,
-    exportChecklistTool,
-    validateChecklistTool,
-    clearChecklistTool,
-    getProgressTool,
-    setManuscriptMetadataTool
-} from '../../components/PRISMA/prismaTools.js';
-import {
-    setIdentificationTool,
-    setRecordsRemovedTool,
-    setScreeningTool,
-    setRetrievalTool,
-    setAssessmentTool,
-    setIncludedTool,
-    addExclusionReasonTool,
-    exportFlowDiagramTool,
-    clearFlowDiagramTool,
-    validateFlowDiagramTool,
-    autoCalculateTool
-} from '../../components/PRISMA/prismaFlowTools.js';
 import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent.js';
 import { PicosComponent } from '../../components/PICOS/picosComponents.js';
 import { PrismaCheckListComponent } from '../../components/PRISMA/prismaCheckListComponent.js';
@@ -117,6 +81,8 @@ This skill automatically activates four components:
 - **Prisma Check List**: Provides set_checklist_item, validate_checklist, export_checklist, get_progress
 - **Prisma Workflow**: Provides set_identification, set_screening, set_assessment, set_included, export_flow_diagram
 
+Tools are automatically extracted from components when the skill is activated.
+
 ## Best Practices
 
 - **Start with PICO**: Formulate clear clinical questions before searching
@@ -135,43 +101,8 @@ At completion, provide:
 5. **PRISMA Checklist**: Completion status with item locations
 6. **Documentation**: All exported data in appropriate formats`,
 
-    // Tools from all components
-    tools: [
-        // Bibliography search tools
-        searchPubmedTool,
-        viewArticleTool,
-        navigatePageTool,
-        clearResultsTool,
-        // PICO tools
-        setPicosElementTool,
-        generateClinicalQuestionTool,
-        validatePicosTool,
-        clearPicosTool,
-        exportPicosTool,
-        // PRISMA checklist tools
-        setChecklistItemTool,
-        setMultipleItemsTool,
-        filterChecklistTool,
-        exportChecklistTool,
-        validateChecklistTool,
-        clearChecklistTool,
-        getProgressTool,
-        setManuscriptMetadataTool,
-        // PRISMA flow diagram tools
-        setIdentificationTool,
-        setRecordsRemovedTool,
-        setScreeningTool,
-        setRetrievalTool,
-        setAssessmentTool,
-        setIncludedTool,
-        addExclusionReasonTool,
-        exportFlowDiagramTool,
-        clearFlowDiagramTool,
-        validateFlowDiagramTool,
-        autoCalculateTool
-    ],
-
     // Components that will be automatically registered when skill is activated
+    // Tools are automatically extracted from these components
     components: [
         createComponentDefinition(
             'pubmed-search-engine',

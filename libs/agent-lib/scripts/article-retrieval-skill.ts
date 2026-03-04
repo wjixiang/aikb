@@ -55,8 +55,8 @@ async function main() {
                     },
                 },
                 apiConfiguration: {
-                    zaiApiLine: 'international_coding',
-                    apiModelId: 'glm-4.5-flash',
+                    zaiApiLine: 'china_coding',
+                    apiModelId: 'glm-4.5-air',
                 },
                 config: {
                     apiRequestTimeout: 90000

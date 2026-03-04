@@ -1,17 +1,5 @@
-import { defineSkill } from '../SkillDefinition.js';
-import {
-    setIdentificationTool,
-    setRecordsRemovedTool,
-    setScreeningTool,
-    setRetrievalTool,
-    setAssessmentTool,
-    setIncludedTool,
-    addExclusionReasonTool,
-    exportFlowDiagramTool,
-    clearFlowDiagramTool,
-    validateFlowDiagramTool,
-    autoCalculateTool
-} from '../../components/PRISMA/prismaFlowTools.js';
+import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
+import { PrismaFlowComponent } from '../../components/PRISMA/prismaFlowComponent.js';
 
 /**
  * PRISMA Flow Diagram Skill - TypeScript Definition
@@ -214,18 +202,13 @@ The PRISMA flow diagram skill integrates with:
 4. **Data Extraction**: Included studies feed into data extraction process
 5. **Publication**: Export flow diagram for manuscript figures`,
 
-    tools: [
-        setIdentificationTool,
-        setRecordsRemovedTool,
-        setScreeningTool,
-        setRetrievalTool,
-        setAssessmentTool,
-        setIncludedTool,
-        addExclusionReasonTool,
-        exportFlowDiagramTool,
-        clearFlowDiagramTool,
-        validateFlowDiagramTool,
-        autoCalculateTool
+    components: [
+        createComponentDefinition(
+            'prisma-flow-diagram',
+            'PRISMA Flow Diagram',
+            'Tracks study selection process with PRISMA 2020 flow diagram',
+            new PrismaFlowComponent()
+        )
     ],
 
     onActivate: async () => {

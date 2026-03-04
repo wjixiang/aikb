@@ -79,10 +79,11 @@ export interface Skill {
         direction: string;
     };
 
-    /** Optional: skill-specific tools (directly defined in skill) */
+    /** Tools automatically extracted from components */
     tools?: Tool[] | undefined;
 
-    /** NEW: Components managed by this skill */
+    /** Components managed by this skill */
+    /** Tools from these components are automatically included in the skill */
     components?: ComponentDefinition[] | undefined;
 
     /** Optional: initialization logic when skill is activated */
@@ -91,10 +92,10 @@ export interface Skill {
     /** Optional: cleanup logic when skill is deactivated */
     onDeactivate?: (() => Promise<void>) | undefined;
 
-    /** NEW: Hook called when a component is activated */
+    /** Hook called when a component is activated */
     onComponentActivate?: (component: ToolComponent) => Promise<void> | undefined;
 
-    /** NEW: Hook called when a component is deactivated */
+    /** Hook called when a component is deactivated */
     onComponentDeactivate?: (component: ToolComponent) => Promise<void> | undefined;
 }
 

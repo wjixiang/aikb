@@ -25,7 +25,7 @@ export const builtinSkills: Skill[] = [
     picoExtractionSkill,
     prismaChecklistSkill,
     prismaFlowDiagramSkill,
-    metaAnalysisWithComponentsSkill,
+    // metaAnalysisWithComponentsSkill,
 ];
 
 /**

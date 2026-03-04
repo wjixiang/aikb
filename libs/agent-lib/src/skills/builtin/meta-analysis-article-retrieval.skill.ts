@@ -1,10 +1,5 @@
-import { defineSkill } from '../SkillDefinition.js';
-import {
-   searchPubmedTool,
-   viewArticleTool,
-   navigatePageTool,
-   clearResultsTool
-} from '../../components/bibliographySearch/bibliographySearchTools.js';
+import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
+import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent.js';
 
 /**
  * Meta-Analysis Article Retrieval Skill
@@ -185,12 +180,13 @@ At completion, provide:
 
 Remember: This is RETRIEVAL only. Do not screen, filter, or assess quality at this stage.`,
 
-   // Define the tools that should be enabled when this skill is active
-   tools: [
-      searchPubmedTool,
-      viewArticleTool,
-      navigatePageTool,
-      clearResultsTool
+   components: [
+      createComponentDefinition(
+         'bibliography-search',
+         'Bibliography Search',
+         'Searches PubMed and retrieves bibliographic records for systematic reviews',
+         new BibliographySearchComponent()
+      )
    ],
 
    onActivate: async () => {

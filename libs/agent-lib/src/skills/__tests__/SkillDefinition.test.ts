@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SkillDefinition, defineSkill, createTool } from '../SkillDefinition.js';
+import { SkillDefinition, defineSkill, createTool, createComponentDefinition } from '../SkillDefinition.js';
+import { ToolComponent } from '../../statefulContext/toolComponent.js';
+import { tdiv, TUIElement } from '../../statefulContext/ui/index.js';
 import { z } from 'zod';
 
 describe('SkillDefinition', () => {
@@ -21,14 +23,23 @@ describe('SkillDefinition', () => {
             expect(skill.prompt.direction).toBe('Test direction');
         });
 
-        it('should create a skill with tools', () => {
-            const tool = createTool(
-                'test_tool',
-                'Test tool description',
-                z.object({
-                    param1: z.string()
-                })
-            );
+        it('should create a skill with tools from components', () => {
+            // Create a mock component with tools
+            class MockComponent extends ToolComponent {
+                toolSet = new Map([
+                    ['test_tool', { toolName: 'test_tool', desc: 'Test tool description', paramsSchema: z.object({ param1: z.string() }) }]
+                ]);
+
+                renderImply = async (): Promise<TUIElement[]> => {
+                    return [new tdiv({})];
+                };
+
+                handleToolCall = async (toolName: string, params: any): Promise<void> => {
+                    // Mock implementation
+                };
+            }
+
+            const mockComponent = new MockComponent();
 
             const skill = defineSkill({
                 name: 'test-skill',
@@ -37,7 +48,14 @@ describe('SkillDefinition', () => {
                 version: '1.0.0',
                 capabilities: [],
                 workDirection: 'Test',
-                tools: [tool]
+                components: [
+                    createComponentDefinition(
+                        'mock-component',
+                        'Mock Component',
+                        'A mock component for testing',
+                        mockComponent
+                    )
+                ]
             });
 
             expect(skill.tools).toBeDefined();
@@ -225,6 +243,113 @@ describe('SkillDefinition', () => {
             });
 
             expect(skill.prompt.capability).toBe('');
+        });
+
+        it('should extract tools from components automatically', () => {
+            // Create a mock component with tools
+            class MockComponent extends ToolComponent {
+                toolSet = new Map([
+                    ['tool1', { toolName: 'tool1', desc: 'Tool 1', paramsSchema: z.object({}) }],
+                    ['tool2', { toolName: 'tool2', desc: 'Tool 2', paramsSchema: z.object({}) }]
+                ]);
+
+                renderImply = async (): Promise<TUIElement[]> => {
+                    return [new tdiv({})];
+                };
+
+                handleToolCall = async (toolName: string, params: any): Promise<void> => {
+                    // Mock implementation
+                };
+            }
+
+            const mockComponent = new MockComponent();
+
+            const skill = defineSkill({
+                name: 'test-skill-with-components',
+                displayName: 'Test Skill with Components',
+                description: 'A test skill with components',
+                version: '1.0.0',
+                capabilities: [],
+                workDirection: 'Test',
+                components: [
+                    createComponentDefinition(
+                        'mock-component',
+                        'Mock Component',
+                        'A mock component for testing',
+                        mockComponent
+                    )
+                ]
+            });
+
+            expect(skill.tools).toBeDefined();
+            expect(skill.tools?.length).toBe(2);
+            expect(skill.tools?.[0]?.toolName).toBe('tool1');
+            expect(skill.tools?.[1]?.toolName).toBe('tool2');
+        });
+
+        it('should extract tools from multiple components', () => {
+            // Create first mock component with tools
+            class MockComponent1 extends ToolComponent {
+                toolSet = new Map([
+                    ['tool1', { toolName: 'tool1', desc: 'Tool 1', paramsSchema: z.object({}) }],
+                    ['tool2', { toolName: 'tool2', desc: 'Tool 2', paramsSchema: z.object({}) }]
+                ]);
+
+                renderImply = async (): Promise<TUIElement[]> => {
+                    return [new tdiv({})];
+                };
+
+                handleToolCall = async (toolName: string, params: any): Promise<void> => {
+                    // Mock implementation
+                };
+            }
+
+            // Create second mock component with tools
+            class MockComponent2 extends ToolComponent {
+                toolSet = new Map([
+                    ['tool3', { toolName: 'tool3', desc: 'Tool 3', paramsSchema: z.object({}) }]
+                ]);
+
+                renderImply = async (): Promise<TUIElement[]> => {
+                    return [new tdiv({})];
+                };
+
+                handleToolCall = async (toolName: string, params: any): Promise<void> => {
+                    // Mock implementation
+                };
+            }
+
+            const mockComponent1 = new MockComponent1();
+            const mockComponent2 = new MockComponent2();
+
+            const skill = defineSkill({
+                name: 'test-skill-multiple-components',
+                displayName: 'Test Skill Multiple Components',
+                description: 'A test skill with multiple components',
+                version: '1.0.0',
+                capabilities: [],
+                workDirection: 'Test',
+                components: [
+                    createComponentDefinition(
+                        'mock-component-1',
+                        'Mock Component 1',
+                        'A mock component for testing',
+                        mockComponent1
+                    ),
+                    createComponentDefinition(
+                        'mock-component-2',
+                        'Mock Component 2',
+                        'A mock component for testing',
+                        mockComponent2
+                    )
+                ]
+            });
+
+            expect(skill.tools).toBeDefined();
+            expect(skill.tools?.length).toBe(3);
+            expect(skill.tools?.[0]?.toolName).toBe('tool1');
+            expect(skill.tools?.[1]?.toolName).toBe('tool2');
+            expect(skill.tools?.[2]?.toolName).toBe('tool3');
         });
     });
 });

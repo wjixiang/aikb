@@ -29,19 +29,17 @@ export interface SkillDefinitionConfig {
     /** Direction - how the agent should approach tasks */
     workDirection: string;
 
-    /** Optional: skill-specific tools */
-    tools?: Tool[];
-
-    /** NEW: Optional components managed by this skill */
+    /** Optional components managed by this skill */
+    /** Tools are automatically extracted from these components */
     components?: ComponentDefinition[];
 
     /** Optional: initialization logic when skill is activated */
     onActivate?: () => Promise<void>;
     /** Optional: cleanup logic when skill is deactivated */
     onDeactivate?: () => Promise<void>;
-    /** NEW: Optional hook called when a component is activated */
+    /** Optional hook called when a component is activated */
     onComponentActivate?: (component: any) => Promise<void>;
-    /** NEW: Optional hook called when a component is deactivated */
+    /** Optional hook called when a component is deactivated */
     onComponentDeactivate?: (component: any) => Promise<void>;
 
     /** Additional metadata */
@@ -66,6 +64,20 @@ export class SkillDefinition {
             ? `You have the following capabilities:\n${this.config.capabilities.map(c => `- ${c}`).join('\n')}`
             : '';
 
+        // Extract tools from components automatically
+        const componentTools: Tool[] = [];
+        if (this.config.components) {
+            for (const component of this.config.components) {
+                // Components have a toolSet Map that contains their tools
+                if (component.instance && 'toolSet' in component.instance) {
+                    const toolSet = component.instance.toolSet as Map<string, Tool>;
+                    toolSet.forEach((tool) => {
+                        componentTools.push(tool);
+                    });
+                }
+            }
+        }
+
         return {
             name: this.config.name,
             displayName: this.config.displayName,
@@ -76,7 +88,7 @@ export class SkillDefinition {
                 capability: capabilityText,
                 direction: this.config.workDirection
             },
-            tools: this.config.tools,
+            tools: componentTools,
             components: this.config.components,
             onActivate: this.config.onActivate,
             onDeactivate: this.config.onDeactivate,
