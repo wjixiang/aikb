@@ -208,6 +208,15 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             }
         }))
 
+        // Add important instruction for LLM
+        availableSkillContainer.addChild(new tdiv({
+            content: '**IMPORTANT:** When referencing or activating a skill, ALWAYS use the **Skill ID** (in backticks), NOT the display name.',
+            styles: {
+                showBorder: false,
+                margin: { bottom: 1 }
+            }
+        }))
+
         if (skills.length === 0) {
             availableSkillContainer.addChild(new tdiv({
                 content: 'No skills registered',
@@ -224,8 +233,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             const triggers = skill.triggers?.length ? `\n**Triggers:** ${skill.triggers.join(', ')}` : '';
             const whenToUse = skill.whenToUse ? `\n**When to use:** ${skill.whenToUse}` : '';
 
+            // Make the skill ID more prominent by placing it first and making it stand out
             availableSkillContainer.addChild(new tdiv({
-                content: `### ${skill.displayName}${statusBadge}\n**ID:** \`${skill.name}\`\n**Description:** ${skill.description}${whenToUse}${triggers}\n\n`,
+                content: `**Skill ID:** \`${skill.name}\`${statusBadge}\n**Display Name:** ${skill.displayName}\n**Description:** ${skill.description}${whenToUse}${triggers}\n\n`,
                 styles: { showBorder: false }
             }));
             availableSkillContainer.addChild(new tdiv({
@@ -456,13 +466,27 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         let totalTools = 0;
         const componentKeys: string[] = [];
 
+        // Get keys and tools from active skill's components
+        if (this.activeSkill && this.activeSkill.components) {
+            for (const componentDef of this.activeSkill.components) {
+                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
+                componentKeys.push(componentKey);
+                // Count tools from component's toolSet
+                if (componentDef.instance && 'toolSet' in componentDef.instance) {
+                    const toolSet = componentDef.instance.toolSet as Map<string, any>;
+                    totalTools += toolSet.size;
+                }
+            }
+        }
+
+        // Fall back to legacy component map
         for (const [key, registration] of this.components.entries()) {
             componentKeys.push(key);
             totalTools += registration.component.toolSet.size;
         }
 
         return {
-            componentCount: this.components.size,
+            componentCount: componentKeys.length,
             componentKeys,
             totalTools
         };

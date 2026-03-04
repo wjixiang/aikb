@@ -13,7 +13,7 @@ export function generateSkillsUsageGuidance(options: SkillsUsageGuidanceOptions)
     }
 
     const activeSkillSection = activeSkill ? `
-✅ CURRENT ACTIVE SKILL: ${activeSkill.displayName}
+✅ CURRENT ACTIVE SKILL: ${activeSkill.name} (${activeSkill.displayName})
 This skill is currently enhancing your capabilities with specialized prompts and tools.
 Use deactivate_skill when you no longer need this specialization.
 ` : '';
@@ -31,7 +31,7 @@ You have access to specialized SKILLS that enhance your capabilities for specifi
 • When you want to leverage task-specific guidance and best practices
 
 📋 AVAILABLE SKILLS TOOLS:
-- get_skill: Activate a skill by name (use list_skills first to see options)
+- get_skill: Activate a skill by ID (use list_skills first to see options - ALWAYS use the Skill ID in backticks, NOT the display name)
 - list_skills: List all available skills with descriptions
 - deactivate_skill: Deactivate the current skill and return to default mode
 
@@ -44,7 +44,7 @@ You have access to specialized SKILLS that enhance your capabilities for specifi
 🔄 SKILL SWITCHING WORKFLOW:
 Step 1: Use list_skills to see all available skills and their descriptions
 Step 2: Identify skills that match your current task (check triggers and descriptions)
-Step 3: Use get_skill with the skill name to activate it
+Step 3: Use get_skill with the Skill ID (the value in backticks, NOT the display name) to activate it
 Step 4: The skill's specialized prompts and tools become available
 Step 5: When the specialized task is complete, use deactivate_skill to return to default mode
 
@@ -54,6 +54,7 @@ Step 5: When the specialized task is complete, use deactivate_skill to return to
 • Deactivate skills when their specialized phase is complete
 • Multiple skills may be relevant - switch between them as the task evolves
 • Check the "Active:" indicator in the SKILLS section to see current skill
+• CRITICAL: When activating skills, ALWAYS use the Skill ID (shown in backticks), never the display name
 
 ${activeSkillSection}
 ℹ️ NO SKILL ACTIVE: You are in default mode with general capabilities.
