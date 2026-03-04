@@ -116,7 +116,7 @@ Best practices:
             'paper-analyzer',
             'Paper Analyzer',
             'Analyzes academic papers for complexity, citations, and comparisons',
-            new PaperAnalysisComponent()
+            () => new PaperAnalysisComponent()
         )
     ],
 

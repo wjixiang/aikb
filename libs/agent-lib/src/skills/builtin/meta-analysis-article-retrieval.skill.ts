@@ -185,7 +185,7 @@ Remember: This is RETRIEVAL only. Do not screen, filter, or assess quality at th
          'bibliography-search',
          'Bibliography Search',
          'Searches PubMed and retrieves bibliographic records for systematic reviews',
-         new BibliographySearchComponent()
+         () => new BibliographySearchComponent()
       )
    ],
 

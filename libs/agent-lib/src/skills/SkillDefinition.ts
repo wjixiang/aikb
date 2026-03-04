@@ -68,13 +68,20 @@ export class SkillDefinition {
         const componentTools: Tool[] = [];
         if (this.config.components) {
             for (const component of this.config.components) {
-                // Components have a toolSet Map that contains their tools
-                if (component.instance && 'toolSet' in component.instance) {
-                    const toolSet = component.instance.toolSet as Map<string, Tool>;
-                    toolSet.forEach((tool) => {
-                        componentTools.push(tool);
-                    });
+                // Resolve instance if it's a factory function
+                // Note: We cannot execute async factory functions here since build() is sync
+                // For async factory functions, tools will be extracted when the component is actually instantiated
+                if (typeof component.instance !== 'function') {
+                    // Components have a toolSet Map that contains their tools
+                    if (component.instance && 'toolSet' in component.instance) {
+                        const toolSet = component.instance.toolSet as Map<string, Tool>;
+                        toolSet.forEach((tool) => {
+                            componentTools.push(tool);
+                        });
+                    }
                 }
+                // For factory functions, tools will be extracted when the component is instantiated
+                // This is handled by the SkillManager when activating skills
             }
         }
 
@@ -148,17 +155,20 @@ export function defineSkill(config: SkillDefinitionConfig): Skill {
 
 /**
  * NEW: Helper function to create a component definition
+ * Accepts either an instance or a factory function that returns an instance
+ * Using a factory function avoids circular dependency issues during SSR
+ * The factory function is NOT executed immediately - it's stored and executed later
  */
 export function createComponentDefinition(
     componentId: string,
     displayName: string,
     description: string,
-    instance: any
+    instanceOrFactory: any | (() => any)
 ): ComponentDefinition {
     return {
         componentId,
         displayName,
         description,
-        instance
+        instance: instanceOrFactory
     };
 }

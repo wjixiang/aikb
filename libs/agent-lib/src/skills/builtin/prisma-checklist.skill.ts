@@ -164,7 +164,7 @@ The PRISMA checklist skill integrates with:
             'prisma-checklist',
             'PRISMA Checklist',
             'Manages PRISMA 2020 checklist compliance for systematic reviews',
-            new PrismaCheckListComponent()
+            () => new PrismaCheckListComponent()
         )
     ],
 

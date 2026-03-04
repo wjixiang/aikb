@@ -207,7 +207,7 @@ The PRISMA flow diagram skill integrates with:
             'prisma-flow-diagram',
             'PRISMA Flow Diagram',
             'Tracks study selection process with PRISMA 2020 flow diagram',
-            new PrismaFlowComponent()
+            () => new PrismaFlowComponent()
         )
     ],
 

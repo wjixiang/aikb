@@ -1,5 +1,4 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import { PicosComponent } from '../../components/PICOS/picosComponents.js';
 
 /**
  * PICO Extraction Skill - TypeScript Definition
@@ -124,7 +123,10 @@ After building a complete PICO formulation:
             'pico-templater',
             'PICO Templater',
             'Formulates clinical research questions using PICO framework',
-            new PicosComponent()
+            async () => {
+                const { PicosComponent } = await import('../../components/PICOS/picosComponents.js');
+                return new PicosComponent();
+            }
         )
     ],
 

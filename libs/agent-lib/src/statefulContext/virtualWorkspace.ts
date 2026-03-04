@@ -5,7 +5,6 @@ import { tdiv } from './ui/index.js';
 import type { TUIElement } from './ui/TUIElement.js';
 import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource } from '../skills/index.js';
 import { renderToolSection } from '../utils/toolRendering.js';
-import { getBuiltinSkills } from '../skills/builtin/index.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { GlobalToolProvider, SkillToolProvider } from '../tools/index.js';
@@ -26,6 +25,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     private components: Map<string, ComponentRegistration>;
     private skillManager: SkillManager;
     private activeSkill: Skill | null = null;
+    private componentInstanceCache: Map<string, ToolComponent> = new Map();
 
     // Tool management system (injected)
     private toolManager: IToolManager;
@@ -54,7 +54,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.globalToolProvider = new GlobalToolProvider(this.skillManager);
         this.toolManager.registerProvider(this.globalToolProvider);
 
-        this.initializeSkills();
+        // Initialize skills asynchronously (fire-and-forget to avoid blocking constructor)
+        this.initializeSkills().catch(error => {
+            console.warn('[VirtualWorkspace] Failed to initialize skills:', error);
+        });
 
         // All tools are now managed by ToolManager
     }
@@ -62,9 +65,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     /**
      * Initialize skills from repository
      */
-    private initializeSkills(): void {
+    private async initializeSkills(): Promise<void> {
         try {
-            // Import built-in skills synchronously
+            // Import built-in skills dynamically to avoid circular dependencies
+            const { getBuiltinSkills } = await import('../skills/builtin/index.js');
             const skills = getBuiltinSkills();
 
             if (skills.length > 0) {
@@ -304,7 +308,35 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             for (const componentDef of this.activeSkill.components) {
                 const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
                 if (componentKey === key) {
-                    return componentDef.instance;
+                    // Check cache first
+                    if (this.componentInstanceCache.has(componentKey)) {
+                        return this.componentInstanceCache.get(componentKey);
+                    }
+
+                    // Resolve instance if it's a factory function
+                    if (typeof componentDef.instance === 'function') {
+                        // For async factory functions, we need to handle this differently
+                        // Since getComponent must be synchronous, we'll return undefined for async factories
+                        // and let the caller handle the async resolution
+                        const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
+                        const result = factory();
+
+                        if (result instanceof Promise) {
+                            // Async factory - trigger resolution in background and return undefined for now
+                            result.then(instance => {
+                                this.componentInstanceCache.set(componentKey, instance);
+                            });
+                            return undefined;
+                        } else {
+                            // Sync factory - cache and return
+                            this.componentInstanceCache.set(componentKey, result);
+                            return result;
+                        }
+                    } else {
+                        // Direct instance - cache and return
+                        this.componentInstanceCache.set(componentKey, componentDef.instance);
+                        return componentDef.instance;
+                    }
                 }
             }
         }
@@ -413,8 +445,29 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                     content: componentKey,
                     styles: { showBorder: true }
                 });
-                const componentRender = await componentDef.instance.render();
-                componentContainer.addChild(componentRender);
+
+                // Get or resolve instance
+                let instance: ToolComponent;
+                if (this.componentInstanceCache.has(componentKey)) {
+                    instance = this.componentInstanceCache.get(componentKey)!;
+                } else if (typeof componentDef.instance === 'function') {
+                    const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
+                    const result = factory();
+                    if (result instanceof Promise) {
+                        instance = await result;
+                        this.componentInstanceCache.set(componentKey, instance);
+                    } else {
+                        instance = result;
+                        this.componentInstanceCache.set(componentKey, instance);
+                    }
+                } else {
+                    instance = componentDef.instance;
+                    this.componentInstanceCache.set(componentKey, instance);
+                }
+
+                const componentRender = await instance.renderImply();
+                // renderImply returns an array, so add each element
+                componentRender.forEach(element => componentContainer.addChild(element));
                 container.addChild(componentContainer);
             }
         }

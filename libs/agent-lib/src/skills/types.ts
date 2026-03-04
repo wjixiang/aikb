@@ -52,8 +52,8 @@ export interface ComponentDefinition {
     displayName: string;
     /** Description of what this component does */
     description: string;
-    /** The component instance */
-    instance: ToolComponent;
+    /** The component instance or a factory function to create it (sync or async) */
+    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>);
 }
 
 /**

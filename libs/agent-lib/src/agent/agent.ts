@@ -75,6 +75,21 @@ interface StackItem {
     userMessageWasRemoved?: boolean;
 }
 
+/**
+ * Abort source types
+ */
+export type AbortSource = 'user' | 'system' | 'error' | 'timeout' | 'manual';
+
+/**
+ * Abort information interface
+ */
+export interface AbortInfo {
+    reason: string;
+    timestamp: number;
+    source: AbortSource;
+    details?: Record<string, unknown>;
+}
+
 export interface AgentPrompt {
     capability: string;
     direction: string;
@@ -96,6 +111,7 @@ export class Agent {
     private _consecutiveMistakeCount: number = 0;
     private _consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
     private _collectedErrors: string[] = [];
+    private _abortInfo: AbortInfo | null = null;
 
     private cachedModel?: { id: string; info: any };
 
@@ -268,9 +284,34 @@ export class Agent {
 
     /**
      * Abort agent task
+     * @param abortReason - The reason for aborting (required)
+     * @param source - The source of the abort (user, system, error, timeout, manual)
+     * @param details - Additional details about the abort
      */
-    abort(abortReason?: string): void {
+    abort(abortReason: string, source: AbortSource = 'manual', details?: Record<string, unknown>): void {
         this._status = 'aborted';
+        this._abortInfo = {
+            reason: abortReason,
+            timestamp: Date.now(),
+            source,
+            details
+        };
+    }
+
+    /**
+     * Get abort information
+     * @returns The abort info if task was aborted, null otherwise
+     */
+    public getAbortInfo(): AbortInfo | null {
+        return this._abortInfo;
+    }
+
+    /**
+     * Get abort reason
+     * @returns The abort reason if task was aborted, undefined otherwise
+     */
+    public getAbortReason(): string | undefined {
+        return this._abortInfo?.reason;
     }
 
     // ==================== Error Handling ====================
@@ -488,7 +529,11 @@ export class Agent {
                 const errorPrompt = ErrorHandlerPrompt.formatErrorPrompt(error as any, currentRetryAttempt);
 
                 if (shouldAbort) {
-                    this.abort('Max retry attempts exceeded or non-retryable error');
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    this.abort(`Max retry attempts exceeded or non-retryable error: ${errorMessage}`, 'error', {
+                        retryAttempt: currentRetryAttempt,
+                        originalError: errorMessage
+                    });
                 } else {
                     // Push the same content with error prompt back onto the stack to retry
                     stack.push({

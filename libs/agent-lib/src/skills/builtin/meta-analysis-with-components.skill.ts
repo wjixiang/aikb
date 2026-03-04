@@ -108,25 +108,25 @@ At completion, provide:
             'pubmed-search-engine',
             'Pubmed Search Engine',
             'Searches PubMed and retrieves bibliographic records for systematic reviews',
-            new BibliographySearchComponent()
+            () => new BibliographySearchComponent()
         ),
         createComponentDefinition(
             'pico-templater',
             'PICO Templater',
             'Formulates clinical research questions using PICO framework',
-            new PicosComponent()
+            () => new PicosComponent()
         ),
         createComponentDefinition(
             'prisma-check-list',
             'Prisma Check List',
             'Manages PRISMA 2020 checklist compliance for systematic reviews',
-            new PrismaCheckListComponent()
+            () => new PrismaCheckListComponent()
         ),
         createComponentDefinition(
             'prisma-workflow',
             'Prisma Workflow',
             'Tracks study selection process with PRISMA 2020 flow diagram',
-            new PrismaFlowComponent()
+            () => new PrismaFlowComponent()
         )
     ],
 
