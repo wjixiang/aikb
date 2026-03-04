@@ -31,7 +31,7 @@ import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ITaskModule } from '../task/types.js';
 import type { IToolManager } from '../tools/IToolManager.js';
-import { ILogger } from '../utils/logging/types.js';
+import type { ILogger } from '../utils/logging/types.js';
 
 // Tool result from execution - now defined in action/types.ts
 // interface ToolResult {
@@ -529,94 +529,6 @@ export class Agent {
     addSystemMessageToHistory(message: string): void {
         const apiMessage = MessageBuilder.system(message);
         this.memoryModule.addMessage(apiMessage);
-    }
-
-    // ==================== Tool Execution (Deprecated - Now handled by ActionModule) ====================
-
-    /**
-     * Execute tool calls and build response
-     * Supports multiple tool calls in a single response
-     * @deprecated This method is now handled by ActionModule. Kept for backward compatibility.
-     */
-    private async executeToolCalls(
-        response: ApiResponse,
-        isAborted: () => boolean,
-    ): Promise<{ userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>, didAttemptCompletion: boolean }> {
-        const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
-        let didAttemptCompletion = false;
-
-        for (const toolCall of response.toolCalls) {
-            if (isAborted()) {
-                break;
-            }
-
-            try {
-                let result: any;
-
-                // Check if this is attempt_completion
-                if (toolCall.name === 'attempt_completion') {
-                    didAttemptCompletion = true;
-                    // Parse arguments to get the completion result
-                    let completionData: any = {};
-                    try {
-                        completionData = JSON.parse(toolCall.arguments);
-                    } catch (e) {
-                        completionData = { result: toolCall.arguments };
-                    }
-                    result = { success: true, result: completionData.result || completionData };
-                } else if (toolCall.name === 'recall_conversation') {
-                    // Handle recall_conversation tool
-                    let recallParams: any = {};
-                    try {
-                        recallParams = JSON.parse(toolCall.arguments);
-                    } catch (e) {
-                        recallParams = {};
-                    }
-
-                    // Call MemoryModule to recall turns
-                    let recalled: ApiMessage[] = [];
-                    if (recallParams.turn_numbers && recallParams.turn_numbers.length > 0) {
-                        recalled = this.memoryModule.recallTurns(recallParams.turn_numbers);
-                    } else if (recallParams.last_n) {
-                        // Get recent messages from last N turns
-                        recalled = this.memoryModule.getTurnStore().getRecentMessages(recallParams.last_n);
-                        // Store for next prompt
-                        this.memoryModule['recalledMessages'] = recalled.slice(0, this.memoryModule.getConfig().maxRecalledMessages);
-                    }
-
-                    result = {
-                        success: true,
-                        recalled_messages: recalled.length,
-                        message: `Successfully recalled ${recalled.length} messages. They will be injected into the next API request.`,
-                    };
-                } else {
-                    // Parse tool arguments
-                    let parsedParams: any = {};
-                    try {
-                        parsedParams = JSON.parse(toolCall.arguments);
-                    } catch (e) {
-                        parsedParams = { raw: toolCall.arguments };
-                    }
-
-                    // Execute tool through IToolManager
-                    result = await this.toolManager.executeTool(toolCall.name, parsedParams);
-                }
-
-                userMessageContent.push({
-                    type: 'tool_result',
-                    tool_use_id: toolCall.id,
-                    content: JSON.stringify(result),
-                });
-            } catch (error) {
-                userMessageContent.push({
-                    type: 'tool_result',
-                    tool_use_id: toolCall.id,
-                    content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-                });
-            }
-        }
-
-        return { userMessageContent, didAttemptCompletion };
     }
 
     // ==================== Helper Methods ====================

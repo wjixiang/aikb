@@ -186,7 +186,7 @@ export class AgentContainer {
         this.container.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {
             const config = this.container.get<ProviderSettings>(TYPES.ProviderSettings);
             return ApiClientFactory.create(config);
-        });
+        }).inRequestScope();
 
         // Memory module and its dependencies
         this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
@@ -439,7 +439,7 @@ export class AgentContainer {
         agentContainer.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {
             const config = agentContainer.get<ProviderSettings>(TYPES.ProviderSettings);
             return ApiClientFactory.create(config);
-        });
+        }).inRequestScope();
 
         // Memory module and its dependencies
         agentContainer.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
@@ -496,7 +496,8 @@ export class AgentContainer {
             });
 
         // Tool Manager - singleton service shared across all agents
-        agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
+        // Bind in agent container for VirtualWorkspace to inject
+        agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inRequestScope();
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         agentContainer.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
