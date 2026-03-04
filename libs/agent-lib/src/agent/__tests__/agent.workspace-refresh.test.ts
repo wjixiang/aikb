@@ -11,10 +11,12 @@ import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
 import { TaskModule } from '../../task/TaskModule.js';
 import { ToolManager } from '../../tools/index.js';
+import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
 import { TestToolComponentA } from '../../statefulContext/__tests__/testComponents.js'
+import type { ILogger } from '../../utils/logging/types.js';
 
-// Mock Logger
-const mockLogger: any = {
+// Mock Logger for MemoryModule (pino Logger)
+const mockPinoLogger: any = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -22,7 +24,20 @@ const mockLogger: any = {
     trace: vi.fn(),
     fatal: vi.fn(),
     silent: vi.fn(),
-    child: vi.fn(() => mockLogger as any),
+    child: vi.fn(() => mockPinoLogger as any),
+    level: 'info',
+    msgPrefix: '',
+    close: vi.fn(),
+} as any;
+
+// Mock Logger for Agent (ILogger)
+const mockLogger: ILogger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => mockLogger),
     close: vi.fn(),
 } as any;
 
@@ -134,19 +149,26 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
 
         // Create and register test component
         testComponent = new StatefulTestComponent();
-        workspace.registerComponent({
-            key: 'test-component',
-            component: testComponent,
-            priority: 0
-        });
+        const componentProvider = new ComponentToolProvider('test-component', testComponent);
+        toolManager.registerProvider(componentProvider);
 
         // Create memory module
         const turnStore = new TurnMemoryStore();
-        thinkingModule = new ThinkingModule(mockApiClient, mockLogger, {}, turnStore);
-        memoryModule = new MemoryModule(mockLogger, {}, turnStore, thinkingModule);
+        thinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
+        memoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, thinkingModule);
 
         // Create task module
         taskModule = new TaskModule();
+
+        // Mock ActionModule
+        const mockActionModule = {
+            performActionPhase: vi.fn().mockResolvedValue({
+                toolResults: [],
+                tokensUsed: 0,
+            }),
+            getConfig: vi.fn(),
+            updateConfig: vi.fn(),
+        };
 
         // Create agent
         agent = new Agent(
@@ -156,6 +178,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
             mockApiClient as ApiClient,
             memoryModule,
             thinkingModule,
+            mockActionModule,
             taskModule,
             mockLogger
         );
@@ -192,6 +215,15 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                     })
             };
 
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
+
             const agentWithMock = new Agent(
                 agentConfig,
                 workspace,
@@ -199,6 +231,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
+                mockActionModule,
                 taskModule,
                 mockLogger
             );
@@ -256,6 +289,15 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                     })
             };
 
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
+
             const agentWithMock = new Agent(
                 agentConfig,
                 workspace,
@@ -263,6 +305,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
+                mockActionModule,
                 taskModule,
                 mockLogger
             );
@@ -313,6 +356,15 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                     })
             };
 
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
+
             const agentWithMock = new Agent(
                 agentConfig,
                 workspace,
@@ -320,6 +372,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
+                mockActionModule,
                 taskModule,
                 mockLogger
             );
@@ -401,6 +454,15 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                     })
             };
 
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
+
             const agentWithMock = new Agent(
                 agentConfig,
                 workspace,
@@ -408,6 +470,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
+                mockActionModule,
                 taskModule,
                 mockLogger
             );
@@ -468,6 +531,15 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                     })
             };
 
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
+
             const agentWithMock = new Agent(
                 agentConfig,
                 workspace,
@@ -475,6 +547,7 @@ describe('Agent Workspace Refresh After Tool Calls', () => {
                 mockAgentApi,
                 memoryModule,
                 thinkingModule,
+                mockActionModule,
                 taskModule,
                 mockLogger
             );

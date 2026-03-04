@@ -1,20 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MemoryModule } from '../MemoryModule';
-import { ApiClient, ApiResponse } from '../../api-client';
 import { TurnMemoryStore } from '../TurnMemoryStore';
-import { Logger } from 'pino';
+import type { Logger } from 'pino';
+import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
 import { MessageBuilder } from '../../task/task.type';
-
-class MockClient implements ApiClient {
-    async makeRequest(): Promise<ApiResponse> {
-        return {
-            toolCalls: [],
-            textResponse: "Mock",
-            requestTime: 100,
-            tokenUsage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 }
-        };
-    }
-}
+import type { Turn } from '../Turn';
+import type { ApiMessage } from '../../task/task.type';
 
 // Mock Logger
 const mockLogger: Logger = {
@@ -26,11 +17,25 @@ const mockLogger: Logger = {
     fatal: vi.fn(),
     silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
+    close: vi.fn(),
 } as any;
+
+// Mock ThinkingModule
+const mockThinkingModule: IThinkingModule = {
+    performThinkingPhase: vi.fn().mockResolvedValue({
+        rounds: [],
+        tokensUsed: 0,
+        shouldProceedToAction: true,
+        summary: 'Test thinking summary'
+    } as ThinkingPhaseResult),
+    performSequentialThinkingPhase: vi.fn(),
+    getConfig: vi.fn(),
+    updateConfig: vi.fn(),
+};
 
 describe('Workspace Context Retrieval', () => {
     it('demonstrates difference between getAllMessages and getAllTurns', () => {
-        const memoryModule = new MemoryModule(new MockClient(), mockLogger, {}, new TurnMemoryStore());
+        const memoryModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
 
         // Create 2 turns with different contexts
         memoryModule.startTurn('Initial workspace: empty project');
@@ -55,7 +60,7 @@ describe('Workspace Context Retrieval', () => {
         console.log('Total turns:', allTurns.length);
         console.log('Can access workspace context?', 'YES ✅');
 
-        allTurns.forEach(turn => {
+        allTurns.forEach((turn: Turn) => {
             console.log(`\nTurn ${turn.turnNumber}:`);
             console.log('  Messages:', turn.messages.length);
             console.log('  Workspace context:', turn.workspaceContext);
@@ -74,7 +79,7 @@ describe('Workspace Context Retrieval', () => {
     });
 
     it('shows how to get messages WITH context', () => {
-        const memoryModule = new MemoryModule(new MockClient(), mockLogger, {}, new TurnMemoryStore());
+        const memoryModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
 
         // Create a turn
         memoryModule.startTurn('Context: empty directory');
@@ -91,15 +96,15 @@ describe('Workspace Context Retrieval', () => {
         // Right way: get turns with full context
         const turns = memoryModule.getTurnStore().getAllTurns();
         console.log('\n✅ Right way (turns with context):');
-        turns.forEach(turn => {
+        turns.forEach((turn: Turn) => {
             console.log(`  Turn ${turn.turnNumber}:`);
             console.log('    Messages:', turn.messages.length);
             console.log('    Workspace context:', turn.workspaceContext);
         });
 
         // Or create a combined structure
-        const messagesWithContext = turns.flatMap(turn =>
-            turn.messages.map(msg => ({
+        const messagesWithContext = turns.flatMap((turn: Turn) =>
+            turn.messages.map((msg: ApiMessage) => ({
                 ...msg,
                 turnNumber: turn.turnNumber,
                 workspaceContext: turn.workspaceContext,
@@ -107,7 +112,7 @@ describe('Workspace Context Retrieval', () => {
         );
 
         console.log('\n✅ Best way (messages enriched with context):');
-        messagesWithContext.forEach((msg, i) => {
+        messagesWithContext.forEach((msg: ApiMessage & { turnNumber: number; workspaceContext: string }, i: number) => {
             console.log(`  Message ${i + 1}:`);
             console.log('    Role:', msg.role);
             console.log('    Turn:', msg.turnNumber);

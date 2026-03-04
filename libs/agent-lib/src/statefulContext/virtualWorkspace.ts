@@ -9,6 +9,7 @@ import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { GlobalToolProvider, SkillToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
+import { getBuiltinSkills } from '../skills/builtin/index.js';
 
 
 /**
@@ -54,10 +55,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.globalToolProvider = new GlobalToolProvider(this.skillManager);
         this.toolManager.registerProvider(this.globalToolProvider);
 
-        // Initialize skills asynchronously (fire-and-forget to avoid blocking constructor)
-        this.initializeSkills().catch(error => {
-            console.warn('[VirtualWorkspace] Failed to initialize skills:', error);
-        });
+        // Initialize skills synchronously
+        this.initializeSkills();
 
         // All tools are now managed by ToolManager
     }
@@ -65,10 +64,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     /**
      * Initialize skills from repository
      */
-    private async initializeSkills(): Promise<void> {
+    private initializeSkills(): void {
         try {
-            // Import built-in skills dynamically to avoid circular dependencies
-            const { getBuiltinSkills } = await import('../skills/builtin/index.js');
+            // Use static import to load built-in skills synchronously
             const skills = getBuiltinSkills();
 
             if (skills.length > 0) {

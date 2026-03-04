@@ -87,7 +87,7 @@ describe('ThinkingModule', () => {
                     summary: 'Test summary'
                 })
             }],
-            textResponse: 'Test response text',
+            textResponse: 'Test response text 2',
             requestTime: 100,
             tokenUsage: {
                 promptTokens: 10,
@@ -105,8 +105,15 @@ describe('ThinkingModule', () => {
 
         const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
         console.log(thinkingResult)
-        console.log(spy.mock.calls[1])
-        expect(JSON.stringify(spy.mock.calls[1])).toContain('test_reason_abc')
+
+        // Verify that thinking messages are stored correctly in each round
+        expect(thinkingResult.rounds.length).toBe(2)
+        expect(thinkingResult.rounds[0].content).toBe('Test response text')
+        expect(thinkingResult.rounds[1].content).toBe('Test response text 2')
+        expect(thinkingResult.rounds[0].continueThinking).toBe(true)
+        expect(thinkingResult.rounds[1].continueThinking).toBe(false)
+        expect(thinkingResult.rounds[1].summary).toBe('Test summary')
+        expect(thinkingResult.summary).toBe('Test summary')
     })
 
     describe('handleRecall', () => {

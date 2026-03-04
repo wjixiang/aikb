@@ -168,7 +168,6 @@ export class AgentContainer {
 
         this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
         this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
-        this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
 
         // Task Module
         this.container.bind<ITaskModule>(TYPES.ITaskModule).to(TaskModule).inRequestScope();

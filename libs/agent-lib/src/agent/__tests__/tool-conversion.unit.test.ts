@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { DefaultToolCallConverter } from '../../api-client/ToolCallConvert';
 import { ToolManager } from '../../tools/index.js';
+import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
 import { z } from 'zod';
 
 describe('Agent Tool Coordination - Unit Tests', () => {
@@ -39,11 +40,9 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 handleToolCall: async () => ({ success: true }),
             };
 
-            workspace.registerComponent({
-                key: 'search-component',
-                component: mockComponent as any,
-                priority: 1,
-            });
+            // Register component using ComponentToolProvider
+            const componentProvider = new ComponentToolProvider('search-component', mockComponent as any);
+            toolManager.registerProvider(componentProvider);
 
             // Get tools from workspace (includes global tools)
             const allTools = workspace.getAllTools();
@@ -123,17 +122,11 @@ describe('Agent Tool Coordination - Unit Tests', () => {
                 handleToolCall: async () => ({ success: true }),
             };
 
-            workspace.registerComponent({
-                key: 'component1',
-                component: component1 as any,
-                priority: 1,
-            });
-
-            workspace.registerComponent({
-                key: 'component2',
-                component: component2 as any,
-                priority: 2,
-            });
+            // Register components using ComponentToolProvider
+            const componentProvider1 = new ComponentToolProvider('component1', component1 as any);
+            const componentProvider2 = new ComponentToolProvider('component2', component2 as any);
+            toolManager.registerProvider(componentProvider1);
+            toolManager.registerProvider(componentProvider2);
 
             // Get and convert tools (filter to only component tools)
             const allTools = workspace.getAllTools();

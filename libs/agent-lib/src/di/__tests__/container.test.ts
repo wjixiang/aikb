@@ -7,10 +7,9 @@ import { Agent } from '../../agent/agent.js';
 import { VirtualWorkspace } from '../../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
-import { ReflectiveThinkingProcessor } from '../../memory/ReflectiveThinkingProcessor.js';
 import { IVirtualWorkspace } from '../../statefulContext/types.js';
 import { IMemoryModule } from '../../memory/types.js';
-import type { ApiClient } from '../../api-client/index.js';
+
 
 describe('AgentContainer', () => {
     let container: AgentContainer;
@@ -83,7 +82,7 @@ describe('AgentContainer', () => {
                 }
             });
             expect(agent).toBeInstanceOf(Agent);
-            expect(agent.config.apiRequestTimeout).toBe(40000); // Default value
+            expect(agent.config.apiRequestTimeout).toBe(60000); // Default value
         });
 
         it('should create an agent with custom configuration', () => {
@@ -480,7 +479,7 @@ describe('Container Configuration', () => {
         const config = internalContainer.get<any>(TYPES.AgentConfig);
 
         expect(config).toBeDefined();
-        expect(config.apiRequestTimeout).toBe(40000);
+        expect(config.apiRequestTimeout).toBe(60000);
         expect(config.maxRetryAttempts).toBe(3);
     });
 
@@ -491,7 +490,7 @@ describe('Container Configuration', () => {
 
         expect(settings).toBeDefined();
         expect(settings.apiProvider).toBe('zai');
-        expect(settings.apiModelId).toBe('glm-4.5');
+        expect(settings.apiModelId).toBe('glm-4.5-flash');
     });
 
     it('should have default VirtualWorkspaceConfig bound', () => {

@@ -40,9 +40,25 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
         }
 
         for (const componentDef of this.skill.components) {
+            // Resolve the component instance - it can be either a direct instance or a factory function
+            let componentInstance: ToolComponent;
+            if (typeof componentDef.instance === 'function') {
+                const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
+                const result = factory();
+                if (result instanceof Promise) {
+                    // For async factories, skip for now - they should be resolved when activated
+                    // This is a limitation of synchronous initialization
+                    console.warn(`[SkillToolProvider] Async factory for component ${componentDef.componentId} will be resolved later`);
+                    continue;
+                }
+                componentInstance = result;
+            } else {
+                componentInstance = componentDef.instance;
+            }
+
             const provider = new ComponentToolProvider(
                 `${this.skill.name}:${componentDef.componentId}`,
-                componentDef.instance
+                componentInstance
             );
             this.componentProviders.set(componentDef.componentId, provider);
         }

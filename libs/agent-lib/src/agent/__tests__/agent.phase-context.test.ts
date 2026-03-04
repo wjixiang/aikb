@@ -22,6 +22,7 @@ import * as z from 'zod';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
 import { ToolManager } from '../../tools/index.js';
+import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
 import type { Logger } from 'pino';
 import type { ApiClient, ApiResponse } from '../../api-client/index.js';
 
@@ -158,11 +159,8 @@ describe('Agent Phase Context Isolation', () => {
 
         // Register action component
         actionComponent = new TestActionComponent();
-        workspace.registerComponent({
-            key: 'database-component',
-            component: actionComponent,
-            priority: 0
-        });
+        const componentProvider = new ComponentToolProvider('database-component', actionComponent);
+        toolManager.registerProvider(componentProvider);
 
         // Register skill with tools
         workspace.registerSkill(testSkillWithTools);
@@ -305,16 +303,16 @@ describe('Agent Phase Context Isolation', () => {
     });
 
     describe('Skill Activation Result', () => {
-        it('should return addedTools in skill activation result', async () => {
+        it('should return addedComponents in skill activation result', async () => {
             const result = await workspace.getSkillManager().activateSkill('database-skill');
 
             expect(result.success).toBe(true);
-            expect(result.addedTools).toBeDefined();
-            expect(result.addedTools).toContain('db_query');
-            expect(result.addedTools).toContain('db_insert');
+            expect(result.addedComponents).toBeDefined();
+            expect(result.addedComponents).toContain('db_query');
+            expect(result.addedComponents).toContain('db_insert');
         });
 
-        it('should NOT return addedTools for skill without tools', async () => {
+        it('should NOT return addedComponents for skill without tools', async () => {
             // Register a skill without tools
             const skillWithoutTools = {
                 name: 'empty-skill',
@@ -330,7 +328,7 @@ describe('Agent Phase Context Isolation', () => {
             const result = await workspace.getSkillManager().activateSkill('empty-skill');
 
             expect(result.success).toBe(true);
-            expect(result.addedTools).toBeUndefined();
+            expect(result.addedComponents).toBeUndefined();
         });
     });
 
@@ -546,7 +544,7 @@ describe('Agent Phase Context Isolation', () => {
             console.log('\n=== Skill Activation Result ===');
             console.log('Success:', activationResult.success);
             console.log('Message:', activationResult.message);
-            console.log('Added Tools:', activationResult.addedTools);
+            console.log('Added Tools:', activationResult.addedComponents);
 
             // Capture the context passed to thinking phase after skill activation
             let capturedContext: string = '';

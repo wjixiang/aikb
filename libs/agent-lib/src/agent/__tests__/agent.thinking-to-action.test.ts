@@ -9,13 +9,15 @@ import type { ApiClient, ApiResponse } from '../../api-client/index.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import type { Logger } from 'pino';
+import type { ILogger } from '../../utils/logging/types.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
 import { TaskModule } from '../../task/TaskModule.js';
 import { TYPES } from '../../di/types.js';
 import { Container } from 'inversify';
 import { ToolManager } from '../../tools/index.js';
-// Mock Logger
-const mockLogger: Logger = {
+import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
+// Mock Logger for MemoryModule (pino Logger)
+const mockPinoLogger: Logger = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -23,7 +25,19 @@ const mockLogger: Logger = {
     trace: vi.fn(),
     fatal: vi.fn(),
     silent: vi.fn(),
-    child: vi.fn(() => mockLogger as any),
+    child: vi.fn(() => mockPinoLogger as any),
+    level: 'info',
+    msgPrefix: '',
+} as any;
+
+// Mock Logger for Agent (ILogger)
+const mockLogger: ILogger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => mockLogger),
     close: vi.fn(),
 } as any;
 
@@ -118,16 +132,13 @@ describe('Agent Thinking to Action Phase Transition', () => {
 
         // Create and register test component
         testComponent = new TestToolComponent();
-        workspace.registerComponent({
-            key: 'test-component',
-            component: testComponent,
-            priority: 0
-        });
+        const componentProvider = new ComponentToolProvider('test-component', testComponent);
+        toolManager.registerProvider(componentProvider);
 
         // Create memory module
         const turnStore = new TurnMemoryStore();
-        thinkingModule = new ThinkingModule(mockApiClient, mockLogger, {}, turnStore);
-        memoryModule = new MemoryModule(mockLogger, {}, turnStore, thinkingModule);
+        thinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
+        memoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, thinkingModule);
 
         // Create task module
         taskModule = new TaskModule();
@@ -143,6 +154,16 @@ describe('Agent Thinking to Action Phase Transition', () => {
             }
         ]);
 
+        // Mock ActionModule
+        const mockActionModule = {
+            performActionPhase: vi.fn().mockResolvedValue({
+                toolResults: [],
+                tokensUsed: 0,
+            }),
+            getConfig: vi.fn(),
+            updateConfig: vi.fn(),
+        };
+
         // Create agent with mocked API client for action phase
         agent = new Agent(
             agentConfig,
@@ -151,8 +172,9 @@ describe('Agent Thinking to Action Phase Transition', () => {
             mockApiClientWithToolCalls,
             memoryModule,
             thinkingModule,
+            mockActionModule,
             taskModule,
-            mockLogger as any
+            mockLogger
         );
     });
 
@@ -475,9 +497,17 @@ describe('Agent Thinking to Action Phase Transition', () => {
 
             // Create new agent with completion API client
             const turnStore = new TurnMemoryStore();
-            const newThinkingModule = new ThinkingModule(mockApiClient, mockLogger, {}, turnStore);
-            const newMemoryModule = new MemoryModule(mockLogger, {}, turnStore, newThinkingModule);
+            const newThinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
+            const newMemoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, newThinkingModule);
             const newTaskModule = new TaskModule();
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
 
             const completionAgent = new Agent(
                 agentConfig,
@@ -486,8 +516,9 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 mockApiClientWithCompletion,
                 newMemoryModule,
                 newThinkingModule,
+                mockActionModule,
                 newTaskModule,
-                mockLogger as any
+                mockLogger
             );
 
             // Mock thinking result
@@ -575,9 +606,17 @@ describe('Agent Thinking to Action Phase Transition', () => {
 
             // Create new agent for cycle test
             const turnStore = new TurnMemoryStore();
-            const newThinkingModule = new ThinkingModule(mockApiClient, mockLogger, {}, turnStore);
-            const newMemoryModule = new MemoryModule(mockLogger, {}, turnStore, newThinkingModule);
+            const newThinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
+            const newMemoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, newThinkingModule);
             const newTaskModule = new TaskModule();
+            const mockActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({
+                    toolResults: [],
+                    tokensUsed: 0,
+                }),
+                getConfig: vi.fn(),
+                updateConfig: vi.fn(),
+            };
 
             const cycleAgent = new Agent(
                 agentConfig,
@@ -586,8 +625,9 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 mockApiClientForCycle,
                 newMemoryModule,
                 newThinkingModule,
+                mockActionModule,
                 newTaskModule,
-                mockLogger as any
+                mockLogger
             );
 
             // Mock thinking to return continueThinking: false for both cycles

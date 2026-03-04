@@ -1,252 +1,309 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { SkillManager } from '../SkillManager.js';
-import { SkillRegistry } from '../SkillRegistry.js';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { describe, it, expect } from 'vitest';
+import metaAnalysisWithComponentsSkill from '../builtin/meta-analysis-with-components.skill.js';
 
-describe('Meta-Analysis Search Skill', () => {
-    let skillManager: SkillManager;
-    let skillRegistry: SkillRegistry;
-
-    beforeEach(() => {
-        skillManager = new SkillManager();
-        skillRegistry = new SkillRegistry();
-    });
-
-    describe('skill loading', () => {
-        it('should load meta-analysis-search skill from markdown file', () => {
-            // Load skill from repository
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-
-            // Parse and load skill
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            console.log(skill)
-            // Verify skill properties
-            expect(skill.name).toBe('meta-analysis-search');
-            expect(skill.displayName).toBe('Meta-Analysis Literature Search');
-            expect(skill.description).toContain('meta-analysis studies');
-            expect(skill.triggers).toContain('meta-analysis');
-            expect(skill.triggers).toContain('pubmed');
+describe('Meta-Analysis Skill', () => {
+    describe('Metadata', () => {
+        it('should have correct name', () => {
+            expect(metaAnalysisWithComponentsSkill.name).toBe('meta-analysis-with-components');
         });
 
-        it('should register loaded skill with SkillManager', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            skillManager.register(skill);
-
-            // Verify registration
-            expect(skillManager.has('meta-analysis-search')).toBe(true);
-            expect(skillManager.size).toBe(1);
+        it('should have correct display name', () => {
+            expect(metaAnalysisWithComponentsSkill.displayName).toBe('Meta-Analysis (Comprehensive)');
         });
 
-        it('should activate meta-analysis-search skill', async () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+        it('should have comprehensive description', () => {
+            expect(metaAnalysisWithComponentsSkill.description).toBeDefined();
+            expect(metaAnalysisWithComponentsSkill.description.toLowerCase()).toContain('meta-analysis');
+            expect(metaAnalysisWithComponentsSkill.description.toLowerCase()).toContain('systematic literature');
+            expect(metaAnalysisWithComponentsSkill.description.toLowerCase()).toContain('pico');
+            expect(metaAnalysisWithComponentsSkill.description.toLowerCase()).toContain('prisma');
+        });
 
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            skillManager.register(skill);
-
-            // Activate skill
-            const result = await skillManager.activateSkill('meta-analysis-search');
-
-            // Verify activation
-            expect(result.success).toBe(true);
-            expect(result.skill?.name).toBe('meta-analysis-search');
-            expect(skillManager.getActiveSkill()?.name).toBe('meta-analysis-search');
+        it('should have whenToUse guidance', () => {
+            expect(metaAnalysisWithComponentsSkill.whenToUse).toBeDefined();
+            expect(metaAnalysisWithComponentsSkill.whenToUse?.toLowerCase()).toContain('meta-analysis');
+            expect(metaAnalysisWithComponentsSkill.whenToUse?.toLowerCase()).toContain('systematic review');
         });
     });
 
-    describe('skill properties', () => {
-        beforeEach(async () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            skillManager.register(skill);
-            await skillManager.activateSkill('meta-analysis-search');
-        });
-
-        it('should have correct prompt enhancement', () => {
-            const prompt = skillManager.getActivePrompt();
-
-            expect(prompt).not.toBeNull();
-            expect(prompt?.capability).toContain('PICO');
-            expect(prompt?.direction).toContain('PRISMA');
-        });
-
-        it('should have no provided tools (only required tools)', () => {
-            const tools = skillManager.getActiveTools();
-
-            // This skill only defines required tools, not provided tools
-            expect(tools).toEqual([]);
-        });
-
-        it('should be discoverable via search', () => {
-            const matches = skillManager.findMatchingSkills('meta-analysis');
-
-            expect(matches.length).toBeGreaterThan(0);
-            expect(matches[0]?.name).toBe('meta-analysis-search');
-        });
-
-        it('should match by tags', () => {
-            const matches = skillManager.findMatchingSkills('pubmed');
-
-            expect(matches.length).toBeGreaterThan(0);
-            expect(matches[0]?.name).toBe('meta-analysis-search');
-        });
-
-        it('should match by description', () => {
-            const matches = skillManager.findMatchingSkills('PRISMA');
-
-            expect(matches.length).toBeGreaterThan(0);
-            expect(matches[0]?.name).toBe('meta-analysis-search');
+    describe('Triggers', () => {
+        it('should have appropriate trigger keywords', () => {
+            expect(metaAnalysisWithComponentsSkill.triggers).toBeDefined();
+            expect(metaAnalysisWithComponentsSkill.triggers).toContain('meta analysis');
+            expect(metaAnalysisWithComponentsSkill.triggers).toContain('systematic review');
+            expect(metaAnalysisWithComponentsSkill.triggers).toContain('comprehensive meta-analysis');
+            expect(metaAnalysisWithComponentsSkill.triggers).toContain('full systematic review');
+            expect(metaAnalysisWithComponentsSkill.triggers).toContain('complete evidence synthesis');
         });
     });
 
-    describe('skill lifecycle', () => {
-        it('should call onActivate when skill is activated', async () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            skillManager.register(skill);
-
-            // Activate skill
-            await skillManager.activateSkill('meta-analysis-search');
-
-            // Verify skill is active
-            expect(skillManager.hasActiveSkill()).toBe(true);
-            expect(skillManager.getActiveSkill()?.name).toBe('meta-analysis-search');
+    describe('Capabilities', () => {
+        it('should have literature search capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Conduct systematic literature searches using PubMed');
         });
 
-        it('should deactivate skill', async () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-            const skill = skillRegistry.loadFromContent(skillContent, skillPath);
-            skillManager.register(skill);
-
-            // Activate then deactivate
-            await skillManager.activateSkill('meta-analysis-search');
-            expect(skillManager.hasActiveSkill()).toBe(true);
-
-            const result = await skillManager.deactivateSkill();
-            expect(result.success).toBe(true);
-            expect(skillManager.hasActiveSkill()).toBe(false);
+        it('should have PICO formulation capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Formulate clinical research questions using PICO framework');
         });
 
-        it('should switch between skills', async () => {
-            // Load meta-analysis-search skill
-            const skillPath1 = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent1 = readFileSync(skillPath1, 'utf-8');
-            const skill1 = skillRegistry.loadFromContent(skillContent1, skillPath1);
-            skillManager.register(skill1);
+        it('should have flow diagram tracking capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Track study selection process with PRISMA flow diagram');
+        });
 
-            // Load another skill
-            const skillPath2 = join(__dirname, '../../../repository/builtin/paper-analysis.skill.md');
-            const skillContent2 = readFileSync(skillPath2, 'utf-8');
-            const skill2 = skillRegistry.loadFromContent(skillContent2, skillPath2);
-            skillManager.register(skill2);
+        it('should have checklist management capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Manage PRISMA 2020 checklist compliance');
+        });
 
-            // Activate first skill
-            await skillManager.activateSkill('meta-analysis-search');
-            expect(skillManager.getActiveSkill()?.name).toBe('meta-analysis-search');
+        it('should have bibliographic management capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Retrieve and manage bibliographic records');
+        });
 
-            // Switch to second skill
-            await skillManager.activateSkill('paper-analysis');
-            expect(skillManager.getActiveSkill()?.name).toBe('paper-analysis');
+        it('should have documentation capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Document exclusion reasons and screening decisions');
+        });
+
+        it('should have export capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Export data in multiple formats for publication');
+        });
+
+        it('should have validation capability', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.capability).toContain('Validate completeness of systematic review reporting');
         });
     });
 
-    describe('skill registry integration', () => {
-        it('should retrieve skill from registry', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+    describe('Work Direction', () => {
+        it('should have Phase 1: Question Formulation', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            skillRegistry.loadFromContent(skillContent, skillPath);
-
-            // Verify skill is in registry
-            expect(skillRegistry.has('meta-analysis-search')).toBe(true);
-
-            const retrievedSkill = skillRegistry.get('meta-analysis-search');
-            expect(retrievedSkill?.name).toBe('meta-analysis-search');
+            expect(direction).toContain('Phase 1: Question Formulation (PICO)');
+            expect(direction).toContain('set_picos_element');
+            expect(direction).toContain('validate_picos');
+            expect(direction).toContain('export_picos');
         });
 
-        it('should get parsed skill data', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+        it('should have Phase 2: Literature Retrieval', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            skillRegistry.loadFromContent(skillContent, skillPath);
-
-            const parsed = skillRegistry.getParsed('meta-analysis-search');
-
-            expect(parsed).toBeDefined();
-            expect(parsed?.frontmatter.name).toBe('meta-analysis-search');
-            expect(parsed?.frontmatter.version).toBe('1.0.0');
-            expect(parsed?.frontmatter.category).toBe('medical-research');
-            expect(parsed?.capabilities.length).toBeGreaterThan(0);
+            expect(direction).toContain('Phase 2: Literature Retrieval');
+            expect(direction).toContain('search_pubmed');
+            expect(direction).toContain('navigate_page');
+            expect(direction).toContain('view_article');
         });
 
-        it('should search skills by category', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+        it('should have Phase 3: Study Selection', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            skillRegistry.loadFromContent(skillContent, skillPath);
-
-            const medicalSkills = skillRegistry.getByCategory('medical-research');
-
-            expect(medicalSkills.length).toBeGreaterThan(0);
-            expect(medicalSkills[0]?.name).toBe('meta-analysis-search');
+            expect(direction).toContain('Phase 3: Study Selection (Flow Diagram)');
+            expect(direction).toContain('set_identification');
+            expect(direction).toContain('set_records_removed');
+            expect(direction).toContain('set_screening');
+            expect(direction).toContain('set_retrieval');
+            expect(direction).toContain('set_assessment');
+            expect(direction).toContain('set_included');
+            expect(direction).toContain('add_exclusion_reason');
         });
 
-        it('should search skills by tag', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+        it('should have Phase 4: PRISMA Checklist', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            skillRegistry.loadFromContent(skillContent, skillPath);
-
-            const pubmedSkills = skillRegistry.getByTag('pubmed');
-
-            expect(pubmedSkills.length).toBeGreaterThan(0);
-            expect(pubmedSkills[0]?.name).toBe('meta-analysis-search');
+            expect(direction).toContain('Phase 4: PRISMA Checklist');
+            expect(direction).toContain('set_manuscript_metadata');
+            expect(direction).toContain('set_checklist_item');
+            expect(direction).toContain('get_progress');
+            expect(direction).toContain('validate_checklist');
         });
 
-        it('should get skill statistics', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
+        it('should mention component integration', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            skillRegistry.loadFromContent(skillContent, skillPath);
+            expect(direction).toContain('Component Integration');
+            expect(direction).toContain('Pubmed Search Engine');
+            expect(direction).toContain('PICO Templater');
+            expect(direction).toContain('Prisma Check List');
+            expect(direction).toContain('Prisma Workflow');
+        });
 
-            const stats = skillRegistry.getStats();
+        it('should include best practices', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
 
-            expect(stats.totalSkills).toBeGreaterThan(0);
-            expect(stats.categories['medical-research']).toBeGreaterThan(0);
-            expect(stats.tags['meta-analysis']).toBeGreaterThan(0);
+            expect(direction).toContain('Best Practices');
+            expect(direction).toContain('Start with PICO');
+            expect(direction).toContain('Document Everything');
+            expect(direction).toContain('Use Auto-Calculate');
+            expect(direction).toContain('Validate Regularly');
+            expect(direction).toContain('Export Often');
+        });
+
+        it('should specify output format', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
+
+            expect(direction).toContain('Output Format');
+            expect(direction).toContain('PICO Formulation');
+            expect(direction).toContain('Search Strategy');
+            expect(direction).toContain('Article List');
+            expect(direction).toContain('Flow Diagram');
+            expect(direction).toContain('PRISMA Checklist');
+            expect(direction).toContain('Documentation');
         });
     });
 
-    describe('skill validation', () => {
-        it('should validate meta-analysis-search skill content', () => {
-            const skillPath = join(__dirname, '../../../repository/builtin/meta-analysis-search.skill.md');
-            const skillContent = readFileSync(skillPath, 'utf-8');
-
-            const validation = skillRegistry.validate(skillContent);
-
-            expect(validation.valid).toBe(true);
-            expect(validation.errors).toEqual([]);
+    describe('Components', () => {
+        it('should have 4 components registered', () => {
+            expect(metaAnalysisWithComponentsSkill.components).toBeDefined();
+            expect(metaAnalysisWithComponentsSkill.components?.length).toBe(4);
         });
 
-        it('should detect invalid skill content', () => {
-            const invalidContent = `
-# Invalid Skill
+        it('should have pubmed-search-engine component', () => {
+            const component = metaAnalysisWithComponentsSkill.components?.find(c => c.componentId === 'pubmed-search-engine');
+            expect(component).toBeDefined();
+            expect(component?.displayName).toBe('Pubmed Search Engine');
+            expect(component?.description).toContain('PubMed');
+        });
 
-Missing frontmatter and required sections.
-`;
+        it('should have pico-templater component', () => {
+            const component = metaAnalysisWithComponentsSkill.components?.find(c => c.componentId === 'pico-templater');
+            expect(component).toBeDefined();
+            expect(component?.displayName).toBe('PICO Templater');
+            expect(component?.description).toContain('PICO');
+        });
 
-            const validation = skillRegistry.validate(invalidContent);
+        it('should have prisma-check-list component', () => {
+            const component = metaAnalysisWithComponentsSkill.components?.find(c => c.componentId === 'prisma-check-list');
+            expect(component).toBeDefined();
+            expect(component?.displayName).toBe('Prisma Check List');
+            expect(component?.description).toContain('PRISMA 2020');
+        });
 
-            expect(validation.valid).toBe(false);
-            expect(validation.errors.length).toBeGreaterThan(0);
+        it('should have prisma-workflow component', () => {
+            const component = metaAnalysisWithComponentsSkill.components?.find(c => c.componentId === 'prisma-workflow');
+            expect(component).toBeDefined();
+            expect(component?.displayName).toBe('Prisma Workflow');
+            expect(component?.description).toContain('PRISMA 2020 flow diagram');
+        });
+
+        it('should have factory functions for all components', () => {
+            metaAnalysisWithComponentsSkill.components?.forEach(component => {
+                expect(component.instance).toBeDefined();
+                expect(typeof component.instance).toBe('function');
+            });
+        });
+    });
+
+    describe('Lifecycle Hooks', () => {
+        it('should have onActivate hook', () => {
+            expect(metaAnalysisWithComponentsSkill.onActivate).toBeDefined();
+            expect(typeof metaAnalysisWithComponentsSkill.onActivate).toBe('function');
+        });
+
+        it('should have onDeactivate hook', () => {
+            expect(metaAnalysisWithComponentsSkill.onDeactivate).toBeDefined();
+            expect(typeof metaAnalysisWithComponentsSkill.onDeactivate).toBe('function');
+        });
+
+        it('should execute onActivate without errors', async () => {
+            await expect(metaAnalysisWithComponentsSkill.onActivate?.()).resolves.not.toThrow();
+        });
+
+        it('should execute onDeactivate without errors', async () => {
+            await expect(metaAnalysisWithComponentsSkill.onDeactivate?.()).resolves.not.toThrow();
+        });
+    });
+
+    describe('Tool Integration', () => {
+        it('should reference search_pubmed tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('search_pubmed');
+        });
+
+        it('should reference view_article tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('view_article');
+        });
+
+        it('should reference navigate_page tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('navigate_page');
+        });
+
+        it('should reference set_picos_element tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_picos_element');
+        });
+
+        it('should reference generate_clinical_question tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('generate_clinical_question');
+        });
+
+        it('should reference validate_picos tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('validate_picos');
+        });
+
+        it('should reference export_picos tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('export_picos');
+        });
+
+        it('should reference set_checklist_item tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_checklist_item');
+        });
+
+        it('should reference validate_checklist tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('validate_checklist');
+        });
+
+        it('should reference export_checklist tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('export_checklist');
+        });
+
+        it('should reference get_progress tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('get_progress');
+        });
+
+        it('should reference set_identification tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_identification');
+        });
+
+        it('should reference set_screening tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_screening');
+        });
+
+        it('should reference set_assessment tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_assessment');
+        });
+
+        it('should reference set_included tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('set_included');
+        });
+
+        it('should reference export_flow_diagram tool in work direction', () => {
+            expect(metaAnalysisWithComponentsSkill.prompt.direction).toContain('export_flow_diagram');
+        });
+    });
+
+    describe('Workflow Completeness', () => {
+        it('should cover complete meta-analysis workflow', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
+
+            // Check all major phases are present
+            expect(direction).toContain('Phase 1');
+            expect(direction).toContain('Phase 2');
+            expect(direction).toContain('Phase 3');
+            expect(direction).toContain('Phase 4');
+        });
+
+        it('should provide guidance for each workflow step', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
+
+            // Check that numbered steps are provided
+            expect(direction).toMatch(/\d+\.\s+\*\*Extract PICO Elements\*\*/);
+            expect(direction).toMatch(/\d+\.\s+\*\*Search PubMed\*\*/);
+            expect(direction).toMatch(/\d+\.\s+\*\*Identification\*\*/);
+            expect(direction).toMatch(/\d+\.\s+\*\*Set Metadata\*\*/);
+        });
+
+        it('should include tool usage examples', () => {
+            const direction = metaAnalysisWithComponentsSkill.prompt.direction;
+
+            // Check that tool usage is demonstrated
+            expect(direction).toContain('Use set_picos_element');
+            expect(direction).toContain('Use search_pubmed');
+            expect(direction).toContain('Use set_identification');
+            expect(direction).toContain('Use set_checklist_item');
         });
     });
 });

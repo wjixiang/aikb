@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryModule } from '../MemoryModule';
 import { TurnStatus } from '../Turn';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client';
 import { TurnMemoryStore } from '../TurnMemoryStore';
-import { Logger } from 'pino';
+import type { Logger } from 'pino';
+import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
 import { MessageBuilder } from '../../task/task.type';
 
 // Mock API Client for testing
@@ -38,7 +39,21 @@ const mockLogger: Logger = {
     fatal: vi.fn(),
     silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
+    close: vi.fn(),
 } as any;
+
+// Mock ThinkingModule
+const mockThinkingModule: IThinkingModule = {
+    performThinkingPhase: vi.fn().mockResolvedValue({
+        rounds: [],
+        tokensUsed: 0,
+        shouldProceedToAction: true,
+        summary: 'Test thinking summary'
+    } as ThinkingPhaseResult),
+    performSequentialThinkingPhase: vi.fn(),
+    getConfig: vi.fn(),
+    updateConfig: vi.fn(),
+};
 
 describe('Turn-based Memory Integration', () => {
     let memoryModule: MemoryModule;
@@ -48,7 +63,7 @@ describe('Turn-based Memory Integration', () => {
     beforeEach(() => {
         mockClient = new MockApiClient();
         mockTurnStore = new TurnMemoryStore();
-        memoryModule = new MemoryModule(mockClient, mockLogger, {}, mockTurnStore);
+        memoryModule = new MemoryModule(mockLogger, {}, mockTurnStore, mockThinkingModule);
     });
 
     it('should manage complete turn lifecycle', async () => {
@@ -67,7 +82,8 @@ describe('Turn-based Memory Integration', () => {
             'workspace after thinking',
             []
         );
-        expect(thinkingResult.turnId).toBe(turn.id);
+        // ThinkingPhaseResult doesn't have turnId, verify the turn exists instead
+        expect(memoryModule.getTurnStore().getTurn(turn.id)).toBeDefined();
 
         // Record tool calls
         memoryModule.recordToolCall('test_tool', true, 'success');
@@ -174,7 +190,7 @@ describe('Turn-based Memory Integration', () => {
         expect(exported.currentTurnNumber).toBe(2);
 
         // Import to new module
-        const newModule = new MemoryModule(mockClient, mockLogger, {}, new TurnMemoryStore());
+        const newModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
         newModule.import(exported);
 
         // Verify imported data
