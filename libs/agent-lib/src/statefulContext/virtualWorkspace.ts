@@ -8,7 +8,7 @@ import { renderToolSection } from '../utils/toolRendering.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { GlobalToolProvider, ComponentToolProvider } from '../tools/index.js';
+import { GlobalToolProvider, ComponentToolProvider, SkillToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 
 
@@ -131,7 +131,18 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * - ToolManager reverts to default strategy
      */
     private handleSkillChange(skill: Skill | null): void {
-        // Use the tool manager's integrated strategy management
+        // NEW: Use SkillToolProvider to manage skill tools and components
+        // Remove previous skill provider if exists
+        if (skill) {
+            // Unregister any existing skill provider
+            this.toolManager.unregisterProvider(`skill:${skill.name}`);
+
+            // Register new skill provider
+            const skillProvider = new SkillToolProvider(skill);
+            this.toolManager.registerProvider(skillProvider);
+        }
+
+        // Also use tool manager's strategy for backward compatibility
         this.toolManager.setStrategy(skill);
         this.toolManager.applyStrategy();
 

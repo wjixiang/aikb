@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Skill, Tool } from './types.js';
+import type { Skill, Tool, ComponentDefinition } from './types.js';
 
 /**
  * TypeScript-based skill definition builder
@@ -32,10 +32,17 @@ export interface SkillDefinitionConfig {
     /** Optional: skill-specific tools */
     tools?: Tool[];
 
+    /** NEW: Optional components managed by this skill */
+    components?: ComponentDefinition[];
+
     /** Optional: initialization logic when skill is activated */
     onActivate?: () => Promise<void>;
     /** Optional: cleanup logic when skill is deactivated */
     onDeactivate?: () => Promise<void>;
+    /** NEW: Optional hook called when a component is activated */
+    onComponentActivate?: (component: any) => Promise<void>;
+    /** NEW: Optional hook called when a component is deactivated */
+    onComponentDeactivate?: (component: any) => Promise<void>;
 
     /** Additional metadata */
     metadata?: Record<string, string>;
@@ -70,8 +77,11 @@ export class SkillDefinition {
                 direction: this.config.workDirection
             },
             tools: this.config.tools,
+            components: this.config.components,
             onActivate: this.config.onActivate,
-            onDeactivate: this.config.onDeactivate
+            onDeactivate: this.config.onDeactivate,
+            onComponentActivate: this.config.onComponentActivate,
+            onComponentDeactivate: this.config.onComponentDeactivate
         };
     }
 
@@ -122,4 +132,21 @@ export function createTool<T extends z.ZodType>(
  */
 export function defineSkill(config: SkillDefinitionConfig): Skill {
     return new SkillDefinition(config).build();
+}
+
+/**
+ * NEW: Helper function to create a component definition
+ */
+export function createComponentDefinition(
+    componentId: string,
+    displayName: string,
+    description: string,
+    instance: any
+): ComponentDefinition {
+    return {
+        componentId,
+        displayName,
+        description,
+        instance
+    };
 }

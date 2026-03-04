@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 // Import Tool and ToolSource from statefulContext for use within this file
 import type { Tool } from '../statefulContext/types.js';
+import type { ToolComponent } from '../statefulContext/toolComponent.js';
 import { ToolSource } from '../tools/IToolProvider.js';
 
 // Re-export Tool and ToolSource for external use (single source of truth)
 export type { Tool } from '../statefulContext/types.js';
 export { ToolSource } from '../tools/IToolProvider.js';
+export type { ToolComponent } from '../statefulContext/toolComponent.js';
 
 /**
  * Extended tool registration with source tracking
@@ -41,7 +43,21 @@ export interface SkillToolState {
 }
 
 /**
- * Skill definition - provides specialized prompt and tools for specific tasks
+ * Component definition for metadata
+ */
+export interface ComponentDefinition {
+    /** Unique identifier for the component */
+    componentId: string;
+    /** Display name for UI */
+    displayName: string;
+    /** Description of what this component does */
+    description: string;
+    /** The component instance */
+    instance: ToolComponent;
+}
+
+/**
+ * Skill definition - provides specialized prompt, tools, and components for specific tasks
  */
 export interface Skill {
     /** Unique identifier */
@@ -63,14 +79,23 @@ export interface Skill {
         direction: string;
     };
 
-    /** Optional: skill-specific tools */
+    /** Optional: skill-specific tools (directly defined in skill) */
     tools?: Tool[] | undefined;
+
+    /** NEW: Components managed by this skill */
+    components?: ComponentDefinition[] | undefined;
 
     /** Optional: initialization logic when skill is activated */
     onActivate?: (() => Promise<void>) | undefined;
 
     /** Optional: cleanup logic when skill is deactivated */
     onDeactivate?: (() => Promise<void>) | undefined;
+
+    /** NEW: Hook called when a component is activated */
+    onComponentActivate?: (component: ToolComponent) => Promise<void> | undefined;
+
+    /** NEW: Hook called when a component is deactivated */
+    onComponentDeactivate?: (component: ToolComponent) => Promise<void> | undefined;
 }
 
 /**
@@ -91,7 +116,8 @@ export interface SkillActivationResult {
     success: boolean;
     message: string;
     skill?: Skill;
-    addedTools?: string[] | undefined;
+    /** NEW: Component IDs that were activated */
+    addedComponents?: string[] | undefined;
 }
 
 /**

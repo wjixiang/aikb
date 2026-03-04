@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool, SkillToolState } from './types.js';
+import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool, SkillToolState, ToolComponent } from './types.js';
 
 /**
  * SkillManager - manages skill registration, activation, and lifecycle
@@ -12,6 +12,12 @@ export class SkillManager {
     private registry = new Map<string, Skill>();
     private activeSkill: Skill | null = null;
     private onSkillChange?: ((skill: Skill | null) => void) | undefined;
+
+    /** NEW: Track active components from the active skill */
+    private activeComponents: Map<string, ToolComponent> = new Map();
+
+    /** NEW: Track added component IDs for activation result */
+    private addedComponents: string[] = [];
 
     constructor(options?: SkillManagerOptions) {
         this.onSkillChange = options?.onSkillChange ?? undefined;
@@ -103,8 +109,24 @@ export class SkillManager {
             };
         }
 
-        // Deactivate current skill
+        // Deactivate current skill and its components
         if (this.activeSkill) {
+            // Deactivate components first
+            for (const component of this.activeComponents.values()) {
+                try {
+                    await this.activeSkill.onComponentDeactivate?.(component);
+                } catch (error) {
+                    console.error(`[SkillManager] Error deactivating component "${component.componentId}":`, error);
+                }
+                try {
+                    await component.onDeactivate?.();
+                } catch (compError) {
+                    console.error(`[SkillManager] Component "${component.componentId}" error during deactivation:`, compError);
+                }
+            }
+            this.activeComponents.clear();
+
+            // Deactivate skill
             try {
                 await this.activeSkill.onDeactivate?.();
             } catch (error) {
@@ -116,6 +138,28 @@ export class SkillManager {
         // Activate new skill
         this.activeSkill = skill;
 
+        // Activate skill's components
+        const activatedComponentIds: string[] = [];
+        if (skill.components) {
+            for (const componentDef of skill.components) {
+                this.activeComponents.set(componentDef.componentId, componentDef.instance);
+                activatedComponentIds.push(componentDef.componentId);
+
+                try {
+                    await skill.onComponentActivate?.(componentDef.instance);
+                } catch (error) {
+                    console.error(`[SkillManager] Error in skill's onComponentActivate for "${componentDef.componentId}":`, error);
+                }
+
+                try {
+                    await componentDef.instance.onActivate?.();
+                } catch (compError) {
+                    console.error(`[SkillManager] Component "${componentDef.componentId}" error during activation:`, compError);
+                }
+            }
+        }
+
+        // Call skill's onActivate
         try {
             await skill.onActivate?.();
         } catch (error) {
@@ -127,18 +171,18 @@ export class SkillManager {
         // Notify listeners
         this.onSkillChange?.(skill);
 
-        const addedTools = skill.tools?.map((t: Tool) => t.toolName) ?? [];
+        const addedComponents = activatedComponentIds.length > 0 ? activatedComponentIds : undefined;
 
         return {
             success: true,
             message: `Skill "${skill.displayName}" activated successfully. ${skill.prompt.direction.split('\n')[0]}`,
             skill,
-            addedTools: addedTools.length > 0 ? addedTools : undefined
+            addedComponents
         };
     }
 
     /**
-     * Deactivate current skill
+     * Deactivate current skill and all its components
      */
     async deactivateSkill(): Promise<{ success: boolean; message: string }> {
         if (!this.activeSkill) {
@@ -149,6 +193,21 @@ export class SkillManager {
         }
 
         const skillName = this.activeSkill.displayName;
+
+        // Deactivate all components first
+        for (const component of this.activeComponents.values()) {
+            try {
+                await this.activeSkill.onComponentDeactivate?.(component);
+            } catch (error) {
+                console.error(`[SkillManager] Error in onComponentDeactivate for "${component.componentId}":`, error);
+            }
+            try {
+                await component.onDeactivate?.();
+            } catch (compError) {
+                console.error(`[SkillManager] Component "${component.componentId}" error during deactivation:`, compError);
+            }
+        }
+        this.activeComponents.clear();
 
         try {
             await this.activeSkill.onDeactivate?.();
@@ -262,5 +321,41 @@ export class SkillManager {
             active: this.activeSkill?.name === skill.name,
             addedToolNames: skill.tools?.map(t => t.toolName) ?? []
         }));
+    }
+
+    // ==================== NEW: Component Management ====================
+
+    /**
+     * Get active components from the currently active skill
+     * @returns Array of active ToolComponent instances
+     */
+    getActiveComponents(): ToolComponent[] {
+        return Array.from(this.activeComponents.values());
+    }
+
+    /**
+     * Get a specific component from the active skill by ID
+     * @param componentId - The component ID to look up
+     * @returns ToolComponent or undefined
+     */
+    getComponent(componentId: string): ToolComponent | undefined {
+        return this.activeComponents.get(componentId);
+    }
+
+    /**
+     * Get the number of active components
+     * @returns Number of active components
+     */
+    getActiveComponentCount(): number {
+        return this.activeComponents.size;
+    }
+
+    /**
+     * Check if a component is active
+     * @param componentId - The component ID to check
+     * @returns true if component is active
+     */
+    isComponentActive(componentId: string): boolean {
+        return this.activeComponents.has(componentId);
     }
 }
