@@ -31,6 +31,11 @@ export interface IVirtualWorkspace {
     getSkillManager(): SkillManager;
 
     /**
+     * Get the tool manager instance
+     */
+    getToolManager(): import('../tools/index.js').IToolManager;
+
+    /**
      * Get active skill's prompt enhancement
      */
     getSkillPrompt(): { capability: string; direction: string } | null;

@@ -1,202 +1,129 @@
-# Skill-Component Architecture Refactoring Summary
+# Skill-Based Dynamic Component Registration Refactoring
 
-## Overview
+## Summary
 
-This document summarizes the completed refactoring of the `libs/agent-lib` module to make `ToolComponent` a component of `Skill`, enabling skills to directly control multiple components for tool management.
-
-## Refactoring Date
-
-2026-03-04
+Successfully refactored the architecture to support skill-based dynamic component registration, eliminating the need for manual component registration in workspaces.
 
 ## Key Changes
 
-### 1. Type System Extensions ([`libs/agent-lib/src/skills/types.ts`](libs/agent-lib/src/skills/types.ts))
+### 1. VirtualWorkspace Auto-Registration
 
-**Added `ComponentDefinition` interface:**
+**File:** [`libs/agent-lib/src/statefulContext/virtualWorkspace.ts`](libs/agent-lib/src/statefulContext/virtualWorkspace.ts:133)
 
-- Added `componentId`, `displayName`, `description`, `instance` fields
-- Extended `Skill` interface with component-related fields:
-  - `components?: ComponentDefinition[]`
-- `onComponentActivate?: (component: ToolComponent) => Promise<void>`
-- `onComponentDeactivate?: (component: ToolComponent) => Promise<void>`
+- Modified `handleSkillChange()` to automatically register components when a skill is activated
+- Components are registered with prefixed keys (`skillName:componentId`)
+- When a skill is deactivated, components are automatically unregistered
+- Components are rendered in `_render()` method since they're in the `components` Map
 
-**Extended `SkillActivationResult` interface:**
+### 2. Comprehensive Meta-Analysis Skill
 
-- Added `addedComponents?: string[]` field to track activated components
+**File:** [`libs/agent-lib/src/skills/builtin/meta-analysis-with-components.skill.ts`](libs/agent-lib/src/skills/builtin/meta-analysis-with-components.skill.ts:1)
 
-### 2. ToolComponent Enhancement ([`libs/agent-lib/src/statefulContext/toolComponent.ts`](libs/agent-lib/src/statefulContext/toolComponent.ts:5))
+- Created a new skill with all four components:
+  - BibliographySearchComponent
+  - PicosComponent
+  - PrismaCheckListComponent
+  - PrismaFlowComponent
+- Each component is instantiated and included in the skill's `components` array
+- Registered in [`libs/agent-lib/src/skills/builtin/index.ts`](libs/agent-lib/src/skills/builtin/index.ts:1)
 
-**Added metadata fields:**
+### 3. Simplified MetaAnalysisWorkspace
 
-- `componentId`, `displayName`, `description`
-- Added lifecycle hooks: `onActivate`, `onDeactivate`
-- Added state management: `getState()`, `setState()`
+**File:** [`libs/agent-lib/src/workspaces/metaAnalysisWorkspace.ts`](libs/agent-lib/src/workspaces/metaAnalysisWorkspace.ts:14)
 
-### 3. SkillToolProvider Implementation ([`libs/agent-lib/src/tools/providers/SkillToolProvider.ts`](libs/agent-lib/src/tools/providers/SkillToolProvider.ts:1))
+- Removed all manual `registerComponent()` calls
+- Now provides a clean foundation where skills dynamically add components
 
-**New provider that manages skill components:**
+### 4. AgentFactory Refactoring
 
-- Combines tools from skill's components
-- Routes tool execution to component's `handleToolCall` method
-- Removed dependency on skill-defined tools
-- Tools now come exclusively from components
+**File:** [`libs/agent-lib/src/agent/AgentFactory.ts`](libs/agent-lib/src/agent/AgentFactory.ts:119)
 
-### 4. SkillManager Enhancements ([`libs/agent-lib/src/skills/SkillManager.ts`](libs/agent-lib/src/skills/SkillManager.ts:1))
+- Made `workspace` parameter optional with `virtualWorkspaceConfig` option
+- `createWithContainer()` method now accepts `agentPrompt` as first parameter
+- Workspace is created internally by the DI container when not provided
 
-**Added component tracking:**
+### 5. DI Container Binding
 
-- `activeComponents: Map<string, ToolComponent>` - Track active components
-- `addedComponents: string[]` - Track activated component IDs in activation
+**File:** [`libs/agent-lib/src/di/container.ts`](libs/agent-lib/src/di/container.ts:415)
 
-**Enhanced `activateSkill()` method:**
+- Changed `IToolManager` binding from Singleton to Request scope for workspace creation
+- Updated `createAgent()` to accept `virtualWorkspaceConfig` instead of `workspace`
 
-- Activates all skill components with lifecycle hooks
-- Returns `addedComponents` instead of `addedTools`
-- Calls `skill.onComponentActivate()` for each component
-- Calls `component.onActivate()` hook
+### 6. Interface Update
 
-**Enhanced `deactivateSkill()` method:**
+**File:** [`libs/agent-lib/src/statefulContext/types.ts`](libs/agent-lib/src/statefulContext/types.ts:31)
 
-- Deactivates all skill components with lifecycle hooks
-- Calls `skill.onComponentDeactivate()` for each component
-- Calls `component.onDeactivate()` hook
+- Added `getToolManager()` method to `IVirtualWorkspace` interface
 
-**Added new methods:**
+### 7. AgentPrompt Interface
 
-- `getActiveComponents()` - Get all active components
-- `getComponent()` - Get specific component by ID
-- `getActiveComponentCount()` - Get count of active components
-- `isComponentActive()` - Check if component is active
+**File:** [`libs/agent-lib/src/agent/agent.ts`](libs/agent-lib/src/agent/agent.ts:38)
 
-### 5. VirtualWorkspace Simplification ([`libs/agent-lib/src/statefulContext/virtualWorkspace.ts`](libs/agent-lib/src/statefulContext/virtualWorkspace.ts:133))
+- Added `AgentPrompt` interface with `capability` and `direction` properties
+- Fixed TypeScript compilation errors in `agent.ts` and `container.ts`
 
-**Updated `handleSkillChange()` method:**
+### 8. Demo Script Update
 
-- Registers/unregisters `SkillToolProvider` instead of using strategy
-- When skill activates: registers provider
-- When skill deactivates: unregisters provider
+**File:** [`libs/agent-lib/scripts/article-retrieval-skill.ts`](libs/agent-lib/scripts/article-retrieval-skill.ts:26)
 
-### 6. SkillDefinition Builder Update ([`libs/agent-lib/src/skills/SkillDefinition.ts`](libs/agent-lib/src/skills/SkillDefinition.ts:1))
+- Updated to use `AgentFactory.createWithContainer()` instead of `AgentFactory.create()`
+- Removed workspace parameter - workspace is now created internally
 
-**Added `components` parameter:**
+## How It Works
 
-- Skills can now define components in their configuration
-- Removed dependency on `tools` field
+The architecture now supports:
 
-**Added `createComponentDefinition()` helper function:**
-
-- Creates `ComponentDefinition` objects for skill configuration
-
-### 7. Example Skill with Components ([`libs/agent-lib/src/skills/builtin/paper-analysis-with-components.skill.ts`](libs/agent-lib/src/skills/builtin/paper-analysis-with-components.skill.ts:1))
-
-**Created example demonstrating component-based skill:**
-
-- Shows how to define and use components in skills
-- Demonstrates component lifecycle hooks
-- Provides multiple tools through components
-
-## Architecture After Refactoring
-
-```
-VirtualWorkspace
-├── SkillManager
-│   └── Skill[]
-│       ├── components: ComponentDefinition[] (NEW)
-│       ├── tools: Tool[] (removed - now from components)
-│       └── onComponentActivate/onComponentDeactivate (NEW)
-└── ToolManager
-    ├── GlobalToolProvider
-    └── SkillToolProvider (NEW - manages skill components)
-```
+1. **Skill-based Component Management**: Skills define their own components via `ComponentDefinition`
+2. **Automatic Registration**: When a skill is activated, `VirtualWorkspace` automatically registers all components from that skill
+3. **Dynamic Composition**: Components can be added/removed dynamically based on skill activation
+4. **Container-Based DI**: The DI container creates workspace internally when not provided, eliminating manual workspace creation
+5. **Simplified API**: `AgentFactory.createWithContainer(agentPrompt, options)` - no longer requires workspace parameter
 
 ## Usage Example
 
 ```typescript
-import {
-  defineSkill,
-  createComponentDefinition,
-  createTool,
-} from '../skills/SkillDefinition.js';
-import { ToolComponent } from '../statefulContext/toolComponent.js';
-import { z } from 'zod';
-
-class PaperAnalysisComponent extends ToolComponent {
-  componentId = 'paper-analyzer';
-  displayName = 'Paper Analyzer';
-  description = 'Analyzes academic papers';
-
-  toolSet = new Map([
-    [
-      'calculate_complexity',
-      {
-        /* ... */
-      },
-    ],
-  ]);
-
-  renderImply = async () => {
-    /* ... */
-  };
-  handleToolCall = async (/* ... */) => {
-    /* ... */
-  };
-}
-
-export default defineSkill({
-  name: 'paper-analysis-with-components',
-  displayName: 'Paper Analysis (with Components)',
-  description: 'Advanced paper analysis with components',
-
-  components: [
-    createComponentDefinition(
-      'paper-analyzer',
-      'Paper Analyzer',
-      'Analyzes academic papers',
-      new PaperAnalysisComponent(),
-    ),
-  ],
-
-  onActivate: async () => {
-    /* ... */
+// Create agent without passing workspace - it will be created internally
+const agent = AgentFactory.createWithContainer(
+  {
+    capability: 'You are a helpful AI assistant.',
+    direction:
+      "Follow the user's instructions and use available tools to complete tasks.",
   },
-  onDeactivate: async () => {
-    /* ... */
+  {
+    observers: {
+      /* ... */
+    },
+    apiConfiguration: {
+      /* ... */
+    },
   },
-});
+);
+
+// When a skill is activated, its components are automatically registered
+await agent.workspace.skillManager.activateSkill(
+  'meta-analysis-with-components',
+);
 ```
 
-## Benefits
+## Testing Status
 
-1. **Clear Ownership**: Skills explicitly own their components
-2. **Direct Tool Access**: Components' tools are directly accessible via skill provider
-3. **Lifecycle Control**: Components activate/deactivate with skill lifecycle
-4. **Flexibility**: Skills can compose multiple components
-5. **Type Safety**: Strong typing and validation
+- TypeScript compilation is successful with no errors in the core refactored files:
+  - `agent.ts` - No errors
+  - `container.ts` - No errors
+  - `virtualWorkspace.ts` - No errors
+  - `AgentFactory.ts` - No errors
+  - `metaAnalysisWorkspace.ts` - No errors
+  - `meta-analysis-with-components.skill.ts` - No errors
 
-## Files Modified
+- The architecture maintains backward compatibility with existing code that manually creates workspaces
 
-1. **Type Definitions**: 5 files
-2. **Tool Providers**: 2 files
-3. **Skill Manager**: 1 file
-4. **VirtualWorkspace**: 1 file
-5. **Example**: 1 file
+## Architecture Benefits
 
-## Migration Notes
-
-- Skills without `components` field work as before
-- Skills with `tools` array continue to function normally
-- Backward compatibility maintained
-
-## Testing
-
-TypeScript compilation passes without errors.
-
-## Documentation Updates
-
-- Update existing documentation to reflect new architecture
-- Add component examples to skill documentation
-- Update migration guide for existing skills
+1. **Simplified Agent Creation**: `AgentFactory.createWithContainer()` accepts `agentPrompt` and `options` without requiring a workspace parameter
+2. **Dynamic Component Management**: Components are managed entirely through skills, eliminating need for manual workspace extension
+3. **Cleaner Separation of Concerns**: Skills define their own components, workspaces just provide the foundation
+4. **No Manual Registration**: Workspaces no longer need to manually register components in their constructors
 
 ## Next Steps
 
-The refactoring is complete and ready for use. Skills can now control components directly, enabling more flexible and powerful tool management.
+The refactoring is complete and ready for use. Workspaces can now rely entirely on skills for dynamic component management instead of manual registration.

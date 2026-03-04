@@ -8,7 +8,7 @@ import { renderToolSection } from '../utils/toolRendering.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { GlobalToolProvider, ComponentToolProvider, SkillToolProvider } from '../tools/index.js';
+import { GlobalToolProvider, SkillToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 
 
@@ -25,6 +25,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     private config: VirtualWorkspaceConfig;
     private components: Map<string, ComponentRegistration>;
     private skillManager: SkillManager;
+    private activeSkill: Skill | null = null;
 
     // Tool management system (injected)
     private toolManager: IToolManager;
@@ -122,24 +123,33 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     /**
      * Handle skill change - enable/disable skill tools
      *
-     * Uses ToolManager's integrated strategy management to apply skill-based tool state strategy.
+     * Uses SkillToolProvider to manage skill tools and components.
      *
      * When a skill is activated:
-     * - ToolManager applies the skill's tool enable/disable strategy
+     * - Unregister previous skill's components
+     * - Register new skill's components using skill name as prefix
+     * - Update activeSkill reference
+     * - Register SkillToolProvider with ToolManager
      *
      * When a skill is deactivated:
-     * - ToolManager reverts to default strategy
+     * - Unregister skill's components
+     * - Clear activeSkill reference
+     * - Unregister SkillToolProvider from ToolManager
      */
     private handleSkillChange(skill: Skill | null): void {
-        // NEW: Use SkillToolProvider to manage skill tools and components
-        // Remove previous skill provider if exists
-        if (skill) {
-            // Unregister any existing skill provider
-            this.toolManager.unregisterProvider(`skill:${skill.name}`);
+        // Unregister previous skill's components if any
+        if (this.activeSkill && this.activeSkill !== skill) {
+            this.toolManager.unregisterProvider(`skill:${this.activeSkill.name}`);
+        }
 
-            // Register new skill provider
+        // Register new skill's components if skill is provided
+        if (skill) {
+            // Register SkillToolProvider which manages skill tools and components
             const skillProvider = new SkillToolProvider(skill);
             this.toolManager.registerProvider(skillProvider);
+            this.activeSkill = skill;
+        } else {
+            this.activeSkill = null;
         }
 
         // Also use tool manager's strategy for backward compatibility
@@ -275,40 +285,41 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Register a component with the workspace
-     */
-    registerComponent(registration: ComponentRegistration): void {
-        this.components.set(registration.key, registration);
-
-        // Create and register ComponentToolProvider with the tool management system
-        const componentToolProvider = new ComponentToolProvider(registration.key, registration.component);
-        this.toolManager.registerProvider(componentToolProvider);
-    }
-
-    /**
-     * Unregister a component from the workspace
-     */
-    unregisterComponent(key: string): boolean {
-        const componentToDelete = this.components.get(key);
-
-        // Unregister ComponentToolProvider from the tool management system
-        this.toolManager.unregisterProvider(`component:${key}`);
-
-        return this.components.delete(key);
-    }
-
-    /**
      * Get a registered component
+     * Note: Components are now managed by skills through SkillToolProvider
      */
     getComponent(key: string): ToolComponent | undefined {
+        // First check if it's a skill component
+        if (this.activeSkill && this.activeSkill.components) {
+            for (const componentDef of this.activeSkill.components) {
+                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
+                if (componentKey === key) {
+                    return componentDef.instance;
+                }
+            }
+        }
+        // Fall back to legacy component map
         return this.components.get(key)?.component;
     }
 
     /**
      * Get all registered component keys
+     * Note: Components are now managed by skills through SkillToolProvider
      */
     getComponentKeys(): string[] {
-        return Array.from(this.components.keys());
+        const keys: string[] = [];
+
+        // Get keys from active skill's components
+        if (this.activeSkill && this.activeSkill.components) {
+            for (const componentDef of this.activeSkill.components) {
+                keys.push(`${this.activeSkill.name}:${componentDef.componentId}`);
+            }
+        }
+
+        // Fall back to legacy component map
+        keys.push(...Array.from(this.components.keys()));
+
+        return keys;
     }
 
     renderToolBox() {
@@ -374,18 +385,31 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // Add skills section
         container.addChild(this.renderSkillsSection());
 
-        // Add skill tools section (if active skill has tools)
-        const skillToolsSection = this.renderSkillToolsSection();
-        if (skillToolsSection) {
-            container.addChild(skillToolsSection);
-        }
+        // Note: Tool sections are NOT rendered in workspace.render()
+        // - Global tools are rendered via renderToolBox() in System Context (agent.ts)
+        // - Skill tools are rendered via renderSkillToolsSection() in System Context (agent.ts)
+        // - Component tools are rendered within their respective component sections below
 
         // container.addChild(new tdiv({
         //     content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
         //     styles: { showBorder: false, margin: { bottom: 1 } }
         // }));
 
-        // Sort components by priority
+        // Render skill components first (if active skill has components)
+        if (this.activeSkill && this.activeSkill.components) {
+            for (const componentDef of this.activeSkill.components) {
+                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
+                const componentContainer = new tdiv({
+                    content: componentKey,
+                    styles: { showBorder: true }
+                });
+                const componentRender = await componentDef.instance.render();
+                componentContainer.addChild(componentRender);
+                container.addChild(componentContainer);
+            }
+        }
+
+        // Render legacy components (for backward compatibility)
         const sortedComponents = Array.from(this.components.entries())
             .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
 

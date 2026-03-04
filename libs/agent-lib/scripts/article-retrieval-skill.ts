@@ -3,7 +3,6 @@ config()
 
 import 'reflect-metadata'
 import { AgentFactory } from '../src/agent/AgentFactory.js'
-import { MetaAnalysisWorkspace } from '../src/workspaces/metaAnalysisWorkspace.js'
 import { SkillRegistry } from '../src/skills/index.js'
 import { MessageContentFormatter } from '../src/task/MessageFormatter.util.js'
 
@@ -14,21 +13,17 @@ async function main() {
     const query = '请你对针对该选题进行meta分析: Efficacy of mesenchymal stem cells injection for the management of knee osteoarthritis';
 
     console.log('Query:', query);
-    console.log('Creating agent with article-retrieval skill...');
+    console.log('Creating agent with meta-analysis skill (workspace will be created internally)...');
 
     try {
-        // Create workspace
-        const workspace = new MetaAnalysisWorkspace();
-
-        // Register skills - provide repository path to auto-load skills
+        // Register skills - the meta-analysis-with-components skill will auto-register its components
         const skillRegistry = new SkillRegistry();
         const skills = skillRegistry.getAll();
         console.log(`Loaded ${skills.length} skills:`, skills.map(s => s.name));
-        workspace.registerSkills(skills);
 
-        // Create agent with observers - the DI container handles wrapping automatically
-        const agent = AgentFactory.create(
-            workspace,
+        // Create agent without passing workspace - it will be created internally
+        // Components will be automatically registered when a skill is activated
+        const agent = AgentFactory.createWithContainer(
             {
                 capability: 'You are a helpful AI assistant.',
                 direction: 'Follow the user\'s instructions and use available tools to complete tasks.'
@@ -55,7 +50,7 @@ async function main() {
                     onError: (error, context) => {
                         console.error(`[Agent] Error in ${context}:`, error);
                     },
-                    onTurnCreated(turnId, turnNumber, workspaceContext, taskContext) {
+                    onTurnCreated: (turnId, turnNumber, workspaceContext, taskContext) => {
                         console.log(`observed turn created: ${workspaceContext}`)
                     },
                 },
@@ -90,11 +85,23 @@ async function main() {
             console.log(`--- End System Message ${idx + 1} ---\n`);
         });
 
-        // Check if article-retrieval skill was activated
-        const activeSkill = workspace.getSkillManager().getActiveSkill();
+        // Check if a skill was activated
+        const activeSkill = agent.workspace.getSkillManager().getActiveSkill();
         if (activeSkill) {
             console.log('Active skill:', activeSkill.displayName);
             console.log('Skill capability:', activeSkill.prompt.capability.substring(0, 100) + '...');
+
+            // Check auto-registered components
+            console.log('\n=== Auto-Registered Components ===');
+            const componentKeys = agent.workspace.getComponentKeys();
+            console.log('Components registered:', componentKeys.length);
+            componentKeys.forEach((key: string) => {
+                console.log(`  - ${key}`);
+            });
+
+            // Show component count from skill manager
+            const activeComponentCount = agent.workspace.getSkillManager().getActiveComponentCount();
+            console.log(`\nActive components from skill: ${activeComponentCount}`);
         } else {
             console.log('No skill was activated');
         }

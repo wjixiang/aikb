@@ -13,6 +13,7 @@ import metaAnalysisArticleRetrievalSkill from './meta-analysis-article-retrieval
 import picoExtractionSkill from './pico-extraction.skill.js';
 import prismaChecklistSkill from './prisma-checklist.skill.js';
 import prismaFlowDiagramSkill from './prisma-flow-diagram.skill.js';
+import metaAnalysisWithComponentsSkill from './meta-analysis-with-components.skill.js';
 
 /**
  * All built-in skills
@@ -24,6 +25,7 @@ export const builtinSkills: Skill[] = [
     picoExtractionSkill,
     prismaChecklistSkill,
     prismaFlowDiagramSkill,
+    metaAnalysisWithComponentsSkill,
 ];
 
 /**

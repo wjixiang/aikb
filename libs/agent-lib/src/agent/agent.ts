@@ -635,11 +635,17 @@ ${direction}
         // Get TODO list from task module
         const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });
 
+        // Render skill tools section (if active skill has tools)
+        // Note: renderSkillToolsSection() returns TUIElement | null
+        const skillToolsSection = this.workspace.renderSkillToolsSection();
+        const skillToolsRendered = skillToolsSection ? skillToolsSection.render() : '';
+
         return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
 ${skillsSection}
+${skillToolsRendered}
 ${skillsUsageGuidance}
 
 ${todoList}

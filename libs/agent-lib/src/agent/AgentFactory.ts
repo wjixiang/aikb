@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/index.js';
+import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import { ApiClient } from '../api-client/index.js';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
@@ -24,6 +25,8 @@ export interface AgentFactoryOptions {
     taskId?: string;
     /** Optional observer callbacks for automatic observation */
     observers?: ObservableAgentCallbacks;
+    /** Optional workspace configuration (if not provided, default workspace will be created) */
+    virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
 }
 
 /**
@@ -41,17 +44,22 @@ export interface AgentFactoryOptions {
  *
  * @example
  * ```ts
- * // Create with default configuration
- * const agent = AgentFactory.create(workspace, agentPrompt);
+ * // Create with default configuration (workspace created internally)
+ * const agent = AgentFactory.create(agentPrompt);
  *
  * // Create with custom configuration
- * const agent = AgentFactory.create(workspace, agentPrompt, {
+ * const agent = AgentFactory.create(agentPrompt, {
  *   config: { apiRequestTimeout: 60000 },
  *   apiConfiguration: { apiModelId: 'custom-model' }
  * });
  *
+ * // Create with custom workspace configuration
+ * const agent = AgentFactory.create(agentPrompt, {
+ *   virtualWorkspaceConfig: { id: 'custom-workspace', name: 'Custom Workspace' }
+ * });
+ *
  * // Create with observers (automatic notification via DI container)
- * const agent = AgentFactory.create(workspace, agentPrompt, {
+ * const agent = AgentFactory.create(agentPrompt, {
  *   observers: {
  *     onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
  *     onTaskCompleted: (taskId) => console.log('Task completed!')
@@ -59,7 +67,7 @@ export interface AgentFactoryOptions {
  * });
  *
  * // Create with custom API client (for testing)
- * const agent = AgentFactory.createWithCustomClient(workspace, apiClient, agentPrompt);
+ * const agent = AgentFactory.createWithCustomClient(apiClient, agentPrompt);
  * ```
  */
 export class AgentFactory {
