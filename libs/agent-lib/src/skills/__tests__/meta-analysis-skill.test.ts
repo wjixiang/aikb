@@ -181,10 +181,10 @@ describe('Meta-Analysis Skill', () => {
             expect(component?.description).toContain('PRISMA 2020 flow diagram');
         });
 
-        it('should have factory functions for all components', () => {
+        it('should have DI tokens for all components', () => {
             metaAnalysisWithComponentsSkill.components?.forEach(component => {
                 expect(component.instance).toBeDefined();
-                expect(typeof component.instance).toBe('function');
+                expect(typeof component.instance).toBe('symbol');
             });
         });
     });

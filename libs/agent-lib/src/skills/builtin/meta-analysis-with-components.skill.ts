@@ -1,8 +1,5 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent.js';
-import { PicosComponent } from '../../components/PICOS/picosComponents.js';
-import { PrismaCheckListComponent } from '../../components/PRISMA/prismaCheckListComponent.js';
-import { PrismaFlowComponent } from '../../components/PRISMA/prismaFlowComponent.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * Comprehensive Meta-Analysis Skill with Components
@@ -108,25 +105,25 @@ At completion, provide:
             'pubmed-search-engine',
             'Pubmed Search Engine',
             'Searches PubMed and retrieves bibliographic records for systematic reviews',
-            () => new BibliographySearchComponent()
+            TYPES.BibliographySearchComponent // Use DI token for container resolution
         ),
         createComponentDefinition(
             'pico-templater',
             'PICO Templater',
             'Formulates clinical research questions using PICO framework',
-            () => new PicosComponent()
+            TYPES.PicosComponent // Use DI token for container resolution
         ),
         createComponentDefinition(
             'prisma-check-list',
             'Prisma Check List',
             'Manages PRISMA 2020 checklist compliance for systematic reviews',
-            () => new PrismaCheckListComponent()
+            TYPES.PrismaCheckListComponent // Use DI token for container resolution
         ),
         createComponentDefinition(
             'prisma-workflow',
             'Prisma Workflow',
             'Tracks study selection process with PRISMA 2020 flow diagram',
-            () => new PrismaFlowComponent()
+            TYPES.PrismaFlowComponent // Use DI token for container resolution
         )
     ],
 

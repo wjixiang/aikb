@@ -44,6 +44,17 @@ export interface SkillToolState {
 
 /**
  * Component definition for metadata
+ *
+ * The instance field supports three patterns:
+ * 1. Direct instance: ToolComponent - for manually created instances
+ * 2. Factory function: () => ToolComponent | Promise<ToolComponent> - for lazy initialization
+ * 3. DI Token: Symbol - for InversifyJS IoC resolution (recommended)
+ *
+ * Using DI tokens (Symbol) is the recommended approach as it:
+ * - Avoids registration issues with factory functions
+ * - Enables proper dependency injection
+ * - Provides better testability
+ * - Maintains consistent IoC pattern across the codebase
  */
 export interface ComponentDefinition {
     /** Unique identifier for the component */
@@ -52,8 +63,13 @@ export interface ComponentDefinition {
     displayName: string;
     /** Description of what this component does */
     description: string;
-    /** The component instance or a factory function to create it (sync or async) */
-    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>);
+    /**
+     * The component instance, factory function, or DI token
+     * - ToolComponent: direct instance
+     * - () => ToolComponent | Promise<ToolComponent>: factory function
+     * - Symbol: DI token for container resolution (recommended)
+     */
+    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
 }
 
 /**

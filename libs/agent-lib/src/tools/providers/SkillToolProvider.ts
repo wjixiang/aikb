@@ -40,9 +40,17 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
         }
 
         for (const componentDef of this.skill.components) {
-            // Resolve the component instance - it can be either a direct instance or a factory function
+            // Resolve the component instance - it can be a direct instance, factory function, or DI token
+            const instanceType = typeof componentDef.instance;
+
+            // Skip if it's a DI token (Symbol) - requires container resolution
+            if (instanceType === 'symbol') {
+                console.warn(`[SkillToolProvider] DI token for component ${componentDef.componentId} requires container resolution. Skipping.`);
+                continue;
+            }
+
             let componentInstance: ToolComponent;
-            if (typeof componentDef.instance === 'function') {
+            if (instanceType === 'function') {
                 const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
                 const result = factory();
                 if (result instanceof Promise) {
@@ -53,7 +61,7 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
                 }
                 componentInstance = result;
             } else {
-                componentInstance = componentDef.instance;
+                componentInstance = componentDef.instance as ToolComponent;
             }
 
             const provider = new ComponentToolProvider(

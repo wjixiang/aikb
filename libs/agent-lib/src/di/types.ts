@@ -17,6 +17,12 @@ export const TYPES = {
     Logger: Symbol('Logger'),
 
     /**
+     * Container - The InversifyJS container instance
+     * @scope Singleton - Shared across all agents
+     */
+    Container: Symbol('Container'),
+
+    /**
      * ObservableAgentCallbacks - Observer callbacks for agent monitoring
      * When provided, the container will automatically wrap agents in an ObservableAgent proxy
      * @scope Request - Shared within an agent creation request
@@ -203,6 +209,32 @@ export const TYPES = {
      * @scope Transient - New instance per strategy
      */
     IToolStateStrategy: Symbol('IToolStateStrategy'),
+
+    // ==================== Tool Components ====================
+
+    /**
+     * PicosComponent - PICO extraction component for evidence-based medicine
+     * @scope Request - New instance per skill activation
+     */
+    PicosComponent: Symbol('PicosComponent'),
+
+    /**
+     * BibliographySearchComponent - PubMed search and article retrieval
+     * @scope Request - New instance per skill activation
+     */
+    BibliographySearchComponent: Symbol('BibliographySearchComponent'),
+
+    /**
+     * PrismaCheckListComponent - PRISMA checklist management
+     * @scope Request - New instance per skill activation
+     */
+    PrismaCheckListComponent: Symbol('PrismaCheckListComponent'),
+
+    /**
+     * PrismaFlowComponent - PRISMA flow diagram tracking
+     * @scope Request - New instance per skill activation
+     */
+    PrismaFlowComponent: Symbol('PrismaFlowComponent'),
 
     // ==================== Action Module ====================
 

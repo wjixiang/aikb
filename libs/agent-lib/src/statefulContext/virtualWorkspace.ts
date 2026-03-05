@@ -105,7 +105,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * Get active skill's prompt enhancement
      */
     getSkillPrompt(): { capability: string; direction: string } | null {
-        return this.skillManager.getActivePrompt();
+        const activeSkill = this.skillManager.getActiveSkill();
+        if (!activeSkill) {
+            return null;
+        }
+        return activeSkill.prompt;
     }
 
     /**
@@ -311,8 +315,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                         return this.componentInstanceCache.get(componentKey);
                     }
 
+                    // Resolve instance based on its type
+                    const instanceType = typeof componentDef.instance;
+
+                    // Skip if it's a DI token (Symbol) - requires container resolution
+                    if (instanceType === 'symbol') {
+                        console.warn(`[VirtualWorkspace] DI token for component "${componentDef.componentId}" requires container resolution. Using factory fallback.`);
+                        return undefined;
+                    }
+
                     // Resolve instance if it's a factory function
-                    if (typeof componentDef.instance === 'function') {
+                    if (instanceType === 'function') {
                         // For async factory functions, we need to handle this differently
                         // Since getComponent must be synchronous, we'll return undefined for async factories
                         // and let the caller handle the async resolution
@@ -332,8 +345,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                         }
                     } else {
                         // Direct instance - cache and return
-                        this.componentInstanceCache.set(componentKey, componentDef.instance);
-                        return componentDef.instance;
+                        this.componentInstanceCache.set(componentKey, componentDef.instance as ToolComponent);
+                        return componentDef.instance as ToolComponent;
                     }
                 }
             }
@@ -458,8 +471,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                         instance = result;
                         this.componentInstanceCache.set(componentKey, instance);
                     }
+                } else if (typeof componentDef.instance === 'symbol') {
+                    // DI token - skip rendering for now
+                    console.warn(`[VirtualWorkspace] DI token for component "${componentDef.componentId}" requires container resolution. Skipping render.`);
+                    continue;
                 } else {
-                    instance = componentDef.instance;
+                    instance = componentDef.instance as ToolComponent;
                     this.componentInstanceCache.set(componentKey, instance);
                 }
 
@@ -523,9 +540,14 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                 const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
                 componentKeys.push(componentKey);
                 // Count tools from component's toolSet
-                if (componentDef.instance && 'toolSet' in componentDef.instance) {
-                    const toolSet = componentDef.instance.toolSet as Map<string, any>;
-                    totalTools += toolSet.size;
+                // Skip factory functions and DI tokens - tools extracted at activation
+                const instanceType = typeof componentDef.instance;
+                if (instanceType === 'object' && componentDef.instance) {
+                    const instance = componentDef.instance as any;
+                    if ('toolSet' in instance) {
+                        const toolSet = instance.toolSet as Map<string, any>;
+                        totalTools += toolSet.size;
+                    }
                 }
             }
         }

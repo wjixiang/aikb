@@ -177,10 +177,10 @@ export class ThinkingModule implements IThinkingModule {
      * Update sequential thinking state based on round results
      */
     private updateSequentialState(round: ThinkingRound): void {
-        // Update thought number
-        this.sequentialState.thoughtNumber = round.thoughtNumber;
+        // Auto-increment thought number (system controlled)
+        this.sequentialState.thoughtNumber++;
 
-        // Update total thoughts estimate
+        // Update total thoughts estimate (LLM controlled)
         if (round.totalThoughts > 0) {
             this.sequentialState.totalThoughts = round.totalThoughts;
         }
@@ -271,7 +271,7 @@ export class ThinkingModule implements IThinkingModule {
                 tokens: this.estimateTokens(content),
                 summary: controlDecision?.summary,
                 // Sequential Thinking properties
-                thoughtNumber: controlDecision?.thoughtNumber ?? this.sequentialState.thoughtNumber,
+                thoughtNumber: this.sequentialState.thoughtNumber,
                 totalThoughts: controlDecision?.totalThoughts ?? this.sequentialState.totalThoughts,
                 isRevision: controlDecision?.isRevision,
                 revisesThought: controlDecision?.revisesThought,
@@ -348,10 +348,10 @@ Key Principles:
 - Don't hesitate to add more thoughts even when you think you're done
 
 Sequential Thinking Process:
-1. Start with an initial estimate of thoughts needed (thoughtNumber=1, totalThoughts=N)
+1. Start with an initial estimate of thoughts needed (totalThoughts=N)
 2. For each thought:
    - Provide your current thinking step
-   - Update thoughtNumber (incrementing)
+   - The system will automatically increment thoughtNumber
    - Adjust totalThoughts if needed (can increase or decrease)
    - Mark if this is a revision (isRevision=true, revisesThought=N)
    - Note if branching (branchFromThought=N, branchId="branch-name")
@@ -421,7 +421,7 @@ Example format:
 Looking at the available skills, I see a meta-analysis skill that would be appropriate.
 My plan is: 1) Exit thinking phase, 2) Activate the skill, 3) Execute the workflow.
 I estimate I'll need about 3 thoughts to complete this plan."
-[Then call continue_thinking with thoughtNumber=1, totalThoughts=3]
+[Then call continue_thinking with totalThoughts=3]
 
 ═══════════════════════════════════════════════════════════════════════════════
                     WHAT TO THINK ABOUT
@@ -605,8 +605,8 @@ Parameters explained:
   * Hypothesis generation
   * Hypothesis verification
 - nextThoughtNeeded: True if you need more thinking, even if at what seemed like the end
-- thoughtNumber: Current number in sequence (can go beyond initial total if needed)
 - totalThoughts: Current estimate of thoughts needed (can be adjusted up/down)
+- Note: thoughtNumber is automatically managed by the system
 - isRevision: A boolean indicating if this thought revises previous thinking
 - revisesThought: If is_revision is true, which thought number is being reconsidered
 - branchFromThought: If branching, which thought number is the branching point
@@ -623,13 +623,9 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
                                 type: 'boolean',
                                 description: 'Whether to continue thinking (true) or proceed to action (false)',
                             },
-                            thoughtNumber: {
-                                type: 'number',
-                                description: 'Current thought number (numeric value, e.g., 1, 2, 3)',
-                            },
                             totalThoughts: {
                                 type: 'number',
-                                description: 'Estimated total thoughts needed (numeric value, e.g., 3, 5)',
+                                description: 'Estimated total thoughts needed (numeric value, e.g., 3, 5). The system will auto-increment the thought number.',
                             },
                             isRevision: {
                                 type: 'boolean',
@@ -668,7 +664,7 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
                                 description: 'REQUIRED when continueThinking=false: A detailed summary with DONE and TODO sections. DONE: specific actions taken, concrete results obtained, decisions made, challenges encountered. TODO: next steps, missing information, follow-up tasks, recommended skill to activate (if applicable). Preserve important details like search terms, numbers, tool names, and key findings.',
                             },
                         },
-                        required: ['continueThinking', 'thoughtNumber', 'totalThoughts'],
+                        required: ['continueThinking', 'totalThoughts'],
                     },
                 },
             },
@@ -916,7 +912,6 @@ If this turn builds upon previous turns, mention the connection and how it advan
     private extractControlDecision(response: ApiResponse): {
         continueThinking: boolean;
         summary?: string;
-        thoughtNumber?: number;
         totalThoughts?: number;
         isRevision?: boolean;
         revisesThought?: number;

@@ -1,3 +1,4 @@
+import { injectable } from 'inversify';
 import { renderToolSection } from "../utils/toolRendering.js";
 import { Tool } from "./types.js";
 import { tdiv, TUIElement } from "./ui/index.js";
@@ -8,7 +9,11 @@ import { tdiv, TUIElement } from "./ui/index.js";
  * Components can be managed by Skills, which control their lifecycle
  * and tool availability. Components can define their own state, lifecycle hooks,
  * and rendering logic.
+ *
+ * @note This class is decorated with @injectable() for InversifyJS IoC integration.
+ * Components can be resolved via DI container using their TYPE symbols from di/types.ts.
  */
+@injectable()
 export abstract class ToolComponent {
     /** Map of tool names to tool definitions */
     abstract toolSet: Map<string, Tool>;

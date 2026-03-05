@@ -1,4 +1,5 @@
-import { injectable } from 'inversify';
+import { injectable, inject, Container } from 'inversify';
+import { TYPES } from '../di/types.js';
 import type { Skill, SkillSummary, SkillActivationResult, SkillManagerOptions, Tool, SkillToolState, ToolComponent } from './types.js';
 
 /**
@@ -13,11 +14,14 @@ export class SkillManager {
     private activeSkill: Skill | null = null;
     private onSkillChange?: ((skill: Skill | null) => void) | undefined;
 
-    /** NEW: Track active components from the active skill */
+    /** NEW: Track active components from active skill */
     private activeComponents: Map<string, ToolComponent> = new Map();
 
     /** NEW: Track added component IDs for activation result */
     private addedComponents: string[] = [];
+
+    /** Container for resolving DI tokens */
+    @inject(TYPES.Container) private container?: Container;
 
     constructor(options?: SkillManagerOptions) {
         this.onSkillChange = options?.onSkillChange ?? undefined;
@@ -144,8 +148,30 @@ export class SkillManager {
             for (const componentDef of skill.components) {
                 let componentInstance: ToolComponent;
 
+                // Check if componentDef.instance is a DI token (Symbol)
+                if (typeof componentDef.instance === 'symbol') {
+                    // Resolve DI token using container
+                    if (!this.container) {
+                        console.error(`[SkillManager] Container not available for resolving DI token for component "${componentDef.componentId}". Skipping.`);
+                        continue;
+                    }
+                    try {
+                        componentInstance = this.container.get<ToolComponent>(componentDef.instance as symbol);
+
+                        // Extract tools from component's toolSet and add to skill's tools
+                        if (componentInstance && 'toolSet' in componentInstance) {
+                            const toolSet = componentInstance.toolSet as Map<string, Tool>;
+                            const existingTools = skill.tools ?? [];
+                            const newTools = Array.from(toolSet.values());
+                            skill.tools = [...existingTools, ...newTools];
+                        }
+                    } catch (resolveError) {
+                        console.error(`[SkillManager] Error resolving DI token for component "${componentDef.componentId}":`, resolveError);
+                        continue;
+                    }
+                }
                 // Check if componentDef.instance is a factory function (sync or async)
-                if (typeof componentDef.instance === 'function') {
+                else if (typeof componentDef.instance === 'function') {
                     // Call the factory function to get the component instance
                     try {
                         componentInstance = await componentDef.instance();
@@ -154,7 +180,7 @@ export class SkillManager {
                         continue; // Skip this component if factory fails
                     }
 
-                    // Extract tools from the component's toolSet and add to skill's tools
+                    // Extract tools from component's toolSet and add to skill's tools
                     if (componentInstance && 'toolSet' in componentInstance) {
                         const toolSet = componentInstance.toolSet as Map<string, Tool>;
                         const existingTools = skill.tools ?? [];
@@ -163,51 +189,50 @@ export class SkillManager {
                     }
                 } else {
                     // Already an instance, use it directly
-                    componentInstance = componentDef.instance;
+                    componentInstance = componentDef.instance as ToolComponent;
                 }
 
                 // Store the actual component instance
                 this.activeComponents.set(componentDef.componentId, componentInstance);
                 activatedComponentIds.push(componentDef.componentId);
 
-                try {
-                    await skill.onComponentActivate?.(componentInstance);
-                } catch (error) {
-                    console.error(`[SkillManager] Error in skill's onComponentActivate for "${componentDef.componentId}":`, error);
-                }
-
+                // Call component's onActivate hook
                 try {
                     await componentInstance.onActivate?.();
-                } catch (compError) {
-                    console.error(`[SkillManager] Component "${componentDef.componentId}" error during activation:`, compError);
+                } catch (activateError) {
+                    console.error(`[SkillManager] Component "${componentDef.componentId}" error during activation:`, activateError);
+                }
+
+                // Call skill's onComponentActivate hook
+                try {
+                    await skill.onComponentActivate?.(componentInstance);
+                } catch (hookError) {
+                    console.error(`[SkillManager] Skill "${skill.name}" error in onComponentActivate for "${componentDef.componentId}":`, hookError);
                 }
             }
         }
 
-        // Call skill's onActivate
+        // Call skill's onActivate hook
         try {
             await skill.onActivate?.();
         } catch (error) {
             console.error(`[SkillManager] Error activating skill "${skill.name}":`, error);
-            throw error
-            // Still consider it activated, but log the error
+            throw error;
         }
 
-        // Notify listeners
+        // Notify skill change
         this.onSkillChange?.(skill);
-
-        const addedComponents = activatedComponentIds.length > 0 ? activatedComponentIds : undefined;
 
         return {
             success: true,
-            message: `Skill "${skill.displayName}" activated successfully. ${skill.prompt.direction.split('\n')[0]}`,
+            message: `Skill "${skill.displayName}" activated successfully.`,
             skill,
-            addedComponents
+            addedComponents: activatedComponentIds
         };
     }
 
     /**
-     * Deactivate current skill and all its components
+     * Deactivate the currently active skill
      */
     async deactivateSkill(): Promise<{ success: boolean; message: string }> {
         if (!this.activeSkill) {
@@ -217,14 +242,14 @@ export class SkillManager {
             };
         }
 
-        const skillName = this.activeSkill.displayName;
+        const skillName = this.activeSkill.name;
 
-        // Deactivate all components first
+        // Deactivate components first
         for (const component of this.activeComponents.values()) {
             try {
                 await this.activeSkill.onComponentDeactivate?.(component);
             } catch (error) {
-                console.error(`[SkillManager] Error in onComponentDeactivate for "${component.componentId}":`, error);
+                console.error(`[SkillManager] Error deactivating component "${component.componentId}":`, error);
             }
             try {
                 await component.onDeactivate?.();
@@ -234,153 +259,118 @@ export class SkillManager {
         }
         this.activeComponents.clear();
 
+        // Deactivate skill
         try {
             await this.activeSkill.onDeactivate?.();
         } catch (error) {
-            console.error(`[SkillManager] Error deactivating skill "${this.activeSkill.name}":`, error);
+            console.error(`[SkillManager] Error deactivating skill "${skillName}":`, error);
+            throw error;
         }
 
+        // Clear active skill
         this.activeSkill = null;
+
+        // Notify skill change
         this.onSkillChange?.(null);
 
         return {
             success: true,
-            message: `Skill "${skillName}" deactivated.`
+            message: `Skill "${skillName}" deactivated successfully.`
         };
     }
 
     /**
-     * Get currently active skill
+     * Get the currently active skill
      */
     getActiveSkill(): Skill | null {
         return this.activeSkill;
     }
 
     /**
-     * Get active skill's prompt enhancement
-     */
-    getActivePrompt(): { capability: string; direction: string } | null {
-        return this.activeSkill?.prompt ?? null;
-    }
-
-    /**
-     * Get active skill's tools
-     */
-    getActiveTools(): Tool[] {
-        return this.activeSkill?.tools ?? [];
-    }
-
-    /**
-     * Check if any skill is active
-     */
-    hasActiveSkill(): boolean {
-        return this.activeSkill !== null;
-    }
-
-    /**
-     * Get skill count
-     */
-    get size(): number {
-        return this.registry.size;
-    }
-
-    /**
-     * Clear all registered skills (deactivates current skill first)
-     */
-    async clear(): Promise<void> {
-        await this.deactivateSkill();
-        this.registry.clear();
-    }
-
-    /**
-     * Find skills matching a query (for smart skill suggestion)
-     */
-    findMatchingSkills(query: string): SkillSummary[] {
-        const lowerQuery = query.toLowerCase();
-
-        return this.getAvailableSkills().filter(skill => {
-            // Check name
-            if (skill.name.toLowerCase().includes(lowerQuery)) return true;
-
-            // Check display name
-            if (skill.displayName.toLowerCase().includes(lowerQuery)) return true;
-
-            // Check description
-            if (skill.description.toLowerCase().includes(lowerQuery)) return true;
-
-            // Check triggers
-            if (skill.triggers?.some((t: string) => t.toLowerCase().includes(lowerQuery))) return true;
-
-            return false;
-        });
-    }
-
-    /**
-     * Get tools from the currently active skill
-     */
-    getActiveSkillTools(): Tool[] {
-        return this.activeSkill?.tools ?? [];
-    }
-
-    /**
-     * Get tool names from the currently active skill
-     */
-    getActiveSkillToolNames(): string[] {
-        return this.activeSkill?.tools?.map(t => t.toolName) ?? [];
-    }
-
-    /**
-     * Check if a tool name belongs to the active skill
-     */
-    isToolFromActiveSkill(toolName: string): boolean {
-        return this.getActiveSkillToolNames().includes(toolName);
-    }
-
-    /**
-     * Get tool state for all skills
-     */
-    getAllSkillToolStates(): SkillToolState[] {
-        return Array.from(this.registry.values()).map(skill => ({
-            skillName: skill.name,
-            tools: skill.tools ?? [],
-            active: this.activeSkill?.name === skill.name,
-            addedToolNames: skill.tools?.map(t => t.toolName) ?? []
-        }));
-    }
-
-    // ==================== NEW: Component Management ====================
-
-    /**
-     * Get active components from the currently active skill
-     * @returns Array of active ToolComponent instances
+     * Get active components
      */
     getActiveComponents(): ToolComponent[] {
         return Array.from(this.activeComponents.values());
     }
 
     /**
-     * Get a specific component from the active skill by ID
-     * @param componentId - The component ID to look up
-     * @returns ToolComponent or undefined
-     */
-    getComponent(componentId: string): ToolComponent | undefined {
-        return this.activeComponents.get(componentId);
-    }
-
-    /**
-     * Get the number of active components
-     * @returns Number of active components
+     * Get active component count
      */
     getActiveComponentCount(): number {
         return this.activeComponents.size;
     }
 
     /**
-     * Check if a component is active
-     * @param componentId - The component ID to check
-     * @returns true if component is active
+     * Get an active component by its component ID
      */
-    isComponentActive(componentId: string): boolean {
-        return this.activeComponents.has(componentId);
+    getComponent(componentId: string): ToolComponent | undefined {
+        return this.activeComponents.get(componentId);
+    }
+
+    /**
+     * Get active skill's prompt enhancement
+     * @deprecated Use getActiveSkill() and access skill.prompt directly
+     */
+    getActivePrompt(): { capability: string; direction: string } | null {
+        const activeSkill = this.getActiveSkill();
+        if (!activeSkill) {
+            return null;
+        }
+        return activeSkill.prompt;
+    }
+
+    /**
+     * Get tools from the active skill
+     */
+    getActiveTools(): Tool[] {
+        if (!this.activeSkill) {
+            return [];
+        }
+        return this.activeSkill.tools ?? [];
+    }
+
+    /**
+     * Clear all skills
+     */
+    async clear(): Promise<void> {
+        // Deactivate active skill if any
+        if (this.activeSkill) {
+            await this.deactivateSkill();
+        }
+        this.registry.clear();
+    }
+
+    /**
+     * Find skills matching a query string
+     * Matches against skill name, display name, description, triggers, and tags
+     */
+    findMatchingSkills(query: string): SkillSummary[] {
+        const lowerQuery = query.toLowerCase();
+        return this.getAvailableSkills().filter(skill => {
+            const nameMatch = skill.name.toLowerCase().includes(lowerQuery);
+            const displayNameMatch = skill.displayName.toLowerCase().includes(lowerQuery);
+            const descriptionMatch = skill.description.toLowerCase().includes(lowerQuery);
+            const triggerMatch = skill.triggers?.some(t => t.toLowerCase().includes(lowerQuery)) ?? false;
+            return nameMatch || displayNameMatch || descriptionMatch || triggerMatch;
+        });
+    }
+
+    /**
+     * Get all skill tool states
+     */
+    getAllSkillToolStates(): SkillToolState[] {
+        return Array.from(this.registry.values()).map(skill => ({
+            skillName: skill.name,
+            tools: skill.tools ?? [],
+            active: this.activeSkill?.name === skill.name,
+            addedToolNames: (skill.tools ?? []).map(t => t.toolName)
+        }));
+    }
+
+    /**
+     * Get the number of registered skills
+     */
+    get size(): number {
+        return this.registry.size;
     }
 }

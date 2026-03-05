@@ -61,7 +61,6 @@ describe('ThinkingModule', () => {
                 name: 'continue_thinking',
                 arguments: JSON.stringify({
                     continueThinking: true,
-                    thoughtNumber: 1,
                     totalThoughts: 2,
                 })
             }],
@@ -82,7 +81,6 @@ describe('ThinkingModule', () => {
                 name: 'continue_thinking',
                 arguments: JSON.stringify({
                     continueThinking: false,
-                    thoughtNumber: 1,
                     totalThoughts: 1,
                     summary: 'Test summary'
                 })
@@ -163,7 +161,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
                     })
@@ -238,7 +235,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
                     })
@@ -282,7 +278,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
                     })
@@ -329,7 +324,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Test summary'
                     })
@@ -368,7 +362,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 1,
                         totalThoughts: 1,
                         summary: 'Analysis completed. The user wants to search for literature on diabetes treatment. Ready to proceed to action phase.'
                     })
@@ -408,7 +401,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: true,
-                        thoughtNumber: 1,
                         totalThoughts: 3,
                         nextFocus: 'Evaluate available skills for literature search'
                     })
@@ -431,7 +423,6 @@ describe('ThinkingModule', () => {
                     name: 'continue_thinking',
                     arguments: JSON.stringify({
                         continueThinking: false,
-                        thoughtNumber: 2,
                         totalThoughts: 3,
                         summary: 'Completed skill evaluation. Recommend activating literature search skill for this task.'
                     })
@@ -464,6 +455,248 @@ describe('ThinkingModule', () => {
 
             // Verify the summary is from the last round
             expect(thinkingResult.summary).toContain('Completed skill evaluation')
+        })
+    })
+
+    describe('thinking workflow', () => {
+        it('should auto-increment thoughtNumber across multiple thinking rounds', async () => {
+            // Mock first response with continueThinking: true
+            const mockedResponse1: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_1',
+                    call_id: 'continue_call_id_1',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: true,
+                        totalThoughts: 3,
+                        nextFocus: 'Evaluate available skills for literature search'
+                    })
+                }],
+                textResponse: 'First thought: Analyzing the task requirements',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Mock second response with continueThinking: true
+            const mockedResponse2: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_2',
+                    call_id: 'continue_call_id_2',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: true,
+                        totalThoughts: 3,
+                        nextFocus: 'Evaluate tool options'
+                    })
+                }],
+                textResponse: 'Second thought: Evaluating available tools',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Mock third response with continueThinking: false
+            const mockedResponse3: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_3',
+                    call_id: 'continue_call_id_3',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 3,
+                        summary: 'Completed analysis. Ready to proceed with action phase.'
+                    })
+                }],
+                textResponse: 'Third thought: Finalizing the action plan',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponse1)
+                .mockResolvedValueOnce(mockedResponse2)
+                .mockResolvedValueOnce(mockedResponse3)
+
+            // Perform thinking phase
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that three thinking rounds were executed
+            expect(thinkingResult.rounds.length).toBe(3)
+
+            // Verify that thoughtNumber was auto-incremented correctly
+            expect(thinkingResult.rounds[0].thoughtNumber).toBe(1)
+            expect(thinkingResult.rounds[1].thoughtNumber).toBe(2)
+            expect(thinkingResult.rounds[2].thoughtNumber).toBe(3)
+
+            // Verify that totalThoughts was controlled by LLM (remained at 3)
+            expect(thinkingResult.rounds[0].totalThoughts).toBe(3)
+            expect(thinkingResult.rounds[1].totalThoughts).toBe(3)
+            expect(thinkingResult.rounds[2].totalThoughts).toBe(3)
+
+            // Verify that continueThinking was set correctly
+            expect(thinkingResult.rounds[0].continueThinking).toBe(true)
+            expect(thinkingResult.rounds[1].continueThinking).toBe(true)
+            expect(thinkingResult.rounds[2].continueThinking).toBe(false)
+
+            // Verify that summary was captured from the last round
+            expect(thinkingResult.summary).toContain('Completed analysis')
+        })
+
+        it('should reset thoughtNumber to 1 when starting a new thinking phase', async () => {
+            // First thinking phase
+            const mockedResponse1: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_1',
+                    call_id: 'continue_call_id_1',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 2,
+                        summary: 'First thinking phase completed'
+                    })
+                }],
+                textResponse: 'First phase thought',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponse1)
+
+            // Perform first thinking phase
+            const result1 = await thinkingModule.performThinkingPhase('workspace context')
+            expect(result1.rounds[0].thoughtNumber).toBe(1)
+
+            // Second thinking phase (should reset to 1)
+            const mockedResponse2: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_2',
+                    call_id: 'continue_call_id_2',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 2,
+                        summary: 'Second thinking phase completed'
+                    })
+                }],
+                textResponse: 'Second phase thought',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponse2)
+
+            // Perform second thinking phase
+            const result2 = await thinkingModule.performThinkingPhase('workspace context')
+            expect(result2.rounds[0].thoughtNumber).toBe(1)
+        })
+
+        it('should allow LLM to update totalThoughts while thoughtNumber auto-increments', async () => {
+            // First response: LLM estimates 3 thoughts
+            const mockedResponse1: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_1',
+                    call_id: 'continue_call_id_1',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: true,
+                        totalThoughts: 3
+                    })
+                }],
+                textResponse: 'First thought',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Second response: LLM updates estimate to 5 thoughts
+            const mockedResponse2: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_2',
+                    call_id: 'continue_call_id_2',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: true,
+                        totalThoughts: 5
+                    })
+                }],
+                textResponse: 'Second thought',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Third response: LLM completes
+            const mockedResponse3: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id_3',
+                    call_id: 'continue_call_id_3',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 5,
+                        summary: 'Thinking completed'
+                    })
+                }],
+                textResponse: 'Third thought',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponse1)
+                .mockResolvedValueOnce(mockedResponse2)
+                .mockResolvedValueOnce(mockedResponse3)
+
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify thoughtNumber auto-incremented
+            expect(thinkingResult.rounds[0].thoughtNumber).toBe(1)
+            expect(thinkingResult.rounds[1].thoughtNumber).toBe(2)
+            expect(thinkingResult.rounds[2].thoughtNumber).toBe(3)
+
+            // Verify totalThoughts was updated by LLM
+            expect(thinkingResult.rounds[0].totalThoughts).toBe(3)
+            expect(thinkingResult.rounds[1].totalThoughts).toBe(5)
+            expect(thinkingResult.rounds[2].totalThoughts).toBe(5)
         })
     })
 })

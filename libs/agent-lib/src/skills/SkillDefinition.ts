@@ -68,20 +68,30 @@ export class SkillDefinition {
         const componentTools: Tool[] = [];
         if (this.config.components) {
             for (const component of this.config.components) {
-                // Resolve instance if it's a factory function
-                // Note: We cannot execute async factory functions here since build() is sync
-                // For async factory functions, tools will be extracted when the component is actually instantiated
-                if (typeof component.instance !== 'function') {
-                    // Components have a toolSet Map that contains their tools
-                    if (component.instance && 'toolSet' in component.instance) {
-                        const toolSet = component.instance.toolSet as Map<string, Tool>;
+                // Resolve instance based on its type
+                const instanceType = typeof component.instance;
+
+                // Skip if it's a factory function (sync or async) - tools extracted at activation
+                if (instanceType === 'function') {
+                    continue;
+                }
+
+                // Skip if it's a DI token (Symbol) - tools extracted at activation via container
+                if (instanceType === 'symbol') {
+                    continue;
+                }
+
+                // For direct instances, extract tools from toolSet
+                // Components have a toolSet Map that contains their tools
+                if (instanceType === 'object' && component.instance) {
+                    const instance = component.instance as any;
+                    if ('toolSet' in instance) {
+                        const toolSet = instance.toolSet as Map<string, Tool>;
                         toolSet.forEach((tool) => {
                             componentTools.push(tool);
                         });
                     }
                 }
-                // For factory functions, tools will be extracted when the component is instantiated
-                // This is handled by the SkillManager when activating skills
             }
         }
 
