@@ -512,6 +512,10 @@ export class AgentContainer {
         // Bind in agent container for VirtualWorkspace to inject
         agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inRequestScope();
 
+        // Bind the agentContainer itself for DI token resolution in SkillManager
+        // This allows VirtualWorkspace to inject the container and pass it to SkillManager
+        agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
+
         // Tool Components - Request scope for skill-based lifecycle
         // These are bound in agent containers for skill activation
         agentContainer.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inRequestScope();

@@ -700,21 +700,34 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
 
     /**
      * Handle context recall
+     * Deduplicates results when both turnNumbers and keywords are provided
      */
     private handleRecall(request: RecallRequest): Turn[] {
         const recalled: Turn[] = [];
+        const seenTurnIds = new Set<string>();
+
+        const addTurnIfNotSeen = (turn: Turn) => {
+            if (!seenTurnIds.has(turn.id)) {
+                seenTurnIds.add(turn.id);
+                recalled.push(turn);
+            }
+        };
 
         if (request.turnNumbers) {
             for (const turn of request.turnNumbers) {
                 const t = this.turnMemoryStore.getTurnByNumber(turn);
-                if (t) recalled.push(t);
+                if (t) {
+                    addTurnIfNotSeen(t);
+                }
             }
         }
 
         if (request.keywords) {
             for (const keyword of request.keywords) {
                 const turns = this.turnMemoryStore.searchTurns(keyword);
-                recalled.push(...turns);
+                for (const turn of turns) {
+                    addTurnIfNotSeen(turn);
+                }
             }
         }
 

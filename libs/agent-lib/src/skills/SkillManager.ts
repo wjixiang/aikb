@@ -21,7 +21,7 @@ export class SkillManager {
     private addedComponents: string[] = [];
 
     /** Container for resolving DI tokens */
-    @inject(TYPES.Container) private container?: Container;
+    private container?: Container;
 
     constructor(options?: SkillManagerOptions) {
         this.onSkillChange = options?.onSkillChange ?? undefined;
@@ -61,6 +61,14 @@ export class SkillManager {
      */
     get(skillName: string): Skill | undefined {
         return this.registry.get(skillName);
+    }
+
+    /**
+     * Set the DI container for resolving DI tokens
+     * This is called when the container is available after construction
+     */
+    setContainer(container: Container): void {
+        this.container = container;
     }
 
     /**

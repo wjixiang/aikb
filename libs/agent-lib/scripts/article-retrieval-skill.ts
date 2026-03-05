@@ -55,8 +55,9 @@ async function main() {
                     },
                 },
                 apiConfiguration: {
-                    zaiApiLine: 'china_coding',
+                    apiProvider: 'zai',
                     apiModelId: 'glm-4.5-air',
+                    apiKey: process.env['GLM_API_KEY'] || '',
                 },
                 config: {
                     apiRequestTimeout: 90000

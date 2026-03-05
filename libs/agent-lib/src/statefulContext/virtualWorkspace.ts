@@ -1,4 +1,4 @@
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject, optional, Container } from 'inversify';
 import { ToolComponent } from './toolComponent.js';
 import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace } from './types.js';
 import { tdiv } from './ui/index.js';
@@ -31,10 +31,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     // Tool management system (injected)
     private toolManager: IToolManager;
     private globalToolProvider: GlobalToolProvider;
+    private container?: Container;
 
     constructor(
         @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
         @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
+        @inject(TYPES.Container) @optional() container?: Container,
     ) {
         this.config = {
             id: config.id || 'default-workspace',
@@ -47,9 +49,18 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // This allows both DI container usage and direct instantiation
         this.toolManager = toolManager ?? new ToolManager();
 
+        // Store container for later use
+        this.container = container;
+
+        // Create SkillManager with container if available for DI token resolution
         this.skillManager = new SkillManager({
             onSkillChange: (skill) => this.handleSkillChange(skill)
         });
+
+        // Inject container into SkillManager if available
+        if (container) {
+            this.skillManager.setContainer(container);
+        }
 
         // Initialize global tool provider with skillManager
         this.globalToolProvider = new GlobalToolProvider(this.skillManager);
@@ -151,7 +162,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // Register new skill's components if skill is provided
         if (skill) {
             // Register SkillToolProvider which manages skill tools and components
-            const skillProvider = new SkillToolProvider(skill);
+            // Pass container if available for DI token resolution
+            const skillProvider = new SkillToolProvider(skill, this.container);
             this.toolManager.registerProvider(skillProvider);
             this.activeSkill = skill;
         } else {
@@ -449,42 +461,19 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // }));
 
         // Render skill components first (if active skill has components)
-        if (this.activeSkill && this.activeSkill.components) {
-            for (const componentDef of this.activeSkill.components) {
-                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
-                const componentContainer = new tdiv({
-                    content: componentKey,
-                    styles: { showBorder: true }
-                });
+        // Use component instances from SkillManager which handles DI token resolution
+        const activeComponents = this.skillManager.getActiveComponents();
+        for (const componentInstance of activeComponents) {
+            const componentKey = `${this.activeSkill?.name}:${componentInstance.componentId}`;
+            const componentContainer = new tdiv({
+                content: componentKey,
+                styles: { showBorder: true }
+            });
 
-                // Get or resolve instance
-                let instance: ToolComponent;
-                if (this.componentInstanceCache.has(componentKey)) {
-                    instance = this.componentInstanceCache.get(componentKey)!;
-                } else if (typeof componentDef.instance === 'function') {
-                    const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
-                    const result = factory();
-                    if (result instanceof Promise) {
-                        instance = await result;
-                        this.componentInstanceCache.set(componentKey, instance);
-                    } else {
-                        instance = result;
-                        this.componentInstanceCache.set(componentKey, instance);
-                    }
-                } else if (typeof componentDef.instance === 'symbol') {
-                    // DI token - skip rendering for now
-                    console.warn(`[VirtualWorkspace] DI token for component "${componentDef.componentId}" requires container resolution. Skipping render.`);
-                    continue;
-                } else {
-                    instance = componentDef.instance as ToolComponent;
-                    this.componentInstanceCache.set(componentKey, instance);
-                }
-
-                const componentRender = await instance.renderImply();
-                // renderImply returns an array, so add each element
-                componentRender.forEach(element => componentContainer.addChild(element));
-                container.addChild(componentContainer);
-            }
+            const componentRender = await componentInstance.renderImply();
+            // renderImply returns an array, so add each element
+            componentRender.forEach(element => componentContainer.addChild(element));
+            container.addChild(componentContainer);
         }
 
         // Render legacy components (for backward compatibility)
@@ -535,20 +524,15 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         const componentKeys: string[] = [];
 
         // Get keys and tools from active skill's components
-        if (this.activeSkill && this.activeSkill.components) {
-            for (const componentDef of this.activeSkill.components) {
-                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
-                componentKeys.push(componentKey);
-                // Count tools from component's toolSet
-                // Skip factory functions and DI tokens - tools extracted at activation
-                const instanceType = typeof componentDef.instance;
-                if (instanceType === 'object' && componentDef.instance) {
-                    const instance = componentDef.instance as any;
-                    if ('toolSet' in instance) {
-                        const toolSet = instance.toolSet as Map<string, any>;
-                        totalTools += toolSet.size;
-                    }
-                }
+        // Use component instances from SkillManager which handles DI token resolution
+        const activeComponents = this.skillManager.getActiveComponents();
+        for (const componentInstance of activeComponents) {
+            const componentKey = `${this.activeSkill?.name}:${componentInstance.componentId}`;
+            componentKeys.push(componentKey);
+            // Count tools from component's toolSet
+            if ('toolSet' in componentInstance) {
+                const toolSet = componentInstance.toolSet as Map<string, any>;
+                totalTools += toolSet.size;
             }
         }
 

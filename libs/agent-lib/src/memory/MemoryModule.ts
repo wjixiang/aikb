@@ -84,14 +84,17 @@ export class MemoryModule implements IMemoryModule {
      * Start a new turn
      */
     startTurn(workspaceContext: string, taskContext?: string): Turn {
+        this.logger.debug(`[MemoryModule] startTurn called, taskContext: ${taskContext ? 'provided' : 'none'}`);
+
         // Complete previous turn if exists
         if (this.currentTurn && this.currentTurn.status !== TurnStatus.COMPLETED) {
-            console.warn(`Previous turn ${this.currentTurn.id} was not completed, completing now`);
+            this.logger.warn(`[MemoryModule] Previous turn ${this.currentTurn.id} was not completed, completing now`);
             this.completeTurn();
         }
 
         // Create new turn with current workspace context and optional task context
         const turn = this.turnStore.createTurn(workspaceContext, taskContext);
+        this.logger.debug(`[MemoryModule] New turn created: ${turn.id}, turnNumber: ${turn.turnNumber}`);
         this.currentTurn = turn;
 
         return turn;
@@ -106,11 +109,16 @@ export class MemoryModule implements IMemoryModule {
             return;
         }
 
+        const turnId = this.currentTurn.id;
+        this.logger.debug(`[MemoryModule] Completing turn: ${turnId}`);
+
         // Update status
         this.turnStore.updateTurnStatus(this.currentTurn.id, TurnStatus.COMPLETED);
 
         // Clear current turn
         this.currentTurn = null;
+
+        this.logger.debug(`[MemoryModule] Turn completed: ${turnId}`);
     }
 
     /**
@@ -127,11 +135,15 @@ export class MemoryModule implements IMemoryModule {
      * @returns The added message
      */
     addMessage(message: ApiMessage): ApiMessage {
+        this.logger.debug(`[MemoryModule] addMessage called with role: ${message.role}`)
         if (!this.currentTurn) {
+            this.logger.error(`[MemoryModule] No active turn when trying to add message`)
             throw new Error('No active turn. Call startTurn() first.');
         }
-
+        this.logger.debug(`[MemoryModule] add message to turn, turnId: ${this.currentTurn.id}`)
         this.turnStore.addMessageToTurn(this.currentTurn.id, message);
+        this.logger.debug(`[MemoryModule] add message to turn successfully: ${message.content.map(e => e.type)}`)
+        this.logger.debug(`[MemoryModule] addMessage returning`)
         return message;
     }
 
@@ -260,7 +272,9 @@ ${summaryText}
      * Record tool call result to current turn
      */
     recordToolCall(toolName: string, success: boolean, result: any): void {
+        this.logger.debug(`[MemoryModule] recordToolCall called with toolName: ${toolName}`)
         if (!this.currentTurn) {
+            this.logger.error('[MemoryModule] No active turn to record tool call');
             console.warn('No active turn to record tool call');
             return;
         }
@@ -272,7 +286,9 @@ ${summaryText}
             timestamp: Date.now(),
         };
 
+        this.logger.debug(`[MemoryModule] About to add tool call result to turn`)
         this.turnStore.addToolCallResult(this.currentTurn.id, toolCall);
+        this.logger.debug(`[MemoryModule] Tool call result added successfully`)
     }
 
     // ==================== Import/Export ====================

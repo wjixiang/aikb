@@ -27,6 +27,7 @@ import {
     ActionPhaseResult,
     ToolResult,
 } from './types.js';
+import { NoToolsUsedError } from '../task/task.errors.js';
 
 /**
  * Default configuration for ActionModule
@@ -94,36 +95,75 @@ export class ActionModule implements IActionModule {
     ): Promise<ActionPhaseResult> {
         // Use provided toolManager or fall back to injected one
         const effectiveToolManager = toolManager ?? this.toolManager;
-        // 1. Make API request
-        const apiResponse = await this.makeApiRequest(
-            systemPrompt,
-            workspaceContext,
-            conversationHistory,
-            tools
-        );
 
-        // 2. Convert API response to assistant message
-        const assistantMessage = this.convertApiResponseToApiMessage(apiResponse);
+        this.logger.info('Starting action phase execution');
 
-        // 3. Execute tool calls
-        const { toolResults, userMessageContent, didAttemptCompletion } =
-            await this.executeToolCalls(apiResponse, isAborted, effectiveToolManager);
+        let apiResponse: ApiResponse;
+        let assistantMessage: ApiMessage;
+        let toolResults: ToolResult[] = [];
+        let userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
+        let didAttemptCompletion = false;
 
-        // 4. Calculate token usage
-        const tokensUsed = apiResponse.tokenUsage.completionTokens + apiResponse.tokenUsage.promptTokens;
+        try {
+            // 1. Make API request
+            this.logger.info('Making API request in action phase');
+            apiResponse = await this.makeApiRequest(
+                systemPrompt,
+                workspaceContext,
+                conversationHistory,
+                tools
+            );
+            this.logger.info({
+                hasToolCalls: !!apiResponse.toolCalls,
+                toolCallsCount: apiResponse.toolCalls?.length || 0,
+                hasTextResponse: !!apiResponse.textResponse
+            }, 'API request completed successfully');
 
-        // 5. Build tool usage statistics
-        const toolUsage = this.buildToolUsage(toolResults);
+            // 2. Convert API response to assistant message
+            assistantMessage = this.convertApiResponseToApiMessage(apiResponse);
 
-        return {
-            apiResponse,
-            toolResults,
-            didAttemptCompletion,
-            assistantMessage,
-            userMessageContent,
-            tokensUsed,
-            toolUsage,
-        };
+            // 3. Execute tool calls
+            this.logger.info('Starting tool execution');
+            const executionResult = await this.executeToolCalls(apiResponse, isAborted, effectiveToolManager);
+            toolResults = executionResult.toolResults;
+            userMessageContent = executionResult.userMessageContent;
+            didAttemptCompletion = executionResult.didAttemptCompletion;
+
+            this.logger.info({
+                toolResultsCount: toolResults.length,
+                successfulTools: toolResults.filter(r => r.success).length,
+                failedTools: toolResults.filter(r => !r.success).length
+            }, 'Tool execution completed');
+
+            // 4. Calculate token usage
+            const tokensUsed = (apiResponse.tokenUsage?.completionTokens || 0) + (apiResponse.tokenUsage?.promptTokens || 0);
+
+            // 5. Build tool usage statistics
+            const toolUsage = this.buildToolUsage(toolResults);
+
+            this.logger.info('Action phase completed successfully');
+
+            return {
+                apiResponse,
+                toolResults,
+                didAttemptCompletion,
+                assistantMessage,
+                userMessageContent,
+                tokensUsed,
+                toolUsage,
+            };
+        } catch (error) {
+            // Log error with partial results (with defensive checks)
+            this.logger.error({
+                error,
+                toolResultsCount: toolResults?.length ?? 0,
+                userMessageContentLength: userMessageContent?.length ?? 0,
+                didAttemptCompletion
+            }, 'Action phase failed with error');
+
+            // Re-throw the error for the caller to handle
+            throw error;
+        }
     }
 
     /**
@@ -202,7 +242,14 @@ export class ActionModule implements IActionModule {
         const toolResults: ToolResult[] = [];
         let didAttemptCompletion = false;
 
-        for (const toolCall of response.toolCalls) {
+        // Ensure toolCalls is an array before iterating
+        const toolCalls = response.toolCalls || [];
+        if (toolCalls.length === 0) {
+            this.logger.error('no tool used')
+            throw new NoToolsUsedError()
+        }
+        this.logger.info({ toolCallsCount: toolCalls.length, toolCalls }, `Starting tool execution for ${toolCalls.length} tool call(s)`);
+        for (const toolCall of toolCalls) {
             if (isAborted()) {
                 break;
             }
@@ -256,7 +303,9 @@ export class ActionModule implements IActionModule {
                     }
 
                     // Execute tool through IToolManager
+                    this.logger.info({ toolName: toolCall.name, params: parsedParams }, `Executing tool: ${toolCall.name}`);
                     result = await effectiveToolManager.executeTool(toolCall.name, parsedParams);
+                    this.logger.info({ toolName: toolCall.name, result }, `Tool execution completed: ${toolCall.name}`);
                 }
 
                 toolResults.push({
@@ -272,6 +321,7 @@ export class ActionModule implements IActionModule {
                     content: JSON.stringify(result),
                 });
             } catch (error) {
+                this.logger.error({ toolName: toolCall.name, error }, `Tool execution failed: ${toolCall.name}`);
                 toolResults.push({
                     toolName: toolCall.name,
                     success: false,
@@ -287,6 +337,11 @@ export class ActionModule implements IActionModule {
             }
         }
 
+        this.logger.info({
+            toolResultsCount: toolResults.length,
+            userMessageContentLength: userMessageContent.length,
+            didAttemptCompletion
+        }, `Tool execution completed. Total tools executed: ${toolResults.length}`);
         return { toolResults, userMessageContent, didAttemptCompletion };
     }
 
@@ -305,7 +360,9 @@ export class ActionModule implements IActionModule {
         }
 
         // Add tool use blocks for each tool call
-        for (const toolCall of response.toolCalls) {
+        // Ensure toolCalls is an array before iterating
+        const toolCalls = response.toolCalls || [];
+        for (const toolCall of toolCalls) {
             // Parse arguments from JSON string
             let parsedArgs: any = {};
             try {

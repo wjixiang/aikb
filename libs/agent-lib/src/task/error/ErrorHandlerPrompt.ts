@@ -9,14 +9,17 @@ export class ErrorHandlerPrompt {
      * Format an error into a user-friendly prompt message
      */
     static formatErrorPrompt(error: TaskError, retryAttempt: number): string {
+        // Defensive checks for error properties
         const errorType = this.getErrorTypeLabel(error);
         const suggestion = this.getErrorSuggestion(error);
+        const errorCode = error?.code ?? 'UNKNOWN';
+        const errorMessage = error?.message ?? 'Unknown error';
 
         return `⚠️ Error Occurred (Attempt ${retryAttempt + 1})
 
 **Error Type:** ${errorType}
-**Error Code:** ${error.code}
-**Message:** ${error.message}
+**Error Code:** ${errorCode}
+**Message:** ${errorMessage}
 
 ${suggestion ? `**Suggestion:** ${suggestion}` : ''}
 
@@ -27,7 +30,12 @@ This error is retryable. The system will attempt to retry the operation.`;
      * Get a user-friendly label for the error type
      */
     private static getErrorTypeLabel(error: TaskError): string {
-        switch (error.code) {
+        const errorCode = error?.code;
+        if (!errorCode) {
+            return 'Unknown Error';
+        }
+
+        switch (errorCode) {
             case 'API_TIMEOUT':
                 return 'API Timeout';
             case 'API_REQUEST_FAILED':
@@ -55,7 +63,12 @@ This error is retryable. The system will attempt to retry the operation.`;
      * Get a helpful suggestion based on the error type
      */
     private static getErrorSuggestion(error: TaskError): string {
-        switch (error.code) {
+        const errorCode = error?.code;
+        if (!errorCode) {
+            return 'An unexpected error occurred. Please review the error details.';
+        }
+
+        switch (errorCode) {
             case 'API_TIMEOUT':
                 return 'The API request took too long to complete. Try simplifying your request or check your network connection.';
             case 'API_REQUEST_FAILED':
@@ -83,14 +96,16 @@ This error is retryable. The system will attempt to retry the operation.`;
      * Format multiple errors into a consolidated prompt
      */
     static formatMultipleErrorsPrompt(errors: TaskError[]): string {
-        if (errors.length === 0) {
+        if (!errors || errors.length === 0) {
             return '';
         }
 
         const errorList = errors
             .map((error, index) => {
                 const errorType = this.getErrorTypeLabel(error);
-                return `${index + 1}. **${errorType}** (${error.code}): ${error.message}`;
+                const errorCode = error?.code ?? 'UNKNOWN';
+                const errorMessage = error?.message ?? 'Unknown error';
+                return `${index + 1}. **${errorType}** (${errorCode}): ${errorMessage}`;
             })
             .join('\n');
 

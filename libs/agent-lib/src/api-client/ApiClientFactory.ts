@@ -63,6 +63,11 @@ export class ApiClientFactory {
                     ? 'https://open.bigmodel.cn/api/paas/v4'
                     : 'https://open.bigmodel.cn/api/coding/paas/v4';
                 break;
+            case 'minimax':
+                // MiniMax API - uses the MiniMax base URL
+                // MiniMax API endpoint format: https://api.minimax.chat/v1/text/chatcompletion_v2
+                baseURL = config.minimaxBaseUrl || 'https://api.minimax.chat/v1';
+                break;
             default:
                 baseURL = undefined;
         }

@@ -18,6 +18,7 @@ export const providerNames = [
   'ollama',
   'lmstudio',
   'vscode-lm',
+  'minimax',
 ] as const;
 
 export const providerNamesSchema = z.enum(providerNames);
@@ -88,6 +89,13 @@ const vsCodeLmSchema = baseProviderSettingsSchema.extend({
     .optional(),
 });
 
+const minimaxSchema = baseProviderSettingsSchema.extend({
+  apiKey: z.string().optional(),
+  apiModelId: z.string().optional(),
+  minimaxModelId: z.string().optional(),
+  minimaxBaseUrl: z.string().optional(),
+});
+
 export const providerSettingsSchema = z.object({
   apiProvider: providerNamesSchema.optional(),
   ...zaiSchema.shape,
@@ -97,6 +105,7 @@ export const providerSettingsSchema = z.object({
   ...ollamaSchema.shape,
   ...lmStudioSchema.shape,
   ...vsCodeLmSchema.shape,
+  ...minimaxSchema.shape,
 });
 
 export type ProviderSettings = z.infer<typeof providerSettingsSchema>;
@@ -119,6 +128,7 @@ export const modelIdKeys = [
   'apiModelId',
   'ollamaModelId',
   'lmStudioModelId',
+  'minimaxModelId',
 ] as const satisfies readonly (keyof ProviderSettings)[];
 
 export type ModelIdKey = (typeof modelIdKeys)[number];

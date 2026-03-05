@@ -65,17 +65,22 @@ export class TurnMemoryStore implements ITurnMemoryStore {
      * Add message to turn
      */
     addMessageToTurn(turnId: string, message: ApiMessage): void {
+        console.log(`[TurnMemoryStore] addMessageToTurn called with turnId: ${turnId}`)
         const turn = this.turns.get(turnId);
+
         if (!turn) {
+            console.error(`[TurnMemoryStore] Turn ${turnId} not found`)
             throw new Error(`Turn ${turnId} not found`);
         }
 
+        console.log(`[TurnMemoryStore] Found turn, adding message with role: ${message.role}`)
         const messageWithTs: ApiMessage = {
             ...message,
             ts: Date.now(),
         };
 
         turn.messages.push(messageWithTs);
+        console.log(`[TurnMemoryStore] Message added successfully, total messages: ${turn.messages.length}`)
     }
 
     /**
@@ -104,11 +109,16 @@ export class TurnMemoryStore implements ITurnMemoryStore {
      * Add tool call result
      */
     addToolCallResult(turnId: string, toolCall: ToolCallResult): void {
+        console.log(`[TurnMemoryStore] addToolCallResult called with turnId: ${turnId}, toolName: ${toolCall.toolName}`)
         const turn = this.turns.get(turnId);
+        console.log(`[TurnMemoryStore] get turn successfully`)
         if (!turn) {
+            console.error(`[TurnMemoryStore] Turn ${turnId} not found`)
             throw new Error(`Turn ${turnId} not found`);
         }
+        console.log(`[TurnMemoryStore] About to push tool call to array, current count: ${turn.toolCalls.length}`)
         turn.toolCalls.push(toolCall);
+        console.log(`[TurnMemoryStore] add toolCall successfully, new count: ${turn.toolCalls.length}`)
     }
 
     /**

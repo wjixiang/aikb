@@ -349,6 +349,118 @@ describe('ThinkingModule', () => {
             expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(999)
             expect(vi.mocked(mockedTurnMemoryStore.getTurnByNumber)).toHaveBeenCalledWith(1000)
         })
+
+        it('should deduplicate recalled turns when both turnNumbers and keywords are provided', async () => {
+            // Mock turns to be returned
+            const mockTurn1: Turn = {
+                id: 'turn-1',
+                turnNumber: 1,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'meta-analysis on mesenchymal stem cells',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+            const mockTurn2: Turn = {
+                id: 'turn-2',
+                turnNumber: 2,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'knee osteoarthritis PICO extraction',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+            const mockTurn3: Turn = {
+                id: 'turn-3',
+                turnNumber: 3,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'PRISMA checklist analysis',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+            const mockTurn4: Turn = {
+                id: 'turn-4',
+                turnNumber: 4,
+                timestamp: Date.now(),
+                status: TurnStatus.COMPLETED,
+                messages: [],
+                workspaceContext: 'PRISMA flow diagram',
+                toolCalls: [],
+                tokenUsage: { thinking: 10, action: 20, total: 30 }
+            }
+
+            // Mock getTurnByNumber to return turns 1-4
+            vi.mocked(mockedTurnMemoryStore.getTurnByNumber)
+                .mockReturnValueOnce(mockTurn1)  // turn 1
+                .mockReturnValueOnce(mockTurn2)  // turn 2
+                .mockReturnValueOnce(mockTurn3)  // turn 3
+                .mockReturnValueOnce(mockTurn4)  // turn 4
+
+            // Mock searchTurns to return the same turns (simulating keyword matches)
+            // This simulates the bug where the same turns are found by both turnNumbers and keywords
+            vi.mocked(mockedTurnMemoryStore.searchTurns)
+                .mockReturnValueOnce([mockTurn1, mockTurn2, mockTurn3, mockTurn4])  // "meta-analysis"
+                .mockReturnValueOnce([mockTurn1, mockTurn2])  // "mesenchymal stem cells"
+                .mockReturnValueOnce([mockTurn2, mockTurn3])  // "knee osteoarthritis"
+                .mockReturnValueOnce([mockTurn2])  // "PICO extraction"
+                .mockReturnValueOnce([mockTurn3, mockTurn4])  // "PRISMA"
+
+            // Create API response with recall_context tool call using BOTH turnNumbers and keywords
+            const recallRequest: RecallRequest = {
+                turnNumbers: [1, 2, 3, 4],
+                keywords: ['meta-analysis', 'mesenchymal stem cells', 'knee osteoarthritis', 'PICO extraction', 'PRISMA']
+            }
+            const mockedResponse: ApiResponse = {
+                toolCalls: [{
+                    id: 'recall_id',
+                    call_id: 'recall_call_id',
+                    type: 'function_call',
+                    name: 'recall_context',
+                    arguments: JSON.stringify(recallRequest)
+                }, {
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 1,
+                        summary: 'Test summary'
+                    })
+                }],
+                textResponse: 'Recalling previous turns with both turnNumbers and keywords',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+
+            // Perform thinking phase which will trigger handleRecall
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that the recalled contexts are deduplicated
+            expect(thinkingResult.rounds.length).toBeGreaterThan(0)
+            const firstRound = thinkingResult.rounds[0]
+
+            // Should only have 4 unique turns, not duplicates
+            expect(firstRound.recalledContexts.length).toBe(4)
+
+            // Verify the turns are unique by checking their IDs
+            const turnIds = firstRound.recalledContexts.map(t => t.id)
+            expect(turnIds).toEqual(['turn-1', 'turn-2', 'turn-3', 'turn-4'])
+
+            // Verify no duplicates exist
+            const uniqueIds = new Set(turnIds)
+            expect(uniqueIds.size).toBe(4)
+        })
     })
 
     describe('exit thinking phase via tool call', () => {

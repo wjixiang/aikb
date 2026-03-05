@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { injectable, Container } from 'inversify';
 import type { Tool } from '../../statefulContext/types.js';
 import type { ToolComponent } from '../../statefulContext/toolComponent.js';
 import type { Skill } from '../../skills/types.js';
@@ -22,11 +22,13 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
 
     private skill: Skill;
     private componentProviders: Map<string, ComponentToolProvider>;
+    private container?: Container;
 
-    constructor(skill: Skill) {
+    constructor(skill: Skill, container?: Container) {
         super();
         this.id = `skill:${skill.name}`;
         this.skill = skill;
+        this.container = container;
         this.componentProviders = new Map();
         this.initializeComponentProviders();
     }
@@ -45,6 +47,20 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
 
             // Skip if it's a DI token (Symbol) - requires container resolution
             if (instanceType === 'symbol') {
+                // Try to resolve DI token if container is available
+                if (this.container) {
+                    try {
+                        const componentInstance = this.container.get<ToolComponent>(componentDef.instance as symbol);
+                        const provider = new ComponentToolProvider(
+                            `${this.skill.name}:${componentDef.componentId}`,
+                            componentInstance
+                        );
+                        this.componentProviders.set(componentDef.componentId, provider);
+                        continue;
+                    } catch (resolveError) {
+                        console.warn(`[SkillToolProvider] Failed to resolve DI token for component ${componentDef.componentId}:`, resolveError);
+                    }
+                }
                 console.warn(`[SkillToolProvider] DI token for component ${componentDef.componentId} requires container resolution. Skipping.`);
                 continue;
             }

@@ -17,7 +17,7 @@ describe(BibliographySearchComponent, () => {
 
     it.skip('should perform bibliographic searching request', async () => {
         const params: searchPubmedParamsType = {
-            simpleTerm: 'hypertension'
+            term: 'hypertension'
         }
         await component.handleToolCall('search_pubmed', params)
         // const renderResult = (await component.render()).render()
