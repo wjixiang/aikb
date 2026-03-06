@@ -15,11 +15,11 @@ export class MessageContentFormatter {
         const includeMetadata = options?.includeMetadata ?? true;
 
         if (block.type === 'text') {
-            return block.text;
+            return block.text ?? '';
         }
 
         if (block.type === 'tool_use') {
-            const input = JSON.stringify(block.input, null, 2);
+            const input = JSON.stringify(block.input ?? {}, null, 2);
             const truncated = input.length > maxLength
                 ? input.substring(0, maxLength) + '...'
                 : input;
@@ -31,10 +31,14 @@ export class MessageContentFormatter {
         }
 
         if (block.type === 'tool_result') {
+            // Handle undefined or null content
+            if (block.content === undefined || block.content === null) {
+                return includeMetadata ? `[Tool Result: ${block.tool_use_id}]` : `[Result: ${block.tool_use_id}]`;
+            }
             const content = typeof block.content === 'string'
                 ? block.content
                 : JSON.stringify(block.content);
-            const truncated = content.length > maxLength
+            const truncated = (content ?? '').length > maxLength
                 ? content.substring(0, maxLength) + '...'
                 : content;
 
@@ -45,15 +49,16 @@ export class MessageContentFormatter {
         }
 
         if (block.type === 'thinking') {
-            const truncated = block.thinking.length > maxLength
-                ? block.thinking.substring(0, maxLength) + '...'
-                : block.thinking;
+            const thinking = block.thinking ?? '';
+            const truncated = thinking.length > maxLength
+                ? thinking.substring(0, maxLength) + '...'
+                : thinking;
 
             return `[Thinking]\n${truncated}`;
         }
 
         if (block.type === 'image') {
-            return `[Image: ${block.source.type}]`;
+            return `[Image: ${block.source?.type ?? 'unknown'}]`;
         }
 
         return `[Unknown block type: ${(block as any).type}]`;

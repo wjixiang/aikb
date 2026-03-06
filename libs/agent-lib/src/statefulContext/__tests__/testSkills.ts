@@ -1,5 +1,5 @@
 import { defineSkill, createComponentDefinition } from '../../skills/SkillDefinition.js';
-import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from './testComponents.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * Test skill with component A (search functionality)
@@ -18,7 +18,7 @@ export const testSkillA = defineSkill({
             'search-component',
             'Search Component',
             'Provides search functionality',
-            new TestToolComponentA()
+            TYPES.TestToolComponentA // Use DI token for singleton resolution
         )
     ]
 });
@@ -40,7 +40,7 @@ export const testSkillB = defineSkill({
             'counter-component',
             'Counter Component',
             'Provides counter functionality',
-            new TestToolComponentB()
+            TYPES.TestToolComponentB // Use DI token for singleton resolution
         )
     ]
 });
@@ -62,7 +62,7 @@ export const testSkillC = defineSkill({
             'toggle-component',
             'Toggle Component',
             'Provides toggle functionality',
-            new TestToolComponentC()
+            TYPES.TestToolComponentC // Use DI token for singleton resolution
         )
     ]
 });
@@ -84,19 +84,19 @@ export const testSkillMulti = defineSkill({
             'search-component',
             'Search Component',
             'Provides search functionality',
-            new TestToolComponentA()
+            TYPES.TestToolComponentA // Use DI token for singleton resolution
         ),
         createComponentDefinition(
             'counter-component',
             'Counter Component',
             'Provides counter functionality',
-            new TestToolComponentB()
+            TYPES.TestToolComponentB // Use DI token for singleton resolution
         ),
         createComponentDefinition(
             'toggle-component',
             'Toggle Component',
             'Provides toggle functionality',
-            new TestToolComponentC()
+            TYPES.TestToolComponentC // Use DI token for singleton resolution
         )
     ]
 });

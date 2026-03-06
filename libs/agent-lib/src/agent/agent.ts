@@ -542,6 +542,19 @@ export class Agent {
                 // For debugging: avoid stuck in loop for some tests
                 // didEndLoop = true;
             } catch (error) {
+                // Properly serialize error to extract message, name, and stack
+                const errorObj: Record<string, unknown> = error instanceof Error
+                    ? {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack,
+                    }
+                    : { message: String(error), original: error };
+                // Add cause if it exists
+                if (error instanceof Error && (error as any).cause) {
+                    errorObj['cause'] = (error as any).cause;
+                }
+                this.logger.error(JSON.stringify(errorObj))
                 const currentRetryAttempt = currentItem.retryAttempt ?? 0;
 
                 // Handle error using error handler logic

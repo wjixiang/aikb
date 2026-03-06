@@ -302,6 +302,17 @@ export class SkillManager {
     }
 
     /**
+     * Get active components with their IDs (definition IDs, not instance IDs)
+     * Returns entries with the component definition ID and the component instance
+     */
+    getActiveComponentsWithIds(): Array<{ componentId: string; component: ToolComponent }> {
+        return Array.from(this.activeComponents.entries()).map(([componentId, component]) => ({
+            componentId,
+            component
+        }));
+    }
+
+    /**
      * Get active component count
      */
     getActiveComponentCount(): number {

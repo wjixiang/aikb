@@ -24,25 +24,49 @@ export class SkillToolProvider extends BaseToolProvider implements IToolProvider
     private componentProviders: Map<string, ComponentToolProvider>;
     private container?: Container;
 
-    constructor(skill: Skill, container?: Container) {
+    /**
+     * @param skill - The skill to provide tools for
+     * @param container - Optional DI container for resolving component tokens
+     * @param preResolvedComponents - Optional map of pre-resolved component instances.
+     *        If provided, these instances will be used instead of creating new ones.
+     *        This ensures the same component instance is used for both tool execution
+     *        and workspace rendering (fixes component state sync issue).
+     */
+    constructor(
+        skill: Skill,
+        container?: Container,
+        preResolvedComponents?: Map<string, ToolComponent>
+    ) {
         super();
         this.id = `skill:${skill.name}`;
         this.skill = skill;
         this.container = container;
         this.componentProviders = new Map();
-        this.initializeComponentProviders();
+        this.initializeComponentProviders(preResolvedComponents);
     }
 
     /**
      * Initialize component providers for all components in the skill
+     * @param preResolvedComponents - Optional map of pre-resolved component instances
      */
-    private initializeComponentProviders(): void {
+    private initializeComponentProviders(preResolvedComponents?: Map<string, ToolComponent>): void {
         if (!this.skill.components) {
             return;
         }
 
         for (const componentDef of this.skill.components) {
-            // Resolve the component instance - it can be a direct instance, factory function, or DI token
+            // If pre-resolved component is provided, use it directly
+            if (preResolvedComponents && preResolvedComponents.has(componentDef.componentId)) {
+                const componentInstance = preResolvedComponents.get(componentDef.componentId)!;
+                const provider = new ComponentToolProvider(
+                    `${this.skill.name}:${componentDef.componentId}`,
+                    componentInstance
+                );
+                this.componentProviders.set(componentDef.componentId, provider);
+                continue;
+            }
+
+            // Otherwise, resolve the component instance - it can be a direct instance, factory function, or DI token
             const instanceType = typeof componentDef.instance;
 
             // Skip if it's a DI token (Symbol) - requires container resolution

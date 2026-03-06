@@ -1,23 +1,32 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { Container } from 'inversify';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
 import { ToolManager } from '../../tools/index.js';
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from './testComponents.js';
 import { testSkillA, testSkillB, testSkillC, testSkillMulti } from './testSkills.js';
 import { defineSkill, createComponentDefinition } from '../../skills/SkillDefinition.js';
+import { TYPES } from '../../di/types.js';
 
 describe('VirtualWorkspace', () => {
     let workspace: VirtualWorkspace;
     let componentA: TestToolComponentA;
     let componentB: TestToolComponentB;
+    let testContainer: Container;
 
     beforeEach(() => {
+        // Create a test container with test components bound
+        testContainer = new Container();
+        testContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        testContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+        testContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
+
         const config = {
             id: 'test-workspace',
             name: 'Test Workspace',
             description: 'A test workspace for unit testing'
         };
         const toolManager = new ToolManager();
-        workspace = new VirtualWorkspace(config, toolManager);
+        workspace = new VirtualWorkspace(config, toolManager, testContainer);
         componentA = new TestToolComponentA();
         componentB = new TestToolComponentB();
     });
@@ -226,12 +235,18 @@ describe('VirtualWorkspace', () => {
 
 describe('Integration Tests', () => {
     it('should demonstrate complete workflow with multiple skills', async () => {
+        // Create a test container with test components bound
+        const testContainer = new Container();
+        testContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        testContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+        testContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
+
         const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'integration-test',
             name: 'Integration Test Workspace',
             description: 'Testing complete workflow'
-        }, toolManager);
+        }, toolManager, testContainer);
 
         // Register skills
         workspace.registerSkill(testSkillA);
@@ -271,11 +286,16 @@ describe('Integration Tests', () => {
     });
 
     it('should handle skill switching', async () => {
+        // Create a test container with test components bound
+        const testContainer = new Container();
+        testContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        testContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+
         const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'switch-test',
             name: 'Switch Test Workspace'
-        }, toolManager);
+        }, toolManager, testContainer);
 
         // Register skills
         workspace.registerSkill(testSkillA);
@@ -297,11 +317,15 @@ describe('Integration Tests', () => {
     });
 
     it('should render updated component state after tool calls', async () => {
+        // Create a test container with test components bound
+        const testContainer = new Container();
+        testContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+
         const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'render-test',
             name: 'Render Test Workspace'
-        }, toolManager);
+        }, toolManager, testContainer);
 
         workspace.registerSkill(testSkillA);
         const skillManager = workspace.getSkillManager();
@@ -328,11 +352,17 @@ describe('Integration Tests', () => {
     });
 
     it('should work with multi-component skill', async () => {
+        // Create a test container with test components bound
+        const testContainer = new Container();
+        testContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        testContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+        testContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
+
         const toolManager = new ToolManager();
         const workspace = new VirtualWorkspace({
             id: 'multi-test',
             name: 'Multi Component Test Workspace'
-        }, toolManager);
+        }, toolManager, testContainer);
 
         // Create a fresh multi skill to avoid state sharing
         const freshTestSkillMulti = defineSkill({

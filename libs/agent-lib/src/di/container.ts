@@ -16,6 +16,7 @@ import { PicosComponent } from '../components/PICOS/picosComponents.js';
 import { BibliographySearchComponent } from '../components/bibliographySearch/bibliographySearchComponent.js';
 import { PrismaCheckListComponent } from '../components/PRISMA/prismaCheckListComponent.js';
 import { PrismaFlowComponent } from '../components/PRISMA/prismaFlowComponent.js';
+import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
@@ -173,12 +174,17 @@ export class AgentContainer {
         // Strategy management is now integrated into ToolManager
         this.container.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
 
-        // Tool Components - Request scope for skill-based lifecycle
-        // These components are resolved via DI tokens, avoiding manual instantiation issues
-        this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inRequestScope();
-        this.container.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inRequestScope();
-        this.container.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inRequestScope();
-        this.container.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inRequestScope();
+        // Tool Components - Singleton scope for skill-based lifecycle
+        // These components are resolved via DI tokens as singletons, avoiding manual instantiation issues
+        this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
+        this.container.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
+        this.container.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
+        this.container.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
+
+        // Test Tool Components - Singleton scope for testing
+        this.container.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        this.container.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+        this.container.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
 
         this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
         this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
@@ -516,12 +522,17 @@ export class AgentContainer {
         // This allows VirtualWorkspace to inject the container and pass it to SkillManager
         agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
 
-        // Tool Components - Request scope for skill-based lifecycle
-        // These are bound in agent containers for skill activation
-        agentContainer.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inRequestScope();
-        agentContainer.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inRequestScope();
-        agentContainer.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inRequestScope();
-        agentContainer.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inRequestScope();
+        // Tool Components - Singleton scope for skill-based lifecycle
+        // These are bound in agent containers for skill activation as singletons
+        agentContainer.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
+        agentContainer.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
+        agentContainer.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
+        agentContainer.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
+
+        // Test Tool Components - Singleton scope for testing
+        agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
+        agentContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
+        agentContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
 
         // Skills - use factory to handle circular dependency with VirtualWorkspace
         agentContainer.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {

@@ -161,9 +161,19 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         // Register new skill's components if skill is provided
         if (skill) {
+            // IMPORTANT: Get pre-resolved component instances from SkillManager
+            // This ensures the same component instance is used for both tool execution
+            // and workspace rendering, fixing the state sync issue
+            const preResolvedComponents = new Map<string, ToolComponent>();
+            const activeComponents = this.skillManager.getActiveComponents();
+            for (const component of activeComponents) {
+                preResolvedComponents.set(component.componentId, component);
+            }
+
             // Register SkillToolProvider which manages skill tools and components
             // Pass container if available for DI token resolution
-            const skillProvider = new SkillToolProvider(skill, this.container);
+            // Pass preResolvedComponents to ensure same instances are used
+            const skillProvider = new SkillToolProvider(skill, this.container, preResolvedComponents);
             this.toolManager.registerProvider(skillProvider);
             this.activeSkill = skill;
         } else {
@@ -317,47 +327,61 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * Note: Components are now managed by skills through SkillToolProvider
      */
     getComponent(key: string): ToolComponent | undefined {
-        // First check if it's a skill component
+        // First, try to get from SkillManager which handles DI token resolution
+        if (this.activeSkill) {
+            // Extract component ID from key (format: "skillName:componentId")
+            const parts = key.split(':');
+            if (parts.length >= 2) {
+                const componentId = parts.slice(1).join(':');
+                const component = this.skillManager.getComponent(componentId);
+                if (component) {
+                    return component;
+                }
+            }
+        }
+
+        // Fall back to legacy approach for backward compatibility
+        // Check cache first
+        if (this.componentInstanceCache.has(key)) {
+            return this.componentInstanceCache.get(key);
+        }
+
+        // Try to resolve from active skill's components
         if (this.activeSkill && this.activeSkill.components) {
             for (const componentDef of this.activeSkill.components) {
                 const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
                 if (componentKey === key) {
-                    // Check cache first
-                    if (this.componentInstanceCache.has(componentKey)) {
-                        return this.componentInstanceCache.get(componentKey);
-                    }
-
                     // Resolve instance based on its type
                     const instanceType = typeof componentDef.instance;
 
-                    // Skip if it's a DI token (Symbol) - requires container resolution
+                    // For DI tokens, try to resolve from SkillManager
                     if (instanceType === 'symbol') {
-                        console.warn(`[VirtualWorkspace] DI token for component "${componentDef.componentId}" requires container resolution. Using factory fallback.`);
+                        const component = this.skillManager.getComponent(componentDef.componentId);
+                        if (component) {
+                            this.componentInstanceCache.set(key, component);
+                            return component;
+                        }
+                        console.warn(`[VirtualWorkspace] Could not resolve DI token for component "${componentDef.componentId}".`);
                         return undefined;
                     }
 
                     // Resolve instance if it's a factory function
                     if (instanceType === 'function') {
-                        // For async factory functions, we need to handle this differently
-                        // Since getComponent must be synchronous, we'll return undefined for async factories
-                        // and let the caller handle the async resolution
                         const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
                         const result = factory();
 
                         if (result instanceof Promise) {
-                            // Async factory - trigger resolution in background and return undefined for now
                             result.then(instance => {
-                                this.componentInstanceCache.set(componentKey, instance);
+                                this.componentInstanceCache.set(key, instance);
                             });
                             return undefined;
                         } else {
-                            // Sync factory - cache and return
-                            this.componentInstanceCache.set(componentKey, result);
+                            this.componentInstanceCache.set(key, result);
                             return result;
                         }
                     } else {
                         // Direct instance - cache and return
-                        this.componentInstanceCache.set(componentKey, componentDef.instance as ToolComponent);
+                        this.componentInstanceCache.set(key, componentDef.instance as ToolComponent);
                         return componentDef.instance as ToolComponent;
                     }
                 }
@@ -462,9 +486,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         // Render skill components first (if active skill has components)
         // Use component instances from SkillManager which handles DI token resolution
-        const activeComponents = this.skillManager.getActiveComponents();
-        for (const componentInstance of activeComponents) {
-            const componentKey = `${this.activeSkill?.name}:${componentInstance.componentId}`;
+        const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
+        for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
+            const componentKey = `${this.activeSkill?.name}:${componentId}`;
             const componentContainer = new tdiv({
                 content: componentKey,
                 styles: { showBorder: true }
@@ -525,9 +549,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         // Get keys and tools from active skill's components
         // Use component instances from SkillManager which handles DI token resolution
-        const activeComponents = this.skillManager.getActiveComponents();
-        for (const componentInstance of activeComponents) {
-            const componentKey = `${this.activeSkill?.name}:${componentInstance.componentId}`;
+        const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
+        for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
+            const componentKey = `${this.activeSkill?.name}:${componentId}`;
             componentKeys.push(componentKey);
             // Count tools from component's toolSet
             if ('toolSet' in componentInstance) {

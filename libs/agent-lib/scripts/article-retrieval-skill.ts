@@ -55,9 +55,9 @@ async function main() {
                     },
                 },
                 apiConfiguration: {
-                    apiProvider: 'zai',
-                    apiModelId: 'glm-4.5-air',
-                    apiKey: process.env['GLM_API_KEY'] || '',
+                    apiProvider: 'minimax',
+                    apiModelId: 'MiniMax-M2',
+                    apiKey: process.env['MINIMAX_API_KEY'] || '',
                 },
                 config: {
                     apiRequestTimeout: 90000

@@ -214,27 +214,45 @@ export const TYPES = {
 
     /**
      * PicosComponent - PICO extraction component for evidence-based medicine
-     * @scope Request - New instance per skill activation
+     * @scope Singleton - Shared across all skill activations
      */
     PicosComponent: Symbol('PicosComponent'),
 
     /**
      * BibliographySearchComponent - PubMed search and article retrieval
-     * @scope Request - New instance per skill activation
+     * @scope Singleton - Shared across all skill activations
      */
     BibliographySearchComponent: Symbol('BibliographySearchComponent'),
 
     /**
      * PrismaCheckListComponent - PRISMA checklist management
-     * @scope Request - New instance per skill activation
+     * @scope Singleton - Shared across all skill activations
      */
     PrismaCheckListComponent: Symbol('PrismaCheckListComponent'),
 
     /**
      * PrismaFlowComponent - PRISMA flow diagram tracking
-     * @scope Request - New instance per skill activation
+     * @scope Singleton - Shared across all skill activations
      */
     PrismaFlowComponent: Symbol('PrismaFlowComponent'),
+
+    /**
+     * TestToolComponentA - Test component for search functionality
+     * @scope Singleton - Shared across all skill activations
+     */
+    TestToolComponentA: Symbol('TestToolComponentA'),
+
+    /**
+     * TestToolComponentB - Test component for counter functionality
+     * @scope Singleton - Shared across all skill activations
+     */
+    TestToolComponentB: Symbol('TestToolComponentB'),
+
+    /**
+     * TestToolComponentC - Test component for toggle functionality
+     * @scope Singleton - Shared across all skill activations
+     */
+    TestToolComponentC: Symbol('TestToolComponentC'),
 
     // ==================== Action Module ====================
 
