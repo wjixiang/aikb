@@ -7,7 +7,7 @@ import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource } 
 import { renderToolSection } from '../utils/toolRendering.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { GlobalToolProvider, SkillToolProvider } from '../tools/index.js';
+import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
 
@@ -48,7 +48,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // ToolManager is injected when available, otherwise create a new instance
         // This allows both DI container usage and direct instantiation
         this.toolManager = toolManager ?? new ToolManager();
-
+        
         // Store container for later use
         this.container = container;
 
@@ -61,6 +61,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         if (container) {
             this.skillManager.setContainer(container);
         }
+
+        // Pass SkillManager to ToolManager for skill-based tool filtering
+        this.toolManager.setSkillManager(this.skillManager);
 
         // Initialize global tool provider with skillManager
         this.globalToolProvider = new GlobalToolProvider(this.skillManager);
@@ -154,35 +157,18 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * - Unregister SkillToolProvider from ToolManager
      */
     private handleSkillChange(skill: Skill | null): void {
-        // Unregister previous skill's components if any
+        // Unregister previous skill's tools if any
         if (this.activeSkill && this.activeSkill !== skill) {
             this.toolManager.unregisterProvider(`skill:${this.activeSkill.name}`);
         }
 
-        // Register new skill's components if skill is provided
+        // Register new skill's tools if skill is provided
         if (skill) {
-            // IMPORTANT: Get pre-resolved component instances from SkillManager
-            // This ensures the same component instance is used for both tool execution
-            // and workspace rendering, fixing the state sync issue
-            const preResolvedComponents = new Map<string, ToolComponent>();
-            const activeComponents = this.skillManager.getActiveComponents();
-            for (const component of activeComponents) {
-                preResolvedComponents.set(component.componentId, component);
-            }
-
-            // Register SkillToolProvider which manages skill tools and components
-            // Pass container if available for DI token resolution
-            // Pass preResolvedComponents to ensure same instances are used
-            const skillProvider = new SkillToolProvider(skill, this.container, preResolvedComponents);
-            this.toolManager.registerProvider(skillProvider);
-            this.activeSkill = skill;
-        } else {
-            this.activeSkill = null;
+            this.toolManager.registerSkillTools(skill);
         }
 
-        // Also use tool manager's strategy for backward compatibility
-        this.toolManager.setStrategy(skill);
-        this.toolManager.applyStrategy();
+        // Update active skill
+        this.activeSkill = skill;
 
         // Notify tool availability change
         this.onToolAvailabilityChange?.();

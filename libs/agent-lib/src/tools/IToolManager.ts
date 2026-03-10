@@ -1,8 +1,6 @@
 import type { Tool } from '../statefulContext/types.js';
 import type { ToolSource } from './IToolProvider.js';
 import type { IToolProvider } from './IToolProvider.js';
-import type { Skill } from '../skills/types.js';
-import type { IToolStateStrategy, IToolStateStrategyFactory } from './state/IToolStateStrategy.js';
 
 /**
  * Extended tool registration with source tracking and state management
@@ -16,7 +14,7 @@ export interface ToolRegistration {
     providerId: string;
     /** Component key (for component tools) */
     componentKey?: string;
-    /** Whether the tool is currently enabled/available */
+    /** Whether the tool is currently enabled/available (for backward compatibility) */
     enabled: boolean;
     /** Optional handler function for executing the tool */
     handler?: (params: any) => Promise<any>;
@@ -44,15 +42,30 @@ export type UnsubscribeFn = () => void;
 /**
  * Central tool management interface
  *
+ * Simplified version: Removed ToolStateStrategy.
+ * Tool availability is now determined dynamically by checking SkillManager.
+ *
  * The ToolManager is responsible for:
  * - Registering/unregistering tool providers
  * - Maintaining a registry of all tools
- * - Managing tool enabled/disabled state
- * - Managing tool state strategies (skill-based tool control)
+ * - Dynamically determining tool enabled/disabled state based on active skill
  * - Executing tool calls
  * - Notifying subscribers of tool availability changes
  */
 export interface IToolManager {
+    /**
+     * Set the SkillManager reference for skill-based tool filtering
+     * @param skillManager - The SkillManager instance
+     */
+    setSkillManager(skillManager: any): void;
+
+    /**
+     * Register a skill's tools directly
+     * This is a simplified alternative to using SkillToolProvider
+     * @param skill - The skill whose tools to register
+     */
+    registerSkillTools(skill: { name: string; tools?: any[] }): void;
+
     /**
      * Register a tool provider
      * @param provider - The provider to register
@@ -73,7 +86,7 @@ export interface IToolManager {
     getAllTools(): ToolRegistration[];
 
     /**
-     * Get available (enabled) tools
+     * Get available (enabled) tools based on current skill state
      * @returns Array of enabled tool definitions
      */
     getAvailableTools(): Tool[];
@@ -93,21 +106,21 @@ export interface IToolManager {
     executeTool(name: string, params: any): Promise<any>;
 
     /**
-     * Enable a tool
+     * Enable a tool (for backward compatibility)
      * @param name - The tool name to enable
-     * @returns true if tool was found and enabled
+     * @returns true if tool was found
      */
     enableTool(name: string): boolean;
 
     /**
-     * Disable a tool
+     * Disable a tool (for backward compatibility)
      * @param name - The tool name to disable
-     * @returns true if tool was found and disabled
+     * @returns true if tool was found
      */
     disableTool(name: string): boolean;
 
     /**
-     * Check if a tool is enabled
+     * Check if a tool is enabled based on current skill state
      * @param name - The tool name to check
      * @returns true if tool exists and is enabled
      */
@@ -133,39 +146,18 @@ export interface IToolManager {
      */
     notifyAvailabilityChange(): void;
 
-    // ==================== Strategy Management (merged from ToolStateManager) ====================
+    /**
+     * Get a provider by ID (for testing/debugging)
+     */
+    getProvider(providerId: string): IToolProvider | undefined;
 
     /**
-     * Get the current state strategy
-     * @returns The current tool state strategy
+     * Get all provider IDs (for testing/debugging)
      */
-    getCurrentStrategy(): IToolStateStrategy;
+    getProviderIds(): string[];
 
     /**
-     * Set strategy based on active skill
-     * This method replaces the separate ToolStateManager.setStrategy()
-     * @param skill - The active skill (null for no skill)
+     * Get tool count (for testing/debugging)
      */
-    setStrategy(skill: Skill | null): void;
-
-    /**
-     * Apply current strategy to enable/disable tools
-     * This method replaces the separate ToolStateManager.applyStrategy()
-     *
-     * This enables/disables component tools based on the strategy.
-     * Global tools are always left enabled.
-     */
-    applyStrategy(): void;
-
-    /**
-     * Get the current strategy name (for debugging)
-     * @returns The name of the current strategy
-     */
-    getStrategyName(): string;
-
-    /**
-     * Set a custom strategy factory (for testing or advanced use cases)
-     * @param factory - The custom strategy factory to use
-     */
-    setStrategyFactory(factory: IToolStateStrategyFactory): void;
+    getToolCount(): { total: number; enabled: number; disabled: number };
 }

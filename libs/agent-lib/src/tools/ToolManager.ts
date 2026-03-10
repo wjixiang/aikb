@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 import type { Tool } from '../statefulContext/types.js';
 import type { IToolProvider } from './IToolProvider.js';
 import { ToolSource } from './IToolProvider.js';
@@ -14,36 +14,63 @@ import {
     ToolDisabledError,
     ProviderNotFoundError,
 } from './tool.errors.js';
-import type { Skill } from '../skills/types.js';
-import type { IToolStateStrategy, IToolStateStrategyFactory } from './state/IToolStateStrategy.js';
-import { NoSkillStrategy, ToolStateStrategyFactory } from './state/IToolStateStrategy.js';
+import type { SkillManager } from '../skills/SkillManager.js';
+import { TYPES } from '../di/types.js';
 
 /**
  * Central tool manager implementation
  *
- * This class is responsible for:
- * - Registering tool providers
- * - Maintaining a registry of all tools
- * - Managing tool enabled/disabled state
- * - Managing tool state strategies (skill-based tool control)
- * - Executing tool calls
- * - Notifying subscribers of tool availability changes
+ * Simplified version: Removed ToolStateStrategy and SkillToolProvider.
+ * Tool availability is now determined dynamically by checking SkillManager:
+ * - Global tools are always available
+ * - Component tools are available only when their skill is active
+ * - Skill tools are available only when their skill is active
  */
 @injectable()
 export class ToolManager implements IToolManager {
     private providers: Map<string, IToolProvider>;
     private toolRegistry: Map<string, ToolRegistration>;
     private availabilityCallbacks: Set<ToolAvailabilityCallback>;
-    private currentStrategy: IToolStateStrategy;
-    private strategyFactory: IToolStateStrategyFactory;
+    private skillManager: SkillManager | null = null;
 
-    constructor() {
+    constructor(
+        @inject(TYPES.SkillManager) @optional() skillManager?: SkillManager
+    ) {
         this.providers = new Map();
         this.toolRegistry = new Map();
         this.availabilityCallbacks = new Set();
-        // Default to no-skill strategy (all tools enabled)
-        this.currentStrategy = new NoSkillStrategy();
-        this.strategyFactory = new ToolStateStrategyFactory();
+        this.skillManager = skillManager ?? null;
+    }
+
+    /**
+     * Set the SkillManager reference after construction
+     * This is called by VirtualWorkspace to provide the SkillManager instance
+     */
+    setSkillManager(skillManager: SkillManager): void {
+        this.skillManager = skillManager;
+    }
+
+    /**
+     * Register a skill's tools directly
+     * This is a simplified alternative to using SkillToolProvider
+     * @param skill - The skill whose tools to register
+     */
+    registerSkillTools(skill: { name: string; tools?: Tool[] }): void {
+        if (!skill.tools || skill.tools.length === 0) {
+            return;
+        }
+
+        for (const tool of skill.tools) {
+            this.toolRegistry.set(tool.toolName, {
+                tool,
+                source: ToolSource.SKILL,
+                providerId: `skill:${skill.name}`,
+                componentKey: undefined,
+                enabled: true,
+                handler: undefined
+            });
+        }
+        console.log(`[ToolManager] Registered ${skill.tools.length} tools for skill: ${skill.name}`);
     }
 
     /**
@@ -57,9 +84,7 @@ export class ToolManager implements IToolManager {
 
         this.providers.set(provider.id, provider);
 
-        // IMPORTANT: Handle both sync and async getTools() properly
-        // Fire and forget for async, but for sync providers like ComponentToolProvider,
-        // we need to ensure tools are registered immediately
+        // Handle both sync and async getTools() properly
         const toolsPromise = provider.getTools();
 
         if (toolsPromise instanceof Promise) {
@@ -83,16 +108,14 @@ export class ToolManager implements IToolManager {
         const source = this.inferSourceFromProvider(provider);
 
         for (const tool of tools) {
-            // Component tools are disabled by default and only enabled when their skill is active
-            // Global tools are always enabled
-            const enabledByDefault = source !== ToolSource.COMPONENT;
-
             this.toolRegistry.set(tool.toolName, {
                 tool,
                 source,
                 providerId: provider.id,
                 componentKey: this.extractComponentKey(provider.id),
-                enabled: enabledByDefault,
+                // Note: enabled state is now determined dynamically in isToolEnabled/getAvailableTools
+                // We store a default but it's not used for skill-based tools
+                enabled: source === ToolSource.GLOBAL,
                 handler: async (params: any) => provider.executeTool(tool.toolName, params),
             });
         }
@@ -148,12 +171,16 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Get available (enabled) tools
+     * Get available (enabled) tools based on current skill state
+     * - Global tools: always available
+     * - Component/Skill tools: available only when their skill is active
      * @returns Array of enabled tool definitions
      */
     getAvailableTools(): Tool[] {
+        const activeSkill = this.skillManager?.getActiveSkill() ?? null;
+
         return Array.from(this.toolRegistry.values())
-            .filter(reg => reg.enabled)
+            .filter(reg => this.isToolEnabled(reg.tool.toolName))
             .map(reg => reg.tool);
     }
 
@@ -169,7 +196,7 @@ export class ToolManager implements IToolManager {
             throw new ToolNotFoundError(name);
         }
 
-        if (!registration.enabled) {
+        if (!this.isToolEnabled(name)) {
             throw new ToolDisabledError(name);
         }
 
@@ -182,24 +209,27 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Enable a tool
+     * Enable a tool (for backward compatibility)
+     * Note: For skill-based tools, this doesn't persist - availability is checked dynamically
      * @param name - The tool name to enable
-     * @returns true if tool was found and enabled
+     * @returns true if tool was found
      */
     enableTool(name: string): boolean {
         const registration = this.toolRegistry.get(name);
         if (!registration) {
             return false;
         }
+        // For backward compatibility, but skill-based tools will still be dynamically controlled
         registration.enabled = true;
         this.notifyAvailabilityChange();
         return true;
     }
 
     /**
-     * Disable a tool
+     * Disable a tool (for backward compatibility)
+     * Note: For skill-based tools, this doesn't persist - availability is checked dynamically
      * @param name - The tool name to disable
-     * @returns true if tool was found and disabled
+     * @returns true if tool was found
      */
     disableTool(name: string): boolean {
         const registration = this.toolRegistry.get(name);
@@ -212,13 +242,32 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Check if a tool is enabled
+     * Check if a tool is enabled based on current skill state
+     * - Global tools: always enabled
+     * - Component/Skill tools: enabled only when their skill is active
      * @param name - The tool name to check
      * @returns true if tool exists and is enabled
      */
     isToolEnabled(name: string): boolean {
         const registration = this.toolRegistry.get(name);
-        return registration?.enabled ?? false;
+        if (!registration) {
+            return false;
+        }
+
+        // Global tools are always enabled
+        if (registration.source === ToolSource.GLOBAL) {
+            return true;
+        }
+
+        // Component and Skill tools are only enabled when their skill is active
+        const activeSkill = this.skillManager?.getActiveSkill() ?? null;
+        if (!activeSkill) {
+            return false;
+        }
+
+        // Check if this tool belongs to the active skill
+        const skillToolNames = activeSkill.tools?.map(t => t.toolName) ?? [];
+        return skillToolNames.includes(name);
     }
 
     /**
@@ -284,76 +333,13 @@ export class ToolManager implements IToolManager {
      */
     getToolCount(): { total: number; enabled: number; disabled: number } {
         const allTools = this.getAllTools();
+        const availableTools = this.getAvailableTools();
+        const enabledSet = new Set(availableTools.map(t => t.toolName));
+
         return {
             total: allTools.length,
-            enabled: allTools.filter(t => t.enabled).length,
-            disabled: allTools.filter(t => !t.enabled).length,
+            enabled: enabledSet.size,
+            disabled: allTools.length - enabledSet.size,
         };
-    }
-
-    // ==================== Strategy Management (merged from ToolStateManager) ====================
-
-    /**
-     * Get the current state strategy
-     * @returns The current tool state strategy
-     */
-    getCurrentStrategy(): IToolStateStrategy {
-        return this.currentStrategy;
-    }
-
-    /**
-     * Set strategy based on active skill
-     * This method replaces the separate ToolStateManager.setStrategy()
-     * @param skill - The active skill (null for no skill)
-     */
-    setStrategy(skill: Skill | null): void {
-        this.currentStrategy = this.strategyFactory.createStrategy(skill);
-        console.log(`[ToolManager] Strategy changed to: ${this.currentStrategy.strategyName}`);
-    }
-
-    /**
-     * Apply current strategy to enable/disable tools
-     * This method replaces the separate ToolStateManager.applyStrategy()
-     *
-     * This enables/disables component tools based on the strategy.
-     * Global tools are always left enabled.
-     */
-    applyStrategy(): void {
-        const allTools = this.getAllTools();
-
-        for (const registration of allTools) {
-            // Only apply strategy to component tools, not global tools
-            if (registration.source === ToolSource.COMPONENT) {
-                const toolName = registration.tool.toolName;
-                const shouldBeEnabled = this.currentStrategy.shouldEnableTool(toolName);
-
-                if (shouldBeEnabled && !registration.enabled) {
-                    registration.enabled = true;
-                    console.log(`[ToolManager] Enabled component tool: ${toolName}`);
-                } else if (!shouldBeEnabled && registration.enabled) {
-                    registration.enabled = false;
-                    console.log(`[ToolManager] Disabled component tool: ${toolName}`);
-                }
-            }
-        }
-
-        console.log(`[ToolManager] Strategy "${this.currentStrategy.strategyName}" applied`);
-        this.notifyAvailabilityChange();
-    }
-
-    /**
-     * Get the current strategy name (for debugging)
-     * @returns The name of the current strategy
-     */
-    getStrategyName(): string {
-        return this.currentStrategy.strategyName;
-    }
-
-    /**
-     * Set a custom strategy factory (for testing or advanced use cases)
-     * @param factory - The custom strategy factory to use
-     */
-    setStrategyFactory(factory: IToolStateStrategyFactory): void {
-        this.strategyFactory = factory;
     }
 }

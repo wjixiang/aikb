@@ -205,10 +205,8 @@ export const TYPES = {
     IComponentToolProvider: Symbol('IComponentToolProvider'),
 
     /**
-     * IToolStateStrategy interface
      * @scope Transient - New instance per strategy
      */
-    IToolStateStrategy: Symbol('IToolStateStrategy'),
 
     // ==================== Tool Components ====================
 

@@ -8,4 +8,3 @@
 
 export { GlobalToolProvider } from './GlobalToolProvider.js';
 export { ComponentToolProvider } from './ComponentToolProvider.js';
-export { SkillToolProvider } from './SkillToolProvider.js';

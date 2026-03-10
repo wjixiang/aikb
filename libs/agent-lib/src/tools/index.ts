@@ -6,7 +6,6 @@
  * Key components:
  * - IToolProvider: Interface for tool sources
  * - IToolManager: Central tool registry and executor with integrated strategy management
- * - IToolStateStrategy: Strategy pattern for tool state control
  *
  * Note: ToolStateManager has been merged into ToolManager for simpler architecture.
  */
@@ -22,7 +21,6 @@ export { ToolManager } from './ToolManager.js';
 export * from './providers/index.js';
 
 // State management (strategy interfaces)
-export * from './state/IToolStateStrategy.js';
 
 // Error classes from tool.errors.ts (with aliases to avoid conflicts with IToolManager.ts)
 export {

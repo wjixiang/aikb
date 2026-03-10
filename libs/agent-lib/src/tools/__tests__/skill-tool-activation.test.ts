@@ -10,10 +10,10 @@ import * as z from 'zod';
 /**
  * Unit tests for skill-based component tool activation
  * 
- * Tests verify that:
- * 1. Component tools are enabled/disabled based on active skill
+ * Simplified tests - ToolManager now directly checks SkillManager for tool availability:
+ * 1. Component tools are enabled/disabled based on active skill (dynamic check)
  * 2. Global tools remain always enabled
- * 3. Strategy pattern correctly applies skill-based tool filtering
+ * 3. No strategy pattern - direct SkillManager integration
  */
 describe('Skill-based Component Tool Activation', () => {
     let toolManager: ToolManager;
@@ -31,15 +31,17 @@ describe('Skill-based Component Tool Activation', () => {
         // Create ToolManager
         toolManager = new ToolManager();
 
-        // Create SkillManager with callback to handle skill changes
+        // Create SkillManager with callback
         skillManager = new SkillManager({
             onSkillChange: (skill) => {
-                // This callback is called when a skill is activated/deactivated
-                // It updates the tool manager's strategy
-                toolManager.setStrategy(skill);
-                toolManager.applyStrategy();
+                // Simplified: Just notify availability change when skill changes
+                // ToolManager now dynamically checks SkillManager for tool availability
+                toolManager.notifyAvailabilityChange();
             }
         });
+
+        // Pass SkillManager to ToolManager for dynamic skill-based filtering
+        toolManager.setSkillManager(skillManager);
 
         // Create GlobalToolProvider with skillManager
         globalProvider = new GlobalToolProvider(skillManager);
@@ -112,7 +114,7 @@ describe('Skill-based Component Tool Activation', () => {
             // All 3 component tools should be registered
             expect(allTools.length).toBeGreaterThanOrEqual(3);
 
-            // Component tools should be disabled when no skill is active (NoSkillStrategy)
+            // Component tools should be disabled when no skill is active
             expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'search' }));
             expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'increment' }));
             expect(availableTools).not.toContainEqual(expect.objectContaining({ toolName: 'toggle' }));
@@ -124,33 +126,19 @@ describe('Skill-based Component Tool Activation', () => {
             // Global tools like get_skill should always be available
             expect(availableTools).toContainEqual(expect.objectContaining({ toolName: 'get_skill' }));
         });
-
-        it('should use NoSkillStrategy when no skill is active', () => {
-            const strategy = toolManager.getCurrentStrategy();
-            expect(strategy.strategyName).toBe('no-skill');
-        });
     });
 
     describe('Single Tool Skill Activation', () => {
         it('should enable only skill tools and disable other component tools', async () => {
-            // Register the mock skill
             skillManager.register(mockSkill);
-
-            // Activate the skill
             await skillManager.activateSkill('test-skill');
 
-            // Check strategy changed
-            expect(toolManager.getCurrentStrategy().strategyName).toBe('test-skill');
-
-            // 'search' should be enabled (it's in the skill)
+            // search is in the skill, should be enabled
             expect(toolManager.isToolEnabled('search')).toBe(true);
 
-            // 'increment' and 'toggle' should be disabled (not in the skill)
+            // increment and toggle are not in the skill, should be disabled
             expect(toolManager.isToolEnabled('increment')).toBe(false);
             expect(toolManager.isToolEnabled('toggle')).toBe(false);
-
-            // Global tools should still be enabled
-            expect(toolManager.isToolEnabled('get_skill')).toBe(true);
         });
 
         it('should only return skill tools in getAvailableTools()', async () => {
@@ -160,15 +148,13 @@ describe('Skill-based Component Tool Activation', () => {
             const availableTools = toolManager.getAvailableTools();
             const toolNames = availableTools.map(t => t.toolName);
 
-            // Should contain search (from skill)
+            // Should contain search (skill tool) and global tools
             expect(toolNames).toContain('search');
+            expect(toolNames).toContain('get_skill');
 
-            // Should NOT contain increment and toggle (not in skill)
+            // Should NOT contain increment or toggle (not in skill)
             expect(toolNames).not.toContain('increment');
             expect(toolNames).not.toContain('toggle');
-
-            // Should contain global tools
-            expect(toolNames).toContain('get_skill');
         });
     });
 
@@ -177,31 +163,25 @@ describe('Skill-based Component Tool Activation', () => {
             skillManager.register(mockSkillWithMultipleTools);
             await skillManager.activateSkill('multi-tool-skill');
 
-            // Both search and increment should be enabled
+            // Both search and increment are in the skill, should be enabled
             expect(toolManager.isToolEnabled('search')).toBe(true);
             expect(toolManager.isToolEnabled('increment')).toBe(true);
 
-            // toggle should still be disabled
+            // toggle is not in the skill, should be disabled
             expect(toolManager.isToolEnabled('toggle')).toBe(false);
         });
-    });
 
-    describe('Skill Deactivation', () => {
         it('should disable all component tools when skill is deactivated', async () => {
             skillManager.register(mockSkill);
-
-            // Activate skill
             await skillManager.activateSkill('test-skill');
+
+            // search should be enabled during skill activation
             expect(toolManager.isToolEnabled('search')).toBe(true);
-            expect(toolManager.isToolEnabled('increment')).toBe(false);
 
             // Deactivate skill
             await skillManager.deactivateSkill();
 
-            // Should revert to NoSkillStrategy
-            expect(toolManager.getCurrentStrategy().strategyName).toBe('no-skill');
-
-            // All component tools should be disabled again
+            // All component tools should be disabled
             expect(toolManager.isToolEnabled('search')).toBe(false);
             expect(toolManager.isToolEnabled('increment')).toBe(false);
             expect(toolManager.isToolEnabled('toggle')).toBe(false);
@@ -275,7 +255,7 @@ describe('Skill-based Component Tool Activation', () => {
         });
     });
 
-    describe('Strategy Application Edge Cases', () => {
+    describe('Skill-based Tool Availability Edge Cases', () => {
         it('should handle skill with no tools (all component tools disabled)', async () => {
             const skillWithNoTools: Skill = {
                 name: 'empty-skill',
