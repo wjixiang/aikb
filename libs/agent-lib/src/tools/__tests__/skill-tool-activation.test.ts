@@ -23,11 +23,21 @@ describe('Skill-based Component Tool Activation', () => {
     let componentProviderC: ComponentToolProvider;
     let globalProvider: GlobalToolProvider;
 
+    // Component instances for use in skill definitions
+    let componentA: TestToolComponentA;
+    let componentB: TestToolComponentB;
+    let componentC: TestToolComponentC;
+
     // Mock skill with specific tools
     let mockSkill: Skill;
     let mockSkillWithMultipleTools: Skill;
 
     beforeEach(() => {
+        // Create component instances
+        componentA = new TestToolComponentA();
+        componentB = new TestToolComponentB();
+        componentC = new TestToolComponentC();
+
         // Create ToolManager
         toolManager = new ToolManager();
 
@@ -47,10 +57,7 @@ describe('Skill-based Component Tool Activation', () => {
         globalProvider = new GlobalToolProvider(skillManager);
         toolManager.registerProvider(globalProvider);
 
-        // Create component providers
-        const componentA = new TestToolComponentA();
-        const componentB = new TestToolComponentB();
-        const componentC = new TestToolComponentC();
+        // Create component providers using the same instances
 
         componentProviderA = new ComponentToolProvider('componentA', componentA);
         componentProviderB = new ComponentToolProvider('componentB', componentB);
@@ -61,7 +68,11 @@ describe('Skill-based Component Tool Activation', () => {
         toolManager.registerProvider(componentProviderB);
         toolManager.registerProvider(componentProviderC);
 
-        // Create mock skills
+        // Create mock skills that reference components (not direct tools)
+        // Note: Tools now come exclusively from components, not from skill.tools
+        // Reuse the same component instances from lines 51-53
+        // componentA = TestToolComponentA, componentB = TestToolComponentB, componentC = TestToolComponentC
+
         mockSkill = {
             name: 'test-skill',
             displayName: 'Test Skill',
@@ -72,11 +83,13 @@ describe('Skill-based Component Tool Activation', () => {
                 capability: 'Test capability',
                 direction: 'Test direction'
             },
-            tools: [
+            // Tools are now derived from components, not directly defined
+            components: [
                 {
-                    toolName: 'search',
-                    desc: 'Search tool from skill',
-                    paramsSchema: z.object({ query: z.string() })
+                    componentId: 'componentA',
+                    displayName: 'Component A',
+                    description: 'Test component A',
+                    instance: componentA
                 }
             ]
         };
@@ -91,16 +104,19 @@ describe('Skill-based Component Tool Activation', () => {
                 capability: 'Multi tool capability',
                 direction: 'Multi tool direction'
             },
-            tools: [
+            // Tools are now derived from components, not directly defined
+            components: [
                 {
-                    toolName: 'search',
-                    desc: 'Search tool from skill',
-                    paramsSchema: z.object({ query: z.string() })
+                    componentId: 'componentA',
+                    displayName: 'Component A',
+                    description: 'Test component A',
+                    instance: componentA
                 },
                 {
-                    toolName: 'increment',
-                    desc: 'Increment tool from skill',
-                    paramsSchema: z.object({ amount: z.number().optional() })
+                    componentId: 'componentB',
+                    displayName: 'Component B',
+                    description: 'Test component B',
+                    instance: componentB
                 }
             ]
         };
@@ -190,7 +206,8 @@ describe('Skill-based Component Tool Activation', () => {
 
     describe('Skill Switching', () => {
         it('should correctly switch tool enablement when changing skills', async () => {
-            // Create another skill with different tools
+            // Create another skill with different components (Component C has 'toggle')
+            const componentC = new TestToolComponentC();
             const anotherSkill: Skill = {
                 name: 'another-skill',
                 displayName: 'Another Skill',
@@ -199,11 +216,12 @@ describe('Skill-based Component Tool Activation', () => {
                     capability: 'Another capability',
                     direction: 'Another direction'
                 },
-                tools: [
+                components: [
                     {
-                        toolName: 'toggle',
-                        desc: 'Toggle tool from skill',
-                        paramsSchema: z.object({})
+                        componentId: 'componentC',
+                        displayName: 'Component C',
+                        description: 'Test component C',
+                        instance: componentC
                     }
                 ]
             };
@@ -256,19 +274,19 @@ describe('Skill-based Component Tool Activation', () => {
     });
 
     describe('Skill-based Tool Availability Edge Cases', () => {
-        it('should handle skill with no tools (all component tools disabled)', async () => {
-            const skillWithNoTools: Skill = {
+        it('should handle skill with no components (all component tools disabled)', async () => {
+            const skillWithNoComponents: Skill = {
                 name: 'empty-skill',
                 displayName: 'Empty Skill',
-                description: 'A skill with no tools',
+                description: 'A skill with no components',
                 prompt: {
                     capability: 'Empty capability',
                     direction: 'Empty direction'
                 },
-                tools: []
+                components: []
             };
 
-            skillManager.register(skillWithNoTools);
+            skillManager.register(skillWithNoComponents);
             await skillManager.activateSkill('empty-skill');
 
             // All component tools should be disabled

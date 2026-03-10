@@ -218,8 +218,8 @@ describe('VirtualWorkspace', () => {
             await skillManager.activateSkill('test-skill-a');
 
             // After activating a skill, only skill tools should be enabled
-            const activeSkill = skillManager.getActiveSkill();
-            const skillToolNames = activeSkill?.tools?.map(t => t.toolName) ?? [];
+            // Use getActiveTools() instead of accessing skill.tools directly
+            const skillToolNames = skillManager.getActiveTools().map(t => t.toolName);
 
             // 'search' should be in the skill's tools
             expect(skillToolNames).toContain('search');

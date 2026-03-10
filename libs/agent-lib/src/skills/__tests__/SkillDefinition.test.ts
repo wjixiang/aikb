@@ -58,9 +58,10 @@ describe('SkillDefinition', () => {
                 ]
             });
 
-            expect(skill.tools).toBeDefined();
-            expect(skill.tools?.length).toBe(1);
-            expect(skill.tools?.[0]?.toolName).toBe('test_tool');
+            // Tools are now derived from components, not directly from skill.tools
+            expect(skill.components).toBeDefined();
+            expect(skill.components?.length).toBe(1);
+            expect(skill.components?.[0]?.componentId).toBe('mock-component');
         });
 
         it('should create a skill with lifecycle hooks', async () => {
@@ -281,10 +282,9 @@ describe('SkillDefinition', () => {
                 ]
             });
 
-            expect(skill.tools).toBeDefined();
-            expect(skill.tools?.length).toBe(2);
-            expect(skill.tools?.[0]?.toolName).toBe('tool1');
-            expect(skill.tools?.[1]?.toolName).toBe('tool2');
+            // Tools are now derived from components, not directly from skill.tools
+            expect(skill.components).toBeDefined();
+            expect(skill.components?.length).toBe(1);
         });
 
         it('should extract tools from multiple components', () => {
@@ -345,11 +345,9 @@ describe('SkillDefinition', () => {
                 ]
             });
 
-            expect(skill.tools).toBeDefined();
-            expect(skill.tools?.length).toBe(3);
-            expect(skill.tools?.[0]?.toolName).toBe('tool1');
-            expect(skill.tools?.[1]?.toolName).toBe('tool2');
-            expect(skill.tools?.[2]?.toolName).toBe('tool3');
+            // Tools are now derived from components, not directly from skill.tools
+            expect(skill.components).toBeDefined();
+            expect(skill.components?.length).toBe(2);
         });
     });
 });

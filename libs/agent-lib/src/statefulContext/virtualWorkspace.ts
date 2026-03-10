@@ -10,6 +10,7 @@ import type { IToolManager } from '../tools/index.js';
 import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { getBuiltinSkills } from '../skills/builtin/index.js';
+import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 
 
 /**
@@ -48,7 +49,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // ToolManager is injected when available, otherwise create a new instance
         // This allows both DI container usage and direct instantiation
         this.toolManager = toolManager ?? new ToolManager();
-        
+
         // Store container for later use
         this.container = container;
 
@@ -143,32 +144,46 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     /**
      * Handle skill change - enable/disable skill tools
      *
-     * Uses SkillToolProvider to manage skill tools and components.
+     * Uses ComponentToolProvider to manage skill component tools.
      *
      * When a skill is activated:
-     * - Unregister previous skill's components
-     * - Register new skill's components using skill name as prefix
-     * - Update activeSkill reference
-     * - Register SkillToolProvider with ToolManager
+     * - Update activeSkill reference first (so getActiveComponentsWithIds works)
+     * - Unregister previous skill's component tool providers
+     * - Register new skill's component tool providers with ToolManager
+     * - Register skill tool definitions for availability checking
      *
      * When a skill is deactivated:
-     * - Unregister skill's components
+     * - Unregister skill's component tool providers
      * - Clear activeSkill reference
-     * - Unregister SkillToolProvider from ToolManager
      */
     private handleSkillChange(skill: Skill | null): void {
-        // Unregister previous skill's tools if any
-        if (this.activeSkill && this.activeSkill !== skill) {
-            this.toolManager.unregisterProvider(`skill:${this.activeSkill.name}`);
-        }
+        // Store previous skill for cleanup
+        const previousSkill = this.activeSkill;
 
-        // Register new skill's tools if skill is provided
-        if (skill) {
-            this.toolManager.registerSkillTools(skill);
-        }
-
-        // Update active skill
+        // Update active skill FIRST so that getActiveComponentsWithIds() returns correct components
         this.activeSkill = skill;
+
+        // Unregister previous skill's component tool providers
+        if (previousSkill && previousSkill !== skill) {
+            // Unregister component tool providers
+            if (previousSkill.components) {
+                for (const comp of previousSkill.components) {
+                    const providerId = `component:${previousSkill.name}:${comp.componentId}`;
+                    this.toolManager.unregisterProvider(providerId);
+                }
+            }
+        }
+
+        // Register new skill's component tool providers
+        if (skill) {
+            // Register component tool providers with actual handlers
+            const activeComponents = this.skillManager.getActiveComponentsWithIds();
+            for (const { componentId, component: componentInstance } of activeComponents) {
+                const componentKey = `${skill.name}:${componentId}`;
+                const provider = new ComponentToolProvider(componentKey, componentInstance);
+                this.toolManager.registerProvider(provider);
+            }
+        }
 
         // Notify tool availability change
         this.onToolAvailabilityChange?.();
@@ -272,20 +287,27 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     /**
      * Render skill-specific tools section
-     * Shows only enabled tools from the active skill
+     * Shows only enabled tools from the active skill's components
      */
     renderSkillToolsSection(): TUIElement | null {
         const activeSkill = this.skillManager.getActiveSkill();
-        if (!activeSkill?.tools || activeSkill.tools.length === 0) {
+        if (!activeSkill) {
             return null;
         }
 
-        // Filter to only show enabled tools using toolManager
-        const enabledTools = activeSkill.tools.filter(tool => {
-            return this.toolManager.isToolEnabled(tool.toolName);
-        });
+        // Get tools from active skill's components
+        const activeComponents = this.skillManager.getActiveComponentsWithIds();
+        const tools: Tool[] = [];
 
-        if (enabledTools.length === 0) {
+        for (const { component } of activeComponents) {
+            for (const tool of component.toolSet.values()) {
+                if (this.toolManager.isToolEnabled(tool.toolName)) {
+                    tools.push(tool);
+                }
+            }
+        }
+
+        if (tools.length === 0) {
             return null;
         }
 
@@ -301,7 +323,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             styles: { align: 'center' }
         }));
 
-        const toolSection = renderToolSection(enabledTools);
+        const toolSection = renderToolSection(tools);
         container.addChild(toolSection);
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return

@@ -48,12 +48,13 @@ describe('Skill with Factory Function Components - Tool Loading', () => {
             ]
         });
 
-        it('should have tools after building with sync factory', () => {
-            // At build time, factory functions are not called, so tools are not extracted
-            // Tools are extracted at activation time (see next test)
-            console.log('Sync factory skill tools at build time:', skillWithSyncFactory.tools);
-            // This is expected to be empty at build time
-            expect(skillWithSyncFactory.tools?.length ?? 0).toBe(0);
+        it('should have components defined after building with sync factory', () => {
+            // At build time, the skill has components defined (but factory functions are not called)
+            // Tools are extracted from components at activation time
+            console.log('Sync factory skill components at build time:', skillWithSyncFactory.components);
+            // Components should be defined
+            expect(skillWithSyncFactory.components).toBeDefined();
+            expect(skillWithSyncFactory.components?.length).toBe(1);
         });
 
         it('should load tools when activating skill with sync factory', async () => {
@@ -94,10 +95,11 @@ describe('Skill with Factory Function Components - Tool Loading', () => {
             ]
         });
 
-        it('should have tools after building with async factory', () => {
-            // With async factory, tools may not be available at build time
-            console.log('Async factory skill tools at build time:', skillWithAsyncFactory.tools);
-            // This test will likely fail, showing the bug
+        it('should have components after building with async factory', () => {
+            // With async factory, the component is defined but not resolved at build time
+            console.log('Async factory skill components at build time:', skillWithAsyncFactory.components);
+            // Components should be defined
+            expect(skillWithAsyncFactory.components).toBeDefined();
         });
 
         it('should load tools when activating skill with async factory', async () => {

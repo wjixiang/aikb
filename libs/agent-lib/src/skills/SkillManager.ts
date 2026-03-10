@@ -165,14 +165,6 @@ export class SkillManager {
                     }
                     try {
                         componentInstance = this.container.get<ToolComponent>(componentDef.instance as symbol);
-
-                        // Extract tools from component's toolSet and add to skill's tools
-                        if (componentInstance && 'toolSet' in componentInstance) {
-                            const toolSet = componentInstance.toolSet as Map<string, Tool>;
-                            const existingTools = skill.tools ?? [];
-                            const newTools = Array.from(toolSet.values());
-                            skill.tools = [...existingTools, ...newTools];
-                        }
                     } catch (resolveError) {
                         console.error(`[SkillManager] Error resolving DI token for component "${componentDef.componentId}":`, resolveError);
                         continue;
@@ -186,14 +178,6 @@ export class SkillManager {
                     } catch (factoryError) {
                         console.error(`[SkillManager] Error calling factory for component "${componentDef.componentId}":`, factoryError);
                         continue; // Skip this component if factory fails
-                    }
-
-                    // Extract tools from component's toolSet and add to skill's tools
-                    if (componentInstance && 'toolSet' in componentInstance) {
-                        const toolSet = componentInstance.toolSet as Map<string, Tool>;
-                        const existingTools = skill.tools ?? [];
-                        const newTools = Array.from(toolSet.values());
-                        skill.tools = [...existingTools, ...newTools];
                     }
                 } else {
                     // Already an instance, use it directly
@@ -339,13 +323,16 @@ export class SkillManager {
     }
 
     /**
-     * Get tools from the active skill
+     * Get tools from the active skill's components
      */
     getActiveTools(): Tool[] {
-        if (!this.activeSkill) {
-            return [];
+        const tools: Tool[] = [];
+        for (const component of this.activeComponents.values()) {
+            for (const tool of component.toolSet.values()) {
+                tools.push(tool);
+            }
         }
-        return this.activeSkill.tools ?? [];
+        return tools;
     }
 
     /**
@@ -376,14 +363,27 @@ export class SkillManager {
 
     /**
      * Get all skill tool states
+     * Note: Tools are now derived from components, not from skill.tools
      */
     getAllSkillToolStates(): SkillToolState[] {
-        return Array.from(this.registry.values()).map(skill => ({
-            skillName: skill.name,
-            tools: skill.tools ?? [],
-            active: this.activeSkill?.name === skill.name,
-            addedToolNames: (skill.tools ?? []).map(t => t.toolName)
-        }));
+        return Array.from(this.registry.values()).map(skill => {
+            // Get tools from skill's components
+            const tools: Tool[] = [];
+            for (const comp of skill.components || []) {
+                // We need to get the resolved component to access toolSet
+                // This is a simplified version - actual tool resolution happens on activation
+                if (typeof comp.instance !== 'symbol' && 'toolSet' in comp.instance) {
+                    const toolSet = comp.instance.toolSet as Map<string, Tool>;
+                    tools.push(...toolSet.values());
+                }
+            }
+            return {
+                skillName: skill.name,
+                tools,
+                active: this.activeSkill?.name === skill.name,
+                addedToolNames: tools.map(t => t.toolName)
+            };
+        });
     }
 
     /**

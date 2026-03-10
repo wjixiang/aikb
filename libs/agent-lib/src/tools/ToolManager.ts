@@ -20,11 +20,11 @@ import { TYPES } from '../di/types.js';
 /**
  * Central tool manager implementation
  *
- * Simplified version: Removed ToolStateStrategy and SkillToolProvider.
- * Tool availability is now determined dynamically by checking SkillManager:
- * - Global tools are always available
- * - Component tools are available only when their skill is active
- * - Skill tools are available only when their skill is active
+ * Tool availability is determined dynamically by checking SkillManager:
+ * - Global tools: always available
+ * - Component tools: available only when their skill is active
+ * 
+ * Note: Skills can only define tools through their components, not directly.
  */
 @injectable()
 export class ToolManager implements IToolManager {
@@ -48,29 +48,6 @@ export class ToolManager implements IToolManager {
      */
     setSkillManager(skillManager: SkillManager): void {
         this.skillManager = skillManager;
-    }
-
-    /**
-     * Register a skill's tools directly
-     * This is a simplified alternative to using SkillToolProvider
-     * @param skill - The skill whose tools to register
-     */
-    registerSkillTools(skill: { name: string; tools?: Tool[] }): void {
-        if (!skill.tools || skill.tools.length === 0) {
-            return;
-        }
-
-        for (const tool of skill.tools) {
-            this.toolRegistry.set(tool.toolName, {
-                tool,
-                source: ToolSource.SKILL,
-                providerId: `skill:${skill.name}`,
-                componentKey: undefined,
-                enabled: true,
-                handler: undefined
-            });
-        }
-        console.log(`[ToolManager] Registered ${skill.tools.length} tools for skill: ${skill.name}`);
     }
 
     /**
@@ -150,7 +127,6 @@ export class ToolManager implements IToolManager {
     private inferSourceFromProvider(provider: IToolProvider): ToolSource {
         if (provider.id.includes('global')) return ToolSource.GLOBAL;
         if (provider.id.includes('component')) return ToolSource.COMPONENT;
-        if (provider.id.includes('skill')) return ToolSource.SKILL;
         return ToolSource.UNKNOWN;
     }
 
@@ -244,7 +220,7 @@ export class ToolManager implements IToolManager {
     /**
      * Check if a tool is enabled based on current skill state
      * - Global tools: always enabled
-     * - Component/Skill tools: enabled only when their skill is active
+     * - Component tools: enabled only when their skill is active
      * @param name - The tool name to check
      * @returns true if tool exists and is enabled
      */
@@ -259,15 +235,18 @@ export class ToolManager implements IToolManager {
             return true;
         }
 
-        // Component and Skill tools are only enabled when their skill is active
-        const activeSkill = this.skillManager?.getActiveSkill() ?? null;
-        if (!activeSkill) {
-            return false;
+        // Component tools are only enabled when their skill is active
+        // Use skillManager's getActiveComponentsWithIds() to get resolved components
+        const activeComponents = this.skillManager?.getActiveComponentsWithIds() ?? [];
+
+        // Check if this tool belongs to any of the active components
+        for (const { component } of activeComponents) {
+            if (component.toolSet.has(name)) {
+                return true;
+            }
         }
 
-        // Check if this tool belongs to the active skill
-        const skillToolNames = activeSkill.tools?.map(t => t.toolName) ?? [];
-        return skillToolNames.includes(name);
+        return false;
     }
 
     /**

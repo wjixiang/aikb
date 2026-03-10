@@ -95,9 +95,6 @@ export interface Skill {
         direction: string;
     };
 
-    /** Tools automatically extracted from components */
-    tools?: Tool[] | undefined;
-
     /** Components managed by this skill */
     /** Tools from these components are automatically included in the skill */
     components?: ComponentDefinition[] | undefined;

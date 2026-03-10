@@ -426,7 +426,7 @@ export class SkillLoader {
                     : '',
                 direction: parsed.workDirection
             },
-            tools,
+            // Note: tools are now derived from components, not directly defined
             onActivate: async () => {
                 console.log(`[Skill] ${parsed.frontmatter.name} activated`);
             },

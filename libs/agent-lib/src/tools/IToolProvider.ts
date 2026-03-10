@@ -60,21 +60,21 @@ export abstract class BaseToolProvider implements IToolProvider {
     protected inferSource(): ToolSource {
         if (this.id.includes('global')) return ToolSource.GLOBAL;
         if (this.id.includes('component')) return ToolSource.COMPONENT;
-        if (this.id.includes('skill')) return ToolSource.SKILL;
         return ToolSource.UNKNOWN;
     }
 }
 
 /**
  * Tool source enumeration
+ * - GLOBAL: Always available (system-level tools)
+ * - COMPONENT: Available only when skill is active (tools from Component)
+ * - UNKNOWN: Source cannot be determined
  */
 export enum ToolSource {
-    /** Always-available component tool */
-    COMPONENT = 'component',
-    /** Skill-scoped tool (only available when skill is active) */
-    SKILL = 'skill',
     /** Global tool (always available) */
     GLOBAL = 'global',
+    /** Component tool (available only when skill is active) */
+    COMPONENT = 'component',
     /** Unknown source */
     UNKNOWN = 'unknown'
 }

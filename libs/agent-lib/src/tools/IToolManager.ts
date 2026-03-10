@@ -60,13 +60,6 @@ export interface IToolManager {
     setSkillManager(skillManager: any): void;
 
     /**
-     * Register a skill's tools directly
-     * This is a simplified alternative to using SkillToolProvider
-     * @param skill - The skill whose tools to register
-     */
-    registerSkillTools(skill: { name: string; tools?: any[] }): void;
-
-    /**
      * Register a tool provider
      * @param provider - The provider to register
      */

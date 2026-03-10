@@ -105,7 +105,7 @@ export class SkillDefinition {
                 capability: capabilityText,
                 direction: this.config.workDirection
             },
-            tools: componentTools,
+            // Note: tools are now derived from components, not directly defined
             components: this.config.components,
             onActivate: this.config.onActivate,
             onDeactivate: this.config.onDeactivate,
