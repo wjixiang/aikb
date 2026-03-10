@@ -35,7 +35,7 @@ import { NoToolsUsedError } from '../task/task.errors.js';
 export const defaultActionConfig: ActionModuleConfig = {
     apiRequestTimeout: 60000,
     maxToolRetryAttempts: 3,
-    enableParallelExecution: false,
+    enableParallelExecution: true,
 };
 
 /**
@@ -48,14 +48,13 @@ export class ActionModule implements IActionModule {
     private logger: Logger;
     private toolManager: IToolManager;
     private turnMemoryStore: ITurnMemoryStore;
-    private memoryModuleConfig: MemoryModuleConfig;
+
 
     constructor(
         @inject(TYPES.ApiClient) apiClient: any,
         @inject(TYPES.Logger) logger: Logger,
         @inject(TYPES.IToolManager) toolManager: IToolManager,
         @inject(TYPES.ITurnMemoryStore) turnMemoryStore: ITurnMemoryStore,
-        @inject(TYPES.MemoryModuleConfig) memoryModuleConfig: MemoryModuleConfig,
         @inject(TYPES.ActionModuleConfig) @optional() config: Partial<ActionModuleConfig> = {}
     ) {
         this.config = { ...defaultActionConfig, ...config };
@@ -63,7 +62,7 @@ export class ActionModule implements IActionModule {
         this.logger = logger;
         this.toolManager = toolManager;
         this.turnMemoryStore = turnMemoryStore;
-        this.memoryModuleConfig = memoryModuleConfig;
+
     }
 
     /**
@@ -91,11 +90,7 @@ export class ActionModule implements IActionModule {
         conversationHistory: ApiMessage[],
         tools: ChatCompletionTool[],
         isAborted: () => boolean,
-        toolManager?: IToolManager
     ): Promise<ActionPhaseResult> {
-        // Use provided toolManager or fall back to injected one
-        const effectiveToolManager = toolManager ?? this.toolManager;
-
         this.logger.info('Starting action phase execution');
 
         let apiResponse: ApiResponse;
@@ -124,7 +119,7 @@ export class ActionModule implements IActionModule {
 
             // 3. Execute tool calls
             this.logger.info('Starting tool execution');
-            const executionResult = await this.executeToolCalls(apiResponse, isAborted, effectiveToolManager);
+            const executionResult = await this.executeToolCalls(apiResponse, isAborted);
             toolResults = executionResult.toolResults;
             userMessageContent = executionResult.userMessageContent;
             didAttemptCompletion = executionResult.didAttemptCompletion;
@@ -229,14 +224,13 @@ export class ActionModule implements IActionModule {
     private async executeToolCalls(
         response: ApiResponse,
         isAborted: () => boolean,
-        toolManager?: IToolManager,
+        // toolManager?: IToolManager,
     ): Promise<{
         toolResults: ToolResult[];
         userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>;
         didAttemptCompletion: boolean;
     }> {
         // Use provided toolManager or fall back to injected one
-        const effectiveToolManager = toolManager ?? this.toolManager;
 
         const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
         const toolResults: ToolResult[] = [];
@@ -248,18 +242,21 @@ export class ActionModule implements IActionModule {
             this.logger.error('no tool used')
             throw new NoToolsUsedError()
         }
-        this.logger.info({ toolCallsCount: toolCalls.length, toolCalls }, `Starting tool execution for ${toolCalls.length} tool call(s)`);
-        for (const toolCall of toolCalls) {
-            if (isAborted()) {
-                break;
-            }
+        this.logger.info({ toolCallsCount: toolCalls.length, toolCalls, parallelEnabled: this.config.enableParallelExecution }, `Starting tool execution for ${toolCalls.length} tool call(s)`);
+
+        // Helper function to execute a single tool call
+        const executeSingleTool = async (toolCall: any): Promise<{
+            toolResult: ToolResult;
+            userMessageContentItem: Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam;
+            didAttempt: boolean;
+        }> => {
+            let result: any;
+            let didAttempt = false;
 
             try {
-                let result: any;
-
                 // Check if this is attempt_completion
                 if (toolCall.name === 'attempt_completion') {
-                    didAttemptCompletion = true;
+                    didAttempt = true;
                     // Parse arguments to get the completion result
                     let completionData: any = {};
                     try {
@@ -304,36 +301,75 @@ export class ActionModule implements IActionModule {
 
                     // Execute tool through IToolManager
                     this.logger.info({ toolName: toolCall.name, params: parsedParams }, `Executing tool: ${toolCall.name}`);
-                    result = await effectiveToolManager.executeTool(toolCall.name, parsedParams);
+                    result = await this.toolManager.executeTool(toolCall.name, parsedParams);
                     this.logger.info({ toolName: toolCall.name, result }, `Tool execution completed: ${toolCall.name}`);
                 }
 
-                toolResults.push({
+                const toolResult: ToolResult = {
                     toolName: toolCall.name,
                     success: true,
                     result,
                     timestamp: Date.now(),
-                });
+                };
 
-                userMessageContent.push({
-                    type: 'tool_result',
+                const userMessageContentItem = {
+                    type: 'tool_result' as const,
                     tool_use_id: toolCall.id,
                     content: JSON.stringify(result),
-                });
+                };
+
+                return { toolResult, userMessageContentItem, didAttempt };
             } catch (error) {
                 this.logger.error({ toolName: toolCall.name, error }, `Tool execution failed: ${toolCall.name}`);
-                toolResults.push({
+                const toolResult: ToolResult = {
                     toolName: toolCall.name,
                     success: false,
                     result: error instanceof Error ? error.message : String(error),
                     timestamp: Date.now(),
-                });
+                };
 
-                userMessageContent.push({
-                    type: 'tool_result',
+                const userMessageContentItem = {
+                    type: 'tool_result' as const,
                     tool_use_id: toolCall.id,
                     content: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-                });
+                };
+
+                return { toolResult, userMessageContentItem, didAttempt: false };
+            }
+        };
+
+        if (this.config.enableParallelExecution) {
+            // Parallel execution
+            const promises = toolCalls.map(async (toolCall) => {
+                if (isAborted()) {
+                    return null;
+                }
+                return executeSingleTool(toolCall);
+            });
+
+            const results = await Promise.all(promises);
+            results.forEach((result) => {
+                if (result) {
+                    toolResults.push(result.toolResult);
+                    userMessageContent.push(result.userMessageContentItem);
+                    if (result.didAttempt) {
+                        didAttemptCompletion = true;
+                    }
+                }
+            });
+        } else {
+            // Sequential execution (original behavior)
+            for (const toolCall of toolCalls) {
+                if (isAborted()) {
+                    break;
+                }
+
+                const result = await executeSingleTool(toolCall);
+                toolResults.push(result.toolResult);
+                userMessageContent.push(result.userMessageContentItem);
+                if (result.didAttempt) {
+                    didAttemptCompletion = true;
+                }
             }
         }
 

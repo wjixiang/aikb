@@ -79,7 +79,7 @@ export class ToolManager implements IToolManager {
      * @param provider - The provider
      * @param tools - The tools to register
      */
-    private _registerToolsFromProvider(provider: IToolProvider, tools: any[]): void {
+    private _registerToolsFromProvider(provider: IToolProvider, tools: Tool[]): void {
         const source = this.inferSourceFromProvider(provider);
 
         for (const tool of tools) {

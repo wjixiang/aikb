@@ -1,3 +1,4 @@
+
 /**
  * Action Phase Guidance Section
  *
@@ -18,8 +19,8 @@
  * @returns Formatted string for the prompt
  */
 export function generateActionPhaseGuidance(thinkingSummary?: string): string {
-    const thinkingGuidance = thinkingSummary
-        ? `
+   const thinkingGuidance = thinkingSummary
+      ? `
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                      📋 THINKING PHASE PLAN 📋                                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -35,22 +36,25 @@ ${thinkingSummary}
 You are now in the ACTION phase. Your primary responsibility is to EXECUTE the plan
 that was generated during the thinking phase.
 
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
                               YOUR INSTRUCTIONS
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
 
 1. 📋 FOLLOW THE PLAN
    - Review the thinking phase plan above
    - Execute the actions in the order specified
    - Each action should build on the previous results
 
-2. 🛠️ USE AVAILABLE TOOLS
+2. 🛠️ USE MULTIPLE TOOLS IN ONE MESSAGE
    - Use the tools listed in the TOOL BOX section
+   - You can call MULTIPLE tools in a SINGLE message when appropriate
+   - This is much more efficient than calling them one at a time
+   - Only use this for independent tools that don't depend on each other's results
    - Choose the appropriate tool for each step
    - Provide clear and accurate parameters
 
 3. 📊 REPORT PROGRESS
-   - After each tool call, review the results
+   - After tool execution, review the results
    - If a tool call fails, analyze why and retry if appropriate
    - Keep track of what has been accomplished
 
@@ -64,13 +68,14 @@ that was generated during the thinking phase.
    - Call 'attempt_completion' when you have successfully completed the task
    - Provide a clear summary of what was accomplished
 
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
                             EXECUTION GUIDELINES
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
 
 ✅ DO:
    - Execute the planned actions systematically
    - Use tools to gather information and perform operations
+   - Call multiple independent tools in a single message for efficiency
    - Review and interpret tool results
    - Adjust your approach based on feedback
    - Provide clear explanations of your actions
@@ -81,15 +86,16 @@ that was generated during the thinking phase.
    - Call tools that weren't planned without justification
    - Ignore tool errors or failures
    - Complete the task prematurely
+   - Chain dependent tools in a single message - wait for results of one before calling the next
 
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
                               RESPONSE FORMAT
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
 
-For each action step:
+For each action:
 1. Briefly explain what you're about to do
-2. Call the appropriate tool with correct parameters
-3. Wait for and review the tool result
+2. Call ONE or MORE tools (if independent) with correct parameters
+3. Wait for and review all tool results
 4. Proceed to the next step or adjust as needed
 
 When you have completed all planned actions:
@@ -97,7 +103,7 @@ When you have completed all planned actions:
 2. Provide clear confirmation that the task is complete
 
 `
-        : `
+      : `
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                        ⚠️ ACTION PHASE GUIDANCE ⚠️                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -105,22 +111,25 @@ When you have completed all planned actions:
 You are now in the ACTION phase. Your responsibility is to EXECUTE actions to
 accomplish the user's task.
 
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
                               YOUR INSTRUCTIONS
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
 
 1. 🎯 ACCOMPLISH THE TASK
    - Understand what the user wants to achieve
    - Use available tools to complete the task
    - Work systematically toward the goal
 
-2. 🛠️ USE AVAILABLE TOOLS
+2. 🛠️ USE MULTIPLE TOOLS IN ONE MESSAGE
    - Use the tools listed in the TOOL BOX section
+   - You can call MULTIPLE tools in a SINGLE message when appropriate
+   - This is much more efficient than calling them one at a time
+   - Only use this for independent tools that don't depend on each other's results
    - Choose the appropriate tool for each action
    - Provide clear and accurate parameters
 
 3. 📊 REPORT PROGRESS
-   - After each tool call, review the results
+   - After tool execution, review the results
    - If a tool call fails, analyze why and retry if appropriate
    - Keep track of what has been accomplished
 
@@ -129,13 +138,14 @@ accomplish the user's task.
    - Call 'attempt_completion' when you have successfully completed the task
    - Provide a clear summary of what was accomplished
 
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
                             EXECUTION GUIDELINES
-══════════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════
 
 ✅ DO:
    - Execute actions systematically
    - Use tools to gather information and perform operations
+   - Call multiple independent tools in a single message for efficiency
    - Review and interpret tool results
    - Adjust your approach based on feedback
    - Provide clear explanations of your actions
@@ -145,8 +155,10 @@ accomplish the user's task.
    - Call tools without clear purpose
    - Ignore tool errors or failures
    - Complete the task prematurely
+   - Chain dependent tools in a single message - wait for results of one before calling the next
 
 `;
 
-    return thinkingGuidance;
+   return thinkingGuidance;
 }
+
