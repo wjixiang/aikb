@@ -14,7 +14,6 @@ import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
 import { TaskModule } from '../../task/TaskModule.js';
-import type { Logger } from 'pino';
 
 // Mock VirtualWorkspace
 vi.mock('statefulContext', () => ({
@@ -26,7 +25,7 @@ vi.mock('statefulContext', () => ({
 }));
 
 // Mock Logger
-const mockLogger: Logger = {
+const mockLogger = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -35,6 +34,7 @@ const mockLogger: Logger = {
     fatal: vi.fn(),
     silent: vi.fn(),
     child: vi.fn(() => mockLogger as any),
+    close: vi.fn(),
 } as any;
 
 // Helper function to create a mock API client
@@ -64,6 +64,9 @@ describe('ObservableAgent', () => {
         const thinkingModule = new ThinkingModule(apiClient, mockLogger, {}, turnStore);
         const memoryModule = createMockMemoryModule(apiClient, thinkingModule);
         const taskModule = new TaskModule();
+        const actionModule = {
+            performActionPhase: vi.fn().mockResolvedValue({ toolResults: [] }),
+        } as any;
         agent = new Agent(
             defaultAgentConfig,
             mockWorkspace,
@@ -71,7 +74,9 @@ describe('ObservableAgent', () => {
             apiClient,
             memoryModule,
             thinkingModule,
-            taskModule
+            actionModule,
+            taskModule,
+            mockLogger
         );
     });
 
@@ -241,6 +246,9 @@ describe('ObservableAgent', () => {
             const errorTurnStore = new TurnMemoryStore();
             const errorThinkingModule = new ThinkingModule(errorApiClient, mockLogger, {}, errorTurnStore);
             const errorTaskModule = new TaskModule();
+            const errorActionModule = {
+                performActionPhase: vi.fn().mockResolvedValue({ toolResults: [] }),
+            } as any;
             const errorAgent = new Agent(
                 defaultAgentConfig,
                 new VirtualWorkspace({ id: 'error-workspace' } as any, errorToolManager),
@@ -248,7 +256,9 @@ describe('ObservableAgent', () => {
                 errorApiClient,
                 createMockMemoryModule(errorApiClient, errorThinkingModule),
                 errorThinkingModule,
-                errorTaskModule
+                errorActionModule,
+                errorTaskModule,
+                mockLogger
             ) as any;
             errorAgent.throwError = () => {
                 throw new Error('Test error');
@@ -315,9 +325,13 @@ describe('ObservableAgent', () => {
             const newHistory = [
                 { role: 'user' as const, content: [{ type: 'text' as const, text: 'test message' }] },
             ];
+            // Setting conversation history is deprecated and does nothing in Turn-based architecture
+            // It should just log a warning and not throw
             observableAgent.conversationHistory = newHistory;
 
-            expect(observableAgent.conversationHistory).toEqual(newHistory);
+            // The conversation history should remain empty (or whatever was in memory before)
+            // as the setter intentionally does nothing
+            expect(observableAgent.conversationHistory).toEqual([]);
         });
     });
 

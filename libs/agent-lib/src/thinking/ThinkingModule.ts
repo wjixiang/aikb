@@ -23,6 +23,22 @@ export class ThinkingPhaseToolViolationError extends Error {
         this.name = 'ThinkingPhaseToolViolationError';
     }
 }
+
+/**
+ * Error thrown when LLM doesn't call required tools during thinking phase
+ */
+export class MissingToolCallError extends Error {
+    constructor(
+        public readonly roundNumber: number,
+        public readonly reason: string
+    ) {
+        super(
+            `Round ${roundNumber}: ${reason}. ` +
+            `You MUST call 'continue_thinking' tool to indicate whether to continue thinking or proceed to action phase.`
+        );
+        this.name = 'MissingToolCallError';
+    }
+}
 import { ApiMessage } from '../task/task.type.js';
 import { Turn, ThinkingRound, ToolCallResult } from '../memory/Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
@@ -224,7 +240,8 @@ export class ThinkingModule implements IThinkingModule {
     }
 
     /**
-     * Perform a single thinking round
+     * Perform a single thinking round with retry mechanism
+     * Retries when LLM doesn't call required tools
      */
     private async performSingleThinkingRound(
         roundNumber: number,
@@ -233,83 +250,176 @@ export class ThinkingModule implements IThinkingModule {
         accumulatedSummaries: string,
         previousRounds: ThinkingRound[]
     ): Promise<ThinkingRound> {
-        const prompt = this.buildThinkingPrompt(
-            roundNumber,
-            workspaceContext,
-            taskContext,
-            accumulatedSummaries,
-            previousRounds
-        );
-
         const tools = this.buildThinkingTools();
+        let lastError: Error | null = null;
 
-        try {
-            const response = await this.apiClient.makeRequest(
-                prompt.systemPrompt,
-                prompt.context,
-                prompt.history,
-                { timeout: this.config.apiRequestTimeout },
-                tools
+        for (let attempt = 0; attempt <= this.config.maxRetriesPerRound; attempt++) {
+            // Build prompt with retry instructions if this is a retry
+            const prompt = this.buildThinkingPrompt(
+                roundNumber,
+                workspaceContext,
+                taskContext,
+                accumulatedSummaries,
+                previousRounds,
+                attempt,
+                lastError
             );
 
-            // Validate that only thinking-phase tools were used
-            this.validateThinkingPhaseTools(response);
+            try {
+                const response = await this.apiClient.makeRequest(
+                    prompt.systemPrompt,
+                    prompt.context,
+                    prompt.history,
+                    { timeout: this.config.apiRequestTimeout },
+                    tools
+                );
 
-            const content = this.extractContent(response);
-            const controlDecision = this.extractControlDecision(response);
-            const recallRequest = this.extractRecallRequest(response);
+                // Validate that only thinking-phase tools were used
+                this.validateThinkingPhaseTools(response);
 
-            const recalledContexts = recallRequest
-                ? this.handleRecall(recallRequest)
-                : [];
+                const content = this.extractContent(response);
+                const controlDecision = this.extractControlDecision(response);
+                const recallRequest = this.extractRecallRequest(response);
 
-            return {
-                roundNumber,
-                content,
-                continueThinking: (controlDecision?.continueThinking || recallRequest !== null) ?? false,
-                recalledContexts,
-                tokens: this.estimateTokens(content),
-                summary: controlDecision?.summary,
-                // Sequential Thinking properties
-                thoughtNumber: this.sequentialState.thoughtNumber,
-                totalThoughts: controlDecision?.totalThoughts ?? this.sequentialState.totalThoughts,
-                isRevision: controlDecision?.isRevision,
-                revisesThought: controlDecision?.revisesThought,
-                branchFromThought: controlDecision?.branchFromThought,
-                branchId: controlDecision?.branchId,
-                needsMoreThoughts: controlDecision?.needsMoreThoughts,
-                hypothesis: controlDecision?.hypothesis,
-                hypothesisVerified: controlDecision?.hypothesisVerified,
-            };
-        } catch (error) {
-            // Re-throw ThinkingPhaseToolViolationError - this should not be caught and ignored
-            if (error instanceof ThinkingPhaseToolViolationError) {
-                throw error;
+                // Check if LLM called the required tool
+                if (!controlDecision && !recallRequest) {
+                    // LLM didn't call continue_thinking or recall_context - need to retry
+                    lastError = new MissingToolCallError(
+                        roundNumber,
+                        'No required tool was called. You MUST call "continue_thinking" to indicate your decision'
+                    );
+                    
+                    this.logger.warn(
+                        { roundNumber, attempt: attempt + 1, maxRetries: this.config.maxRetriesPerRound },
+                        'LLM did not call required tool, will retry'
+                    );
+
+                    // If we have more retries, wait a bit and continue
+                    if (attempt < this.config.maxRetriesPerRound) {
+                        if (this.config.retryDelayMs > 0) {
+                            await this.delay(this.config.retryDelayMs);
+                        }
+                        continue;
+                    }
+                    
+                    // No more retries - use fallback strategy
+                    this.logger.error(
+                        { roundNumber, attempts: attempt + 1 },
+                        'Max retries exceeded for thinking round, using fallback'
+                    );
+                    
+                    // Fallback: treat as if continueThinking=false with the text response as content
+                    return this.createFallbackRound(roundNumber, content, previousRounds);
+                }
+
+                // Success - LLM called the required tool
+                const recalledContexts = recallRequest
+                    ? this.handleRecall(recallRequest)
+                    : [];
+
+                // If recall was called but no continue_thinking, we still need to continue
+                const continueThinking = controlDecision?.continueThinking ?? (recallRequest !== null);
+
+                return {
+                    roundNumber,
+                    content,
+                    continueThinking,
+                    recalledContexts,
+                    tokens: this.estimateTokens(content),
+                    summary: controlDecision?.summary,
+                    // Sequential Thinking properties
+                    thoughtNumber: this.sequentialState.thoughtNumber,
+                    totalThoughts: controlDecision?.totalThoughts ?? this.sequentialState.totalThoughts,
+                    isRevision: controlDecision?.isRevision,
+                    revisesThought: controlDecision?.revisesThought,
+                    branchFromThought: controlDecision?.branchFromThought,
+                    branchId: controlDecision?.branchId,
+                    needsMoreThoughts: controlDecision?.needsMoreThoughts,
+                    hypothesis: controlDecision?.hypothesis,
+                    hypothesisVerified: controlDecision?.hypothesisVerified,
+                };
+            } catch (error) {
+                // Re-throw ThinkingPhaseToolViolationError - this should not be caught and ignored
+                if (error instanceof ThinkingPhaseToolViolationError) {
+                    throw error;
+                }
+
+                // For other errors, retry if we have attempts left
+                lastError = error instanceof Error ? error : new Error(String(error));
+                
+                this.logger.error(
+                    { error, roundNumber, attempt: attempt + 1, maxRetries: this.config.maxRetriesPerRound },
+                    'Thinking round API call failed'
+                );
+
+                if (attempt < this.config.maxRetriesPerRound) {
+                    if (this.config.retryDelayMs > 0) {
+                        await this.delay(this.config.retryDelayMs);
+                    }
+                    continue;
+                }
+
+                // No more retries - return failure round
+                return {
+                    roundNumber,
+                    content: `Thinking round failed after ${attempt + 1} attempts: ${lastError.message}`,
+                    continueThinking: false,
+                    recalledContexts: [],
+                    tokens: 0,
+                    thoughtNumber: this.sequentialState.thoughtNumber,
+                    totalThoughts: this.sequentialState.totalThoughts,
+                };
             }
-
-            this.logger.error({ error }, 'Thinking round failed');
-            return {
-                roundNumber,
-                content: 'Thinking round failed',
-                continueThinking: false,
-                recalledContexts: [],
-                tokens: 0,
-                thoughtNumber: this.sequentialState.thoughtNumber,
-                totalThoughts: this.sequentialState.totalThoughts,
-            };
         }
+
+        // Should not reach here, but return a fallback just in case
+        return this.createFallbackRound(roundNumber, 'Unexpected state in thinking round', previousRounds);
+    }
+
+    /**
+     * Create a fallback round when all retries are exhausted
+     */
+    private createFallbackRound(
+        roundNumber: number,
+        content: string,
+        previousRounds: ThinkingRound[]
+    ): ThinkingRound {
+        // If we have meaningful content from the LLM, use it
+        const meaningfulContent = content && content !== 'No content' 
+            ? content 
+            : 'LLM did not provide thinking content after multiple attempts';
+
+        return {
+            roundNumber,
+            content: meaningfulContent,
+            continueThinking: false, // Stop thinking on fallback
+            recalledContexts: [],
+            tokens: this.estimateTokens(meaningfulContent),
+            summary: undefined,
+            thoughtNumber: this.sequentialState.thoughtNumber,
+            totalThoughts: this.sequentialState.totalThoughts,
+        };
+    }
+
+    /**
+     * Delay helper for retry waits
+     */
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
      * Build thinking prompt
-     * Now includes Sequential Thinking guidance
+     * Now includes Sequential Thinking guidance and retry instructions
      */
     private buildThinkingPrompt(
         roundNumber: number,
         workspaceContext: string,
         taskContext: string | undefined,
         accumulatedSummaries: string,
-        previousRounds: ThinkingRound[]
+        previousRounds: ThinkingRound[],
+        retryAttempt: number = 0,
+        lastError: Error | null = null
     ): { systemPrompt: string; context: string; history: string[] } {
         const tools = this.buildThinkingTools();
         const toolsText = formatChatCompletionTools(tools);
@@ -459,7 +569,7 @@ the official record of this thinking phase and will guide the ACTION phase.
 
 Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}
 Current thought number: ${this.sequentialState.thoughtNumber}
-Estimated total thoughts: ${this.sequentialState.totalThoughts}`;
+Estimated total thoughts: ${this.sequentialState.totalThoughts}${this.buildRetryWarning(retryAttempt, lastError)}`;
 
         // Get task context if available
         const taskContextSection = taskContext
@@ -973,5 +1083,26 @@ If this turn builds upon previous turns, mention the connection and how it advan
      */
     private estimateTokens(text: string): number {
         return Math.ceil(text.length / 4);
+    }
+
+    /**
+     * Build retry warning message for system prompt
+     */
+    private buildRetryWarning(retryAttempt: number, lastError: Error | null): string {
+        if (retryAttempt === 0 || !lastError) {
+            return '';
+        }
+
+        return `
+
+⚠️ RETRY ATTEMPT ${retryAttempt}/${this.config.maxRetriesPerRound} ⚠️
+
+Previous attempt failed with error:
+"${lastError.message}"
+
+IMPORTANT: You MUST call the 'continue_thinking' tool to indicate your decision.
+Text-only responses are NOT sufficient. Call the tool with:
+- continueThinking=true to continue planning
+- continueThinking=false to proceed to action phase (and provide a summary)`;
     }
 }

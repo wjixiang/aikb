@@ -28,6 +28,10 @@ export interface ThinkingModuleConfig {
     apiRequestTimeout: number;
     /** Thinking mode to use (standard or sequential) */
     thinkingMode: ThinkingMode;
+    /** Maximum retries per thinking round when LLM doesn't call required tools (default: 2) */
+    maxRetriesPerRound: number;
+    /** Delay between retries in milliseconds (default: 100) */
+    retryDelayMs: number;
 }
 
 /**
@@ -39,6 +43,8 @@ export const defaultThinkingConfig: ThinkingModuleConfig = {
     enableSummarization: true,
     apiRequestTimeout: 40000,
     thinkingMode: ThinkingMode.STANDARD,
+    maxRetriesPerRound: 2,
+    retryDelayMs: 100,
 };
 
 /**

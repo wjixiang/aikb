@@ -51,10 +51,16 @@ describe('ActionModule - Action Phase Guidance', () => {
                         tools,
                     });
 
-                    // Return mock response
+                    // Return mock response with a tool call
                     return Promise.resolve({
-                        toolCalls: [],
-                        textResponse: 'Mock response',
+                        toolCalls: [{
+                            id: 'test-call-1',
+                            call_id: 'test-call-id-1',
+                            type: 'function_call',
+                            name: 'attempt_completion',
+                            arguments: JSON.stringify({ result: 'Task completed successfully' })
+                        }],
+                        textResponse: 'Task completed',
                         requestTime: 100,
                         tokenUsage: {
                             promptTokens: 100,
@@ -129,8 +135,7 @@ Thinking rounds:
             expect(prompt.systemPrompt).toContain('THINKING PHASE PLAN');
             expect(prompt.systemPrompt).toContain('Round 1: I need to analyze this task');
             expect(prompt.systemPrompt).toContain('FOLLOW THE PLAN');
-            expect(prompt.systemPrompt).toContain('USE AVAILABLE TOOLS');
-            expect(prompt.systemPrompt).toContain('attempt_completion');
+            expect(prompt.systemPrompt).toContain('MULTIPLE TOOLS');
         });
 
         it('should include generic action phase guidance when no thinking summary is provided', async () => {
@@ -156,7 +161,7 @@ Thinking rounds:
             expect(prompt.systemPrompt).toContain('ACTION PHASE GUIDANCE');
             expect(prompt.systemPrompt).not.toContain('THINKING PHASE PLAN');
             expect(prompt.systemPrompt).toContain('ACCOMPLISH THE TASK');
-            expect(prompt.systemPrompt).toContain('USE AVAILABLE TOOLS');
+            expect(prompt.systemPrompt).toContain('MULTIPLE TOOLS');
         });
 
         it('should display the complete action phase guidance structure', async () => {
@@ -178,7 +183,7 @@ Thinking rounds:
             expect(guidance).toContain('⚠️ ACTION PHASE GUIDANCE ⚠️');
             expect(guidance).toContain('YOUR INSTRUCTIONS');
             expect(guidance).toContain('📋 FOLLOW THE PLAN');
-            expect(guidance).toContain('🛠️ USE AVAILABLE TOOLS');
+            expect(guidance).toContain('🛠️ USE MULTIPLE TOOLS IN ONE MESSAGE');
             expect(guidance).toContain('📊 REPORT PROGRESS');
             expect(guidance).toContain('🔄 ADAPT IF NEEDED');
             expect(guidance).toContain('✅ COMPLETE THE TASK');

@@ -82,7 +82,13 @@ describe('ActionModule - Tool Validation', () => {
 
             // Mock successful API response
             vi.mocked(mockApiClient.makeRequest).mockResolvedValue({
-                toolCalls: [],
+                toolCalls: [{
+                    id: 'test-call-1',
+                    call_id: 'test-call-id-1',
+                    type: 'function_call' as const,
+                    name: 'attempt_completion',
+                    arguments: JSON.stringify({ result: 'Task completed successfully' })
+                }],
                 textResponse: 'Test response',
                 requestTime: 100,
                 tokenUsage: {
@@ -210,7 +216,13 @@ describe('ActionModule - Tool Validation', () => {
 
             // Mock successful API response
             vi.mocked(mockApiClient.makeRequest).mockResolvedValue({
-                toolCalls: [],
+                toolCalls: [{
+                    id: 'test-call-1',
+                    call_id: 'test-call-id-1',
+                    type: 'function_call' as const,
+                    name: 'attempt_completion',
+                    arguments: JSON.stringify({ result: 'Task completed successfully' })
+                }],
                 textResponse: 'Test response',
                 requestTime: 100,
                 tokenUsage: {

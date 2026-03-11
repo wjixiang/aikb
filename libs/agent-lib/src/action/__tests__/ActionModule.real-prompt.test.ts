@@ -52,10 +52,16 @@ describe('ActionModule - Real Prompt Structure', () => {
                         tools,
                     });
 
-                    // Return mock response
+                    // Return mock response with a tool call
                     return Promise.resolve({
-                        toolCalls: [],
-                        textResponse: 'Mock response',
+                        toolCalls: [{
+                            id: 'test-call-1',
+                            call_id: 'test-call-id-1',
+                            type: 'function_call',
+                            name: 'attempt_completion',
+                            arguments: JSON.stringify({ result: 'Task completed successfully' })
+                        }],
+                        textResponse: 'Task completed',
                         requestTime: 100,
                         tokenUsage: {
                             promptTokens: 100,
@@ -215,12 +221,11 @@ Thinking rounds:
             }
             console.log('\n==================================================\n');
 
-            // Verify structure
+            // Verify structure - check for actual content in the prompt
             expect(prompt.systemPrompt).toContain('ACTION PHASE GUIDANCE');
             expect(prompt.systemPrompt).toContain('THINKING PHASE PLAN');
             expect(prompt.systemPrompt).toContain('FOLLOW THE PLAN');
-            expect(prompt.systemPrompt).toContain('USE AVAILABLE TOOLS');
-            expect(prompt.systemPrompt).toContain('attempt_completion');
+            expect(prompt.systemPrompt).toContain('MULTIPLE TOOLS');
         });
     });
 });

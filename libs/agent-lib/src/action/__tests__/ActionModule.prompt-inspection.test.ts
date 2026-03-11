@@ -51,10 +51,16 @@ describe('ActionModule - Prompt Inspection', () => {
                         tools,
                     });
 
-                    // Return mock response
+                    // Return mock response with a tool call (attempt_completion)
                     return Promise.resolve({
-                        toolCalls: [],
-                        textResponse: 'Mock response',
+                        toolCalls: [{
+                            id: 'test-call-1',
+                            call_id: 'test-call-id-1',
+                            type: 'function_call',
+                            name: 'attempt_completion',
+                            arguments: JSON.stringify({ result: 'Task completed successfully' })
+                        }],
+                        textResponse: 'Task completed',
                         requestTime: 100,
                         tokenUsage: {
                             promptTokens: 100,

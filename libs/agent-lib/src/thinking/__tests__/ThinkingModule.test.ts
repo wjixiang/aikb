@@ -1,5 +1,5 @@
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client'
-import { ThinkingModule } from '../ThinkingModule'
+import { ThinkingModule, MissingToolCallError } from '../ThinkingModule'
 import { ITurnMemoryStore } from '../../memory/TurnMemoryStore.interface'
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult, TurnMemoryExport } from '../../memory/Turn'
 import { ApiMessage } from '../../task/task.type'
@@ -567,6 +567,244 @@ describe('ThinkingModule', () => {
 
             // Verify the summary is from the last round
             expect(thinkingResult.summary).toContain('Completed skill evaluation')
+        })
+    })
+
+    describe('retry mechanism', () => {
+        it('should retry when LLM does not call any tool', async () => {
+            // First response: LLM returns text but no tool call (should trigger retry)
+            const mockedResponseNoTool: ApiResponse = {
+                toolCalls: [], // No tool calls - this should trigger retry
+                textResponse: 'I should use a tool here',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Second response: LLM calls continue_thinking correctly
+            const mockedResponseWithTool: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 1,
+                        summary: 'Corrected response with tool call'
+                    })
+                }],
+                textResponse: 'Now I call the tool',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseWithTool)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that two API calls were made (retry happened)
+            expect(spy).toHaveBeenCalledTimes(2)
+
+            // Verify the thinking completed successfully
+            expect(thinkingResult.rounds.length).toBe(1)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+            expect(thinkingResult.summary).toBe('Corrected response with tool call')
+        })
+
+        it('should use fallback when max retries exceeded without tool call', async () => {
+            // Create a ThinkingModule with summarization disabled to avoid extra API calls
+            const noSummaryThinkingModule = new ThinkingModule(
+                mockedApiClient,
+                mockedLogger,
+                { enableSummarization: false },
+                mockedTurnMemoryStore
+            )
+
+            // All responses: LLM returns text but no tool call
+            const mockedResponseNoTool: ApiResponse = {
+                toolCalls: [], // No tool calls
+                textResponse: 'I am not using the tool',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 10,
+                    completionTokens: 20,
+                    totalTokens: 30
+                }
+            }
+
+            // Mock 3 responses (original + 2 retries = 3 total attempts with default config)
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase
+            const thinkingResult = await noSummaryThinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that 3 API calls were made (maxRetriesPerRound + 1)
+            expect(spy).toHaveBeenCalledTimes(3)
+
+            // Verify fallback behavior - should stop thinking
+            expect(thinkingResult.rounds.length).toBe(1)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+            expect(thinkingResult.rounds[0].content).toContain('I am not using the tool')
+        })
+
+        it('should include retry warning in prompt on retry attempts', async () => {
+            // First response: No tool call
+            const mockedResponseNoTool: ApiResponse = {
+                toolCalls: [],
+                textResponse: 'No tool called',
+                requestTime: 100,
+                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+            }
+
+            // Second response: With tool call
+            const mockedResponseWithTool: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 1,
+                        summary: 'Success after retry'
+                    })
+                }],
+                textResponse: 'Tool called',
+                requestTime: 100,
+                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseWithTool)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify second call includes retry warning
+            const secondCallArgs = spy.mock.calls[1]
+            const systemPrompt = secondCallArgs[0] as string
+            expect(systemPrompt).toContain('RETRY ATTEMPT')
+            expect(systemPrompt).toContain('No required tool was called')
+        })
+
+        it('should retry on API errors', async () => {
+            // First response: API error
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockRejectedValueOnce(new Error('Network timeout'))
+
+            // Second response: Success
+            const mockedResponseSuccess: ApiResponse = {
+                toolCalls: [{
+                    id: 'continue_id',
+                    call_id: 'continue_call_id',
+                    type: 'function_call',
+                    name: 'continue_thinking',
+                    arguments: JSON.stringify({
+                        continueThinking: false,
+                        totalThoughts: 1,
+                        summary: 'Success after error retry'
+                    })
+                }],
+                textResponse: 'Success',
+                requestTime: 100,
+                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockResolvedValueOnce(mockedResponseSuccess)
+
+            // We need to reset and re-setup since we used mockRejectedValueOnce
+            vi.clearAllMocks()
+            vi.mocked(mockedApiClient.makeRequest)
+                .mockRejectedValueOnce(new Error('Network timeout'))
+                .mockResolvedValueOnce(mockedResponseSuccess)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            // Perform thinking phase
+            const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that two API calls were made (retry happened)
+            expect(spy).toHaveBeenCalledTimes(2)
+
+            // Verify success
+            expect(thinkingResult.rounds.length).toBe(1)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+        })
+
+        it('should return failure round after max retries on API errors', async () => {
+            // Create a new mock API client specifically for this test
+            const freshMockedApiClient: ApiClient = {
+                makeRequest: vi.fn().mockRejectedValue(new Error('Persistent network error'))
+            }
+
+            // Create a ThinkingModule with summarization disabled to avoid extra API calls
+            const noSummaryThinkingModule = new ThinkingModule(
+                freshMockedApiClient,
+                mockedLogger,
+                { enableSummarization: false },
+                mockedTurnMemoryStore
+            )
+
+            // Perform thinking phase
+            const thinkingResult = await noSummaryThinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that 3 API calls were made (maxRetriesPerRound + 1)
+            // Note: With maxRetriesPerRound=2 (default), we expect 3 calls (attempt 0, 1, 2)
+            expect(freshMockedApiClient.makeRequest).toHaveBeenCalledTimes(3)
+
+            // Verify failure handling
+            expect(thinkingResult.rounds.length).toBe(1)
+            expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+            expect(thinkingResult.rounds[0].content).toContain('Thinking round failed')
+            expect(thinkingResult.rounds[0].content).toContain('Persistent network error')
+        })
+
+        it('should respect custom maxRetriesPerRound config', async () => {
+            // Create a new ThinkingModule with maxRetriesPerRound=1 and summarization disabled
+            const customConfigThinkingModule = new ThinkingModule(
+                mockedApiClient,
+                mockedLogger,
+                { maxRetriesPerRound: 1, enableSummarization: false },
+                mockedTurnMemoryStore
+            )
+
+            // All responses: No tool call
+            const mockedResponseNoTool: ApiResponse = {
+                toolCalls: [],
+                textResponse: 'No tool',
+                requestTime: 100,
+                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
+            }
+
+            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponseNoTool)
+
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+
+            await customConfigThinkingModule.performThinkingPhase('workspace context')
+
+            // Verify that only 2 API calls were made (maxRetriesPerRound=1 + 1 original)
+            expect(spy).toHaveBeenCalledTimes(2)
         })
     })
 

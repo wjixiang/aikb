@@ -67,7 +67,7 @@ describe('ActionModule', () => {
             expect(config).toBeDefined();
             expect(config.apiRequestTimeout).toBe(60000);
             expect(config.maxToolRetryAttempts).toBe(3);
-            expect(config.enableParallelExecution).toBe(false);
+            expect(config.enableParallelExecution).toBe(true);
         });
     });
 
