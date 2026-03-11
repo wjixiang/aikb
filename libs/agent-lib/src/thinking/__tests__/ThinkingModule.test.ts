@@ -1,11 +1,110 @@
-import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client'
-import { ThinkingModule, MissingToolCallError } from '../ThinkingModule'
+import { ApiClient, ApiResponse } from '../../api-client'
+import { ThinkingModule } from '../ThinkingModule'
 import { ITurnMemoryStore } from '../../memory/TurnMemoryStore.interface'
-import { Turn, TurnStatus, ThinkingRound, ToolCallResult, TurnMemoryExport } from '../../memory/Turn'
-import { ApiMessage } from '../../task/task.type'
+import { Turn, TurnStatus } from '../../memory/Turn'
 import { vi } from 'vitest'
 import pino from 'pino'
 import { RecallRequest } from '../types'
+
+// =============================================================================
+// Reusable Mock Response Factories
+// =============================================================================
+
+const createTokenUsage = () => ({
+    promptTokens: 10,
+    completionTokens: 20,
+    totalTokens: 30
+})
+
+const baseApiResponse = (overrides: Partial<ApiResponse> = {}): ApiResponse => ({
+    toolCalls: [],
+    textResponse: '',
+    requestTime: 100,
+    tokenUsage: createTokenUsage(),
+    ...overrides
+})
+
+// Factory for continue_thinking with continueThinking: true
+const createContinueThinkingResponse = (options: {
+    id?: string
+    call_id?: string
+    totalThoughts?: number
+    nextFocus?: string
+    textResponse?: string
+} = {}): ApiResponse => baseApiResponse({
+    toolCalls: [{
+        id: options.id || 'continue_id',
+        call_id: options.call_id || 'continue_call_id',
+        type: 'function_call',
+        name: 'continue_thinking',
+        arguments: JSON.stringify({
+            continueThinking: true,
+            totalThoughts: options.totalThoughts || 3,
+            nextFocus: options.nextFocus
+        })
+    }],
+    textResponse: options.textResponse || 'Continuing analysis'
+})
+
+// Factory for continue_thinking with continueThinking: false (end thinking)
+const createEndThinkingResponse = (options: {
+    id?: string
+    call_id?: string
+    totalThoughts?: number
+    summary?: string
+    textResponse?: string
+} = {}): ApiResponse => baseApiResponse({
+    toolCalls: [{
+        id: options.id || 'continue_id',
+        call_id: options.call_id || 'continue_call_id',
+        type: 'function_call',
+        name: 'continue_thinking',
+        arguments: JSON.stringify({
+            continueThinking: false,
+            totalThoughts: options.totalThoughts || 1,
+            summary: options.summary || 'Test summary'
+        })
+    }],
+    textResponse: options.textResponse || 'Thinking completed'
+})
+
+// Factory for response with no tool calls (triggers retry)
+const createNoToolCallResponse = (textResponse: string = 'No tool called'): ApiResponse => baseApiResponse({
+    toolCalls: [],
+    textResponse
+})
+
+// Factory for recall_context + continue_thinking response
+const createRecallResponse = (options: {
+    recallRequest: RecallRequest
+    textResponse?: string
+    continueThinking?: boolean
+    summary?: string
+}): ApiResponse => baseApiResponse({
+    toolCalls: [{
+        id: 'recall_id',
+        call_id: 'recall_call_id',
+        type: 'function_call',
+        name: 'recall_context',
+        arguments: JSON.stringify(options.recallRequest)
+    }, {
+        id: 'continue_id',
+        call_id: 'continue_call_id',
+        type: 'function_call',
+        name: 'continue_thinking',
+        arguments: JSON.stringify({
+            continueThinking: options.continueThinking ?? false,
+            totalThoughts: 1,
+            summary: options.summary || 'Test summary'
+        })
+    }],
+    textResponse: options.textResponse || 'Recalling context'
+})
+
+// Factory for error response
+const createErrorResponse = (error: Error): ApiResponse => {
+    throw error
+}
 
 describe('ThinkingModule', () => {
     const mockedApiClient: ApiClient = {
@@ -53,46 +152,20 @@ describe('ThinkingModule', () => {
     })
 
     it('should store thinking message of each step correctly', async () => {
-        const mockedResponse: ApiResponse = {
-            toolCalls: [{
-                id: 'continue_id',
-                call_id: 'continue_call_id',
-                type: 'function_call',
-                name: 'continue_thinking',
-                arguments: JSON.stringify({
-                    continueThinking: true,
-                    totalThoughts: 2,
-                })
-            }],
-            textResponse: 'Test response text',
-            requestTime: 100,
-            tokenUsage: {
-                promptTokens: 10,
-                completionTokens: 20,
-                totalTokens: 30
-            }
-        }
+        const mockedResponse = createContinueThinkingResponse({
+            id: 'continue_id',
+            call_id: 'continue_call_id',
+            totalThoughts: 2,
+            textResponse: 'Test response text'
+        })
 
-        const mockedResponse2: ApiResponse = {
-            toolCalls: [{
-                id: 'continue_id',
-                call_id: 'continue_call_id',
-                type: 'function_call',
-                name: 'continue_thinking',
-                arguments: JSON.stringify({
-                    continueThinking: false,
-                    totalThoughts: 1,
-                    summary: 'Test summary'
-                })
-            }],
-            textResponse: 'Test response text 2',
-            requestTime: 100,
-            tokenUsage: {
-                promptTokens: 10,
-                completionTokens: 20,
-                totalTokens: 30
-            }
-        }
+        const mockedResponse2 = createEndThinkingResponse({
+            id: 'continue_id',
+            call_id: 'continue_call_id',
+            totalThoughts: 1,
+            summary: 'Test summary',
+            textResponse: 'Test response text 2'
+        })
 
         // Mock the makeRequest to return the mockedResponse
         vi.mocked(mockedApiClient.makeRequest)
@@ -147,32 +220,10 @@ describe('ThinkingModule', () => {
             const recallRequest: RecallRequest = {
                 turnNumbers: [1, 2]
             }
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'recall_id',
-                    call_id: 'recall_call_id',
-                    type: 'function_call',
-                    name: 'recall_context',
-                    arguments: JSON.stringify(recallRequest)
-                }, {
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Test summary'
-                    })
-                }],
-                textResponse: 'Recalling previous turns',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createRecallResponse({
+                recallRequest,
+                textResponse: 'Recalling previous turns'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
             const spy = vi.spyOn(mockedApiClient, 'makeRequest')
@@ -221,32 +272,10 @@ describe('ThinkingModule', () => {
             const recallRequest: RecallRequest = {
                 keywords: ['diabetes', 'treatment']
             }
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'recall_id',
-                    call_id: 'recall_call_id',
-                    type: 'function_call',
-                    name: 'recall_context',
-                    arguments: JSON.stringify(recallRequest)
-                }, {
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Test summary'
-                    })
-                }],
-                textResponse: 'Searching for relevant turns',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createRecallResponse({
+                recallRequest,
+                textResponse: 'Searching for relevant turns'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
 
@@ -264,32 +293,10 @@ describe('ThinkingModule', () => {
         it('should handle empty recall request gracefully', async () => {
             // Create API response with empty recall_context tool call
             const recallRequest: RecallRequest = {}
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'recall_id',
-                    call_id: 'recall_call_id',
-                    type: 'function_call',
-                    name: 'recall_context',
-                    arguments: JSON.stringify(recallRequest)
-                }, {
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Test summary'
-                    })
-                }],
-                textResponse: 'Empty recall request',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createRecallResponse({
+                recallRequest,
+                textResponse: 'Empty recall request'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
 
@@ -310,32 +317,10 @@ describe('ThinkingModule', () => {
             const recallRequest: RecallRequest = {
                 turnNumbers: [999, 1000]
             }
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'recall_id',
-                    call_id: 'recall_call_id',
-                    type: 'function_call',
-                    name: 'recall_context',
-                    arguments: JSON.stringify(recallRequest)
-                }, {
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Test summary'
-                    })
-                }],
-                textResponse: 'Recalling non-existent turns',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createRecallResponse({
+                recallRequest,
+                textResponse: 'Recalling non-existent turns'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
 
@@ -414,32 +399,10 @@ describe('ThinkingModule', () => {
                 turnNumbers: [1, 2, 3, 4],
                 keywords: ['meta-analysis', 'mesenchymal stem cells', 'knee osteoarthritis', 'PICO extraction', 'PRISMA']
             }
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'recall_id',
-                    call_id: 'recall_call_id',
-                    type: 'function_call',
-                    name: 'recall_context',
-                    arguments: JSON.stringify(recallRequest)
-                }, {
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Test summary'
-                    })
-                }],
-                textResponse: 'Recalling previous turns with both turnNumbers and keywords',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createRecallResponse({
+                recallRequest,
+                textResponse: 'Recalling previous turns with both turnNumbers and keywords'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
 
@@ -466,26 +429,10 @@ describe('ThinkingModule', () => {
     describe('exit thinking phase via tool call', () => {
         it('should exit thinking phase when continueThinking is false via tool call', async () => {
             // Mock API response with continue_thinking tool call that has continueThinking: false
-            const mockedResponse: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Analysis completed. The user wants to search for literature on diabetes treatment. Ready to proceed to action phase.'
-                    })
-                }],
-                textResponse: 'Thinking completed',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse = createEndThinkingResponse({
+                summary: 'Analysis completed. The user wants to search for literature on diabetes treatment. Ready to proceed to action phase.',
+                textResponse: 'Thinking completed'
+            })
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
             const spy = vi.spyOn(mockedApiClient, 'makeRequest')
@@ -505,48 +452,22 @@ describe('ThinkingModule', () => {
 
         it('should continue thinking when continueThinking is true and exit when false', async () => {
             // Mock first response with continueThinking: true
-            const mockedResponse1: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_1',
-                    call_id: 'continue_call_id_1',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: true,
-                        totalThoughts: 3,
-                        nextFocus: 'Evaluate available skills for literature search'
-                    })
-                }],
-                textResponse: 'Continuing analysis',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse1 = createContinueThinkingResponse({
+                id: 'continue_id_1',
+                call_id: 'continue_call_id_1',
+                totalThoughts: 3,
+                nextFocus: 'Evaluate available skills for literature search',
+                textResponse: 'Continuing analysis'
+            })
 
             // Mock second response with continueThinking: false
-            const mockedResponse2: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_2',
-                    call_id: 'continue_call_id_2',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 3,
-                        summary: 'Completed skill evaluation. Recommend activating literature search skill for this task.'
-                    })
-                }],
-                textResponse: 'Thinking completed',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse2 = createEndThinkingResponse({
+                id: 'continue_id_2',
+                call_id: 'continue_call_id_2',
+                totalThoughts: 3,
+                summary: 'Completed skill evaluation. Recommend activating literature search skill for this task.',
+                textResponse: 'Thinking completed'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponse1)
@@ -573,38 +494,13 @@ describe('ThinkingModule', () => {
     describe('retry mechanism', () => {
         it('should retry when LLM does not call any tool', async () => {
             // First response: LLM returns text but no tool call (should trigger retry)
-            const mockedResponseNoTool: ApiResponse = {
-                toolCalls: [], // No tool calls - this should trigger retry
-                textResponse: 'I should use a tool here',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponseNoTool = createNoToolCallResponse('I should use a tool here')
 
             // Second response: LLM calls continue_thinking correctly
-            const mockedResponseWithTool: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Corrected response with tool call'
-                    })
-                }],
-                textResponse: 'Now I call the tool',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponseWithTool = createEndThinkingResponse({
+                summary: 'Corrected response with tool call',
+                textResponse: 'Now I call the tool'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponseNoTool)
@@ -634,16 +530,7 @@ describe('ThinkingModule', () => {
             )
 
             // All responses: LLM returns text but no tool call
-            const mockedResponseNoTool: ApiResponse = {
-                toolCalls: [], // No tool calls
-                textResponse: 'I am not using the tool',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponseNoTool = createNoToolCallResponse('I am not using the tool')
 
             // Mock 3 responses (original + 2 retries = 3 total attempts with default config)
             vi.mocked(mockedApiClient.makeRequest)
@@ -667,30 +554,13 @@ describe('ThinkingModule', () => {
 
         it('should include retry warning in prompt on retry attempts', async () => {
             // First response: No tool call
-            const mockedResponseNoTool: ApiResponse = {
-                toolCalls: [],
-                textResponse: 'No tool called',
-                requestTime: 100,
-                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
-            }
+            const mockedResponseNoTool = createNoToolCallResponse('No tool called')
 
             // Second response: With tool call
-            const mockedResponseWithTool: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Success after retry'
-                    })
-                }],
-                textResponse: 'Tool called',
-                requestTime: 100,
-                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
-            }
+            const mockedResponseWithTool = createEndThinkingResponse({
+                summary: 'Success after retry',
+                textResponse: 'Tool called'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponseNoTool)
@@ -713,22 +583,10 @@ describe('ThinkingModule', () => {
                 .mockRejectedValueOnce(new Error('Network timeout'))
 
             // Second response: Success
-            const mockedResponseSuccess: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id',
-                    call_id: 'continue_call_id',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 1,
-                        summary: 'Success after error retry'
-                    })
-                }],
-                textResponse: 'Success',
-                requestTime: 100,
-                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
-            }
+            const mockedResponseSuccess = createEndThinkingResponse({
+                summary: 'Success after error retry',
+                textResponse: 'Success'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponseSuccess)
@@ -790,12 +648,7 @@ describe('ThinkingModule', () => {
             )
 
             // All responses: No tool call
-            const mockedResponseNoTool: ApiResponse = {
-                toolCalls: [],
-                textResponse: 'No tool',
-                requestTime: 100,
-                tokenUsage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 }
-            }
+            const mockedResponseNoTool = createNoToolCallResponse('No tool')
 
             vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponseNoTool)
 
@@ -811,70 +664,31 @@ describe('ThinkingModule', () => {
     describe('thinking workflow', () => {
         it('should auto-increment thoughtNumber across multiple thinking rounds', async () => {
             // Mock first response with continueThinking: true
-            const mockedResponse1: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_1',
-                    call_id: 'continue_call_id_1',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: true,
-                        totalThoughts: 3,
-                        nextFocus: 'Evaluate available skills for literature search'
-                    })
-                }],
-                textResponse: 'First thought: Analyzing the task requirements',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse1 = createContinueThinkingResponse({
+                id: 'continue_id_1',
+                call_id: 'continue_call_id_1',
+                totalThoughts: 3,
+                nextFocus: 'Evaluate available skills for literature search',
+                textResponse: 'First thought: Analyzing the task requirements'
+            })
 
             // Mock second response with continueThinking: true
-            const mockedResponse2: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_2',
-                    call_id: 'continue_call_id_2',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: true,
-                        totalThoughts: 3,
-                        nextFocus: 'Evaluate tool options'
-                    })
-                }],
-                textResponse: 'Second thought: Evaluating available tools',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse2 = createContinueThinkingResponse({
+                id: 'continue_id_2',
+                call_id: 'continue_call_id_2',
+                totalThoughts: 3,
+                nextFocus: 'Evaluate tool options',
+                textResponse: 'Second thought: Evaluating available tools'
+            })
 
             // Mock third response with continueThinking: false
-            const mockedResponse3: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_3',
-                    call_id: 'continue_call_id_3',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 3,
-                        summary: 'Completed analysis. Ready to proceed with action phase.'
-                    })
-                }],
-                textResponse: 'Third thought: Finalizing the action plan',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse3 = createEndThinkingResponse({
+                id: 'continue_id_3',
+                call_id: 'continue_call_id_3',
+                totalThoughts: 3,
+                summary: 'Completed analysis. Ready to proceed with action phase.',
+                textResponse: 'Third thought: Finalizing the action plan'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponse1)
@@ -908,26 +722,13 @@ describe('ThinkingModule', () => {
 
         it('should reset thoughtNumber to 1 when starting a new thinking phase', async () => {
             // First thinking phase
-            const mockedResponse1: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_1',
-                    call_id: 'continue_call_id_1',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 2,
-                        summary: 'First thinking phase completed'
-                    })
-                }],
-                textResponse: 'First phase thought',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse1 = createEndThinkingResponse({
+                id: 'continue_id_1',
+                call_id: 'continue_call_id_1',
+                totalThoughts: 2,
+                summary: 'First thinking phase completed',
+                textResponse: 'First phase thought'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponse1)
@@ -937,26 +738,13 @@ describe('ThinkingModule', () => {
             expect(result1.rounds[0].thoughtNumber).toBe(1)
 
             // Second thinking phase (should reset to 1)
-            const mockedResponse2: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_2',
-                    call_id: 'continue_call_id_2',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 2,
-                        summary: 'Second thinking phase completed'
-                    })
-                }],
-                textResponse: 'Second phase thought',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse2 = createEndThinkingResponse({
+                id: 'continue_id_2',
+                call_id: 'continue_call_id_2',
+                totalThoughts: 2,
+                summary: 'Second thinking phase completed',
+                textResponse: 'Second phase thought'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponse2)
@@ -968,68 +756,29 @@ describe('ThinkingModule', () => {
 
         it('should allow LLM to update totalThoughts while thoughtNumber auto-increments', async () => {
             // First response: LLM estimates 3 thoughts
-            const mockedResponse1: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_1',
-                    call_id: 'continue_call_id_1',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: true,
-                        totalThoughts: 3
-                    })
-                }],
-                textResponse: 'First thought',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse1 = createContinueThinkingResponse({
+                id: 'continue_id_1',
+                call_id: 'continue_call_id_1',
+                totalThoughts: 3,
+                textResponse: 'First thought'
+            })
 
             // Second response: LLM updates estimate to 5 thoughts
-            const mockedResponse2: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_2',
-                    call_id: 'continue_call_id_2',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: true,
-                        totalThoughts: 5
-                    })
-                }],
-                textResponse: 'Second thought',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse2 = createContinueThinkingResponse({
+                id: 'continue_id_2',
+                call_id: 'continue_call_id_2',
+                totalThoughts: 5,
+                textResponse: 'Second thought'
+            })
 
             // Third response: LLM completes
-            const mockedResponse3: ApiResponse = {
-                toolCalls: [{
-                    id: 'continue_id_3',
-                    call_id: 'continue_call_id_3',
-                    type: 'function_call',
-                    name: 'continue_thinking',
-                    arguments: JSON.stringify({
-                        continueThinking: false,
-                        totalThoughts: 5,
-                        summary: 'Thinking completed'
-                    })
-                }],
-                textResponse: 'Third thought',
-                requestTime: 100,
-                tokenUsage: {
-                    promptTokens: 10,
-                    completionTokens: 20,
-                    totalTokens: 30
-                }
-            }
+            const mockedResponse3 = createEndThinkingResponse({
+                id: 'continue_id_3',
+                call_id: 'continue_call_id_3',
+                totalThoughts: 5,
+                summary: 'Thinking completed',
+                textResponse: 'Third thought'
+            })
 
             vi.mocked(mockedApiClient.makeRequest)
                 .mockResolvedValueOnce(mockedResponse1)
@@ -1037,6 +786,7 @@ describe('ThinkingModule', () => {
                 .mockResolvedValueOnce(mockedResponse3)
 
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
+            console.log(thinkingResult)
 
             // Verify thoughtNumber auto-incremented
             expect(thinkingResult.rounds[0].thoughtNumber).toBe(1)

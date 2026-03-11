@@ -1,5 +1,5 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * Meta-Analysis Article Retrieval Skill
@@ -185,7 +185,7 @@ Remember: This is RETRIEVAL only. Do not screen, filter, or assess quality at th
          'bibliography-search',
          'Bibliography Search',
          'Searches PubMed and retrieves bibliographic records for systematic reviews',
-         () => new BibliographySearchComponent()
+         TYPES.BibliographySearchComponent
       )
    ],
 

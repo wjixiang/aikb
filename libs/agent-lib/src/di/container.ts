@@ -16,6 +16,7 @@ import { PicosComponent } from '../components/PICOS/picosComponents.js';
 import { BibliographySearchComponent } from '../components/bibliographySearch/bibliographySearchComponent.js';
 import { PrismaCheckListComponent } from '../components/PRISMA/prismaCheckListComponent.js';
 import { PrismaFlowComponent } from '../components/PRISMA/prismaFlowComponent.js';
+import { PaperAnalysisComponent } from '../components/paperAnalysis/paperAnalysisComponent.js';
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
@@ -180,6 +181,7 @@ export class AgentContainer {
         this.container.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
         this.container.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
         this.container.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
+        this.container.bind<PaperAnalysisComponent>(TYPES.PaperAnalysisComponent).to(PaperAnalysisComponent).inSingletonScope();
 
         // Test Tool Components - Singleton scope for testing
         this.container.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
@@ -528,6 +530,7 @@ export class AgentContainer {
         agentContainer.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
         agentContainer.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
         agentContainer.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
+        agentContainer.bind<PaperAnalysisComponent>(TYPES.PaperAnalysisComponent).to(PaperAnalysisComponent).inSingletonScope();
 
         // Test Tool Components - Singleton scope for testing
         agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();

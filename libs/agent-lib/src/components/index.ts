@@ -166,3 +166,11 @@ export type {
     OtherMethodsFlow,
     PrismaFlowDiagram
 } from './PRISMA/prismaFlowSchemas.js'
+
+/**
+ * Paper Analysis Module
+ *
+ * This module provides components for analyzing academic papers for complexity, citations, and comparisons.
+ */
+
+export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js'

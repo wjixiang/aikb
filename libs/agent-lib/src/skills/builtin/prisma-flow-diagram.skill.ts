@@ -1,5 +1,5 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import { PrismaFlowComponent } from '../../components/PRISMA/prismaFlowComponent.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * PRISMA Flow Diagram Skill - TypeScript Definition
@@ -207,7 +207,7 @@ The PRISMA flow diagram skill integrates with:
             'prisma-flow-diagram',
             'PRISMA Flow Diagram',
             'Tracks study selection process with PRISMA 2020 flow diagram',
-            () => new PrismaFlowComponent()
+            TYPES.PrismaFlowComponent
         )
     ],
 

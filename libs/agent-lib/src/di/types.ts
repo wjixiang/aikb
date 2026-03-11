@@ -235,6 +235,12 @@ export const TYPES = {
     PrismaFlowComponent: Symbol('PrismaFlowComponent'),
 
     /**
+     * PaperAnalysisComponent - Paper analysis for complexity, citations, and comparisons
+     * @scope Singleton - Shared across all skill activations
+     */
+    PaperAnalysisComponent: Symbol('PaperAnalysisComponent'),
+
+    /**
      * TestToolComponentA - Test component for search functionality
      * @scope Singleton - Shared across all skill activations
      */

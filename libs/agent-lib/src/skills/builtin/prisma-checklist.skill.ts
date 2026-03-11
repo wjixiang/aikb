@@ -1,5 +1,5 @@
 import { defineSkill, createComponentDefinition } from '../SkillDefinition.js';
-import { PrismaCheckListComponent } from '../../components/PRISMA/prismaCheckListComponent.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * PRISMA Checklist Skill - TypeScript Definition
@@ -164,7 +164,7 @@ The PRISMA checklist skill integrates with:
             'prisma-checklist',
             'PRISMA Checklist',
             'Manages PRISMA 2020 checklist compliance for systematic reviews',
-            () => new PrismaCheckListComponent()
+            TYPES.PrismaCheckListComponent
         )
     ],
 
