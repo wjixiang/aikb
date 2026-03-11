@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16 # It's recommended to use a specific version
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fl5ox03 # Required
+      POSTGRES_USER: admin # Optional, defaults to 'postgres'
+      POSTGRES_DB: database # Optional, defaults to 'postgres'
+    ports:
+      - "5432:5432" # Maps container port 5432 to host port 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist data in a named volume
+
+volumes:
+  postgres_data:

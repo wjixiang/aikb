@@ -17,7 +17,9 @@
       "Bash(pnpm run type-check:*)",
       "Bash(ls:*)",
       "Bash(npx tsx:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(cd /mnt/disk1/project/project/aikb/libs/agent-lib && pnpm test 2>&1 | head -100)",
+      "Bash(pnpm test:*)"
     ]
   }
 }
