@@ -19,7 +19,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@libs/agent-lib": ["libs/agent-lib/src/index.ts"],
+      "@libs/agent-lib/*": ["libs/agent-lib/src/*"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

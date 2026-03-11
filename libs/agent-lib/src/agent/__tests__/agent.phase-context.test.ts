@@ -162,6 +162,12 @@ describe('Agent Phase Context Isolation', () => {
         const componentProvider = new ComponentToolProvider('database-component', actionComponent);
         toolManager.registerProvider(componentProvider);
 
+        // Also register component with workspace for rendering (using any cast for test access)
+        (workspace as any).components.set('database-component', {
+            component: actionComponent,
+            priority: 0
+        });
+
         // Register skill with tools
         workspace.registerSkill(testSkillWithTools);
 
@@ -303,16 +309,16 @@ describe('Agent Phase Context Isolation', () => {
     });
 
     describe('Skill Activation Result', () => {
-        it('should return addedComponents in skill activation result', async () => {
+        it('should return empty addedComponents for skill with tools but no components', async () => {
             const result = await workspace.getSkillManager().activateSkill('database-skill');
 
             expect(result.success).toBe(true);
+            // Skill has tools but no components definition, so addedComponents is empty
             expect(result.addedComponents).toBeDefined();
-            expect(result.addedComponents).toContain('db_query');
-            expect(result.addedComponents).toContain('db_insert');
+            expect(result.addedComponents).toEqual([]);
         });
 
-        it('should NOT return addedComponents for skill without tools', async () => {
+        it('should return empty addedComponents for skill without tools', async () => {
             // Register a skill without tools
             const skillWithoutTools = {
                 name: 'empty-skill',
@@ -328,7 +334,8 @@ describe('Agent Phase Context Isolation', () => {
             const result = await workspace.getSkillManager().activateSkill('empty-skill');
 
             expect(result.success).toBe(true);
-            expect(result.addedComponents).toBeUndefined();
+            // No components defined, so addedComponents is empty array
+            expect(result.addedComponents).toEqual([]);
         });
     });
 

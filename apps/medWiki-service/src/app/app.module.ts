@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-// import { AgentLibModule } from 'agent-lib';
+// import { AgentLibModule } from '@libs/agent-lib';
 // import { AuthLibModule } from 'auth-lib';
 import { EntityResolver } from './entity.resolver';
 import { EntityService, WIKI_PRISMA_SERVICE_TOKEN } from './entity.service';

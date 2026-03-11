@@ -1,5 +1,5 @@
 import { prisma } from 'quiz-db';
-import { QuizType } from 'agent-lib/';
+import { QuizType } from '@libs/agent-lib/';
 import { MongoClient, Db, Collection, WithId } from 'mongodb';
 import { randomUUID } from 'crypto';
 import * as dotenv from 'dotenv';

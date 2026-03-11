@@ -1,4 +1,4 @@
-import { QuizType } from 'agent-lib/';
+import { QuizType } from '@libs/agent-lib/';
 
 export enum TabType {
   QUIZ = 'quiz',

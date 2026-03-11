@@ -1,4 +1,4 @@
-import { QuizType } from 'agent-lib/';
+import { QuizType } from '@libs/agent-lib/';
 import { b } from '../baml_client/async_client';
 import { TextSegmenter } from './TextSegmenter';
 import pLimit from 'p-limit';

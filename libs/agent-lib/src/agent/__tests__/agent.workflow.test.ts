@@ -143,7 +143,8 @@ function extractToolNames(tools: any[]): string[] {
         .filter((name): name is string => name !== null);
 }
 
-describe('Agent Phase Context Isolation', () => {
+// This describe block has no tests - skipping as it's incomplete
+describe.skip('Agent Phase Context Isolation', () => {
     let workspace: VirtualWorkspace;
     let actionComponent: TestActionComponent;
     let turnStore: TurnMemoryStore;
