@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import type { ExpertConfig } from '../../types.js';
+import type { ExpertConfig, ExpertComponentDefinition } from '../../types.js';
+import { TYPES } from '../../../di/types.js';
 
 // Get current file directory
 const __filename = fileURLToPath(import.meta.url);
@@ -17,7 +18,20 @@ interface ExpertConfigJson {
     category?: string;
     tags?: string[];
     triggers?: string[];
+    components?: Array<{
+        componentId: string;
+        displayName: string;
+        description: string;
+        diToken: string;
+    }>;
 }
+
+/**
+ * DI Token mapping
+ */
+const DI_TOKEN_MAP: Record<string, symbol> = {
+    'BibliographySearchComponent': TYPES.BibliographySearchComponent
+};
 
 /**
  * Load Expert configuration from config.json
@@ -37,19 +51,21 @@ function loadSOP(): string {
 }
 
 /**
+ * Load components from config
+ */
+function loadComponents(config: ExpertConfigJson): ExpertComponentDefinition[] {
+    if (!config.components) return [];
+
+    return config.components.map(comp => ({
+        componentId: comp.componentId,
+        displayName: comp.displayName,
+        description: comp.description,
+        instance: DI_TOKEN_MAP[comp.diToken]
+    }));
+}
+
+/**
  * Parse SOP content to extract sections
- * Format:
- * # Title
- * ## Overview
- * ...
- * ## Parameters
- * ...
- * ## Steps
- * ...
- * ## Examples
- * ...
- * ## Constraints
- * ...
  */
 function parseSOP(sopContent: string): {
     overview: string;
@@ -114,6 +130,7 @@ export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig
         responsibilities: sop.overview,
         capabilities: config.tags || [],
 
-        components: []
+        // Load components from config
+        components: loadComponents(config)
     };
 }

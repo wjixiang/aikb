@@ -16,5 +16,13 @@
     "systematic search",
     "pubmed search strategy",
     "article retrieval"
+  ],
+  "components": [
+    {
+      "componentId": "bibliography-search",
+      "displayName": "Bibliography Search",
+      "description": "Searches PubMed and retrieves bibliographic records for systematic reviews",
+      "diToken": "BibliographySearchComponent"
+    }
   ]
 }
