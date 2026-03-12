@@ -4,11 +4,16 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  // Enable pgvector extension
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
 }
+
+// Enable pgvector extension at database level
+// Run: CREATE EXTENSION IF NOT EXISTS vector;
 
 // ============ Article (Main) ============
 model Article {
@@ -181,8 +186,9 @@ model ArticleEmbedding {
   // Embedding text (what was embedded)
   text        String   // The text that was embedded (title + abstract, etc.)
 
-  // Vector data - stored as JSON array (use pgvector for better performance)
-  vector      Json?    // Array of numbers, e.g., [0.1, 0.2, ...]
+  // Vector data - pgvector type for similarity search
+  // Note: Using Unsupported because Prisma doesn't natively support vector type
+  vector      Unsupported("vector")?  // pgvector type for similarity search
 
   // Status
   isActive    Boolean  @default(true)

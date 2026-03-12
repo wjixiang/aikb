@@ -65,7 +65,6 @@ export type ArticleEmbeddingCountAggregateOutputType = {
   model: number
   dimension: number
   text: number
-  vector: number
   isActive: number
   createdAt: number
   updatedAt: number
@@ -112,7 +111,6 @@ export type ArticleEmbeddingCountAggregateInputType = {
   model?: true
   dimension?: true
   text?: true
-  vector?: true
   isActive?: true
   createdAt?: true
   updatedAt?: true
@@ -212,7 +210,6 @@ export type ArticleEmbeddingGroupByOutputType = {
   model: string
   dimension: number
   text: string
-  vector: runtime.JsonValue | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -248,7 +245,6 @@ export type ArticleEmbeddingWhereInput = {
   model?: Prisma.StringFilter<"ArticleEmbedding"> | string
   dimension?: Prisma.IntFilter<"ArticleEmbedding"> | number
   text?: Prisma.StringFilter<"ArticleEmbedding"> | string
-  vector?: Prisma.JsonNullableFilter<"ArticleEmbedding">
   isActive?: Prisma.BoolFilter<"ArticleEmbedding"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
@@ -262,7 +258,6 @@ export type ArticleEmbeddingOrderByWithRelationInput = {
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  vector?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -280,7 +275,6 @@ export type ArticleEmbeddingWhereUniqueInput = Prisma.AtLeast<{
   model?: Prisma.StringFilter<"ArticleEmbedding"> | string
   dimension?: Prisma.IntFilter<"ArticleEmbedding"> | number
   text?: Prisma.StringFilter<"ArticleEmbedding"> | string
-  vector?: Prisma.JsonNullableFilter<"ArticleEmbedding">
   isActive?: Prisma.BoolFilter<"ArticleEmbedding"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
@@ -294,7 +288,6 @@ export type ArticleEmbeddingOrderByWithAggregationInput = {
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  vector?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -315,7 +308,6 @@ export type ArticleEmbeddingScalarWhereWithAggregatesInput = {
   model?: Prisma.StringWithAggregatesFilter<"ArticleEmbedding"> | string
   dimension?: Prisma.IntWithAggregatesFilter<"ArticleEmbedding"> | number
   text?: Prisma.StringWithAggregatesFilter<"ArticleEmbedding"> | string
-  vector?: Prisma.JsonNullableWithAggregatesFilter<"ArticleEmbedding">
   isActive?: Prisma.BoolWithAggregatesFilter<"ArticleEmbedding"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ArticleEmbedding"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ArticleEmbedding"> | Date | string
@@ -327,7 +319,6 @@ export type ArticleEmbeddingCreateInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -341,7 +332,6 @@ export type ArticleEmbeddingUncheckedCreateInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -353,7 +343,6 @@ export type ArticleEmbeddingUpdateInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -367,7 +356,6 @@ export type ArticleEmbeddingUncheckedUpdateInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -380,7 +368,6 @@ export type ArticleEmbeddingCreateManyInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -392,7 +379,6 @@ export type ArticleEmbeddingUpdateManyMutationInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -405,7 +391,6 @@ export type ArticleEmbeddingUncheckedUpdateManyInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -434,7 +419,6 @@ export type ArticleEmbeddingCountOrderByAggregateInput = {
   model?: Prisma.SortOrder
   dimension?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  vector?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -528,7 +512,6 @@ export type ArticleEmbeddingCreateWithoutArticleInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -540,7 +523,6 @@ export type ArticleEmbeddingUncheckedCreateWithoutArticleInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -582,7 +564,6 @@ export type ArticleEmbeddingScalarWhereInput = {
   model?: Prisma.StringFilter<"ArticleEmbedding"> | string
   dimension?: Prisma.IntFilter<"ArticleEmbedding"> | number
   text?: Prisma.StringFilter<"ArticleEmbedding"> | string
-  vector?: Prisma.JsonNullableFilter<"ArticleEmbedding">
   isActive?: Prisma.BoolFilter<"ArticleEmbedding"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ArticleEmbedding"> | Date | string
@@ -594,7 +575,6 @@ export type ArticleEmbeddingCreateManyArticleInput = {
   model: string
   dimension: number
   text: string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -606,7 +586,6 @@ export type ArticleEmbeddingUpdateWithoutArticleInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -618,7 +597,6 @@ export type ArticleEmbeddingUncheckedUpdateWithoutArticleInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -630,7 +608,6 @@ export type ArticleEmbeddingUncheckedUpdateManyWithoutArticleInput = {
   model?: Prisma.StringFieldUpdateOperationsInput | string
   dimension?: Prisma.IntFieldUpdateOperationsInput | number
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  vector?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -645,7 +622,6 @@ export type ArticleEmbeddingSelect<ExtArgs extends runtime.Types.Extensions.Inte
   model?: boolean
   dimension?: boolean
   text?: boolean
-  vector?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -659,7 +635,6 @@ export type ArticleEmbeddingSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   model?: boolean
   dimension?: boolean
   text?: boolean
-  vector?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -673,7 +648,6 @@ export type ArticleEmbeddingSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   model?: boolean
   dimension?: boolean
   text?: boolean
-  vector?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -687,13 +661,12 @@ export type ArticleEmbeddingSelectScalar = {
   model?: boolean
   dimension?: boolean
   text?: boolean
-  vector?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ArticleEmbeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "articleId" | "provider" | "model" | "dimension" | "text" | "vector" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["articleEmbedding"]>
+export type ArticleEmbeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "articleId" | "provider" | "model" | "dimension" | "text" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["articleEmbedding"]>
 export type ArticleEmbeddingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   article?: boolean | Prisma.ArticleDefaultArgs<ExtArgs>
 }
@@ -716,7 +689,6 @@ export type $ArticleEmbeddingPayload<ExtArgs extends runtime.Types.Extensions.In
     model: string
     dimension: number
     text: string
-    vector: runtime.JsonValue | null
     isActive: boolean
     createdAt: Date
     updatedAt: Date
@@ -1150,7 +1122,6 @@ export interface ArticleEmbeddingFieldRefs {
   readonly model: Prisma.FieldRef<"ArticleEmbedding", 'String'>
   readonly dimension: Prisma.FieldRef<"ArticleEmbedding", 'Int'>
   readonly text: Prisma.FieldRef<"ArticleEmbedding", 'String'>
-  readonly vector: Prisma.FieldRef<"ArticleEmbedding", 'Json'>
   readonly isActive: Prisma.FieldRef<"ArticleEmbedding", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"ArticleEmbedding", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ArticleEmbedding", 'DateTime'>

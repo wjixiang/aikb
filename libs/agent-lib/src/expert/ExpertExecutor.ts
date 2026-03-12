@@ -4,14 +4,18 @@
  * Responsible for creating, managing, and executing Expert instances
  */
 
-import { injectable, inject, Container } from 'inversify';
-import type { IExpertExecutor, IExpertInstance, ExpertConfig, ExpertExecuteRequest, ExpertResult, ExpertArtifact } from './types.js';
+import { injectable, inject, optional, Container } from 'inversify';
+import type { IExpertExecutor, IExpertInstance, ExpertConfig, ExpertExecuteRequest, ExpertResult, ExpertArtifact, ExpertComponentDefinition } from './types.js';
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
 import type { Agent, AgentConfig, AgentPrompt } from '../agent/agent.js';
-import type { IVirtualWorkspace } from '../statefulContext/types.js';
+import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import { TYPES } from '../di/types.js';
 import type { ILogger } from '../utils/logging/types.js';
+import { AgentContainer, AgentCreationOptions } from '../di/container.js';
+import { SkillManager } from '../skills/SkillManager.js';
+import type { Skill } from '../skills/types.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 
 @injectable()
 export class ExpertExecutor implements IExpertExecutor {
@@ -19,10 +23,18 @@ export class ExpertExecutor implements IExpertExecutor {
 
     private expertInstances: Map<string, IExpertInstance> = new Map();
     private expertConfigs: Map<string, ExpertConfig> = new Map();
+    private agentContainer: AgentContainer;
 
     constructor(
         private registry: ExpertRegistry,
-    ) {}
+        @inject(TYPES.Container) @optional() container?: Container,
+    ) {
+        // Use provided container or create a new AgentContainer
+        // If container is provided, we can use it to get the global AgentContainer
+        this.agentContainer = container
+            ? (container as any).agentContainer || new AgentContainer()
+            : new AgentContainer();
+    }
 
     /**
      * Register Expert configuration
@@ -39,7 +51,7 @@ export class ExpertExecutor implements IExpertExecutor {
         }
 
         // Create Agent instance
-        const agent = this.createAgent(config);
+        const agent = await this.createAgent(config);
 
         // Create Expert instance
         const expertInstance = new ExpertInstance(config, agent);
@@ -87,19 +99,93 @@ export class ExpertExecutor implements IExpertExecutor {
     }
 
     /**
-     * Create Agent instance
+     * Create Agent instance for Expert
+     *
+     * Reuses AgentContainer logic to create an Agent with Expert-specific configuration:
+     * - Expert's capability and direction as agentPrompt
+     * - Expert's components registered to VirtualWorkspace
+     * - Unique workspace for each Expert
      */
-    private createAgent(config: ExpertConfig): Agent {
-        // Here we need to create Agent based on AgentContainer logic
-        // Simplified version: return a new Agent instance
-        // Full implementation requires injecting Container and other dependencies
+    private async createAgent(config: ExpertConfig): Promise<Agent> {
+        // Create agent with Expert's prompt configuration
+        const agentPrompt: AgentPrompt = {
+            capability: config.prompt?.capability || config.responsibilities,
+            direction: config.prompt?.direction || '',
+        };
 
-        // TODO: Implement full Agent creation logic
-        // Needs:
-        // 1. Create VirtualWorkspace and register config.components
-        // 2. Create Agent and inject workspace
-        // 3. Configure Agent's system prompt
+        // Configure workspace for this Expert
+        // IMPORTANT:
+        // 1. Disable builtin skills to prevent Agent from switching to other skills
+        // 2. Always render all registered components (Expert's components should always be visible)
+        const workspaceConfig: VirtualWorkspaceConfig = {
+            id: `expert-${config.expertId}-workspace`,
+            name: `${config.displayName} Workspace`,
+            disableBuiltinSkills: true, // Expert should NOT switch to other skills
+            alwaysRenderAllComponents: true, // Always render all Expert's components
+        };
 
-        throw new Error('ExpertExecutor.createAgent() needs full implementation with DI container');
+        // Create agent using AgentContainer
+        const agent = this.agentContainer.createAgent({
+            agentPrompt,
+            virtualWorkspaceConfig: workspaceConfig,
+            taskId: `expert-${config.expertId}`,
+        });
+
+        // Register Expert's components to VirtualWorkspace (async, must await)
+        await this.registerExpertComponents(agent, config.components);
+
+        this.logger.info(`Created Agent for Expert: ${config.expertId}`);
+        return agent;
+    }
+
+    /**
+     * Register Expert's components to VirtualWorkspace
+     *
+     * Components are registered through SkillManager mechanism:
+     * - Create a virtual Skill that wraps Expert's components
+     * - Activate this Skill in the workspace
+     */
+    private async registerExpertComponents(agent: Agent, components: ExpertComponentDefinition[]): Promise<void> {
+        if (!components || components.length === 0) {
+            return;
+        }
+
+        // Get workspace from agent
+        const workspace = (agent as any).workspace as VirtualWorkspace;
+        if (!workspace) {
+            this.logger.warn('Could not get workspace from agent');
+            return;
+        }
+
+        // Create a virtual skill to wrap Expert's components
+        const expertSkill: Skill = {
+            name: `expert-${components[0]?.componentId?.split('-')[0] || 'skill'}`,
+            displayName: 'Expert Skill',
+            description: 'Virtual skill for expert components',
+            prompt: {
+                capability: '',
+                direction: '',
+            },
+            components: components.map(comp => ({
+                componentId: comp.componentId,
+                displayName: comp.displayName,
+                description: comp.description,
+                // Use the instance if it's already resolved, otherwise pass the DI token for resolution
+                instance: comp.instance,
+            })),
+            triggers: [],
+            whenToUse: '',
+        };
+
+        // Register and activate the skill
+        workspace.registerSkill(expertSkill);
+
+        // Activate the skill to enable its components (async, must await)
+        const result = await workspace.getSkillManager().activateSkill(expertSkill.name);
+        if (!result.success) {
+            this.logger.warn(`Failed to activate expert skill: ${result.message}`);
+        } else {
+            this.logger.info(`Activated expert skill with ${components.length} components`);
+        }
     }
 }

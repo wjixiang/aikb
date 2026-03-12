@@ -99,6 +99,13 @@ export class SkillManager {
     }
 
     /**
+     * Get all registered skills (full Skill objects with components)
+     */
+    getAllSkills(): Skill[] {
+        return Array.from(this.registry.values());
+    }
+
+    /**
      * Activate a skill by name
      */
     async activateSkill(skillName: string): Promise<SkillActivationResult> {
@@ -294,6 +301,70 @@ export class SkillManager {
             componentId,
             component
         }));
+    }
+
+    /**
+     * Get all registered components from ALL skills (regardless of activation status)
+     * This is used when we want all components to be always rendered
+     *
+     * Note: This method resolves components that may not be currently active.
+     * It iterates through all registered skills and returns their components.
+     */
+    async getAllComponentsWithIds(): Promise<Array<{ componentId: string; component: ToolComponent }>> {
+        const allComponents: Array<{ componentId: string; component: ToolComponent }> = [];
+        const componentIds = new Set<string>(); // Avoid duplicates
+
+        for (const skill of this.registry.values()) {
+            if (!skill.components) continue;
+
+            for (const componentDef of skill.components) {
+                if (componentIds.has(componentDef.componentId)) continue;
+                componentIds.add(componentDef.componentId);
+
+                // Check if component is already active (re-use instance)
+                const existingComponent = this.activeComponents.get(componentDef.componentId);
+                if (existingComponent) {
+                    allComponents.push({
+                        componentId: componentDef.componentId,
+                        component: existingComponent
+                    });
+                    continue;
+                }
+
+                // Resolve component from DI or factory
+                let componentInstance: ToolComponent | undefined;
+
+                if (typeof componentDef.instance === 'symbol') {
+                    // Resolve from DI container
+                    if (this.container) {
+                        try {
+                            componentInstance = this.container.get<ToolComponent>(componentDef.instance as symbol);
+                        } catch (e) {
+                            console.warn(`[SkillManager] Could not resolve component "${componentDef.componentId}" from DI`);
+                        }
+                    }
+                } else if (typeof componentDef.instance === 'function') {
+                    // Call factory function
+                    try {
+                        componentInstance = await componentDef.instance();
+                    } catch (e) {
+                        console.warn(`[SkillManager] Could not create component "${componentDef.componentId}" from factory`);
+                    }
+                } else if (componentDef.instance) {
+                    // Already an instance
+                    componentInstance = componentDef.instance as ToolComponent;
+                }
+
+                if (componentInstance) {
+                    allComponents.push({
+                        componentId: componentDef.componentId,
+                        component: componentInstance
+                    });
+                }
+            }
+        }
+
+        return allComponents;
     }
 
     /**

@@ -1301,6 +1301,9 @@ importers:
       '@apollo/client':
         specifier: ^3.8.0
         version: 3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.19.0))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))
+      '@aws-sdk/client-s3':
+        specifier: ^3.901.0
+        version: 3.901.0
       '@boundaryml/baml':
         specifier: ^0.218.1
         version: 0.218.1
@@ -1364,7 +1367,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^4.0.0
-        version: 4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       esbuild:
         specifier: ^0.27.3
         version: 0.27.3
@@ -1382,7 +1385,7 @@ importers:
         version: 6.4.1(@types/node@25.2.0)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
       vitest:
         specifier: ^4.0.0
-        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   libs/ai-embed:
     dependencies:
@@ -1402,11 +1405,20 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vite:
+        specifier: ^6.4.1
+        version: 6.4.1(@types/node@22.18.6)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest:
+        specifier: ^4.0.0
+        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@22.18.6)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   libs/auth-ui: {}
 
   libs/bib-lib:
     dependencies:
+      '@ai-embed/core':
+        specifier: workspace:*
+        version: link:../ai-embed
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.16(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1422,9 +1434,6 @@ importers:
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
-      embedding:
-        specifier: '*'
-        version: 0.0.1
       fast-xml-parser:
         specifier: ^5.3.4
         version: 5.3.4
@@ -12353,9 +12362,6 @@ packages:
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
 
-  embedding@0.0.1:
-    resolution: {integrity: sha512-wrYybHr5NkTCWowFjxl+xuGlxZ2SiIROzUkas7kvbgbIM7haav3jonqdvBau+7Dfr3KXzLoCehqjdbXtUdpu8w==}
-
   embla-carousel-react@8.6.0:
     resolution: {integrity: sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==}
     peerDependencies:
@@ -16522,9 +16528,6 @@ packages:
   pako@1.0.11:
     resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
 
-  papaparse@4.6.3:
-    resolution: {integrity: sha512-LRq7BrHC2kHPBYSD50aKuw/B/dGcg29omyJbKWY3KsYUZU69RKwaBHu13jGmCYBtOc4odsLCrFyk6imfyNubJQ==}
-
   param-case@3.0.4:
     resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
 
@@ -17508,10 +17511,6 @@ packages:
 
   quansync@0.2.11:
     resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
-
-  query-string@4.3.4:
-    resolution: {integrity: sha512-O2XLNDBIg1DnTOa+2XrIwSiXEV8h2KImXUnjhhn2+UsvZ+Es2uyd5CCRTNQlDGbzUQOW3aYCBx9rVA6dzsiY7Q==}
-    engines: {node: '>=0.10.0'}
 
   querystring-es3@0.2.1:
     resolution: {integrity: sha512-773xhDQnZBMFobEiztv8LIl70ch5MSF/jUQVlhwFyBILqq96anmoctVIYz+ZRp0qbCKATTn6ev02M3r7Ga5vqA==}
@@ -19039,10 +19038,6 @@ packages:
   strict-event-emitter@0.5.1:
     resolution: {integrity: sha512-vMgjE/GGEPEFnhFub6pa4FmJBRBVOLpIII2hvCZ8Kzb7K0hlHo7mQv6xYrBvCL2LtAIBwFUK8wvuJgTVSQ5MFQ==}
 
-  strict-uri-encode@1.1.0:
-    resolution: {integrity: sha512-R3f198pcvnB+5IpnBlRkphuE9n46WyVl8I39W/ZUTZLz4nqSP/oLYUrcnJrw462Ds8he4YKMov2efsTIw1BDGQ==}
-    engines: {node: '>=0.10.0'}
-
   string-argv@0.3.2:
     resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
     engines: {node: '>=0.6.19'}
@@ -19415,9 +19410,6 @@ packages:
     resolution: {integrity: sha512-4iMVL6HAINXWf1ZKZjIPcz5wYaOdPhtO8ATvZ+Xqp3BTdaqtAwQkNmKORqcIo5YkQqGXq5cwfswDwMqqQNrpJA==}
     engines: {node: '>=20'}
 
-  three-orbit-controls@72.0.0:
-    resolution: {integrity: sha512-PkoU4aeoXHh1yJ8trhw6y7Mn3VLnpTEFezkithWsTBTdMmregyBnKC5FN5HIB3IYm+tV4IlDK3HemwtmUuSNOQ==}
-
   throttle-debounce@3.0.1:
     resolution: {integrity: sha512-dTEWWNu6JmeVXY0ZYoPuH5cRIwc0MeGbJwah9KUNYSJwommQpCzTySTpEe8Gs1J23aeWEuAobe4Ag7EHVt/LOg==}
     engines: {node: '>=10'}
@@ -19745,10 +19737,6 @@ packages:
 
   tty-browserify@0.0.1:
     resolution: {integrity: sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==}
-
-  tween.js@16.6.0:
-    resolution: {integrity: sha512-IIhm0VsiBxNJO+WsXUvjcq+u3sKfOwSu67Yh9T5xSpXb2eHHi9+uZDDGBc7uMXjfud0bYiLkYCEb7JXIGXi5KA==}
-    deprecated: This package has moved to @tweenjs/tween.js. Please update your dependencies.
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -31319,7 +31307,7 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/coverage-v8@4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
+  '@vitest/coverage-v8@4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.0.15
@@ -31332,7 +31320,7 @@ snapshots:
       obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -34347,14 +34335,6 @@ snapshots:
       inherits: 2.0.4
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
-
-  embedding@0.0.1:
-    dependencies:
-      object-assign: 4.1.1
-      papaparse: 4.6.3
-      query-string: 4.3.4
-      three-orbit-controls: 72.0.0
-      tween.js: 16.6.0
 
   embla-carousel-react@8.6.0(react@19.2.3):
     dependencies:
@@ -40136,8 +40116,6 @@ snapshots:
 
   pako@1.0.11: {}
 
-  papaparse@4.6.3: {}
-
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
@@ -41155,11 +41133,6 @@ snapshots:
       side-channel: 1.1.0
 
   quansync@0.2.11: {}
-
-  query-string@4.3.4:
-    dependencies:
-      object-assign: 4.1.1
-      strict-uri-encode: 1.1.0
 
   querystring-es3@0.2.1: {}
 
@@ -43129,8 +43102,6 @@ snapshots:
 
   strict-event-emitter@0.5.1: {}
 
-  strict-uri-encode@1.1.0: {}
-
   string-argv@0.3.2: {}
 
   string-convert@0.2.1: {}
@@ -43598,8 +43569,6 @@ snapshots:
     dependencies:
       real-require: 0.2.0
 
-  three-orbit-controls@72.0.0: {}
-
   throttle-debounce@3.0.1: {}
 
   throttle-debounce@5.0.2: {}
@@ -43985,8 +43954,6 @@ snapshots:
     optional: true
 
   tty-browserify@0.0.1: {}
-
-  tween.js@16.6.0: {}
 
   type-check@0.4.0:
     dependencies:
@@ -44751,7 +44718,7 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.15
       '@vitest/mocker': 4.0.15(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(vite@7.1.7(@types/node@25.2.0)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))

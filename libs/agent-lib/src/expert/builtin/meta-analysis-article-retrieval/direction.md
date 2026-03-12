@@ -62,7 +62,7 @@
    - Do NOT apply inclusion/exclusion criteria at this stage
 
 7. **Document Search Strategy**
-   - Record the final search formula exactly as executed
+   - Record the final searchba formula exactly as executed
 
 ### Phase 4: Aggregation
 

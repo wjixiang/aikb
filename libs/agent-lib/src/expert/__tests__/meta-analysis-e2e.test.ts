@@ -259,7 +259,7 @@ describe('Meta-Analysis Article Retrieval Expert E2E', () => {
             expect(bucketFiles.size).toBeGreaterThan(0);
 
             // Verify CSV content
-            const exportedFile = Array.from(bucketFiles.values())[0];
+            const exportedFile = Array.from(bucketFiles.values())[0] as { content: string; contentType: string };
             expect(exportedFile.contentType).toBe('text/csv');
             expect(exportedFile.content).toContain('PMID');
             expect(exportedFile.content).toContain('35758526'); // First article PMID

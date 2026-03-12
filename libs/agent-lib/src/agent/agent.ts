@@ -716,8 +716,8 @@ ${direction}
         const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });
 
         // Render skill tools section (if active skill has tools)
-        // Note: renderSkillToolsSection() returns TUIElement | null
-        const skillToolsSection = this.workspace.renderSkillToolsSection();
+        // Note: renderSkillToolsSection() returns Promise<TUIElement | null>
+        const skillToolsSection = await this.workspace.renderSkillToolsSection();
         const skillToolsRendered = skillToolsSection ? skillToolsSection.render() : '';
 
         return `

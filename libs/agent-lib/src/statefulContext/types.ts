@@ -413,6 +413,19 @@ export interface VirtualWorkspaceConfig {
      * Security configuration for script execution
      */
     securityConfig?: SecurityConfig;
+    /**
+     * Whether to disable loading builtin skills
+     * When true, the workspace will not load any builtin skills
+     * Useful for Expert workspaces where skills should not be switched
+     */
+    disableBuiltinSkills?: boolean;
+    /**
+     * Whether to always render ALL registered components
+     * When true, all components from all registered skills will be rendered
+     * regardless of which skill is currently active
+     * When false (default), only active skill's components are rendered
+     */
+    alwaysRenderAllComponents?: boolean;
 }
 
 /**

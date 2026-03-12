@@ -40,10 +40,11 @@ describe('ExpertConfig', () => {
 
         it('should handle empty constraints', () => {
             const overview = 'Test overview';
+            const constraints = '';
 
             const capability = [
                 overview,
-                '' ? `## Constraints\n${''}` : ''
+                constraints ? `## Constraints\n${constraints}` : ''
             ].filter(Boolean).join('\n\n');
 
             expect(capability).toBe('Test overview');

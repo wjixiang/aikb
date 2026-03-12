@@ -19,7 +19,10 @@
       "Bash(npx tsx:*)",
       "Bash(node -e:*)",
       "Bash(cd /mnt/disk1/project/project/aikb/libs/agent-lib && pnpm test 2>&1 | head -100)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "WebFetch(domain:docs.ollama.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.prisma.io)"
     ]
   }
 }

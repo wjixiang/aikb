@@ -80,6 +80,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * Initialize skills from repository
      */
     private initializeSkills(): void {
+        // Skip loading builtin skills if disabled in config
+        if (this.config.disableBuiltinSkills) {
+            console.log('[VirtualWorkspace] Built-in skills disabled');
+            return;
+        }
+
         try {
             // Use static import to load built-in skills synchronously
             const skills = getBuiltinSkills();
@@ -289,17 +295,22 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * Render skill-specific tools section
      * Shows only enabled tools from the active skill's components
      */
-    renderSkillToolsSection(): TUIElement | null {
+    async renderSkillToolsSection(): Promise<TUIElement | null> {
         const activeSkill = this.skillManager.getActiveSkill();
         if (!activeSkill) {
             return null;
         }
 
-        // Get tools from active skill's components
-        const activeComponents = this.skillManager.getActiveComponentsWithIds();
+        // Get tools from active skill's components or all components based on config
+        let components;
+        if (this.config.alwaysRenderAllComponents) {
+            components = await this.skillManager.getAllComponentsWithIds();
+        } else {
+            components = this.skillManager.getActiveComponentsWithIds();
+        }
         const tools: Tool[] = [];
 
-        for (const { component } of activeComponents) {
+        for (const { component } of components) {
             for (const tool of component.toolSet.values()) {
                 if (this.toolManager.isToolEnabled(tool.toolName)) {
                     tools.push(tool);
@@ -494,9 +505,16 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         // Render skill components first (if active skill has components)
         // Use component instances from SkillManager which handles DI token resolution
-        const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
-        for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
-            const componentKey = `${this.activeSkill?.name}:${componentId}`;
+        // If alwaysRenderAllComponents is true, render ALL registered components
+        let componentsToRender;
+        if (this.config.alwaysRenderAllComponents) {
+            componentsToRender = await this.skillManager.getAllComponentsWithIds();
+        } else {
+            componentsToRender = this.skillManager.getActiveComponentsWithIds();
+        }
+
+        for (const { componentId, component: componentInstance } of componentsToRender) {
+            const componentKey = `${this.activeSkill?.name || 'global'}:${componentId}`;
             const componentContainer = new tdiv({
                 content: componentKey,
                 styles: { showBorder: true }
@@ -546,6 +564,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     /**
      * Get workspace statistics
+     * When alwaysRenderAllComponents is true, counts all registered skill components
      */
     getStats(): {
         componentCount: number;
@@ -555,16 +574,34 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         let totalTools = 0;
         const componentKeys: string[] = [];
 
-        // Get keys and tools from active skill's components
-        // Use component instances from SkillManager which handles DI token resolution
-        const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
-        for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
-            const componentKey = `${this.activeSkill?.name}:${componentId}`;
-            componentKeys.push(componentKey);
-            // Count tools from component's toolSet
-            if ('toolSet' in componentInstance) {
-                const toolSet = componentInstance.toolSet as Map<string, any>;
-                totalTools += toolSet.size;
+        // Get keys and tools from active skill's components or all components based on config
+        if (this.config.alwaysRenderAllComponents) {
+            // Get all registered skill components (synchronous, counts components from registry)
+            const allSkills = this.skillManager.getAllSkills();
+            for (const skill of allSkills) {
+                if (skill.components) {
+                    for (const comp of skill.components) {
+                        const componentKey = `${skill.name}:${comp.componentId}`;
+                        componentKeys.push(componentKey);
+                        // Try to get tool count from active component, otherwise estimate
+                        const activeComp = this.skillManager.getComponent(comp.componentId);
+                        if (activeComp && 'toolSet' in activeComp) {
+                            totalTools += activeComp.toolSet.size;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Use component instances from SkillManager which handles DI token resolution
+            const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
+            for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
+                const componentKey = `${this.activeSkill?.name}:${componentId}`;
+                componentKeys.push(componentKey);
+                // Count tools from component's toolSet
+                if ('toolSet' in componentInstance) {
+                    const toolSet = componentInstance.toolSet as Map<string, any>;
+                    totalTools += toolSet.size;
+                }
             }
         }
 
