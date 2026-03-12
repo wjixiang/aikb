@@ -8,6 +8,9 @@ export * from './sync/sync.service';
 export * from './sync/parsers/types';
 export * from './sync/embed/embed.module';
 export * from './sync/embed/embed.service';
+export * from './search/search.module';
+export * from './search/search.service';
+export * from './search/types';
 
 export interface BibliographyItem {
     id: string;

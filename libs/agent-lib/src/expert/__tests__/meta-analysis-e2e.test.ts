@@ -8,6 +8,7 @@ import type { ExpertConfig, ExpertTask } from '../types';
 import createMetaAnalysisArticleRetrievalExpert from '../builtin/meta-analysis-article-retrieval/expert';
 import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent';
 import { VirtualFileSystemComponent } from '../../components/virtualFileSystem/virtualFileSystemComponent';
+import { createMockAgent } from './fixtures/mock-agent';
 
 /**
  * Get test data file path
@@ -93,12 +94,13 @@ class MockS3Client {
 }
 
 /**
- * Create mock Agent for e2e testing
+ * Extend mock Agent for E2E testing with real components
+ * Reuses createMockAgent and adds specialized workspace
  */
 function createMockAgentForE2E() {
     const mockS3Client = new MockS3Client();
 
-    // Create components
+    // Create real components
     const bibComponent = new BibliographySearchComponent();
     const vfsComponent = new VirtualFileSystemComponent() as any;
 
@@ -112,42 +114,29 @@ function createMockAgentForE2E() {
     );
     bibComponent.currentResults = mockSearchResults;
 
-    const agent = {
-        workspace: {
-            getStats: vi.fn().mockReturnValue({ componentCount: 2 }),
-            getComponent: vi.fn().mockImplementation((key: string) => {
-                if (key === 'bibliography-search') return bibComponent;
-                if (key === 'virtualFileSystem') return vfsComponent;
-                return null;
-            }),
-            getComponentKeys: vi.fn().mockReturnValue(['bibliography-search', 'virtualFileSystem']),
-            getComponentState: vi.fn().mockImplementation((key: string) => {
-                if (key === 'bibliography-search') return bibComponent.getState();
-                if (key === 'virtualFileSystem') return vfsComponent.getState();
-                return {};
-            })
-        },
+    // Start with base mock agent
+    const agent = createMockAgent();
 
-        start: vi.fn().mockImplementation(async () => {
-            // Simulate LLM execution - in real scenario, the LLM would call tools
-            // For this test, we simulate completion after tools are available
-            return agent;
+    // Override workspace with real components
+    agent.workspace = {
+        getStats: vi.fn().mockReturnValue({ componentCount: 2 }),
+        getComponent: vi.fn().mockImplementation((key: string) => {
+            if (key === 'bibliography-search') return bibComponent;
+            if (key === 'virtualFileSystem') return vfsComponent;
+            return null;
         }),
-
-        abort: vi.fn(),
-
-        logger: {
-            info: vi.fn(),
-            debug: vi.fn(),
-            warn: vi.fn(),
-            error: vi.fn()
-        },
-
-        // Expose for testing
-        _mockS3Client: mockS3Client,
-        _bibComponent: bibComponent,
-        _vfsComponent: vfsComponent
+        getComponentKeys: vi.fn().mockReturnValue(['bibliography-search', 'virtualFileSystem']),
+        getComponentState: vi.fn().mockImplementation((key: string) => {
+            if (key === 'bibliography-search') return bibComponent.getState();
+            if (key === 'virtualFileSystem') return vfsComponent.getState();
+            return {};
+        })
     };
+
+    // Expose for testing
+    (agent as any)._mockS3Client = mockS3Client;
+    (agent as any)._bibComponent = bibComponent;
+    (agent as any)._vfsComponent = vfsComponent;
 
     return agent;
 }
