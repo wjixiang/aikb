@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { ExpertConfig, ExpertComponentDefinition } from '../../types.js';
 import { TYPES } from '../../../di/types.js';
+import { metaAnalysisArticleRetrievalExportHandler } from './exportHandler.js';
 
 // Get current file directory
 const __filename = fileURLToPath(import.meta.url);
@@ -106,6 +107,14 @@ export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig
         capabilities: config.tags || [],
 
         // Load components
-        components: loadComponents(config)
+        components: loadComponents(config),
+
+        // Export configuration
+        exportConfig: {
+            autoExport: true,
+            bucket: process.env['FS_BUCKET'] || 'agentfs',
+            defaultPath: '{expertId}/{timestamp}.csv',
+            exportHandler: metaAnalysisArticleRetrievalExportHandler
+        }
     };
 }
