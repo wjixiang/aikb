@@ -170,7 +170,20 @@ ${componentSummaries.join('\n') || 'No components'}
     }
 
     private buildTaskPrompt(task: ExpertTask, context?: Record<string, any>): string {
-        let prompt = `## Task\n${task.description}\n`;
+        let prompt = '';
+
+        // Add Expert's capability (SOP Overview + Constraints)
+        if (this.config.prompt?.capability) {
+            prompt += `## Expert Capability\n${this.config.prompt.capability}\n\n`;
+        }
+
+        // Add Expert's direction (SOP Steps + Examples)
+        if (this.config.prompt?.direction) {
+            prompt += `## Expert Direction\n${this.config.prompt.direction}\n\n`;
+        }
+
+        // Add task description
+        prompt += `## Task\n${task.description}\n`;
 
         // Add context information
         if (context && Object.keys(context).length > 0) {
@@ -184,7 +197,7 @@ ${componentSummaries.join('\n') || 'No components'}
 
         // Add Expert-specific system prompt
         if (this.config.systemPrompt) {
-            prompt += `\n## Expert Prompt\n${this.config.systemPrompt}\n`;
+            prompt += `\n## Additional Guidance\n${this.config.systemPrompt}\n`;
         }
 
         return prompt;
