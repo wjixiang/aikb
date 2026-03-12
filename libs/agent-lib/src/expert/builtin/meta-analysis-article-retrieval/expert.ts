@@ -43,11 +43,19 @@ function loadConfig(): ExpertConfigJson {
 }
 
 /**
- * Load SOP content from .sop.md file
+ * Load capability prompt from capability.md
  */
-function loadSOP(): string {
-    const sopPath = join(__dirname, 'expert.sop.md');
-    return readFileSync(sopPath, 'utf-8');
+function loadCapability(): string {
+    const capabilityPath = join(__dirname, 'capability.md');
+    return readFileSync(capabilityPath, 'utf-8');
+}
+
+/**
+ * Load direction prompt from direction.md
+ */
+function loadDirection(): string {
+    const directionPath = join(__dirname, 'direction.md');
+    return readFileSync(directionPath, 'utf-8');
 }
 
 /**
@@ -65,72 +73,39 @@ function loadComponents(config: ExpertConfigJson): ExpertComponentDefinition[] {
 }
 
 /**
- * Parse SOP content to extract sections
- */
-function parseSOP(sopContent: string): {
-    overview: string;
-    whenToUse: string;
-    parameters: string;
-    steps: string;
-    examples: string;
-    constraints: string;
-} {
-    const getSection = (name: string): string => {
-        const pattern = new RegExp(`## ${name}[\\s\\S]*?(?=##|$)`, 'i');
-        const match = sopContent.match(pattern);
-        return match ? match[0].replace(`## ${name}`, '').trim() : '';
-    };
-
-    return {
-        overview: getSection('Overview'),
-        whenToUse: getSection('When to Use'),
-        parameters: getSection('Parameters'),
-        steps: getSection('Steps'),
-        examples: getSection('Examples'),
-        constraints: getSection('Constraints')
-    };
-}
-
-/**
  * Meta-Analysis Article Retrieval Expert
  *
- * Factory function that loads configuration from config.json and SOP from .sop.md
+ * Factory function that loads configuration and markdown files at runtime.
  */
 export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig {
     const config = loadConfig();
-    const sopContent = loadSOP();
-    const sop = parseSOP(sopContent);
 
-    // Build capability from SOP sections
-    const capability = [
-        sop.overview,
-        sop.constraints ? `## Constraints\n${sop.constraints}` : ''
-    ].filter(Boolean).join('\n\n');
-
-    // Build direction from Steps
-    const direction = [
-        sop.steps,
-        sop.examples ? `## Examples\n${sop.examples}` : ''
-    ].filter(Boolean).join('\n\n');
+    // Load markdown files directly
+    const capability = loadCapability();
+    const direction = loadDirection();
 
     return {
         expertId: config.expertId,
         displayName: config.displayName,
         description: config.description,
-        whenToUse: sop.whenToUse,
         triggers: config.triggers,
 
-        // Full SOP as prompt
+        // Direct markdown content as prompt
         prompt: {
             capability,
             direction
         },
 
-        // For matching and discovery
-        responsibilities: sop.overview,
+        // Extract responsibilities from capability (first section before ## Constraints)
+        responsibilities: capability
+            .replace(/## Constraints[\s\S]*$/, '')
+            .replace(/## Overview\n/, '')
+            .trim(),
+
+        // Extract capabilities from tags
         capabilities: config.tags || [],
 
-        // Load components from config
+        // Load components
         components: loadComponents(config)
     };
 }

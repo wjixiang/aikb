@@ -103,14 +103,21 @@ describe('MetaAnalysisArticleRetrieval Expert', () => {
         });
     });
 
-    describe('whenToUse', () => {
-        it('should have whenToUse', () => {
-            expect(expert.whenToUse).toBeDefined();
-            expect(expert.whenToUse).toBeTruthy();
+    describe('prompt content', () => {
+        it('should include Overview in capability', () => {
+            expect(expert.prompt.capability).toContain('Overview');
         });
 
-        it('should describe meta-analysis context', () => {
-            expect(expert.whenToUse?.toLowerCase()).toContain('meta-analysis');
+        it('should include Steps in direction', () => {
+            expect(expert.prompt.direction).toContain('Phase');
+        });
+
+        it('should include Constraints in capability', () => {
+            expect(expert.prompt.capability).toContain('Constraints');
+        });
+
+        it('should include Examples in direction', () => {
+            expect(expert.prompt.direction).toContain('Examples');
         });
     });
 });
