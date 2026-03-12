@@ -24,7 +24,8 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "sync": "tsx src/sync/cli/sync.cli.ts",
-    "embed": "tsx src/sync/cli/embed.cli.ts"
+    "embed": "tsx src/sync/cli/embed.cli.ts",
+    "db:init": "node scripts/init-db.js"
   },
   "dependencies": {
     "@ai-embed/core": "workspace:*",

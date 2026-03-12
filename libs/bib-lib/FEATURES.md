@@ -141,17 +141,20 @@ bib-lib 是一个用于管理 PubMed 文献数据的 NestJS 库，支持从 PubM
 - 集成测试覆盖不足
 
 ### 4. 向量化
-- `ArticleEmbedding` 表已有 schema，但实际填充数据的功能需要完善
-- 需要定期更新文章的 embedding
+- ✅ `ArticleEmbedding` 表已有 schema
+- ✅ 已实现 EmbedService 用于生成向量嵌入
+- ✅ 支持多种 embedding provider (OpenAI, Alibaba, Ollama, ONNX)
+- ✅ 支持 HNSW 索引优化向量搜索
 
 ### 5. 搜索增强
-- 高亮显示 (highlights) 功能未完全实现
-- 搜索建议 (suggestions) 算法可优化
-- 分页游标 (cursor) 支持可增强
+- ✅ 高亮显示 (highlights) - 基于查询词的高亮片段
+- ✅ 搜索建议 (suggestions) - 使用 contains 实现智能自动补全
+- ✅ 分页游标 (cursor) - 支持 nextCursor 分页
 
 ### 6. 性能优化
-- 关键词搜索可以考虑使用全文索引 (GIN/GiST)
-- 语义搜索可以添加向量索引 (HNSW/IVFFlat)
+- ✅ GIN 索引 - 已添加 trigram 索引优化关键词搜索
+- ✅ 向量索引 - 已添加 HNSW 索引优化语义搜索
+- ✅ 数据库初始化脚本 - `npm run db:init` 自动配置
 - 批量导出可优化内存使用
 
 ---

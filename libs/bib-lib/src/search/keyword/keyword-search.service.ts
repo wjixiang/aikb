@@ -55,8 +55,8 @@ export class KeywordSearchService {
       this.prisma.article.count({ where }),
     ]);
 
-    // Transform results
-    const results = articles.map((article) => this.transformResult(article));
+    // Transform results with highlights
+    const results = articles.map((article) => this.transformResult(article, query.query));
 
     const searchTime = Date.now() - startTime;
 
@@ -162,10 +162,10 @@ export class KeywordSearchService {
   }
 
   /**
-   * Transform Prisma result to search result
+   * Transform Prisma result to search result with highlights
    */
-  private transformResult(article: any): SearchResult {
-    return {
+  private transformResult(article: any, query?: string): SearchResult {
+    const result: SearchResult = {
       id: article.id,
       pmid: article.pmid,
       articleTitle: article.articleTitle,
@@ -206,6 +206,75 @@ export class KeywordSearchService {
         pmc: ai.pmc,
       })),
     };
+
+    // Add highlights if query is provided
+    if (query) {
+      result.highlights = this.generateHighlights(article.articleTitle, query);
+    }
+
+    return result;
+  }
+
+  /**
+   * Generate highlighted snippets for search results
+   */
+  private generateHighlights(text: string, query: string): string[] {
+    if (!text || !query) return [];
+
+    const highlights: string[] = [];
+    const normalizedText = text.toLowerCase();
+    const normalizedQuery = query.toLowerCase();
+    const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 2);
+
+    // Create highlight markers
+    const highlightStart = '<mark>';
+    const highlightEnd = '</mark>';
+
+    // Exact phrase match highlight
+    const phraseIndex = normalizedText.indexOf(normalizedQuery);
+    if (phraseIndex !== -1) {
+      const start = Math.max(0, phraseIndex - 50);
+      const end = Math.min(text.length, phraseIndex + query.length + 50);
+      let snippet = text.slice(start, end);
+      if (start > 0) snippet = '...' + snippet;
+      if (end < text.length) snippet = snippet + '...';
+
+      // Wrap the matching phrase
+      const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+      snippet = snippet.replace(regex, `${highlightStart}$1${highlightEnd}`);
+      highlights.push(snippet);
+    } else {
+      // Match individual words
+      for (const word of queryWords) {
+        const wordIndex = normalizedText.indexOf(word);
+        if (wordIndex !== -1) {
+          const start = Math.max(0, wordIndex - 40);
+          const end = Math.min(text.length, wordIndex + word.length + 40);
+          let snippet = text.slice(start, end);
+          if (start > 0) snippet = '...' + snippet;
+          if (end < text.length) snippet = snippet + '...';
+
+          // Wrap the matching word
+          const regex = new RegExp(`(${this.escapeRegex(word)})`, 'gi');
+          snippet = snippet.replace(regex, `${highlightStart}$1${highlightEnd}`);
+
+          // Avoid duplicates
+          if (!highlights.some(h => h.includes(snippet))) {
+            highlights.push(snippet);
+          }
+        }
+      }
+    }
+
+    // Limit to 3 highlights
+    return highlights.slice(0, 3);
+  }
+
+  /**
+   * Escape special regex characters
+   */
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   /**
@@ -215,7 +284,7 @@ export class KeywordSearchService {
     const articles = await this.prisma.article.findMany({
       where: {
         articleTitle: {
-          startsWith: query,
+          contains: query,
           mode: 'insensitive',
         },
       },
