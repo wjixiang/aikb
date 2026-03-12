@@ -102,7 +102,9 @@ export class ExpertOrchestrator {
             });
 
             expertResults.set(expertTask.expertId, result);
-            allArtifacts.push(...result.artifacts);
+            if (result.artifacts) {
+                allArtifacts.push(...result.artifacts);
+            }
 
             if (!result.success) {
                 errors.push(`Expert ${expertTask.expertId} failed: ${result.summary}`);
@@ -158,7 +160,9 @@ export class ExpertOrchestrator {
 
         for (const { expertId, result } of results) {
             expertResults.set(expertId, result);
-            allArtifacts.push(...result.artifacts);
+            if (result.artifacts) {
+                allArtifacts.push(...result.artifacts);
+            }
 
             if (!result.success) {
                 errors.push(`Expert ${expertId} failed: ${result.summary}`);
@@ -223,7 +227,9 @@ export class ExpertOrchestrator {
             });
 
             expertResults.set(expertTask.expertId, result);
-            allArtifacts.push(...result.artifacts);
+            if (result.artifacts) {
+                allArtifacts.push(...result.artifacts);
+            }
 
             // Update context
             context = {

@@ -15,3 +15,6 @@ export { ExpertRegistry } from './ExpertRegistry.js';
 export { ExpertExecutor } from './ExpertExecutor.js';
 export { ExpertOrchestrator } from './ExpertOrchestrator.js';
 export { ExpertInstance } from './ExpertInstance.js';
+
+// Builtin Experts
+export * from './builtin/index.js';
