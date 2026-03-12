@@ -1,0 +1,56 @@
+---
+to: src/expert/builtin/<%= name %>/exportHandler.ts
+---
+import type { ExportConfig, ExportResult } from '../../types.js';
+
+/**
+ * Export handler for <%= name %> expert
+ *
+ * This handler is called after task completion to export results.
+ * Customize this function to define your own export format and logic.
+ */
+export async function <%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>ExportHandler(
+    workspace: any,
+    config: ExportConfig
+): Promise<ExportResult> {
+    // Example: Get component from workspace
+    // const component = workspace.getComponent('your-component');
+    // if (!component) {
+    //     return { success: false, error: 'Component not found' };
+    // }
+
+    // Example: Get component state
+    // const state = component.getState();
+
+    // Example: Generate export content
+    // const content = JSON.stringify(state, null, 2);
+
+    // Example: Get VFS component and export
+    // const vfsComponent = workspace.getComponent('virtualFileSystem');
+    // if (!vfsComponent) {
+    //     return { success: false, error: 'VirtualFileSystemComponent not found' };
+    // }
+
+    // return vfsComponent.exportContent(config.bucket, config.path, content, 'application/json');
+
+    // Default: export workspace state as JSON
+    const keys = workspace.getComponentKeys();
+    const output: Record<string, any> = {};
+
+    for (const key of keys) {
+        const component = workspace.getComponent(key);
+        if (component) {
+            output[key] = component.getState();
+        }
+    }
+
+    const content = JSON.stringify(output, null, 2);
+
+    // Get VirtualFileSystemComponent
+    const vfsComponent = workspace.getComponent('virtualFileSystem');
+    if (!vfsComponent) {
+        return { success: false, error: 'VirtualFileSystemComponent not found' };
+    }
+
+    return vfsComponent.exportContent(config.bucket, config.path, content, 'application/json');
+}
