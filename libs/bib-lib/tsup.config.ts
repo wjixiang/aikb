@@ -9,9 +9,12 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     treeshake: true,
+    noExternal: [],
     external: [
         '@prisma/client',
-        '@prisma/client-runtime'
+        '@prisma/client-runtime',
+        'embedding',
+        '@libs/embedding'
     ],
     outDir: 'dist',
 })

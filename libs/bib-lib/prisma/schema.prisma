@@ -29,6 +29,7 @@ model Article {
   chemicals    Chemical[]
   grants       Grant[]
   articleIds   ArticleId[]
+  embeddings   ArticleEmbedding[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -160,4 +161,32 @@ model ArticleId {
   @@index([doi])
   @@index([pmc])
   @@index([articleId])
+}
+
+// ============ Article Embedding ============
+model ArticleEmbedding {
+  id          String   @id @default(uuid())
+  articleId   String
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  // Embedding model configuration
+  provider    String   // e.g., "openai", "alibaba", "onnx"
+  model       String   // e.g., "text-embedding-ada-002", "text-embedding-v4"
+  dimension   Int      // e.g., 1024, 1536
+
+  // Embedding text (what was embedded)
+  text        String   // The text that was embedded (title + abstract, etc.)
+
+  // Vector data - stored as JSON array (use pgvector for better performance)
+  vector      Json?    // Array of numbers, e.g., [0.1, 0.2, ...]
+
+  // Status
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([articleId, provider, model])
+  @@index([articleId])
+  @@index([provider, model])
 }
