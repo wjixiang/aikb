@@ -19,7 +19,6 @@ interface ExpertConfigJson {
     category?: string;
     tags?: string[];
     triggers?: string[];
-    metadata?: Record<string, string>;
 }
 
 /**
@@ -40,31 +39,26 @@ function loadInstruction(filename: string): string {
 }
 
 /**
- * Extract responsibilities section from capability.md
+ * Split capability.md into responsibilities and capabilities
+ * Uses # CAPABILITIES as delimiter
  */
-function extractResponsibilities(content: string): string {
-    const match = content.match(/## Responsibilities\n([\s\S]*?)(?=##|$)/i);
-    return match ? match[1].trim() : '';
-}
+function splitCapabilityContent(content: string): { responsibilities: string; capabilities: string[] } {
+    const delimiter = '# CAPABILITIES';
+    const parts = content.split(delimiter);
 
-/**
- * Extract capabilities list from capability.md
- */
-function extractCapabilities(content: string): string[] {
-    const match = content.match(/## Capabilities\n([\s\S]*?)(?=##|$)/i);
-    if (!match) return [];
+    const responsibilities = parts[0].replace('# RESPONSIBILITIES', '').trim();
 
-    return match[1]
-        .split('\n')
-        .map(line => line.replace(/^-\s*/, '').trim())
-        .filter(line => line.length > 0);
+    const capabilities = parts[1]
+        ? parts[1].split('\n').map(line => line.replace(/^-\s*/, '').trim()).filter(line => line.length > 0)
+        : [];
+
+    return { responsibilities, capabilities };
 }
 
 /**
  * Meta-Analysis Article Retrieval Expert
  *
  * Factory function that loads configuration and instructions at runtime.
- * Uses fs.readFile to load markdown and JSON files.
  */
 export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig {
     const config = loadConfig();
@@ -73,6 +67,9 @@ export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig
     const capabilityContent = loadInstruction('capability.md');
     const directionContent = loadInstruction('direction.md');
 
+    // Split capability content
+    const { responsibilities, capabilities } = splitCapabilityContent(capabilityContent);
+
     return {
         expertId: config.expertId,
         displayName: config.displayName,
@@ -80,16 +77,14 @@ export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig
         whenToUse: config.whenToUse,
         triggers: config.triggers,
 
-        // Prompt loaded from markdown files at runtime
+        // Full capability.md as capability prompt
         prompt: {
             capability: capabilityContent,
             direction: directionContent
         },
 
-        // Extract responsibilities and capabilities from markdown
-        responsibilities: extractResponsibilities(capabilityContent),
-        capabilities: extractCapabilities(capabilityContent),
-
+        responsibilities,
+        capabilities,
         components: []
     };
 }
