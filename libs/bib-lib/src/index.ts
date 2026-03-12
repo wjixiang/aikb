@@ -3,6 +3,9 @@
 
 export * from './prisma/prisma.module';
 export * from './prisma/prisma.service';
+export * from './sync/sync.module';
+export * from './sync/sync.service';
+export * from './sync/parsers/types';
 
 export interface BibliographyItem {
     id: string;
