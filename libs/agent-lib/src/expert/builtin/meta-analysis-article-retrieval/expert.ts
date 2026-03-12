@@ -14,8 +14,6 @@ interface ExpertConfigJson {
     expertId: string;
     displayName: string;
     description: string;
-    whenToUse?: string;
-    version: string;
     category?: string;
     tags?: string[];
     triggers?: string[];
@@ -31,60 +29,91 @@ function loadConfig(): ExpertConfigJson {
 }
 
 /**
- * Load instruction content from markdown file
+ * Load SOP content from .sop.md file
  */
-function loadInstruction(filename: string): string {
-    const filePath = join(__dirname, filename);
-    return readFileSync(filePath, 'utf-8');
+function loadSOP(): string {
+    const sopPath = join(__dirname, 'expert.sop.md');
+    return readFileSync(sopPath, 'utf-8');
 }
 
 /**
- * Split capability.md into responsibilities and capabilities
- * Uses # CAPABILITIES as delimiter
+ * Parse SOP content to extract sections
+ * Format:
+ * # Title
+ * ## Overview
+ * ...
+ * ## Parameters
+ * ...
+ * ## Steps
+ * ...
+ * ## Examples
+ * ...
+ * ## Constraints
+ * ...
  */
-function splitCapabilityContent(content: string): { responsibilities: string; capabilities: string[] } {
-    const delimiter = '# CAPABILITIES';
-    const parts = content.split(delimiter);
+function parseSOP(sopContent: string): {
+    overview: string;
+    whenToUse: string;
+    parameters: string;
+    steps: string;
+    examples: string;
+    constraints: string;
+} {
+    const getSection = (name: string): string => {
+        const pattern = new RegExp(`## ${name}[\\s\\S]*?(?=##|$)`, 'i');
+        const match = sopContent.match(pattern);
+        return match ? match[0].replace(`## ${name}`, '').trim() : '';
+    };
 
-    const responsibilities = parts[0].replace('# RESPONSIBILITIES', '').trim();
-
-    const capabilities = parts[1]
-        ? parts[1].split('\n').map(line => line.replace(/^-\s*/, '').trim()).filter(line => line.length > 0)
-        : [];
-
-    return { responsibilities, capabilities };
+    return {
+        overview: getSection('Overview'),
+        whenToUse: getSection('When to Use'),
+        parameters: getSection('Parameters'),
+        steps: getSection('Steps'),
+        examples: getSection('Examples'),
+        constraints: getSection('Constraints')
+    };
 }
 
 /**
  * Meta-Analysis Article Retrieval Expert
  *
- * Factory function that loads configuration and instructions at runtime.
+ * Factory function that loads configuration from config.json and SOP from .sop.md
  */
 export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig {
     const config = loadConfig();
+    const sopContent = loadSOP();
+    const sop = parseSOP(sopContent);
 
-    // Load markdown instructions at runtime
-    const capabilityContent = loadInstruction('capability.md');
-    const directionContent = loadInstruction('direction.md');
+    // Build capability from SOP sections
+    const capability = [
+        sop.overview,
+        sop.constraints ? `## Constraints\n${sop.constraints}` : ''
+    ].filter(Boolean).join('\n\n');
 
-    // Split capability content
-    const { responsibilities, capabilities } = splitCapabilityContent(capabilityContent);
+    // Build direction from Steps
+    const direction = [
+        sop.steps,
+        sop.examples ? `## Examples\n${sop.examples}` : ''
+    ].filter(Boolean).join('\n\n');
 
     return {
         expertId: config.expertId,
         displayName: config.displayName,
         description: config.description,
-        whenToUse: config.whenToUse,
+        whenToUse: sop.whenToUse,
         triggers: config.triggers,
 
-        // Full capability.md as capability prompt
+        // Full SOP as prompt
         prompt: {
-            capability: capabilityContent,
-            direction: directionContent
+            capability,
+            direction
         },
 
-        responsibilities,
-        capabilities,
+        // For matching and discovery
+        responsibilities: sop.overview,
+        capabilities: config.tags || [],
+
         components: []
     };
 }
