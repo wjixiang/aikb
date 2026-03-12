@@ -25,7 +25,9 @@ import type {
     ExpertResult,
     ExpertArtifact,
     ExpertTask,
-    IExpertInstance
+    IExpertInstance,
+    ExportConfig,
+    ExportResult
 } from './types.js';
 import type { Container } from 'inversify';
 
@@ -75,6 +77,7 @@ export class ExpertInstance implements IExpertInstance {
     async execute(task: ExpertTask, context?: Record<string, any>): Promise<ExpertResult> {
         const startTime = Date.now();
         this.status = 'running';
+        let exportResult: ExportResult | undefined;
 
         try {
             // Build Expert's task prompt
@@ -85,13 +88,24 @@ export class ExpertInstance implements IExpertInstance {
 
             // Get execution result
             const summary = await this.getStateSummary();
+            const output = this.getOutput();
+
+            // Auto-export if configured
+            if (this.config.exportConfig?.autoExport) {
+                exportResult = await this.performAutoExport(task, output);
+                if (exportResult.success) {
+                    this.logger.info(`Expert ${this.expertId} auto-exported to ${exportResult.filePath}`);
+                } else {
+                    this.logger.warn(`Expert ${this.expertId} auto-export failed: ${exportResult.error}`);
+                }
+            }
 
             this.status = 'completed';
 
             return {
                 expertId: this.expertId,
                 success: true,
-                output: this.getOutput(),
+                output: output,
                 summary: summary,
                 artifacts: this.artifacts,
                 duration: Date.now() - startTime
@@ -217,5 +231,85 @@ ${componentSummaries.join('\n') || 'No components'}
         }
 
         return outputs;
+    }
+
+    /**
+     * Perform auto-export after task completion
+     */
+    private async performAutoExport(task: ExpertTask, output: any): Promise<ExportResult> {
+        const exportConfig = this.config.exportConfig;
+        if (!exportConfig) {
+            return { success: false, error: 'No export config' };
+        }
+
+        // Get export parameters
+        const bucket = exportConfig.bucket || process.env['FS_BUCKET'] || 'agentfs';
+        const format = exportConfig.format || 'json';
+
+        // Generate path with placeholders
+        let path = exportConfig.defaultPath || '{expertId}/{timestamp}.{format}';
+        path = path
+            .replace('{expertId}', this.expertId)
+            .replace('{taskId}', task.taskId || 'unknown')
+            .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'))
+            .replace('{format}', format);
+
+        // Get content - use custom handler or default JSON
+        let content: string;
+        if (exportConfig.exportHandler) {
+            const exportResult = await exportConfig.exportHandler(
+                this.agent.workspace,
+                { bucket, path, format }
+            );
+            if (exportResult.success) {
+                return exportResult;
+            }
+            content = exportResult.error || 'Export handler failed';
+        } else {
+            // Default: export all component states as JSON
+            content = JSON.stringify({
+                expertId: this.expertId,
+                taskId: task.taskId,
+                taskDescription: task.description,
+                output: output,
+                artifacts: this.artifacts,
+                timestamp: new Date().toISOString(),
+            }, null, 2);
+        }
+
+        // Get VirtualFileSystemComponent and export
+        const vfsComponent = this.getVirtualFileSystemComponent();
+        if (!vfsComponent) {
+            return { success: false, error: 'VirtualFileSystemComponent not found' };
+        }
+
+        // Determine content type
+        let contentType = 'application/json';
+        if (format === 'markdown' || path.endsWith('.md')) {
+            contentType = 'text/markdown';
+        } else if (format === 'text' || path.endsWith('.txt')) {
+            contentType = 'text/plain';
+        }
+
+        return vfsComponent.exportContent(bucket, path, content, contentType);
+    }
+
+    /**
+     * Get VirtualFileSystemComponent from workspace
+     */
+    private getVirtualFileSystemComponent(): any {
+        const workspace = this.agent.workspace;
+        const componentKeys = workspace.getComponentKeys();
+
+        for (const key of componentKeys) {
+            const component = workspace.getComponent(key);
+            // Check by component name or type
+            if (component && (component.constructor.name === 'VirtualFileSystemComponent' ||
+                key.includes('virtualFileSystem') || key === 'virtualFileSystem')) {
+                return component;
+            }
+        }
+
+        return null;
     }
 }

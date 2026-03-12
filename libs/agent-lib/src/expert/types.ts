@@ -70,6 +70,54 @@ export interface ExpertConfig {
     onDeactivate?: () => Promise<void>;
     onComponentActivate?: (component: ToolComponent) => Promise<void>;
     onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
+
+    /**
+     * Export configuration for workspace
+     * Controls how Expert results are exported to storage
+     */
+    exportConfig?: ExpertExportConfig;
+}
+
+/**
+ * Export configuration for Expert results
+ */
+export interface ExpertExportConfig {
+    /** Whether to auto-export after task completion */
+    autoExport?: boolean;
+    /** Default bucket for export */
+    bucket?: string;
+    /** Default path template (supports {expertId}, {timestamp}, {taskId}) */
+    defaultPath?: string;
+    /** Default format */
+    format?: 'json' | 'markdown' | 'text';
+    /**
+     * Custom export handler
+     * Called to generate export content from workspace
+     * If not provided, exports all component states as JSON
+     */
+    exportHandler?: (
+        workspace: any,
+        config: ExportConfig
+    ) => Promise<ExportResult>;
+}
+
+/**
+ * Export configuration for a single export operation
+ */
+export interface ExportConfig {
+    bucket: string;
+    path: string;
+    format?: 'json' | 'markdown' | 'text';
+}
+
+/**
+ * Export result
+ */
+export interface ExportResult {
+    success: boolean;
+    filePath?: string;
+    url?: string;
+    error?: string;
 }
 
 /**

@@ -174,3 +174,19 @@ export type {
  */
 
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js'
+
+/**
+ * Virtual File System Module
+ *
+ * This module provides file system operations via S3-compatible storage (rustfs).
+ * LLM can read/write files as if they were local files.
+ */
+
+export { VirtualFileSystemComponent } from './virtualFileSystem/virtualFileSystemComponent.js'
+export {
+    readFileParams,
+    writeFileParams,
+    listFilesParams,
+    deleteFileParams,
+    exportWorkspaceParams
+} from './virtualFileSystem/virtualFileSystemSchemas.js'

@@ -241,6 +241,12 @@ export const TYPES = {
     PaperAnalysisComponent: Symbol('PaperAnalysisComponent'),
 
     /**
+     * VirtualFileSystemComponent - Virtual file system via S3 (rustfs)
+     * @scope Singleton - Shared across all skill activations
+     */
+    VirtualFileSystemComponent: Symbol('VirtualFileSystemComponent'),
+
+    /**
      * TestToolComponentA - Test component for search functionality
      * @scope Singleton - Shared across all skill activations
      */
