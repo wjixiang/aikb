@@ -17,6 +17,7 @@ export * from './search/hybrid/hybrid-search.service';
 export * from './export/export.module';
 export * from './export/export.service';
 export * from './export/types';
+export * from './api/index';
 
 export interface BibliographyItem {
     id: string;

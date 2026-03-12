@@ -128,12 +128,13 @@ bib-lib 是一个用于管理 PubMed 文献数据的 NestJS 库，支持从 PubM
 - 需要根据 Agent 需求定义具体工具
 
 ### 2. REST API
-- 尚未提供 HTTP API 端点
-- 需要实现以下端点:
-  - `GET /search` - 搜索接口
-  - `GET /articles/:id` - 获取文章详情
-  - `GET /export` - 导出接口
-  - `POST /sync` - 触发同步
+- ✅ 已实现 HTTP API 端点
+- 已实现以下端点:
+  - `GET /api/search` - 搜索接口
+  - `GET /api/suggestions` - 搜索建议
+  - `GET /api/facets` - 搜索 facets
+  - `GET /api/export` - 导出接口
+  - `GET /api/health` - 健康检查
 
 ### 3. 测试
 - 已实现搜索服务和导出服务的单元测试 (69 个测试用例)
