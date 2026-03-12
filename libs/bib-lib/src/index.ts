@@ -1,6 +1,9 @@
 // bib-lib - Bibliography library
 // ESM exports
 
+export * from './prisma/prisma.module';
+export * from './prisma/prisma.service';
+
 export interface BibliographyItem {
     id: string;
     title: string;

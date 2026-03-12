@@ -3,24 +3,161 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Example model - customize for your needs
-model BibIndex {
-  id        String   @id @default(uuid())
-  title     String
-  authors   String[]
-  year      Int?
-  journal   String?
-  doi       String?  @unique
+// ============ Article (Main) ============
+model Article {
+  id                String    @id @default(uuid())
+  pmid              BigInt    @unique
+  articleTitle      String
+  language          String?
+  publicationType   String?
+  dateCompleted     DateTime?
+  dateRevised       DateTime?
+  publicationStatus String?
+
+  // Relations
+  journal      Journal?        @relation(fields: [journalId], references: [id])
+  journalId    String?
+  authors      AuthorArticle[]
+  meshHeadings MeshHeading[]
+  chemicals    Chemical[]
+  grants       Grant[]
+  articleIds   ArticleId[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([pmid])
+  @@index([articleTitle])
+}
+
+// ============ Journal ============
+model Journal {
+  id              String  @id @default(uuid())
+  issn            String?
+  issnElectronic  String? // Electronic ISSN
+  volume          String?
+  issue           String?
+  pubDate         String? // Publication date (e.g., "2020 Jan")
+  pubYear         Int? // Year for querying
+  title           String?
+  isoAbbreviation String?
+
+  // Relations
+  articles Article[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issn])
   @@index([title])
-  @@index([year])
+}
+
+// ============ Author ============
+model Author {
+  id       String  @id @default(uuid())
+  lastName String? // Last name
+  foreName String? // First name
+  initials String? // Initials
+
+  // Relations
+  articles AuthorArticle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lastName])
+}
+
+// ============ Author-Article (Many-to-Many) ============
+model AuthorArticle {
+  id        String  @id @default(uuid())
+  authorId  String
+  articleId String
+  author    Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([authorId, articleId])
+  @@index([authorId])
+  @@index([articleId])
+}
+
+// ============ MeSH Heading ============
+model MeshHeading {
+  id             String  @id @default(uuid())
+  descriptorName String? // MeSH descriptor term
+  qualifierName  String? // MeSH qualifier term
+  ui             String? // Unique identifier
+  majorTopicYN   Boolean @default(false) // Is major topic
+
+  // Relations
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([descriptorName])
+  @@index([articleId])
+}
+
+// ============ Chemical ============
+model Chemical {
+  id              String  @id @default(uuid())
+  registryNumber  String? // CAS registry number
+  nameOfSubstance String? // Substance name
+
+  // Relations
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([registryNumber])
+  @@index([articleId])
+}
+
+// ============ Grant ============
+model Grant {
+  id      String  @id @default(uuid())
+  grantId String? // Grant ID
+  agency  String? // Funding agency
+  country String? // Country
+
+  // Relations
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([grantId])
+  @@index([articleId])
+}
+
+// ============ Article External IDs (DOI, etc.) ============
+model ArticleId {
+  id          String  @id @default(uuid())
+  pubmed      BigInt? // PubMed ID
+  doi         String? // DOI
+  pii         String? // Publisher Item Identifier
+  pmc         String? // PubMed Central ID
+  otherId     String? // Other ID
+  otherIdType String? // Other ID type
+
+  // Relations
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([doi])
+  @@index([pmc])
+  @@index([articleId])
 }
