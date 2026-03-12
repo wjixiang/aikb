@@ -1,8 +1,8 @@
 /**
- * Expert Registry - 专家注册表
+ * Expert Registry
  *
- * 管理所有可用 Expert 的配置
- * 替代原 SkillManager 的注册功能
+ * Manages all available Expert configurations
+ * Replaces the registration functionality of the original SkillManager
  */
 
 import { injectable } from 'inversify';

@@ -1,10 +1,10 @@
 /**
- * Expert Implementation - 独立的专家Agent
+ * Expert Implementation - Independent Expert Agent
  *
- * 每个 Expert 拥有：
- * - 独立的 VirtualWorkspace（管理 Components）
- * - 独立的 MemoryModule（管理对话历史）
- * - 独立的执行循环
+ * Each Expert has:
+ * - Independent VirtualWorkspace (manages Components)
+ * - Independent MemoryModule (manages conversation history)
+ * - Independent execution loop
  */
 
 import { injectable, inject, optional } from 'inversify';
@@ -30,7 +30,7 @@ import type {
 import type { Container } from 'inversify';
 
 /**
- * Expert 实例实现
+ * Expert instance implementation
  */
 @injectable()
 export class ExpertInstance implements IExpertInstance {
@@ -77,13 +77,13 @@ export class ExpertInstance implements IExpertInstance {
         this.status = 'running';
 
         try {
-            // 构建 Expert 的任务提示
+            // Build Expert's task prompt
             const taskPrompt = this.buildTaskPrompt(task, context);
 
-            // 执行任务
+            // Execute task
             await this.agent.start(taskPrompt);
 
-            // 获取执行结果
+            // Get execution result
             const summary = await this.getStateSummary();
 
             this.status = 'completed';
@@ -113,11 +113,11 @@ export class ExpertInstance implements IExpertInstance {
     }
 
     async getStateSummary(): Promise<string> {
-        // 获取 workspace 中的组件状态摘要
+        // Get component state summary from workspace
         const workspace = this.agent.workspace;
         const stats = workspace.getStats();
 
-        // 从组件中提取状态
+        // Extract state from components
         const componentSummaries: string[] = [];
         const componentKeys = workspace.getComponentKeys();
 
@@ -152,14 +152,14 @@ ${componentSummaries.join('\n') || 'No components'}
     }
 
     /**
-     * 添加产物
+     * Add artifact
      */
     addArtifact(artifact: ExpertArtifact): void {
         this.artifacts.push(artifact);
     }
 
     /**
-     * 获取 Agent 实例（供 Controller 使用）
+     * Get Agent instance (for Controller use)
      */
     getAgent(): Agent {
         return this.agent;
@@ -170,28 +170,28 @@ ${componentSummaries.join('\n') || 'No components'}
     }
 
     private buildTaskPrompt(task: ExpertTask, context?: Record<string, any>): string {
-        let prompt = `## 任务\n${task.description}\n`;
+        let prompt = `## Task\n${task.description}\n`;
 
-        // 添加上下文信息
+        // Add context information
         if (context && Object.keys(context).length > 0) {
-            prompt += `\n## 上下文信息\n${JSON.stringify(context, null, 2)}\n`;
+            prompt += `\n## Context\n${JSON.stringify(context, null, 2)}\n`;
         }
 
-        // 添加期望产物说明
+        // Add expected outputs description
         if (task.expectedOutputs && task.expectedOutputs.length > 0) {
-            prompt += `\n## 期望产物\n${task.expectedOutputs.join(', ')}\n`;
+            prompt += `\n## Expected Outputs\n${task.expectedOutputs.join(', ')}\n`;
         }
 
-        // 添加 Expert 特定的系统提示
+        // Add Expert-specific system prompt
         if (this.config.systemPrompt) {
-            prompt += `\n## 专业提示\n${this.config.systemPrompt}\n`;
+            prompt += `\n## Expert Prompt\n${this.config.systemPrompt}\n`;
         }
 
         return prompt;
     }
 
     private getOutput(): any {
-        // 从 workspace 或 artifacts 中提取输出
+        // Extract output from workspace or artifacts
         const workspace = this.agent.workspace;
         const componentKeys = workspace.getComponentKeys();
 

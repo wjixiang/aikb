@@ -1,10 +1,10 @@
 /**
- * Expert Module - 多Expert架构
+ * Expert Module - Multi-Expert Architecture
  *
- * 替代原有的 Skill 架构：
- * - Expert = 原 Skill + 独立的 Agent 实例 + 独立的上下文
- * - 每个 Expert 有自己的 VirtualWorkspace、MemoryModule、Tools
- * - Controller Agent 负责调度和结果汇总
+ * Replaces the original Skill architecture:
+ * - Expert = Original Skill + Independent Agent Instance + Independent Context
+ * - Each Expert has its own VirtualWorkspace, MemoryModule, Tools
+ * - Controller Agent is responsible for scheduling and result aggregation
  */
 
 // Types

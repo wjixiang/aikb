@@ -1,7 +1,7 @@
 /**
- * Expert Executor - 专家执行器
+ * Expert Executor
  *
- * 负责创建、管理和执行 Expert 实例
+ * Responsible for creating, managing, and executing Expert instances
  */
 
 import { injectable, inject, Container } from 'inversify';
@@ -25,7 +25,7 @@ export class ExpertExecutor implements IExpertExecutor {
     ) {}
 
     /**
-     * 注册 Expert 配置
+     * Register Expert configuration
      */
     registerExpert(config: ExpertConfig): void {
         this.expertConfigs.set(config.expertId, config);
@@ -38,13 +38,13 @@ export class ExpertExecutor implements IExpertExecutor {
             throw new Error(`Expert "${expertId}" not found in registry`);
         }
 
-        // 创建 Agent 实例
+        // Create Agent instance
         const agent = this.createAgent(config);
 
-        // 创建 Expert 实例
+        // Create Expert instance
         const expertInstance = new ExpertInstance(config, agent);
 
-        // 激活 Expert
+        // Activate Expert
         await expertInstance.activate();
 
         this.expertInstances.set(expertId, expertInstance);
@@ -66,17 +66,17 @@ export class ExpertExecutor implements IExpertExecutor {
     async execute(request: ExpertExecuteRequest): Promise<ExpertResult> {
         let expert = this.expertInstances.get(request.expertId);
 
-        // 如果 Expert 不存在，创建它
+        // If Expert doesn't exist, create it
         if (!expert) {
             expert = await this.createExpert(request.expertId);
         }
 
-        // 执行任务
+        // Execute task
         return await expert.execute(request.task, request.context);
     }
 
     /**
-     * 收集所有 Expert 的产物
+     * Collect all Expert artifacts
      */
     collectAllArtifacts(): ExpertArtifact[] {
         const allArtifacts: ExpertArtifact[] = [];
@@ -87,18 +87,18 @@ export class ExpertExecutor implements IExpertExecutor {
     }
 
     /**
-     * 创建 Agent 实例
+     * Create Agent instance
      */
     private createAgent(config: ExpertConfig): Agent {
-        // 这里需要根据 AgentContainer 的逻辑创建 Agent
-        // 简化版本：返回一个新的 Agent 实例
-        // 实际实现需要注入 Container 和其他依赖
+        // Here we need to create Agent based on AgentContainer logic
+        // Simplified version: return a new Agent instance
+        // Full implementation requires injecting Container and other dependencies
 
-        // TODO: 实现完整的 Agent 创建逻辑
-        // 需要：
-        // 1. 创建 VirtualWorkspace 并注册 config.components
-        // 2. 创建 Agent 并注入 workspace
-        // 3. 配置 Agent 的系统提示
+        // TODO: Implement full Agent creation logic
+        // Needs:
+        // 1. Create VirtualWorkspace and register config.components
+        // 2. Create Agent and inject workspace
+        // 3. Configure Agent's system prompt
 
         throw new Error('ExpertExecutor.createAgent() needs full implementation with DI container');
     }

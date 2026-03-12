@@ -1,10 +1,10 @@
 /**
- * Expert Orchestrator - 专家编排器（Controller Agent 核心）
+ * Expert Orchestrator - Expert Orchestrator (Core of Controller Agent)
  *
- * 负责：
- * - 任务分解
- * - Expert 调度
- * - 结果汇总
+ * Responsible for:
+ * - Task decomposition
+ * - Expert scheduling
+ * - Result aggregation
  */
 
 import { injectable, inject } from 'inversify';
@@ -31,7 +31,7 @@ export class ExpertOrchestrator {
     ) {}
 
     /**
-     * 执行编排
+     * Execute orchestration
      */
     async orchestrate(request: ExpertOrchestrationRequest): Promise<ExpertOrchestrationResult> {
         const startTime = Date.now();
@@ -73,14 +73,14 @@ export class ExpertOrchestrator {
     }
 
     /**
-     * 列出所有可用 Expert
+     * List all available Experts
      */
     listExperts() {
         return this.registry.listExperts();
     }
 
     /**
-     * 顺序执行
+     * Sequential execution
      */
     private async executeSequential(request: ExpertOrchestrationRequest): Promise<ExpertOrchestrationResult> {
         const startTime = Date.now();
@@ -88,7 +88,7 @@ export class ExpertOrchestrator {
         const allArtifacts: ExpertArtifact[] = [];
         const errors: string[] = [];
 
-        // 全局上下文
+        // Global context
         let context = { ...request.globalContext };
 
         for (const expertTask of request.expertTasks) {
@@ -106,16 +106,16 @@ export class ExpertOrchestrator {
 
             if (!result.success) {
                 errors.push(`Expert ${expertTask.expertId} failed: ${result.summary}`);
-                // 根据错误处理策略决定是否继续
-                // 这里选择继续执行
+                // Decide whether to continue based on error handling strategy
+                // Here we choose to continue execution
             }
 
-            // 将结果添加到上下文，供下一个 Expert 使用
+            // Add result to context for next Expert to use
             context = {
                 ...context,
                 [`${expertTask.expertId}_result`]: result.output,
                 [`${expertTask.expertId}_summary`]: result.summary,
-                // 传递可共享的产物
+                // Pass shareable artifacts
                 shared_artifacts: allArtifacts.filter(a => a.shareable)
             };
         }
@@ -132,7 +132,7 @@ export class ExpertOrchestrator {
     }
 
     /**
-     * 并行执行
+     * Parallel execution
      */
     private async executeParallel(request: ExpertOrchestrationRequest): Promise<ExpertOrchestrationResult> {
         const startTime = Date.now();
@@ -140,7 +140,7 @@ export class ExpertOrchestrator {
         const allArtifacts: ExpertArtifact[] = [];
         const errors: string[] = [];
 
-        // 并行执行所有 Expert
+        // Execute all Experts in parallel
         const promises = request.expertTasks.map(async (expertTask) => {
             this.logger.info(`[Orchestrator] Starting parallel expert: ${expertTask.expertId}`);
 
@@ -177,25 +177,25 @@ export class ExpertOrchestrator {
     }
 
     /**
-     * 依赖顺序执行
+     * Dependency-ordered execution
      */
     private async executeDependencyOrdered(request: ExpertOrchestrationRequest): Promise<ExpertOrchestrationResult> {
-        // 构建依赖图并执行拓扑排序
+        // Build dependency graph and perform topological sort
         const startTime = Date.now();
         const expertResults = new Map<string, ExpertResult>();
         const allArtifacts: ExpertArtifact[] = [];
         const errors: string[] = [];
 
-        // TODO: 实现依赖顺序执行
-        // 1. 构建依赖图
-        // 2. 执行拓扑排序
-        // 3. 按顺序执行
+        // TODO: Implement dependency-ordered execution
+        // 1. Build dependency graph
+        // 2. Perform topological sort
+        // 3. Execute in order
 
         return this.executeSequential(request);
     }
 
     /**
-     * 条件执行
+     * Conditional execution
      */
     private async executeConditional(request: ExpertOrchestrationRequest): Promise<ExpertOrchestrationResult> {
         const startTime = Date.now();
@@ -206,7 +206,7 @@ export class ExpertOrchestrator {
         let context = { ...request.globalContext };
 
         for (const expertTask of request.expertTasks) {
-            // 检查条件
+            // Check condition
             if (expertTask.conditional) {
                 const shouldExecute = this.evaluateCondition(expertTask.task, context);
                 if (!shouldExecute) {
@@ -225,7 +225,7 @@ export class ExpertOrchestrator {
             expertResults.set(expertTask.expertId, result);
             allArtifacts.push(...result.artifacts);
 
-            // 更新上下文
+            // Update context
             context = {
                 ...context,
                 [`${expertTask.expertId}_result`]: result.output
@@ -244,16 +244,16 @@ export class ExpertOrchestrator {
     }
 
     /**
-     * 评估条件
+     * Evaluate condition
      */
     private evaluateCondition(task: ExpertTask, context: Record<string, any>): boolean {
-        // 简化的条件评估
-        // 可以根据任务描述和上下文动态判断
+        // Simplified condition evaluation
+        // Can dynamically determine based on task description and context
         return true;
     }
 
     /**
-     * 生成汇总摘要
+     * Generate summary
      */
     private generateSummary(results: Map<string, ExpertResult>): string {
         const entries = Array.from(results.entries());
@@ -265,7 +265,7 @@ export class ExpertOrchestrator {
     }
 
     /**
-     * 聚合输出
+     * Aggregate outputs
      */
     private aggregateOutputs(results: Map<string, ExpertResult>): any {
         const outputs: Record<string, any> = {};

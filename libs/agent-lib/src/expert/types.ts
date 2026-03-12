@@ -1,71 +1,71 @@
 /**
  * Expert Types - Multi-Agent Architecture
  *
- * Expert: 独立的专业Agent，拥有自己的上下文、组件和任务处理能力
- * 整合了原 Skill 的功能：prompt、components、lifecycle hooks
+ * Expert: Independent professional Agent with its own context, components, and task processing capabilities
+ * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
 import type { ToolComponent } from '../statefulContext/toolComponent.js';
 
 /**
- * Component definition - 从原 Skill 迁移
- * 支持三种模式：
- * 1. 直接实例: ToolComponent
- * 2. 工厂函数: () => ToolComponent | Promise<ToolComponent>
- * 3. DI Token: Symbol (推荐)
+ * Component definition - migrated from original Skill
+ * Supports three modes:
+ * 1. Direct instance: ToolComponent
+ * 2. Factory function: () => ToolComponent | Promise<ToolComponent>
+ * 3. DI Token: Symbol (recommended)
  */
 export interface ExpertComponentDefinition {
-    /** 唯一标识 */
+    /** Unique identifier */
     componentId: string;
-    /** 显示名称 */
+    /** Display name */
     displayName: string;
-    /** 描述 */
+    /** Description */
     description: string;
-    /** 实例、工厂函数或 DI Token */
+    /** Instance, factory function, or DI Token */
     instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
-    /** 是否为共享组件（跨 Expert 保留状态） */
+    /** Whether it is a shared component (preserves state across Experts) */
     shared?: boolean;
 }
 
 /**
- * Expert 配置 - 整合了原 Skill 的所有功能
+ * Expert Configuration - integrates all original Skill functionality
  */
 export interface ExpertConfig {
-    /** Expert 唯一标识 (原 Skill name) */
+    /** Expert unique identifier (original Skill name) */
     expertId: string;
-    /** Expert 显示名称 (原 Skill displayName) */
+    /** Expert display name (original Skill displayName) */
     displayName: string;
-    /** Expert 描述 (原 Skill description) */
+    /** Expert description (original Skill description) */
     description: string;
-    /** 何时使用此 Expert (原 Skill whenToUse) */
+    /** When to use this Expert (original Skill whenToUse) */
     whenToUse?: string;
-    /** 触发关键词 (原 Skill triggers) */
+    /** Trigger keywords (original Skill triggers) */
     triggers?: string[];
 
-    /** 职责说明 - Controller 何时应该委托此 Expert */
+    /** Responsibility description - when Controller should delegate to this Expert */
     responsibilities: string;
 
-    /** 能力说明 */
+    /** Capability description */
     capabilities: string[];
 
-    /** 组件定义 (原 Skill components) */
+    /** Component definitions (original Skill components) */
     components: ExpertComponentDefinition[];
 
-    /** Prompt 增强 (原 Skill prompt) */
+    /** Prompt enhancement (original Skill prompt) */
     prompt: {
-        /** 能力描述 */
+        /** Capability description */
         capability: string;
-        /** 方向指引 */
+        /** Direction guidance */
         direction: string;
     };
 
-    /** 额外的系统提示 */
+    /** Additional system prompt */
     systemPrompt?: string;
 
-    /** 是否自动激活 */
+    /** Whether to auto-activate */
     autoActivate?: boolean;
 
-    /** 生命周期钩子 (原 Skill onActivate/onDeactivate) */
+    /** Lifecycle hooks (original Skill onActivate/onDeactivate) */
     onActivate?: () => Promise<void>;
     onDeactivate?: () => Promise<void>;
     onComponentActivate?: (component: ToolComponent) => Promise<void>;
@@ -73,7 +73,7 @@ export interface ExpertConfig {
 }
 
 /**
- * Expert Summary - 用于展示和选择
+ * Expert Summary - for display and selection
  */
 export interface ExpertSummary {
     expertId: string;
@@ -85,12 +85,12 @@ export interface ExpertSummary {
 }
 
 /**
- * Expert 状态
+ * Expert status
  */
 export type ExpertStatus = 'idle' | 'ready' | 'running' | 'completed' | 'failed' | 'suspended';
 
 /**
- * Expert 执行结果
+ * Expert execution result
  */
 export interface ExpertResult {
     expertId: string;
@@ -103,53 +103,53 @@ export interface ExpertResult {
 }
 
 /**
- * Expert 产物（可传递给其他 Expert）
+ * Expert artifact (can be passed to other Experts)
  */
 export interface ExpertArtifact {
-    /** 产物类型 */
+    /** Artifact type */
     type: 'data' | 'document' | 'model-output' | 'state';
-    /** 产物名称 */
+    /** Artifact name */
     name: string;
-    /** 产物内容 */
+    /** Artifact content */
     content: any;
-    /** 元数据 */
+    /** Metadata */
     metadata?: Record<string, any>;
-    /** 是否可共享给其他 Expert */
+    /** Whether it can be shared with other Experts */
     shareable: boolean;
 }
 
 /**
- * Expert 任务
+ * Expert task
  */
 export interface ExpertTask {
-    /** 任务 ID */
+    /** Task ID */
     taskId: string;
-    /** 任务描述 */
+    /** Task description */
     description: string;
-    /** 任务输入 */
+    /** Task input */
     input?: any;
-    /** 依赖的其他 Expert 任务 */
+    /** Dependencies on other Expert tasks */
     dependencies?: string[];
-    /** 期望的产物类型 */
+    /** Expected output types */
     expectedOutputs?: string[];
 }
 
 /**
- * Expert 执行请求
+ * Expert execution request
  */
 export interface ExpertExecuteRequest {
-    /** Expert ID 或名称 */
+    /** Expert ID or name */
     expertId: string;
-    /** 执行的任务 */
+    /** Task to execute */
     task: ExpertTask;
-    /** 上下文（来自 Controller 或其他 Expert） */
+    /** Context (from Controller or other Experts) */
     context?: Record<string, any>;
-    /** 超时时间（毫秒） */
+    /** Timeout in milliseconds */
     timeout?: number;
 }
 
 /**
- * Expert 生命周期事件
+ * Expert lifecycle event
  */
 export interface ExpertLifecycleEvent {
     type: 'created' | 'activated' | 'suspended' | 'resumed' | 'completed' | 'failed' | 'error';
@@ -159,90 +159,90 @@ export interface ExpertLifecycleEvent {
 }
 
 /**
- * Expert 注册表 - 用于管理所有 Expert
+ * Expert Registry - for managing all Experts
  */
 export interface IExpertRegistry {
-    /** 注册 Expert */
+    /** Register Expert */
     register(expert: ExpertConfig): void;
-    /** 获取 Expert */
+    /** Get Expert */
     get(expertId: string): ExpertConfig | undefined;
-    /** 获取所有 Expert */
+    /** Get all Experts */
     getAll(): ExpertConfig[];
-    /** 根据能力查找 Expert */
+    /** Find Experts by capability */
     findByCapability(capability: string): ExpertConfig[];
-    /** 根据触发词查找 Expert */
+    /** Find Experts by trigger */
     findByTrigger(trigger: string): ExpertConfig[];
-    /** 列出所有可用的 Expert */
+    /** List all available Experts */
     listExperts(): ExpertSummary[];
 }
 
 /**
- * Expert 执行器 - 负责创建和管理 Expert 实例
+ * Expert Executor - responsible for creating and managing Expert instances
  */
 export interface IExpertExecutor {
-    /** 注册 Expert */
+    /** Register Expert */
     registerExpert(config: ExpertConfig): void;
-    /** 创建 Expert 实例 */
+    /** Create Expert instance */
     createExpert(expertId: string): Promise<IExpertInstance>;
-    /** 获取 Expert 实例 */
+    /** Get Expert instance */
     getExpert(expertId: string): IExpertInstance | undefined;
-    /** 释放 Expert 实例 */
+    /** Release Expert instance */
     releaseExpert(expertId: string): void;
-    /** 执行 Expert 任务 */
+    /** Execute Expert task */
     execute(request: ExpertExecuteRequest): Promise<ExpertResult>;
 }
 
 /**
- * Expert 实例 - 运行中的 Expert
+ * Expert Instance - running Expert
  */
 export interface IExpertInstance {
     /** Expert ID */
     expertId: string;
-    /** 状态 */
+    /** Status */
     status: ExpertStatus;
-    /** 激活 Expert */
+    /** Activate Expert */
     activate(): Promise<void>;
-    /** 暂停 Expert */
+    /** Suspend Expert */
     suspend(): Promise<void>;
-    /** 恢复 Expert */
+    /** Resume Expert */
     resume(): Promise<void>;
-    /** 执行任务 */
+    /** Execute task */
     execute(task: ExpertTask, context?: Record<string, any>): Promise<ExpertResult>;
-    /** 获取当前状态摘要 */
+    /** Get current state summary */
     getStateSummary(): Promise<string>;
-    /** 获取产物 */
+    /** Get artifacts */
     getArtifacts(): ExpertArtifact[];
-    /** 清理资源 */
+    /** Cleanup resources */
     dispose(): Promise<void>;
 }
 
 /**
- * Expert 调度策略
+ * Expert scheduling strategy
  */
 export type ExpertSchedulingStrategy = 'sequential' | 'parallel' | 'dependency-ordered' | 'conditional';
 
 /**
- * Expert 编排请求
+ * Expert orchestration request
  */
 export interface ExpertOrchestrationRequest {
-    /** 主任务描述 */
+    /** Main task description */
     task: string;
-    /** 任务分解策略 */
+    /** Task decomposition strategy */
     strategy: ExpertSchedulingStrategy;
-    /** Expert 任务列表 */
+    /** Expert task list */
     expertTasks: {
         expertId: string;
         task: ExpertTask;
         conditional?: boolean;
     }[];
-    /** 全局上下文 */
+    /** Global context */
     globalContext?: Record<string, any>;
-    /** 超时时间 */
+    /** Timeout */
     timeout?: number;
 }
 
 /**
- * Expert 编排结果
+ * Expert orchestration result
  */
 export interface ExpertOrchestrationResult {
     success: boolean;
