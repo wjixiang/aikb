@@ -53,35 +53,46 @@ export class SemanticSearchService {
 
     const articleIdSet = new Set(filteredArticleIds.map((a) => a.id));
 
-    // Perform vector similarity search
+    // Use raw SQL for vector similarity search
+    const articleIdArray = Array.from(articleIdSet);
     const vectorStr = this.arrayToVector(embedding);
 
-    let orderBy: any;
+    let similarityExpr: string;
     switch (similarityType) {
       case 'cosine':
-        orderBy = [{ embedding: 'desc' }]; // Using raw query instead
+        similarityExpr = '1 - (ae.vector <=> $1::vector)';
         break;
       case 'euclidean':
-        orderBy = [{ embedding: 'asc' }];
+        similarityExpr = 'ae.vector <#> $1::vector';
         break;
       case 'dot':
-        orderBy = [{ embedding: 'desc' }];
+        similarityExpr = 'ae.vector <#> $1::vector';
         break;
+      default:
+        similarityExpr = '1 - (ae.vector <=> $1::vector)';
     }
 
-    // Use raw SQL for vector similarity search
-    const similarArticles = await this.prisma.$queryRaw<{ id: string; similarity: number }[]>`
+    // Build the IN clause safely
+    const inClause = articleIdArray.map((id) => `'${id}'`).join(', ');
+    const sql = `
       SELECT
         ae."articleId" as id,
-        1 - (ae.vector <=> ${vectorStr}::vector) as similarity
+        ${similarityExpr} as similarity
       FROM "ArticleEmbedding" ae
-      WHERE ae."articleId" IN (${this.prisma.raw(Array.from(articleIdSet).map((id) => `'${id}'`).join(', '))})
+      WHERE ae."articleId" IN (${inClause})
         AND ae."isActive" = true
-        AND ae.provider = ${options?.embeddingProvider || 'alibaba'}
-        AND ae.model = ${options?.embeddingModel || 'text-embedding-v4'}
-      ORDER BY ae.vector <=> ${vectorStr}::vector
+        AND ae.provider = $2
+        AND ae.model = $3
+      ORDER BY ae.vector <=> $1::vector
       LIMIT ${topN}
     `;
+
+    const similarArticles = await this.prisma.$queryRawUnsafe<{ id: string; similarity: number }[]>(
+      sql,
+      vectorStr,
+      options?.embeddingProvider || 'alibaba',
+      options?.embeddingModel || 'text-embedding-v4',
+    );
 
     if (similarArticles.length === 0) {
       return {

@@ -11,6 +11,12 @@ export * from './sync/embed/embed.service';
 export * from './search/search.module';
 export * from './search/search.service';
 export * from './search/types';
+export * from './search/keyword/keyword-search.service';
+export * from './search/semantic/semantic-search.service';
+export * from './search/hybrid/hybrid-search.service';
+export * from './export/export.module';
+export * from './export/export.service';
+export * from './export/types';
 
 export interface BibliographyItem {
     id: string;
