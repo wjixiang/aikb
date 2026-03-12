@@ -1,0 +1,11 @@
+---
+to: src/expert/builtin/<%= expertId %>/config.json
+---
+{
+  "expertId": "<%= expertId %>",
+  "displayName": "<%= displayName %>",
+  "description": "<%= description %>",
+  "category": "<%= category %>",
+  "tags": <%- JSON.stringify(tags.split(',')) %>,
+  "triggers": <%- JSON.stringify(triggers.split(',')) %>
+}
