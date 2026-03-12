@@ -10,6 +10,7 @@ import 'dotenv/config';
 import { EmbedService } from '../embed/embed.service.js';
 import { EmbedModule } from '../embed/embed.module.js';
 import { NestFactory } from '@nestjs/core';
+import { EmbeddingProvider } from '@ai-embed/core';
 
 interface CliArgs {
   provider: string;

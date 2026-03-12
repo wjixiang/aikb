@@ -391,7 +391,8 @@ export const ModelName = {
   MeshHeading: 'MeshHeading',
   Chemical: 'Chemical',
   Grant: 'Grant',
-  ArticleId: 'ArticleId'
+  ArticleId: 'ArticleId',
+  ArticleEmbedding: 'ArticleEmbedding'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "article" | "journal" | "author" | "authorArticle" | "meshHeading" | "chemical" | "grant" | "articleId"
+    modelProps: "article" | "journal" | "author" | "authorArticle" | "meshHeading" | "chemical" | "grant" | "articleId" | "articleEmbedding"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1003,6 +1004,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ArticleEmbedding: {
+      payload: Prisma.$ArticleEmbeddingPayload<ExtArgs>
+      fields: Prisma.ArticleEmbeddingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArticleEmbeddingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArticleEmbeddingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        findFirst: {
+          args: Prisma.ArticleEmbeddingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArticleEmbeddingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        findMany: {
+          args: Prisma.ArticleEmbeddingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>[]
+        }
+        create: {
+          args: Prisma.ArticleEmbeddingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        createMany: {
+          args: Prisma.ArticleEmbeddingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArticleEmbeddingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>[]
+        }
+        delete: {
+          args: Prisma.ArticleEmbeddingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        update: {
+          args: Prisma.ArticleEmbeddingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArticleEmbeddingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArticleEmbeddingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArticleEmbeddingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArticleEmbeddingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleEmbeddingPayload>
+        }
+        aggregate: {
+          args: Prisma.ArticleEmbeddingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArticleEmbedding>
+        }
+        groupBy: {
+          args: Prisma.ArticleEmbeddingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleEmbeddingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArticleEmbeddingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArticleEmbeddingCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1149,12 +1224,36 @@ export const ArticleIdScalarFieldEnum = {
 export type ArticleIdScalarFieldEnum = (typeof ArticleIdScalarFieldEnum)[keyof typeof ArticleIdScalarFieldEnum]
 
 
+export const ArticleEmbeddingScalarFieldEnum = {
+  id: 'id',
+  articleId: 'articleId',
+  provider: 'provider',
+  model: 'model',
+  dimension: 'dimension',
+  text: 'text',
+  vector: 'vector',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleEmbeddingScalarFieldEnum = (typeof ArticleEmbeddingScalarFieldEnum)[keyof typeof ArticleEmbeddingScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1171,6 +1270,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1239,6 +1347,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Boolean'
  */
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1342,6 +1464,7 @@ export type GlobalOmitConfig = {
   chemical?: Prisma.ChemicalOmit
   grant?: Prisma.GrantOmit
   articleId?: Prisma.ArticleIdOmit
+  articleEmbedding?: Prisma.ArticleEmbeddingOmit
 }
 
 /* Types for Logging */

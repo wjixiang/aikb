@@ -1,0 +1,34 @@
+{
+  "expertId": "meta-analysis-article-retrieval",
+  "displayName": "Meta-Analysis Article Retrieval",
+  "description": "Systematic literature retrieval for meta-analysis, producing standardized search strategies and comprehensive article lists",
+  "whenToUse": "Use this expert when you need to conduct systematic literature searches for meta-analysis or systematic reviews. This includes tasks like: searching PubMed for clinical studies, building search strategies with MeSH terms and Boolean operators, retrieving comprehensive article lists, or conducting literature searches for evidence-based medicine research.",
+  "version": "1.0.0",
+  "category": "meta-analysis",
+  "tags": [
+    "meta-analysis",
+    "literature-retrieval",
+    "pubmed",
+    "systematic-review",
+    "search-strategy"
+  ],
+  "triggers": [
+    "meta analysis retrieval",
+    "literature search",
+    "systematic search",
+    "pubmed search strategy",
+    "article retrieval"
+  ],
+  "metadata": {
+    "author": "AI Knowledge Base Team",
+    "created": "2025-02-19",
+    "updated": "2025-03-12",
+    "complexity": "Medium",
+    "requiredWorkspace": "MetaAnalysisWorkspace",
+    "requiredTools": "search_pubmed, view_article, navigate_page, clear_results",
+    "phase": "retrieval",
+    "nextPhase": "screening",
+    "targetResultsPerSubQuestion": "<100",
+    "decompositionStrategy": "intervention-population-outcome"
+  }
+}

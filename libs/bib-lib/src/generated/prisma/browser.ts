@@ -57,3 +57,8 @@ export type Grant = Prisma.GrantModel
  * 
  */
 export type ArticleId = Prisma.ArticleIdModel
+/**
+ * Model ArticleEmbedding
+ * 
+ */
+export type ArticleEmbedding = Prisma.ArticleEmbeddingModel

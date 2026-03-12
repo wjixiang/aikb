@@ -27,6 +27,7 @@
     "embed": "tsx src/sync/cli/embed.cli.ts"
   },
   "dependencies": {
+    "@ai-embed/core": "workspace:*",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "dotenv": "^17.3.1",
@@ -45,7 +46,6 @@
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
-    "reflect-metadata": "^0.2.2",
-    "embedding": "*"
+    "reflect-metadata": "^0.2.2"
   }
 }

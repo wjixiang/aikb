@@ -270,6 +270,7 @@ export type ArticleWhereInput = {
   chemicals?: Prisma.ChemicalListRelationFilter
   grants?: Prisma.GrantListRelationFilter
   articleIds?: Prisma.ArticleIdListRelationFilter
+  embeddings?: Prisma.ArticleEmbeddingListRelationFilter
 }
 
 export type ArticleOrderByWithRelationInput = {
@@ -290,6 +291,7 @@ export type ArticleOrderByWithRelationInput = {
   chemicals?: Prisma.ChemicalOrderByRelationAggregateInput
   grants?: Prisma.GrantOrderByRelationAggregateInput
   articleIds?: Prisma.ArticleIdOrderByRelationAggregateInput
+  embeddings?: Prisma.ArticleEmbeddingOrderByRelationAggregateInput
 }
 
 export type ArticleWhereUniqueInput = Prisma.AtLeast<{
@@ -313,6 +315,7 @@ export type ArticleWhereUniqueInput = Prisma.AtLeast<{
   chemicals?: Prisma.ChemicalListRelationFilter
   grants?: Prisma.GrantListRelationFilter
   articleIds?: Prisma.ArticleIdListRelationFilter
+  embeddings?: Prisma.ArticleEmbeddingListRelationFilter
 }, "id" | "pmid">
 
 export type ArticleOrderByWithAggregationInput = {
@@ -368,6 +371,7 @@ export type ArticleCreateInput = {
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateInput = {
@@ -387,6 +391,7 @@ export type ArticleUncheckedCreateInput = {
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUpdateInput = {
@@ -406,6 +411,7 @@ export type ArticleUpdateInput = {
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateInput = {
@@ -425,6 +431,7 @@ export type ArticleUncheckedUpdateInput = {
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateManyInput = {
@@ -669,6 +676,20 @@ export type ArticleUpdateOneRequiredWithoutArticleIdsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ArticleUpdateToOneWithWhereWithoutArticleIdsInput, Prisma.ArticleUpdateWithoutArticleIdsInput>, Prisma.ArticleUncheckedUpdateWithoutArticleIdsInput>
 }
 
+export type ArticleCreateNestedOneWithoutEmbeddingsInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutEmbeddingsInput, Prisma.ArticleUncheckedCreateWithoutEmbeddingsInput>
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutEmbeddingsInput
+  connect?: Prisma.ArticleWhereUniqueInput
+}
+
+export type ArticleUpdateOneRequiredWithoutEmbeddingsNestedInput = {
+  create?: Prisma.XOR<Prisma.ArticleCreateWithoutEmbeddingsInput, Prisma.ArticleUncheckedCreateWithoutEmbeddingsInput>
+  connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutEmbeddingsInput
+  upsert?: Prisma.ArticleUpsertWithoutEmbeddingsInput
+  connect?: Prisma.ArticleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ArticleUpdateToOneWithWhereWithoutEmbeddingsInput, Prisma.ArticleUpdateWithoutEmbeddingsInput>, Prisma.ArticleUncheckedUpdateWithoutEmbeddingsInput>
+}
+
 export type ArticleCreateWithoutJournalInput = {
   id?: string
   pmid: bigint | number
@@ -685,6 +706,7 @@ export type ArticleCreateWithoutJournalInput = {
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutJournalInput = {
@@ -703,6 +725,7 @@ export type ArticleUncheckedCreateWithoutJournalInput = {
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutJournalInput = {
@@ -764,6 +787,7 @@ export type ArticleCreateWithoutAuthorsInput = {
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutAuthorsInput = {
@@ -782,6 +806,7 @@ export type ArticleUncheckedCreateWithoutAuthorsInput = {
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutAuthorsInput = {
@@ -816,6 +841,7 @@ export type ArticleUpdateWithoutAuthorsInput = {
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutAuthorsInput = {
@@ -834,6 +860,7 @@ export type ArticleUncheckedUpdateWithoutAuthorsInput = {
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutMeshHeadingsInput = {
@@ -852,6 +879,7 @@ export type ArticleCreateWithoutMeshHeadingsInput = {
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutMeshHeadingsInput = {
@@ -870,6 +898,7 @@ export type ArticleUncheckedCreateWithoutMeshHeadingsInput = {
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutMeshHeadingsInput = {
@@ -904,6 +933,7 @@ export type ArticleUpdateWithoutMeshHeadingsInput = {
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutMeshHeadingsInput = {
@@ -922,6 +952,7 @@ export type ArticleUncheckedUpdateWithoutMeshHeadingsInput = {
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutChemicalsInput = {
@@ -940,6 +971,7 @@ export type ArticleCreateWithoutChemicalsInput = {
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutChemicalsInput = {
@@ -958,6 +990,7 @@ export type ArticleUncheckedCreateWithoutChemicalsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutChemicalsInput = {
@@ -992,6 +1025,7 @@ export type ArticleUpdateWithoutChemicalsInput = {
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutChemicalsInput = {
@@ -1010,6 +1044,7 @@ export type ArticleUncheckedUpdateWithoutChemicalsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutGrantsInput = {
@@ -1028,6 +1063,7 @@ export type ArticleCreateWithoutGrantsInput = {
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutArticleInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutGrantsInput = {
@@ -1046,6 +1082,7 @@ export type ArticleUncheckedCreateWithoutGrantsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutArticleInput
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutGrantsInput = {
@@ -1080,6 +1117,7 @@ export type ArticleUpdateWithoutGrantsInput = {
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutArticleNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutGrantsInput = {
@@ -1098,6 +1136,7 @@ export type ArticleUncheckedUpdateWithoutGrantsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutArticleNestedInput
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateWithoutArticleIdsInput = {
@@ -1116,6 +1155,7 @@ export type ArticleCreateWithoutArticleIdsInput = {
   meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutArticleInput
   chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleUncheckedCreateWithoutArticleIdsInput = {
@@ -1134,6 +1174,7 @@ export type ArticleUncheckedCreateWithoutArticleIdsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutArticleInput
   chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
   grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedCreateNestedManyWithoutArticleInput
 }
 
 export type ArticleCreateOrConnectWithoutArticleIdsInput = {
@@ -1168,6 +1209,7 @@ export type ArticleUpdateWithoutArticleIdsInput = {
   meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutArticleNestedInput
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutArticleIdsInput = {
@@ -1186,6 +1228,99 @@ export type ArticleUncheckedUpdateWithoutArticleIdsInput = {
   meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutArticleNestedInput
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
+}
+
+export type ArticleCreateWithoutEmbeddingsInput = {
+  id?: string
+  pmid: bigint | number
+  articleTitle: string
+  language?: string | null
+  publicationType?: string | null
+  dateCompleted?: Date | string | null
+  dateRevised?: Date | string | null
+  publicationStatus?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journal?: Prisma.JournalCreateNestedOneWithoutArticlesInput
+  authors?: Prisma.AuthorArticleCreateNestedManyWithoutArticleInput
+  meshHeadings?: Prisma.MeshHeadingCreateNestedManyWithoutArticleInput
+  chemicals?: Prisma.ChemicalCreateNestedManyWithoutArticleInput
+  grants?: Prisma.GrantCreateNestedManyWithoutArticleInput
+  articleIds?: Prisma.ArticleIdCreateNestedManyWithoutArticleInput
+}
+
+export type ArticleUncheckedCreateWithoutEmbeddingsInput = {
+  id?: string
+  pmid: bigint | number
+  articleTitle: string
+  language?: string | null
+  publicationType?: string | null
+  dateCompleted?: Date | string | null
+  dateRevised?: Date | string | null
+  publicationStatus?: string | null
+  journalId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  authors?: Prisma.AuthorArticleUncheckedCreateNestedManyWithoutArticleInput
+  meshHeadings?: Prisma.MeshHeadingUncheckedCreateNestedManyWithoutArticleInput
+  chemicals?: Prisma.ChemicalUncheckedCreateNestedManyWithoutArticleInput
+  grants?: Prisma.GrantUncheckedCreateNestedManyWithoutArticleInput
+  articleIds?: Prisma.ArticleIdUncheckedCreateNestedManyWithoutArticleInput
+}
+
+export type ArticleCreateOrConnectWithoutEmbeddingsInput = {
+  where: Prisma.ArticleWhereUniqueInput
+  create: Prisma.XOR<Prisma.ArticleCreateWithoutEmbeddingsInput, Prisma.ArticleUncheckedCreateWithoutEmbeddingsInput>
+}
+
+export type ArticleUpsertWithoutEmbeddingsInput = {
+  update: Prisma.XOR<Prisma.ArticleUpdateWithoutEmbeddingsInput, Prisma.ArticleUncheckedUpdateWithoutEmbeddingsInput>
+  create: Prisma.XOR<Prisma.ArticleCreateWithoutEmbeddingsInput, Prisma.ArticleUncheckedCreateWithoutEmbeddingsInput>
+  where?: Prisma.ArticleWhereInput
+}
+
+export type ArticleUpdateToOneWithWhereWithoutEmbeddingsInput = {
+  where?: Prisma.ArticleWhereInput
+  data: Prisma.XOR<Prisma.ArticleUpdateWithoutEmbeddingsInput, Prisma.ArticleUncheckedUpdateWithoutEmbeddingsInput>
+}
+
+export type ArticleUpdateWithoutEmbeddingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  pmid?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publicationType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateRevised?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  publicationStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journal?: Prisma.JournalUpdateOneWithoutArticlesNestedInput
+  authors?: Prisma.AuthorArticleUpdateManyWithoutArticleNestedInput
+  meshHeadings?: Prisma.MeshHeadingUpdateManyWithoutArticleNestedInput
+  chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
+  grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
+  articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+}
+
+export type ArticleUncheckedUpdateWithoutEmbeddingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  pmid?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  articleTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publicationType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateCompleted?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateRevised?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  publicationStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  journalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  authors?: Prisma.AuthorArticleUncheckedUpdateManyWithoutArticleNestedInput
+  meshHeadings?: Prisma.MeshHeadingUncheckedUpdateManyWithoutArticleNestedInput
+  chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
+  grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
+  articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleCreateManyJournalInput = {
@@ -1217,6 +1352,7 @@ export type ArticleUpdateWithoutJournalInput = {
   chemicals?: Prisma.ChemicalUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateWithoutJournalInput = {
@@ -1235,6 +1371,7 @@ export type ArticleUncheckedUpdateWithoutJournalInput = {
   chemicals?: Prisma.ChemicalUncheckedUpdateManyWithoutArticleNestedInput
   grants?: Prisma.GrantUncheckedUpdateManyWithoutArticleNestedInput
   articleIds?: Prisma.ArticleIdUncheckedUpdateManyWithoutArticleNestedInput
+  embeddings?: Prisma.ArticleEmbeddingUncheckedUpdateManyWithoutArticleNestedInput
 }
 
 export type ArticleUncheckedUpdateManyWithoutJournalInput = {
@@ -1261,6 +1398,7 @@ export type ArticleCountOutputType = {
   chemicals: number
   grants: number
   articleIds: number
+  embeddings: number
 }
 
 export type ArticleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1269,6 +1407,7 @@ export type ArticleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   chemicals?: boolean | ArticleCountOutputTypeCountChemicalsArgs
   grants?: boolean | ArticleCountOutputTypeCountGrantsArgs
   articleIds?: boolean | ArticleCountOutputTypeCountArticleIdsArgs
+  embeddings?: boolean | ArticleCountOutputTypeCountEmbeddingsArgs
 }
 
 /**
@@ -1316,6 +1455,13 @@ export type ArticleCountOutputTypeCountArticleIdsArgs<ExtArgs extends runtime.Ty
   where?: Prisma.ArticleIdWhereInput
 }
 
+/**
+ * ArticleCountOutputType without action
+ */
+export type ArticleCountOutputTypeCountEmbeddingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ArticleEmbeddingWhereInput
+}
+
 
 export type ArticleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1335,6 +1481,7 @@ export type ArticleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   chemicals?: boolean | Prisma.Article$chemicalsArgs<ExtArgs>
   grants?: boolean | Prisma.Article$grantsArgs<ExtArgs>
   articleIds?: boolean | Prisma.Article$articleIdsArgs<ExtArgs>
+  embeddings?: boolean | Prisma.Article$embeddingsArgs<ExtArgs>
   _count?: boolean | Prisma.ArticleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["article"]>
 
@@ -1390,6 +1537,7 @@ export type ArticleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   chemicals?: boolean | Prisma.Article$chemicalsArgs<ExtArgs>
   grants?: boolean | Prisma.Article$grantsArgs<ExtArgs>
   articleIds?: boolean | Prisma.Article$articleIdsArgs<ExtArgs>
+  embeddings?: boolean | Prisma.Article$embeddingsArgs<ExtArgs>
   _count?: boolean | Prisma.ArticleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ArticleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1408,6 +1556,7 @@ export type $ArticlePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     chemicals: Prisma.$ChemicalPayload<ExtArgs>[]
     grants: Prisma.$GrantPayload<ExtArgs>[]
     articleIds: Prisma.$ArticleIdPayload<ExtArgs>[]
+    embeddings: Prisma.$ArticleEmbeddingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1821,6 +1970,7 @@ export interface Prisma__ArticleClient<T, Null = never, ExtArgs extends runtime.
   chemicals<T extends Prisma.Article$chemicalsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$chemicalsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChemicalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   grants<T extends Prisma.Article$grantsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$grantsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   articleIds<T extends Prisma.Article$articleIdsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$articleIdsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticleIdPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  embeddings<T extends Prisma.Article$embeddingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Article$embeddingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticleEmbeddingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2393,6 +2543,30 @@ export type Article$articleIdsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ArticleIdScalarFieldEnum | Prisma.ArticleIdScalarFieldEnum[]
+}
+
+/**
+ * Article.embeddings
+ */
+export type Article$embeddingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ArticleEmbedding
+   */
+  select?: Prisma.ArticleEmbeddingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ArticleEmbedding
+   */
+  omit?: Prisma.ArticleEmbeddingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ArticleEmbeddingInclude<ExtArgs> | null
+  where?: Prisma.ArticleEmbeddingWhereInput
+  orderBy?: Prisma.ArticleEmbeddingOrderByWithRelationInput | Prisma.ArticleEmbeddingOrderByWithRelationInput[]
+  cursor?: Prisma.ArticleEmbeddingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ArticleEmbeddingScalarFieldEnum | Prisma.ArticleEmbeddingScalarFieldEnum[]
 }
 
 /**

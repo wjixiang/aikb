@@ -1,28 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-
-type EmbeddingConfig = {
-  provider: string;
-  model: string;
-  dimension: number;
-  batchSize: number;
-  maxRetries: number;
-  timeout: number;
-  concurrencyLimit: number;
-};
-
-const defaultEmbeddingConfig: EmbeddingConfig = {
-  provider: 'alibaba',
-  model: 'text-embedding-v4',
-  dimension: 1024,
-  batchSize: 20,
-  maxRetries: 3,
-  timeout: 20000,
-  concurrencyLimit: 20,
-};
+import { Embedding, EmbeddingProvider, defaultEmbeddingConfig } from '@ai-embed/core';
 
 export interface EmbedArticleOptions {
-  provider?: string;
+  provider?: EmbeddingProvider;
   model?: string;
   dimension?: number;
   batchSize?: number;
@@ -39,18 +20,10 @@ export interface EmbedProgress {
 @Injectable()
 export class EmbedService {
   private readonly logger = new Logger(EmbedService.name);
-  private embedding: any;
-  private embeddingInitialized = false;
+  private embedding: Embedding;
 
-  constructor(private prisma: PrismaService) {}
-
-  private async getEmbedding(): Promise<any> {
-    if (!this.embeddingInitialized) {
-      const { Embedding } = await import('embedding');
-      this.embedding = new Embedding();
-      this.embeddingInitialized = true;
-    }
-    return this.embedding;
+  constructor(private prisma: PrismaService) {
+    this.embedding = new Embedding();
   }
 
   /**
@@ -108,9 +81,9 @@ export class EmbedService {
         }
 
         // Generate embedding
-        const embeddingInstance = await this.getEmbedding();
-        const embedding = await embeddingInstance.embed(textToEmbed, config);
-        if (!embedding) {
+        const result = await this.embedding.embed(textToEmbed, config);
+        if (!result.success || !result.embedding) {
+          this.logger.warn(`Failed to generate embedding for article ${article.pmid}: ${result.error}`);
           this.logger.warn(`Failed to generate embedding for article ${article.pmid}`);
           progress.errors++;
           progress.processedArticles++;
@@ -133,12 +106,12 @@ export class EmbedService {
             model: config.model,
             dimension: config.dimension,
             text: textToEmbed,
-            vector: embedding,
+            vector: result.embedding,
             isActive: true,
           },
           update: {
             text: textToEmbed,
-            vector: embedding,
+            vector: result.embedding,
             isActive: true,
             updatedAt: new Date(),
           },
@@ -225,8 +198,7 @@ export class EmbedService {
 
       try {
         // Batch embed
-        const embeddingInstance = await this.getEmbedding();
-        const embeddings = await embeddingInstance.embedBatch(
+        const batchResult = await this.embedding.embedBatch(
           texts.map((t) => t.text),
           config,
         );
@@ -234,9 +206,9 @@ export class EmbedService {
         // Save embeddings
         for (let j = 0; j < texts.length; j++) {
           const item = texts[j];
-          const embedding = embeddings[j];
+          const result = batchResult.results[j];
 
-          if (!embedding) {
+          if (!result.success || !result.embedding) {
             progress.errors++;
             continue;
           }
@@ -255,12 +227,12 @@ export class EmbedService {
               model: config.model,
               dimension: config.dimension,
               text: item.text,
-              vector: embedding,
+              vector: result.embedding,
               isActive: true,
             },
             update: {
               text: item.text,
-              vector: embedding,
+              vector: result.embedding,
               isActive: true,
               updatedAt: new Date(),
             },
@@ -369,9 +341,8 @@ export class EmbedService {
           continue;
         }
 
-        const embeddingInstance = await this.getEmbedding();
-        const embedding = await embeddingInstance.embed(text, config);
-        if (!embedding) {
+        const result = await this.embedding.embed(text, config);
+        if (!result.success || !result.embedding) {
           progress.errors++;
           continue;
         }
@@ -386,7 +357,7 @@ export class EmbedService {
           },
           data: {
             text,
-            vector: embedding,
+            vector: result.embedding,
             updatedAt: new Date(),
           },
         });
@@ -404,19 +375,14 @@ export class EmbedService {
     return progress;
   }
 
-  private buildConfig(options: EmbedArticleOptions): EmbeddingConfig {
-    const provider = options.provider || defaultEmbeddingConfig.provider;
-    const model = (options.model || defaultEmbeddingConfig.model) as any;
-    const dimension = options.dimension || defaultEmbeddingConfig.dimension;
-
+  private buildConfig(options: EmbedArticleOptions): any {
     return {
-      provider,
-      model,
-      dimension,
+      provider: options.provider || defaultEmbeddingConfig.provider,
+      model: options.model || defaultEmbeddingConfig.model,
+      dimension: options.dimension || defaultEmbeddingConfig.dimension,
       batchSize: options.batchSize || defaultEmbeddingConfig.batchSize,
       maxRetries: defaultEmbeddingConfig.maxRetries,
       timeout: defaultEmbeddingConfig.timeout,
-      concurrencyLimit: defaultEmbeddingConfig.concurrencyLimit,
     };
   }
 

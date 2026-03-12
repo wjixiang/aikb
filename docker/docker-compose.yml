@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16 # It's recommended to use a specific version
+    image: pgvector/pgvector:pg16-trixie # It's recommended to use a specific version
     restart: always
     environment:
       POSTGRES_PASSWORD: fl5ox03 # Required

@@ -24,9 +24,11 @@ export interface ExpertDefinitionConfig {
     triggers?: string[];
 
     /** Responsibilities - when Controller should delegate to this Expert */
-    responsibilities: string;
+    /** Can be extracted from capability.md */
+    responsibilities?: string;
     /** Capabilities - what the Expert can do */
-    capabilities: string[];
+    /** Can be extracted from capability.md */
+    capabilities?: string[];
 
     /** Prompt enhancement */
     prompt: {
@@ -73,8 +75,8 @@ export class ExpertDefinition {
             description: this.config.description,
             whenToUse: this.config.whenToUse,
             triggers: this.config.triggers ?? this.config.tags,
-            responsibilities: this.config.responsibilities,
-            capabilities: this.config.capabilities,
+            responsibilities: this.config.responsibilities ?? '',
+            capabilities: this.config.capabilities ?? [],
             prompt: this.config.prompt,
             components: this.config.components ?? [],
             systemPrompt: this.config.systemPrompt,
