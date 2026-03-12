@@ -244,38 +244,28 @@ ${componentSummaries.join('\n') || 'No components'}
 
         // Get export parameters
         const bucket = exportConfig.bucket || process.env['FS_BUCKET'] || 'agentfs';
-        const format = exportConfig.format || 'json';
 
-        // Generate path with placeholders
-        let path = exportConfig.defaultPath || '{expertId}/{timestamp}.{format}';
+        // Generate path with placeholders (no format placeholder)
+        let path = exportConfig.defaultPath || '{expertId}/{timestamp}.json';
         path = path
             .replace('{expertId}', this.expertId)
             .replace('{taskId}', task.taskId || 'unknown')
-            .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'))
-            .replace('{format}', format);
+            .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'));
 
-        // Get content - use custom handler or default JSON
-        let content: string;
+        // Use custom handler or default JSON export
         if (exportConfig.exportHandler) {
-            const exportResult = await exportConfig.exportHandler(
-                this.agent.workspace,
-                { bucket, path, format }
-            );
-            if (exportResult.success) {
-                return exportResult;
-            }
-            content = exportResult.error || 'Export handler failed';
-        } else {
-            // Default: export all component states as JSON
-            content = JSON.stringify({
-                expertId: this.expertId,
-                taskId: task.taskId,
-                taskDescription: task.description,
-                output: output,
-                artifacts: this.artifacts,
-                timestamp: new Date().toISOString(),
-            }, null, 2);
+            return exportConfig.exportHandler(this.agent.workspace, { bucket, path });
         }
+
+        // Default: export all component states as JSON
+        const content = JSON.stringify({
+            expertId: this.expertId,
+            taskId: task.taskId,
+            taskDescription: task.description,
+            output: output,
+            artifacts: this.artifacts,
+            timestamp: new Date().toISOString(),
+        }, null, 2);
 
         // Get VirtualFileSystemComponent and export
         const vfsComponent = this.getVirtualFileSystemComponent();
@@ -283,14 +273,8 @@ ${componentSummaries.join('\n') || 'No components'}
             return { success: false, error: 'VirtualFileSystemComponent not found' };
         }
 
-        // Determine content type
-        let contentType = 'application/json';
-        if (format === 'markdown' || path.endsWith('.md')) {
-            contentType = 'text/markdown';
-        } else if (format === 'text' || path.endsWith('.txt')) {
-            contentType = 'text/plain';
-        }
-
+        // Default to JSON content type
+        const contentType = 'application/json';
         return vfsComponent.exportContent(bucket, path, content, contentType);
     }
 

@@ -86,14 +86,18 @@ export interface ExpertExportConfig {
     autoExport?: boolean;
     /** Default bucket for export */
     bucket?: string;
-    /** Default path template (supports {expertId}, {timestamp}, {taskId}) */
+    /**
+     * Default path template
+     * Supports placeholders: {expertId}, {timestamp}, {taskId}
+     * Note: Format extension should be included in the path
+     */
     defaultPath?: string;
-    /** Default format */
-    format?: 'json' | 'markdown' | 'text';
     /**
      * Custom export handler
-     * Called to generate export content from workspace
-     * If not provided, exports all component states as JSON
+     * Full control over:
+     * - Export format (via file extension in path)
+     * - Content type
+     * - Export logic
      */
     exportHandler?: (
         workspace: any,
@@ -107,7 +111,6 @@ export interface ExpertExportConfig {
 export interface ExportConfig {
     bucket: string;
     path: string;
-    format?: 'json' | 'markdown' | 'text';
 }
 
 /**
@@ -117,6 +120,7 @@ export interface ExportResult {
     success: boolean;
     filePath?: string;
     url?: string;
+    contentType?: string;
     error?: string;
 }
 
