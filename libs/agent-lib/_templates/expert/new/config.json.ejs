@@ -1,0 +1,11 @@
+---
+to: src/expert/builtin/<%= name %>/config.json
+---
+{
+  "expertId": "<%= name %>",
+  "displayName": "<%= name.replace(/-([a-z])/g, (g) => ' ' + g[1].toUpperCase()).replace(/^./, (s) => s.toUpperCase()) %>",
+  "description": "TODO: Add description",
+  "category": "general",
+  "tags": <%- JSON.stringify(name.split('-')) %>,
+  "triggers": []
+}
