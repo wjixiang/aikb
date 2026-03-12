@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node sync.cli.js /path/to/pubmed/xml
- *   node sync.cli.js /path/to/pubmed/xml --batch-size 50
+ *   node sync.cli.js /path/to/pubmed/xml --batch-size 1000 --concurrency 4
  */
 
 import 'dotenv/config';
@@ -16,13 +16,15 @@ import { NestFactory } from '@nestjs/core';
 interface CliArgs {
   path: string;
   batchSize: number;
+  concurrency: number;
   help: boolean;
 }
 
 function parseArgs(): CliArgs {
   const args: CliArgs = {
     path: '',
-    batchSize: 100,
+    batchSize: 500,
+    concurrency: 1,
     help: false,
   };
 
@@ -35,6 +37,11 @@ function parseArgs(): CliArgs {
       const size = parseInt(argv[++i], 10);
       if (!isNaN(size) && size > 0) {
         args.batchSize = size;
+      }
+    } else if (arg === '--concurrency' || arg === '-c') {
+      const size = parseInt(argv[++i], 10);
+      if (!isNaN(size) && size > 0) {
+        args.concurrency = size;
       }
     } else if (!arg.startsWith('--')) {
       args.path = arg;
@@ -55,12 +62,14 @@ Arguments:
   path              Path to PubMed XML directory or file
 
 Options:
-  --batch-size, -b  Batch size for database operations (default: 100)
-  --help, -h       Show this help message
+  --batch-size, -b    Batch size for database operations (default: 500)
+  --concurrency, -c   Number of files to process in parallel (default: 1)
+  --help, -h         Show this help message
 
 Examples:
   npm run sync -- /mnt/disk1/pubmed-mirror/baseline/2026
-  npm run sync -- /path/to/pubmed.xml.gz --batch-size 50
+  npm run sync -- /mnt/disk1/pubmed-mirror/baseline/2026 --batch-size 2000 --concurrency 4
+  npm run sync -- /path/to/pubmed.xml.gz --batch-size 500
 `);
 }
 
@@ -80,6 +89,7 @@ async function main() {
   console.log(`Path: ${args.path}`);
   console.log(`Type: ${isFile ? 'file' : 'directory'}`);
   console.log(`Batch size: ${args.batchSize}`);
+  console.log(`Concurrency: ${args.concurrency}`);
   console.log('');
 
   const app = await NestFactory.createApplicationContext(SyncModule, {
@@ -103,6 +113,7 @@ async function main() {
       })
     : await syncService.syncFromDirectory(args.path, {
         batchSize: args.batchSize,
+        concurrency: args.concurrency,
         onProgress: (p) => {
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
           console.log(

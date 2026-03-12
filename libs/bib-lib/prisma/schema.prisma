@@ -105,6 +105,7 @@ model MeshHeading {
 
   createdAt DateTime @default(now())
 
+  @@unique([articleId, descriptorName, qualifierName])
   @@index([descriptorName])
   @@index([articleId])
 }
@@ -121,6 +122,7 @@ model Chemical {
 
   createdAt DateTime @default(now())
 
+  @@unique([articleId, registryNumber, nameOfSubstance])
   @@index([registryNumber])
   @@index([articleId])
 }
@@ -138,6 +140,7 @@ model Grant {
 
   createdAt DateTime @default(now())
 
+  @@unique([articleId, grantId, agency, country])
   @@index([grantId])
   @@index([articleId])
 }
@@ -158,6 +161,7 @@ model ArticleId {
 
   createdAt DateTime @default(now())
 
+  @@unique([articleId, doi, pii, pmc])
   @@index([doi])
   @@index([pmc])
   @@index([articleId])

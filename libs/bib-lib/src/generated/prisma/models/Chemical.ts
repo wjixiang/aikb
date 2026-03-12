@@ -196,6 +196,7 @@ export type ChemicalOrderByWithRelationInput = {
 
 export type ChemicalWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  articleId_registryNumber_nameOfSubstance?: Prisma.ChemicalArticleIdRegistryNumberNameOfSubstanceCompoundUniqueInput
   AND?: Prisma.ChemicalWhereInput | Prisma.ChemicalWhereInput[]
   OR?: Prisma.ChemicalWhereInput[]
   NOT?: Prisma.ChemicalWhereInput | Prisma.ChemicalWhereInput[]
@@ -204,7 +205,7 @@ export type ChemicalWhereUniqueInput = Prisma.AtLeast<{
   articleId?: Prisma.StringFilter<"Chemical"> | string
   createdAt?: Prisma.DateTimeFilter<"Chemical"> | Date | string
   article?: Prisma.XOR<Prisma.ArticleScalarRelationFilter, Prisma.ArticleWhereInput>
-}, "id">
+}, "id" | "articleId_registryNumber_nameOfSubstance">
 
 export type ChemicalOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -291,6 +292,12 @@ export type ChemicalListRelationFilter = {
 
 export type ChemicalOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type ChemicalArticleIdRegistryNumberNameOfSubstanceCompoundUniqueInput = {
+  articleId: string
+  registryNumber: string
+  nameOfSubstance: string
 }
 
 export type ChemicalCountOrderByAggregateInput = {

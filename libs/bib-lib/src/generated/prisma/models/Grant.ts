@@ -205,6 +205,7 @@ export type GrantOrderByWithRelationInput = {
 
 export type GrantWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  articleId_grantId_agency_country?: Prisma.GrantArticleIdGrantIdAgencyCountryCompoundUniqueInput
   AND?: Prisma.GrantWhereInput | Prisma.GrantWhereInput[]
   OR?: Prisma.GrantWhereInput[]
   NOT?: Prisma.GrantWhereInput | Prisma.GrantWhereInput[]
@@ -214,7 +215,7 @@ export type GrantWhereUniqueInput = Prisma.AtLeast<{
   articleId?: Prisma.StringFilter<"Grant"> | string
   createdAt?: Prisma.DateTimeFilter<"Grant"> | Date | string
   article?: Prisma.XOR<Prisma.ArticleScalarRelationFilter, Prisma.ArticleWhereInput>
-}, "id">
+}, "id" | "articleId_grantId_agency_country">
 
 export type GrantOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -310,6 +311,13 @@ export type GrantListRelationFilter = {
 
 export type GrantOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type GrantArticleIdGrantIdAgencyCountryCompoundUniqueInput = {
+  articleId: string
+  grantId: string
+  agency: string
+  country: string
 }
 
 export type GrantCountOrderByAggregateInput = {

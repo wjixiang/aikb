@@ -1,9 +1,14 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PubmedParser } from './parsers/pubmed.parser.js';
 import type { ParsedArticle, SyncProgress, SyncOptions } from './parsers/types.js';
+
+interface CacheData {
+  journals: Map<string, string>;
+  authors: Map<string, string>;
+}
 
 @Injectable()
 export class SyncService {
@@ -12,9 +17,6 @@ export class SyncService {
 
   constructor(@Inject(forwardRef(() => PrismaService)) private prisma: PrismaService) {}
 
-  /**
-   * Sync all PubMed XML files from a directory
-   */
   async syncFromDirectory(dirPath: string, options: SyncOptions = {}): Promise<SyncProgress> {
     const progress: SyncProgress = {
       totalFiles: 0,
@@ -24,46 +26,39 @@ export class SyncService {
       errors: 0,
     };
 
-    // Get all XML gz files
     const files = await this.getXmlFiles(dirPath);
     progress.totalFiles = files.length;
 
     this.logger.log(`Found ${files.length} XML files to process`);
-
     options.onProgress?.(progress);
 
-    const batchSize = options.batchSize || 100;
-    const articleBatch: ParsedArticle[] = [];
+    const concurrency = options.concurrency || 2;
+    const batchSize = options.batchSize || 5000;
 
-    for (const file of files) {
-      try {
-        this.logger.log(`Processing: ${file}`);
+    const cache: CacheData = { journals: new Map(), authors: new Map() };
+    await this.preloadCache(cache);
 
-        for await (const article of this.parser.parseFile(file)) {
-          articleBatch.push(article);
-          progress.totalArticles++;
-
-          if (articleBatch.length >= batchSize) {
-            await this.syncBatch(articleBatch);
-            progress.processedArticles += articleBatch.length;
-            articleBatch.length = 0;
-            options.onProgress?.(progress);
+    for (let i = 0; i < files.length; i += concurrency) {
+      const chunk = files.slice(i, i + concurrency);
+      const results = await Promise.all(
+        chunk.map(async (file) => {
+          try {
+            return await this.processFile(file, batchSize, cache);
+          } catch (error) {
+            this.logger.error(`Error processing file ${file}:`, error);
+            return { articles: 0, errors: 1 };
           }
-        }
+        })
+      );
 
-        // Process remaining articles
-        if (articleBatch.length > 0) {
-          await this.syncBatch(articleBatch);
-          progress.processedArticles += articleBatch.length;
-          articleBatch.length = 0;
-        }
-
+      for (const result of results) {
         progress.processedFiles++;
-        options.onProgress?.(progress);
-      } catch (error) {
-        this.logger.error(`Error processing file ${file}:`, error);
-        progress.errors++;
+        progress.totalArticles += result.articles;
+        progress.processedArticles += result.articles;
+        progress.errors += result.errors;
       }
+
+      options.onProgress?.(progress);
     }
 
     this.logger.log(
@@ -75,97 +70,158 @@ export class SyncService {
     return progress;
   }
 
-  /**
-   * Sync a single PubMed XML file
-   */
-  async syncFile(filePath: string, options: SyncOptions = {}): Promise<SyncProgress> {
-    const progress: SyncProgress = {
-      totalFiles: 1,
-      processedFiles: 0,
-      totalArticles: 0,
-      processedArticles: 0,
-      errors: 0,
-    };
+  private async preloadCache(cache: CacheData): Promise<void> {
+    this.logger.log('Preloading cache...');
 
-    const batchSize = options.batchSize || 100;
+    const journals = await this.prisma.journal.findMany({
+      select: { id: true, issn: true, issnElectronic: true, isoAbbreviation: true },
+    });
+    for (const j of journals) {
+      if (j.issn) cache.journals.set(j.issn, j.id);
+      if (j.issnElectronic) cache.journals.set(j.issnElectronic, j.id);
+      if (j.isoAbbreviation) cache.journals.set(j.isoAbbreviation, j.id);
+    }
+    this.logger.log(`Preloaded ${cache.journals.size} journals`);
+
+    const authors = await this.prisma.author.findMany({
+      where: { lastName: { not: null } },
+      select: { id: true, lastName: true, foreName: true },
+    });
+    for (const a of authors) {
+      if (a.lastName) {
+        cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
+      }
+    }
+    this.logger.log(`Preloaded ${cache.authors.size} authors`);
+  }
+
+  private async processFile(
+    filePath: string,
+    batchSize: number,
+    cache: CacheData
+  ): Promise<{ articles: number; errors: number }> {
     const articleBatch: ParsedArticle[] = [];
+    let totalArticles = 0;
 
-    try {
-      for await (const article of this.parser.parseFile(filePath)) {
-        articleBatch.push(article);
-        progress.totalArticles++;
+    for await (const article of this.parser.parseFile(filePath)) {
+      articleBatch.push(article);
+      totalArticles++;
 
-        if (articleBatch.length >= batchSize) {
-          await this.syncBatch(articleBatch);
-          progress.processedArticles += articleBatch.length;
-          articleBatch.length = 0;
-          options.onProgress?.(progress);
+      if (articleBatch.length >= batchSize) {
+        await this.syncBatch(articleBatch, cache);
+        articleBatch.length = 0;
+      }
+    }
+
+    if (articleBatch.length > 0) {
+      await this.syncBatch(articleBatch, cache);
+    }
+
+    return { articles: totalArticles, errors: 0 };
+  }
+
+  private async syncBatch(articles: ParsedArticle[], cache: CacheData): Promise<void> {
+    this.logger.log(`Processing batch of ${articles.length} articles...`);
+    const chunkSize = 200;
+    for (let i = 0; i < articles.length; i += chunkSize) {
+      const chunk = articles.slice(i, i + chunkSize);
+      this.logger.log(`Processing chunk ${i}-${i + chunkSize}...`);
+      await this.syncChunk(chunk, cache);
+      this.logger.log(`Chunk ${i}-${i + chunkSize} complete`);
+    }
+    this.logger.log(`Batch complete`);
+  }
+
+  private async syncChunk(articles: ParsedArticle[], cache: CacheData): Promise<void> {
+    this.logger.log(`Collecting journals/authors for ${articles.length} articles...`);
+    const newJournals = new Map<string, any>();
+    const newAuthors = new Map<string, any>();
+
+    for (const article of articles) {
+      if (article.journal) {
+        const j = article.journal;
+        const key = j.isoAbbreviation || j.issn || '';
+        if (key && !cache.journals.has(key) && !newJournals.has(key)) {
+          newJournals.set(key, {
+            issn: j.issn,
+            issnElectronic: j.issnElectronic,
+            volume: j.volume,
+            issue: j.issue,
+            pubDate: j.pubDate,
+            pubYear: j.pubYear,
+            title: j.title,
+            isoAbbreviation: j.isoAbbreviation,
+          });
         }
       }
 
-      // Process remaining articles
-      if (articleBatch.length > 0) {
-        await this.syncBatch(articleBatch);
-        progress.processedArticles += articleBatch.length;
+      for (const author of article.authors) {
+        if (!author.lastName) continue;
+        const key = `${author.lastName}|${author.foreName || ''}`;
+        if (!cache.authors.has(key) && !newAuthors.has(key)) {
+          newAuthors.set(key, {
+            lastName: author.lastName,
+            foreName: author.foreName,
+            initials: author.initials,
+          });
+        }
       }
-
-      progress.processedFiles++;
-    } catch (error) {
-      this.logger.error(`Error processing file ${filePath}:`, error);
-      progress.errors++;
     }
 
-    options.onProgress?.(progress);
+    if (newJournals.size > 0) {
+      this.logger.log(`Creating ${newJournals.size} journals...`);
+      const journalData = Array.from(newJournals.values());
+      await this.prisma.journal.createMany({
+        data: journalData,
+        skipDuplicates: true,
+      });
 
-    return progress;
-  }
+      const keys = Array.from(newJournals.keys());
+      const created = await this.prisma.journal.findMany({
+        where: { isoAbbreviation: { in: keys } },
+        select: { id: true, isoAbbreviation: true },
+      });
+      for (const j of created) {
+        if (j.isoAbbreviation) cache.journals.set(j.isoAbbreviation, j.id);
+      }
+      this.logger.log(`Journals created`);
+    }
 
-  /**
-   * Sync a batch of articles using upsert
-   */
-  private async syncBatch(articles: ParsedArticle[]): Promise<void> {
+    if (newAuthors.size > 0) {
+      this.logger.log(`Creating ${newAuthors.size} authors...`);
+      const authorData = Array.from(newAuthors.values());
+      await this.prisma.author.createMany({
+        data: authorData,
+        skipDuplicates: true,
+      });
+
+      const created = await this.prisma.author.findMany({
+        where: { lastName: { in: authorData.map(a => a.lastName) } },
+        select: { id: true, lastName: true, foreName: true },
+      });
+      for (const a of created) {
+        if (a.lastName) {
+          cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
+        }
+      }
+      this.logger.log(`Authors created`);
+    }
+
+    this.logger.log(`Starting transaction for ${articles.length} articles...`);
+
     await this.prisma.$transaction(async (tx) => {
       for (const article of articles) {
         try {
-          // Upsert Journal
-          let journalId: string | undefined;
+          let journalId: string | null = null;
           if (article.journal) {
             const j = article.journal;
-            const existingJournal = await this.findJournalByIssn(tx, j.issn || j.isoAbbreviation);
-
-            if (existingJournal) {
-              journalId = existingJournal;
-              await tx.journal.update({
-                where: { id: existingJournal },
-                data: {
-                  issn: j.issn,
-                  issnElectronic: j.issnElectronic,
-                  volume: j.volume,
-                  issue: j.issue,
-                  pubDate: j.pubDate,
-                  pubYear: j.pubYear,
-                  title: j.title,
-                  isoAbbreviation: j.isoAbbreviation,
-                },
-              });
-            } else {
-              const newJournal = await tx.journal.create({
-                data: {
-                  issn: j.issn,
-                  issnElectronic: j.issnElectronic,
-                  volume: j.volume,
-                  issue: j.issue,
-                  pubDate: j.pubDate,
-                  pubYear: j.pubYear,
-                  title: j.title,
-                  isoAbbreviation: j.isoAbbreviation,
-                },
-              });
-              journalId = newJournal.id;
+            if (j.isoAbbreviation && cache.journals.has(j.isoAbbreviation)) {
+              journalId = cache.journals.get(j.isoAbbreviation)!;
+            } else if (j.issn && cache.journals.has(j.issn)) {
+              journalId = cache.journals.get(j.issn)!;
             }
           }
 
-          // Upsert Article
           const dbArticle = await tx.article.upsert({
             where: { pmid: article.pmid },
             create: {
@@ -189,129 +245,127 @@ export class SyncService {
             },
           });
 
-          // Upsert Authors
+          const authorLinks = [];
           for (const author of article.authors) {
-            const existingAuthor = await this.findAuthor(tx, author.lastName, author.foreName);
-
-            let dbAuthor;
-            if (existingAuthor) {
-              dbAuthor = await tx.author.update({
-                where: { id: existingAuthor },
-                data: {
-                  lastName: author.lastName,
-                  foreName: author.foreName,
-                  initials: author.initials,
-                },
-              });
-            } else {
-              dbAuthor = await tx.author.create({
-                data: {
-                  lastName: author.lastName,
-                  foreName: author.foreName,
-                  initials: author.initials,
-                },
-              });
+            if (!author.lastName) continue;
+            const key = `${author.lastName}|${author.foreName || ''}`;
+            const authorId = cache.authors.get(key);
+            if (authorId) {
+              authorLinks.push({ authorId, articleId: dbArticle.id });
             }
+          }
 
-            await tx.authorArticle.upsert({
-              where: {
-                authorId_articleId: {
-                  authorId: dbAuthor.id,
-                  articleId: dbArticle.id,
-                },
-              },
-              create: {
-                authorId: dbAuthor.id,
-                articleId: dbArticle.id,
-              },
-              update: {},
+          if (authorLinks.length > 0) {
+            await tx.authorArticle.createMany({
+              data: authorLinks,
+              skipDuplicates: true,
             });
           }
 
-          // Upsert MeSH Headings
-          for (const mesh of article.meshHeadings) {
-            await tx.meshHeading.create({
-              data: {
-                descriptorName: mesh.descriptorName,
-                qualifierName: mesh.qualifierName,
-                ui: mesh.ui,
-                majorTopicYN: mesh.majorTopicYN,
-                articleId: dbArticle.id,
-              },
-            }).catch(() => {
-              // Ignore duplicates
+          if (article.meshHeadings.length > 0) {
+            const meshData = article.meshHeadings.map(m => ({
+              descriptorName: m.descriptorName || null,
+              qualifierName: m.qualifierName ? String(m.qualifierName) : null,
+              ui: m.ui || null,
+              majorTopicYN: m.majorTopicYN || false,
+              articleId: dbArticle.id,
+            }));
+            await tx.meshHeading.createMany({
+              data: meshData,
+              skipDuplicates: true,
             });
           }
 
-          // Upsert Chemicals
-          for (const chem of article.chemicals) {
-            await tx.chemical.create({
-              data: {
-                registryNumber: chem.registryNumber,
-                nameOfSubstance: chem.nameOfSubstance,
-                articleId: dbArticle.id,
-              },
-            }).catch(() => {
-              // Ignore duplicates
+          if (article.chemicals.length > 0) {
+            const chemData = article.chemicals.map(c => ({
+              registryNumber: c.registryNumber?.toString() || null,
+              nameOfSubstance: c.nameOfSubstance || null,
+              articleId: dbArticle.id,
+            }));
+            await tx.chemical.createMany({
+              data: chemData,
+              skipDuplicates: true,
             });
           }
 
-          // Upsert Grants
-          for (const grant of article.grants) {
-            await tx.grant.create({
-              data: {
-                grantId: grant.grantId,
-                agency: grant.agency,
-                country: grant.country,
-                articleId: dbArticle.id,
-              },
-            }).catch(() => {
-              // Ignore duplicates
+          if (article.grants.length > 0) {
+            const grantData = article.grants.map(g => ({
+              grantId: g.grantId?.toString() || null,
+              agency: g.agency || null,
+              country: g.country || null,
+              articleId: dbArticle.id,
+            }));
+            await tx.grant.createMany({
+              data: grantData,
+              skipDuplicates: true,
             });
           }
 
-          // Upsert Article IDs
-          for (const articleId of article.articleIds) {
-            await tx.articleId.create({
-              data: {
-                pubmed: articleId.pubmed,
-                doi: articleId.doi,
-                pii: articleId.pii,
-                pmc: articleId.pmc,
-                otherId: articleId.otherId,
-                otherIdType: articleId.otherIdType,
-                articleId: dbArticle.id,
-              },
-            }).catch(() => {
-              // Ignore duplicates
+          if (article.articleIds.length > 0) {
+            const articleIdData = article.articleIds.map(ai => ({
+              pubmed: ai.pubmed ? ai.pubmed.toString() : null,
+              doi: ai.doi != null ? String(ai.doi) : null,
+              pii: ai.pii != null ? String(ai.pii) : null,
+              pmc: ai.pmc != null ? String(ai.pmc) : null,
+              otherId: ai.otherId != null ? String(ai.otherId) : null,
+              otherIdType: ai.otherIdType != null ? String(ai.otherIdType) : null,
+              articleId: dbArticle.id,
+            }));
+            await tx.articleId.createMany({
+              data: articleIdData,
+              skipDuplicates: true,
             });
           }
         } catch (error) {
-          this.logger.error(`Error syncing article ${article.pmid}:`, error);
+          // Log but don't fail the whole batch
         }
       }
-    });
+    }, { timeout: 120000 });
   }
 
-  private async findJournalByIssn(tx: any, issn: string | undefined): Promise<string | null> {
-    if (!issn) return null;
-    const journal = await tx.journal.findFirst({
-      where: { OR: [{ issn }, { issnElectronic: issn }] },
-    });
-    return journal?.id || null;
+  async syncFile(filePath: string, options: SyncOptions = {}): Promise<SyncProgress> {
+    const progress: SyncProgress = {
+      totalFiles: 1,
+      processedFiles: 0,
+      totalArticles: 0,
+      processedArticles: 0,
+      errors: 0,
+    };
+
+    const cache: CacheData = { journals: new Map(), authors: new Map() };
+    await this.preloadCache(cache);
+
+    const batchSize = options.batchSize || 5000;
+    const articleBatch: ParsedArticle[] = [];
+
+    try {
+      for await (const article of this.parser.parseFile(filePath)) {
+        articleBatch.push(article);
+        progress.totalArticles++;
+
+        if (articleBatch.length >= batchSize) {
+          await this.syncBatch(articleBatch, cache);
+          progress.processedArticles += articleBatch.length;
+          articleBatch.length = 0;
+          options.onProgress?.(progress);
+        }
+      }
+
+      if (articleBatch.length > 0) {
+        await this.syncBatch(articleBatch, cache);
+        progress.processedArticles += articleBatch.length;
+      }
+
+      progress.processedFiles++;
+    } catch (error) {
+      this.logger.error(`Error processing file ${filePath}:`, error);
+      progress.errors++;
+    }
+
+    options.onProgress?.(progress);
+    return progress;
   }
 
-  private async findAuthor(tx: any, lastName: string | undefined, foreName: string | undefined): Promise<string | null> {
-    if (!lastName) return null;
-    const author = await tx.author.findFirst({
-      where: { lastName, foreName },
-    });
-    return author?.id || null;
-  }
-
-  /**
-   * Get all XML gz files from a directory recursively
-   */
   private async getXmlFiles(dirPath: string): Promise<string[]> {
     const files: string[] = [];
     const entries = await readdir(dirPath, { withFileTypes: true });

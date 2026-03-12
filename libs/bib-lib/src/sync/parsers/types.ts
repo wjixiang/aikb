@@ -76,5 +76,6 @@ export interface SyncProgress {
 
 export interface SyncOptions {
   batchSize?: number;
+  concurrency?: number;  // Number of files to process in parallel
   onProgress?: (progress: SyncProgress) => void;
 }

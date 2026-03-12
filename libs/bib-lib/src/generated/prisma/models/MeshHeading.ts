@@ -214,6 +214,7 @@ export type MeshHeadingOrderByWithRelationInput = {
 
 export type MeshHeadingWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  articleId_descriptorName_qualifierName?: Prisma.MeshHeadingArticleIdDescriptorNameQualifierNameCompoundUniqueInput
   AND?: Prisma.MeshHeadingWhereInput | Prisma.MeshHeadingWhereInput[]
   OR?: Prisma.MeshHeadingWhereInput[]
   NOT?: Prisma.MeshHeadingWhereInput | Prisma.MeshHeadingWhereInput[]
@@ -224,7 +225,7 @@ export type MeshHeadingWhereUniqueInput = Prisma.AtLeast<{
   articleId?: Prisma.StringFilter<"MeshHeading"> | string
   createdAt?: Prisma.DateTimeFilter<"MeshHeading"> | Date | string
   article?: Prisma.XOR<Prisma.ArticleScalarRelationFilter, Prisma.ArticleWhereInput>
-}, "id">
+}, "id" | "articleId_descriptorName_qualifierName">
 
 export type MeshHeadingOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -329,6 +330,12 @@ export type MeshHeadingListRelationFilter = {
 
 export type MeshHeadingOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type MeshHeadingArticleIdDescriptorNameQualifierNameCompoundUniqueInput = {
+  articleId: string
+  descriptorName: string
+  qualifierName: string
 }
 
 export type MeshHeadingCountOrderByAggregateInput = {

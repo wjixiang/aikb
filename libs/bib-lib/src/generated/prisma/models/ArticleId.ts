@@ -266,6 +266,7 @@ export type ArticleIdOrderByWithRelationInput = {
 
 export type ArticleIdWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  articleId_doi_pii_pmc?: Prisma.ArticleIdArticleIdDoiPiiPmcCompoundUniqueInput
   AND?: Prisma.ArticleIdWhereInput | Prisma.ArticleIdWhereInput[]
   OR?: Prisma.ArticleIdWhereInput[]
   NOT?: Prisma.ArticleIdWhereInput | Prisma.ArticleIdWhereInput[]
@@ -278,7 +279,7 @@ export type ArticleIdWhereUniqueInput = Prisma.AtLeast<{
   articleId?: Prisma.StringFilter<"ArticleId"> | string
   createdAt?: Prisma.DateTimeFilter<"ArticleId"> | Date | string
   article?: Prisma.XOR<Prisma.ArticleScalarRelationFilter, Prisma.ArticleWhereInput>
-}, "id">
+}, "id" | "articleId_doi_pii_pmc">
 
 export type ArticleIdOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -403,6 +404,13 @@ export type ArticleIdListRelationFilter = {
 
 export type ArticleIdOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type ArticleIdArticleIdDoiPiiPmcCompoundUniqueInput = {
+  articleId: string
+  doi: string
+  pii: string
+  pmc: string
 }
 
 export type ArticleIdCountOrderByAggregateInput = {
