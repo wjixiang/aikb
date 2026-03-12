@@ -72,7 +72,7 @@ function parseSOP(sopContent: string): {
  *
  * Factory function that loads configuration from config.json and SOP from .sop.md
  */
-export default function create<%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>Expert(): ExpertConfig {
+export default function create<%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace(/^./, (s) => s.toUpperCase()) %>Expert(): ExpertConfig {
     const config = loadConfig();
     const sopContent = loadSOP();
     const sop = parseSOP(sopContent);
