@@ -3,6 +3,7 @@
 export enum EmbeddingProvider {
   OPENAI = 'openai',
   ALIBABA = 'alibaba',
+  OLLAMA = 'ollama',
 }
 
 export interface EmbeddingConfig {

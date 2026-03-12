@@ -68,7 +68,7 @@ Usage:
 
 Options:
   --provider, -p       Embedding provider (default: alibaba)
-                      Options: openai, alibaba, onnx
+                      Options: openai, alibaba, ollama
   --model, -m         Embedding model (default: text-embedding-v4)
   --dimension, -d     Embedding dimension (default: 1024)
   --batch-size, -b    Batch size for embedding (default: 20)

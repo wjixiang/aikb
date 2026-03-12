@@ -2,6 +2,7 @@ import type { EmbeddingConfig, IEmbeddingProvider, EmbedResult, BatchEmbedResult
 import { defaultEmbeddingConfig, EmbeddingProvider } from './types.js';
 import { AlibabaEmbeddingProvider } from './providers/alibaba.js';
 import { OpenAIEmbeddingProvider } from './providers/openai.js';
+import { OllamaEmbeddingProvider } from './providers/ollama.js';
 
 export class Embedding {
   private providers: Map<EmbeddingProvider, IEmbeddingProvider> = new Map();
@@ -11,6 +12,7 @@ export class Embedding {
     // Initialize providers
     this.providers.set(EmbeddingProvider.ALIBABA, new AlibabaEmbeddingProvider());
     this.providers.set(EmbeddingProvider.OPENAI, new OpenAIEmbeddingProvider());
+    this.providers.set(EmbeddingProvider.OLLAMA, new OllamaEmbeddingProvider());
 
     this.defaultProvider = defaultProvider;
   }
@@ -19,7 +21,7 @@ export class Embedding {
    * Generate embedding for a single text
    */
   async embed(text: string, config?: Partial<EmbeddingConfig>): Promise<EmbedResult> {
-    const fullConfig = { ...defaultEmbeddingConfig, ...config };
+    const fullConfig: EmbeddingConfig = { ...defaultEmbeddingConfig, ...config } as EmbeddingConfig;
     const provider = this.providers.get(fullConfig.provider);
 
     if (!provider) {
@@ -41,7 +43,7 @@ export class Embedding {
    * Generate embeddings for multiple texts
    */
   async embedBatch(texts: string[], config?: Partial<EmbeddingConfig>): Promise<BatchEmbedResult> {
-    const fullConfig = { ...defaultEmbeddingConfig, ...config };
+    const fullConfig: EmbeddingConfig = { ...defaultEmbeddingConfig, ...config } as EmbeddingConfig;
     const provider = this.providers.get(fullConfig.provider);
 
     if (!provider) {
