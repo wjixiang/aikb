@@ -42,9 +42,8 @@ export * from './agent/ObservableAgent.js';
 // Re-export from statefulContext (now integrated into agent-lib)
 export * from './statefulContext/index.js';
 
-// Export component registry for external component development
-export { ComponentRegistry } from './components/ComponentRegistry.js';
-export type { ComponentRegistration } from './components/ComponentRegistry.js';
+// Re-export components from agent-components
+export * from 'agent-components';
 
 // Export thinking module (refactored from MemoryModule)
 export * from './thinking/index.js';
@@ -57,5 +56,8 @@ export type { ValidationResult, InputHandler, ExportConfig, ExportResult, Expert
 
 // Export DI (Dependency Injection) module
 export * from './di/index.js';
+
+// Export utils (S3 client, etc.)
+export * from './utils/index.js';
 
 export { createExpertConfig } from './expert/ExpertFactory.js';

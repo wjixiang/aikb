@@ -5,8 +5,8 @@
  * and provides access to component tools.
  */
 
-import { ToolComponent } from '../statefulContext/toolComponent.js';
-import type { Tool } from '../statefulContext/types.js';
+import { ToolComponent } from './ui/index.js';
+import type { Tool } from './ui/index.js';
 
 export interface ComponentRegistration {
     id: string;

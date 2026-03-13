@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ComponentRegistry } from '../../components/ComponentRegistry.js';
-import { ToolComponent } from '../../statefulContext/toolComponent.js';
-import type { Tool } from '../../statefulContext/types.js';
+import { ComponentRegistry } from '../ComponentRegistry.js';
+import { ToolComponent } from '../ui/index.js';
+import type { Tool } from '../ui/index.js';
 import { z } from 'zod';
 
 describe('ComponentRegistry', () => {

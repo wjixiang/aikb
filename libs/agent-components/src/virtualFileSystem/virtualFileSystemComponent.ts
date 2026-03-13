@@ -5,7 +5,7 @@
  * This allows LLM to read/write files as if they were local files
  */
 
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../../statefulContext/index.js';
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js';
 import {
     S3Client,
     S3ClientConfig,
@@ -16,7 +16,7 @@ import {
     listFiles,
     bucketExists,
     getPresignedUrl,
-} from '../../utils/s3Client.js';
+} from '../utils/index.js';
 import { readFileParams, writeFileParams, listFilesParams, deleteFileParams, exportWorkspaceParams } from './virtualFileSystemSchemas.js';
 
 /**

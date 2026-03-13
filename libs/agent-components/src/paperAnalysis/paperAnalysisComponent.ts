@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { ToolComponent } from '../../statefulContext/toolComponent.js';
-import { tdiv } from '../../statefulContext/ui/index.js';
+import { ToolComponent, tdiv } from '../ui/index.js';
 import { z } from 'zod';
 
 /**

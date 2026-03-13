@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../../statefulContext/index.js'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
 import { createPrismaFlowToolSet } from './prismaFlowTools.js'
 import type {
     DatabaseFlow,
