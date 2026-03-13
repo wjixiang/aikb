@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
+    "test:expert": "vitest run src/expert-demo.test.ts",
     "test:expert-cli": "npx tsx src/test-expert-cli.ts",
     "expert:new": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts new",
     "expert:list": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts list",

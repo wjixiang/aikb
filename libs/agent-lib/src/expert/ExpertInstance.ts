@@ -7,7 +7,7 @@
  * - Independent execution loop
  */
 
-import { injectable, inject, optional } from 'inversify';
+import { injectable } from 'inversify';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import { Agent } from '../agent/agent.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
@@ -48,7 +48,7 @@ export class ExpertInstance implements IExpertInstance {
     constructor(
         config: ExpertConfig,
         agent: Agent,
-        @inject(TYPES.Container) @optional() container?: Container,
+        container?: Container, // Optional container (can be passed or undefined)
     ) {
         this.expertId = config.expertId;
         this.config = config;
