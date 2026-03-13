@@ -106,143 +106,36 @@ examples:
 function generateWorkspaceTs(config: ExpertTemplateConfig, isExternal: boolean = false): string {
   const className = toPascalCase(config.expertId) + 'Workspace';
 
-  // 外部项目使用包导入，内部项目使用相对路径
-  const baseImportPath = isExternal
-    ? 'agent-lib'
-    : '../../index.js';
+  // 统一使用 'agent-lib' 包导入
+  const baseImportPath = 'agent-lib';
 
   return `/**
- * ${config.displayName} Workspace Module
+ * ${config.displayName} Workspace
  *
- * 职责：
- * 1. 导入和注册组件
- * 2. 输入验证和转换
- * 3. 输出格式化和导出
+ * 运行时工作空间 - 用于注册组件
  *
- * 使用方式：
- * - 继承 VirtualWorkspace 创建运行时工作空间
- * - 使用 VirtualWorkspaceStatic 定义静态配置
+ * 如果不需要自定义输入/输出处理，可以直接使用 createSimpleExpertConfig
+ * 此时此文件可选
  */
 
-import { VirtualWorkspace, VirtualWorkspaceStatic } from '${baseImportPath}';
-import type { ValidationResult } from '${baseImportPath}';
+import { VirtualWorkspace } from '${baseImportPath}';
 // import { MyComponent } from './components/MyComponent.js';
 
 /**
  * ${className} - 运行时工作空间
  *
- * 继承VirtualWorkspace以获得完整的运行时能力
+ * 继承 VirtualWorkspace 以获得完整的运行时能力
  * 在构造函数中注册组件
+ *
+ * 使用方式：
+ * const workspace = new ${className}();
  */
 export class ${className} extends VirtualWorkspace {
   constructor() {
     super({ id: '${config.expertId}', name: '${config.displayName}' });
 
-    // 方式1：直接在构造函数中注册组件
+    // 注册组件（可选）
     // this.registerComponent('myComponent', new MyComponent());
-
-    // 方式2：注册多个组件
-    // this.registerComponents([
-    //   { id: 'componentA', component: new ComponentA() },
-    //   { id: 'componentB', component: new ComponentB(), priority: 10 },
-    // ]);
-  }
-}
-
-/**
- * ${className}Static - 静态配置
- *
- * 使用VirtualWorkspaceStatic命名空间定义静态配置
- * 用于ExpertFactory加载配置和输入/输出处理
- */
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace ${className}Static {
-  // ==================== 组件定义 ====================
-
-  /**
-   * 获取组件列表
-   * 返回组件实例或DI Token
-   */
-  export function getComponents() {
-    return [
-      // 添加组件实例或DI Token
-      // new MyComponent(),
-      // TYPES.MyOtherComponent,
-    ];
-  }
-
-  /**
-   * 组件DI Token映射
-   * 用于从config.json的diToken字符串解析为实际的Symbol
-   */
-  export const componentTokenMap: Record<string, symbol> = {
-    // 'MyComponent': TYPES.MyComponent,
-  };
-
-  // ==================== 输入处理 ====================
-
-  /**
-   * 验证输入
-   * 重写以实现自定义验证逻辑
-   */
-  export function validateInput(input: Record<string, any>): ValidationResult {
-    const errors: string[] = [];
-
-    // 示例验证：检查必需字段
-    if (!input['query'] && !input['input']) {
-      errors.push('Missing required field: query or input');
-    }
-
-    // 注意：使用 exactOptionalPropertyTypes 时，不要显式设置 undefined
-    // 而是使用条件展开来省略空数组
-    return {
-      valid: errors.length === 0,
-      ...(errors.length > 0 && { errors }),
-    };
-  }
-
-  /**
-   * 转换输入格式
-   * 重写以实现输入转换（如添加默认值、格式转换等）
-   */
-  export function transformInput(input: Record<string, any>): Record<string, any> {
-    return {
-      ...input,
-      timestamp: Date.now(),
-    };
-  }
-
-  /**
-   * 加载外部数据
-   * 重写以实现从外部存储（如S3）加载数据
-   */
-  export async function loadExternalData(input: Record<string, any>): Promise<Record<string, any>> {
-    // 如果有S3 key，加载数据
-    // if (input.s3Key) {
-    //   const vfs = ...;
-    //   const data = await vfs.readFile(input.s3Key);
-    //   return { ...input, loadedData: data };
-    // }
-
-    return input;
-  }
-
-  // ==================== 输出处理 ====================
-
-  /**
-   * 格式化输出
-   * 使用默认实现，或重写以实现自定义输出格式
-   */
-  export function formatOutput(workspace: any): Record<string, any> {
-    return VirtualWorkspaceStatic.formatOutput(workspace);
-  }
-
-  /**
-   * 导出处理
-   * 使用默认实现，或重写以实现自定义导出格式
-   */
-  export async function exportHandler(workspace: any, config: any): Promise<any> {
-    return VirtualWorkspaceStatic.exportHandler(workspace, config);
   }
 }
 `;
@@ -255,33 +148,28 @@ export namespace ${className}Static {
  * @param isExternal - 是否为外部项目（非agent-lib内置）
  */
 function generateIndexTs(config: ExpertTemplateConfig, isExternal: boolean = false): string {
-  const className = toPascalCase(config.expertId) + 'Workspace';
-  const staticName = className + 'Static';
-
-  // 外部项目使用包导入，内部项目使用相对路径
-  const importPath = isExternal
-    ? 'agent-lib'
-    : '../../ExpertFactory.js';
+  // 外部项目使用包导入 'agent-lib'
+  // 内部项目（agent-lib源码）也使用 'agent-lib'，因为运行时它已经是构建后的包
+  const importPath = 'agent-lib';
 
   return `/**
  * ${config.displayName} - Factory Function
  *
- * 使用ExpertFactory自动加载配置，无需样板代码
- */
-
-import { createExpertConfig } from '${importPath}';
-import { ${staticName} } from './Workspace.js';
-
-/**
- * 创建Expert配置
+ * 使用 ExpertFactory 自动加载配置，无需样板代码
  *
- * 工厂函数会自动：
- * 1. 加载config.json
- * 2. 加载sop.yaml
- * 3. 构建prompt（capability + direction）
- * 4. 从Static命名空间获取输入/输出处理器
+ * 方式1（推荐）：最简方式，无需额外配置
+ *   import { createSimpleExpertConfig } from '${importPath}';
+ *   export default createSimpleExpertConfig(import.meta.url);
+ *
+ * 方式2：需要自定义输入/输出处理时
+ *   import { createExpertConfig } from '${importPath}';
+ *   import { ${toPascalCase(config.expertId)}Workspace } from './Workspace.js';
+ *   export default createExpertConfig(import.meta.url, ${toPascalCase(config.expertId)}Workspace);
  */
-export default createExpertConfig(import.meta.url, ${staticName});
+
+import { createSimpleExpertConfig } from '${importPath}';
+
+export default createSimpleExpertConfig(import.meta.url);
 `;
 }
 

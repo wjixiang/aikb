@@ -6,7 +6,13 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "test:expert-cli": "npx tsx src/test-expert-cli.ts"
+    "test:expert-cli": "npx tsx src/test-expert-cli.ts",
+    "expert:new": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts new",
+    "expert:list": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts list",
+    "expert:validate": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts validate",
+    "expert:show": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts show",
+    "expert:demo": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts demo",
+    "expert:test": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts test"
   },
   "keywords": [],
   "author": "",

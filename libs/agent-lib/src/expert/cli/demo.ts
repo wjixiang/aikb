@@ -23,31 +23,63 @@ import { AgentFactory } from '../../agent/AgentFactory.js';
 import { ProviderSettings } from '../../types/provider-settings.js';
 
 /**
- * Get experts directory
+ * Get experts directories to search
  */
-function getExpertsDir(): string {
-    return join(process.cwd(), 'src', 'expert', 'builtin');
+function getExpertsDirs(): string[] {
+    return [
+        join(process.cwd(), 'src', 'expert', 'builtin'),
+        join(process.cwd(), 'experts'),
+    ].filter(dir => existsSync(dir));
+}
+
+/**
+ * Find expert directory by name
+ */
+function findExpertDirByName(expertName: string): string | null {
+    for (const expertsDir of getExpertsDirs()) {
+        const expertDir = join(expertsDir, expertName);
+        if (existsSync(expertDir)) {
+            return expertDir;
+        }
+    }
+    return null;
 }
 
 /**
  * Load Expert configuration
+ * Supports both new format (index.ts) and old format (expert.ts)
  */
 async function loadExpert(expertName: string): Promise<ExpertConfig> {
-    const expertDir = join(getExpertsDir(), expertName);
-    const expertPath = join(expertDir, 'expert.ts');
+    const expertDir = findExpertDirByName(expertName);
 
-    if (!existsSync(expertPath)) {
-        throw new Error(`Expert not found: ${expertPath}`);
+    if (!expertDir) {
+        const searchedDirs = getExpertsDirs();
+        throw new Error(`Expert not found: ${expertName}\nSearched in: ${searchedDirs.join(', ')}`);
     }
 
-    const expertModule = await import(`file://${expertPath}`);
-    const createExpert = expertModule.default;
-
-    if (!createExpert) {
-        throw new Error(`Expert factory not found: ${expertPath}`);
+    // Try new format first (index.ts)
+    const newFormatPath = join(expertDir, 'index.ts');
+    if (existsSync(newFormatPath)) {
+        const expertModule = await import(`file://${newFormatPath}`);
+        const createExpert = expertModule.default;
+        if (!createExpert) {
+            throw new Error(`Expert factory not found: ${newFormatPath}`);
+        }
+        return createExpert();
     }
 
-    return createExpert();
+    // Fallback to old format (expert.ts)
+    const oldFormatPath = join(expertDir, 'expert.ts');
+    if (existsSync(oldFormatPath)) {
+        const expertModule = await import(`file://${oldFormatPath}`);
+        const createExpert = expertModule.default;
+        if (!createExpert) {
+            throw new Error(`Expert factory not found: ${oldFormatPath}`);
+        }
+        return createExpert();
+    }
+
+    throw new Error(`Expert entry point not found: ${expertDir}\nExpected index.ts or expert.ts`);
 }
 
 /**

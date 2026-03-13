@@ -1,19 +1,18 @@
 /**
- * My Expert - Factory Function
+ * Test Expert - Factory Function
  *
- * 使用ExpertFactory自动加载配置，无需样板代码
+ * 使用 ExpertFactory 自动加载配置，无需样板代码
+ *
+ * 方式1（推荐）：最简方式，无需额外配置
+ *   import { createSimpleExpertConfig } from 'agent-lib';
+ *   export default createSimpleExpertConfig(import.meta.url);
+ *
+ * 方式2：需要自定义输入/输出处理时
+ *   import { createExpertConfig } from 'agent-lib';
+ *   import { MyExpertWorkspaceStatic } from './Workspace.js';
+ *   export default createExpertConfig(import.meta.url, MyExpertWorkspaceStatic);
  */
 
-import { createExpertConfig } from '../../ExpertFactory.js';
-import { MyExpertWorkspaceStatic } from './Workspace.js';
+import { createSimpleExpertConfig } from 'agent-lib';
 
-/**
- * 创建Expert配置
- *
- * 工厂函数会自动：
- * 1. 加载config.json
- * 2. 加载sop.yaml
- * 3. 构建prompt（capability + direction）
- * 4. 从Static命名空间获取输入/输出处理器
- */
-export default createExpertConfig(import.meta.url, MyExpertWorkspaceStatic);
+export default createSimpleExpertConfig(import.meta.url);

@@ -1,8 +1,8 @@
 {
-  "extends": "../../libs/agent-lib/tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*", "experts/**/*"]
+  "include": ["*.ts"]
 }
