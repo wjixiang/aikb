@@ -15,7 +15,8 @@ import type { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
-import { Logger } from 'pino';
+// Define Logger type locally to avoid pino ESM import issues
+type Logger = import('pino').Logger;
 import type { IThinkingModule, ThinkingPhaseResult } from '../thinking/types.js';
 
 // Re-export types for backward compatibility

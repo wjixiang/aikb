@@ -5,6 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "build": "tsup",
     "test": "vitest run",
     "test:expert": "vitest run src/expert-demo.test.ts",
     "test:expert-cli": "npx tsx src/test-expert-cli.ts",
@@ -23,8 +24,12 @@
     "agent-lib": "workspace:*"
   },
   "devDependencies": {
+    "@swc-node/register": "~1.9.1",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^1.6.0",
-    "@types/node": "^20.0.0"
+    "unplugin-swc": "^1.5.9",
+    "vitest": "^1.6.1"
   }
 }

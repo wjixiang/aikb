@@ -36,7 +36,10 @@ import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import { TaskModule } from '../task/TaskModule.js';
 import pino from 'pino';
-import type { Logger, Level } from 'pino'
+
+// Define Logger type locally to avoid pino ESM import issues
+type Logger = ReturnType<typeof pino>;
+type Level = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 import { object } from 'zod';
 
 /**

@@ -44,7 +44,8 @@ import { Turn, ThinkingRound, ToolCallResult } from '../memory/Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { formatChatCompletionTools } from '../utils/toolRendering.js';
 import { TYPES } from '../di/types.js';
-import type { Logger } from 'pino';
+// Define Logger type locally to avoid pino ESM import issues
+type Logger = import('pino').Logger;
 import {
     IThinkingModule,
     ThinkingModuleConfig,
@@ -288,7 +289,7 @@ export class ThinkingModule implements IThinkingModule {
                         roundNumber,
                         'No required tool was called. You MUST call "continue_thinking" to indicate your decision'
                     );
-                    
+
                     this.logger.warn(
                         { roundNumber, attempt: attempt + 1, maxRetries: this.config.maxRetriesPerRound },
                         'LLM did not call required tool, will retry'
@@ -301,13 +302,13 @@ export class ThinkingModule implements IThinkingModule {
                         }
                         continue;
                     }
-                    
+
                     // No more retries - use fallback strategy
                     this.logger.error(
                         { roundNumber, attempts: attempt + 1 },
                         'Max retries exceeded for thinking round, using fallback'
                     );
-                    
+
                     // Fallback: treat as if continueThinking=false with the text response as content
                     return this.createFallbackRound(roundNumber, content, previousRounds);
                 }
@@ -346,7 +347,7 @@ export class ThinkingModule implements IThinkingModule {
 
                 // For other errors, retry if we have attempts left
                 lastError = error instanceof Error ? error : new Error(String(error));
-                
+
                 this.logger.error(
                     { error, roundNumber, attempt: attempt + 1, maxRetries: this.config.maxRetriesPerRound },
                     'Thinking round API call failed'
@@ -385,8 +386,8 @@ export class ThinkingModule implements IThinkingModule {
         previousRounds: ThinkingRound[]
     ): ThinkingRound {
         // If we have meaningful content from the LLM, use it
-        const meaningfulContent = content && content !== 'No content' 
-            ? content 
+        const meaningfulContent = content && content !== 'No content'
+            ? content
             : 'LLM did not provide thinking content after multiple attempts';
 
         return {

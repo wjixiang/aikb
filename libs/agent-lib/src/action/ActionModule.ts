@@ -17,7 +17,8 @@ import {
 import { ToolUsage } from '../types/index.js';
 import type { ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { TYPES } from '../di/types.js';
-import type { Logger } from 'pino';
+// Define Logger type locally to avoid pino ESM import issues
+type Logger = import('pino').Logger;
 import type { IToolManager } from '../tools/index.js';
 import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
