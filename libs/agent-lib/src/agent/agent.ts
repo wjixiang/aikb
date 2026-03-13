@@ -350,6 +350,7 @@ export class Agent {
         let needsNewTurn = true;
 
         while (stack.length > 0) {
+            console.log('++++++++++++++++start new turn++++++++++++++++')
             const currentItem = stack.pop()!;
             const currentUserContent = currentItem.content;
             let didEndLoop = false;

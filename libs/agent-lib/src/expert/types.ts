@@ -6,6 +6,8 @@
  */
 
 import type { ToolComponent } from '../statefulContext/toolComponent.js';
+import type { ProviderSettings } from '../types/provider-settings.js';
+import type { AgentConfig } from '../agent/agent.js';
 
 /**
  * Component definition - for Expert
@@ -84,6 +86,32 @@ export interface ExpertConfig {
      * Validates, transforms input and loads external data
      */
     input?: InputHandler;
+
+    /**
+     * API configuration for the Expert's underlying Agent
+     * Controls API provider, model, and related settings
+     * 
+     * @example
+     * // Use OpenAI with specific model
+     * apiConfiguration: {
+     *   apiProvider: 'openai',
+     *   apiModelId: 'gpt-4o'
+     * }
+     * 
+     * @example
+     * // Use Anthropic Claude
+     * apiConfiguration: {
+     *   apiProvider: 'anthropic',
+     *   apiModelId: 'claude-sonnet-4-20250514'
+     * }
+     */
+    apiConfiguration?: Partial<ProviderSettings>;
+
+    /**
+     * Agent configuration overrides
+     * Controls agent behavior like timeout, retry, memory settings
+     */
+    config?: Partial<AgentConfig>;
 }
 
 /**

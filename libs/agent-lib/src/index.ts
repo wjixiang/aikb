@@ -51,7 +51,9 @@ export * from './thinking/index.js';
 
 // Export Expert development utilities
 export { ExpertWorkspaceBase } from './expert/ExpertWorkspaceBase.js';
-export type { ValidationResult, InputHandler, ExportConfig, ExportResult, ExpertConfig, ExpertComponentDefinition } from './expert/types.js';
+export { ExpertExecutor } from './expert/ExpertExecutor.js';
+export { ExpertRegistry } from './expert/ExpertRegistry.js';
+export type { ValidationResult, InputHandler, ExportConfig, ExportResult, ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance } from './expert/types.js';
 
 // Export DI (Dependency Injection) module
 export * from './di/index.js';

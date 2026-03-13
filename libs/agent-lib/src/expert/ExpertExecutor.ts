@@ -4,22 +4,17 @@
  * Responsible for creating, managing, and executing Expert instances
  */
 
-import { injectable, Container } from 'inversify';
+import { Container } from 'inversify';
 import type { IExpertExecutor, IExpertInstance, ExpertConfig, ExpertExecuteRequest, ExpertResult, ExpertArtifact, ExpertComponentDefinition } from './types.js';
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
 import type { Agent, AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../statefulContext/types.js';
-import { TYPES } from '../di/types.js';
-import type { ILogger } from '../utils/logging/types.js';
 import { AgentContainer, AgentCreationOptions } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolComponent } from '../statefulContext/toolComponent.js';
 
-@injectable()
 export class ExpertExecutor implements IExpertExecutor {
-    @inject(TYPES.Logger) private logger!: ILogger;
-
     private expertInstances: Map<string, IExpertInstance> = new Map();
     private expertConfigs: Map<string, ExpertConfig> = new Map();
     private agentContainer: AgentContainer;
@@ -43,6 +38,32 @@ export class ExpertExecutor implements IExpertExecutor {
         this.registry.register(config);
     }
 
+    /**
+     * Get Expert instance
+     */
+    getExpert(expertId: string): IExpertInstance | undefined {
+        return this.expertInstances.get(expertId);
+    }
+
+    /**
+     * Release Expert instance
+     */
+    releaseExpert(expertId: string): void {
+        const expert = this.expertInstances.get(expertId);
+        if (expert) {
+            expert.dispose();
+            this.expertInstances.delete(expertId);
+        }
+    }
+
+    /**
+     * Execute Expert task directly
+     */
+    async execute(request: ExpertExecuteRequest): Promise<ExpertResult> {
+        const expert = await this.createExpert(request.expertId);
+        return expert.execute(request.task, request.context);
+    }
+
     async createExpert(expertId: string): Promise<IExpertInstance> {
         const config = this.expertConfigs.get(expertId);
         if (!config) {
@@ -61,13 +82,10 @@ export class ExpertExecutor implements IExpertExecutor {
         };
 
         // Configure workspace for this Expert
-        // Note: expertMode and disableBuiltinSkills are kept for backward compatibility
-        // but skill-related features are now handled by ComponentRegistry
         const workspaceConfig: VirtualWorkspaceConfig = {
             id: `expert-${config.expertId}-workspace`,
             name: `${config.displayName} Workspace`,
             expertMode: true,
-            disableBuiltinSkills: true,
             alwaysRenderAllComponents: true,
         };
 
@@ -76,13 +94,20 @@ export class ExpertExecutor implements IExpertExecutor {
             agentPrompt,
             virtualWorkspaceConfig: workspaceConfig,
             taskId: `expert-${config.expertId}`,
+            // Pass API and agent configuration from ExpertConfig
+            apiConfiguration: config.apiConfiguration,
+            config: config.config,
         });
 
         // Register Expert's components to VirtualWorkspace (async, must await)
         await this.registerExpertComponents(agent, config.components);
 
-        this.logger.info(`Created Agent for Expert: ${config.expertId}`);
-        return agent;
+        // Create ExpertInstance wrapping the Agent
+        const expertInstance = new ExpertInstance(config, agent);
+        this.expertInstances.set(expertId, expertInstance);
+
+        console.log(`[ExpertExecutor] Created Expert instance for: ${config.expertId}`);
+        return expertInstance;
     }
 
     /**
@@ -97,14 +122,14 @@ export class ExpertExecutor implements IExpertExecutor {
      */
     private async registerExpertComponents(agent: Agent, components: ExpertComponentDefinition[]): Promise<void> {
         if (!components || components.length === 0) {
-            this.logger.info('No components to register for Expert');
+            console.log('[ExpertExecutor] No components to register for Expert');
             return;
         }
 
         // Get workspace from agent
         const workspace = (agent as any).workspace as VirtualWorkspace;
         if (!workspace) {
-            this.logger.warn('Could not get workspace from agent');
+            console.warn('[ExpertExecutor] Could not get workspace from agent');
             return;
         }
 
@@ -132,9 +157,9 @@ export class ExpertExecutor implements IExpertExecutor {
 
             if (componentInstance) {
                 workspace.registerComponent(componentId, componentInstance, comp.priority);
-                this.logger.info(`Registered component: ${componentId}`);
+                console.log(`[ExpertExecutor] Registered component: ${componentId}`);
             } else {
-                this.logger.warn(`Could not resolve component instance for: ${componentId}`);
+                console.warn(`[ExpertExecutor] Could not resolve component instance for: ${componentId}`);
             }
         }
     }
