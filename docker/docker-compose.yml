@@ -1,15 +1,75 @@
 services:
-  db:
-    image: pgvector/pgvector:pg16-trixie # It's recommended to use a specific version
+  # Master database (for final merged data)
+  db-master:
+    image: pgvector/pgvector:pg16-trixie
     restart: always
     environment:
-      POSTGRES_PASSWORD: fl5ox03 # Required
-      POSTGRES_USER: admin # Optional, defaults to 'postgres'
-      POSTGRES_DB: database # Optional, defaults to 'postgres'
+      POSTGRES_PASSWORD: fl5ox03
+      POSTGRES_USER: admin
+      POSTGRES_DB: bib_master
     ports:
-      - "5432:5432" # Maps container port 5432 to host port 5432
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persist data in a named volume
+      - postgres_master:/var/lib/postgresql/data
+    networks:
+      - bib-network
+
+  # Shard databases (for parallel sync)
+  db-shard-0:
+    image: pgvector/pgvector:pg16-trixie
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fl5ox03
+      POSTGRES_USER: admin
+      POSTGRES_DB: bib_shard_0
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_shard_0:/var/lib/postgresql/data
+    networks:
+      - bib-network
+
+  db-shard-1:
+    image: pgvector/pgvector:pg16-trixie
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fl5ox03
+      POSTGRES_USER: admin
+      POSTGRES_DB: bib_shard_1
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_shard_1:/var/lib/postgresql/data
+    networks:
+      - bib-network
+
+  db-shard-2:
+    image: pgvector/pgvector:pg16-trixie
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fl5ox03
+      POSTGRES_USER: admin
+      POSTGRES_DB: bib_shard_2
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_shard_2:/var/lib/postgresql/data
+    networks:
+      - bib-network
+
+  db-shard-3:
+    image: pgvector/pgvector:pg16-trixie
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fl5ox03
+      POSTGRES_USER: admin
+      POSTGRES_DB: bib_shard_3
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_shard_3:/var/lib/postgresql/data
+    networks:
+      - bib-network
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -20,8 +80,18 @@ services:
     volumes:
       - rustfs_data:/data
       - rustfs_logs:/logs
+    networks:
+      - bib-network
+
+networks:
+  bib-network:
+    driver: bridge
 
 volumes:
-  postgres_data:
+  postgres_master:
+  postgres_shard_0:
+  postgres_shard_1:
+  postgres_shard_2:
+  postgres_shard_3:
   rustfs_data:
   rustfs_logs:

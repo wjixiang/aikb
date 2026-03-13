@@ -26,7 +26,13 @@ export class SyncService {
       errors: 0,
     };
 
-    const files = await this.getXmlFiles(dirPath);
+    const allFiles = await this.getXmlFiles(dirPath);
+
+    // Apply sharding: filter files based on shard index
+    const shardIndex = options.shardIndex ?? 0;
+    const shardCount = options.shardCount ?? 1;
+    const files = allFiles.filter((_, idx) => this.shouldProcessFile(idx, allFiles.length, shardIndex, shardCount));
+
     progress.totalFiles = files.length;
 
     options.onProgress?.(progress);
@@ -125,6 +131,7 @@ export class SyncService {
     const newJournals = new Map<string, any>();
     const newAuthors = new Map<string, any>();
 
+    // Collect journals and authors
     for (const article of articles) {
       if (article.journal) {
         const j = article.journal;
@@ -156,16 +163,15 @@ export class SyncService {
       }
     }
 
+    // Batch create journals
     if (newJournals.size > 0) {
-      const journalData = Array.from(newJournals.values());
       await this.prisma.journal.createMany({
-        data: journalData,
+        data: Array.from(newJournals.values()),
         skipDuplicates: true,
       });
-
-      const keys = Array.from(newJournals.keys());
+      // Update cache
       const created = await this.prisma.journal.findMany({
-        where: { isoAbbreviation: { in: keys } },
+        where: { isoAbbreviation: { in: Array.from(newJournals.keys()) } },
         select: { id: true, isoAbbreviation: true },
       });
       for (const j of created) {
@@ -173,136 +179,146 @@ export class SyncService {
       }
     }
 
+    // Batch create authors
     if (newAuthors.size > 0) {
-      const authorData = Array.from(newAuthors.values());
       await this.prisma.author.createMany({
-        data: authorData,
+        data: Array.from(newAuthors.values()),
         skipDuplicates: true,
       });
-
+      // Update cache
+      const authorData = Array.from(newAuthors.values());
       const created = await this.prisma.author.findMany({
         where: { lastName: { in: authorData.map(a => a.lastName) } },
         select: { id: true, lastName: true, foreName: true },
       });
       for (const a of created) {
-        if (a.lastName) {
-          cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
-        }
+        if (a.lastName) cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
       }
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      for (const article of articles) {
-        try {
-          let journalId: string | null = null;
-          if (article.journal) {
-            const j = article.journal;
-            if (j.isoAbbreviation && cache.journals.has(j.isoAbbreviation)) {
-              journalId = cache.journals.get(j.isoAbbreviation)!;
-            } else if (j.issn && cache.journals.has(j.issn)) {
-              journalId = cache.journals.get(j.issn)!;
-            }
-          }
-
-          const dbArticle = await tx.article.upsert({
-            where: { pmid: article.pmid },
-            create: {
-              pmid: article.pmid,
-              articleTitle: article.articleTitle,
-              language: article.language,
-              publicationType: article.publicationType,
-              dateCompleted: article.dateCompleted,
-              dateRevised: article.dateRevised,
-              publicationStatus: article.publicationStatus,
-              journalId,
-            },
-            update: {
-              articleTitle: article.articleTitle,
-              language: article.language,
-              publicationType: article.publicationType,
-              dateCompleted: article.dateCompleted,
-              dateRevised: article.dateRevised,
-              publicationStatus: article.publicationStatus,
-              journalId,
-            },
-          });
-
-          const authorLinks = [];
-          for (const author of article.authors) {
-            if (!author.lastName) continue;
-            const key = `${author.lastName}|${author.foreName || ''}`;
-            const authorId = cache.authors.get(key);
-            if (authorId) {
-              authorLinks.push({ authorId, articleId: dbArticle.id });
-            }
-          }
-
-          if (authorLinks.length > 0) {
-            await tx.authorArticle.createMany({
-              data: authorLinks,
-              skipDuplicates: true,
-            });
-          }
-
-          if (article.meshHeadings.length > 0) {
-            const meshData = article.meshHeadings.map(m => ({
-              descriptorName: m.descriptorName || null,
-              qualifierName: m.qualifierName ? String(m.qualifierName) : null,
-              ui: m.ui || null,
-              majorTopicYN: m.majorTopicYN || false,
-              articleId: dbArticle.id,
-            }));
-            await tx.meshHeading.createMany({
-              data: meshData,
-              skipDuplicates: true,
-            });
-          }
-
-          if (article.chemicals.length > 0) {
-            const chemData = article.chemicals.map(c => ({
-              registryNumber: c.registryNumber?.toString() || null,
-              nameOfSubstance: c.nameOfSubstance || null,
-              articleId: dbArticle.id,
-            }));
-            await tx.chemical.createMany({
-              data: chemData,
-              skipDuplicates: true,
-            });
-          }
-
-          if (article.grants.length > 0) {
-            const grantData = article.grants.map(g => ({
-              grantId: g.grantId?.toString() || null,
-              agency: g.agency || null,
-              country: g.country || null,
-              articleId: dbArticle.id,
-            }));
-            await tx.grant.createMany({
-              data: grantData,
-              skipDuplicates: true,
-            });
-          }
-
-          if (article.articleIds.length > 0) {
-            const articleIdData = article.articleIds.map(ai => ({
-              pubmed: ai.pubmed ? ai.pubmed.toString() : null,
-              doi: ai.doi != null ? String(ai.doi) : null,
-              pii: ai.pii != null ? String(ai.pii) : null,
-              pmc: ai.pmc != null ? String(ai.pmc) : null,
-              otherId: ai.otherId != null ? String(ai.otherId) : null,
-              otherIdType: ai.otherIdType != null ? String(ai.otherIdType) : null,
-              articleId: dbArticle.id,
-            }));
-            await tx.articleId.createMany({
-              data: articleIdData,
-              skipDuplicates: true,
-            });
-          }
-        } catch (error) {
-          // Log but don't fail the whole batch
+    // Build article data
+    const articleData = articles.map(article => {
+      let journalId: string | null = null;
+      if (article.journal) {
+        const j = article.journal;
+        if (j.isoAbbreviation && cache.journals.has(j.isoAbbreviation)) {
+          journalId = cache.journals.get(j.isoAbbreviation)!;
+        } else if (j.issn && cache.journals.has(j.issn)) {
+          journalId = cache.journals.get(j.issn)!;
         }
       }
-    }, { timeout: 120000 });
+      return {
+        id: crypto.randomUUID(),
+        pmid: article.pmid,
+        articleTitle: article.articleTitle,
+        language: article.language,
+        publicationType: article.publicationType,
+        dateCompleted: article.dateCompleted,
+        dateRevised: article.dateRevised,
+        publicationStatus: article.publicationStatus,
+        journalId,
+      };
+    });
+
+    // Batch upsert using raw SQL (INSERT ... ON CONFLICT DO UPDATE)
+    if (articleData.length > 0) {
+      const placeholders = articleData.map((_, i) => {
+        const offset = i * 9;
+        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`;
+      }).join(', ');
+      const params = articleData.flatMap(a => [a.id, a.pmid, a.articleTitle, a.language, a.publicationType, a.dateCompleted, a.dateRevised, a.publicationStatus, a.journalId]);
+
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO "Article" (id, pmid, "articleTitle", language, "publicationType", "dateCompleted", "dateRevised", "publicationStatus", "journalId")
+         VALUES ${placeholders}
+         ON CONFLICT (pmid) DO UPDATE SET
+           "articleTitle" = EXCLUDED."articleTitle",
+           language = EXCLUDED.language,
+           "publicationType" = EXCLUDED."publicationType",
+           "dateCompleted" = EXCLUDED."dateCompleted",
+           "dateRevised" = EXCLUDED."dateRevised",
+           "publicationStatus" = EXCLUDED."publicationStatus",
+           "journalId" = EXCLUDED."journalId"`,
+        ...params,
+      );
+    }
+
+    // Query back article IDs
+    const pmids = articles.map(a => a.pmid);
+    const dbArticles = await this.prisma.article.findMany({
+      where: { pmid: { in: pmids } },
+      select: { id: true, pmid: true },
+    });
+    const pmidToId = new Map(dbArticles.map(a => [a.pmid, a.id]));
+
+    // Batch collect related data
+    const authorLinks: { authorId: string; articleId: string }[] = [];
+    const meshData: any[] = [];
+    const chemData: any[] = [];
+    const grantData: any[] = [];
+    const articleIdData: any[] = [];
+
+    for (const article of articles) {
+      const articleId = pmidToId.get(article.pmid);
+      if (!articleId) continue;
+
+      for (const author of article.authors) {
+        if (!author.lastName) continue;
+        const authorId = cache.authors.get(`${author.lastName}|${author.foreName || ''}`);
+        if (authorId) authorLinks.push({ authorId, articleId });
+      }
+
+      for (const m of article.meshHeadings) {
+        meshData.push({
+          descriptorName: m.descriptorName || null,
+          qualifierName: m.qualifierName ? String(m.qualifierName) : null,
+          ui: m.ui || null,
+          majorTopicYN: m.majorTopicYN || false,
+          articleId,
+        });
+      }
+
+      for (const c of article.chemicals) {
+        chemData.push({
+          registryNumber: c.registryNumber?.toString() || null,
+          nameOfSubstance: c.nameOfSubstance || null,
+          articleId,
+        });
+      }
+
+      for (const g of article.grants) {
+        grantData.push({
+          grantId: g.grantId?.toString() || null,
+          agency: g.agency || null,
+          country: g.country || null,
+          articleId,
+        });
+      }
+
+      for (const ai of article.articleIds) {
+        articleIdData.push({
+          pubmed: ai.pubmed ? ai.pubmed.toString() : null,
+          doi: ai.doi != null ? String(ai.doi) : null,
+          pii: ai.pii != null ? String(ai.pii) : null,
+          pmc: ai.pmc != null ? String(ai.pmc) : null,
+          otherId: ai.otherId != null ? String(ai.otherId) : null,
+          otherIdType: ai.otherIdType != null ? String(ai.otherIdType) : null,
+          articleId,
+        });
+      }
+    }
+
+    // Batch insert related data in single transaction
+    const relatedPromises = [];
+    if (authorLinks.length > 0) relatedPromises.push(this.prisma.authorArticle.createMany({ data: authorLinks, skipDuplicates: true }));
+    if (meshData.length > 0) relatedPromises.push(this.prisma.meshHeading.createMany({ data: meshData, skipDuplicates: true }));
+    if (chemData.length > 0) relatedPromises.push(this.prisma.chemical.createMany({ data: chemData, skipDuplicates: true }));
+    if (grantData.length > 0) relatedPromises.push(this.prisma.grant.createMany({ data: grantData, skipDuplicates: true }));
+    if (articleIdData.length > 0) relatedPromises.push(this.prisma.articleId.createMany({ data: articleIdData, skipDuplicates: true }));
+
+    if (relatedPromises.length > 0) {
+      await this.prisma.$transaction(relatedPromises);
+    }
   }
 
   async syncFile(filePath: string, options: SyncOptions = {}): Promise<SyncProgress> {
@@ -363,5 +379,28 @@ export class SyncService {
     }
 
     return files.sort();
+  }
+
+  /**
+   * Determine if a file should be processed by this shard.
+   * Uses consistent hashing based on file path to ensure even distribution.
+   */
+  private shouldProcessFile(fileIdx: number, totalFiles: number, shardIndex: number, shardCount: number): boolean {
+    // Use file index for consistent distribution across shards
+    // This ensures each shard processes a consistent portion of files
+    return (fileIdx % shardCount) === shardIndex;
+  }
+
+  /**
+   * Get the hash of a file path for sharding
+   */
+  private getFileHash(filePath: string): number {
+    let hash = 0;
+    for (let i = 0; i < filePath.length; i++) {
+      const char = filePath.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
   }
 }

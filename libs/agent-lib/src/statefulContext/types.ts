@@ -1,6 +1,6 @@
 import * as z from 'zod'
-import type { SkillManager, Skill, SkillSummary, ToolRegistration } from '../skills/index.js';
 import { IToolManager } from '../tools/IToolManager.js';
+import { ToolSource } from '../tools/IToolProvider.js';
 
 /**
  * Core type definitions for stateful context library
@@ -24,12 +24,7 @@ export interface IVirtualWorkspace {
     /**
      * Get all registered tools
      */
-    getAllTools(): ToolRegistration[];
-
-    /**
-     * Get the skill manager instance
-     */
-    getSkillManager(): SkillManager;
+    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: ToolSource; enabled: boolean }>;
 
     /**
      * Get the tool manager instance
@@ -37,24 +32,34 @@ export interface IVirtualWorkspace {
     getToolManager(): IToolManager;
 
     /**
-     * Get active skill's prompt enhancement
+     * Register a component with an ID
      */
-    getSkillPrompt(): { capability: string; direction: string } | null;
+    registerComponent(id: string, component: any, priority?: number): void;
 
     /**
-     * Get available skills summary
+     * Get a registered component by ID
      */
-    getAvailableSkills(): SkillSummary[];
+    getComponent(id: string): any;
 
     /**
-     * Register multiple skills
+     * Get all registered component IDs
      */
-    registerSkills(skills: Skill[]): void;
+    getComponentKeys(): string[];
 
     /**
-     * Register a single skill
+     * Render tool box for LLM context
      */
-    registerSkill(skill: Skill): void;
+    renderToolBox(): any;
+
+    /**
+     * Render component tools section for LLM context
+     */
+    renderComponentToolsSection(): Promise<any>;
+
+    /**
+     * Get workspace configuration
+     */
+    getConfig(): VirtualWorkspaceConfig;
 }
 
 /**
@@ -420,25 +425,14 @@ export interface VirtualWorkspaceConfig {
      */
     securityConfig?: SecurityConfig;
     /**
-     * Whether to disable loading builtin skills
-     * When true, the workspace will not load any builtin skills
-     * Useful for Expert workspaces where skills should not be switched
-     */
-    disableBuiltinSkills?: boolean;
-    /**
      * Whether to always render ALL registered components
-     * When true, all components from all registered skills will be rendered
-     * regardless of which skill is currently active
-     * When false (default), only active skill's components are rendered
+     * When true, all components will be rendered regardless of any activation state
      */
     alwaysRenderAllComponents?: boolean;
     /**
-     * Expert mode - disables all skill-related features
+     * Expert mode - recommended mode for Expert framework
      * When true:
-     * - No skill context is rendered in prompts
-     * - No skill switching is allowed
      * - Components are registered directly without skill wrapping
-     * This is the recommended mode for Expert framework
      */
     expertMode?: boolean;
     /**
@@ -447,6 +441,10 @@ export interface VirtualWorkspaceConfig {
      * - 'markdown': Markdown format with headlines and separators
      */
     renderMode?: RenderMode;
+    /**
+     * Components to register directly with the workspace
+     */
+    components?: import('./toolComponent.js').ToolComponent[];
 }
 
 /**

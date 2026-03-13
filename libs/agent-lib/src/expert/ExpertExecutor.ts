@@ -88,11 +88,16 @@ export class ExpertExecutor implements IExpertExecutor {
     /**
      * Register Expert's components to VirtualWorkspace
      *
-     * Components are now registered directly via ComponentRegistry
-     * (removed skill-based registration)
+     * Components are resolved from:
+     * - Direct ToolComponent instances
+     * - Factory functions: () => ToolComponent
+     * - Async factory functions: () => Promise<ToolComponent>
+     *
+     * Note: DI tokens (Symbol) are no longer supported
      */
     private async registerExpertComponents(agent: Agent, components: ExpertComponentDefinition[]): Promise<void> {
         if (!components || components.length === 0) {
+            this.logger.info('No components to register for Expert');
             return;
         }
 
@@ -124,8 +129,6 @@ export class ExpertExecutor implements IExpertExecutor {
                     componentInstance = result;
                 }
             }
-            // Note: DI tokens (Symbol) are no longer supported in this simplified version
-            // Components must be instantiated directly
 
             if (componentInstance) {
                 workspace.registerComponent(componentId, componentInstance, comp.priority);

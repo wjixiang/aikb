@@ -77,5 +77,7 @@ export interface SyncProgress {
 export interface SyncOptions {
   batchSize?: number;
   concurrency?: number;  // Number of files to process in parallel
+  shardIndex?: number;  // Shard index (0, 1, 2, ...)
+  shardCount?: number;  // Total number of shards
   onProgress?: (progress: SyncProgress) => void;
 }

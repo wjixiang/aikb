@@ -20,6 +20,20 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';
 
 /**
+ * 组件定义类型
+ * 支持直接实例、工厂函数、异步工厂函数
+ */
+export type ComponentFactory = ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>);
+
+/**
+ * 组件定义（含ID）
+ */
+export interface ComponentDefinition {
+    id: string;
+    component: ComponentFactory;
+}
+
+/**
  * Expert Workspace 基类
  *
  * 提供静态方法用于 createExpertConfig 工厂函数
@@ -31,37 +45,49 @@ export abstract class ExpertWorkspaceBase {
 
     /**
      * 获取组件列表
-     * 子类必须实现此方法
-     * 
-     * @returns 组件实例数组或DI Token数组
-     * 
+     * 子类必须实现此方法以定义 Expert 使用的组件
+     *
+     * @returns 组件实例数组、工厂函数数组或两者混合
+     *
      * @example
      * ```typescript
      * static override getComponents() {
      *   return [
-     *     new MyComponent(),           // 直接实例
-     *     TYPES.MyOtherComponent,      // DI Token
+     *     new BibliographySearchComponent(),           // 直接实例
+     *     () => new VirtualFileSystemComponent(),     // 同步工厂函数
+     *     async () => await createComponent(),        // 异步工厂函数
+     *   ];
+     * }
+     * ```
+     *
+     * @example
+     * ```typescript
+     * // 带ID的组件定义
+     * static override getComponentsWithIds() {
+     *   return [
+     *     { id: 'search', component: new BibliographySearchComponent() },
+     *     { id: 'vfs', component: () => new VirtualFileSystemComponent() },
      *   ];
      * }
      * ```
      */
-    static getComponents(): (ToolComponent | symbol)[] {
+    static getComponents(): ComponentFactory[] {
         return [];
     }
 
     /**
-     * 组件DI Token映射
-     * 用于从config.json的diToken字符串解析为实际的Symbol
-     * 
-     * @example
-     * ```typescript
-     * static override componentTokenMap = {
-     *   'BibliographySearchComponent': TYPES.BibliographySearchComponent,
-     *   'MyComponent': TYPES.MyComponent,
-     * };
-     * ```
+     * 获取带ID的组件列表（可选）
+     * 子类可重写此方法以自定义组件ID
+     *
+     * @returns 带ID的组件定义数组
      */
-    static componentTokenMap: Record<string, symbol> = {};
+    static getComponentsWithIds(): ComponentDefinition[] {
+        const components = this.getComponents();
+        return components.map((comp, index) => ({
+            id: `component-${index}`,
+            component: comp,
+        }));
+    }
 
     // ==================== 输入处理 ====================
 
@@ -198,20 +224,36 @@ export abstract class ExpertWorkspaceBase {
     // ==================== 工具方法 ====================
 
     /**
-     * 从组件列表中获取DI Tokens
-     * 用于向DI容器注册组件
+     * 从组件列表中获取已实例化的组件
+     * 过滤出直接实例（非工厂函数）
+     *
+     * @returns 已实例化的 ToolComponent 数组
      */
-    static getComponentTokens(): symbol[] {
-        return this.getComponents()
-            .filter((c): c is symbol => typeof c === 'symbol');
+    static getComponentInstances(): ToolComponent[] {
+        const components = this.getComponents();
+        const instances: ToolComponent[] = [];
+        for (const c of components) {
+            if (c instanceof ToolComponent) {
+                instances.push(c);
+            }
+        }
+        return instances;
     }
 
     /**
-     * 从组件列表中获取组件实例
-     * 用于直接注册到workspace
+     * 从组件列表中获取工厂函数
+     * 过滤出工厂函数（同步或异步）
+     *
+     * @returns 工厂函数数组
      */
-    static getComponentInstances(): ToolComponent[] {
-        return this.getComponents()
-            .filter((c): c is ToolComponent => c instanceof ToolComponent);
+    static getComponentFactories(): Array<() => ToolComponent | Promise<ToolComponent>> {
+        const components = this.getComponents();
+        const factories: Array<() => ToolComponent | Promise<ToolComponent>> = [];
+        for (const c of components) {
+            if (typeof c === 'function') {
+                factories.push(c as () => ToolComponent | Promise<ToolComponent>);
+            }
+        }
+        return factories;
     }
 }

@@ -13,7 +13,6 @@
     "template"
   ],
   "whenToUse": "Use this Expert as a template for creating new Experts",
-  "components": [],
   "export": {
     "autoExport": false,
     "bucket": "agentfs",

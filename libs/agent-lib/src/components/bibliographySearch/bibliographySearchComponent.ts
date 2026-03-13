@@ -9,7 +9,7 @@ import {
     FullTextSource,
     renderRetrivalStrategy,
     RetrivalStrategy
-} from 'med_database_portal'
+} from 'bibliography-search'
 import { createBibliographySearchToolSet } from './bibliographySearchTools.js'
 
 export class BibliographySearchComponent extends ToolComponent {

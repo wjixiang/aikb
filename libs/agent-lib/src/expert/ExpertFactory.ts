@@ -1,15 +1,28 @@
 /**
  * Expert Factory - 简化Expert创建的工具函数
- * 
+ *
  * 自动加载config.json和sop.yaml，减少样板代码
- * 
+ *
  * 使用方式：
  * ```typescript
  * // index.ts
  * import { createExpertConfig } from '../../ExpertFactory.js';
  * import { MyExpertWorkspace } from './Workspace.js';
- * 
+ *
  * export default createExpertConfig(import.meta.url, MyExpertWorkspace);
+ * ```
+ *
+ * 组件定义：
+ * 在 Workspace.ts 中通过重写 getComponents() 方法定义组件
+ * ```typescript
+ * class MyExpertWorkspace extends ExpertWorkspaceBase {
+ *   static override getComponents() {
+ *     return [
+ *       new MyComponent(),           // 直接实例
+ *       () => new AnotherComponent(), // 工厂函数
+ *     ];
+ *   }
+ * }
  * ```
  */
 
@@ -29,6 +42,7 @@ import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
 
 /**
  * Expert配置JSON接口
+ * 注意：components 字段已移除，组件应在 Workspace.ts 中定义
  */
 interface ExpertConfigJson {
     id: string;
@@ -39,19 +53,7 @@ interface ExpertConfigJson {
     tags?: string[];
     triggers?: string[];
     whenToUse?: string;
-    components?: ComponentDefinitionJson[];
     export?: ExportConfigJson;
-}
-
-/**
- * 组件定义JSON接口
- */
-interface ComponentDefinitionJson {
-    id: string;
-    displayName: string;
-    description: string;
-    diToken: string;
-    shared?: boolean;
 }
 
 /**
@@ -170,19 +172,37 @@ function buildDirection(sop: SOPDefinitionJson): string {
 
 /**
  * 构建组件定义
+ *
+ * 从 Workspace.getComponents() 或 Workspace.getComponentsWithIds() 获取组件
+ * 移除对 config.json 中 components 字段的依赖
  */
 function buildComponents(
-    config: ExpertConfigJson,
     workspace: typeof ExpertWorkspaceBase
 ): ExpertComponentDefinition[] {
-    if (!config.components) return [];
+    // 优先使用 getComponentsWithIds（如果子类重写了）
+    if (typeof workspace.getComponentsWithIds === 'function') {
+        const componentsWithIds = workspace.getComponentsWithIds();
+        if (componentsWithIds && componentsWithIds.length > 0) {
+            return componentsWithIds.map(def => ({
+                componentId: def.id,
+                displayName: def.id,
+                description: '',
+                instance: def.component,
+            }));
+        }
+    }
 
-    return config.components.map(comp => ({
-        componentId: comp.id,
-        displayName: comp.displayName,
-        description: comp.description,
-        instance: workspace.componentTokenMap[comp.diToken] || comp.diToken,
-        shared: comp.shared,
+    // 使用 getComponents
+    const components = workspace.getComponents();
+    if (!components || components.length === 0) {
+        return [];
+    }
+
+    return components.map((comp, index) => ({
+        componentId: `component-${index}`,
+        displayName: `component-${index}`,
+        description: '',
+        instance: comp,
     }));
 }
 
@@ -234,8 +254,8 @@ export function createExpertConfig(
         responsibilities: sop.responsibilities?.join('; ') || '',
         capabilities: config.tags || [],
 
-        // 组件
-        components: buildComponents(config, workspace),
+        // 组件（从 Workspace 获取）
+        components: buildComponents(workspace),
 
         // 输入处理（从Workspace获取）
         input: workspace.getInputHandler(),

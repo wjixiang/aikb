@@ -9,8 +9,8 @@ AIKB (AI Knowledge Base) is a knowledge management system integrated with agents
 ## Build System
 
 - **Package Manager**: pnpm (v10.7.0)
-- **Monorepo**: NX (v22.1.3) with pnpm workspaces
-- **Build Tools**: tsup for standalone libraries, NX for apps
+- **Monorepo**: with pnpm workspaces
+- **Build Tools**: tsup for standalone libraries
 - **Testing**: Vitest with unit, integrated, and e2e test configurations
 
 ## Common Commands

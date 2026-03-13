@@ -1,12 +1,13 @@
 /**
  * Hi Agent Workspace
  *
- * 运行时工作空间 - 用于注册组件
+ * 运行时工作空间 - 用于定义组件
  * 继承 ExpertWorkspaceBase 以获得输入/输出处理能力
  */
 
 import { ExpertWorkspaceBase } from 'agent-lib';
 import type { ValidationResult } from 'agent-lib';
+import { HelloComponent } from './components/HelloComponent.js';
 
 /**
  * HiAgentWorkspace - 运行时工作空间
@@ -20,12 +21,10 @@ export class HiAgentWorkspace extends ExpertWorkspaceBase {
 
   /**
    * 获取组件列表
-   * 返回组件实例或DI Token
    */
   static override getComponents() {
     return [
-      // 添加组件实例或DI Token
-      // new MyComponent(),
+      new HelloComponent(),
     ];
   }
 

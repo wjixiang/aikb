@@ -5,10 +5,18 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+interface PrismaServiceOptions {
+  datasources?: {
+    db?: {
+      url?: string;
+    };
+  };
+}
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    const connectionString = process.env.BIB_DATABASE_URL;
+  constructor(options?: PrismaServiceOptions) {
+    const connectionString = options?.datasources?.db?.url || process.env.BIB_DATABASE_URL;
     if (!connectionString) {
       throw new Error('BIB_DATABASE_URL environment variable is not set');
     }

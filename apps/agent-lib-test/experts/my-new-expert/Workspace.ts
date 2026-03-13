@@ -1,21 +1,21 @@
 /**
- * My Expert Workspace
+ * My New Expert Workspace
  *
  * 运行时工作空间 - 用于定义组件
  * 继承 ExpertWorkspaceBase 以获得输入/输出处理能力
  */
 
-import { ExpertWorkspaceBase } from '../../ExpertWorkspaceBase.js';
-import type { ValidationResult } from '../../types.js';
+import { ExpertWorkspaceBase } from 'agent-lib';
+import type { ValidationResult } from 'agent-lib';
 // import { MyComponent } from './components/MyComponent.js';
 
 /**
- * MyExpertWorkspace - 运行时工作空间
+ * MyNewExpertWorkspace - 运行时工作空间
  *
  * 继承 ExpertWorkspaceBase 以获得静态方法
  * 用于 createExpertConfig 工厂函数
  */
-export class MyExpertWorkspace extends ExpertWorkspaceBase {
+export class MyNewExpertWorkspace extends ExpertWorkspaceBase {
 
   // ==================== 组件定义 ====================
 
@@ -27,26 +27,21 @@ export class MyExpertWorkspace extends ExpertWorkspaceBase {
    * 2. 工厂函数: () => new MyComponent()
    * 3. 异步工厂: async () => await createComponent()
    *
-   * @example
-   * ```typescript
+   * 示例:
+   * // 直接实例
    * static override getComponents() {
-   *   return [
-   *     new MyComponent(),                    // 直接实例
-   *     () => new VirtualFileSystemComponent(), // 工厂函数
-   *   ];
+   *   return [new MyComponent()];
    * }
-   * ```
    *
-   * @example
-   * ```typescript
-   * // 自定义组件ID
-   * static override getComponentsWithIds() {
-   *   return [
-   *     { id: 'search', component: new BibliographySearchComponent() },
-   *     { id: 'vfs', component: () => new VirtualFileSystemComponent() },
-   *   ];
+   * // 工厂函数
+   * static override getComponents() {
+   *   return [() => new AnotherComponent()];
    * }
-   * ```
+   *
+   * // 带自定义ID
+   * static override getComponentsWithIds() {
+   *   return [{ id: 'my-component', component: new MyComponent() }];
+   * }
    */
   static override getComponents() {
     return [

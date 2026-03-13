@@ -9,7 +9,6 @@
     "hi-agent"
   ],
   "whenToUse": "Use this Expert when you need to a new expert for hi agent",
-  "components": [],
   "export": {
     "autoExport": false,
     "bucket": "agentfs",

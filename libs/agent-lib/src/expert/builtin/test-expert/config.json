@@ -9,7 +9,6 @@
     "test-expert"
   ],
   "whenToUse": "Use this Expert when you need to a new expert for test expert",
-  "components": [],
   "export": {
     "autoExport": false,
     "bucket": "agentfs",

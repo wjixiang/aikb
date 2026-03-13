@@ -2,7 +2,7 @@ import * as z from 'zod'
 import {
     FieldConstraint,
     RetrivalStrategy
-} from 'med_database_portal'
+} from 'bibliography-search'
 
 /**
  * Recursive schema for retrieval strategy

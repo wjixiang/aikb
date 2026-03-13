@@ -1,20 +1,20 @@
 /**
  * Meta-Analysis Article Retrieval Workspace Module
- * 
+ *
  * 职责：
  * 1. 导入和注册 BibliographySearchComponent
  * 2. 输入验证和转换
  * 3. CSV格式输出和导出
  */
 
-import { ExpertWorkspaceBase } from '../../ExpertWorkspaceBase.js';
+import { ExpertWorkspaceBase, type ComponentDefinition } from '../../ExpertWorkspaceBase.js';
 import { VirtualWorkspace } from '../../../statefulContext/virtualWorkspace.js';
 import type { ValidationResult, ExportConfig, ExportResult } from '../../types.js';
-import { TYPES } from '../../../di/types.js';
+import { BibliographySearchComponent } from '../../../components/bibliographySearch/bibliographySearchComponent.js';
 
 /**
  * MetaAnalysisArticleRetrievalWorkspace
- * 
+ *
  * 专门用于Meta-Analysis文献检索的工作空间
  */
 export class MetaAnalysisArticleRetrievalWorkspace extends ExpertWorkspaceBase {
@@ -22,21 +22,18 @@ export class MetaAnalysisArticleRetrievalWorkspace extends ExpertWorkspaceBase {
     // ==================== 组件定义 ====================
 
     /**
-     * 获取组件列表
-     * 使用BibliographySearchComponent进行PubMed检索
+     * 获取带ID的组件列表
+     * 使用 BibliographySearchComponent 进行 PubMed 检索
+     * 使用 getComponentsWithIds 以保留组件ID（bibliography-search）
      */
-    static override getComponents() {
+    static override getComponentsWithIds(): ComponentDefinition[] {
         return [
-            TYPES.BibliographySearchComponent,
+            {
+                id: 'bibliography-search',
+                component: new BibliographySearchComponent(),
+            },
         ];
     }
-
-    /**
-     * 组件DI Token映射
-     */
-    static override componentTokenMap: Record<string, symbol> = {
-        'BibliographySearchComponent': TYPES.BibliographySearchComponent,
-    };
 
     // ==================== 输入处理 ====================
 

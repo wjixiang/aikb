@@ -8,11 +8,11 @@
 import type { ToolComponent } from '../statefulContext/toolComponent.js';
 
 /**
- * Component definition - migrated from original Skill
+ * Component definition - for Expert
  * Supports three modes:
  * 1. Direct instance: ToolComponent
  * 2. Factory function: () => ToolComponent | Promise<ToolComponent>
- * 3. DI Token: Symbol (recommended)
+ * 3. Async factory: async () => Promise<ToolComponent>
  */
 export interface ExpertComponentDefinition {
     /** Unique identifier */
@@ -21,10 +21,12 @@ export interface ExpertComponentDefinition {
     displayName: string;
     /** Description */
     description: string;
-    /** Instance, factory function, or DI Token */
-    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
+    /** Instance or factory function */
+    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>);
     /** Whether it is a shared component (preserves state across Experts) */
     shared?: boolean;
+    /** Priority for component registration (lower = earlier) */
+    priority?: number;
 }
 
 /**

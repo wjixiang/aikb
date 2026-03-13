@@ -4,7 +4,7 @@ config()
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { BibliographySearchComponent } from '../bibliographySearchComponent.js'
 import { searchPubmedParamsType } from '../bibliographySearchSchemas.js'
-import type { ArticleProfile, ArticleDetail } from 'med_database_portal'
+import type { ArticleProfile, ArticleDetail } from 'bibliography-search'
 
 describe(BibliographySearchComponent, () => {
     let component: BibliographySearchComponent

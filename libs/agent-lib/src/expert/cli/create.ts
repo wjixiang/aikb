@@ -32,7 +32,6 @@ function generateConfigJson(config: ExpertTemplateConfig): string {
     tags: [],
     triggers: [config.expertId],
     whenToUse: `Use this Expert when you need to ${config.description.toLowerCase()}`,
-    components: [],
     export: {
       autoExport: false,
       bucket: 'agentfs',
@@ -112,7 +111,7 @@ function generateWorkspaceTs(config: ExpertTemplateConfig, isExternal: boolean =
   return `/**
  * ${config.displayName} Workspace
  *
- * 运行时工作空间 - 用于注册组件
+ * 运行时工作空间 - 用于定义组件
  * 继承 ExpertWorkspaceBase 以获得输入/输出处理能力
  */
 
@@ -132,12 +131,33 @@ export class ${className} extends ExpertWorkspaceBase {
 
   /**
    * 获取组件列表
-   * 返回组件实例或DI Token
+   *
+   * 支持三种方式定义组件：
+   * 1. 直接实例: new MyComponent()
+   * 2. 工厂函数: () => new MyComponent()
+   * 3. 异步工厂: async () => await createComponent()
+   *
+   * 示例:
+   * // 直接实例
+   * static override getComponents() {
+   *   return [new MyComponent()];
+   * }
+   *
+   * // 工厂函数
+   * static override getComponents() {
+   *   return [() => new AnotherComponent()];
+   * }
+   *
+   * // 带自定义ID
+   * static override getComponentsWithIds() {
+   *   return [{ id: 'my-component', component: new MyComponent() }];
+   * }
    */
   static override getComponents() {
     return [
-      // 添加组件实例或DI Token
+      // 添加组件实例或工厂函数
       // new MyComponent(),
+      // () => new AnotherComponent(),
     ];
   }
 
