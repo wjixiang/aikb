@@ -1,5 +1,5 @@
 {
-  "expertId": "meta-analysis-article-retrieval",
+  "id": "meta-analysis-article-retrieval",
   "displayName": "Meta-Analysis Article Retrieval",
   "description": "Systematic literature retrieval for meta-analysis, producing standardized search strategies and comprehensive article lists",
   "category": "meta-analysis",
@@ -17,6 +17,7 @@
     "pubmed search strategy",
     "article retrieval"
   ],
+  "whenToUse": "When performing systematic literature review or meta-analysis and you need to retrieve comprehensive article lists from PubMed",
   "components": [
     {
       "componentId": "bibliography-search",

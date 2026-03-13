@@ -4,109 +4,214 @@ to: src/expert/builtin/<%= name %>/expert.ts
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import type { ExpertConfig } from '../../types.js';
+import YAML from 'yaml';
+import type { ExpertConfig, ExpertComponentDefinition, ValidationResult } from '../../types.js';
 import { <%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>ExportHandler } from './exportHandler.js';
+<% if (hasInputHandler !== false) { -%>
+import { <%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>InputHandler } from './input.js';
+<% } -%>
 
 // Get current file directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Expert configuration interface (matches config.json)
+ * Expert metadata interface (matches config.json)
  */
-interface ExpertConfigJson {
-    expertId: string;
+interface ExpertMetadataJson {
+    id: string;
     displayName: string;
-    description: string;
+    description?: string;
     category?: string;
     tags?: string[];
     triggers?: string[];
+    whenToUse?: string;
 }
 
 /**
- * Load Expert configuration from config.json
+ * Parameter definition interface (matches sop.yaml)
  */
-function loadConfig(): ExpertConfigJson {
+interface ParameterDefinitionJson {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 's3Key[]';
+    required: boolean;
+    description: string;
+    default?: any;
+}
+
+/**
+ * Step definition interface
+ */
+interface StepDefinitionJson {
+    phase: string;
+    description: string;
+    details?: string;
+}
+
+/**
+ * Example interface
+ */
+interface ExampleJson {
+    input: string;
+    output: string;
+    description?: string;
+}
+
+/**
+ * SOP definition interface (matches sop.yaml)
+ */
+interface SOPDefinitionJson {
+    overview: string;
+    responsibilities: string[];
+    constraints?: string[];
+    parameters?: ParameterDefinitionJson[];
+    steps: StepDefinitionJson[];
+    examples?: ExampleJson[];
+}
+
+/**
+ * Component definition interface (matches components.json)
+ */
+interface ComponentDefinitionJson {
+    componentId: string;
+    displayName: string;
+    description: string;
+    diToken: string;
+    shared?: boolean;
+}
+
+/**
+ * Expert configuration interface (matches config.json)
+ */
+interface ExpertConfigJson extends ExpertMetadataJson {
+    components?: ComponentDefinitionJson[];
+}
+
+/**
+ * DI Token mapping - add your component tokens here
+ */
+const DI_TOKEN_MAP: Record<string, symbol> = {
+    // 'BibliographySearchComponent': TYPES.BibliographySearchComponent
+};
+
+/**
+ * Load Expert metadata from config.json
+ */
+function loadMetadata(): ExpertMetadataJson {
     const configPath = join(__dirname, 'config.json');
     const configContent = readFileSync(configPath, 'utf-8');
     return JSON.parse(configContent);
 }
 
 /**
- * Load SOP content from .sop.md file
+ * Load SOP definition from sop.yaml
  */
-function loadSOP(): string {
-    const sopPath = join(__dirname, 'expert.sop.md');
-    return readFileSync(sopPath, 'utf-8');
+function loadSOP(): SOPDefinitionJson {
+    const sopPath = join(__dirname, 'sop.yaml');
+    const sopContent = readFileSync(sopPath, 'utf-8');
+    return YAML.parse(sopContent);
 }
 
 /**
- * Parse SOP content to extract sections
+ * Load components from config
  */
-function parseSOP(sopContent: string): {
-    overview: string;
-    whenToUse: string;
-    parameters: string;
-    steps: string;
-    examples: string;
-    constraints: string;
-} {
-    const getSection = (name: string): string => {
-        const pattern = new RegExp(`## ${name}[\\s\\S]*?(?=##|$)`, 'i');
-        const match = sopContent.match(pattern);
-        return match ? match[0].replace(`## ${name}`, '').trim() : '';
-    };
+function loadComponents(config: ExpertConfigJson): ExpertComponentDefinition[] {
+    if (!config.components) return [];
 
-    return {
-        overview: getSection('Overview'),
-        whenToUse: getSection('When to Use'),
-        parameters: getSection('Parameters'),
-        steps: getSection('Steps'),
-        examples: getSection('Examples'),
-        constraints: getSection('Constraints')
-    };
+    return config.components.map(comp => ({
+        componentId: comp.componentId,
+        displayName: comp.displayName,
+        description: comp.description,
+        instance: DI_TOKEN_MAP[comp.diToken] || comp.diToken,
+        shared: comp.shared
+    }));
 }
+
+<% if (hasInputHandler !== false) { -%>
+/**
+ * Validate input using input handler
+ */
+function validateInput(input: any): ValidationResult {
+    if (!<%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>InputHandler?.validate) {
+        return { valid: true };
+    }
+    return <%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>InputHandler.validate(input);
+}
+
+/**
+ * Transform input using input handler
+ */
+function transformInput(input: any): any {
+    if (!<%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>InputHandler?.transform) {
+        return input;
+    }
+    return <%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) %>InputHandler.transform(input);
+}
+<% } -%>
 
 /**
  * <%= name.replace(/-([a-z])/g, (g) => ' ' + g[1].toUpperCase()).replace(/^./, (s) => s.toUpperCase()) %> Expert
  *
- * Factory function that loads configuration from config.json and SOP from .sop.md
+ * Factory function that loads configuration from config.json and SOP from sop.yaml
  */
 export default function create<%= name.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace(/^./, (s) => s.toUpperCase()) %>Expert(): ExpertConfig {
-    const config = loadConfig();
-    const sopContent = loadSOP();
-    const sop = parseSOP(sopContent);
+    const metadata = loadMetadata();
+    const sop = loadSOP();
+    const config = loadMetadata(); // Re-use metadata as config
 
-    // Build capability from SOP sections
+    // Build capability from SOP Overview + Constraints
     const capability = [
         sop.overview,
-        sop.constraints ? `## Constraints\n${sop.constraints}` : ''
+        sop.constraints?.length ? `## Constraints\n${sop.constraints.map(c => `- ${c}`).join('\n')}` : ''
     ].filter(Boolean).join('\n\n');
 
-    // Build direction from Steps
-    const direction = [
-        sop.steps,
-        sop.examples ? `## Examples\n${sop.examples}` : ''
-    ].filter(Boolean).join('\n\n');
+    // Build direction from Steps + Examples
+    const directionParts: string[] = [];
+
+    if (sop.steps?.length) {
+        directionParts.push('## Steps\n');
+        for (const step of sop.steps) {
+            directionParts.push(`### ${step.phase}\n${step.description}`);
+            if (step.details) {
+                directionParts.push(`\n${step.details}`);
+            }
+        }
+    }
+
+    if (sop.examples?.length) {
+        directionParts.push('\n## Examples\n');
+        for (const example of sop.examples) {
+            directionParts.push(`**Input:**\n\`\`\`\n${example.input}\n\`\`\`\n`);
+            directionParts.push(`**Output:**\n\`\`\`\n${example.output}\n\`\`\`\n`);
+            if (example.description) {
+                directionParts.push(`${example.description}\n`);
+            }
+        }
+    }
+
+    const direction = directionParts.join('\n');
 
     return {
-        expertId: config.expertId,
-        displayName: config.displayName,
-        description: config.description,
-        whenToUse: sop.whenToUse,
-        triggers: config.triggers,
+        expertId: metadata.id,
+        displayName: metadata.displayName,
+        description: metadata.description || '',
+        whenToUse: metadata.whenToUse,
+        triggers: metadata.triggers,
 
-        // Full SOP as prompt
+        // SOP-based prompt
         prompt: {
             capability,
             direction
         },
 
-        // For matching and discovery
-        responsibilities: sop.overview,
-        capabilities: config.tags || [],
+        // Responsibilities from SOP
+        responsibilities: sop.responsibilities.join('; '),
 
-        components: [],
+        // Capabilities from tags
+        capabilities: metadata.tags || [],
+
+        // Load components
+        components: loadComponents(config),
 
         // Export configuration
         exportConfig: {

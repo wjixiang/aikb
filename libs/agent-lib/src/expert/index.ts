@@ -16,5 +16,8 @@ export { ExpertExecutor } from './ExpertExecutor.js';
 export { ExpertOrchestrator } from './ExpertOrchestrator.js';
 export { ExpertInstance } from './ExpertInstance.js';
 
+// CLI
+export * from './cli/index.js';
+
 // Builtin Experts
 export * from './builtin/index.js';

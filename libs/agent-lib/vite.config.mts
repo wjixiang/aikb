@@ -59,7 +59,7 @@ export default defineConfig(() => ({
     environment: 'node',
     root: __dirname,
     include: ['{src,tests,scripts}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['{src,tests}/**/*.{integrated,e2e}.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['{src,tests}/**/*.{integrated,e2e}.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', '{src,tests}/**/integration/**'],
     reporters: ['default'],
     setupFiles: ['./src/test-setup.ts'],
     coverage: {

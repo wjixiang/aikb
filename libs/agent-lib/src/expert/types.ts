@@ -76,6 +76,12 @@ export interface ExpertConfig {
      * Controls how Expert results are exported to storage
      */
     exportConfig?: ExpertExportConfig;
+
+    /**
+     * Input handler for task input processing
+     * Validates, transforms input and loads external data
+     */
+    input?: InputHandler;
 }
 
 /**
@@ -304,4 +310,196 @@ export interface ExpertOrchestrationResult {
     artifacts: ExpertArtifact[];
     totalDuration: number;
     errors?: string[];
+}
+
+// =============================================================================
+// Expert Definition Framework - Declarative Expert Development
+// =============================================================================
+
+/**
+ * Parameter definition for SOP
+ */
+export interface ParameterDefinition {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 's3Key[]';
+    required: boolean;
+    description: string;
+    default?: any;
+    validation?: (value: any) => boolean;
+}
+
+/**
+ * Step definition in SOP workflow
+ */
+export interface StepDefinition {
+    phase: string;
+    description: string;
+    details?: string;
+}
+
+/**
+ * Example for SOP documentation
+ */
+export interface Example {
+    input: string;
+    output: string;
+    description?: string;
+}
+
+/**
+ * Validation result
+ */
+export interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+    warnings?: string[];
+}
+
+/**
+ * External data loaded during input processing (e.g., from S3)
+ */
+export interface ExternalData {
+    /** S3 file paths list, loaded and merged into context */
+    s3Keys?: string[];
+    /** Other external data sources */
+    [key: string]: any;
+}
+
+/**
+ * Execution context for input handler
+ */
+export interface ExecutionContext {
+    /** Virtual workspace */
+    workspace: any;
+    /** Expert ID */
+    expertId: string;
+    /** Task information */
+    task: ExpertTask;
+    /** Additional context */
+    context?: Record<string, any>;
+}
+
+/**
+ * Input handler for task input processing
+ */
+export interface InputHandler {
+    /** Validate input parameters */
+    validate?: (input: any) => ValidationResult;
+    /** Transform input before processing */
+    transform?: (input: any) => any;
+    /** Load external data (e.g., S3 files) */
+    loadExternalData?: (input: any, context: ExecutionContext) => Promise<ExternalData>;
+}
+
+/**
+ * Output handler for result export
+ */
+export interface OutputHandler {
+    /** Default export format */
+    format: 'json' | 'csv' | 'xml' | 'custom';
+    /** Custom export function */
+    export?: (workspace: any, config: ExportConfig) => Promise<ExportResult>;
+    /** Post-process output */
+    postprocess?: (output: any) => any;
+}
+
+/**
+ * SOP definition structure
+ */
+export interface SOPDefinition {
+    /** Capability overview */
+    overview: string;
+    /** Responsibilities */
+    responsibilities: string[];
+    /** Constraints */
+    constraints?: string[];
+    /** Parameter definitions */
+    parameters?: ParameterDefinition[];
+    /** Workflow steps */
+    steps: StepDefinition[];
+    /** Examples */
+    examples?: Example[];
+}
+
+/**
+ * Component state validation
+ */
+export interface ComponentStateValidation {
+    /** Validate component state */
+    validate: (state: any) => ValidationResult;
+}
+
+/**
+ * Component definition with state validation
+ */
+export interface ComponentDefinition {
+    componentId: string;
+    displayName: string;
+    description: string;
+    /** Instance, factory function, or DI Token */
+    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
+    /** Component state validation */
+    stateValidation?: (state: any) => ValidationResult;
+    /** Component configuration */
+    config?: Record<string, any>;
+    /** Whether it is a shared component */
+    shared?: boolean;
+}
+
+/**
+ * Lifecycle hooks for Expert
+ */
+export interface LifecycleHooks {
+    /** Called when Expert is created */
+    onCreate?: () => Promise<void>;
+    /** Called when Expert is activated */
+    onActivate?: () => Promise<void>;
+    /** Called when Expert is deactivated */
+    onDeactivate?: () => Promise<void>;
+    /** Called when Expert is disposed */
+    onDispose?: () => Promise<void>;
+    /** Called when a component is activated */
+    onComponentActivate?: (component: ToolComponent) => Promise<void>;
+    /** Called when a component is deactivated */
+    onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
+}
+
+/**
+ * Expert metadata
+ */
+export interface ExpertMetadata {
+    /** Unique identifier */
+    id: string;
+    /** Display name */
+    displayName: string;
+    /** Description */
+    description?: string;
+    /** Category */
+    category?: string;
+    /** Tags for discovery */
+    tags?: string[];
+    /** Trigger keywords */
+    triggers?: string[];
+    /** When to use this Expert */
+    whenToUse?: string;
+}
+
+/**
+ * Unified Expert Schema interface
+ * Provides a declarative way to define an Expert with all components
+ * (Named ExpertSchema to avoid conflict with the existing ExpertDefinition class)
+ */
+export interface ExpertSchema {
+    /** Metadata */
+    metadata: ExpertMetadata;
+    /** SOP definition */
+    sop: SOPDefinition;
+    /** Component definitions */
+    components: ComponentDefinition[];
+    /** Input handler */
+    input?: InputHandler;
+    /** Output handler */
+    output: OutputHandler;
+    /** Lifecycle hooks */
+    lifecycle?: LifecycleHooks;
 }

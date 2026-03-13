@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "bin": {
+    "expert-cli": "./src/expert/cli/index.ts"
+  },
   "scripts": {
     "test": "vitest --config vite.config.mts",
     "test:integrated": "vitest --config vite.config.integrated.mts",
@@ -12,7 +15,17 @@
     "build": "tsup src/index.ts",
     "build:watch": "vite build --watch",
     "dev": "vite build --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "expert:list": "npx tsx src/expert/cli/index.ts list",
+    "expert:validate": "npx tsx src/expert/cli/index.ts validate",
+    "expert:show": "npx tsx src/expert/cli/index.ts show",
+    "expert:new": "npx tsx src/expert/cli/index.ts new",
+    "expert:demo": "npx tsx src/expert/cli/index.ts demo",
+    "expert:test": "npx tsx src/expert/cli/index.ts test",
+    "expert:test:run": "npx tsx src/expert/cli/index.ts test run",
+    "expert:test:run:ts": "npx tsx src/expert/cli/index.ts test run:ts",
+    "expert:test:init": "npx tsx src/expert/cli/index.ts test init",
+    "expert:test:list": "npx tsx src/expert/cli/index.ts test list"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -25,6 +38,8 @@
     "@prisma/client": "^7.0.0",
     "dotenv": "^17.3.1",
     "graphql": "^16.8.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.0",
     "inversify": "^7.11.0",
     "med_database_portal": "workspace:",
     "openai": "^5.23.2",
@@ -34,8 +49,10 @@
     "tiktoken": "^1.0.22",
     "tslib": "^2.3.0",
     "valtio": "^2.0.0",
+    "commander": "^13.1.0",
     "winston": "^3.17.0",
     "winston-transport": "^4.9.0",
+    "yaml": "^2.7.1",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.1"
   },
@@ -43,6 +60,7 @@
     "@vitest/coverage-v8": "^4.0.0",
     "esbuild": "^0.27.3",
     "prisma": "^7.0.0",
+    "tsx": "^4.19.0",
     "tsup": "^8.5.1",
     "typescript": "^5.7.3",
     "vite": "^6.4.1",
