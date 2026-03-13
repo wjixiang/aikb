@@ -1,0 +1,22 @@
+{
+  "id": "my-expert",
+  "displayName": "My Expert",
+  "description": "A template Expert demonstrating the simplified 4-file architecture",
+  "version": "1.0.0",
+  "category": "template",
+  "tags": [
+    "template",
+    "example"
+  ],
+  "triggers": [
+    "my expert",
+    "template"
+  ],
+  "whenToUse": "Use this Expert as a template for creating new Experts",
+  "components": [],
+  "export": {
+    "autoExport": false,
+    "bucket": "agentfs",
+    "defaultPath": "{expertId}/{timestamp}.json"
+  }
+}

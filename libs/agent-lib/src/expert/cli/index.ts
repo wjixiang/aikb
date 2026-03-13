@@ -285,54 +285,14 @@ export async function showExpert(expertName: string): Promise<void> {
 }
 
 /**
- * Generate a new Expert using hygen
+ * Generate a new Expert using simplified 4-file architecture
+ *
+ * @param name - Expert name
+ * @param options - Options including output directory
  */
-export async function generateExpert(name: string, options: { input?: boolean } = {}): Promise<void> {
-    const expertsDir = getExpertsDir();
-    const expertDir = join(expertsDir, name);
-
-    if (existsSync(expertDir)) {
-        console.error(`❌ Expert already exists: ${name}`);
-        process.exit(1);
-    }
-
-    // Default to include input handler (options.input is undefined = true, false = explicitly disabled)
-    const includeInput = options.input !== false;
-
-    console.log(`\n🔧 Generating new Expert: ${name}\n`);
-
-    // Use hygen to generate the expert
-    const { execSync } = await import('child_process');
-
-    try {
-        const inputFlag = includeInput ? '' : '--no-input';
-        execSync(`hygen expert new ${name} ${inputFlag}`, {
-            stdio: 'inherit',
-            cwd: process.cwd()
-        });
-
-        console.log(`\n✅ Expert "${name}" generated successfully!`);
-        console.log(`\n📁 Created files:`);
-        console.log(`   - src/expert/builtin/${name}/config.json`);
-        console.log(`   - src/expert/builtin/${name}/sop.yaml`);
-        console.log(`   - src/expert/builtin/${name}/expert.ts`);
-        console.log(`   - src/expert/builtin/${name}/exportHandler.ts`);
-        if (includeInput) {
-            console.log(`   - src/expert/builtin/${name}/input.ts`);
-        }
-
-        console.log(`\n📝 Next steps:`);
-        console.log(`   1. Edit config.json with your Expert metadata`);
-        console.log(`   2. Edit sop.yaml with your SOP definition`);
-        console.log(`   3. Customize exportHandler.ts for your output format`);
-        if (includeInput) {
-            console.log(`   4. Customize input.ts for input validation`);
-        }
-        console.log('');
-    } catch (error) {
-        console.error('❌ Failed to generate Expert:', error);
-        process.exit(1);
-    }
+export async function generateExpert(name: string, options: { input?: boolean; dir?: string } = {}): Promise<void> {
+    const { createExpert } = await import('./create.js');
+    await createExpert(name, options.dir);
 }
 
 /**
@@ -363,8 +323,9 @@ export function createCLI(): Command {
 
     program
         .command('new <name>')
-        .description('Generate a new Expert')
+        .description('Generate a new Expert in the current project')
         .option('--no-input', 'Exclude input handler')
+        .option('-d, --dir <directory>', 'Output directory (default: ./experts)')
         .action((name, options) => generateExpert(name, options));
 
     // Demo command

@@ -85,12 +85,7 @@ async function main() {
   const pathStat = await stat(args.path);
   const isFile = pathStat.isFile();
 
-  console.log('Starting PubMed sync...');
-  console.log(`Path: ${args.path}`);
-  console.log(`Type: ${isFile ? 'file' : 'directory'}`);
-  console.log(`Batch size: ${args.batchSize}`);
-  console.log(`Concurrency: ${args.concurrency}`);
-  console.log('');
+  console.log(`Sync: ${args.path} (batch: ${args.batchSize}, concurrent: ${args.concurrency})`);
 
   const app = await NestFactory.createApplicationContext(SyncModule, {
     logger: ['error', 'warn', 'log'],
@@ -104,10 +99,9 @@ async function main() {
     ? await syncService.syncFile(args.path, {
         batchSize: args.batchSize,
         onProgress: (p) => {
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
           console.log(
-            `[${elapsed}s] Articles: ${p.processedArticles}/${p.totalArticles}, ` +
-            `Errors: ${p.errors}`,
+            `[${elapsed}s] ${p.processedArticles}/${p.totalArticles} articles (${p.errors} errors)`,
           );
         },
       })
@@ -115,22 +109,15 @@ async function main() {
         batchSize: args.batchSize,
         concurrency: args.concurrency,
         onProgress: (p) => {
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
           console.log(
-            `[${elapsed}s] Files: ${p.processedFiles}/${p.totalFiles}, ` +
-            `Articles: ${p.processedArticles}/${p.totalArticles}, ` +
-            `Errors: ${p.errors}`,
+            `[${elapsed}s] ${p.processedFiles}/${p.totalFiles} files, ${p.processedArticles} articles`,
           );
         },
       });
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log('');
-  console.log('=== Sync Complete ===');
-  console.log(`Total files: ${progress.totalFiles}`);
-  console.log(`Total articles: ${progress.totalArticles}`);
-  console.log(`Errors: ${progress.errors}`);
-  console.log(`Time: ${totalTime}s`);
+  console.log(`\nDone: ${progress.totalFiles} files, ${progress.totalArticles} articles, ${progress.errors} errors (${totalTime}s)`);
 
   await app.close();
 

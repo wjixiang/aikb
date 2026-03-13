@@ -2,6 +2,7 @@
   "id": "meta-analysis-article-retrieval",
   "displayName": "Meta-Analysis Article Retrieval",
   "description": "Systematic literature retrieval for meta-analysis, producing standardized search strategies and comprehensive article lists",
+  "version": "2.0.0",
   "category": "meta-analysis",
   "tags": [
     "meta-analysis",
@@ -20,10 +21,15 @@
   "whenToUse": "When performing systematic literature review or meta-analysis and you need to retrieve comprehensive article lists from PubMed",
   "components": [
     {
-      "componentId": "bibliography-search",
+      "id": "bibliography-search",
       "displayName": "Bibliography Search",
       "description": "Searches PubMed and retrieves bibliographic records for systematic reviews",
       "diToken": "BibliographySearchComponent"
     }
-  ]
+  ],
+  "export": {
+    "autoExport": true,
+    "bucket": "agentfs",
+    "defaultPath": "{expertId}/{timestamp}.csv"
+  }
 }

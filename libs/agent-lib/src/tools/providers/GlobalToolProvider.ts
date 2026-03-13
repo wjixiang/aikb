@@ -15,12 +15,12 @@ import {
 
 /**
  * Global tool provider
- * 
+ *
  * Provides always-available global tools:
  * - attempt_completion
- * - get_skill
- * - list_skills
- * - deactivate_skill
+ * - get_skill (disabled in Expert mode)
+ * - list_skills (disabled in Expert mode)
+ * - deactivate_skill (disabled in Expert mode)
  */
 @injectable()
 export class GlobalToolProvider extends BaseToolProvider implements IToolProvider {
@@ -54,10 +54,33 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
     }
 
     /**
+     * Check if skill switching tools should be available
+     * Disabled in Expert mode
+     */
+    private isSkillToolsEnabled(): boolean {
+        if (!this.skillManager) {
+            return true; // If no SkillManager, allow skill tools
+        }
+        return !this.skillManager.isExpertMode();
+    }
+
+    /**
      * Get all global tools
+     * In Expert mode, skill switching tools are hidden
      */
     getTools(): Tool[] {
-        return Array.from(this.tools.values());
+        const allTools = Array.from(this.tools.values());
+
+        // In Expert mode, filter out skill switching tools
+        if (!this.isSkillToolsEnabled()) {
+            return allTools.filter(tool =>
+                tool.toolName !== 'get_skill' &&
+                tool.toolName !== 'list_skills' &&
+                tool.toolName !== 'deactivate_skill'
+            );
+        }
+
+        return allTools;
     }
 
     /**
@@ -141,15 +164,35 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
 
     /**
      * Check if a tool is a global tool
+     * In Expert mode, skill tools are not available
      */
     hasTool(name: string): boolean {
+        // In Expert mode, skill tools are hidden
+        if (!this.isSkillToolsEnabled()) {
+            const skillTools = ['get_skill', 'list_skills', 'deactivate_skill'];
+            if (skillTools.includes(name)) {
+                return false;
+            }
+        }
         return this.tools.has(name);
     }
 
     /**
      * Get all global tool names
+     * In Expert mode, skill tool names are filtered out
      */
     getToolNames(): string[] {
-        return Array.from(this.tools.keys());
+        const allNames = Array.from(this.tools.keys());
+
+        // In Expert mode, filter out skill switching tool names
+        if (!this.isSkillToolsEnabled()) {
+            return allNames.filter(name =>
+                name !== 'get_skill' &&
+                name !== 'list_skills' &&
+                name !== 'deactivate_skill'
+            );
+        }
+
+        return allNames;
     }
 }

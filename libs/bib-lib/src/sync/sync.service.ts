@@ -29,7 +29,6 @@ export class SyncService {
     const files = await this.getXmlFiles(dirPath);
     progress.totalFiles = files.length;
 
-    this.logger.log(`Found ${files.length} XML files to process`);
     options.onProgress?.(progress);
 
     const concurrency = options.concurrency || 2;
@@ -62,17 +61,13 @@ export class SyncService {
     }
 
     this.logger.log(
-      `Sync complete: ${progress.processedFiles}/${progress.totalFiles} files, ` +
-      `${progress.processedArticles}/${progress.totalArticles} articles, ` +
-      `${progress.errors} errors`,
+      `Done: ${progress.processedFiles} files, ${progress.processedArticles} articles, ${progress.errors} errors`,
     );
 
     return progress;
   }
 
   private async preloadCache(cache: CacheData): Promise<void> {
-    this.logger.log('Preloading cache...');
-
     const journals = await this.prisma.journal.findMany({
       select: { id: true, issn: true, issnElectronic: true, isoAbbreviation: true },
     });
@@ -81,7 +76,6 @@ export class SyncService {
       if (j.issnElectronic) cache.journals.set(j.issnElectronic, j.id);
       if (j.isoAbbreviation) cache.journals.set(j.isoAbbreviation, j.id);
     }
-    this.logger.log(`Preloaded ${cache.journals.size} journals`);
 
     const authors = await this.prisma.author.findMany({
       where: { lastName: { not: null } },
@@ -92,7 +86,6 @@ export class SyncService {
         cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
       }
     }
-    this.logger.log(`Preloaded ${cache.authors.size} authors`);
   }
 
   private async processFile(
@@ -121,19 +114,14 @@ export class SyncService {
   }
 
   private async syncBatch(articles: ParsedArticle[], cache: CacheData): Promise<void> {
-    this.logger.log(`Processing batch of ${articles.length} articles...`);
     const chunkSize = 200;
     for (let i = 0; i < articles.length; i += chunkSize) {
       const chunk = articles.slice(i, i + chunkSize);
-      this.logger.log(`Processing chunk ${i}-${i + chunkSize}...`);
       await this.syncChunk(chunk, cache);
-      this.logger.log(`Chunk ${i}-${i + chunkSize} complete`);
     }
-    this.logger.log(`Batch complete`);
   }
 
   private async syncChunk(articles: ParsedArticle[], cache: CacheData): Promise<void> {
-    this.logger.log(`Collecting journals/authors for ${articles.length} articles...`);
     const newJournals = new Map<string, any>();
     const newAuthors = new Map<string, any>();
 
@@ -169,7 +157,6 @@ export class SyncService {
     }
 
     if (newJournals.size > 0) {
-      this.logger.log(`Creating ${newJournals.size} journals...`);
       const journalData = Array.from(newJournals.values());
       await this.prisma.journal.createMany({
         data: journalData,
@@ -184,11 +171,9 @@ export class SyncService {
       for (const j of created) {
         if (j.isoAbbreviation) cache.journals.set(j.isoAbbreviation, j.id);
       }
-      this.logger.log(`Journals created`);
     }
 
     if (newAuthors.size > 0) {
-      this.logger.log(`Creating ${newAuthors.size} authors...`);
       const authorData = Array.from(newAuthors.values());
       await this.prisma.author.createMany({
         data: authorData,
@@ -204,10 +189,7 @@ export class SyncService {
           cache.authors.set(`${a.lastName}|${a.foreName || ''}`, a.id);
         }
       }
-      this.logger.log(`Authors created`);
     }
-
-    this.logger.log(`Starting transaction for ${articles.length} articles...`);
 
     await this.prisma.$transaction(async (tx) => {
       for (const article of articles) {

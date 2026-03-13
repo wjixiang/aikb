@@ -78,6 +78,7 @@ async function createAgent(): Promise<any> {
                 name: 'Demo Workspace',
                 expertMode: true, // Disable all skill-related features for Expert
                 disableBuiltinSkills: true, // Expert should NOT have access to builtin skills
+                renderMode: 'markdown'
             }
         }
     );
@@ -261,8 +262,13 @@ export async function runDemo(
 
 /**
  * Build task prompt from expert config and input
+ *
+ * NOTE: Expert's capability and direction are already set in agentPrompt (systemPrompt)
+ * This function only adds task-specific information
  */
 function buildTaskPrompt(expertConfig: ExpertConfig, taskDescription: string): string {
+    // In demo mode, show the full prompt including capability/direction for visibility
+    // In production, these are in systemPrompt via agentPrompt
     let prompt = '';
 
     if (expertConfig.prompt?.capability) {

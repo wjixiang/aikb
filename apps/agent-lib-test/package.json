@@ -1,0 +1,23 @@
+{
+  "name": "agent-lib-test",
+  "version": "1.0.0",
+  "description": "Test app for agent-lib Expert CLI",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:expert-cli": "npx tsx src/test-expert-cli.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.7.0",
+  "dependencies": {
+    "agent-lib": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -16,7 +16,9 @@ export * from './search/semantic/semantic-search.service';
 export * from './search/hybrid/hybrid-search.service';
 export * from './export/export.module';
 export * from './export/export.service';
-export * from './export/types';
+// Explicitly re-export from './export/types' excluding ExportFormat
+// to avoid conflict with the enum ExportFormat from './api/dto/index'
+export type { ExportOptions, ExportResult } from './export/types';
 export * from './api/index';
 
 export interface BibliographyItem {

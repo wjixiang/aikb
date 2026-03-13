@@ -5,6 +5,7 @@ import { NativeToolCallParser } from './assistant-message/NativeToolCallParser.j
 // Export from merged agent-db
 import { prisma, AgentDBPrismaService } from './prisma.js';
 import { AgentDBModule as AgentDBModuleExport } from './agent-db.module.js';
+import { createExpertConfig } from './expert/ExpertFactory.js';
 
 export * from './agent-lib.module.js';
 export { NativeToolCallParser };
@@ -47,5 +48,11 @@ export * from './skills/index.js';
 // Export thinking module (refactored from MemoryModule)
 export * from './thinking/index.js';
 
+// Export Expert development utilities
+export { ExpertWorkspaceBase } from './expert/ExpertWorkspaceBase.js';
+export type { ValidationResult, InputHandler, ExportConfig, ExportResult, ExpertConfig, ExpertComponentDefinition } from './expert/types.js';
+
 // Export DI (Dependency Injection) module
 export * from './di/index.js';
+
+export { createExpertConfig }

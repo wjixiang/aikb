@@ -18,6 +18,7 @@ import {
     parseError,
     isRetryableError,
 } from './errors.js';
+import chalk from 'chalk';
 
 /**
  * Configuration for OpenAI-compatible API client
@@ -160,10 +161,10 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 //     },
                 //     'Request completed successfully'
                 // );
-
+                console.debug(chalk.bgCyanBright("systemPrompt\n", systemPrompt))
+                console.debug(chalk.bgBlueBright("workspaceContext\n", workspaceContext))
+                console.debug(chalk.bgCyanBright("systemPrompt\n", systemPrompt))
                 this.logger.info({
-                    systemPrompt: `\n${systemPrompt}`,
-                    workspaceContext: `\n${workspaceContext}`,
                     response: response
                 }, "Get reponse successfully")
 
