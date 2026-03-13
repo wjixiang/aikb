@@ -31,7 +31,6 @@ export class ttext extends TUIElement {
 
     constructor(metadata: ttextMetadata) {
         super(metadata);
-        this.metadata = metadata;
     }
 
     /**

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/agent-lib.d.ts",
   "bin": {
     "expert-cli": "./src/expert/cli/index.ts"
   },
