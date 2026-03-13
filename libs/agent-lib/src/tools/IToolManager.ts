@@ -42,23 +42,17 @@ export type UnsubscribeFn = () => void;
 /**
  * Central tool management interface
  *
- * Simplified version: Removed ToolStateStrategy.
- * Tool availability is now determined dynamically by checking SkillManager.
+ * Simplified version after removing skill system.
+ * All registered tools are now available by default.
  *
  * The ToolManager is responsible for:
  * - Registering/unregistering tool providers
  * - Maintaining a registry of all tools
- * - Dynamically determining tool enabled/disabled state based on active skill
+ * - Determining tool enabled/disabled state
  * - Executing tool calls
  * - Notifying subscribers of tool availability changes
  */
 export interface IToolManager {
-    /**
-     * Set the SkillManager reference for skill-based tool filtering
-     * @param skillManager - The SkillManager instance
-     */
-    setSkillManager(skillManager: any): void;
-
     /**
      * Register a tool provider
      * @param provider - The provider to register

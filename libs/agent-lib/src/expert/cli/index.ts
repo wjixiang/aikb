@@ -11,7 +11,7 @@
 
 import { Command } from 'commander';
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join, basename } from 'path';
+import { join, basename, relative } from 'path';
 import chalk from 'chalk';
 import YAML from 'yaml';
 
@@ -25,10 +25,17 @@ export type { ExpertMetadata, SOPDefinition, ParameterDefinition, StepDefinition
 export type { ExpertTestDefinition, TestCase, TestExpectation, TestResult, TestSuiteResult } from './test.js';
 
 /**
- * Get experts directory
+ * Get experts directories to search
+ * Searches multiple locations:
+ * - src/expert/builtin (agent-lib built-in experts)
+ * - experts (external experts created via CLI)
  */
-function getExpertsDir(): string {
-    return join(process.cwd(), 'src', 'expert', 'builtin');
+function getExpertsDirs(): string[] {
+    const dirs = [
+        join(process.cwd(), 'src', 'expert', 'builtin'),
+        join(process.cwd(), 'experts'),
+    ];
+    return dirs.filter(dir => existsSync(dir));
 }
 
 /**
@@ -69,11 +76,11 @@ function getExpertDirs(expertsDir: string): string[] {
  * List all Experts
  */
 export async function listExperts(): Promise<void> {
-    const expertsDir = getExpertsDir();
-    const expertDirs = getExpertDirs(expertsDir);
+    const expertsDirs = getExpertsDirs();
 
-    if (expertDirs.length === 0) {
+    if (expertsDirs.length === 0) {
         console.log('No Experts found.');
+        console.log('  Run "expert-cli new <name>" to create a new Expert\n');
         return;
     }
 
@@ -81,47 +88,81 @@ export async function listExperts(): Promise<void> {
     console.log('  Name'.padEnd(30) + 'Display Name'.padEnd(35) + 'Category');
     console.log('  ' + '-'.repeat(80));
 
-    for (const dir of expertDirs) {
-        const name = basename(dir);
-        try {
-            const config = loadExpertConfig(dir);
-            console.log(
-                `  ${name.padEnd(28)} ${(config.displayName || '').padEnd(33)} ${config.category || '-'}`
-            );
-        } catch (e) {
-            console.log(`  ${name.padEnd(28)} [Invalid Config]`);
+    let totalCount = 0;
+    for (const expertsDir of expertsDirs) {
+        const expertDirs = getExpertDirs(expertsDir);
+        const relPath = relative(process.cwd(), expertsDir);
+
+        if (expertDirs.length > 0) {
+            console.log(`\n  📁 ${relPath}/`);
+        }
+
+        for (const dir of expertDirs) {
+            const name = basename(dir);
+            totalCount++;
+            try {
+                const config = loadExpertConfig(dir);
+                console.log(
+                    `    ${name.padEnd(26)} ${(config.displayName || '').padEnd(33)} ${config.category || '-'}`
+                );
+            } catch (e) {
+                console.log(`    ${name.padEnd(26)} [Invalid Config]`);
+            }
         }
     }
+
+    console.log(`\n  Total: ${totalCount} Expert(s)\n`);
     console.log('');
+}
+
+/**
+ * Find expert directory by name across all experts directories
+ */
+function findExpertDirByName(expertName: string): string | null {
+    for (const expertsDir of getExpertsDirs()) {
+        const expertDir = join(expertsDir, expertName);
+        if (existsSync(expertDir)) {
+            return expertDir;
+        }
+    }
+    return null;
 }
 
 /**
  * Validate an Expert configuration
  */
 export async function validateExpert(expertName?: string): Promise<void> {
-    const expertsDir = getExpertsDir();
+    const expertsDirs = getExpertsDirs();
 
     if (expertName) {
-        // Validate specific expert
-        const expertDir = join(expertsDir, expertName);
-        if (!existsSync(expertDir)) {
+        // Validate specific expert - search across all directories
+        const expertDir = findExpertDirByName(expertName);
+        if (!expertDir) {
             console.error(`❌ Expert not found: ${expertName}`);
+            console.error(`  Searched in:`);
+            for (const dir of expertsDirs) {
+                console.error(`    - ${relative(process.cwd(), dir)}`);
+            }
             process.exit(1);
         }
         await validateSingleExpert(expertDir, expertName);
     } else {
-        // Validate all experts
-        const expertDirs = getExpertDirs(expertsDir);
+        // Validate all experts across all directories
+        let allExpertDirs: string[] = [];
+        for (const expertsDir of expertsDirs) {
+            allExpertDirs = allExpertDirs.concat(getExpertDirs(expertsDir));
+        }
 
-        if (expertDirs.length === 0) {
+        if (allExpertDirs.length === 0) {
             console.log('No Experts found to validate.');
+            console.log('  Run "expert-cli new <name>" to create a new Expert\n');
             return;
         }
 
-        console.log(`\n🔍 Validating ${expertDirs.length} Experts...\n`);
+        console.log(`\n🔍 Validating ${allExpertDirs.length} Experts...\n`);
 
         let hasErrors = false;
-        for (const dir of expertDirs) {
+        for (const dir of allExpertDirs) {
             const name = basename(dir);
             try {
                 await validateSingleExpert(dir, name);
@@ -228,11 +269,17 @@ async function validateSingleExpert(expertDir: string, name: string): Promise<vo
  * Show Expert details
  */
 export async function showExpert(expertName: string): Promise<void> {
-    const expertsDir = getExpertsDir();
-    const expertDir = join(expertsDir, expertName);
+    const expertDir = findExpertDirByName(expertName);
 
-    if (!existsSync(expertDir)) {
+    if (!expertDir) {
         console.error(`❌ Expert not found: ${expertName}`);
+        const expertsDirs = getExpertsDirs();
+        if (expertsDirs.length > 0) {
+            console.error(`  Searched in:`);
+            for (const dir of expertsDirs) {
+                console.error(`    - ${relative(process.cwd(), dir)}`);
+            }
+        }
         process.exit(1);
     }
 

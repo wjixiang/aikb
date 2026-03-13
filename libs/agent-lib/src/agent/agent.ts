@@ -20,7 +20,6 @@ import {
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
-import { generateSkillsUsageGuidance } from "../prompts/sections/skillsUsageGuidance.js";
 import { generateActionPhaseGuidance } from "../prompts/sections/actionPhaseGuidance.js";
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
@@ -147,7 +146,7 @@ export class Agent {
         @inject(TYPES.Logger) private logger: ILogger,
         @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
-        this.workspace = workspace as VirtualWorkspace;
+        this.workspace = workspace as unknown as VirtualWorkspace;
         this._taskId = taskId || crypto.randomUUID();
         this.agentPrompt = agentPrompt;
 
@@ -666,17 +665,8 @@ ${rounds}`;
     }
 
     renderAgentPrompt() {
-        // Get skill prompt enhancement if available
-        const skillPrompt = this.workspace.getSkillPrompt();
-
-        // Merge base prompt with skill prompt
-        const capability = skillPrompt?.capability
-            ? `${this.agentPrompt.capability}\n\n--- Skill Enhancement ---\n${skillPrompt.capability}`
-            : this.agentPrompt.capability;
-
-        const direction = skillPrompt?.direction
-            ? `${this.agentPrompt.direction}\n\n--- Skill Guidance ---\n${skillPrompt.direction}`
-            : this.agentPrompt.direction;
+        const capability = this.agentPrompt.capability;
+        const direction = this.agentPrompt.direction;
 
         return `
 ------------
@@ -699,45 +689,18 @@ ${direction}
      * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
-        // Check if workspace is in Expert mode - skip all skill-related context
-        const workspaceConfig = this.workspace.getConfig();
-        const expertMode = workspaceConfig?.expertMode === true;
-
-        // In Expert mode, don't render any skill-related context
-        let skillsSection = '';
-        let skillsUsageGuidance = '';
-
-        if (!expertMode) {
-            // Only render skills section for non-Expert workspaces
-            skillsSection = this.workspace.getAvailableSkills().length > 0
-                ? this.workspace.renderSkillsSection().render()
-                : '';
-
-            const availableSkills = this.workspace.getAvailableSkills();
-            const activeSkill = this.workspace.getSkillManager().getActiveSkill();
-
-            // Build skills usage guidance using the section function
-            skillsUsageGuidance = generateSkillsUsageGuidance({
-                availableSkills,
-                activeSkill,
-            });
-        }
-
         // Get TODO list from task module
         const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });
 
-        // Render skill tools section (if active skill has tools)
-        // Note: renderSkillToolsSection() returns Promise<TUIElement | null>
-        const skillToolsSection = await this.workspace.renderSkillToolsSection();
-        const skillToolsRendered = skillToolsSection ? skillToolsSection.render() : '';
+        // Render component tools section
+        const componentToolsSection = await this.workspace.renderComponentToolsSection();
+        const componentToolsRendered = componentToolsSection ? componentToolsSection.render() : '';
 
         return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
-${skillsSection}
-${skillToolsRendered}
-${skillsUsageGuidance}
+${componentToolsRendered}
 
 ${todoList}
         `;

@@ -72,18 +72,6 @@ export const TYPES = {
     // ==================== Supporting Services ====================
 
     /**
-     * SkillManager for managing agent skills
-     * @scope Singleton - Shared across all agents
-     */
-    SkillManager: Symbol('SkillManager'),
-
-    /**
-     * SkillRegistry for skill registration
-     * @scope Singleton - Shared across all agents
-     */
-    SkillRegistry: Symbol('SkillRegistry'),
-
-    /**
      * TurnMemoryStore for turn-based memory storage
      * @scope Request - Shared within an agent creation request
      */

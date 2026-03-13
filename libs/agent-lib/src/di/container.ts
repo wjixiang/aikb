@@ -9,7 +9,6 @@ import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../
 import { ThinkingModule } from '../thinking/ThinkingModule.js';
 import { defaultThinkingConfig } from '../thinking/types.js';
 import { ActionModule, defaultActionConfig } from '../action/ActionModule.js';
-import { SkillManager } from '../skills/SkillManager.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { PicosComponent } from '../components/PICOS/picosComponents.js';
@@ -255,17 +254,6 @@ export class AgentContainer {
                     apiRequestTimeout: config.apiRequestTimeout,
                 };
             });
-
-        // Skills - use factory to handle circular dependency with VirtualWorkspace
-        this.container.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
-            // SkillManager will be initialized with a callback for skill changes
-            // The actual VirtualWorkspace reference will be set when needed
-            return new SkillManager({
-                onSkillChange: () => {
-                    // Placeholder - will be overridden when VirtualWorkspace is created
-                },
-            });
-        });
 
         // Configuration defaults
         this.container.bind<AgentConfig>(TYPES.AgentConfig).toConstantValue(defaultAgentConfig);
@@ -522,12 +510,11 @@ export class AgentContainer {
         // Bind in agent container for VirtualWorkspace to inject
         agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inRequestScope();
 
-        // Bind the agentContainer itself for DI token resolution in SkillManager
-        // This allows VirtualWorkspace to inject the container and pass it to SkillManager
+        // Bind the agentContainer itself for DI token resolution
         agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
 
-        // Tool Components - Singleton scope for skill-based lifecycle
-        // These are bound in agent containers for skill activation as singletons
+        // Tool Components - Singleton scope
+        // These are bound in agent containers as singletons
         agentContainer.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
         agentContainer.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
         agentContainer.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
@@ -539,15 +526,6 @@ export class AgentContainer {
         agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
         agentContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
         agentContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
-
-        // Skills - use factory to handle circular dependency with VirtualWorkspace
-        agentContainer.bind<SkillManager>(TYPES.SkillManager).toDynamicValue(() => {
-            return new SkillManager({
-                onSkillChange: () => {
-                    // Placeholder - will be overridden when VirtualWorkspace is created
-                },
-            });
-        });
     }
 
     /**

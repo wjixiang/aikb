@@ -1,18 +1,175 @@
 import { injectable, inject, optional, Container } from 'inversify';
 import { ToolComponent } from './toolComponent.js';
-import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace, RenderMode } from './types.js';
+import type { VirtualWorkspaceConfig, Tool, IVirtualWorkspace, RenderMode } from './types.js';
 import { tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText } from './ui/index.js';
 import type { TUIElement } from './ui/TUIElement.js';
 import { MdElement } from './ui/markdown/MdElement.js';
 import type { IRenderer } from './ui/Renderer.js';
-import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource } from '../skills/index.js';
+import { ToolSource } from '../tools/IToolProvider.js';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
-import { getBuiltinSkills } from '../skills/builtin/index.js';
+import { ComponentRegistry, type ComponentRegistration } from '../components/ComponentRegistry.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
+import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from '../expert/types.js';
+
+
+/**
+ * VirtualWorkspace Static Methods
+ * Provide input validation, transformation, and output export functionality
+ * Can be overridden by subclasses for custom behavior
+ */
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace VirtualWorkspaceStatic {
+    // ==================== Component Management ====================
+
+    /**
+     * Get components to register in this workspace
+     * Override in subclass to define components
+     */
+    export function getComponents(): (ToolComponent | symbol)[] {
+        return [];
+    }
+
+    /**
+     * Component DI Token mapping
+     * Used to resolve diToken strings from config.json to actual Symbols
+     */
+    export const componentTokenMap: Record<string, symbol> = {};
+
+    // ==================== Input Handling ====================
+
+    /**
+     * Validate user input
+     * Override in subclass for custom validation
+     */
+    export function validateInput(input: Record<string, any>): ValidationResult {
+        return { valid: true };
+    }
+
+    /**
+     * Transform input format
+     * Override in subclass for custom transformation
+     */
+    export function transformInput(input: Record<string, any>): Record<string, any> {
+        return input;
+    }
+
+    /**
+     * Load external data (e.g., from S3)
+     * Override in subclass for custom data loading
+     */
+    export async function loadExternalData(input: Record<string, any>): Promise<Record<string, any>> {
+        return input;
+    }
+
+    /**
+     * Get complete InputHandler for ExpertConfig.input
+     */
+    export function getInputHandler(): InputHandler {
+        return {
+            validate: (input: Record<string, any>) => validateInput(input),
+            transform: (input: Record<string, any>) => transformInput(input),
+            loadExternalData: (input: Record<string, any>) => loadExternalData(input),
+        };
+    }
+
+    // ==================== Output Handling ====================
+
+    /**
+     * Format output by extracting component states
+     */
+    export function formatOutput(workspace: VirtualWorkspace): Record<string, any> {
+        const outputs: Record<string, any> = {};
+        const componentKeys = workspace.getComponentKeys();
+
+        for (const key of componentKeys) {
+            const component = workspace.getComponent(key);
+            if (component) {
+                outputs[key] = component.getState();
+            }
+        }
+
+        return outputs;
+    }
+
+    /**
+     * Export handler - default JSON export via VFS
+     * Override in subclass for custom export
+     */
+    export async function exportHandler(
+        workspace: VirtualWorkspace,
+        config: ExportConfig
+    ): Promise<ExportResult> {
+        try {
+            const output = formatOutput(workspace);
+            const content = JSON.stringify(output, null, 2);
+
+            // Try to get VirtualFileSystemComponent for export
+            const vfsComponent = getVFSComponent(workspace);
+            if (!vfsComponent) {
+                return {
+                    success: false,
+                    error: 'VirtualFileSystemComponent not found in workspace'
+                };
+            }
+
+            return await vfsComponent.exportContent(
+                config.bucket,
+                config.path,
+                content,
+                'application/json'
+            );
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+            };
+        }
+    }
+
+    /**
+     * Get VirtualFileSystemComponent from workspace
+     */
+    function getVFSComponent(workspace: VirtualWorkspace): any {
+        const componentKeys = workspace.getComponentKeys();
+
+        for (const key of componentKeys) {
+            const component = workspace.getComponent(key);
+            if (component) {
+                const className = component.constructor?.name;
+                if (className === 'VirtualFileSystemComponent' ||
+                    key.includes('virtualFileSystem') ||
+                    key === 'virtualFileSystem') {
+                    return component;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // ==================== Utilities ====================
+
+    /**
+     * Get DI Tokens from component list
+     */
+    export function getComponentTokens(): symbol[] {
+        return getComponents()
+            .filter((c: ToolComponent | symbol): c is symbol => typeof c === 'symbol');
+    }
+
+    /**
+     * Get component instances from component list
+     */
+    export function getComponentInstances(): ToolComponent[] {
+        return getComponents()
+            .filter((c: ToolComponent | symbol): c is ToolComponent => c instanceof ToolComponent);
+    }
+}
 
 
 /**
@@ -20,16 +177,12 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
  * Uses tool calls for interaction instead of script execution
  *
  * This class delegates all tool management to IToolManager.
- * All tools are managed by the singleton ToolManager instance.
- * Tool state strategy management (skill-based tool control) is now integrated into ToolManager.
+ * Components are managed directly via ComponentRegistry (no skill system).
  */
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
     private config: VirtualWorkspaceConfig;
-    private components: Map<string, ComponentRegistration>;
-    private skillManager: SkillManager;
-    private activeSkill: Skill | null = null;
-    private componentInstanceCache: Map<string, ToolComponent> = new Map();
+    private componentRegistry: ComponentRegistry;
 
     // Tool management system (injected)
     private toolManager: IToolManager;
@@ -50,7 +203,19 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             renderMode: config.renderMode ?? 'tui',
             ...config,
         };
-        this.components = new Map();
+
+        // Initialize component registry
+        this.componentRegistry = new ComponentRegistry();
+
+        // Register components from config if provided
+        if (config.components) {
+            for (const comp of config.components) {
+                this.componentRegistry.register(
+                    comp.componentId || comp.constructor.name,
+                    comp
+                );
+            }
+        }
 
         // Initialize renderer based on render mode
         this.renderer = this.config.renderMode === 'markdown'
@@ -64,96 +229,49 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // Store container for later use
         this.container = container;
 
-        // Create SkillManager with container if available for DI token resolution
-        this.skillManager = new SkillManager({
-            onSkillChange: (skill) => this.handleSkillChange(skill)
-        });
-
-        // Inject container into SkillManager if available
-        if (container) {
-            this.skillManager.setContainer(container);
-        }
-
-        // Pass SkillManager to ToolManager for skill-based tool filtering
-        this.toolManager.setSkillManager(this.skillManager);
-
-        // Initialize global tool provider with skillManager
-        this.globalToolProvider = new GlobalToolProvider(this.skillManager);
+        // Initialize global tool provider
+        this.globalToolProvider = new GlobalToolProvider();
         this.toolManager.registerProvider(this.globalToolProvider);
 
-        // Initialize skills synchronously
-        this.initializeSkills();
-
-        // Set expert mode on SkillManager if enabled
-        if (this.config.expertMode) {
-            this.skillManager.setExpertMode(true);
-        }
-
-        // All tools are now managed by ToolManager
+        // Register all components from registry as tool providers
+        this.registerComponentTools();
     }
 
     /**
-     * Initialize skills from repository
+     * Register all components from registry as tool providers
      */
-    private initializeSkills(): void {
-        // Skip loading builtin skills if disabled in config
-        if (this.config.disableBuiltinSkills) {
-            console.log('[VirtualWorkspace] Built-in skills disabled');
-            return;
-        }
-
-        try {
-            // Use static import to load built-in skills synchronously
-            const skills = getBuiltinSkills();
-
-            if (skills.length > 0) {
-                this.skillManager.registerAll(skills);
-                console.log(`[VirtualWorkspace] Registered ${skills.length} built-in skills`);
-            }
-        } catch (error) {
-            console.warn('[VirtualWorkspace] Failed to load built-in skills:', error);
+    private registerComponentTools(): void {
+        const registrations = this.componentRegistry.getAllRegistrations();
+        for (const registration of registrations) {
+            const provider = new ComponentToolProvider(registration.id, registration.component);
+            this.toolManager.registerProvider(provider);
         }
     }
 
-    // ==================== Skill Management ====================
+    // ==================== Component Management ====================
 
     /**
-     * Register skills with the workspace
+     * Register a component with an ID
      */
-    registerSkills(skills: Skill[]): void {
-        this.skillManager.registerAll(skills);
+    registerComponent(id: string, component: ToolComponent, priority?: number): void {
+        this.componentRegistry.register(id, component, priority);
+
+        // Also register as a tool provider
+        const provider = new ComponentToolProvider(id, component);
+        this.toolManager.registerProvider(provider);
     }
 
     /**
-     * Register a single skill
+     * Register multiple components
      */
-    registerSkill(skill: Skill): void {
-        this.skillManager.register(skill);
-    }
+    registerComponents(components: Array<{ id: string; component: ToolComponent; priority?: number }>): void {
+        this.componentRegistry.registerWithPriority(components);
 
-    /**
-     * Get the skill manager instance
-     */
-    getSkillManager(): SkillManager {
-        return this.skillManager;
-    }
-
-    /**
-     * Get active skill's prompt enhancement
-     */
-    getSkillPrompt(): { capability: string; direction: string } | null {
-        const activeSkill = this.skillManager.getActiveSkill();
-        if (!activeSkill) {
-            return null;
+        // Register all as tool providers
+        for (const { id, component } of components) {
+            const provider = new ComponentToolProvider(id, component);
+            this.toolManager.registerProvider(provider);
         }
-        return activeSkill.prompt;
-    }
-
-    /**
-     * Get available skills summary
-     */
-    getAvailableSkills(): SkillSummary[] {
-        return this.skillManager.getAvailableSkills();
     }
 
     /**
@@ -164,54 +282,29 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Handle skill change - enable/disable skill tools
-     *
-     * Uses ComponentToolProvider to manage skill component tools.
-     *
-     * When a skill is activated:
-     * - Update activeSkill reference first (so getActiveComponentsWithIds works)
-     * - Unregister previous skill's component tool providers
-     * - Register new skill's component tool providers with ToolManager
-     * - Register skill tool definitions for availability checking
-     *
-     * When a skill is deactivated:
-     * - Unregister skill's component tool providers
-     * - Clear activeSkill reference
+     * Get the component registry
      */
-    private handleSkillChange(skill: Skill | null): void {
-        // Store previous skill for cleanup
-        const previousSkill = this.activeSkill;
-
-        // Update active skill FIRST so that getActiveComponentsWithIds() returns correct components
-        this.activeSkill = skill;
-
-        // Unregister previous skill's component tool providers
-        if (previousSkill && previousSkill !== skill) {
-            // Unregister component tool providers
-            if (previousSkill.components) {
-                for (const comp of previousSkill.components) {
-                    const providerId = `component:${previousSkill.name}:${comp.componentId}`;
-                    this.toolManager.unregisterProvider(providerId);
-                }
-            }
-        }
-
-        // Register new skill's component tool providers
-        if (skill) {
-            // Register component tool providers with actual handlers
-            const activeComponents = this.skillManager.getActiveComponentsWithIds();
-            for (const { componentId, component: componentInstance } of activeComponents) {
-                const componentKey = `${skill.name}:${componentId}`;
-                const provider = new ComponentToolProvider(componentKey, componentInstance);
-                this.toolManager.registerProvider(provider);
-            }
-        }
-
-        // Notify tool availability change
-        this.onToolAvailabilityChange?.();
+    getComponentRegistry(): ComponentRegistry {
+        return this.componentRegistry;
     }
 
-    /** Callback for when tool availability changes */
+    /**
+     * Get a registered component by ID
+     */
+    getComponent(id: string): ToolComponent | undefined {
+        return this.componentRegistry.get(id);
+    }
+
+    /**
+     * Get all registered component IDs
+     */
+    getComponentKeys(): string[] {
+        return this.componentRegistry.getIds();
+    }
+
+    /**
+     * Callback for when tool availability changes
+     */
     private onToolAvailabilityChange?: (() => void) | undefined;
 
     /**
@@ -222,90 +315,50 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Render skills section for LLM context
+     * Render component section for LLM context (TUI mode)
+     * Renders all registered components
      */
-    renderSkillsSection(): TUIElement {
-        // In expert mode, don't render skills section
-        if (this.config.expertMode) {
-            return new tdiv({ content: '' });
-        }
-
-        const skills = this.skillManager.getAvailableSkills();
-        const activeSkill = this.skillManager.getActiveSkill();
-
+    renderComponentsSection(): TUIElement {
         const container = new tdiv({
             styles: {
                 showBorder: true,
-                // align: 'center'
             }
         });
 
         container.addChild(new tdiv({
-            content: 'SKILLS',
+            content: 'COMPONENTS',
             styles: {
                 align: 'center'
             }
-        }))
+        }));
 
-        const availableSkillContainer = new tdiv({
-            styles: {
-                showBorder: true
-            }
-        })
-        const activeSkillContainer = new tdiv({})
+        const componentIds = this.componentRegistry.getIds();
 
-        container.addChild(availableSkillContainer)
-        container.addChild(activeSkillContainer)
-
-        availableSkillContainer.addChild(new tdiv({
-            content: 'AVAILABLE SKILLS',
-            styles: {
-                align: 'center',
-            }
-        }))
-
-        // Add important instruction for LLM
-        availableSkillContainer.addChild(new tdiv({
-            content: '**IMPORTANT:** When referencing or activating a skill, ALWAYS use the **Skill ID** (in backticks), NOT the display name.',
-            styles: {
-                showBorder: false,
-                margin: { bottom: 1 }
-            }
-        }))
-
-        if (skills.length === 0) {
-            availableSkillContainer.addChild(new tdiv({
-                content: 'No skills registered',
+        if (componentIds.length === 0) {
+            container.addChild(new tdiv({
+                content: 'No components registered',
                 styles: { showBorder: false }
             }));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return container;
         }
 
-        // List all skills
-        for (const skill of skills) {
-            const isActive = skill.name === activeSkill?.name;
-            const statusBadge = isActive ? ' **[ACTIVE]**' : '';
-            const triggers = skill.triggers?.length ? `\n**Triggers:** ${skill.triggers.join(', ')}` : '';
-            const whenToUse = skill.whenToUse ? `\n**When to use:** ${skill.whenToUse}` : '';
+        // List all components
+        for (const id of componentIds) {
+            const component = this.componentRegistry.get(id);
+            if (component) {
+                const displayName = component.displayName || id;
+                const description = component.description || '';
 
-            // Make the skill ID more prominent by placing it first and making it stand out
-            availableSkillContainer.addChild(new tdiv({
-                content: `**Skill ID:** \`${skill.name}\`${statusBadge}\n**Display Name:** ${skill.displayName}\n**Description:** ${skill.description}${whenToUse}${triggers}\n\n`,
-                styles: { showBorder: false }
-            }));
-            availableSkillContainer.addChild(new tdiv({
-                content: `\n\n---\n\n`,
-                styles: { showBorder: false }
-            }));
-        }
-
-        // Show active skill indicator at the bottom
-        if (activeSkill) {
-            activeSkillContainer.addChild(new tdiv({
-                content: `**Currently Active:** \`${activeSkill.name}\` (${activeSkill.displayName})`,
-                styles: { showBorder: false }
-            }));
+                container.addChild(new tdiv({
+                    content: `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}\n`,
+                    styles: { showBorder: false }
+                }));
+                container.addChild(new tdiv({
+                    content: `\n\n---\n\n`,
+                    styles: { showBorder: false }
+                }));
+            }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -313,85 +366,57 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Render skills section for LLM context in Markdown mode
+     * Render component section for LLM context (Markdown mode)
      */
-    renderSkillsSectionMarkdown(): MdElement {
-        // In expert mode, don't render skills section
-        if (this.config.expertMode) {
-            return new MdDiv({ content: '' });
-        }
-
-        const skills = this.skillManager.getAvailableSkills();
-        const activeSkill = this.skillManager.getActiveSkill();
-
+    renderComponentsSectionMarkdown(): MdElement {
         const container = new MdDiv({
             styles: { showBorder: true }
         }, [], 0);
 
         container.addChild(new MdHeading({
-            content: 'SKILLS'
+            content: 'COMPONENTS'
         }, [], 0));
 
-        const availableSkillsContainer = new MdDiv({}, [], 1);
-        container.addChild(availableSkillsContainer);
+        const componentIds = this.componentRegistry.getIds();
 
-        // Add important instruction for LLM
-        availableSkillsContainer.addChild(new MdParagraph({
-            content: '**IMPORTANT:** When referencing or activating a skill, ALWAYS use the **Skill ID** (in backticks), NOT the display name.'
-        }, [], 1));
-
-        if (skills.length === 0) {
-            availableSkillsContainer.addChild(new MdParagraph({
-                content: 'No skills registered'
+        if (componentIds.length === 0) {
+            container.addChild(new MdParagraph({
+                content: 'No components registered'
             }, [], 1));
             return container;
         }
 
-        // List all skills
-        for (const skill of skills) {
-            const isActive = skill.name === activeSkill?.name;
-            const statusBadge = isActive ? ' **[ACTIVE]**' : '';
-            const triggers = skill.triggers?.length ? `\n**Triggers:** ${skill.triggers.join(', ')}` : '';
-            const whenToUse = skill.whenToUse ? `\n**When to use:** ${skill.whenToUse}` : '';
+        // List all components
+        for (const id of componentIds) {
+            const component = this.componentRegistry.get(id);
+            if (component) {
+                const displayName = component.displayName || id;
+                const description = component.description || '';
 
-            availableSkillsContainer.addChild(new MdParagraph({
-                content: `**Skill ID:** \`${skill.name}\`${statusBadge}\n**Display Name:** ${skill.displayName}\n**Description:** ${skill.description}${whenToUse}${triggers}`
-            }, [], 1));
-        }
-
-        // Show active skill indicator at the bottom
-        if (activeSkill) {
-            container.addChild(new MdParagraph({
-                content: `**Currently Active:** \`${activeSkill.name}\` (${activeSkill.displayName})`
-            }, [], 1));
+                container.addChild(new MdParagraph({
+                    content: `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}`
+                }, [], 1));
+            }
         }
 
         return container;
     }
 
     /**
-     * Render skill-specific tools section
-     * Shows only enabled tools from the active skill's components
+     * Render component-specific tools section
+     * Shows all tools from registered components
      */
-    async renderSkillToolsSection(): Promise<TUIElement | null> {
-        const activeSkill = this.skillManager.getActiveSkill();
-        if (!activeSkill) {
-            return null;
-        }
-
-        // Get tools from active skill's components or all components based on config
-        let components;
-        if (this.config.alwaysRenderAllComponents) {
-            components = await this.skillManager.getAllComponentsWithIds();
-        } else {
-            components = this.skillManager.getActiveComponentsWithIds();
-        }
+    async renderComponentToolsSection(): Promise<TUIElement | null> {
+        const componentIds = this.componentRegistry.getIds();
         const tools: Tool[] = [];
 
-        for (const { component } of components) {
-            for (const tool of component.toolSet.values()) {
-                if (this.toolManager.isToolEnabled(tool.toolName)) {
-                    tools.push(tool);
+        for (const id of componentIds) {
+            const component = this.componentRegistry.get(id);
+            if (component) {
+                for (const tool of component.toolSet.values()) {
+                    if (this.toolManager.isToolEnabled(tool.toolName)) {
+                        tools.push(tool);
+                    }
                 }
             }
         }
@@ -408,7 +433,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         });
 
         container.addChild(new tdiv({
-            content: `SKILL TOOLS: ${activeSkill.displayName}`,
+            content: `COMPONENT TOOLS`,
             styles: { align: 'center' }
         }));
 
@@ -417,95 +442,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container;
-    }
-
-    /**
-     * Get a registered component
-     * Note: Components are now managed by skills through SkillToolProvider
-     */
-    getComponent(key: string): ToolComponent | undefined {
-        // First, try to get from SkillManager which handles DI token resolution
-        if (this.activeSkill) {
-            // Extract component ID from key (format: "skillName:componentId")
-            const parts = key.split(':');
-            if (parts.length >= 2) {
-                const componentId = parts.slice(1).join(':');
-                const component = this.skillManager.getComponent(componentId);
-                if (component) {
-                    return component;
-                }
-            }
-        }
-
-        // Fall back to legacy approach for backward compatibility
-        // Check cache first
-        if (this.componentInstanceCache.has(key)) {
-            return this.componentInstanceCache.get(key);
-        }
-
-        // Try to resolve from active skill's components
-        if (this.activeSkill && this.activeSkill.components) {
-            for (const componentDef of this.activeSkill.components) {
-                const componentKey = `${this.activeSkill.name}:${componentDef.componentId}`;
-                if (componentKey === key) {
-                    // Resolve instance based on its type
-                    const instanceType = typeof componentDef.instance;
-
-                    // For DI tokens, try to resolve from SkillManager
-                    if (instanceType === 'symbol') {
-                        const component = this.skillManager.getComponent(componentDef.componentId);
-                        if (component) {
-                            this.componentInstanceCache.set(key, component);
-                            return component;
-                        }
-                        console.warn(`[VirtualWorkspace] Could not resolve DI token for component "${componentDef.componentId}".`);
-                        return undefined;
-                    }
-
-                    // Resolve instance if it's a factory function
-                    if (instanceType === 'function') {
-                        const factory = componentDef.instance as () => ToolComponent | Promise<ToolComponent>;
-                        const result = factory();
-
-                        if (result instanceof Promise) {
-                            result.then(instance => {
-                                this.componentInstanceCache.set(key, instance);
-                            });
-                            return undefined;
-                        } else {
-                            this.componentInstanceCache.set(key, result);
-                            return result;
-                        }
-                    } else {
-                        // Direct instance - cache and return
-                        this.componentInstanceCache.set(key, componentDef.instance as ToolComponent);
-                        return componentDef.instance as ToolComponent;
-                    }
-                }
-            }
-        }
-        // Fall back to legacy component map
-        return this.components.get(key)?.component;
-    }
-
-    /**
-     * Get all registered component keys
-     * Note: Components are now managed by skills through SkillToolProvider
-     */
-    getComponentKeys(): string[] {
-        const keys: string[] = [];
-
-        // Get keys from active skill's components
-        if (this.activeSkill && this.activeSkill.components) {
-            for (const componentDef of this.activeSkill.components) {
-                keys.push(`${this.activeSkill.name}:${componentDef.componentId}`);
-            }
-        }
-
-        // Fall back to legacy component map
-        keys.push(...Array.from(this.components.keys()));
-
-        return keys;
     }
 
     renderToolBox() {
@@ -527,9 +463,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             const globalToolsSection = renderToolSection(globalTools)
             container.addChild(globalToolsSection);
         }
-
-        // Note: Component tools are no longer rendered in TOOL BOX
-        // They are rendered in their respective component sections in _render()
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return container
@@ -562,25 +495,19 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             }, undefined, 1));
         }
 
-        // Add skills section
-        container.addChild(this.renderSkillsSectionMarkdown());
+        // Add components section
+        container.addChild(this.renderComponentsSectionMarkdown());
 
-        // Render skill components
-        let componentsToRender;
-        if (this.config.alwaysRenderAllComponents) {
-            componentsToRender = await this.skillManager.getAllComponentsWithIds();
-        } else {
-            componentsToRender = this.skillManager.getActiveComponentsWithIds();
-        }
+        // Render all registered components
+        const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-        for (const { componentId, component: componentInstance } of componentsToRender) {
-            const componentKey = `${this.activeSkill?.name || 'global'}:${componentId}`;
+        for (const registration of sortedRegistrations) {
             const componentContainer = new MdDiv({
-                content: `## ${componentKey}`,
+                content: `## ${registration.id}`,
                 styles: { showBorder: true }
             }, [], 1);
 
-            const componentRender = await componentInstance.renderImply();
+            const componentRender = await registration.component.renderImply();
             // renderImply returns TUIElement[], wrap them appropriately for markdown
             for (const element of componentRender) {
                 // Convert TUIElement to markdown representation
@@ -589,24 +516,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                     content: rendered,
                 }, undefined, 2));
             }
-            container.addChild(componentContainer);
-        }
-
-        // Render legacy components (for backward compatibility)
-        const sortedComponents = Array.from(this.components.entries())
-            .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
-
-        for (const [key, registration] of sortedComponents) {
-            const componentContainer = new MdDiv({
-                content: `## ${key}`,
-                styles: { showBorder: true }
-            }, [], 1);
-            const componentRender = await registration.component.render();
-            // Handle both TUIElement and MdElement returns
-            const rendered = componentRender.render();
-            componentContainer.addChild(new MdParagraph({
-                content: rendered,
-            }, undefined, 2));
             container.addChild(componentContainer);
         }
 
@@ -644,62 +553,21 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             }));
         }
 
-        // Add skills section
-        container.addChild(this.renderSkillsSection());
+        // Add components section
+        container.addChild(this.renderComponentsSection());
 
-        // Note: Tool sections are NOT rendered in workspace.render()
-        // - Global tools are rendered via renderToolBox() in System Context (agent.ts)
-        // - Skill tools are rendered via renderSkillToolsSection() in System Context (agent.ts)
-        // - Component tools are rendered within their respective component sections below
+        // Render all registered components
+        const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-        // container.addChild(new tdiv({
-        //     content: `Workspace ID: ${this.config.id}\nComponents: ${this.components.size}`,
-        //     styles: { showBorder: false, margin: { bottom: 1 } }
-        // }));
-
-        // Render skill components first (if active skill has components)
-        // Use component instances from SkillManager which handles DI token resolution
-        // If alwaysRenderAllComponents is true, render ALL registered components
-        let componentsToRender;
-        if (this.config.alwaysRenderAllComponents) {
-            componentsToRender = await this.skillManager.getAllComponentsWithIds();
-        } else {
-            componentsToRender = this.skillManager.getActiveComponentsWithIds();
-        }
-
-        for (const { componentId, component: componentInstance } of componentsToRender) {
-            const componentKey = `${this.activeSkill?.name || 'global'}:${componentId}`;
+        for (const registration of sortedRegistrations) {
             const componentContainer = new tdiv({
-                content: componentKey,
+                content: registration.id,
                 styles: { showBorder: true }
             });
 
-            const componentRender = await componentInstance.renderImply();
+            const componentRender = await registration.component.renderImply();
             // renderImply returns an array, so add each element
             componentRender.forEach(element => componentContainer.addChild(element));
-            container.addChild(componentContainer);
-        }
-
-        // Render legacy components (for backward compatibility)
-        const sortedComponents = Array.from(this.components.entries())
-            .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
-
-        for (const [key, registration] of sortedComponents) {
-            // Render component header using tdiv
-            // ToolComponent.render() returns TUIElement | MdElement
-            const componentContainer = new tdiv({
-                content: key,
-                styles: { showBorder: true }
-            });
-            const componentRender = await registration.component.render();
-            // In TUI mode, render MdElement to string and add as text content
-            if (componentRender instanceof MdElement) {
-                componentContainer.addChild(new ttext({
-                    content: componentRender.render()
-                }));
-            } else {
-                componentContainer.addChild(componentRender);
-            }
             container.addChild(componentContainer);
         }
 
@@ -725,55 +593,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     /**
      * Get workspace statistics
-     * When alwaysRenderAllComponents is true, counts all registered skill components
      */
     getStats(): {
         componentCount: number;
         componentKeys: string[];
         totalTools: number;
     } {
-        let totalTools = 0;
-        const componentKeys: string[] = [];
-
-        // Get keys and tools from active skill's components or all components based on config
-        if (this.config.alwaysRenderAllComponents) {
-            // Get all registered skill components (synchronous, counts components from registry)
-            const allSkills = this.skillManager.getAllSkills();
-            for (const skill of allSkills) {
-                if (skill.components) {
-                    for (const comp of skill.components) {
-                        const componentKey = `${skill.name}:${comp.componentId}`;
-                        componentKeys.push(componentKey);
-                        // Try to get tool count from active component, otherwise estimate
-                        const activeComp = this.skillManager.getComponent(comp.componentId);
-                        if (activeComp && 'toolSet' in activeComp) {
-                            totalTools += activeComp.toolSet.size;
-                        }
-                    }
-                }
-            }
-        } else {
-            // Use component instances from SkillManager which handles DI token resolution
-            const activeComponentsWithIds = this.skillManager.getActiveComponentsWithIds();
-            for (const { componentId, component: componentInstance } of activeComponentsWithIds) {
-                const componentKey = `${this.activeSkill?.name}:${componentId}`;
-                componentKeys.push(componentKey);
-                // Count tools from component's toolSet
-                if ('toolSet' in componentInstance) {
-                    const toolSet = componentInstance.toolSet as Map<string, any>;
-                    totalTools += toolSet.size;
-                }
-            }
-        }
-
-        // Fall back to legacy component map
-        for (const [key, registration] of this.components.entries()) {
-            componentKeys.push(key);
-            totalTools += registration.component.toolSet.size;
-        }
+        const componentKeys = this.componentRegistry.getIds();
+        const totalTools = this.componentRegistry.getToolCount();
 
         return {
-            componentCount: componentKeys.length,
+            componentCount: this.componentRegistry.size,
             componentKeys,
             totalTools
         };
@@ -855,5 +685,4 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         return null;
     }
 }
-export type { ComponentRegistration, Skill, SkillSummary };
-
+export type { ComponentRegistration };

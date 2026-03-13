@@ -2,15 +2,10 @@ import { injectable, inject, optional } from 'inversify';
 import type { Tool } from '../../statefulContext/types.js';
 import type { IToolProvider } from '../IToolProvider.js';
 import { ToolSource, BaseToolProvider } from '../IToolProvider.js';
-import type { SkillManager } from '../../skills/index.js';
-import { TYPES } from '../../di/types.js';
 
 // Import global tools
 import {
     attempt_completion,
-    get_skill,
-    list_skills,
-    deactivate_skill,
 } from '../../statefulContext/globalTools.js';
 
 /**
@@ -18,9 +13,10 @@ import {
  *
  * Provides always-available global tools:
  * - attempt_completion
- * - get_skill (disabled in Expert mode)
- * - list_skills (disabled in Expert mode)
- * - deactivate_skill (disabled in Expert mode)
+ *
+ * Note: Skill-related tools (get_skill, list_skills, deactivate_skill) have been
+ * removed as part of the VirtualWorkspace refactoring. Components are now
+ * registered directly without requiring skill activation.
  */
 @injectable()
 export class GlobalToolProvider extends BaseToolProvider implements IToolProvider {
@@ -29,9 +25,7 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
 
     private tools: Map<string, Tool>;
 
-    constructor(
-        @inject(TYPES.SkillManager) @optional() private skillManager?: SkillManager
-    ) {
+    constructor() {
         super();
         this.tools = new Map();
         this.initializeTools();
@@ -43,9 +37,6 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
     private initializeTools(): void {
         const globalTools: Tool[] = [
             attempt_completion,
-            get_skill,
-            list_skills,
-            deactivate_skill,
         ];
 
         for (const tool of globalTools) {
@@ -54,33 +45,10 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
     }
 
     /**
-     * Check if skill switching tools should be available
-     * Disabled in Expert mode
-     */
-    private isSkillToolsEnabled(): boolean {
-        if (!this.skillManager) {
-            return true; // If no SkillManager, allow skill tools
-        }
-        return !this.skillManager.isExpertMode();
-    }
-
-    /**
      * Get all global tools
-     * In Expert mode, skill switching tools are hidden
      */
     getTools(): Tool[] {
-        const allTools = Array.from(this.tools.values());
-
-        // In Expert mode, filter out skill switching tools
-        if (!this.isSkillToolsEnabled()) {
-            return allTools.filter(tool =>
-                tool.toolName !== 'get_skill' &&
-                tool.toolName !== 'list_skills' &&
-                tool.toolName !== 'deactivate_skill'
-            );
-        }
-
-        return allTools;
+        return Array.from(this.tools.values());
     }
 
     /**
@@ -103,12 +71,6 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
         switch (name) {
             case 'attempt_completion':
                 return this.handleAttemptCompletion(params);
-            case 'get_skill':
-                return await this.handleGetSkill(params);
-            case 'list_skills':
-                return this.handleListSkills();
-            case 'deactivate_skill':
-                return await this.handleDeactivateSkill();
             default:
                 throw new Error(`Unknown global tool: ${name}`);
         }
@@ -127,72 +89,16 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
     }
 
     /**
-     * Handle get_skill tool call
-     */
-    private async handleGetSkill(params: any): Promise<any> {
-        if (!this.skillManager) {
-            throw new Error('SkillManager not available for get_skill operation');
-        }
-        const skillName = typeof params?.skill_name === 'string' ? params.skill_name : '';
-        return await this.skillManager.activateSkill(skillName);
-    }
-
-    /**
-     * Handle list_skills tool call
-     */
-    private handleListSkills(): { skills: any[]; activeSkill: string | null } {
-        if (!this.skillManager) {
-            throw new Error('SkillManager not available for list_skills operation');
-        }
-        const skills = this.skillManager.getAvailableSkills();
-        const activeSkill = this.skillManager.getActiveSkill();
-        return {
-            skills,
-            activeSkill: activeSkill?.name ?? null
-        };
-    }
-
-    /**
-     * Handle deactivate_skill tool call
-     */
-    private async handleDeactivateSkill(): Promise<{ success: boolean; message: string }> {
-        if (!this.skillManager) {
-            throw new Error('SkillManager not available for deactivate_skill operation');
-        }
-        return await this.skillManager.deactivateSkill();
-    }
-
-    /**
      * Check if a tool is a global tool
-     * In Expert mode, skill tools are not available
      */
     hasTool(name: string): boolean {
-        // In Expert mode, skill tools are hidden
-        if (!this.isSkillToolsEnabled()) {
-            const skillTools = ['get_skill', 'list_skills', 'deactivate_skill'];
-            if (skillTools.includes(name)) {
-                return false;
-            }
-        }
         return this.tools.has(name);
     }
 
     /**
      * Get all global tool names
-     * In Expert mode, skill tool names are filtered out
      */
     getToolNames(): string[] {
-        const allNames = Array.from(this.tools.keys());
-
-        // In Expert mode, filter out skill switching tool names
-        if (!this.isSkillToolsEnabled()) {
-            return allNames.filter(name =>
-                name !== 'get_skill' &&
-                name !== 'list_skills' &&
-                name !== 'deactivate_skill'
-            );
-        }
-
-        return allNames;
+        return Array.from(this.tools.keys());
     }
 }

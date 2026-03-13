@@ -156,7 +156,7 @@ describe('Agent - Quick Integration Test', () => {
         expect(mockApiClient.makeRequest).toHaveBeenCalled();
     });
 
-    it('should handle skill activation with mocked ApiClient', async () => {
+    it.skip('should handle skill activation with mocked ApiClient', async () => {
         // Mock ApiClient with get_skill tool call
         const mockApiClient: ApiClient = {
             makeRequest: vi.fn()

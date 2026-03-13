@@ -159,17 +159,13 @@ describe('Agent Phase Context Isolation', () => {
 
         // Register action component
         actionComponent = new TestActionComponent();
-        const componentProvider = new ComponentToolProvider('database-component', actionComponent);
-        toolManager.registerProvider(componentProvider);
 
-        // Also register component with workspace for rendering (using any cast for test access)
-        (workspace as any).components.set('database-component', {
-            component: actionComponent,
-            priority: 0
-        });
+        // Use new API to register component with workspace
+        workspace.registerComponent('database-component', actionComponent, 0);
 
-        // Register skill with tools
-        workspace.registerSkill(testSkillWithTools);
+        // Register skill with tools (deprecated but needed for some tests)
+        // Note: registerSkill is no longer available in the new architecture
+        // workspace.registerSkill(testSkillWithTools);
 
         // Create memory store
         turnStore = new TurnMemoryStore();
@@ -213,7 +209,7 @@ describe('Agent Phase Context Isolation', () => {
             expect(toolNames).not.toContain('fetch_records');
             expect(toolNames).not.toContain('db_query');
             expect(toolNames).not.toContain('db_insert');
-            expect(toolNames).not.toContain('get_skill');
+            // Note: get_skill, list_skills, deactivate_skill have been removed
             expect(toolNames).not.toContain('attempt_completion');
         });
 
@@ -289,54 +285,8 @@ describe('Agent Phase Context Isolation', () => {
             expect(context).toContain('Database Component');
         });
 
-        it('should render workspace with skills section', async () => {
-            const context = await workspace.render();
-
-            // Workspace should contain skills section
-            expect(context).toContain('SKILLS');
-            expect(context).toContain('database-skill');
-        });
-
-        it('should show active skill when skill is activated', async () => {
-            await workspace.getSkillManager().activateSkill('database-skill');
-
-            const context = await workspace.render();
-
-            // Workspace should show active skill
-            expect(context).toContain('Active:');
-            expect(context).toContain('Database Skill');
-        });
-    });
-
-    describe('Skill Activation Result', () => {
-        it('should return empty addedComponents for skill with tools but no components', async () => {
-            const result = await workspace.getSkillManager().activateSkill('database-skill');
-
-            expect(result.success).toBe(true);
-            // Skill has tools but no components definition, so addedComponents is empty
-            expect(result.addedComponents).toBeDefined();
-            expect(result.addedComponents).toEqual([]);
-        });
-
-        it('should return empty addedComponents for skill without tools', async () => {
-            // Register a skill without tools
-            const skillWithoutTools = {
-                name: 'empty-skill',
-                displayName: 'Empty Skill',
-                description: 'A skill without tools',
-                prompt: {
-                    capability: 'Empty capability',
-                    direction: 'Empty direction'
-                }
-            };
-            workspace.registerSkill(skillWithoutTools);
-
-            const result = await workspace.getSkillManager().activateSkill('empty-skill');
-
-            expect(result.success).toBe(true);
-            // No components defined, so addedComponents is empty array
-            expect(result.addedComponents).toEqual([]);
-        });
+        // Note: Skill-related tests have been removed as the skill system is deprecated
+        // The COMPONENTS section replaces the SKILLS section in the new architecture
     });
 
     describe('Tool Manager Integration', () => {
@@ -353,11 +303,9 @@ describe('Agent Phase Context Isolation', () => {
             const tools = workspace.getAllTools();
 
             // Should include global tools
+            // Note: skill tools (get_skill, list_skills, deactivate_skill) have been removed
             const toolNames = tools.map((t: any) => t.tool.toolName);
             expect(toolNames).toContain('attempt_completion');
-            expect(toolNames).toContain('get_skill');
-            expect(toolNames).toContain('list_skills');
-            expect(toolNames).toContain('deactivate_skill');
         });
     });
 
@@ -465,18 +413,18 @@ describe('Agent Phase Context Isolation', () => {
                 .rejects.toThrow('Thinking phase violation');
         });
 
-        it('should throw error when LLM uses get_skill tool during thinking', async () => {
-            // Mock response with get_skill tool call
+        it('should throw error when LLM uses action-phase tools during thinking', async () => {
+            // Mock response with attempt_completion tool call (which is action-phase only)
             const mockApiClient: ApiClient = {
                 makeRequest: vi.fn().mockResolvedValue({
                     toolCalls: [{
                         id: 'violation-2',
                         call_id: 'violation-call-2',
                         type: 'function_call',
-                        name: 'get_skill',  // This is an action-phase tool
-                        arguments: JSON.stringify({ skill_name: 'database-skill' })
+                        name: 'attempt_completion',  // This is an action-phase tool
+                        arguments: JSON.stringify({ result: 'Task completed' })
                     }],
-                    textResponse: 'I will activate the skill',
+                    textResponse: 'I will complete the task',
                     requestTime: 100,
                     tokenUsage: { promptTokens: 50, completionTokens: 30, totalTokens: 80 }
                 })
@@ -544,7 +492,8 @@ describe('Agent Phase Context Isolation', () => {
         });
     });
 
-    describe('Context After Skill Activation', () => {
+    // Note: These tests depend on the removed skill system - skipping
+    describe.skip('Context After Skill Activation', () => {
         it('should print context after skill activation to verify tool leakage', async () => {
             // First, activate the skill
             const activationResult = await workspace.getSkillManager().activateSkill('database-skill');

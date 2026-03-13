@@ -24,8 +24,7 @@ import type {
     ExportConfig,
     ExportResult
 } from './types.js';
-import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
-import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
+import { VirtualWorkspace, VirtualWorkspaceStatic } from '../statefulContext/virtualWorkspace.js';
 
 /**
  * Expert配置JSON接口
@@ -173,7 +172,7 @@ function buildDirection(sop: SOPDefinitionJson): string {
  */
 function buildComponents(
     config: ExpertConfigJson,
-    workspace: typeof ExpertWorkspaceBase
+    workspace: typeof VirtualWorkspaceStatic
 ): ExpertComponentDefinition[] {
     if (!config.components) return [];
 
@@ -188,25 +187,25 @@ function buildComponents(
 
 /**
  * 创建Expert配置
- * 
+ *
  * 这是主要的工厂函数，自动加载配置文件并生成ExpertConfig
- * 
+ *
  * @param metaUrl - import.meta.url（用于定位配置文件路径）
- * @param workspace - ExpertWorkspaceBase子类
+ * @param workspace - VirtualWorkspace子类或VirtualWorkspaceStatic命名空间
  * @returns ExpertConfig
- * 
+ *
  * @example
  * ```typescript
  * // index.ts
  * import { createExpertConfig } from '../../ExpertFactory.js';
  * import { MyExpertWorkspace } from './Workspace.js';
- * 
+ *
  * export default createExpertConfig(import.meta.url, MyExpertWorkspace);
  * ```
  */
 export function createExpertConfig(
     metaUrl: string,
-    workspace: typeof ExpertWorkspaceBase
+    workspace: typeof VirtualWorkspaceStatic
 ): ExpertConfig {
     // 获取当前Expert目录
     const __filename = fileURLToPath(metaUrl);
@@ -253,23 +252,21 @@ export function createExpertConfig(
 
 /**
  * 创建简单Expert配置（不需要Workspace类）
- * 
+ *
  * 适用于不需要自定义输入/输出处理的简单Expert
- * 
+ *
  * @param metaUrl - import.meta.url
  * @returns ExpertConfig
- * 
+ *
  * @example
  * ```typescript
  * // index.ts
  * import { createSimpleExpertConfig } from '../../ExpertFactory.js';
- * 
+ *
  * export default createSimpleExpertConfig(import.meta.url);
  * ```
  */
 export function createSimpleExpertConfig(metaUrl: string): ExpertConfig {
-    // 使用默认的空Workspace
-    class DefaultWorkspace extends ExpertWorkspaceBase { }
-
-    return createExpertConfig(metaUrl, DefaultWorkspace);
+    // 使用默认的VirtualWorkspaceStatic
+    return createExpertConfig(metaUrl, VirtualWorkspaceStatic);
 }

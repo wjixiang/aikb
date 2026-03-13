@@ -1,35 +1,28 @@
 /**
- * ExpertWorkspaceBase - Expert Workspace 基类
+ * ExpertWorkspaceBase - Expert Workspace 基类 (DEPRECATED)
+ *
+ * @deprecated 请使用 VirtualWorkspace 替代
  *
  * 提供通用的输入/输出处理功能，简化Expert开发
+ * 此类的功能已合并到 VirtualWorkspace 的静态方法中
  *
  * 使用方式：
  * ```typescript
+ * // 旧方式 (deprecated)
  * class MyExpertWorkspace extends ExpertWorkspaceBase {
- *   // 1. 定义组件
- *   static override getComponents() {
- *     return [new MyComponent()];
- *   }
+ *   static override getComponents() { ... }
+ * }
  *
- *   // 2. 定义DI Token映射
- *   static override componentTokenMap = {
- *     'MyComponent': TYPES.MyComponent,
- *   };
+ * // 新方式：直接使用 VirtualWorkspace
+ * import { VirtualWorkspace } from '../statefulContext/virtualworkspace.js';
  *
- *   // 3. 可选：重写输入验证
- *   static override validateInput(input) {
- *     if (!input.query) {
- *       return { valid: false, errors: ['Missing query'] };
- *     }
- *     return { valid: true };
- *   }
- *
- *   // 4. 可选：重写输出格式化
- *   static override formatOutput(workspace) {
- *     return { custom: 'format' };
- *   }
+ * class MyExpertWorkspace extends VirtualWorkspace {
+ *   // 直接在类中定义组件
+ *   static getComponents() { ... }
  * }
  * ```
+ *
+ * @deprecated
  */
 
 import { ToolComponent } from '../statefulContext/toolComponent.js';
@@ -37,12 +30,10 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';
 
 /**
- * Expert Workspace 基类
- * 
- * 职责：
- * 1. 管理组件导入和注册
- * 2. 输入验证和转换
- * 3. 输出格式化和导出
+ * Expert Workspace 基类 (DEPRECATED)
+ *
+ * @deprecated 请使用 VirtualWorkspace 替代
+ * 此类已不再维护，功能已合并到 VirtualWorkspaceStatic 命名空间
  */
 export abstract class ExpertWorkspaceBase {
 

@@ -14,40 +14,27 @@ import {
     ToolDisabledError,
     ProviderNotFoundError,
 } from './tool.errors.js';
-import type { SkillManager } from '../skills/SkillManager.js';
 import { TYPES } from '../di/types.js';
 
 /**
  * Central tool manager implementation
  *
- * Tool availability is determined dynamically by checking SkillManager:
+ * Tool availability is now simplified:
  * - Global tools: always available
- * - Component tools: available only when their skill is active
- * 
- * Note: Skills can only define tools through their components, not directly.
+ * - Component tools: always available (no skill activation required)
+ *
+ * This replaces the previous skill-based tool availability system.
  */
 @injectable()
 export class ToolManager implements IToolManager {
     private providers: Map<string, IToolProvider>;
     private toolRegistry: Map<string, ToolRegistration>;
     private availabilityCallbacks: Set<ToolAvailabilityCallback>;
-    private skillManager: SkillManager | null = null;
 
-    constructor(
-        @inject(TYPES.SkillManager) @optional() skillManager?: SkillManager
-    ) {
+    constructor() {
         this.providers = new Map();
         this.toolRegistry = new Map();
         this.availabilityCallbacks = new Set();
-        this.skillManager = skillManager ?? null;
-    }
-
-    /**
-     * Set the SkillManager reference after construction
-     * This is called by VirtualWorkspace to provide the SkillManager instance
-     */
-    setSkillManager(skillManager: SkillManager): void {
-        this.skillManager = skillManager;
     }
 
     /**
@@ -90,9 +77,7 @@ export class ToolManager implements IToolManager {
                 source,
                 providerId: provider.id,
                 componentKey: this.extractComponentKey(provider.id),
-                // Note: enabled state is now determined dynamically in isToolEnabled/getAvailableTools
-                // We store a default but it's not used for skill-based tools
-                enabled: source === ToolSource.GLOBAL,
+                enabled: true,
                 handler: async (params: any) => provider.executeTool(tool.toolName, params),
             });
         }
@@ -147,14 +132,11 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Get available (enabled) tools based on current skill state
-     * - Global tools: always available
-     * - Component/Skill tools: available only when their skill is active
+     * Get available (enabled) tools
+     * All registered tools are now available by default
      * @returns Array of enabled tool definitions
      */
     getAvailableTools(): Tool[] {
-        const activeSkill = this.skillManager?.getActiveSkill() ?? null;
-
         return Array.from(this.toolRegistry.values())
             .filter(reg => this.isToolEnabled(reg.tool.toolName))
             .map(reg => reg.tool);
@@ -185,8 +167,7 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Enable a tool (for backward compatibility)
-     * Note: For skill-based tools, this doesn't persist - availability is checked dynamically
+     * Enable a tool
      * @param name - The tool name to enable
      * @returns true if tool was found
      */
@@ -195,15 +176,13 @@ export class ToolManager implements IToolManager {
         if (!registration) {
             return false;
         }
-        // For backward compatibility, but skill-based tools will still be dynamically controlled
         registration.enabled = true;
         this.notifyAvailabilityChange();
         return true;
     }
 
     /**
-     * Disable a tool (for backward compatibility)
-     * Note: For skill-based tools, this doesn't persist - availability is checked dynamically
+     * Disable a tool
      * @param name - The tool name to disable
      * @returns true if tool was found
      */
@@ -218,9 +197,9 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Check if a tool is enabled based on current skill state
+     * Check if a tool is enabled
      * - Global tools: always enabled
-     * - Component tools: enabled only when their skill is active
+     * - Component tools: enabled by default
      * @param name - The tool name to check
      * @returns true if tool exists and is enabled
      */
@@ -235,18 +214,8 @@ export class ToolManager implements IToolManager {
             return true;
         }
 
-        // Component tools are only enabled when their skill is active
-        // Use skillManager's getActiveComponentsWithIds() to get resolved components
-        const activeComponents = this.skillManager?.getActiveComponentsWithIds() ?? [];
-
-        // Check if this tool belongs to any of the active components
-        for (const { component } of activeComponents) {
-            if (component.toolSet.has(name)) {
-                return true;
-            }
-        }
-
-        return false;
+        // Component tools are enabled by default
+        return registration.enabled;
     }
 
     /**
@@ -301,24 +270,31 @@ export class ToolManager implements IToolManager {
     }
 
     /**
-     * Get all provider IDs (for testing/debugging)
+     * Get all provider IDs
      */
     getProviderIds(): string[] {
         return Array.from(this.providers.keys());
     }
 
     /**
-     * Get tool count (for testing/debugging)
+     * Get tool count statistics
      */
     getToolCount(): { total: number; enabled: number; disabled: number } {
-        const allTools = this.getAllTools();
-        const availableTools = this.getAvailableTools();
-        const enabledSet = new Set(availableTools.map(t => t.toolName));
+        let enabled = 0;
+        let disabled = 0;
+
+        for (const registration of this.toolRegistry.values()) {
+            if (registration.enabled) {
+                enabled++;
+            } else {
+                disabled++;
+            }
+        }
 
         return {
-            total: allTools.length,
-            enabled: enabledSet.size,
-            disabled: allTools.length - enabledSet.size,
+            total: this.toolRegistry.size,
+            enabled,
+            disabled,
         };
     }
 }
