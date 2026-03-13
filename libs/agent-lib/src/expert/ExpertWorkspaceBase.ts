@@ -1,28 +1,18 @@
 /**
- * ExpertWorkspaceBase - Expert Workspace 基类 (DEPRECATED)
- *
- * @deprecated 请使用 VirtualWorkspace 替代
+ * ExpertWorkspaceBase - Expert Workspace 基类
  *
  * 提供通用的输入/输出处理功能，简化Expert开发
- * 此类的功能已合并到 VirtualWorkspace 的静态方法中
+ * 用于 createExpertConfig 工厂函数
  *
  * 使用方式：
  * ```typescript
- * // 旧方式 (deprecated)
+ * import { ExpertWorkspaceBase } from 'agent-lib';
+ *
  * class MyExpertWorkspace extends ExpertWorkspaceBase {
  *   static override getComponents() { ... }
- * }
- *
- * // 新方式：直接使用 VirtualWorkspace
- * import { VirtualWorkspace } from '../statefulContext/virtualworkspace.js';
- *
- * class MyExpertWorkspace extends VirtualWorkspace {
- *   // 直接在类中定义组件
- *   static getComponents() { ... }
+ *   static override validateInput() { ... }
  * }
  * ```
- *
- * @deprecated
  */
 
 import { ToolComponent } from '../statefulContext/toolComponent.js';
@@ -30,10 +20,10 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';
 
 /**
- * Expert Workspace 基类 (DEPRECATED)
+ * Expert Workspace 基类
  *
- * @deprecated 请使用 VirtualWorkspace 替代
- * 此类已不再维护，功能已合并到 VirtualWorkspaceStatic 命名空间
+ * 提供静态方法用于 createExpertConfig 工厂函数
+ * 定义组件列表、输入验证、输出格式化等
  */
 export abstract class ExpertWorkspaceBase {
 

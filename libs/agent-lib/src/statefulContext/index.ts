@@ -14,7 +14,7 @@ export type { Tool, IVirtualWorkspace, RenderMode, VirtualWorkspaceConfig } from
 export { ToolComponent } from './toolComponent.js';
 
 // Re-export virtual workspace
-export { VirtualWorkspace, VirtualWorkspaceStatic } from './virtualWorkspace.js';
+export { VirtualWorkspace } from './virtualWorkspace.js';
 
 // Re-export TUI elements
 export * from './ui/index.js';

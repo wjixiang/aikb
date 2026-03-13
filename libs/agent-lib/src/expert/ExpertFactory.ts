@@ -24,7 +24,8 @@ import type {
     ExportConfig,
     ExportResult
 } from './types.js';
-import { VirtualWorkspace, VirtualWorkspaceStatic } from '../statefulContext/virtualWorkspace.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
+import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
 
 /**
  * Expert配置JSON接口
@@ -172,7 +173,7 @@ function buildDirection(sop: SOPDefinitionJson): string {
  */
 function buildComponents(
     config: ExpertConfigJson,
-    workspace: typeof VirtualWorkspaceStatic
+    workspace: typeof ExpertWorkspaceBase
 ): ExpertComponentDefinition[] {
     if (!config.components) return [];
 
@@ -191,7 +192,7 @@ function buildComponents(
  * 这是主要的工厂函数，自动加载配置文件并生成ExpertConfig
  *
  * @param metaUrl - import.meta.url（用于定位配置文件路径）
- * @param workspace - VirtualWorkspace子类或VirtualWorkspaceStatic命名空间
+ * @param workspace - VirtualWorkspace子类或ExpertWorkspaceBase命名空间
  * @returns ExpertConfig
  *
  * @example
@@ -205,7 +206,7 @@ function buildComponents(
  */
 export function createExpertConfig(
     metaUrl: string,
-    workspace: typeof VirtualWorkspaceStatic
+    workspace: typeof ExpertWorkspaceBase
 ): ExpertConfig {
     // 获取当前Expert目录
     const __filename = fileURLToPath(metaUrl);
