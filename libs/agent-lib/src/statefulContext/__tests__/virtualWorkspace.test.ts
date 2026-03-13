@@ -6,8 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
-import { ToolComponent } from '../toolComponent.js';
-import type { Tool } from './types.js';
+import { ToolComponent, type Tool } from 'agent-components';
 import { z } from 'zod';
 
 describe('VirtualWorkspace (Component-based)', () => {

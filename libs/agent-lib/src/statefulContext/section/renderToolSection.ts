@@ -1,5 +1,5 @@
-import { Tool } from "../types.js";
-import { renderToolSection as renderToolSectionUtil, renderZodSchema } from "../../utils/toolRendering.js";
+import type { Tool } from "../types.js";
+import { renderToolSection as renderToolSectionUtil, renderZodSchema } from 'agent-components';
 
 /**
  * Render tool definitions as TUIElement

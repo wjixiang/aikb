@@ -2,4 +2,5 @@
  * Utility functions for agent-lib
  */
 
-export * from './toolRendering.js';
+export * from 'agent-components';
+export * from './s3Client.js';

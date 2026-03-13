@@ -1,9 +1,8 @@
-import { ChatCompletionTool } from '../api-client/index.js';
-import { Tool } from '../statefulContext/types.js';
-import { tdiv } from '../statefulContext/ui/tdiv.js';
-import { ttext } from '../statefulContext/ui/text/ttext.js';
-import { TUIElement } from '../statefulContext/ui/TUIElement.js';
 import * as z from 'zod';
+import { Tool } from '../core/types.js';
+import { tdiv } from '../ui/tdiv.js';
+import { ttext } from '../ui/text/ttext.js';
+import { TUIElement } from '../ui/TUIElement.js';
 
 /**
  * Render a Zod schema as a human/LLM-readable string
@@ -204,13 +203,13 @@ export function renderZodSchema(schema: z.ZodTypeAny, indent: number = 0): strin
 
 /**
  * Format ChatCompletionTool[] as human-readable text
- * 
+ *
  * This function converts OpenAI-style ChatCompletionTool objects into
  * a human-readable format suitable for LLM consumption in prompts.
  *
  * @param tools - Array of ChatCompletionTool objects
  * @returns A string representation of the tools
- * 
+ *
  * @example
  * ```ts
  * const tools: ChatCompletionTool[] = [
@@ -238,7 +237,7 @@ export function renderZodSchema(schema: z.ZodTypeAny, indent: number = 0): strin
  * // }
  * ```
  */
-export function formatChatCompletionTools(tools: ChatCompletionTool[]): string {
+export function formatChatCompletionTools(tools: any[]): string {
     if (tools.length === 0) {
         return 'No tools available.';
     }
@@ -284,13 +283,13 @@ export function formatChatCompletionTools(tools: ChatCompletionTool[]): string {
 
 /**
  * Render tool definitions (statefulContext Tool[]) as TUIElement
- * 
+ *
  * This function converts statefulContext Tool objects into a TUIElement
  * for rendering in the UI or prompts.
  *
  * @param tools - Array of Tool definitions from statefulContext
  * @returns TUIElement describing available tools
- * 
+ *
  * @example
  * ```ts
  * const tools: Tool[] = [

@@ -5,7 +5,7 @@
 
 import type { TUIElement } from './TUIElement.js';
 import type { MdElement } from './markdown/MdElement.js';
-import type { ElementMetadata, HeadingLevel, RenderMode } from '../types.js';
+import type { ElementMetadata, HeadingLevel, RenderMode } from '../core/types.js';
 import { tdiv } from './tdiv.js';
 import { th } from './text/th.js';
 import { tp } from './text/tp.js';

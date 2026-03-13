@@ -7,7 +7,7 @@ import {
     createSecurityConfig,
     validateSecurityConfig,
 } from '../scriptSecurity.js';
-import { DEFAULT_SECURITY_CONFIG, SecurityConfig } from '../types.js';
+import { DEFAULT_SECURITY_CONFIG, SecurityConfig } from 'agent-components';
 
 describe('Script Security Module', () => {
     describe('SecurityConfig', () => {

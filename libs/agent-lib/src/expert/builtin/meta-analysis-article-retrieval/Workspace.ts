@@ -10,7 +10,7 @@
 import { ExpertWorkspaceBase, type ComponentDefinition } from '../../ExpertWorkspaceBase.js';
 import { VirtualWorkspace } from '../../../statefulContext/virtualWorkspace.js';
 import type { ValidationResult, ExportConfig, ExportResult } from '../../types.js';
-import { BibliographySearchComponent } from '../../../components/bibliographySearch/bibliographySearchComponent.js';
+import { BibliographySearchComponent } from 'agent-components';
 
 /**
  * MetaAnalysisArticleRetrievalWorkspace

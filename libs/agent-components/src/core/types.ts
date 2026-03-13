@@ -1,10 +1,11 @@
-import * as z from 'zod'
-import { IToolManager } from '../tools/IToolManager.js';
-import { ToolSource } from '../tools/IToolProvider.js';
-
 /**
- * Core type definitions for stateful context library
+ * Core type definitions for agent-components library
+ *
+ * This module provides the foundational types for the TUI rendering system
+ * and the Tool component system.
  */
+
+import type * as z from 'zod';
 
 /**
  * Interface for VirtualWorkspace
@@ -24,12 +25,12 @@ export interface IVirtualWorkspace {
     /**
      * Get all registered tools
      */
-    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: ToolSource; enabled: boolean }>;
+    getAllTools(): Array<{ componentKey: string | undefined; toolName: string; tool: Tool; source: any; enabled: boolean }>;
 
     /**
      * Get the tool manager instance
      */
-    getToolManager(): IToolManager;
+    getToolManager(): any;
 
     /**
      * Register a component with an ID
@@ -261,7 +262,7 @@ export interface State {
     /**
      * Schema defining the structure of the state
      */
-    schema: import('zod').Schema;
+    schema: z.Schema;
     /**
      * The actual state data (using valtio proxy for reactivity)
      */
@@ -286,6 +287,9 @@ export interface ScriptExecutionResult {
     error?: string;
 }
 
+/**
+ * Tool definition for components
+ */
 export interface Tool {
     toolName: string;
     paramsSchema: z.ZodTypeAny;
@@ -444,7 +448,7 @@ export interface VirtualWorkspaceConfig {
     /**
      * Components to register directly with the workspace
      */
-    components?: import('./toolComponent.js').ToolComponent[];
+    components?: any[];
 }
 
 /**
@@ -457,9 +461,8 @@ export interface ComponentRegistration {
     key: string;
     /**
      * The tool component instance
-     * Use type import to avoid circular dependency
      */
-    component: import('./toolComponent.js').ToolComponent;
+    component: any;
     /**
      * Optional priority for rendering (lower = earlier)
      */
@@ -484,4 +487,3 @@ export interface WorkspaceScriptExecutionResult extends ScriptExecutionResult {
  * Callback for task completion
  */
 export type CompletionCallback = (result: string) => Promise<void>;
-

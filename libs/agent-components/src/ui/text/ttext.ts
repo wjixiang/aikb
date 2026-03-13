@@ -1,50 +1,53 @@
 /**
- * th (heading) element - similar to HTML <h1>-<h6>
+ * ttext (text) element - basic styled text
  */
 
 import { TUIElement } from '../TUIElement.js';
-import { ElementMetadata, HeadingLevel, TextStyle } from '../../types.js';
+import { ElementMetadata, TextColor } from '../core/types.js';
 
 /**
- * Metadata for th (heading) element
+ * Metadata for ttext (text) element
  */
-export interface thMetadata extends ElementMetadata {
-    /** Heading level (1-6) */
-    level?: HeadingLevel;
-    /** Whether to underline the heading */
+export interface ttextMetadata extends ElementMetadata {
+    /** Whether text should be bold */
+    bold?: boolean;
+    /** Whether text should be italic */
+    italic?: boolean;
+    /** Whether text should be underlined */
     underline?: boolean;
-    /** Text styling options */
-    textStyle?: TextStyle;
+    /** Whether text should have strikethrough */
+    strikethrough?: boolean;
+    /** Text color */
+    color?: TextColor;
+    /** Background color */
+    backgroundColor?: TextColor;
 }
 
 /**
- * th (heading) element - displays text as a heading
+ * ttext (text) element - displays styled text
  */
-export class th extends TUIElement {
-    constructor(metadata: thMetadata) {
+export class ttext extends TUIElement {
+    declare metadata: ttextMetadata;
+
+    constructor(metadata: ttextMetadata) {
         super(metadata);
+        this.metadata = metadata;
     }
 
     /**
-     * Render heading element
+     * Render text element
      */
     render(): string {
         return this.renderWithWidth(undefined);
     }
 
     /**
-     * Render heading element with a specified available width
+     * Render text element with a specified available width
      */
     override renderWithWidth(availableWidth: number | undefined): string {
         const styles = this.computeStyles(availableWidth);
-        const content = this.metadata.content;
-        const thMetadata = this.metadata as thMetadata;
-        const level = thMetadata.level ?? 1;
-        const underline = thMetadata.underline ?? false;
-        const textStyle = thMetadata.textStyle ?? {};
-
+        const { content } = this.metadata;
         const finalContent = content ?? '';
-        const styledContent = this.applyTextStyle(finalContent, textStyle);
 
         // Calculate inner content area dimensions
         const innerWidth = styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0);
@@ -78,7 +81,7 @@ export class th extends TUIElement {
 
         // Wrap content to fit inner width
         let contentLines: string[] = [];
-        const rawLines = styledContent.split('\n');
+        const rawLines = finalContent.split('\n');
         for (let index = 0; index < rawLines.length; index++) {
             let currentLine = rawLines[index];
             // If innerWidth is available, wrap the content
@@ -91,42 +94,25 @@ export class th extends TUIElement {
             contentLines.push(currentLine);
         }
 
+        // Apply text styling to each line and handle underline/strikethrough
+        const styledLines: string[] = [];
+        for (const line of contentLines) {
+            styledLines.push(line);
+            if (this.metadata.underline || this.metadata.strikethrough) {
+                styledLines.push('─'.repeat(line.length));
+            }
+        }
+
         // Render content area
-        const contentHeight = Math.max(innerHeight, contentLines.length + (underline ? contentLines.length : 0));
-        for (let i = 0; i < contentLines.length; i++) {
-            const line = contentLines[i];
+        const contentHeight = Math.max(innerHeight, styledLines.length);
+        for (let i = 0; i < contentHeight; i++) {
+            const line = styledLines[i] || '';
             result += ' '.repeat(styles.margin[3]);
             if (styles.border) {
                 const borderChars = this.getBorderChars(styles.border);
                 result += borderChars.vertical + this.padLine(line, styles.width - 2, styles.align) + borderChars.vertical;
             } else {
                 result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3], styles.align);
-            }
-            result += '\n';
-
-            // Add underline after each line if specified
-            if (underline) {
-                const underlineLine = '─'.repeat(Math.min(line.length, styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0)));
-                result += ' '.repeat(styles.margin[3]);
-                if (styles.border) {
-                    const borderChars = this.getBorderChars(styles.border);
-                    result += borderChars.vertical + this.padLine(underlineLine, styles.width - 2, styles.align) + borderChars.vertical;
-                } else {
-                    result += this.padLine(underlineLine, styles.width - styles.padding[1] - styles.padding[3], styles.align);
-                }
-                result += '\n';
-            }
-        }
-
-        // Fill remaining content height with empty lines
-        const remainingHeight = contentHeight - contentLines.length - (underline ? contentLines.length : 0);
-        for (let i = 0; i < remainingHeight; i++) {
-            result += ' '.repeat(styles.margin[3]);
-            if (styles.border) {
-                const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
-            } else {
-                result += ' '.repeat(styles.width);
             }
             result += '\n';
         }
@@ -166,41 +152,79 @@ export class th extends TUIElement {
     /**
      * Apply text styling to content
      */
-    private applyTextStyle(content: string, style: TextStyle): string {
+    private applyTextStyle(content: string): string {
         let result = content;
 
-        if (style.bold) {
-            // Terminal doesn't support bold, but we can use uppercase for emphasis
+        // Apply bold (uppercase for terminal)
+        if (this.metadata.bold) {
             // result = result.toUpperCase();
         }
 
-        if (style.italic) {
-            // Terminal doesn't support italic, skip
+        // Apply underline
+        if (this.metadata.underline) {
+            result = this.addUnderline(result);
         }
 
-        if (style.strikethrough) {
-            // Terminal doesn't support strikethrough, skip
+        // Apply strikethrough
+        if (this.metadata.strikethrough) {
+            result = this.addStrikethrough(result);
         }
+
+        // Note: italic and colors are not supported in basic terminal
+        // They would require ANSI escape codes which may not work in all terminals
 
         return result;
     }
 
     /**
+     * Add underline to text
+     */
+    private addUnderline(text: string): string {
+        const lines = text.split('\n');
+        const result: string[] = [];
+
+        for (const line of lines) {
+            result.push(line);
+            result.push(' '.repeat(line.length).replace(/ /g, '─'));
+        }
+
+        return result.join('\n');
+    }
+
+    /**
+     * Add strikethrough to text
+     */
+    private addStrikethrough(text: string): string {
+        const lines = text.split('\n');
+        const result: string[] = [];
+
+        for (const line of lines) {
+            result.push(line);
+            result.push(' '.repeat(line.length).replace(/ /g, '─'));
+        }
+
+        return result.join('\n');
+    }
+
+    /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
-        const content = this.metadata.content;
+    protected override calculateContentDimensions(_availableWidth?: number): { width: number; height: number } {
+        const { content } = this.metadata;
         const finalContent = content ?? '';
-        const thMetadata = this.metadata as thMetadata;
-        const underline = thMetadata.underline ?? false;
 
         const lines = finalContent.split('\n');
         const maxWidth = Math.max(...lines.map((line: string) => line.length));
-        const height = lines.length + (underline ? lines.length : 0);
+
+        // Add extra height for underline or strikethrough
+        let extraHeight = 0;
+        if (this.metadata.underline || this.metadata.strikethrough) {
+            extraHeight = lines.length;
+        }
 
         return {
             width: maxWidth,
-            height
+            height: lines.length + extraHeight
         };
     }
 }

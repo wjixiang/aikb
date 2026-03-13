@@ -1,6 +1,4 @@
-import { ToolComponent } from '../toolComponent.js';
-import { Tool } from '../types.js';
-import { tdiv } from '../ui/index.js';
+import { ToolComponent, type Tool, tdiv } from 'agent-components';
 import * as z from 'zod';
 
 /**

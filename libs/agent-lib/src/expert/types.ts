@@ -5,7 +5,7 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { ToolComponent } from '../statefulContext/toolComponent.js';
+import type { ToolComponent } from 'agent-components';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
 

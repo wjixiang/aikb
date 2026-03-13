@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import type { Tool } from '../../statefulContext/types.js';
-import type { ToolComponent } from '../../statefulContext/toolComponent.js';
+import type { Tool, ToolComponent } from 'agent-components';
 import type { IToolProvider } from '../IToolProvider.js';
 import { BaseToolProvider } from '../IToolProvider.js';
 

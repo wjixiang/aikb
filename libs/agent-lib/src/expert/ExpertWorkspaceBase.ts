@@ -15,7 +15,7 @@
  * ```
  */
 
-import { ToolComponent } from '../statefulContext/toolComponent.js';
+import { ToolComponent } from 'agent-components';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';
 

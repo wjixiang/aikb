@@ -7,7 +7,7 @@ import { TUIElement } from './TUIElement.js';
 import {
     ElementMetadata,
     ComputedStyles
-} from '../types.js';
+} from '../core/types.js';
 
 /**
  * Enhanced metadata for tdiv element

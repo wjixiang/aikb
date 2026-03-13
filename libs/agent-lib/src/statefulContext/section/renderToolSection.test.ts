@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderToolSection, renderZodSchema } from "../../utils/toolRendering.js";
+import { renderToolSection, renderZodSchema } from 'agent-components';
 import * as z from "zod";
 
 describe("renderToolSection", () => {

@@ -12,7 +12,7 @@ import type { Agent, AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../statefulContext/types.js';
 import { AgentContainer, AgentCreationOptions } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import { ToolComponent } from '../statefulContext/toolComponent.js';
+import { ToolComponent } from 'agent-components';
 
 export class ExpertExecutor implements IExpertExecutor {
     private expertInstances: Map<string, IExpertInstance> = new Map();

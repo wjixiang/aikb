@@ -12,7 +12,7 @@ import {
     border,
     BoxBorders,
     BoxBorderChars
-} from '../types.js';
+} from '../core/types.js';
 
 /**
  * Abstract base class for all TUI elements

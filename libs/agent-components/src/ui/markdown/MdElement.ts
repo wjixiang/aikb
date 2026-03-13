@@ -2,7 +2,7 @@
  * Base class for all Markdown elements
  */
 
-import type { ElementMetadata } from '../../types.js';
+import type { ElementMetadata } from '../core/types.js';
 
 /**
  * Abstract base class for all Markdown elements

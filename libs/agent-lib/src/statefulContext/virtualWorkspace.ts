@@ -1,17 +1,11 @@
 import { injectable, inject, optional, Container } from 'inversify';
-import { ToolComponent } from './toolComponent.js';
-import type { VirtualWorkspaceConfig, Tool, IVirtualWorkspace, RenderMode } from './types.js';
-import { tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText } from './ui/index.js';
-import type { TUIElement } from './ui/TUIElement.js';
-import { MdElement } from './ui/markdown/MdElement.js';
-import type { IRenderer } from './ui/Renderer.js';
+import { ToolComponent, type VirtualWorkspaceConfig, type Tool, type IVirtualWorkspace, type RenderMode, tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText, type TUIElement, MdElement, type IRenderer, renderToolSection } from 'agent-components';
 import { ToolSource } from '../tools/IToolProvider.js';
-import { renderToolSection } from '../utils/toolRendering.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
-import { ComponentRegistry, type ComponentRegistration } from '../components/ComponentRegistry.js';
+import { ComponentRegistry, type ComponentRegistration } from 'agent-components';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 
 

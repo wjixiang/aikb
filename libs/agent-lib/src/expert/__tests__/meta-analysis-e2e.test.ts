@@ -6,8 +6,8 @@ import { ExpertInstance } from '../ExpertInstance';
 import { ExpertExecutor } from '../ExpertExecutor';
 import type { ExpertConfig, ExpertTask } from '../types';
 import createMetaAnalysisArticleRetrievalExpert from '../builtin/meta-analysis-article-retrieval/expert';
-import { BibliographySearchComponent } from '../../components/bibliographySearch/bibliographySearchComponent';
-import { VirtualFileSystemComponent } from '../../components/virtualFileSystem/virtualFileSystemComponent';
+import { BibliographySearchComponent } from 'agent-components';
+import { VirtualFileSystemComponent } from 'agent-components';
 import { createMockAgent } from './fixtures/mock-agent';
 
 /**

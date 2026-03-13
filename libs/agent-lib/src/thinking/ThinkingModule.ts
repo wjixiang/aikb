@@ -42,7 +42,7 @@ export class MissingToolCallError extends Error {
 import { ApiMessage } from '../task/task.type.js';
 import { Turn, ThinkingRound, ToolCallResult } from '../memory/Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
-import { formatChatCompletionTools } from '../utils/toolRendering.js';
+import { formatChatCompletionTools } from 'agent-components';
 import { TYPES } from '../di/types.js';
 // Define Logger type locally to avoid pino ESM import issues
 type Logger = import('pino').Logger;
