@@ -699,18 +699,29 @@ ${direction}
      * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
-        const skillsSection = this.workspace.getAvailableSkills().length > 0
-            ? this.workspace.renderSkillsSection().render()
-            : '';
+        // Check if workspace is in Expert mode - skip all skill-related context
+        const workspaceConfig = this.workspace.getConfig();
+        const expertMode = workspaceConfig?.expertMode === true;
 
-        const availableSkills = this.workspace.getAvailableSkills();
-        const activeSkill = this.workspace.getSkillManager().getActiveSkill();
+        // In Expert mode, don't render any skill-related context
+        let skillsSection = '';
+        let skillsUsageGuidance = '';
 
-        // Build skills usage guidance using the section function
-        const skillsUsageGuidance = generateSkillsUsageGuidance({
-            availableSkills,
-            activeSkill,
-        });
+        if (!expertMode) {
+            // Only render skills section for non-Expert workspaces
+            skillsSection = this.workspace.getAvailableSkills().length > 0
+                ? this.workspace.renderSkillsSection().render()
+                : '';
+
+            const availableSkills = this.workspace.getAvailableSkills();
+            const activeSkill = this.workspace.getSkillManager().getActiveSkill();
+
+            // Build skills usage guidance using the section function
+            skillsUsageGuidance = generateSkillsUsageGuidance({
+                availableSkills,
+                activeSkill,
+            });
+        }
 
         // Get TODO list from task module
         const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });

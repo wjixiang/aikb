@@ -7,7 +7,6 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import ora from 'ora';
 import dotenv from 'dotenv';
@@ -76,7 +75,9 @@ async function createAgent(): Promise<any> {
             apiConfiguration: providerSettings,
             virtualWorkspaceConfig: {
                 id: `demo-${Date.now()}`,
-                name: 'Demo Workspace'
+                name: 'Demo Workspace',
+                expertMode: true, // Disable all skill-related features for Expert
+                disableBuiltinSkills: true, // Expert should NOT have access to builtin skills
             }
         }
     );

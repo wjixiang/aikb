@@ -6,6 +6,7 @@
  *   npx expert-cli list          List all Experts
  *   npx expert-cli validate      Validate Expert configuration
  *   npx expert-cli test          Run Expert tests
+ *   npx expert-cli demo          Run Expert demo
  */
 
 import { Command } from 'commander';

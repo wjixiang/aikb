@@ -23,8 +23,25 @@ export class SkillManager {
     /** Container for resolving DI tokens */
     private container?: Container;
 
+    /** Expert mode - disables skill switching */
+    private expertMode: boolean = false;
+
     constructor(options?: SkillManagerOptions) {
         this.onSkillChange = options?.onSkillChange ?? undefined;
+    }
+
+    /**
+     * Set expert mode - disables skill switching
+     */
+    setExpertMode(enabled: boolean): void {
+        this.expertMode = enabled;
+    }
+
+    /**
+     * Check if expert mode is enabled
+     */
+    isExpertMode(): boolean {
+        return this.expertMode;
     }
 
     /**
@@ -109,6 +126,14 @@ export class SkillManager {
      * Activate a skill by name
      */
     async activateSkill(skillName: string): Promise<SkillActivationResult> {
+        // In expert mode, skill switching is disabled
+        if (this.expertMode) {
+            return {
+                success: false,
+                message: 'Skill switching is disabled in Expert mode'
+            };
+        }
+
         const skill = this.registry.get(skillName);
 
         if (!skill) {
@@ -234,6 +259,14 @@ export class SkillManager {
      * Deactivate the currently active skill
      */
     async deactivateSkill(): Promise<{ success: boolean; message: string }> {
+        // In expert mode, skill switching is disabled
+        if (this.expertMode) {
+            return {
+                success: false,
+                message: 'Skill switching is disabled in Expert mode'
+            };
+        }
+
         if (!this.activeSkill) {
             return {
                 success: true,

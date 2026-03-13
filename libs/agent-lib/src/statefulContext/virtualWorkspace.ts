@@ -84,6 +84,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         // Initialize skills synchronously
         this.initializeSkills();
 
+        // Set expert mode on SkillManager if enabled
+        if (this.config.expertMode) {
+            this.skillManager.setExpertMode(true);
+        }
+
         // All tools are now managed by ToolManager
     }
 

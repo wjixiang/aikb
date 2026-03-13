@@ -115,11 +115,13 @@ export class ExpertExecutor implements IExpertExecutor {
 
         // Configure workspace for this Expert
         // IMPORTANT:
-        // 1. Disable builtin skills to prevent Agent from switching to other skills
-        // 2. Always render all registered components (Expert's components should always be visible)
+        // 1. Expert mode - disables all skill-related features
+        // 2. Disable builtin skills to prevent Agent from switching to other skills
+        // 3. Always render all registered components (Expert's components should always be visible)
         const workspaceConfig: VirtualWorkspaceConfig = {
             id: `expert-${config.expertId}-workspace`,
             name: `${config.displayName} Workspace`,
+            expertMode: true, // Disable all skill-related context rendering
             disableBuiltinSkills: true, // Expert should NOT switch to other skills
             alwaysRenderAllComponents: true, // Always render all Expert's components
         };

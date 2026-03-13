@@ -171,6 +171,7 @@ export class AgentFactory {
             agentPrompt,
             taskId: options.taskId,
             workspace: options.workspace,
+            virtualWorkspaceConfig: options.virtualWorkspaceConfig, // Pass workspace config to container
             observers: options.observers, // Pass observers to container
         });
     }

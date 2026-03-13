@@ -161,7 +161,11 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 //     'Request completed successfully'
                 // );
 
-                this.logger.info(response)
+                this.logger.info({
+                    systemPrompt: `\n${systemPrompt}`,
+                    workspaceContext: `\n${workspaceContext}`,
+                    response: response
+                }, "Get reponse successfully")
 
                 this.lastError = null;
                 return response;

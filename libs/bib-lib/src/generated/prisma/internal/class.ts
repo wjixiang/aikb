@@ -19,8 +19,8 @@ const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [
     "postgresqlExtensions"
   ],
-  "clientVersion": "7.0.0",
-  "engineVersion": "0c19ccc313cf9911a90d99d2ac2eb0280c76c513",
+  "clientVersion": "7.3.0",
+  "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "postgresql",
   "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider        = \"prisma-client\"\n  output          = \"../src/generated/prisma\"\n  // Enable pgvector extension\n  previewFeatures = [\"postgresqlExtensions\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// Enable pgvector extension at database level\n// Run: CREATE EXTENSION IF NOT EXISTS vector;\n\n// ============ Article (Main) ============\nmodel Article {\n  id                String    @id @default(uuid())\n  pmid              BigInt    @unique\n  articleTitle      String\n  language          String?\n  publicationType   String?\n  dateCompleted     DateTime?\n  dateRevised       DateTime?\n  publicationStatus String?\n\n  // Relations\n  journal      Journal?           @relation(fields: [journalId], references: [id])\n  journalId    String?\n  authors      AuthorArticle[]\n  meshHeadings MeshHeading[]\n  chemicals    Chemical[]\n  grants       Grant[]\n  articleIds   ArticleId[]\n  embeddings   ArticleEmbedding[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@index([pmid])\n  @@index([articleTitle])\n}\n\n// ============ Journal ============\nmodel Journal {\n  id              String  @id @default(uuid())\n  issn            String?\n  issnElectronic  String? // Electronic ISSN\n  volume          String?\n  issue           String?\n  pubDate         String? // Publication date (e.g., \"2020 Jan\")\n  pubYear         Int? // Year for querying\n  title           String?\n  isoAbbreviation String?\n\n  // Relations\n  articles Article[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@index([issn])\n  @@index([title])\n}\n\n// ============ Author ============\nmodel Author {\n  id       String  @id @default(uuid())\n  lastName String? // Last name\n  foreName String? // First name\n  initials String? // Initials\n\n  // Relations\n  articles AuthorArticle[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@index([lastName])\n}\n\n// ============ Author-Article (Many-to-Many) ============\nmodel AuthorArticle {\n  id        String  @id @default(uuid())\n  authorId  String\n  articleId String\n  author    Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n\n  @@unique([authorId, articleId])\n  @@index([authorId])\n  @@index([articleId])\n}\n\n// ============ MeSH Heading ============\nmodel MeshHeading {\n  id             String  @id @default(uuid())\n  descriptorName String? // MeSH descriptor term\n  qualifierName  String? // MeSH qualifier term\n  ui             String? // Unique identifier\n  majorTopicYN   Boolean @default(false) // Is major topic\n\n  // Relations\n  articleId String\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n\n  @@unique([articleId, descriptorName, qualifierName])\n  @@index([descriptorName])\n  @@index([articleId])\n}\n\n// ============ Chemical ============\nmodel Chemical {\n  id              String  @id @default(uuid())\n  registryNumber  String? // CAS registry number\n  nameOfSubstance String? // Substance name\n\n  // Relations\n  articleId String\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n\n  @@unique([articleId, registryNumber, nameOfSubstance])\n  @@index([registryNumber])\n  @@index([articleId])\n}\n\n// ============ Grant ============\nmodel Grant {\n  id      String  @id @default(uuid())\n  grantId String? // Grant ID\n  agency  String? // Funding agency\n  country String? // Country\n\n  // Relations\n  articleId String\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n\n  @@unique([articleId, grantId, agency, country])\n  @@index([grantId])\n  @@index([articleId])\n}\n\n// ============ Article External IDs (DOI, etc.) ============\nmodel ArticleId {\n  id          String  @id @default(uuid())\n  pubmed      BigInt? // PubMed ID\n  doi         String? // DOI\n  pii         String? // Publisher Item Identifier\n  pmc         String? // PubMed Central ID\n  otherId     String? // Other ID\n  otherIdType String? // Other ID type\n\n  // Relations\n  articleId String\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n\n  @@unique([articleId, doi, pii, pmc])\n  @@index([doi])\n  @@index([pmc])\n  @@index([articleId])\n}\n\n// ============ Article Embedding ============\nmodel ArticleEmbedding {\n  id        String  @id @default(uuid())\n  articleId String\n  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)\n\n  // Embedding model configuration\n  provider  String // e.g., \"openai\", \"alibaba\", \"onnx\"\n  model     String // e.g., \"text-embedding-ada-002\", \"text-embedding-v4\"\n  dimension Int // e.g., 1024, 1536\n\n  // Embedding text (what was embedded)\n  text String // The text that was embedded (title + abstract, etc.)\n\n  // Vector data - pgvector type for similarity search\n  // Note: Using Unsupported because Prisma doesn't natively support vector type\n  vector Unsupported(\"vector\")? // pgvector type for similarity search\n\n  // Status\n  isActive Boolean @default(true)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([articleId, provider, model])\n  @@index([articleId])\n  @@index([provider, model])\n}\n",
   "runtimeDataModel": {
@@ -39,12 +39,14 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs")
     return await decodeBase64AsWasm(wasm)
-  }
+  },
+
+  importName: "./query_compiler_fast_bg.js"
 }
 
 
@@ -64,7 +66,7 @@ export interface PrismaClientConstructor {
    * const articles = await prisma.article.findMany()
    * ```
    * 
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+   * Read more in our [docs](https://pris.ly/d/client).
    */
 
   new <
@@ -86,7 +88,7 @@ export interface PrismaClientConstructor {
  * const articles = await prisma.article.findMany()
  * ```
  * 
- * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+ * Read more in our [docs](https://pris.ly/d/client).
  */
 
 export interface PrismaClient<
@@ -115,7 +117,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -127,7 +129,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -138,7 +140,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -150,7 +152,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 
