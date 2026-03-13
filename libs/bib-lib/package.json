@@ -25,21 +25,26 @@
     "prisma:studio": "prisma studio",
     "sync": "tsx src/sync/cli/sync.cli.ts",
     "embed": "tsx src/sync/cli/embed.cli.ts",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "start": "node --import tsx server.ts"
   },
   "dependencies": {
     "@ai-embed/core": "workspace:*",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "dotenv": "^17.3.1",
+    "express": "^5.1.0",
     "fast-xml-parser": "^5.3.4",
     "pg": "^8.16.3",
+    "swagger-ui-express": "^5.0.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.1",
     "@types/node": "^22.18.6",
     "prisma": "^7.3.0",
     "tsup": "^8.5.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vitest": "^4.0.0"

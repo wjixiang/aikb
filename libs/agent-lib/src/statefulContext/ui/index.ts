@@ -31,3 +31,14 @@ export { renderInfoBox, prettifyCodeContext } from './componentUtils';
 
 // Re-export BoxBorders for backward compatibility
 export { BoxBorders } from '../types';
+
+// Re-export Markdown elements
+export { MdElement } from './markdown/MdElement';
+export { MdDiv } from './markdown/MdDiv';
+export { MdHeading } from './markdown/MdHeading';
+export { MdParagraph } from './markdown/MdParagraph';
+export { MdText } from './markdown/MdText';
+
+// Re-export Renderer classes
+export type { IRenderer } from './Renderer';
+export { TUIRenderer, MarkdownRenderer } from './Renderer';

@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
 import { renderToolSection } from "../utils/toolRendering.js";
 import { Tool } from "./types.js";
-import { tdiv, TUIElement } from "./ui/index.js";
+import { tdiv, TUIElement, MdDiv, MdElement } from "./ui/index.js";
 
 /**
  * ToolComponent - Abstract base class for components that provide tools
@@ -67,11 +67,20 @@ export abstract class ToolComponent {
     }
 
     /**
-     * Render component as a TUI element
-     * @returns TUIElement with component content
+     * Render component as a UI element
+     * @returns TUIElement or MdElement with component content
      */
-    async render(): Promise<TUIElement> {
+    async render(): Promise<TUIElement | MdElement> {
         const body = await this.renderImply();
+
+        // Check if body contains MdElements (Markdown mode)
+        if (body.length > 0 && body[0] instanceof MdElement) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mdChildren = body as any as MdElement[];
+            return new MdDiv({ styles: { showBorder: true } }, mdChildren);
+        }
+
+        // Default to TUI rendering
         const container = new tdiv({
             styles: { showBorder: true },
         }, body);

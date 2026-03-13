@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import type { SkillManager, Skill, SkillSummary, ToolRegistration } from '../skills/index.js';
+import { IToolManager } from '../tools/IToolManager.js';
 
 /**
  * Core type definitions for stateful context library
@@ -33,7 +34,7 @@ export interface IVirtualWorkspace {
     /**
      * Get the tool manager instance
      */
-    getToolManager(): import('../tools/index.js').IToolManager;
+    getToolManager(): IToolManager;
 
     /**
      * Get active skill's prompt enhancement
@@ -394,6 +395,11 @@ export interface ValidationResult {
 }
 
 /**
+ * Rendering mode for workspace context
+ */
+export type RenderMode = 'tui' | 'markdown';
+
+/**
  * Configuration options for VirtualWorkspace
  */
 export interface VirtualWorkspaceConfig {
@@ -426,6 +432,21 @@ export interface VirtualWorkspaceConfig {
      * When false (default), only active skill's components are rendered
      */
     alwaysRenderAllComponents?: boolean;
+    /**
+     * Expert mode - disables all skill-related features
+     * When true:
+     * - No skill context is rendered in prompts
+     * - No skill switching is allowed
+     * - Components are registered directly without skill wrapping
+     * This is the recommended mode for Expert framework
+     */
+    expertMode?: boolean;
+    /**
+     * Rendering mode for workspace context
+     * - 'tui': Terminal UI with ASCII borders (default)
+     * - 'markdown': Markdown format with headlines and separators
+     */
+    renderMode?: RenderMode;
 }
 
 /**

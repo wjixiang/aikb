@@ -1,8 +1,10 @@
 import { injectable, inject, optional, Container } from 'inversify';
 import { ToolComponent } from './toolComponent.js';
-import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace } from './types.js';
-import { tdiv } from './ui/index.js';
+import type { ComponentRegistration, VirtualWorkspaceConfig, Tool, IVirtualWorkspace, RenderMode } from './types.js';
+import { tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText } from './ui/index.js';
 import type { TUIElement } from './ui/TUIElement.js';
+import { MdElement } from './ui/markdown/MdElement.js';
+import type { IRenderer } from './ui/Renderer.js';
 import { SkillManager, Skill, SkillSummary, SkillActivationResult, ToolSource } from '../skills/index.js';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { TYPES } from '../di/types.js';
@@ -34,6 +36,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     private globalToolProvider: GlobalToolProvider;
     private container?: Container;
 
+    // Renderer for different rendering modes
+    private renderer: IRenderer;
+
     constructor(
         @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
         @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
@@ -42,9 +47,15 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.config = {
             id: config.id || 'default-workspace',
             name: config.name || 'Default Workspace',
+            renderMode: config.renderMode ?? 'tui',
             ...config,
         };
         this.components = new Map();
+
+        // Initialize renderer based on render mode
+        this.renderer = this.config.renderMode === 'markdown'
+            ? new MarkdownRenderer()
+            : new TUIRenderer();
 
         // ToolManager is injected when available, otherwise create a new instance
         // This allows both DI container usage and direct instantiation
@@ -209,6 +220,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      * Render skills section for LLM context
      */
     renderSkillsSection(): TUIElement {
+        // In expert mode, don't render skills section
+        if (this.config.expertMode) {
+            return new tdiv({ content: '' });
+        }
+
         const skills = this.skillManager.getAvailableSkills();
         const activeSkill = this.skillManager.getActiveSkill();
 
@@ -288,6 +304,63 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return container;
+    }
+
+    /**
+     * Render skills section for LLM context in Markdown mode
+     */
+    renderSkillsSectionMarkdown(): MdElement {
+        // In expert mode, don't render skills section
+        if (this.config.expertMode) {
+            return new MdDiv({ content: '' });
+        }
+
+        const skills = this.skillManager.getAvailableSkills();
+        const activeSkill = this.skillManager.getActiveSkill();
+
+        const container = new MdDiv({
+            styles: { showBorder: true }
+        }, [], 0);
+
+        container.addChild(new MdHeading({
+            content: 'SKILLS'
+        }, [], 0));
+
+        const availableSkillsContainer = new MdDiv({}, [], 1);
+        container.addChild(availableSkillsContainer);
+
+        // Add important instruction for LLM
+        availableSkillsContainer.addChild(new MdParagraph({
+            content: '**IMPORTANT:** When referencing or activating a skill, ALWAYS use the **Skill ID** (in backticks), NOT the display name.'
+        }, [], 1));
+
+        if (skills.length === 0) {
+            availableSkillsContainer.addChild(new MdParagraph({
+                content: 'No skills registered'
+            }, [], 1));
+            return container;
+        }
+
+        // List all skills
+        for (const skill of skills) {
+            const isActive = skill.name === activeSkill?.name;
+            const statusBadge = isActive ? ' **[ACTIVE]**' : '';
+            const triggers = skill.triggers?.length ? `\n**Triggers:** ${skill.triggers.join(', ')}` : '';
+            const whenToUse = skill.whenToUse ? `\n**When to use:** ${skill.whenToUse}` : '';
+
+            availableSkillsContainer.addChild(new MdParagraph({
+                content: `**Skill ID:** \`${skill.name}\`${statusBadge}\n**Display Name:** ${skill.displayName}\n**Description:** ${skill.description}${whenToUse}${triggers}`
+            }, [], 1));
+        }
+
+        // Show active skill indicator at the bottom
+        if (activeSkill) {
+            container.addChild(new MdParagraph({
+                content: `**Currently Active:** \`${activeSkill.name}\` (${activeSkill.displayName})`
+            }, [], 1));
+        }
+
         return container;
     }
 
@@ -460,9 +533,85 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     /**
      * Render the entire workspace as context for LLM
-     * Components are rendered in priority order (lower priority first)
+     * Dispatches to the appropriate renderer based on render mode
      */
-    private async _render(): Promise<TUIElement> {
+    private async _render(): Promise<TUIElement | MdElement> {
+        if (this.config.renderMode === 'markdown') {
+            return this._renderMarkdown();
+        }
+        return this._renderTUI();
+    }
+
+    /**
+     * Render in Markdown mode
+     */
+    private async _renderMarkdown(): Promise<MdElement> {
+        const container = new MdDiv({
+            content: `# VIRTUAL WORKSPACE: ${this.config.name}`,
+        }, [], 0);
+
+        // Add description if present
+        if (this.config.description) {
+            container.addChild(new MdParagraph({
+                content: `**Description:** ${this.config.description}`,
+            }, undefined, 1));
+        }
+
+        // Add skills section
+        container.addChild(this.renderSkillsSectionMarkdown());
+
+        // Render skill components
+        let componentsToRender;
+        if (this.config.alwaysRenderAllComponents) {
+            componentsToRender = await this.skillManager.getAllComponentsWithIds();
+        } else {
+            componentsToRender = this.skillManager.getActiveComponentsWithIds();
+        }
+
+        for (const { componentId, component: componentInstance } of componentsToRender) {
+            const componentKey = `${this.activeSkill?.name || 'global'}:${componentId}`;
+            const componentContainer = new MdDiv({
+                content: `## ${componentKey}`,
+                styles: { showBorder: true }
+            }, [], 1);
+
+            const componentRender = await componentInstance.renderImply();
+            // renderImply returns TUIElement[], wrap them appropriately for markdown
+            for (const element of componentRender) {
+                // Convert TUIElement to markdown representation
+                const rendered = element.render();
+                componentContainer.addChild(new MdParagraph({
+                    content: rendered,
+                }, undefined, 2));
+            }
+            container.addChild(componentContainer);
+        }
+
+        // Render legacy components (for backward compatibility)
+        const sortedComponents = Array.from(this.components.entries())
+            .sort(([, a], [, b]) => (a.priority || 0) - (b.priority || 0));
+
+        for (const [key, registration] of sortedComponents) {
+            const componentContainer = new MdDiv({
+                content: `## ${key}`,
+                styles: { showBorder: true }
+            }, [], 1);
+            const componentRender = await registration.component.render();
+            // Handle both TUIElement and MdElement returns
+            const rendered = componentRender.render();
+            componentContainer.addChild(new MdParagraph({
+                content: rendered,
+            }, undefined, 2));
+            container.addChild(componentContainer);
+        }
+
+        return container;
+    }
+
+    /**
+     * Render in TUI mode
+     */
+    private async _renderTUI(): Promise<TUIElement> {
         // Create container tdiv
         const container = new tdiv({
             content: '',
@@ -532,13 +681,20 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
         for (const [key, registration] of sortedComponents) {
             // Render component header using tdiv
-            // ToolComponent.render() returns TUIElement (a container), so we add it directly
+            // ToolComponent.render() returns TUIElement | MdElement
             const componentContainer = new tdiv({
                 content: key,
                 styles: { showBorder: true }
             });
             const componentRender = await registration.component.render();
-            componentContainer.addChild(componentRender);
+            // In TUI mode, render MdElement to string and add as text content
+            if (componentRender instanceof MdElement) {
+                componentContainer.addChild(new ttext({
+                    content: componentRender.render()
+                }));
+            } else {
+                componentContainer.addChild(componentRender);
+            }
             container.addChild(componentContainer);
         }
 
