@@ -113,29 +113,48 @@ function generateWorkspaceTs(config: ExpertTemplateConfig, isExternal: boolean =
  * ${config.displayName} Workspace
  *
  * 运行时工作空间 - 用于注册组件
- *
- * 如果不需要自定义输入/输出处理，可以直接使用 createSimpleExpertConfig
- * 此时此文件可选
+ * 继承 ExpertWorkspaceBase 以获得输入/输出处理能力
  */
 
-import { VirtualWorkspace } from '${baseImportPath}';
+import { ExpertWorkspaceBase } from '${baseImportPath}';
+import type { ValidationResult } from '${baseImportPath}';
 // import { MyComponent } from './components/MyComponent.js';
 
 /**
  * ${className} - 运行时工作空间
  *
- * 继承 VirtualWorkspace 以获得完整的运行时能力
- * 在构造函数中注册组件
- *
- * 使用方式：
- * const workspace = new ${className}();
+ * 继承 ExpertWorkspaceBase 以获得静态方法
+ * 用于 createExpertConfig 工厂函数
  */
-export class ${className} extends VirtualWorkspace {
-  constructor() {
-    super({ id: '${config.expertId}', name: '${config.displayName}' });
+export class ${className} extends ExpertWorkspaceBase {
 
-    // 注册组件（可选）
-    // this.registerComponent('myComponent', new MyComponent());
+  // ==================== 组件定义 ====================
+
+  /**
+   * 获取组件列表
+   * 返回组件实例或DI Token
+   */
+  static override getComponents() {
+    return [
+      // 添加组件实例或DI Token
+      // new MyComponent(),
+    ];
+  }
+
+  // ==================== 输入处理 ====================
+
+  /**
+   * 验证输入
+   */
+  static override validateInput(input: Record<string, any>): ValidationResult {
+    return { valid: true };
+  }
+
+  /**
+   * 转换输入格式
+   */
+  static override transformInput(input: Record<string, any>): Record<string, any> {
+    return input;
   }
 }
 `;
@@ -151,25 +170,23 @@ function generateIndexTs(config: ExpertTemplateConfig, isExternal: boolean = fal
   // 外部项目使用包导入 'agent-lib'
   // 内部项目（agent-lib源码）也使用 'agent-lib'，因为运行时它已经是构建后的包
   const importPath = 'agent-lib';
+  const className = toPascalCase(config.expertId) + 'Workspace';
 
   return `/**
  * ${config.displayName} - Factory Function
  *
  * 使用 ExpertFactory 自动加载配置，无需样板代码
  *
- * 方式1（推荐）：最简方式，无需额外配置
- *   import { createSimpleExpertConfig } from '${importPath}';
- *   export default createSimpleExpertConfig(import.meta.url);
- *
- * 方式2：需要自定义输入/输出处理时
+ * 使用方式：
  *   import { createExpertConfig } from '${importPath}';
- *   import { ${toPascalCase(config.expertId)}Workspace } from './Workspace.js';
- *   export default createExpertConfig(import.meta.url, ${toPascalCase(config.expertId)}Workspace);
+ *   import { ${className} } from './Workspace.js';
+ *   export default createExpertConfig(import.meta.url, ${className});
  */
 
-import { createSimpleExpertConfig } from '${importPath}';
+import { createExpertConfig } from '${importPath}';
+import { ${className} } from './Workspace.js';
 
-export default createSimpleExpertConfig(import.meta.url);
+export default createExpertConfig(import.meta.url, ${className});
 `;
 }
 

@@ -250,23 +250,3 @@ export function createExpertConfig(
     };
 }
 
-/**
- * 创建简单Expert配置（不需要Workspace类）
- *
- * 适用于不需要自定义输入/输出处理的简单Expert
- *
- * @param metaUrl - import.meta.url
- * @returns ExpertConfig
- *
- * @example
- * ```typescript
- * // index.ts
- * import { createSimpleExpertConfig } from '../../ExpertFactory.js';
- *
- * export default createSimpleExpertConfig(import.meta.url);
- * ```
- */
-export function createSimpleExpertConfig(metaUrl: string): ExpertConfig {
-    // 使用默认的VirtualWorkspaceStatic
-    return createExpertConfig(metaUrl, VirtualWorkspaceStatic);
-}

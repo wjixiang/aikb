@@ -26,7 +26,7 @@ describe('Expert Demo', () => {
         expect(config.displayName).toBeDefined();
     });
 
-    it('should have valid index.ts with createSimpleExpertConfig', async () => {
+    it('should have valid index.ts with createExpertConfig', async () => {
         const expertDir = join(process.cwd(), 'experts', 'hi-agent');
         const indexPath = join(expertDir, 'index.ts');
 

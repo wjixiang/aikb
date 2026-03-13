@@ -56,4 +56,4 @@ export type { ValidationResult, InputHandler, ExportConfig, ExportResult, Expert
 // Export DI (Dependency Injection) module
 export * from './di/index.js';
 
-export { createExpertConfig, createSimpleExpertConfig } from './expert/ExpertFactory.js';
+export { createExpertConfig } from './expert/ExpertFactory.js';
