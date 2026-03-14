@@ -1,7 +1,7 @@
 {
-  "name": "agent-lib-test",
+  "name": "ebm-agent",
   "version": "1.0.0",
-  "description": "Test app for agent-lib Expert CLI",
+  "description": "Evidence-based medicine agent application",
   "type": "module",
   "main": "index.js",
   "scripts": {

@@ -47,7 +47,7 @@ export type {
 export { ToolComponent } from '../../components/index.js';
 
 // Re-export virtual workspace
-export { VirtualWorkspace } from './virtualWorkspace.js';
+export { VirtualWorkspace, type ToolCallSummary } from './virtualWorkspace.js';
 
 // Re-export TUI elements from components
 export {

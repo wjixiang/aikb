@@ -19,6 +19,7 @@ async function main() {
         apiModelId: 'Minimax-m2'
     }
 
+
     // 2. Register ExpertConfig
     executor.registerExpert(config);
 

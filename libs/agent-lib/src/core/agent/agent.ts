@@ -509,6 +509,11 @@ export class Agent {
                 // rather than the context that was captured BEFORE tool execution
                 this.logger.info(`Tool-calling has been executed successfully`);
 
+                // Update workspace with tool call log for the LOG section
+                if (this.workspace.setToolCallLog) {
+                    this.workspace.setToolCallLog(actionResult.toolResults);
+                }
+
                 // Re-render workspace to capture updated component states
                 // This fixes the bug where the next thinking/action phase would get stale context
                 const updatedWorkspaceContext = await this.workspace.render();

@@ -1138,34 +1138,6 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.102.1)
 
-  apps/agent-lib-test:
-    dependencies:
-      agent-lib:
-        specifier: workspace:*
-        version: link:../../libs/agent-lib
-    devDependencies:
-      '@swc-node/register':
-        specifier: ~1.9.1
-        version: 1.9.2(@swc/core@1.15.3(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3)
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.17
-      ts-node:
-        specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.15.3(@swc/helpers@0.5.17))(@types/node@20.19.17)(typescript@5.9.3)
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(@microsoft/api-extractor@7.53.3(@types/node@20.19.17))(@swc/core@1.15.3(@swc/helpers@0.5.17))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      unplugin-swc:
-        specifier: ^1.5.9
-        version: 1.5.9(@swc/core@1.15.3(@swc/helpers@0.5.17))(rollup@4.52.0)
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@20.19.17)(@vitest/ui@4.0.16(vitest@4.0.15))(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)
-
   apps/bibliography-service:
     dependencies:
       '@apollo/server':
@@ -1262,6 +1234,34 @@ importers:
       webpack-cli:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.102.1)
+
+  apps/ebm-agent:
+    dependencies:
+      agent-lib:
+        specifier: workspace:*
+        version: link:../../libs/agent-lib
+    devDependencies:
+      '@swc-node/register':
+        specifier: ~1.9.1
+        version: 1.9.2(@swc/core@1.15.3(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3)
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.17
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.15.3(@swc/helpers@0.5.17))(@types/node@20.19.17)(typescript@5.9.3)
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(@microsoft/api-extractor@7.53.3(@types/node@20.19.17))(@swc/core@1.15.3(@swc/helpers@0.5.17))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      unplugin-swc:
+        specifier: ^1.5.9
+        version: 1.5.9(@swc/core@1.15.3(@swc/helpers@0.5.17))(rollup@4.52.0)
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@20.19.17)(@vitest/ui@4.0.16(vitest@4.0.15))(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)
 
   libs/agent-lib:
     dependencies:

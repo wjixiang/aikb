@@ -1,5 +1,5 @@
 import { injectable, inject, optional, Container } from 'inversify';
-import { ToolComponent, type VirtualWorkspaceConfig, type Tool, type IVirtualWorkspace, type RenderMode, tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText, type TUIElement, MdElement, type IRenderer, renderToolSection } from '../../components/index.js';
+import { ToolComponent, type VirtualWorkspaceConfig, type Tool, type IVirtualWorkspace, type RenderMode, tdiv, ttext, TUIRenderer, MarkdownRenderer, MdDiv, MdHeading, MdParagraph, MdText, type TUIElement, MdElement, renderToolSection } from '../../components/index.js';
 import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
@@ -7,6 +7,16 @@ import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { ComponentRegistry, type ComponentRegistration } from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
+
+/**
+ * Tool call summary for the LOG section
+ */
+export interface ToolCallSummary {
+    toolName: string;
+    success: boolean;
+    summary: string;
+    timestamp: number;
+}
 
 
 /**
@@ -24,10 +34,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     // Tool management system (injected)
     private toolManager: IToolManager;
     private globalToolProvider: GlobalToolProvider;
-    private container?: Container;
 
-    // Renderer for different rendering modes
-    private renderer: IRenderer;
+
+    // Tool call log for the LOG section
+    private toolCallLog: ToolCallSummary[] = [];
 
     constructor(
         @inject(TYPES.VirtualWorkspaceConfig) @optional() config: Partial<VirtualWorkspaceConfig> = {},
@@ -54,17 +64,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             }
         }
 
-        // Initialize renderer based on render mode
-        this.renderer = this.config.renderMode === 'markdown'
-            ? new MarkdownRenderer()
-            : new TUIRenderer();
-
         // ToolManager is injected when available, otherwise create a new instance
         // This allows both DI container usage and direct instantiation
         this.toolManager = toolManager ?? new ToolManager();
 
-        // Store container for later use
-        this.container = container;
 
         // Initialize global tool provider
         this.globalToolProvider = new GlobalToolProvider();
@@ -149,6 +152,75 @@ export class VirtualWorkspace implements IVirtualWorkspace {
      */
     setOnToolAvailabilityChange(callback: () => void): void {
         this.onToolAvailabilityChange = callback;
+    }
+
+    /**
+     * Set tool call log for rendering in the LOG section
+     * @param toolCalls Array of tool call results to display
+     */
+    setToolCallLog(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number }>): void {
+        const maxCount = this.config.toolCallLogCount ?? 3;
+        if (maxCount <= 0) {
+            this.toolCallLog = [];
+            return;
+        }
+
+        // Convert tool results to summaries
+        this.toolCallLog = toolCalls.slice(-maxCount).map(tc => ({
+            toolName: tc.toolName,
+            success: tc.success,
+            summary: this.summarizeToolResult(tc.toolName, tc.result),
+            timestamp: tc.timestamp
+        }));
+    }
+
+    /**
+     * Generate a brief summary of tool result for the LOG section
+     */
+    private summarizeToolResult(toolName: string, result: any): string {
+        if (!result) {
+            return '(no result)';
+        }
+
+        // Try to extract key information based on tool name
+        try {
+            if (typeof result === 'string') {
+                // If result is a string, truncate it
+                return result.length > 200 ? result.substring(0, 200) + '...' : result;
+            }
+
+            if (typeof result === 'object') {
+                // Common patterns for tool results
+                const keys = Object.keys(result);
+
+                // If it has a 'result' or 'data' key, use that
+                if ('result' in result && typeof result.result === 'string') {
+                    return result.result.length > 200 ? result.result.substring(0, 200) + '...' : result.result;
+                }
+                if ('data' in result) {
+                    return JSON.stringify(result.data).length > 200
+                        ? JSON.stringify(result.data).substring(0, 200) + '...'
+                        : JSON.stringify(result.data);
+                }
+                if ('message' in result) {
+                    return result.message.length > 200 ? result.message.substring(0, 200) + '...' : result.message;
+                }
+
+                // Otherwise, just list the keys
+                return `[${keys.join(', ')}]`;
+            }
+
+            return String(result);
+        } catch {
+            return '(result processing failed)';
+        }
+    }
+
+    /**
+     * Get current tool call log
+     */
+    getToolCallLog(): ToolCallSummary[] {
+        return [...this.toolCallLog];
     }
 
     /**
@@ -240,6 +312,38 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
+     * Render the tool call log section (Markdown style)
+     */
+    renderToolCallLogSectionMarkdown(): MdElement {
+        const maxCount = this.config.toolCallLogCount ?? 3;
+        const container = new MdDiv({
+            styles: { showBorder: false }
+        }, [], 0);
+
+        // Header
+        const sliderIndicator = this.toolCallLog.length > maxCount
+            ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
+            : '';
+        container.addChild(new MdHeading({
+            content: `### Recent Tool Calls${sliderIndicator}`
+        }, [], 1));
+
+        // Render each tool call as markdown list items
+        const logEntries = this.toolCallLog.slice(-maxCount);
+        logEntries.forEach((entry, index) => {
+            const isLatest = index === logEntries.length - 1;
+            const prefix = isLatest ? '**>**' : '-';
+            const status = entry.success ? '`OK`' : '`FAIL`';
+
+            container.addChild(new MdParagraph({
+                content: `${prefix} ${status} \`${entry.toolName}\`: ${entry.summary}`
+            }, [], 2));
+        });
+
+        return container;
+    }
+
+    /**
      * Render component-specific tools section
      * Shows all tools from registered components
      */
@@ -307,6 +411,44 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
+     * Render the tool call log section (TUI mode)
+     * Render the tool call log section (Markdown style for both TUI and Markdown modes)
+     */
+    renderToolCallLogSection(): TUIElement {
+        const maxCount = this.config.toolCallLogCount ?? 3;
+
+        // Use simple markdown-style container without borders
+        const container = new tdiv({
+            styles: { showBorder: false }
+        });
+
+        // Header
+        const sliderIndicator = this.toolCallLog.length > maxCount
+            ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
+            : '';
+        container.addChild(new tdiv({
+            content: `**Recent Tool Calls**${sliderIndicator}`,
+            styles: { showBorder: false }
+        }));
+
+        // Render each tool call as markdown list items
+        const logEntries = this.toolCallLog.slice(-maxCount);
+        logEntries.forEach((entry, index) => {
+            const isLatest = index === logEntries.length - 1;
+            const prefix = isLatest ? '**>**' : '-';
+            const status = entry.success ? '`OK`' : '`FAIL`';
+
+            container.addChild(new tdiv({
+                content: `${prefix} ${status} \`${entry.toolName}\`: ${entry.summary}`,
+                styles: { showBorder: false }
+            }));
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return container;
+    }
+
+    /**
      * Render the entire workspace as context for LLM
      * Dispatches to the appropriate renderer based on render mode
      */
@@ -354,6 +496,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
                 }, undefined, 2));
             }
             container.addChild(componentContainer);
+        }
+
+        // Add LOG section for recent tool calls
+        if (this.toolCallLog.length > 0) {
+            container.addChild(this.renderToolCallLogSectionMarkdown());
         }
 
         return container;
@@ -406,6 +553,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             // renderImply returns an array, so add each element
             componentRender.forEach(element => componentContainer.addChild(element));
             container.addChild(componentContainer);
+        }
+
+        // Add LOG section for recent tool calls
+        if (this.toolCallLog.length > 0) {
+            container.addChild(this.renderToolCallLogSection());
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return

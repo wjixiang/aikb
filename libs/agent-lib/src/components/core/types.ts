@@ -61,6 +61,11 @@ export interface IVirtualWorkspace {
      * Get workspace configuration
      */
     getConfig(): VirtualWorkspaceConfig;
+
+    /**
+     * Set tool call log for rendering in the LOG section
+     */
+    setToolCallLog?(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number }>): void;
 }
 
 /**
@@ -449,6 +454,11 @@ export interface VirtualWorkspaceConfig {
      * Components to register directly with the workspace
      */
     components?: any[];
+    /**
+     * Number of recent tool calls to show in the LOG section (default: 3)
+     * Set to 0 to disable the LOG section
+     */
+    toolCallLogCount?: number;
 }
 
 /**
