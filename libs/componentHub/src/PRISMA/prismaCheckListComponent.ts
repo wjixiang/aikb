@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
 import { createPrismaToolSet } from './prismaTools.js'
 import type {
     PrismaChecklistItem,

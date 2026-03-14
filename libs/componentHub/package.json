@@ -1,0 +1,48 @@
+{
+  "name": "componentHub",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./src/index.ts"
+    },
+    "./bibliographySearch": {
+      "import": "./dist/bibliographySearch/index.js",
+      "types": "./src/bibliographySearch/index.ts"
+    },
+    "./paperAnalysis": {
+      "import": "./dist/paperAnalysis/index.js",
+      "types": "./src/paperAnalysis/index.ts"
+    },
+    "./PICOS": {
+      "import": "./dist/PICOS/index.js",
+      "types": "./src/PICOS/index.ts"
+    },
+    "./PRISMA": {
+      "import": "./dist/PRISMA/index.js",
+      "types": "./src/PRISMA/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts",
+    "dev": "tsup src/index.ts --watch",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "agent-lib": "workspace:*",
+    "bibliography-search": "workspace:*",
+    "inversify": "^7.11.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.0"
+  }
+}

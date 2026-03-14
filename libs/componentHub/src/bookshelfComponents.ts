@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-import { ToolComponent, Tool, tdiv } from './ui/index.js';
+import { ToolComponent, Tool, tdiv } from 'agent-lib/components/ui/index.js';
 
 loadDevMessages();
 loadErrorMessages();

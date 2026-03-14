@@ -11,12 +11,11 @@ import { defaultThinkingConfig } from '../thinking/types.js';
 import { ActionModule, defaultActionConfig } from '../action/ActionModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
-import { PicosComponent } from '../../components/index.js';
-import { BibliographySearchComponent } from '../../components/index.js';
-import { PrismaCheckListComponent } from '../../components/index.js';
-import { PrismaFlowComponent } from '../../components/index.js';
-import { PaperAnalysisComponent } from '../../components/index.js';
-import { VirtualFileSystemComponent } from '../../components/index.js';
+// Example components moved to componentHub
+// Users who need these components should import and register them themselves:
+// import { PicosComponent, BibliographySearchComponent, ... } from 'componentHub';
+// container.bind(TYPES.Component).to(PicosComponent);
+// etc.
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';

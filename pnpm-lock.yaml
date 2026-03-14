@@ -1140,9 +1140,6 @@ importers:
 
   apps/agent-lib-test:
     dependencies:
-      agent-components:
-        specifier: workspace:*
-        version: link:../../libs/agent-components
       agent-lib:
         specifier: workspace:*
         version: link:../../libs/agent-lib
@@ -1266,40 +1263,6 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.102.1)
 
-  libs/agent-components:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.8.0
-        version: 3.14.0(@types/react@19.2.2)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.19.0))(graphql@16.12.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(subscriptions-transport-ws@0.11.0(graphql@16.12.0))
-      '@aws-sdk/client-s3':
-        specifier: ^3.901.0
-        version: 3.901.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: ^3.901.0
-        version: 3.901.0
-      bibliography-search:
-        specifier: workspace:*
-        version: link:../bibliography-search
-      inversify:
-        specifier: ^7.11.0
-        version: 7.11.0(reflect-metadata@0.2.2)
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-      zod-to-json-schema:
-        specifier: ^3.25.1
-        version: 3.25.1(zod@3.25.76)
-    devDependencies:
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(@microsoft/api-extractor@7.53.3(@types/node@25.2.0))(@swc/core@1.15.3(@swc/helpers@0.5.17))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.0
-        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
-
   libs/agent-lib:
     dependencies:
       '@anthropic-ai/sdk':
@@ -1326,9 +1289,6 @@ importers:
       '@prisma/client':
         specifier: ^7.0.0
         version: 7.0.0(prisma@7.3.0(@types/react@19.2.2)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
-      agent-components:
-        specifier: workspace:*
-        version: link:../agent-components
       bibliography-search:
         specifier: workspace:*
         version: link:../bibliography-search
@@ -1545,6 +1505,31 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+
+  libs/componentHub:
+    dependencies:
+      agent-lib:
+        specifier: workspace:*
+        version: link:../agent-lib
+      bibliography-search:
+        specifier: workspace:*
+        version: link:../bibliography-search
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+      zod-to-json-schema:
+        specifier: ^3.25.1
+        version: 3.25.1(zod@3.25.76)
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(@microsoft/api-extractor@7.53.3(@types/node@25.2.0))(@swc/core@1.15.3(@swc/helpers@0.5.17))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.0
+        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0)(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   libs/embedding:
     dependencies:
