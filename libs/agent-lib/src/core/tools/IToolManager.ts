@@ -1,4 +1,4 @@
-import type { Tool } from '../statefulContext/types.js';
+import type { Tool } from '../statefulContext/index.js';
 import type { ToolSource } from './IToolProvider.js';
 import type { IToolProvider } from './IToolProvider.js';
 

@@ -26,7 +26,7 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ThinkingPhaseResult, IThinkingModule } from '../thinking/types.js';
 import type { IActionModule, ActionPhaseResult, ToolResult } from '../action/types.js';
 import { TYPES } from '../di/types.js';
-import type { IVirtualWorkspace } from '../statefulContext/types.js';
+import type { IVirtualWorkspace } from '../statefulContext/index.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ITaskModule } from '../task/types.js';
 import type { IToolManager } from '../tools/IToolManager.js';
@@ -350,13 +350,9 @@ export class Agent {
         let needsNewTurn = true;
 
         while (stack.length > 0) {
-            console.log('++++++++++++++++start new turn++++++++++++++++')
             const currentItem = stack.pop()!;
             const currentUserContent = currentItem.content;
             let didEndLoop = false;
-
-            this.logger.debug(`[Agent] === Starting loop iteration ===`);
-            this.logger.debug(`[Agent] Stack length: ${stack.length + 1} (before pop), sender: ${currentItem.sender}, retryAttempt: ${currentItem.retryAttempt ?? 0}`);
 
             if (this.isAborted()) {
                 stack.length = 0;
@@ -481,8 +477,6 @@ export class Agent {
                 this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
                 this._toolUsage = { ...this._toolUsage, ...actionResult.toolUsage };
 
-                this.logger.debug(`[Agent] Adding assistant message to memory, toolResults count: ${actionResult.toolResults.length}`);
-
                 // Add messages to memory
                 this.memoryModule.addMessage(actionResult.assistantMessage);
                 if (actionResult.userMessageContent.length > 0) {
@@ -490,10 +484,8 @@ export class Agent {
                     this.memoryModule.addMessage(message);
                 }
 
-                this.logger.debug(`[Agent] Recording tool calls to turn`);
                 // Record tool calls to turn
                 actionResult.toolResults.forEach(result => {
-                    this.logger.debug(`[Agent] Recording tool call: ${result.toolName}, success: ${result.success}`);
                     this.memoryModule.recordToolCall(
                         result.toolName,
                         result.success,
@@ -517,19 +509,12 @@ export class Agent {
                 // Re-render workspace to capture updated component states
                 // This fixes the bug where the next thinking/action phase would get stale context
                 const updatedWorkspaceContext = await this.workspace.render();
-                this.logger.debug(`[Agent] Workspace re-rendered after tool execution, context length: ${updatedWorkspaceContext.length}`);
-
-                // Check if we should continue recursion
-                this.logger.debug(`[Agent] Checking didAttemptCompletion: ${actionResult.didAttemptCompletion}`);
-                this.logger.debug(`[Agent] Current stack length: ${stack.length}, needsNewTurn: ${needsNewTurn}`);
 
                 if (!actionResult.didAttemptCompletion) {
                     // Complete current turn and prepare for next turn
-                    this.logger.debug(`[Agent] Completing turn and preparing for next turn`);
                     this.memoryModule.completeTurn();
                     needsNewTurn = true;
 
-                    this.logger.debug(`[Agent] Pushing system message to stack for next iteration`);
                     stack.push({
                         sender: 'system',
                         content: [{
@@ -537,10 +522,8 @@ export class Agent {
                             text: 'WORKSPACE STATE UPDATED'
                         }],
                     });
-                    this.logger.debug(`[Agent] Stack length after push: ${stack.length}`);
                 } else {
                     // Task completed, complete the turn
-                    this.logger.debug(`[Agent] Task completed via attempt_completion, completing turn`);
                     this.memoryModule.completeTurn();
                 }
 

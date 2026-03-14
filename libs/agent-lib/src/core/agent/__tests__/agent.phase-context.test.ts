@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
-import { ToolComponent } from '../../statefulContext/index.js';
+import { ToolComponent, ToolCallResult } from '../../statefulContext/index.js';
 import { Tool } from '../../statefulContext/types.js';
 import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
@@ -66,10 +66,15 @@ class TestActionComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'search_database') {
             this.searchData = `Searched for: ${params.query}`;
+            return {
+                data: { query: params.query, result: this.searchData },
+                summary: `[TestAction] 搜索: ${params.query}`
+            };
         }
+        return { data: { error: 'Unknown tool' } };
     };
 }
 

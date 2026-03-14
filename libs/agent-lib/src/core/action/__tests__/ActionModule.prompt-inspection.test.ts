@@ -75,6 +75,7 @@ describe('ActionModule - Prompt Inspection', () => {
         // Create mock ToolManager
         mockToolManager = {
             executeTool: vi.fn(),
+            getToolSource: vi.fn().mockReturnValue({ source: 'component', providerId: 'component:test', componentKey: 'test' }),
         } as any;
 
         // Create mock TurnMemoryStore

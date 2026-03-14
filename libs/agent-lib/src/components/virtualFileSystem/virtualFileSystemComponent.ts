@@ -5,7 +5,7 @@
  * This allows LLM to read/write files as if they were local files
  */
 
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js';
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from '../ui/index.js';
 import {
     S3Client,
     S3ClientConfig,
@@ -35,7 +35,7 @@ function getDefaultS3Config(): S3ClientConfig {
 
 export class VirtualFileSystemComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<void>;
+    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     private s3Client: S3Client;
     private defaultBucket: string;
@@ -91,40 +91,44 @@ export class VirtualFileSystemComponent extends ToolComponent {
         return tools;
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<void> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
         switch (toolName) {
             case 'read_file':
-                await this.readFile(params.path);
-                break;
+                return await this.readFile(params.path);
             case 'write_file':
-                await this.writeFile(params.path, params.content, params.contentType);
-                break;
+                return await this.writeFile(params.path, params.content, params.contentType);
             case 'list_files':
-                await this.listFiles(params.path);
-                break;
+                return await this.listFiles(params.path);
             case 'delete_file':
-                await this.deleteFile(params.path);
-                break;
+                return await this.deleteFile(params.path);
             case 'export_workspace':
-                await this.exportWorkspace(params.bucket, params.path, params.content, params.contentType);
-                break;
+                return await this.exportWorkspace(params.bucket, params.path, params.content, params.contentType);
             default:
-                console.warn(`Unknown tool: ${toolName}`);
+                return {
+                    data: { error: `Unknown tool: ${toolName}` },
+                    summary: `未知工具: ${toolName}`
+                };
         }
     }
 
     /**
      * Read file from S3
      */
-    private async readFile(path: string): Promise<void> {
+    private async readFile(path: string): Promise<ToolCallResult> {
         const result = await downloadFile(this.s3Client, this.defaultBucket, path);
 
         if (result.success) {
+            const content = result.content || '';
+            const lineCount = content.split('\n').length;
             this.currentResults = {
                 operation: 'read',
                 path,
-                content: result.content,
+                content,
                 message: `Successfully read file: ${path}`,
+            };
+            return {
+                data: { path, content, lineCount },
+                summary: `[FileSystem] 读取 ${path} (${lineCount} 行)`
             };
         } else {
             this.currentResults = {
@@ -133,13 +137,17 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 error: result.error,
                 message: `Failed to read file: ${path}`,
             };
+            return {
+                data: { path, error: result.error },
+                summary: `[FileSystem] 读取失败: ${path} - ${result.error}`
+            };
         }
     }
 
     /**
      * Write file to S3
      */
-    private async writeFile(path: string, content: string, contentType?: string): Promise<void> {
+    private async writeFile(path: string, content: string, contentType?: string): Promise<ToolCallResult> {
         const result = await uploadFile(
             this.s3Client,
             this.defaultBucket,
@@ -149,10 +157,15 @@ export class VirtualFileSystemComponent extends ToolComponent {
         );
 
         if (result.success) {
+            const lineCount = content.split('\n').length;
             this.currentResults = {
                 operation: 'write',
                 path,
                 message: `Successfully wrote file: ${path}`,
+            };
+            return {
+                data: { path, success: true, size: content.length },
+                summary: `[FileSystem] 写入成功: ${path} (${lineCount} 行)`
             };
         } else {
             this.currentResults = {
@@ -161,25 +174,35 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 error: result.error,
                 message: `Failed to write file: ${path}`,
             };
+            return {
+                data: { path, error: result.error },
+                summary: `[FileSystem] 写入失败: ${path} - ${result.error}`
+            };
         }
     }
 
     /**
      * List files in S3
      */
-    private async listFiles(path?: string): Promise<void> {
+    private async listFiles(path?: string): Promise<ToolCallResult> {
         const prefix = path || this.currentPath;
         const result = await listFiles(this.s3Client, this.defaultBucket, prefix);
 
         if (result.success) {
+            const files = result.files?.map(f => ({
+                name: f.key,
+                size: f.size,
+            })) || [];
+            const fileCount = files.length;
             this.currentResults = {
                 operation: 'list',
                 path: prefix,
-                files: result.files?.map(f => ({
-                    name: f.key,
-                    size: f.size,
-                })) || [],
-                message: `Found ${result.files?.length || 0} files in ${prefix}`,
+                files,
+                message: `Found ${fileCount} files in ${prefix}`,
+            };
+            return {
+                data: { path: prefix, files, count: fileCount },
+                summary: `[FileSystem] 列出 ${prefix}: ${fileCount} 个文件/目录`
             };
         } else {
             this.currentResults = {
@@ -188,13 +211,17 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 error: result.error,
                 message: `Failed to list files: ${prefix}`,
             };
+            return {
+                data: { path: prefix, error: result.error },
+                summary: `[FileSystem] 列出失败: ${prefix} - ${result.error}`
+            };
         }
     }
 
     /**
      * Delete file from S3
      */
-    private async deleteFile(path: string): Promise<void> {
+    private async deleteFile(path: string): Promise<ToolCallResult> {
         const result = await deleteFile(this.s3Client, this.defaultBucket, path);
 
         if (result.success) {
@@ -203,12 +230,20 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 path,
                 message: `Successfully deleted file: ${path}`,
             };
+            return {
+                data: { path, success: true },
+                summary: `[FileSystem] 删除成功: ${path}`
+            };
         } else {
             this.currentResults = {
                 operation: 'delete',
                 path,
                 error: result.error,
                 message: `Failed to delete file: ${path}`,
+            };
+            return {
+                data: { path, error: result.error },
+                summary: `[FileSystem] 删除失败: ${path} - ${result.error}`
             };
         }
     }
@@ -222,7 +257,7 @@ export class VirtualFileSystemComponent extends ToolComponent {
         path: string,
         content: string,
         contentType?: string
-    ): Promise<void> {
+    ): Promise<ToolCallResult> {
         // Determine content type based on file extension if not provided
         let finalContentType = contentType;
         if (!finalContentType) {
@@ -254,6 +289,10 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 success: true,
                 message: `Successfully exported to ${targetBucket}/${path}`,
             };
+            return {
+                data: { bucket: targetBucket, path, success: true, size: content.length },
+                summary: `[FileSystem] 导出成功: ${targetBucket}/${path}`
+            };
         } else {
             this.currentResults = {
                 operation: 'export',
@@ -262,6 +301,10 @@ export class VirtualFileSystemComponent extends ToolComponent {
                 success: false,
                 error: result.error,
                 message: `Failed to export: ${result.error}`,
+            };
+            return {
+                data: { bucket: targetBucket, path, error: result.error },
+                summary: `[FileSystem] 导出失败: ${targetBucket}/${path} - ${result.error}`
             };
         }
     }

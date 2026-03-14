@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Agent, AgentConfig, AgentPrompt } from '../agent.js';
 import { VirtualWorkspace, ComponentRegistration } from '../../statefulContext/index.js';
-import { ToolComponent } from '../../statefulContext/index.js';
+import { ToolComponent, ToolCallResult } from '../../statefulContext/index.js';
 import { Tool } from '../../statefulContext/index.js';
 import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
@@ -132,8 +132,12 @@ class TestToolComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         this.testData = params.input || JSON.stringify(params);
+        return {
+            data: { result: this.testData },
+            summary: `[Test] 执行: ${toolName}`
+        };
     };
 
     getTestData(): string {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Agent, AgentConfig, AgentPrompt } from '../agent.js';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
-import { ToolComponent } from '../../statefulContext/index.js';
+import { ToolComponent, ToolCallResult } from '../../statefulContext/index.js';
 import { Tool } from '../../statefulContext/index.js';
 import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
@@ -92,10 +92,15 @@ class TestToolComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'test_action_tool') {
             this.lastAction = params.action;
+            return {
+                data: { action: params.action },
+                summary: `[TestThinking] 执行动作: ${params.action}`
+            };
         }
+        return { data: { error: 'Unknown tool' } };
     };
 
     getLastAction(): string {

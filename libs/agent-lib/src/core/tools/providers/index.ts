@@ -7,4 +7,4 @@
  */
 
 export { GlobalToolProvider } from './GlobalToolProvider.js';
-export { ComponentToolProvider } from './ComponentToolProvider.js';
+export { ComponentToolProvider, type ToolExecutedCallback } from './ComponentToolProvider.js';
