@@ -2,12 +2,10 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-    'scripts/article-retrieval-skill.ts',
-    'src/expert/cli/index.ts'
-  ],
-  format: ['cjs', 'esm'],
+  entry: {
+    index: 'src/index.ts',
+  },
+  format: ['esm', 'cjs'],
   dts: false,
   splitting: false,
   sourcemap: true,

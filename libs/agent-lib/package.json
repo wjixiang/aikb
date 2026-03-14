@@ -12,14 +12,6 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./src/index.ts"
-    },
-    "./core": {
-      "import": "./dist/core/index.js",
-      "types": "./src/core/index.ts"
-    },
-    "./components": {
-      "import": "./dist/components/index.js",
-      "types": "./src/components/index.ts"
     }
   },
   "scripts": {
