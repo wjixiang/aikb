@@ -1140,6 +1140,9 @@ importers:
 
   apps/agent-lib-test:
     dependencies:
+      agent-components:
+        specifier: workspace:*
+        version: link:../../libs/agent-components
       agent-lib:
         specifier: workspace:*
         version: link:../../libs/agent-lib

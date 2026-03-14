@@ -4,9 +4,23 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/agent-lib.d.ts",
+  "types": "./src/index.ts",
   "bin": {
-    "expert-cli": "./src/expert/cli/index.ts"
+    "expert-cli": "./src/core/expert/cli/index.ts"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./src/index.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./src/core/index.ts"
+    },
+    "./components": {
+      "import": "./dist/components/index.js",
+      "types": "./src/components/index.ts"
+    }
   },
   "scripts": {
     "test": "vitest --config vite.config.mts",
@@ -16,16 +30,16 @@
     "build:watch": "vite build --watch",
     "dev": "vite build --watch",
     "type-check": "tsc --noEmit",
-    "expert:list": "npx tsx src/expert/cli/index.ts list",
-    "expert:validate": "npx tsx src/expert/cli/index.ts validate",
-    "expert:show": "npx tsx src/expert/cli/index.ts show",
-    "expert:new": "npx tsx src/expert/cli/index.ts new",
-    "expert:demo": "npx tsx src/expert/cli/index.ts demo",
-    "expert:test": "npx tsx src/expert/cli/index.ts test",
-    "expert:test:run": "npx tsx src/expert/cli/index.ts test run",
-    "expert:test:run:ts": "npx tsx src/expert/cli/index.ts test run:ts",
-    "expert:test:init": "npx tsx src/expert/cli/index.ts test init",
-    "expert:test:list": "npx tsx src/expert/cli/index.ts test list"
+    "expert:list": "npx tsx src/core/expert/cli/index.ts list",
+    "expert:validate": "npx tsx src/core/expert/cli/index.ts validate",
+    "expert:show": "npx tsx src/core/expert/cli/index.ts show",
+    "expert:new": "npx tsx src/core/expert/cli/index.ts new",
+    "expert:demo": "npx tsx src/core/expert/cli/index.ts demo",
+    "expert:test": "npx tsx src/core/expert/cli/index.ts test",
+    "expert:test:run": "npx tsx src/core/expert/cli/index.ts test run",
+    "expert:test:run:ts": "npx tsx src/core/expert/cli/index.ts test run:ts",
+    "expert:test:init": "npx tsx src/core/expert/cli/index.ts test init",
+    "expert:test:list": "npx tsx src/core/expert/cli/index.ts test list"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -36,7 +50,6 @@
     "@nestjs/common": "^10.0.0",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
-    "agent-components": "workspace:*",
     "bibliography-search": "workspace:*",
     "dotenv": "^17.3.1",
     "graphql": "^16.8.0",

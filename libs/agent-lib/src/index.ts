@@ -1,63 +1,11 @@
-// Export from existing agent-lib modules
-import { Agent, AgentConfig, defaultAgentConfig } from './agent/agent.js';
-import { NativeToolCallParser } from './assistant-message/NativeToolCallParser.js';
+/**
+ * Agent Lib - Main Entry Point
+ *
+ * Unified exports from core and components modules.
+ */
 
-// Export from merged agent-db
-import { prisma, AgentDBPrismaService } from './prisma.js';
-import { AgentDBModule as AgentDBModuleExport } from './agent-db.module.js';
-import { createExpertConfig } from './expert/ExpertFactory.js';
+// Core module - Agent framework, tools, memory, expert system, etc.
+export * from './core/index.js';
 
-export * from './agent-lib.module.js';
-export { NativeToolCallParser };
-export { prisma, AgentDBPrismaService, AgentDBModuleExport as AgentDBModule };
-
-
-
-// Export from merged llm-api (includes reasoning functions)
-// export * from './api';
-
-
-
-
-// Export from merged llm-types
-export * from './types/index.js';
-export type { ApiMessage } from './task/task.type.js'
-export { MessageBuilder } from './task/task.type.js'
-export { MessageContentFormatter } from './task/MessageFormatter.util.js'
-
-// Export from agent v2 (virtual workspace) - re-exported from statefulContext
-// export * from './agent/virtualWorkspace';
-// export * from './agent/statefulComponent';
-// export { Agent, defaultAgentConfig }
-export type { AgentConfig }
-
-// Export API client and factory
-export * from './api-client/index.js';
-export { AgentFactory } from './agent/AgentFactory.js';
-export type { AgentFactoryOptions } from './agent/AgentFactory.js';
-
-// Export ObservableAgent (Proxy-based observer pattern)
-export * from './agent/ObservableAgent.js';
-
-// Re-export from statefulContext (now integrated into agent-lib)
-export * from './statefulContext/index.js';
-
-// Re-export components from agent-components
-export * from 'agent-components';
-
-// Export thinking module (refactored from MemoryModule)
-export * from './thinking/index.js';
-
-// Export Expert development utilities
-export { ExpertWorkspaceBase } from './expert/ExpertWorkspaceBase.js';
-export { ExpertExecutor } from './expert/ExpertExecutor.js';
-export { ExpertRegistry } from './expert/ExpertRegistry.js';
-export type { ValidationResult, InputHandler, ExportConfig, ExportResult, ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance } from './expert/types.js';
-
-// Export DI (Dependency Injection) module
-export * from './di/index.js';
-
-// Export utils (S3 client, etc.)
-export * from './utils/index.js';
-
-export { createExpertConfig } from './expert/ExpertFactory.js';
+// Components module - UI components for bibliograpy search, PICOS, PRISMA, etc.
+export * from './components/index.js';
