@@ -3,7 +3,6 @@
  *
  * This module provides the core agent functionality including:
  * - Agent and factory
- * - BAML client
  * - State management
  * - Memory
  * - Tools
@@ -23,9 +22,6 @@ export { NativeToolCallParser } from './assistant-message/NativeToolCallParser.j
 
 // API Client
 export * from './api-client/index.js';
-
-// BAML Client
-export * from './baml_client/index.js';
 
 // Database
 export { prisma, AgentDBPrismaService } from '../prisma.js';
