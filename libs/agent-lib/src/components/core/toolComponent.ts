@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { renderToolSection } from '../utils/toolRendering.js';
-import { Tool } from './types.js';
+import { Tool, ToolCallResult } from './types.js';
 import { tdiv, TUIElement, MdDiv, MdElement } from '../ui/index.js';
 
 /**
@@ -30,8 +30,13 @@ export abstract class ToolComponent {
     /** Abstract method to render component content */
     abstract renderImply: () => Promise<TUIElement[]>;
 
-    /** Abstract method to handle tool calls */
-    abstract handleToolCall: (toolName: string, params: any) => Promise<void>;
+    /**
+     * Handle tool call and return result with optional custom summary
+     * @param toolName - The name of the tool to execute
+     * @param params - The parameters passed to the tool
+     * @returns ToolCallResult containing the result data and optional custom summary for LOG section
+     */
+    abstract handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     /** Optional hook called when component is activated by a skill */
     onActivate?: () => Promise<void>;

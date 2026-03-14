@@ -302,6 +302,22 @@ export interface Tool {
 }
 
 /**
+ * Result returned by ToolComponent.handleToolCall()
+ * This allows components to provide custom summaries for the LOG section
+ */
+export interface ToolCallResult {
+    /**
+     * The actual result data to return to the caller
+     */
+    data: any;
+    /**
+     * Optional custom summary for the LOG section
+     * If not provided, a default summary will be generated
+     */
+    summary?: string;
+}
+
+/**
  * Security configuration options
  */
 export interface SecurityConfig {

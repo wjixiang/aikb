@@ -16,6 +16,8 @@ export interface ToolCallSummary {
     success: boolean;
     summary: string;
     timestamp: number;
+    /** Component key that provided this tool */
+    componentKey?: string;
 }
 
 
@@ -69,8 +71,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.toolManager = toolManager ?? new ToolManager();
 
 
-        // Initialize global tool provider
-        this.globalToolProvider = new GlobalToolProvider();
+        // Initialize global tool provider with tool executed callback
+        this.globalToolProvider = new GlobalToolProvider(this.notifyToolExecuted.bind(this));
         this.toolManager.registerProvider(this.globalToolProvider);
 
         // Register all components from registry as tool providers
@@ -83,7 +85,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     private registerComponentTools(): void {
         const registrations = this.componentRegistry.getAllRegistrations();
         for (const registration of registrations) {
-            const provider = new ComponentToolProvider(registration.id, registration.component);
+            const provider = new ComponentToolProvider(
+                registration.id,
+                registration.component,
+                this.notifyToolExecuted.bind(this)
+            );
             this.toolManager.registerProvider(provider);
         }
     }
@@ -96,8 +102,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     registerComponent(id: string, component: ToolComponent, priority?: number): void {
         this.componentRegistry.register(id, component, priority);
 
-        // Also register as a tool provider
-        const provider = new ComponentToolProvider(id, component);
+        // Also register as a tool provider with tool executed callback
+        const provider = new ComponentToolProvider(id, component, this.notifyToolExecuted.bind(this));
         this.toolManager.registerProvider(provider);
     }
 
@@ -107,9 +113,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     registerComponents(components: Array<{ id: string; component: ToolComponent; priority?: number }>): void {
         this.componentRegistry.registerWithPriority(components);
 
-        // Register all as tool providers
+        // Register all as tool providers with tool executed callback
         for (const { id, component } of components) {
-            const provider = new ComponentToolProvider(id, component);
+            const provider = new ComponentToolProvider(id, component, this.notifyToolExecuted.bind(this));
             this.toolManager.registerProvider(provider);
         }
     }
@@ -155,10 +161,54 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
+     * Callback for real-time tool execution notifications
+     * This is called by ComponentToolProvider immediately after tool execution
+     */
+    private onToolExecuted?: (toolName: string, params: any, result: any, success: boolean, componentKey: string, customSummary?: string) => void;
+
+    /**
+     * Set callback for real-time tool execution notifications
+     * This allows VirtualWorkspace to receive tool results immediately after execution
+     */
+    setOnToolExecuted(callback: (toolName: string, params: any, result: any, success: boolean, componentKey: string, customSummary?: string) => void): void {
+        this.onToolExecuted = callback;
+    }
+
+    /**
+     * Notify workspace of a tool execution result in real-time
+     * This updates the tool call log immediately after tool execution
+     */
+    notifyToolExecuted(toolName: string, params: any, result: any, success: boolean, componentKey: string, customSummary?: string): void {
+        // Get current max count
+        const maxCount = this.config.toolCallLogCount ?? 3;
+
+        if (maxCount <= 0) {
+            return;
+        }
+
+        // Use custom summary if provided, otherwise generate default summary
+        const summary = customSummary ?? this.summarizeToolResult(toolName, result, componentKey);
+
+        // Add to the log (keep only last maxCount entries)
+        this.toolCallLog.push({
+            toolName,
+            success,
+            summary,
+            timestamp: Date.now(),
+            componentKey
+        });
+
+        // Trim to max count
+        if (this.toolCallLog.length > maxCount) {
+            this.toolCallLog = this.toolCallLog.slice(-maxCount);
+        }
+    }
+
+    /**
      * Set tool call log for rendering in the LOG section
      * @param toolCalls Array of tool call results to display
      */
-    setToolCallLog(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number }>): void {
+    setToolCallLog(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number; componentKey?: string }>): void {
         const maxCount = this.config.toolCallLogCount ?? 3;
         if (maxCount <= 0) {
             this.toolCallLog = [];
@@ -169,50 +219,58 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         this.toolCallLog = toolCalls.slice(-maxCount).map(tc => ({
             toolName: tc.toolName,
             success: tc.success,
-            summary: this.summarizeToolResult(tc.toolName, tc.result),
-            timestamp: tc.timestamp
+            summary: this.summarizeToolResult(tc.toolName, tc.result, tc.componentKey),
+            timestamp: tc.timestamp,
+            componentKey: tc.componentKey
         }));
     }
 
     /**
      * Generate a brief summary of tool result for the LOG section
+     * @param toolName The name of the tool
+     * @param result The result from the tool execution
+     * @param componentKey The component key that provided this tool (optional)
      */
-    private summarizeToolResult(toolName: string, result: any): string {
+    private summarizeToolResult(toolName: string, result: any, componentKey?: string): string {
         if (!result) {
-            return '(no result)';
+            return componentKey ? `[${componentKey}] (no result)` : '(no result)';
         }
 
         // Try to extract key information based on tool name
         try {
+            let summary: string;
+
             if (typeof result === 'string') {
                 // If result is a string, truncate it
-                return result.length > 200 ? result.substring(0, 200) + '...' : result;
-            }
-
-            if (typeof result === 'object') {
+                summary = result.length > 200 ? result.substring(0, 200) + '...' : result;
+            } else if (typeof result === 'object') {
                 // Common patterns for tool results
                 const keys = Object.keys(result);
 
                 // If it has a 'result' or 'data' key, use that
                 if ('result' in result && typeof result.result === 'string') {
-                    return result.result.length > 200 ? result.result.substring(0, 200) + '...' : result.result;
-                }
-                if ('data' in result) {
-                    return JSON.stringify(result.data).length > 200
+                    summary = result.result.length > 200 ? result.result.substring(0, 200) + '...' : result.result;
+                } else if ('data' in result) {
+                    summary = JSON.stringify(result.data).length > 200
                         ? JSON.stringify(result.data).substring(0, 200) + '...'
                         : JSON.stringify(result.data);
+                } else if ('message' in result) {
+                    summary = result.message.length > 200 ? result.message.substring(0, 200) + '...' : result.message;
+                } else {
+                    // Otherwise, just list the keys
+                    summary = `[${keys.join(', ')}]`;
                 }
-                if ('message' in result) {
-                    return result.message.length > 200 ? result.message.substring(0, 200) + '...' : result.message;
-                }
-
-                // Otherwise, just list the keys
-                return `[${keys.join(', ')}]`;
+            } else {
+                summary = String(result);
             }
 
-            return String(result);
+            // Prepend component key if available
+            if (componentKey) {
+                return `[${componentKey}] ${summary}`;
+            }
+            return summary;
         } catch {
-            return '(result processing failed)';
+            return componentKey ? `[${componentKey}] (result processing failed)` : '(result processing failed)';
         }
     }
 

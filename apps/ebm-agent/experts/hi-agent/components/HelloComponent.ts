@@ -4,7 +4,7 @@
  * 简单的计算器组件 - 支持基本数学运算
  */
 
-import { ToolComponent } from 'agent-lib/components';
+import { ToolComponent, type ToolCallResult } from 'agent-lib/components';
 import { tdiv, type TUIElement } from 'agent-lib/components'
 import { z } from 'zod';
 
@@ -65,23 +65,25 @@ export class HelloComponent extends ToolComponent {
     ];
   };
 
-  override handleToolCall: (toolName: string, params: any) => Promise<void> = async (toolName, params) => {
+  override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult> = async (toolName, params) => {
     const { a, b } = params;
     switch (toolName) {
       case 'add':
         this.currentTask = `${a} + ${b}`
         this.lastResult = a + b;
-        break;
+        return { data: { result: this.lastResult }, summary: `[Calculator] ${a} + ${b} = ${this.lastResult}` };
       case 'subtract':
         this.currentTask = `${a} - ${b}`
         this.lastResult = a - b;
-        break;
+        return { data: { result: this.lastResult }, summary: `[Calculator] ${a} - ${b} = ${this.lastResult}` };
       case 'multiply':
         this.lastResult = a * b;
-        break;
+        return { data: { result: this.lastResult }, summary: `[Calculator] ${a} * ${b} = ${this.lastResult}` };
       case 'divide':
         this.lastResult = b !== 0 ? a / b : NaN;
-        break;
+        return { data: { result: this.lastResult }, summary: `[Calculator] ${a} / ${b} = ${this.lastResult}` };
+      default:
+        return { data: { error: `Unknown tool: ${toolName}` } };
     }
   };
 

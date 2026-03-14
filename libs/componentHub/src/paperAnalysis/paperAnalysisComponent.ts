@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ToolComponent, tdiv } from 'agent-lib/components/ui/index.js';
+import { ToolComponent, ToolCallResult, tdiv } from 'agent-lib/components/ui/index.js';
 import { z } from 'zod';
 
 /**
@@ -50,17 +50,21 @@ export class PaperAnalysisComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any) => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'calculate_complexity') {
             const result = await this.calculateComplexity(params.paper_content, params.dimensions);
             this.analysisResults.push(result);
+            return { data: result, summary: `[PaperAnalysis] 计算复杂度完成` };
         } else if (toolName === 'extract_key_citations') {
             const result = await this.extractKeyCitations(params.paper_content, params.max_citations);
             this.analysisResults.push(result);
+            return { data: result, summary: `[PaperAnalysis] 提取关键引用完成` };
         } else if (toolName === 'compare_papers') {
             const result = await this.comparePapers(params.paper_a, params.paper_b, params.comparison_aspects);
             this.analysisResults.push(result);
+            return { data: result, summary: `[PaperAnalysis] 论文比较完成` };
         }
+        return { data: { error: `Unknown tool: ${toolName}` }, summary: `[PaperAnalysis] 未知工具: ${toolName}` };
     };
 
     private async calculateComplexity(content: string, dimensions?: string[]): Promise<any> {

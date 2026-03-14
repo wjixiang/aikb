@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
 import {
     PubmedService,
     PubmedSearchParams,
@@ -14,7 +14,7 @@ import { createBibliographySearchToolSet } from './bibliographySearchTools.js'
 
 export class BibliographySearchComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<void>;
+    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     private pubmedService: PubmedService;
     currentResults: { totalResults: number | null; totalPages: number | null; articleProfiles: ArticleProfile[] } | null = null;
@@ -291,26 +291,22 @@ export class BibliographySearchComponent extends ToolComponent {
         return container;
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<void> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
         switch (toolName) {
             case 'search_pubmed':
-                await this.handleSearch(params);
-                break;
+                return await this.handleSearch(params);
             case 'view_article':
-                await this.handleViewArticle(params);
-                break;
+                return await this.handleViewArticle(params);
             case 'navigate_page':
-                await this.handleNavigatePage(params);
-                break;
+                return await this.handleNavigatePage(params);
             case 'clear_results':
-                this.handleClearResults();
-                break;
+                return this.handleClearResults();
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[Bibliography] 未知工具: ${toolName}` };
         }
     }
 
-    private async handleSearch(params: any): Promise<void> {
+    private async handleSearch(params: any): Promise<ToolCallResult> {
         let searchTerm: string;
 
         // Build search term from strategy or use simple term
@@ -318,7 +314,7 @@ export class BibliographySearchComponent extends ToolComponent {
             searchTerm = params.term;
             this.currentRetrivalStrategy = null;
         } else {
-            throw new Error('term must be provided');
+            return { data: { error: 'term must be provided' }, summary: '[Bibliography] 错误: 未提供搜索词' };
         }
 
         const searchParams: PubmedSearchParams = {
@@ -342,33 +338,41 @@ export class BibliographySearchComponent extends ToolComponent {
             };
             this.currentPage = searchParams.page || 1;
             this.currentArticleDetail = null;
+            return {
+                data: { term: searchTerm, totalResults: results.totalResults, totalPages: results.totalPages },
+                summary: `[Bibliography] 搜索: ${searchTerm}, 找到 ${results.totalResults} 篇文献`
+            };
         } catch (error) {
-            throw new Error(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
+            return { data: { error: `Search failed: ${error instanceof Error ? error.message : String(error)}` }, summary: `[Bibliography] 搜索失败` };
         }
     }
 
-    private async handleViewArticle(params: any): Promise<void> {
+    private async handleViewArticle(params: any): Promise<ToolCallResult> {
         const { pmid } = params;
 
         if (!pmid) {
-            throw new Error('PMID is required');
+            return { data: { error: 'PMID is required' }, summary: '[Bibliography] 错误: 未提供 PMID' };
         }
 
         try {
             const detail = await this.pubmedService.getArticleDetail(pmid);
             this.currentArticleDetail = detail;
+            return {
+                data: { pmid, title: detail.title },
+                summary: `[Bibliography] 查看文献: ${detail.title?.substring(0, 50) || pmid}`
+            };
         } catch (error) {
-            throw new Error(`Failed to load article details: ${error instanceof Error ? error.message : String(error)}`);
+            return { data: { error: `Failed to load article details: ${error instanceof Error ? error.message : String(error)}` }, summary: `[Bibliography] 加载文献失败` };
         }
     }
 
-    private async handleNavigatePage(params: any): Promise<void> {
+    private async handleNavigatePage(params: any): Promise<ToolCallResult> {
         if (!this.currentResults) {
-            throw new Error('No search results to navigate');
+            return { data: { error: 'No search results to navigate' }, summary: '[Bibliography] 错误: 无搜索结果' };
         }
 
         if (!this.currentSearchParams) {
-            throw new Error('No search parameters available for navigation');
+            return { data: { error: 'No search parameters available for navigation' }, summary: '[Bibliography] 错误: 无搜索参数' };
         }
 
         const { direction } = params;
@@ -376,16 +380,16 @@ export class BibliographySearchComponent extends ToolComponent {
 
         if (direction === 'next') {
             if (this.currentPage >= totalPages) {
-                throw new Error('Already on the last page');
+                return { data: { error: 'Already on the last page' }, summary: '[Bibliography] 已是最后一页' };
             }
             this.currentPage++;
         } else if (direction === 'prev') {
             if (this.currentPage <= 1) {
-                throw new Error('Already on the first page');
+                return { data: { error: 'Already on the first page' }, summary: '[Bibliography] 已是第一页' };
             }
             this.currentPage--;
         } else {
-            throw new Error('Invalid direction. Use "next" or "prev"');
+            return { data: { error: 'Invalid direction. Use "next" or "prev"' }, summary: '[Bibliography] 错误: 无效方向' };
         }
 
         // Re-run search with new page using stored search parameters
@@ -402,16 +406,21 @@ export class BibliographySearchComponent extends ToolComponent {
                 articleProfiles: results.articleProfiles
             };
             this.currentArticleDetail = null;
+            return {
+                data: { page: this.currentPage, totalPages },
+                summary: `[Bibliography] 翻页: 第 ${this.currentPage} / ${totalPages} 页`
+            };
         } catch (error) {
-            throw new Error(`Navigation failed: ${error instanceof Error ? error.message : String(error)}`);
+            return { data: { error: `Navigation failed: ${error instanceof Error ? error.message : String(error)}` }, summary: `[Bibliography] 翻页失败` };
         }
     }
 
-    private handleClearResults(): void {
+    private handleClearResults(): ToolCallResult {
         this.currentResults = null;
         this.currentArticleDetail = null;
         this.currentPage = 1;
         this.currentRetrivalStrategy = null;
         this.currentSearchParams = null;
+        return { data: { cleared: true }, summary: '[Bibliography] 已清除结果' };
     }
 }

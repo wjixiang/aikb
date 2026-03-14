@@ -1,4 +1,4 @@
-import type { Tool } from '../statefulContext/types.js';
+import type { Tool } from '../statefulContext/index.js';
 
 /**
  * Tool provider interface - abstracts the source of tools

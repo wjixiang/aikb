@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
 import { createPrismaToolSet } from './prismaTools.js'
 import type {
     PrismaChecklistItem,
@@ -38,7 +38,7 @@ export interface ProgressResult {
 
 export class PrismaCheckListComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<void>;
+    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     // Internal state
     private checklistItems: Map<number, PrismaChecklistItem> = new Map();
@@ -366,43 +366,35 @@ export class PrismaCheckListComponent extends ToolComponent {
         }
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<void> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
         switch (toolName) {
             case 'set_checklist_item':
-                this.handleSetChecklistItem(params);
-                break;
+                return this.handleSetChecklistItem(params);
             case 'set_multiple_items':
-                this.handleSetMultipleItems(params);
-                break;
+                return this.handleSetMultipleItems(params);
             case 'filter_checklist':
-                this.handleFilterChecklist(params);
-                break;
+                return this.handleFilterChecklist(params);
             case 'export_checklist':
-                this.handleExportChecklist(params);
-                break;
+                return this.handleExportChecklist(params);
             case 'validate_checklist':
-                this.handleValidateChecklist(params);
-                break;
+                return this.handleValidateChecklist(params);
             case 'clear_checklist':
-                this.handleClearChecklist(params);
-                break;
+                return this.handleClearChecklist(params);
             case 'get_progress':
-                this.handleGetProgress();
-                break;
+                return this.handleGetProgress();
             case 'set_manuscript_metadata':
-                this.handleSetManuscriptMetadata(params);
-                break;
+                return this.handleSetManuscriptMetadata(params);
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[PRISMA] 未知工具: ${toolName}` };
         }
     }
 
-    private handleSetChecklistItem(params: any): void {
+    private handleSetChecklistItem(params: any): ToolCallResult {
         const { itemNumber, status, location, notes } = params;
 
         const item = this.checklistItems.get(itemNumber);
         if (!item) {
-            throw new Error(`Invalid item number: ${itemNumber}. Must be between 1 and 27.`);
+            return { data: { error: `Invalid item number: ${itemNumber}` }, summary: `[PRISMA] 无效项目编号: ${itemNumber}` };
         }
 
         // Update the item
@@ -418,10 +410,13 @@ export class PrismaCheckListComponent extends ToolComponent {
         this.progressResult = null;
         this.exportResult = null;
         this.filteredItems = null;
+
+        return { data: { itemNumber, status }, summary: `[PRISMA] 更新项目 ${itemNumber}: ${status}` };
     }
 
-    private handleSetMultipleItems(params: any): void {
+    private handleSetMultipleItems(params: any): ToolCallResult {
         const { items } = params;
+        let updatedCount = 0;
 
         for (const itemUpdate of items) {
             const { itemNumber, status, location, notes } = itemUpdate;
@@ -434,6 +429,7 @@ export class PrismaCheckListComponent extends ToolComponent {
                     location: location || item.location,
                     notes: notes || item.notes
                 });
+                updatedCount++;
             }
         }
 
@@ -442,9 +438,11 @@ export class PrismaCheckListComponent extends ToolComponent {
         this.progressResult = null;
         this.exportResult = null;
         this.filteredItems = null;
+
+        return { data: { updatedCount }, summary: `[PRISMA] 批量更新 ${updatedCount} 个项目` };
     }
 
-    private handleFilterChecklist(params: any): void {
+    private handleFilterChecklist(params: any): ToolCallResult {
         const { section, status, topic } = params;
 
         let filtered = Array.from(this.checklistItems.values());
@@ -462,9 +460,10 @@ export class PrismaCheckListComponent extends ToolComponent {
         }
 
         this.filteredItems = filtered;
+        return { data: { count: filtered.length }, summary: `[PRISMA] 筛选结果: ${filtered.length} 个项目` };
     }
 
-    private handleExportChecklist(params: any): void {
+    private handleExportChecklist(params: any): ToolCallResult {
         const { format, includeCompletedOnly } = params;
 
         let items = Array.from(this.checklistItems.values());
@@ -484,11 +483,12 @@ export class PrismaCheckListComponent extends ToolComponent {
                 this.exportResult = this.generateCsvOutput(items);
                 break;
             default:
-                throw new Error(`Invalid export format: ${format}`);
+                return { data: { error: `Invalid export format: ${format}` }, summary: `[PRISMA] 无效导出格式` };
         }
+        return { data: { format, count: items.length }, summary: `[PRISMA] 导出成功: ${format} 格式, ${items.length} 个项目` };
     }
 
-    private handleValidateChecklist(params: any): void {
+    private handleValidateChecklist(params: any): ToolCallResult {
         const { requiredItems } = params;
 
         const required = requiredItems || Array.from({ length: 27 }, (_, i) => i + 1);
@@ -530,11 +530,11 @@ export class PrismaCheckListComponent extends ToolComponent {
         };
     }
 
-    private handleClearChecklist(params: any): void {
+    private handleClearChecklist(params: any): ToolCallResult {
         const { confirm } = params;
 
         if (!confirm) {
-            throw new Error('Clearing the checklist requires confirmation. Set confirm=true to proceed.');
+            return { data: { error: 'Clearing the checklist requires confirmation. Set confirm=true to proceed.' }, summary: '[PRISMA] 清除清单需要确认' };
         }
 
         // Reset all items to not_started
@@ -553,9 +553,11 @@ export class PrismaCheckListComponent extends ToolComponent {
         this.exportResult = null;
         this.filteredItems = null;
         this.metadata = {};
+
+        return { data: { cleared: true }, summary: '[PRISMA] 已清除清单' };
     }
 
-    private handleGetProgress(): void {
+    private handleGetProgress(): ToolCallResult {
         const items = Array.from(this.checklistItems.values());
 
         const completedItems = items.filter(item => item.status === 'completed').length;
@@ -596,9 +598,14 @@ export class PrismaCheckListComponent extends ToolComponent {
             completionPercentage,
             sectionProgress
         };
+
+        return {
+            data: this.progressResult,
+            summary: `[PRISMA] 进度: ${completedItems}/${totalItems} (${completionPercentage.toFixed(1)}%)`
+        };
     }
 
-    private handleSetManuscriptMetadata(params: any): void {
+    private handleSetManuscriptMetadata(params: any): ToolCallResult {
         const { title, authors, registrationNumber, registrationDate, protocolLink } = params;
 
         this.metadata = {
@@ -608,6 +615,11 @@ export class PrismaCheckListComponent extends ToolComponent {
             ...(registrationNumber !== undefined && { registrationNumber }),
             ...(registrationDate !== undefined && { registrationDate }),
             ...(protocolLink !== undefined && { protocolLink })
+        };
+
+        return {
+            data: { metadata: this.metadata },
+            summary: `[PRISMA] 设置稿件元数据: ${this.metadata.title || 'Untitled'}`
         };
     }
 

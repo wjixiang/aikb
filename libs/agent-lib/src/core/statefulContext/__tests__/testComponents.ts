@@ -1,4 +1,4 @@
-import { ToolComponent, type Tool, tdiv } from '../../../components/index.js';
+import { ToolComponent, type Tool, type ToolCallResult, tdiv } from '../../../components/index.js';
 import * as z from 'zod';
 
 /**
@@ -30,11 +30,16 @@ export class TestToolComponentA extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'search') {
             this.searchQuery = params.query;
             this.searchResults = [`result1 for ${params.query}`, `result2 for ${params.query}`];
+            return {
+                data: { query: params.query, results: this.searchResults },
+                summary: `[TestA] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果`
+            };
         }
+        return { data: { error: 'Unknown tool' } };
     };
 
     getSearchQuery(): string {
@@ -70,10 +75,16 @@ export class TestToolComponentB extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'increment') {
-            this.counter += params.amount || 1;
+            const amount = params.amount || 1;
+            this.counter += amount;
+            return {
+                data: { counter: this.counter, increment: amount },
+                summary: `[TestB] 计数器: +${amount}, 当前值: ${this.counter}`
+            };
         }
+        return { data: { error: 'Unknown tool' } };
     };
 
     getCounter(): number {
@@ -105,10 +116,15 @@ export class TestToolComponentC extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'toggle') {
             this.flag = !this.flag;
+            return {
+                data: { flag: this.flag },
+                summary: `[TestC] 开关: ${this.flag ? 'ON' : 'OFF'}`
+            };
         }
+        return { data: { error: 'Unknown tool' } };
     };
 
     getFlag(): boolean {

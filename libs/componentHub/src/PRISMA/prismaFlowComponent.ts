@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
 import { createPrismaFlowToolSet } from './prismaFlowTools.js'
 import type {
     DatabaseFlow,
@@ -16,7 +16,7 @@ export interface ValidationResult {
 
 export class PrismaFlowComponent extends ToolComponent {
     override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<void>;
+    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     // Internal state
     private databaseFlow: DatabaseFlow = {};
@@ -262,47 +262,36 @@ export class PrismaFlowComponent extends ToolComponent {
         return container;
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<void> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
         switch (toolName) {
             case 'set_identification':
-                this.handleSetIdentification(params);
-                break;
+                return this.handleSetIdentification(params);
             case 'set_records_removed':
-                this.handleSetRecordsRemoved(params);
-                break;
+                return this.handleSetRecordsRemoved(params);
             case 'set_screening':
-                this.handleSetScreening(params);
-                break;
+                return this.handleSetScreening(params);
             case 'set_retrieval':
-                this.handleSetRetrieval(params);
-                break;
+                return this.handleSetRetrieval(params);
             case 'set_assessment':
-                this.handleSetAssessment(params);
-                break;
+                return this.handleSetAssessment(params);
             case 'set_included':
-                this.handleSetIncluded(params);
-                break;
+                return this.handleSetIncluded(params);
             case 'add_exclusion_reason':
-                this.handleAddExclusionReason(params);
-                break;
+                return this.handleAddExclusionReason(params);
             case 'export_flow_diagram':
-                this.handleExportFlowDiagram(params);
-                break;
+                return this.handleExportFlowDiagram(params);
             case 'clear_flow_diagram':
-                this.handleClearFlowDiagram(params);
-                break;
+                return this.handleClearFlowDiagram(params);
             case 'validate_flow_diagram':
-                this.handleValidateFlowDiagram();
-                break;
+                return this.handleValidateFlowDiagram();
             case 'auto_calculate':
-                this.handleAutoCalculate(params);
-                break;
+                return this.handleAutoCalculate(params);
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[PRISMA Flow] 未知工具: ${toolName}` };
         }
     }
 
-    private handleSetIdentification(params: any): void {
+    private handleSetIdentification(params: any): ToolCallResult {
         const { flow, databases, registers, websites, organisations, citationSearching, other } = params;
 
         if (flow === 'database') {
@@ -323,9 +312,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { flow }, summary: `[PRISMA Flow] 设置识别阶段: ${flow}` };
     }
 
-    private handleSetRecordsRemoved(params: any): void {
+    private handleSetRecordsRemoved(params: any): ToolCallResult {
         const { duplicates, automationTools, otherReasons } = params;
 
         this.databaseFlow.recordsRemoved = {
@@ -337,9 +328,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { duplicates, automationTools, otherReasons }, summary: `[PRISMA Flow] 设置移除记录` };
     }
 
-    private handleSetScreening(params: any): void {
+    private handleSetScreening(params: any): ToolCallResult {
         const { recordsScreened, recordsExcluded, exclusionReasons } = params;
 
         this.databaseFlow.screening = {
@@ -351,9 +344,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { recordsScreened, recordsExcluded }, summary: `[PRISMA Flow] 设置筛选: ${recordsScreened} 待筛选, ${recordsExcluded} 排除` };
     }
 
-    private handleSetRetrieval(params: any): void {
+    private handleSetRetrieval(params: any): ToolCallResult {
         const { flow, reportsSought, reportsNotRetrieved } = params;
 
         const data = {
@@ -375,9 +370,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { flow, reportsSought, reportsNotRetrieved }, summary: `[PRISMA Flow] 设置检索: ${flow}` };
     }
 
-    private handleSetAssessment(params: any): void {
+    private handleSetAssessment(params: any): ToolCallResult {
         const { flow, reportsAssessed, reportsExcluded, exclusionReasons } = params;
 
         const data = {
@@ -400,9 +397,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { flow, reportsAssessed, reportsExcluded }, summary: `[PRISMA Flow] 设置评估: ${flow}` };
     }
 
-    private handleSetIncluded(params: any): void {
+    private handleSetIncluded(params: any): ToolCallResult {
         const { studiesIncluded, reportsIncluded } = params;
 
         this.included = {
@@ -413,9 +412,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { studiesIncluded, reportsIncluded }, summary: `[PRISMA Flow] 设置纳入研究: ${studiesIncluded} 研究, ${reportsIncluded} 报告` };
     }
 
-    private handleAddExclusionReason(params: any): void {
+    private handleAddExclusionReason(params: any): ToolCallResult {
         const { phase, flow, reason, count } = params;
 
         const newReason: ExclusionReason = { reason, count };
@@ -444,9 +445,11 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { phase, flow, reason, count }, summary: `[PRISMA Flow] 添加排除原因: ${reason}` };
     }
 
-    private handleExportFlowDiagram(params: any): void {
+    private handleExportFlowDiagram(params: any): ToolCallResult {
         const { format } = params;
 
         switch (format) {
@@ -460,15 +463,17 @@ export class PrismaFlowComponent extends ToolComponent {
                 this.exportResult = this.generateMermaidOutput();
                 break;
             default:
-                throw new Error(`Invalid export format: ${format}`);
+                return { data: { error: `Invalid export format: ${format}` }, summary: `[PRISMA Flow] 无效导出格式: ${format}` };
         }
+
+        return { data: { format }, summary: `[PRISMA Flow] 导出流程图: ${format} 格式` };
     }
 
-    private handleClearFlowDiagram(params: any): void {
+    private handleClearFlowDiagram(params: any): ToolCallResult {
         const { confirm } = params;
 
         if (!confirm) {
-            throw new Error('Clearing the flow diagram requires confirmation. Set confirm=true to proceed.');
+            return { data: { error: 'Clearing the flow diagram requires confirmation. Set confirm=true to proceed.' }, summary: `[PRISMA Flow] 清除流程图需要确认` };
         }
 
         this.databaseFlow = {};
@@ -476,9 +481,11 @@ export class PrismaFlowComponent extends ToolComponent {
         this.included = { studiesIncluded: 0, reportsIncluded: 0 };
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { cleared: true }, summary: `[PRISMA Flow] 已清除流程图` };
     }
 
-    private handleValidateFlowDiagram(): void {
+    private handleValidateFlowDiagram(): ToolCallResult {
         const warnings: string[] = [];
         let isValid = true;
 
@@ -527,9 +534,14 @@ export class PrismaFlowComponent extends ToolComponent {
             message,
             warnings
         };
+
+        return {
+            data: this.validationResult,
+            summary: `[PRISMA Flow] 验证: ${isValid ? '有效' : '有问题'}`
+        };
     }
 
-    private handleAutoCalculate(params: any): void {
+    private handleAutoCalculate(params: any): ToolCallResult {
         const { flow } = params;
 
         if (flow === 'database' || flow === 'both') {
@@ -574,6 +586,8 @@ export class PrismaFlowComponent extends ToolComponent {
 
         this.validationResult = null;
         this.exportResult = null;
+
+        return { data: { flow }, summary: `[PRISMA Flow] 自动计算: ${flow}` };
     }
 
     private generateJsonOutput(): string {

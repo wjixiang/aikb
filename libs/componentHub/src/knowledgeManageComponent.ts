@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { tdiv, ToolComponent, Tool } from 'agent-lib/components/ui/index.js';
+import { tdiv, ToolComponent, Tool, ToolCallResult } from 'agent-lib/components/ui/index.js';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
@@ -357,14 +357,14 @@ export class KnowledgeManageComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         switch (toolName) {
             case 'fetchDocuments':
                 await this.fetchDocuments();
-                break;
+                return { data: { count: this.allDocuments.length }, summary: `[Knowledge] 获取文档: ${this.allDocuments.length} 个` };
             case 'selectDocument':
                 await this.selectDocument(params.documentId);
-                break;
+                return { data: { documentId: params.documentId }, summary: `[Knowledge] 选择文档: ${params.documentId}` };
             case 'createDocument':
                 await this.createDocument(
                     params.type,
@@ -373,7 +373,7 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.entities || [],
                     params.tags || []
                 );
-                break;
+                return { data: { topic: params.topic, type: params.type }, summary: `[Knowledge] 创建文档: ${params.topic}` };
             case 'updateDocument':
                 await this.updateDocument(
                     params.documentId,
@@ -383,10 +383,10 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.entities,
                     params.tags
                 );
-                break;
+                return { data: { documentId: params.documentId }, summary: `[Knowledge] 更新文档: ${params.documentId}` };
             case 'deleteDocument':
                 await this.deleteDocument(params.documentId);
-                break;
+                return { data: { documentId: params.documentId }, summary: `[Knowledge] 删除文档: ${params.documentId}` };
             case 'filterDocuments':
                 await this.filterDocuments(
                     params.type,
@@ -396,10 +396,10 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.sortBy,
                     params.sortOrder
                 );
-                break;
+                return { data: { filters: params }, summary: `[Knowledge] 筛选文档` };
             case 'sortDocuments':
                 await this.sortDocuments(params.sortBy, params.sortOrder);
-                break;
+                return { data: { sortBy: params.sortBy }, summary: `[Knowledge] 排序文档: ${params.sortBy}` };
             case 'searchDocuments':
                 await this.searchDocuments(
                     params.query,
@@ -407,13 +407,15 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.topK,
                     params.threshold
                 );
-                break;
+                return { data: { query: params.query, results: this.searchResults.length }, summary: `[Knowledge] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果` };
             case 'fetchEntities':
                 await this.fetchEntities();
-                break;
+                return { data: { count: this.entities.length }, summary: `[Knowledge] 获取实体: ${this.entities.length} 个` };
             case 'filterEntities':
                 await this.filterEntities(params.nameContains, params.definitionContains);
-                break;
+                return { data: { filters: params }, summary: `[Knowledge] 筛选实体` };
+            default:
+                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[Knowledge] 未知工具: ${toolName}` };
         }
     };
 

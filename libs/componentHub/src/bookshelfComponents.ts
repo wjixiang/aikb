@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-import { ToolComponent, Tool, tdiv } from 'agent-lib/components/ui/index.js';
+import { ToolComponent, Tool, ToolCallResult, tdiv } from 'agent-lib/components/ui/index.js';
 
 loadDevMessages();
 loadErrorMessages();
@@ -370,7 +370,7 @@ export class BookViewerComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'selectBook') {
             const bookName = params.bookName;
             console.log(`[BookViewer] Book changed to: ${bookName}`);
@@ -422,8 +422,13 @@ export class BookViewerComponent extends ToolComponent {
             if (this.chunkEmbedGroupId) {
                 console.log(`[BookViewer] Performing semantic search for "${query}"...`);
                 this.searchResults = await performSemanticSearch(query, this.chunkEmbedGroupId);
+                return {
+                    data: { query, results: this.searchResults.length },
+                    summary: `[Bookshelf] 搜索: ${query}, 找到 ${this.searchResults.length} 个结果`
+                };
             }
         }
+        return { data: { toolName }, summary: `[Bookshelf] 执行: ${toolName}` };
     };
 
     /**
@@ -487,9 +492,14 @@ export class WorkspaceInfoComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<void> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
         if (toolName === 'updateTimestamp') {
             this.lastUpdated = new Date().toISOString();
+            return {
+                data: { timestamp: this.lastUpdated },
+                summary: `[WorkspaceInfo] 更新时间戳: ${this.lastUpdated}`
+            };
         }
+        return { data: { error: `Unknown tool: ${toolName}` } };
     };
 }

@@ -28,6 +28,8 @@ export interface ToolResult {
     success: boolean;
     result: any;
     timestamp: number;
+    /** Component key that provided this tool (if applicable) */
+    componentKey?: string;
 }
 
 /**

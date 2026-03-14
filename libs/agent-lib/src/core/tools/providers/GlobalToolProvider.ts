@@ -1,7 +1,8 @@
 import { injectable, inject, optional } from 'inversify';
-import type { Tool } from '../../statefulContext/types.js';
+import type { Tool } from '../../statefulContext/index.js';
 import type { IToolProvider } from '../IToolProvider.js';
 import { ToolSource, BaseToolProvider } from '../IToolProvider.js';
+import type { ToolExecutedCallback } from './ComponentToolProvider.js';
 
 // Import global tools
 import {
@@ -25,10 +26,24 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
 
     private tools: Map<string, Tool>;
 
-    constructor() {
+    /**
+     * Optional callback for tool execution notifications
+     * Used to notify VirtualWorkspace of tool results in real-time
+     */
+    private onToolExecuted?: ToolExecutedCallback;
+
+    constructor(onToolExecuted?: ToolExecutedCallback) {
         super();
         this.tools = new Map();
+        this.onToolExecuted = onToolExecuted;
         this.initializeTools();
+    }
+
+    /**
+     * Set the tool executed callback
+     */
+    setOnToolExecuted(callback: ToolExecutedCallback): void {
+        this.onToolExecuted = callback;
     }
 
     /**
@@ -67,12 +82,36 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
             throw new Error(`Global tool not found: ${name}`);
         }
 
-        // Execute the appropriate global tool
-        switch (name) {
-            case 'attempt_completion':
-                return this.handleAttemptCompletion(params);
-            default:
-                throw new Error(`Unknown global tool: ${name}`);
+        try {
+            // Execute the appropriate global tool
+            let result: any;
+            switch (name) {
+                case 'attempt_completion':
+                    result = this.handleAttemptCompletion(params);
+                    break;
+                default:
+                    throw new Error(`Unknown global tool: ${name}`);
+            }
+
+            // Notify callback if registered (for real-time tool result updates)
+            if (this.onToolExecuted) {
+                this.onToolExecuted(name, params, result, true, 'global');
+            }
+
+            return result;
+        } catch (error) {
+            // Notify callback of failure
+            if (this.onToolExecuted) {
+                this.onToolExecuted(
+                    name,
+                    params,
+                    error instanceof Error ? error.message : String(error),
+                    false,
+                    'global'
+                );
+            }
+
+            throw error;
         }
     }
 

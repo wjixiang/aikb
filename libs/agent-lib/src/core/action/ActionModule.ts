@@ -306,11 +306,16 @@ export class ActionModule implements IActionModule {
                     this.logger.info({ toolName: toolCall.name, result }, `Tool execution completed: ${toolCall.name}`);
                 }
 
+                // Get component key for the tool (for logging/display purposes)
+                const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
+                const componentKey = toolSourceInfo?.componentKey;
+
                 const toolResult: ToolResult = {
                     toolName: toolCall.name,
                     success: true,
                     result,
                     timestamp: Date.now(),
+                    componentKey,
                 };
 
                 const userMessageContentItem = {
@@ -322,11 +327,16 @@ export class ActionModule implements IActionModule {
                 return { toolResult, userMessageContentItem, didAttempt };
             } catch (error) {
                 this.logger.error({ toolName: toolCall.name, error }, `Tool execution failed: ${toolCall.name}`);
+                // Get component key for the tool (for logging/display purposes)
+                const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
+                const componentKey = toolSourceInfo?.componentKey;
+
                 const toolResult: ToolResult = {
                     toolName: toolCall.name,
                     success: false,
                     result: error instanceof Error ? error.message : String(error),
                     timestamp: Date.now(),
+                    componentKey,
                 };
 
                 const userMessageContentItem = {
