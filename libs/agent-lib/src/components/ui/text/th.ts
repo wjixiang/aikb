@@ -3,7 +3,7 @@
  */
 
 import { TUIElement } from '../TUIElement.js';
-import { ElementMetadata, HeadingLevel, TextStyle } from '../core/types.js';
+import { ElementMetadata, HeadingLevel, TextStyle } from '../../core/types.js';
 
 /**
  * Metadata for th (heading) element

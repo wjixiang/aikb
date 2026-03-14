@@ -6,6 +6,8 @@ export default defineConfig({
     index: 'src/index.ts',
     'src/core/index': 'src/core/index.ts',
     'src/components/index': 'src/components/index.ts',
+    'src/components/ui/index': 'src/components/ui/index.ts',
+    'src/components/utils/index': 'src/components/utils/index.ts',
   },
   format: ['esm'],
   dts: false,

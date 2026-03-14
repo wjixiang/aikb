@@ -1,4 +1,4 @@
-import type { Tool } from 'agent-lib/components/ui/index.js';
+import type { Tool } from 'agent-lib/components/ui';
 import {
     setPicosElementParamsSchema,
     generateClinicalQuestionParamsSchema,

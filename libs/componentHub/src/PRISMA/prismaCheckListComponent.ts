@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
 import { createPrismaToolSet } from './prismaTools.js'
 import type {
     PrismaChecklistItem,
@@ -37,8 +37,8 @@ export interface ProgressResult {
 }
 
 export class PrismaCheckListComponent extends ToolComponent {
-    override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    toolSet: Map<string, Tool>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     // Internal state
     private checklistItems: Map<number, PrismaChecklistItem> = new Map();

@@ -34,8 +34,8 @@ function getDefaultS3Config(): S3ClientConfig {
 }
 
 export class VirtualFileSystemComponent extends ToolComponent {
-    override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    toolSet: Map<string, Tool>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     private s3Client: S3Client;
     private defaultBucket: string;

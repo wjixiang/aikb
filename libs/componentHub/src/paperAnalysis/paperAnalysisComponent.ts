@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ToolComponent, ToolCallResult, tdiv } from 'agent-lib/components/ui/index.js';
+import { ToolComponent, ToolCallResult, tdiv } from 'agent-lib/components/ui';
 import { z } from 'zod';
 
 /**

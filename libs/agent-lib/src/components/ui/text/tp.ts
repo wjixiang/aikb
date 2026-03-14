@@ -3,7 +3,7 @@
  */
 
 import { TUIElement } from '../TUIElement.js';
-import { ElementMetadata, TextStyle } from '../core/types.js';
+import { ElementMetadata, TextStyle } from '../../core/types.js';
 
 /**
  * Metadata for tp (paragraph) element

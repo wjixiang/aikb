@@ -1240,6 +1240,9 @@ importers:
       agent-lib:
         specifier: workspace:*
         version: link:../../libs/agent-lib
+      component-hub:
+        specifier: workspace:*
+        version: link:../../libs/componentHub
     devDependencies:
       '@swc-node/register':
         specifier: ~1.9.1

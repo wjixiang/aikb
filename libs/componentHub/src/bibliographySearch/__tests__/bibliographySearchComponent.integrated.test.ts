@@ -37,7 +37,7 @@ describe(BibliographySearchComponent, () => {
             expect(component.currentSearchParams).not.toBeNull()
             expect(component.currentSearchParams!.term).toBe('hypertension')
             expect(component.currentPage).toBe(1)
-        })
+        }, 15000)
 
         it('should perform PubMed search with sort options', async () => {
             const params: searchPubmedParamsType = {
@@ -53,7 +53,7 @@ describe(BibliographySearchComponent, () => {
             expect(component.currentResults!.articleProfiles.length).toBeGreaterThan(0)
             expect(component.currentSearchParams!.sort).toBe('date')
             expect(component.currentSearchParams!.sortOrder).toBe('dsc')
-        })
+        }, 15000)
 
         it('should perform PubMed search with filters', async () => {
             const params: searchPubmedParamsType = {
@@ -67,7 +67,7 @@ describe(BibliographySearchComponent, () => {
             expect(component.currentResults).not.toBeNull()
             expect(component.currentResults!.totalResults).toBeGreaterThan(0)
             expect(component.currentSearchParams!.filter).toEqual(['Meta-Analysis', 'Systematic Review'])
-        })
+        }, 15000)
 
         it('should handle search with no results gracefully', async () => {
             const params: searchPubmedParamsType = {
@@ -81,7 +81,7 @@ describe(BibliographySearchComponent, () => {
             expect(component.currentResults).not.toBeNull()
             expect(component.currentResults!.articleProfiles).toBeDefined()
             expect(component.currentResults!.articleProfiles.length).toBe(0)
-        })
+        }, 15000)
     })
 
     describe('E2E: Article Detail Retrieval', () => {
@@ -98,26 +98,25 @@ describe(BibliographySearchComponent, () => {
             const pmid = firstArticle.pmid
 
             // Retrieve article details
-            await component.handleToolCall('view_article', { pmid })
+            const result = await component.handleToolCall('view_article', { pmid })
 
-            // Verify article details were retrieved
+            // Verify article details were retrieved (check result.data.error)
+            expect(result.data.error).toBeUndefined()
             expect(component.currentArticleDetail).not.toBeNull()
             expect(component.currentArticleDetail!.pmid).toBe(pmid)
             expect(component.currentArticleDetail!.title).toBeDefined()
             expect(component.currentArticleDetail!.authors).toBeDefined()
             expect(component.currentArticleDetail!.abstract).toBeDefined()
+        }, 15000)
+
+        it('should return error for invalid PMID', async () => {
+            const result = await component.handleToolCall('view_article', { pmid: '00000000' })
+            expect(result.data.error).toBeDefined()
         })
 
-        it('should throw error for invalid PMID', async () => {
-            await expect(
-                component.handleToolCall('view_article', { pmid: '00000000' })
-            ).rejects.toThrow()
-        })
-
-        it('should throw error when PMID is not provided', async () => {
-            await expect(
-                component.handleToolCall('view_article', {})
-            ).rejects.toThrow('PMID is required')
+        it('should return error when PMID is not provided', async () => {
+            const result = await component.handleToolCall('view_article', {})
+            expect(result.data.error).toBe('PMID is required')
         })
     })
 
@@ -142,7 +141,7 @@ describe(BibliographySearchComponent, () => {
             // Results should be different (or at least different position)
             const secondPageResults = component.currentResults!.articleProfiles
             expect(secondPageResults).toBeDefined()
-        })
+        }, 15000)
 
         it('should navigate to previous page', async () => {
             // Start from page 2
@@ -157,9 +156,9 @@ describe(BibliographySearchComponent, () => {
 
             // Verify page changed
             expect(component.currentPage).toBe(1)
-        }, 10000)
+        }, 15000)
 
-        it('should throw error when navigating next on last page', async () => {
+        it('should return error when navigating next on last page', async () => {
             // Search with a specific term that has limited results
             const searchParams: searchPubmedParamsType = {
                 term: 'xyzabc123nonexistentterm',
@@ -167,13 +166,12 @@ describe(BibliographySearchComponent, () => {
             }
             await component.handleToolCall('search_pubmed', searchParams)
 
-            // Try to navigate next (should fail since no results)
-            await expect(
-                component.handleToolCall('navigate_page', { direction: 'next' })
-            ).rejects.toThrow()
+            // Try to navigate next (should return error since no results)
+            const result = await component.handleToolCall('navigate_page', { direction: 'next' })
+            expect(result.data.error).toBeDefined()
         })
 
-        it('should throw error when navigating prev on first page', async () => {
+        it('should return error when navigating prev on first page', async () => {
             const searchParams: searchPubmedParamsType = {
                 term: 'hypertension',
                 page: 1
@@ -181,16 +179,14 @@ describe(BibliographySearchComponent, () => {
             await component.handleToolCall('search_pubmed', searchParams)
 
             // Try to navigate previous from page 1
-            await expect(
-                component.handleToolCall('navigate_page', { direction: 'prev' })
-            ).rejects.toThrow('Already on the first page')
+            const result = await component.handleToolCall('navigate_page', { direction: 'prev' })
+            expect(result.data.error).toBe('Already on the first page')
         })
 
-        it('should throw error when navigating without search results', async () => {
+        it('should return error when navigating without search results', async () => {
             // Try to navigate without performing a search first
-            await expect(
-                component.handleToolCall('navigate_page', { direction: 'next' })
-            ).rejects.toThrow('No search results to navigate')
+            const result = await component.handleToolCall('navigate_page', { direction: 'next' })
+            expect(result.data.error).toBe('No search results to navigate')
         })
     })
 
@@ -222,7 +218,7 @@ describe(BibliographySearchComponent, () => {
             expect(component.currentSearchParams).toBeNull()
             expect(component.currentRetrivalStrategy).toBeNull()
             expect(component.currentPage).toBe(1)
-        })
+        }, 15000)
     })
 
     describe('E2E: Rendering Integration', () => {
@@ -247,7 +243,7 @@ describe(BibliographySearchComponent, () => {
             expect(rendered).toContain('Search Result')
             expect(rendered).toContain('Found')
             expect(rendered).toContain('articles')
-        })
+        }, 15000)
 
         it('should render article detail when viewing article', async () => {
             // Perform search
@@ -267,20 +263,18 @@ describe(BibliographySearchComponent, () => {
             expect(rendered).toContain('Article Detail')
             expect(rendered).toContain('PMID:')
             expect(rendered).toContain('Authors:')
-        })
+        }, 15000)
     })
 
     describe('E2E: Error Handling', () => {
         it('should handle search with missing term', async () => {
-            await expect(
-                component.handleToolCall('search_pubmed', {})
-            ).rejects.toThrow('term must be provided')
+            const result = await component.handleToolCall('search_pubmed', {})
+            expect(result.data.error).toBe('term must be provided')
         })
 
         it('should handle invalid tool name', async () => {
-            await expect(
-                component.handleToolCall('invalid_tool', {})
-            ).rejects.toThrow('Unknown tool: invalid_tool')
+            const result = await component.handleToolCall('invalid_tool', {})
+            expect(result.data.error).toBe('Unknown tool: invalid_tool')
         })
     })
 
@@ -324,6 +318,6 @@ describe(BibliographySearchComponent, () => {
                 await component.handleToolCall('navigate_page', { direction: 'next' })
                 expect(component.currentPage).toBe(2)
             }
-        })
+        }, 30000)
     })
 })

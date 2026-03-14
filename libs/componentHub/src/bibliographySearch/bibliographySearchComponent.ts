@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
 import {
     PubmedService,
     PubmedSearchParams,
@@ -13,8 +13,8 @@ import {
 import { createBibliographySearchToolSet } from './bibliographySearchTools.js'
 
 export class BibliographySearchComponent extends ToolComponent {
-    override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    toolSet: Map<string, Tool>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     private pubmedService: PubmedService;
     currentResults: { totalResults: number | null; totalPages: number | null; articleProfiles: ArticleProfile[] } | null = null;

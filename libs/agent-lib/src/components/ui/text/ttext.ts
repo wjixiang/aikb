@@ -3,7 +3,7 @@
  */
 
 import { TUIElement } from '../TUIElement.js';
-import { ElementMetadata, TextColor } from '../core/types.js';
+import { ElementMetadata, TextColor } from '../../core/types.js';
 
 /**
  * Metadata for ttext (text) element

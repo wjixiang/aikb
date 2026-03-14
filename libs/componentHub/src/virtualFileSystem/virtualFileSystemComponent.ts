@@ -5,7 +5,7 @@
  * This allows LLM to read/write files as if they were local files
  */
 
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js';
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import {
     S3Client,
     S3ClientConfig,
@@ -34,8 +34,8 @@ function getDefaultS3Config(): S3ClientConfig {
 }
 
 export class VirtualFileSystemComponent extends ToolComponent {
-    override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    toolSet: Map<string, Tool>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     private s3Client: S3Client;
     private defaultBucket: string;

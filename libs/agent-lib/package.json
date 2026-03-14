@@ -20,6 +20,22 @@
     "./components": {
       "types": "./src/components/index.ts",
       "default": "./dist/src/components/index.js"
+    },
+    "./components/ui": {
+      "types": "./src/components/ui/index.ts",
+      "default": "./dist/src/components/ui/index.js"
+    },
+    "./components/ui/index.js": {
+      "types": "./src/components/ui/index.ts",
+      "default": "./dist/src/components/ui/index.js"
+    },
+    "./components/utils": {
+      "types": "./src/components/utils/index.ts",
+      "default": "./dist/src/components/utils/index.js"
+    },
+    "./components/utils/index.js": {
+      "types": "./src/components/utils/index.ts",
+      "default": "./dist/src/components/utils/index.js"
     }
   },
   "scripts": {

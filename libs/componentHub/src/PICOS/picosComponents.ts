@@ -1,4 +1,4 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index.js'
+import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
 import { createPicosToolSet } from './picosTools.js'
 import type {
     Patient,
@@ -10,8 +10,8 @@ import type {
 } from './picosSchemas.js'
 
 export class PicosComponent extends ToolComponent {
-    override toolSet: Map<string, Tool>;
-    override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    toolSet: Map<string, Tool>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
 
     currentPicos: PICOS = {};
     generatedQuestion: string | null = null;

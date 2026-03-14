@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PicosComponent } from "../picosComponents.js";
 
 describe('PICOS Component', () => {
@@ -171,10 +172,9 @@ describe('PICOS Component', () => {
             expect(output).toContain('In Test patients does Test drug?');
         });
 
-        it('should throw error when no elements set', async () => {
-            await expect(
-                component.handleToolCall('generate_clinical_question', {})
-            ).rejects.toThrow('At least one PICOS element must be set');
+        it('should return error when no elements set', async () => {
+            const result = await component.handleToolCall('generate_clinical_question', {})
+            expect(result.data.error).toContain('At least one PICOS element must be set');
         });
     });
 
@@ -365,13 +365,11 @@ describe('PICOS Component', () => {
         });
 
         it('should handle tool call errors gracefully', async () => {
-            await expect(
-                component.handleToolCall('set_picos_element', { element: 'invalid', data: {} })
-            ).rejects.toThrow('Invalid PICOS element');
+            const result1 = await component.handleToolCall('set_picos_element', { element: 'invalid', data: {} })
+            expect(result1.data.error).toContain('Invalid PICOS element');
 
-            await expect(
-                component.handleToolCall('export_picos', { format: 'invalid' })
-            ).rejects.toThrow('Invalid export format');
+            const result2 = await component.handleToolCall('export_picos', { format: 'invalid' })
+            expect(result2.data.error).toContain('Invalid export format');
         });
 
         it('should render tool section with all tools', async () => {

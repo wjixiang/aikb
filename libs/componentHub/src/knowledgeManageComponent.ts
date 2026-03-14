@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { tdiv, ToolComponent, Tool, ToolCallResult } from 'agent-lib/components/ui/index.js';
+import { tdiv, ToolComponent, Tool, ToolCallResult } from 'agent-lib/components/ui';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
