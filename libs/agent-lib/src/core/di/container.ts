@@ -177,14 +177,11 @@ export class AgentContainer {
         // Strategy management is now integrated into ToolManager
         this.container.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
 
-        // Tool Components - Singleton scope for skill-based lifecycle
-        // These components are resolved via DI tokens as singletons, avoiding manual instantiation issues
-        this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
-        this.container.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
-        this.container.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
-        this.container.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
-        this.container.bind<PaperAnalysisComponent>(TYPES.PaperAnalysisComponent).to(PaperAnalysisComponent).inSingletonScope();
-        this.container.bind<VirtualFileSystemComponent>(TYPES.VirtualFileSystemComponent).to(VirtualFileSystemComponent).inSingletonScope();
+        // Tool Components moved to componentHub
+        // Users who need these components should install componentHub separately
+        // Example:
+        // import { PicosComponent } from 'componentHub';
+        // this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
 
         // Test Tool Components - Singleton scope for testing
         this.container.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
@@ -515,14 +512,8 @@ export class AgentContainer {
         // Bind the agentContainer itself for DI token resolution
         agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
 
-        // Tool Components - Singleton scope
-        // These are bound in agent containers as singletons
-        agentContainer.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
-        agentContainer.bind<BibliographySearchComponent>(TYPES.BibliographySearchComponent).to(BibliographySearchComponent).inSingletonScope();
-        agentContainer.bind<PrismaCheckListComponent>(TYPES.PrismaCheckListComponent).to(PrismaCheckListComponent).inSingletonScope();
-        agentContainer.bind<PrismaFlowComponent>(TYPES.PrismaFlowComponent).to(PrismaFlowComponent).inSingletonScope();
-        agentContainer.bind<PaperAnalysisComponent>(TYPES.PaperAnalysisComponent).to(PaperAnalysisComponent).inSingletonScope();
-        agentContainer.bind<VirtualFileSystemComponent>(TYPES.VirtualFileSystemComponent).to(VirtualFileSystemComponent).inSingletonScope();
+        // Tool Components moved to componentHub
+        // Users who need these components should install componentHub separately
 
         // Test Tool Components - Singleton scope for testing
         agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();

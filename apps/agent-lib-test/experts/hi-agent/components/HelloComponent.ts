@@ -4,8 +4,8 @@
  * 简单的计算器组件 - 支持基本数学运算
  */
 
-import { ToolComponent } from 'agent-lib';
-import { tdiv, type TUIElement } from 'agent-lib'
+import { ToolComponent } from 'agent-lib/components';
+import { tdiv, type TUIElement } from 'agent-lib/components'
 import { z } from 'zod';
 
 /**

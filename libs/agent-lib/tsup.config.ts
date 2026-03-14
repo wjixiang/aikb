@@ -4,10 +4,11 @@ import { defineConfig } from 'tsup'
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    'src/core/index': 'src/core/index.ts',
+    'src/components/index': 'src/components/index.ts',
   },
-  format: ['esm', 'cjs'],
+  format: ['esm'],
   dts: false,
-  splitting: false,
   sourcemap: true,
   clean: true,
   treeshake: true,
