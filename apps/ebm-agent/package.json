@@ -9,19 +9,20 @@
     "test": "vitest run",
     "test:expert": "vitest run src/expert-demo.test.ts",
     "test:expert-cli": "npx tsx src/test-expert-cli.ts",
-    "expert:new": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts new",
-    "expert:list": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts list",
-    "expert:validate": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts validate",
-    "expert:show": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts show",
-    "expert:demo": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts demo",
-    "expert:test": "npx tsx ../../libs/agent-lib/src/expert/cli/index.ts test"
+    "expert:new": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts new",
+    "expert:list": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts list",
+    "expert:validate": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts validate",
+    "expert:show": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts show",
+    "expert:demo": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts demo",
+    "expert:test": "npx tsx ../../libs/agent-lib/src/core/expert/cli/index.ts test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
   "dependencies": {
-    "agent-lib": "workspace:*"
+    "agent-lib": "workspace:*",
+    "component-hub": "workspace:*"
   },
   "devDependencies": {
     "@swc-node/register": "~1.9.1",

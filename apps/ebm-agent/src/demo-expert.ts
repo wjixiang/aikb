@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { ExpertExecutor, ExpertRegistry } from 'agent-lib'
-import config from '../experts/hi-agent/index.js'
+import config from '../experts/pubmed-retrieve'
 import type { ExpertTask } from 'agent-lib'
 
 async function main() {
@@ -16,7 +16,7 @@ async function main() {
     config.apiConfiguration = {
         apiProvider: 'minimax',
         apiKey: apiKey,
-        apiModelId: 'Minimax-m2'
+        apiModelId: 'Minimax-M2.5-highspeed'
     }
 
 
@@ -32,7 +32,7 @@ async function main() {
     // 5. Define task
     const task: ExpertTask = {
         taskId: `task-${Date.now()}`,
-        description: '测试你的工具交互能力：使用计算器计算1+1等于几',
+        description: '搜索血管外科近几年的研究热点',
         input: {},
     };
 

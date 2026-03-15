@@ -72,6 +72,7 @@ class StorageService:
         if isinstance(data, str):
             data = data.encode("utf-8")
 
+        key = self._normalize_key(key)
         self.client.put_object(
             Bucket=settings.s3.bucket,
             Key=key,
@@ -91,6 +92,7 @@ class StorageService:
         Returns:
             文件内容
         """
+        key = self._normalize_key(key)
         response = self.client.get_object(
             Bucket=settings.s3.bucket,
             Key=key,
@@ -107,6 +109,7 @@ class StorageService:
         Returns:
             是否删除成功
         """
+        key = self._normalize_key(key)
         self.client.delete_object(
             Bucket=settings.s3.bucket,
             Key=key,
@@ -167,6 +170,7 @@ class StorageService:
         Returns:
             文件是否存在
         """
+        key = self._normalize_key(key)
         try:
             self.client.head_object(
                 Bucket=settings.s3.bucket,
@@ -175,6 +179,45 @@ class StorageService:
             return True
         except ClientError:
             return False
+
+    def _normalize_key(self, key: str) -> str:
+        """规范化 S3 key，去除前导斜杠"""
+        return key.lstrip("/")
+
+    def get_file_size(self, key: str) -> int:
+        """
+        获取文件大小
+
+        Args:
+            key: S3存储路径
+
+        Returns:
+            文件大小（字节）
+        """
+        key = self._normalize_key(key)
+        response = self.client.head_object(
+            Bucket=settings.s3.bucket,
+            Key=key,
+        )
+        return response["ContentLength"]
+
+    def get_modified_time(self, key: str) -> int:
+        """
+        获取文件修改时间戳
+
+        Args:
+            key: S3存储路径
+
+        Returns:
+            文件修改时间戳（秒）
+        """
+        key = self._normalize_key(key)
+        response = self.client.head_object(
+            Bucket=settings.s3.bucket,
+            Key=key,
+        )
+        # 转换为时间戳
+        return int(response["LastModified"].timestamp())
 
     def list_objects(self, prefix: str = "") -> list[str]:
         """
@@ -202,6 +245,7 @@ class StorageService:
 
     def _generate_url(self, key: str) -> str:
         """生成公开访问URL"""
+        key = self._normalize_key(key)
         if settings.s3.force_path_style:
             return f"http://{settings.s3.endpoint}/{settings.s3.bucket}/{key}"
         else:

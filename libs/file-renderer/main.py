@@ -23,7 +23,7 @@ from routers import (
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     """应用生命周期管理"""
     # 启动时
     print(f"Starting {settings.app_name} v{settings.app_version}")

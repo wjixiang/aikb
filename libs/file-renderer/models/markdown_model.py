@@ -32,3 +32,38 @@ class MarkdownReadByPageResponse(BaseModel):
     end_line: int = Field(..., description="结束行号")
     has_next: bool = Field(..., description="是否有下一页")
     has_previous: bool = Field(..., description="是否有上一页")
+
+class MarkdownEditResponse(BaseModel):
+    """Markdown 编辑响应"""
+
+    success: bool = Field(..., description="是否编辑成功")
+    message: str = Field(..., description="响应消息")
+    s3_key: str = Field(..., description="S3存储路径")
+    old_line_count: int = Field(..., description="原文件行数")
+    new_line_count: int = Field(..., description="新文件行数")
+    lines_changed: int = Field(..., description="变更行数")
+
+
+class ContentDiff(BaseModel):
+    """内容差异模型"""
+
+    diff_type: str = Field(..., description="差异类型: added/changed/deleted")
+    old_content: str | None = Field(default=None, description="原内容")
+    new_content: str | None = Field(default=None, description="新内容")
+    old_line_start: int | None = Field(default=None, description="原内容起始行号")
+    old_line_end: int | None = Field(default=None, description="原内容结束行号")
+    new_line_start: int | None = Field(default=None, description="新内容起始行号")
+    new_line_end: int | None = Field(default=None, description="新内容结束行号")
+    line_count: int | None = Field(default=None, description="变更行数")
+
+
+class MarkdownPreviewResponse(BaseModel):
+    """Markdown 编辑预览响应"""
+
+    success: bool = Field(..., description="预览是否成功")
+    message: str = Field(..., description="响应消息")
+    s3_key: str = Field(..., description="S3存储路径")
+    diffs: list[ContentDiff] = Field(..., description="差异列表")
+    old_line_count: int = Field(..., description="原文件行数")
+    new_line_count: int = Field(..., description="新文件行数（预览）")
+

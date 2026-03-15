@@ -125,6 +125,22 @@ class ServerSettings(BaseSettings):
     )
 
 
+class DatabaseSettings(BaseSettings):
+    """数据库配置"""
+
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+    database_url: str = Field(
+        default="postgresql://postgres:postgres@localhost:5432/filerenderer",
+        description="PostgreSQL 数据库连接字符串"
+    )
+
+
 class Settings(BaseSettings):
     """全局配置"""
 
@@ -138,6 +154,7 @@ class Settings(BaseSettings):
     pagination: PaginationSettings = Field(default_factory=PaginationSettings)
     conversion: ConversionSettings = Field(default_factory=ConversionSettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
     # 应用元信息
     app_name: str = Field(

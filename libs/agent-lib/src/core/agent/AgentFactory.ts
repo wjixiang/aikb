@@ -1,14 +1,11 @@
 import 'reflect-metadata';
-import { Agent, AgentConfig, AgentPrompt, defaultAgentConfig } from './agent.js';
+import { Agent, AgentConfig, AgentPrompt } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/index.js';
-import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
+import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { ApiClient } from '../api-client/index.js';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
-import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { getGlobalContainer, AgentContainer } from '../di/index.js';
-import { IVirtualWorkspace } from '../statefulContext/types.js';
-import { TYPES } from '../di/types.js';
 import { overwrite_di, TestOverrides } from '../di/container.js';
 
 /**

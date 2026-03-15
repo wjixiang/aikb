@@ -9,7 +9,7 @@ import type { IExpertExecutor, IExpertInstance, ExpertConfig, ExpertExecuteReque
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
 import type { Agent, AgentConfig, AgentPrompt } from '../agent/agent.js';
-import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../statefulContext/types.js';
+import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { AgentContainer, AgentCreationOptions } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolComponent } from '../../components/index.js';

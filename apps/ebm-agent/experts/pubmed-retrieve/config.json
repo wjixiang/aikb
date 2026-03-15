@@ -1,0 +1,17 @@
+{
+  "id": "pubmed-retrieve",
+  "displayName": "Pubmed Retrieve",
+  "description": "A new Expert for pubmed retrieve",
+  "version": "1.0.0",
+  "category": "general",
+  "tags": [],
+  "triggers": [
+    "pubmed-retrieve"
+  ],
+  "whenToUse": "Use this Expert when you need to a new expert for pubmed retrieve",
+  "export": {
+    "autoExport": false,
+    "bucket": "agentfs",
+    "defaultPath": "{expertId}/{timestamp}.json"
+  }
+}

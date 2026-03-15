@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:trixie
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_logs:/logs
+    #配置文件启动
+    command: redis-server /usr/local/etc/redis/redis.conf
+
   # Master database (for final merged data)
   db-master:
     image: pgvector/pgvector:pg16-trixie
@@ -6,70 +19,70 @@ services:
     environment:
       POSTGRES_PASSWORD: fl5ox03
       POSTGRES_USER: admin
-      POSTGRES_DB: bib_master
+      POSTGRES_DB: biblib
     ports:
       - "5432:5432"
     volumes:
-      - postgres_master:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - bib-network
 
   # Shard databases (for parallel sync)
-  db-shard-0:
-    image: pgvector/pgvector:pg16-trixie
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: fl5ox03
-      POSTGRES_USER: admin
-      POSTGRES_DB: bib_shard_0
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_shard_0:/var/lib/postgresql/data
-    networks:
-      - bib-network
+  # db-shard-0:
+  #   image: pgvector/pgvector:pg16-trixie
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: fl5ox03
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: bib_shard_0
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - postgres_shard_0:/var/lib/postgresql/data
+  #   networks:
+  #     - bib-network
 
-  db-shard-1:
-    image: pgvector/pgvector:pg16-trixie
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: fl5ox03
-      POSTGRES_USER: admin
-      POSTGRES_DB: bib_shard_1
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres_shard_1:/var/lib/postgresql/data
-    networks:
-      - bib-network
+  # db-shard-1:
+  #   image: pgvector/pgvector:pg16-trixie
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: fl5ox03
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: bib_shard_1
+  #   ports:
+  #     - "5434:5432"
+  #   volumes:
+  #     - postgres_shard_1:/var/lib/postgresql/data
+  #   networks:
+  #     - bib-network
 
-  db-shard-2:
-    image: pgvector/pgvector:pg16-trixie
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: fl5ox03
-      POSTGRES_USER: admin
-      POSTGRES_DB: bib_shard_2
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres_shard_2:/var/lib/postgresql/data
-    networks:
-      - bib-network
+  # db-shard-2:
+  #   image: pgvector/pgvector:pg16-trixie
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: fl5ox03
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: bib_shard_2
+  #   ports:
+  #     - "5435:5432"
+  #   volumes:
+  #     - postgres_shard_2:/var/lib/postgresql/data
+  #   networks:
+  #     - bib-network
 
-  db-shard-3:
-    image: pgvector/pgvector:pg16-trixie
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: fl5ox03
-      POSTGRES_USER: admin
-      POSTGRES_DB: bib_shard_3
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres_shard_3:/var/lib/postgresql/data
-    networks:
-      - bib-network
+  # db-shard-3:
+  #   image: pgvector/pgvector:pg16-trixie
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: fl5ox03
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: bib_shard_3
+  #   ports:
+  #     - "5436:5432"
+  #   volumes:
+  #     - postgres_shard_3:/var/lib/postgresql/data
+  #   networks:
+  #     - bib-network
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -88,7 +101,9 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_master:
+  redis_data:
+  redis_logs:
+  postgres_data:
   postgres_shard_0:
   postgres_shard_1:
   postgres_shard_2:
