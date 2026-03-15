@@ -6,24 +6,19 @@ import io
 
 from fastapi import APIRouter
 
+from lib.s3_key_generator import generate_json_key
 from models.create import FileCreateRequest, FileCreateResponse
 from services.storage_service import storage_service
 
 router = APIRouter(tags=["json"])
 
 CONTENT_TYPE = "application/json"
-FILE_TYPE = "json"
-
-
-def generate_s3_key(file_name: str) -> str:
-    """生成 s3_key: json/{filename}"""
-    return f"{FILE_TYPE}/{file_name}"
 
 
 @router.post("/create", response_model=FileCreateResponse)
 async def create_json_file(request: FileCreateRequest):
     """创建空 JSON 文件"""
-    s3_key = generate_s3_key(request.fileName)
+    s3_key = generate_json_key(request.fileName)
 
     try:
         empty_file = io.BytesIO(b"")

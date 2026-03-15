@@ -6,24 +6,19 @@ import io
 
 from fastapi import APIRouter
 
+from lib.s3_key_generator import generate_html_key
 from models.create import FileCreateRequest, FileCreateResponse
 from services.storage_service import storage_service
 
 router = APIRouter(tags=["html"])
 
 CONTENT_TYPE = "text/html"
-FILE_TYPE = "html"
-
-
-def generate_s3_key(file_name: str) -> str:
-    """生成 s3_key: html/{filename}"""
-    return f"{FILE_TYPE}/{file_name}"
 
 
 @router.post("/create", response_model=FileCreateResponse)
 async def create_html_file(request: FileCreateRequest):
     """创建空 HTML 文件"""
-    s3_key = generate_s3_key(request.fileName)
+    s3_key = generate_html_key(request.fileName)
 
     try:
         empty_file = io.BytesIO(b"")

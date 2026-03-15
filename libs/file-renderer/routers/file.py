@@ -3,12 +3,11 @@ File API Router
 """
 
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
 
 from config import settings
+from lib.s3_key_generator import generate_file_key
 from models.file import (
     FileDetailResponse,
     FileDownloadResponse,
@@ -45,7 +44,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     # 生成唯一ID和S3 key
     file_id = str(uuid.uuid4())
-    s3_key = f"files/{file_id}/{file.filename}"
+    s3_key = generate_file_key(file.filename)
 
     # 上传到S3
     storage_service.upload(content, s3_key, file.content_type or "application/octet-stream")
