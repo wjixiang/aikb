@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from config import settings
+from models.database import init_db
 from routers import (
     binary_router,
     csv_router,
@@ -15,6 +16,7 @@ from routers import (
     json_router,
     markdown_router,
     pdf_router,
+    tex_router,
     text_router,
     xml_router,
 )
@@ -27,6 +29,11 @@ async def lifespan(app: FastAPI):
     print(f"Starting {settings.app_name} v{settings.app_version}")
     print(f"S3 Bucket: {settings.s3.bucket}")
     print(f"S3 Endpoint: {settings.s3.endpoint}")
+
+    # 初始化数据库
+    init_db()
+    print("Database initialized")
+
     yield
     # 关闭时
     print(f"Shutting down {settings.app_name}")
@@ -48,6 +55,7 @@ app.include_router(xml_router, prefix="/xml")
 app.include_router(csv_router, prefix="/csv")
 app.include_router(binary_router, prefix="/binary")
 app.include_router(pdf_router, prefix="/pdf")
+app.include_router(tex_router, prefix="/tex")
 
 
 @app.get("/")
@@ -56,7 +64,7 @@ def read_root():
     return {
         "name": settings.app_name,
         "version": settings.app_version,
-        "status": "running"
+        "status": "running",
     }
 
 
@@ -71,6 +79,7 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "main:app",
         host=settings.server.host,

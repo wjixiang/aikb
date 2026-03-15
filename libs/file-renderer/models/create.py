@@ -15,6 +15,7 @@ FILE_TYPE_MAPPING: dict[str, str] = {
     "csv": "text/csv",
     "pdf": "application/pdf",
     "binary": "application/octet-stream",
+    "tex": "application/x-tex",
 }
 
 

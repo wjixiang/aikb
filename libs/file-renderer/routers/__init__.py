@@ -9,6 +9,7 @@ from routers.html import router as html_router
 from routers.json import router as json_router
 from routers.markdown import router as markdown_router
 from routers.pdf import router as pdf_router
+from routers.tex import router as tex_router
 from routers.text import router as text_router
 from routers.xml import router as xml_router
 
@@ -22,4 +23,5 @@ __all__ = [
     "csv_router",
     "binary_router",
     "pdf_router",
+    "tex_router",
 ]

@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Literal
 
 # 支持的文件类型
-FileType = Literal["pdf", "markdown", "text", "html", "csv", "xml", "json", "binary", "files"]
+FileType = Literal["pdf", "markdown", "text", "html", "csv", "xml", "json", "binary", "tex", "files"]
 
 # 默认配置
 DEFAULT_PREFIX = "files"
@@ -105,6 +105,11 @@ def generate_json_key(filename: str, prefix: str = DEFAULT_PREFIX) -> str:
 def generate_binary_key(filename: str, prefix: str = DEFAULT_PREFIX) -> str:
     """生成 Binary 文件的 S3 Key"""
     return generate_s3_key("binary", filename, prefix)
+
+
+def generate_tex_key(filename: str, prefix: str = DEFAULT_PREFIX) -> str:
+    """生成 TeX 文件的 S3 Key"""
+    return generate_s3_key("tex", filename, prefix)
 
 
 def generate_file_key(filename: str, prefix: str = DEFAULT_PREFIX) -> str:
