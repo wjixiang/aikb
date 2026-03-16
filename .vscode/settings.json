@@ -1,5 +1,5 @@
 {
-    "baml.enablePlaygroundProxy": false,
+    "baml.enablePlaygroundProxy": true,
     "python.analysis.extraPaths": [
         ".venv/lib/python3.12/site-packages"
     ],

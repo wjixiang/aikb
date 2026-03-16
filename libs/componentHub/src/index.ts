@@ -31,10 +31,6 @@ export type { ExclusionReason, IdentificationSources, RecordsRemoved, ScreeningP
 // Paper Analysis
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js';
 
-// Virtual File System
-export { VirtualFileSystemComponent } from './virtualFileSystem/virtualFileSystemComponent.js';
-export { readFileParams, writeFileParams, listFilesParams, deleteFileParams, exportWorkspaceParams } from './virtualFileSystem/virtualFileSystemSchemas.js';
-
 // Bookshelf
 export { BookViewerComponent, WorkspaceInfoComponent } from './bookshelfComponents.js';
 

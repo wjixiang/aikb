@@ -83,6 +83,8 @@ export class ExpertExecutor implements IExpertExecutor {
 
         // Configure workspace for this Expert
         const workspaceConfig: VirtualWorkspaceConfig = {
+            renderMode: 'markdown',
+            ...config.virtualWorkspaceConfig,
             id: `expert-${config.expertId}-workspace`,
             name: `${config.displayName} Workspace`,
             expertMode: true,
@@ -96,7 +98,7 @@ export class ExpertExecutor implements IExpertExecutor {
             taskId: `expert-${config.expertId}`,
             // Pass API and agent configuration from ExpertConfig
             apiConfiguration: config.apiConfiguration,
-            config: config.config,
+            config: config.agentConfig,
         });
 
         // Register Expert's components to VirtualWorkspace (async, must await)

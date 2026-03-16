@@ -29,16 +29,18 @@ export class tp extends TUIElement {
 
     /**
      * Render paragraph element
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    render(): string {
-        return this.renderWithWidth(undefined);
+    render(renderMode?: 'tui' | 'markdown'): string {
+        return this.renderWithWidth(undefined, renderMode);
     }
 
     /**
      * Render paragraph element with a specified available width
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    override renderWithWidth(availableWidth: number | undefined): string {
-        const styles = this.computeStyles(availableWidth);
+    override renderWithWidth(availableWidth: number | undefined, renderMode?: 'tui' | 'markdown'): string {
+        const styles = this.computeStyles(availableWidth, renderMode);
         const content = this.metadata.content;
         const indent = this.metadata.indent ?? 0;
         const lineHeight = this.metadata.lineHeight ?? 1;
@@ -171,7 +173,7 @@ export class tp extends TUIElement {
     /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number, renderMode?: 'tui' | 'markdown'): { width: number; height: number } {
         const content = this.metadata.content;
         const indent = this.metadata.indent ?? 0;
 

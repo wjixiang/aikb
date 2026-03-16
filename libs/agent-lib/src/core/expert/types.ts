@@ -5,7 +5,7 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { ToolComponent } from '../../components/index.js';
+import type { ToolComponent, VirtualWorkspaceConfig } from '../../components/index.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
 
@@ -111,7 +111,9 @@ export interface ExpertConfig {
      * Agent configuration overrides
      * Controls agent behavior like timeout, retry, memory settings
      */
-    config?: Partial<AgentConfig>;
+    agentConfig?: Partial<AgentConfig>;
+
+    virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
 }
 
 /**

@@ -27,16 +27,18 @@ export class th extends TUIElement {
 
     /**
      * Render heading element
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    render(): string {
-        return this.renderWithWidth(undefined);
+    render(renderMode?: 'tui' | 'markdown'): string {
+        return this.renderWithWidth(undefined, renderMode);
     }
 
     /**
      * Render heading element with a specified available width
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    override renderWithWidth(availableWidth: number | undefined): string {
-        const styles = this.computeStyles(availableWidth);
+    override renderWithWidth(availableWidth: number | undefined, renderMode?: 'tui' | 'markdown'): string {
+        const styles = this.computeStyles(availableWidth, renderMode);
         const content = this.metadata.content;
         const thMetadata = this.metadata as thMetadata;
         const level = thMetadata.level ?? 1;
@@ -188,7 +190,7 @@ export class th extends TUIElement {
     /**
      * Calculate content dimensions
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number, renderMode?: 'tui' | 'markdown'): { width: number; height: number } {
         const content = this.metadata.content;
         const finalContent = content ?? '';
         const thMetadata = this.metadata as thMetadata;

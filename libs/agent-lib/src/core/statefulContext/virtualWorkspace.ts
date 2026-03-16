@@ -529,7 +529,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             // renderImply returns TUIElement[], wrap them appropriately for markdown
             for (const element of componentRender) {
                 // Convert TUIElement to markdown representation
-                const rendered = element.render();
+                const rendered = element.render(this.config.renderMode);
                 componentContainer.addChild(new MdParagraph({
                     content: rendered,
                 }, undefined, 2));

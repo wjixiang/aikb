@@ -17,3 +17,5 @@ export * from './errors.js';
 // Export tool conversion utilities
 export * from './ToolCallConvert.js';
 export * from './ToolProvider.interface.js';
+
+export * from './ApiClientFactory.js'
