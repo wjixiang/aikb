@@ -1,5 +1,3 @@
-import { TaskError } from '../task.errors';
-
 /**
  * Generates user-friendly error prompts for the LLM
  * Converts error information into readable text format
@@ -8,7 +6,7 @@ export class ErrorHandlerPrompt {
     /**
      * Format an error into a user-friendly prompt message
      */
-    static formatErrorPrompt(error: TaskError, retryAttempt: number): string {
+    static formatErrorPrompt(error: { code?: string; message?: string }, retryAttempt: number): string {
         // Defensive checks for error properties
         const errorType = this.getErrorTypeLabel(error);
         const suggestion = this.getErrorSuggestion(error);
@@ -29,7 +27,7 @@ This error is retryable. The system will attempt to retry the operation.`;
     /**
      * Get a user-friendly label for the error type
      */
-    private static getErrorTypeLabel(error: TaskError): string {
+    private static getErrorTypeLabel(error: { code?: string }): string {
         const errorCode = error?.code;
         if (!errorCode) {
             return 'Unknown Error';
@@ -62,7 +60,7 @@ This error is retryable. The system will attempt to retry the operation.`;
     /**
      * Get a helpful suggestion based on the error type
      */
-    private static getErrorSuggestion(error: TaskError): string {
+    private static getErrorSuggestion(error: { code?: string }): string {
         const errorCode = error?.code;
         if (!errorCode) {
             return 'An unexpected error occurred. Please review the error details.';
@@ -95,7 +93,7 @@ This error is retryable. The system will attempt to retry the operation.`;
     /**
      * Format multiple errors into a consolidated prompt
      */
-    static formatMultipleErrorsPrompt(errors: TaskError[]): string {
+    static formatMultipleErrorsPrompt(errors: Array<{ code?: string; message?: string }>): string {
         if (!errors || errors.length === 0) {
             return '';
         }

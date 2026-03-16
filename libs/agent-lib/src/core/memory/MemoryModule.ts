@@ -10,7 +10,7 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import { ApiMessage, ExtendedContentBlock, MessageBuilder } from '../task/task.type.js';
+import { ApiMessage, ExtendedContentBlock, MessageBuilder } from './types.js';
 import type { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult } from './Turn.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';

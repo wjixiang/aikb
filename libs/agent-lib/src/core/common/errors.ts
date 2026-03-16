@@ -1,7 +1,17 @@
 /**
- * Base error class for Task-related errors
+ * Common Error Types - Shared error definitions across the agent system
+ *
+ * This module contains error classes that are used across multiple modules.
  */
-export abstract class TaskError extends Error {
+
+// =============================================================================
+// Base Error
+// =============================================================================
+
+/**
+ * Base error class for agent-related errors
+ */
+export abstract class AgentError extends Error {
   abstract readonly code: string;
 
   constructor(
@@ -14,9 +24,19 @@ export abstract class TaskError extends Error {
 }
 
 /**
+ * Legacy alias for backward compatibility
+ * @deprecated Use AgentError instead
+ */
+export type TaskError = AgentError;
+
+// =============================================================================
+// Task/Agent Errors
+// =============================================================================
+
+/**
  * Error thrown when task is aborted
  */
-export class TaskAbortedError extends TaskError {
+export class TaskAbortedError extends AgentError {
   readonly code = 'TASK_ABORTED';
 
   constructor(taskId: string, cause?: Error) {
@@ -27,7 +47,7 @@ export class TaskAbortedError extends TaskError {
 /**
  * Error thrown when consecutive mistake limit is reached
  */
-export class ConsecutiveMistakeError extends TaskError {
+export class ConsecutiveMistakeError extends AgentError {
   readonly code = 'CONSECUTIVE_MISTAKE_LIMIT';
 
   constructor(limit: number, cause?: Error) {
@@ -38,7 +58,7 @@ export class ConsecutiveMistakeError extends TaskError {
 /**
  * Error thrown when API request times out
  */
-export class ApiTimeoutError extends TaskError {
+export class ApiTimeoutError extends AgentError {
   readonly code = 'API_TIMEOUT';
 
   constructor(timeoutMs: number, cause?: Error) {
@@ -49,7 +69,7 @@ export class ApiTimeoutError extends TaskError {
 /**
  * Error thrown when API request fails
  */
-export class ApiRequestError extends TaskError {
+export class ApiRequestError extends AgentError {
   readonly code = 'API_REQUEST_FAILED';
 
   constructor(
@@ -64,7 +84,7 @@ export class ApiRequestError extends TaskError {
 /**
  * Error thrown when no response is received from API
  */
-export class NoApiResponseError extends TaskError {
+export class NoApiResponseError extends AgentError {
   readonly code = 'NO_API_RESPONSE';
 
   constructor(attempt: number, cause?: Error) {
@@ -75,7 +95,7 @@ export class NoApiResponseError extends TaskError {
 /**
  * Error thrown when LLM doesn't use any tools
  */
-export class NoToolsUsedError extends TaskError {
+export class NoToolsUsedError extends AgentError {
   readonly code = 'NO_TOOLS_USED';
 
   constructor(cause?: Error) {
@@ -86,7 +106,7 @@ export class NoToolsUsedError extends TaskError {
 /**
  * Error thrown when streaming fails
  */
-export class StreamingError extends TaskError {
+export class StreamingError extends AgentError {
   readonly code = 'STREAMING_FAILED';
 
   constructor(message: string, cause?: Error) {
@@ -97,12 +117,12 @@ export class StreamingError extends TaskError {
 /**
  * Error thrown when maximum retry attempts are exceeded
  */
-export class MaxRetryExceededError extends TaskError {
+export class MaxRetryExceededError extends AgentError {
   readonly code = 'MAX_RETRY_EXCEEDED';
 
-  readonly errors: TaskError[];
+  readonly errors: AgentError[];
 
-  constructor(maxAttempts: number, errors: TaskError[], cause?: Error) {
+  constructor(maxAttempts: number, errors: AgentError[], cause?: Error) {
     super(
       `Maximum retry attempts (${maxAttempts}) exceeded. Collected ${errors.length} errors.`,
       cause,
@@ -114,7 +134,7 @@ export class MaxRetryExceededError extends TaskError {
 /**
  * Error thrown when tool execution fails
  */
-export class ToolExecutionFailedError extends TaskError {
+export class ToolExecutionFailedError extends AgentError {
   readonly code = 'TOOL_EXECUTION_FAILED';
 
   constructor(

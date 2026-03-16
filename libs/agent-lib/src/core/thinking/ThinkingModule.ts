@@ -39,7 +39,7 @@ export class MissingToolCallError extends Error {
         this.name = 'MissingToolCallError';
     }
 }
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage } from '../memory/types.js';
 import { Turn, ThinkingRound, ToolCallResult } from '../memory/Turn.js';
 import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { formatChatCompletionTools } from '../../components/index.js';

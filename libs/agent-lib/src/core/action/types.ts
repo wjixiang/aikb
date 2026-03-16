@@ -2,7 +2,7 @@
  * Type definitions for ActionModule
  */
 
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage } from '../memory/types.js';
 import type { ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { ToolUsage } from '../types/index.js';
 import type { IToolManager } from '../tools/index.js';

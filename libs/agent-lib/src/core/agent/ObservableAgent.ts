@@ -1,13 +1,12 @@
 import { Agent } from './agent.js';
 import {
     TaskStatus,
-    MessageAddedCallback,
     TaskStatusChangedCallback,
     TaskCompletedCallback,
     TaskAbortedCallback,
-} from '../task/task.type.js';
+} from '../common/types.js';
 import { TurnStatus, ThinkingRound, ToolCallResult, Turn } from '../memory/Turn.js';
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage, MessageAddedCallback } from '../memory/types.js';
 
 /**
  * Observer callbacks for ObservableAgent

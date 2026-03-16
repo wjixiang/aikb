@@ -23,6 +23,9 @@ export { NativeToolCallParser } from './assistant-message/NativeToolCallParser.j
 // API Client
 export * from './api-client/index.js';
 
+// Common Types
+export * from './common/types.js';
+
 // Database
 export { prisma, AgentDBPrismaService } from '../prisma.js';
 export { AgentDBModule } from '../agent-db.module.js';
@@ -46,12 +49,6 @@ export * from './prompts/index.js';
 
 // Stateful Context
 export * from './statefulContext/index.js';
-
-// Task
-export * from './task/index.js';
-export type { ApiMessage } from './task/task.type.js';
-export { MessageBuilder } from './task/task.type.js';
-export { MessageContentFormatter } from './task/MessageFormatter.util.js';
 
 // Thinking
 export * from './thinking/index.js';

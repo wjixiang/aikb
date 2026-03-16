@@ -27,13 +27,11 @@ import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../statefulContext/types.js';
 import type { IMemoryModule } from '../memory/types.js';
-import type { ITaskModule } from '../task/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
 import type { IActionModule } from '../action/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
-import { TaskModule } from '../task/TaskModule.js';
 import pino from 'pino';
 
 // Define Logger type locally to avoid pino ESM import issues
@@ -190,10 +188,6 @@ export class AgentContainer {
 
         this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
         this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
-
-        // Task Module
-        this.container.bind<ITaskModule>(TYPES.ITaskModule).to(TaskModule).inRequestScope();
-        this.container.bind(TYPES.TaskModule).to(TaskModule).inRequestScope();
 
         // API Client - dynamic creation based on ProviderSettings
         this.container
@@ -440,10 +434,6 @@ export class AgentContainer {
             .bind<IMemoryModule>(TYPES.IMemoryModule)
             .to(MemoryModule)
             .inRequestScope();
-
-        // Task Module
-        agentContainer.bind<ITaskModule>(TYPES.ITaskModule).to(TaskModule).inRequestScope();
-        agentContainer.bind(TYPES.TaskModule).to(TaskModule).inRequestScope();
 
         // API Client - dynamic creation based on ProviderSettings
         agentContainer.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {

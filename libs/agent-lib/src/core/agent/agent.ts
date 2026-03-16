@@ -1,22 +1,18 @@
 import { injectable, inject, optional } from 'inversify';
 import Anthropic from "@anthropic-ai/sdk";
-import {
-    ApiMessage,
-    TaskStatus,
-    MessageBuilder,
-    ExtendedContentBlock,
-} from "../task/task.type.js";
+import { ApiMessage, MessageBuilder, ExtendedContentBlock } from "../memory/types.js";
+import type { TaskStatus } from "../common/types.js";
 import { MessageTokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "../statefulContext/index.js";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
 import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
-import { ErrorHandlerPrompt } from '../task/error/ErrorHandlerPrompt.js';
+import { ErrorHandlerPrompt } from '../common/ErrorHandlerPrompt.js';
 import {
     ConsecutiveMistakeError,
     NoApiResponseError,
     NoToolsUsedError,
-} from '../task/task.errors.js';
+} from '../common/errors.js';
 import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
 import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from "../prompts/sections/workspaceGuide.js";
@@ -28,7 +24,6 @@ import type { IActionModule, ActionPhaseResult, ToolResult } from '../action/typ
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/index.js';
 import type { IMemoryModule } from '../memory/types.js';
-import type { ITaskModule } from '../task/types.js';
 import type { IToolManager } from '../tools/IToolManager.js';
 import type { ILogger } from '../utils/logging/types.js';
 
@@ -126,9 +121,6 @@ export class Agent {
     // Action module (dependency injected, always present)
     private actionModule: IActionModule;
 
-    // Task module (dependency injected, always present)
-    private taskModule: ITaskModule;
-
     // Tool manager (dependency injected, obtained from workspace)
     private toolManager: IToolManager;
 
@@ -142,7 +134,6 @@ export class Agent {
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
         @inject(TYPES.IActionModule) actionModule: IActionModule,
-        @inject(TYPES.ITaskModule) taskModule: ITaskModule,
         @inject(TYPES.Logger) private logger: ILogger,
         @inject(TYPES.TaskId) @optional() taskId?: string,
     ) {
@@ -155,7 +146,6 @@ export class Agent {
         this.memoryModule = memoryModule as MemoryModule;
         this.thinkingModule = thinkingModule;
         this.actionModule = actionModule;
-        this.taskModule = taskModule;
 
         // Get IToolManager from workspace (which has it injected)
         this.toolManager = this.workspace.getToolManager();
@@ -248,13 +238,6 @@ export class Agent {
      */
     public hasMemoryModule(): boolean {
         return true;
-    }
-
-    /**
-     * Get task module (always available)
-     */
-    public getTaskModule(): ITaskModule {
-        return this.taskModule;
     }
 
     // ==================== Lifecycle Methods ====================
@@ -674,9 +657,6 @@ ${direction}
      * Uses VirtualWorkspace's render for context
      */
     async getSystemPrompt() {
-        // Get TODO list from task module
-        const todoList = this.taskModule.renderTodoListForPrompt({ format: 'markdown' });
-
         // Render component tools section
         const componentToolsSection = await this.workspace.renderComponentToolsSection();
         const componentToolsRendered = componentToolsSection ? componentToolsSection.render() : '';
@@ -686,8 +666,6 @@ ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
 ${this.workspace.renderToolBox().render()}
 ${componentToolsRendered}
-
-${todoList}
         `;
     }
 }

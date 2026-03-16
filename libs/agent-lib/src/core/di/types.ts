@@ -151,21 +151,6 @@ export const TYPES = {
      */
     TaskId: Symbol('TaskId'),
 
-    // ==================== Task Module ====================
-
-    /**
-     * TaskModule - Container for managing Tasks with dedicated collectors/validators
-     * @scope Request - Shared within an agent creation request
-     */
-    TaskModule: Symbol('TaskModule'),
-
-    /**
-     * ITaskModule interface
-     * Use this for dependency injection to enable loose coupling
-     * @scope Request - Shared within an agent creation request
-     */
-    ITaskModule: Symbol('ITaskModule'),
-
     // ==================== Tool Management ====================
 
     /**

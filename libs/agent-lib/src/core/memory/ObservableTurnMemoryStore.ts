@@ -20,7 +20,7 @@
 import { TurnMemoryStore } from './TurnMemoryStore.js';
 import { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 import { Turn, TurnStatus, ThinkingRound, ToolCallResult, TurnMemoryExport } from './Turn.js';
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage } from './types.js';
 
 /**
  * Observer callbacks for turn-level events

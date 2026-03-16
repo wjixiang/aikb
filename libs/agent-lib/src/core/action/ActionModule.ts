@@ -13,7 +13,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import {
     ApiMessage,
     ExtendedContentBlock,
-} from '../task/task.type.js';
+} from '../memory/types.js';
 import { ToolUsage } from '../types/index.js';
 import type { ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { TYPES } from '../di/types.js';
@@ -28,7 +28,7 @@ import {
     ActionPhaseResult,
     ToolResult,
 } from './types.js';
-import { NoToolsUsedError } from '../task/task.errors.js';
+import { NoToolsUsedError } from '../common/errors.js';
 
 /**
  * Default configuration for ActionModule

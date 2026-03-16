@@ -11,7 +11,7 @@
  * - Summary and insights for each turn
  */
 
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage } from './types.js';
 import {
     Turn,
     TurnStatus,

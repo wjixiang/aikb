@@ -5,7 +5,7 @@
  * User Input → Thinking → Action → Tool Execution → Workspace Update
  */
 
-import { ApiMessage } from '../task/task.type.js';
+import { ApiMessage } from './types.js';
 
 /**
  * Turn status enum
