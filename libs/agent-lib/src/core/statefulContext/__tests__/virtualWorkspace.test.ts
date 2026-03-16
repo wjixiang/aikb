@@ -6,34 +6,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
-import { ToolComponent, type Tool } from '../../../components/index.js';
-import { z } from 'zod';
+import { TestComponent, TestComponent2 } from './testComponents.js';
 
 describe('VirtualWorkspace (Component-based)', () => {
     let workspace: VirtualWorkspace;
-
-    // Test component
-    class TestComponent extends ToolComponent {
-        readonly componentId = 'test-component';
-        readonly displayName = 'Test Component';
-        readonly description = 'A test component';
-
-        toolSet = new Map<string, Tool>([
-            ['test_tool', {
-                toolName: 'test_tool',
-                paramsSchema: z.object({}),
-                desc: 'A test tool',
-            }],
-        ]);
-
-        async renderImply() {
-            return [];
-        }
-
-        async handleToolCall(toolName: string, params: any): Promise<void> {
-            // Mock implementation
-        }
-    }
 
     beforeEach(() => {
         workspace = new VirtualWorkspace({
@@ -53,8 +29,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
         it('should register multiple components', () => {
             const component1 = new TestComponent();
-            const component2 = new TestComponent();
-            component2.componentId = 'test-component-2';
+            const component2 = new TestComponent2();
 
             workspace.registerComponents([
                 { id: 'comp1', component: component1 },
@@ -67,8 +42,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
         it('should get all component keys', () => {
             const component1 = new TestComponent();
-            const component2 = new TestComponent();
-            component2.componentId = 'test-component-2';
+            const component2 = new TestComponent2();
 
             workspace.registerComponent('comp1', component1);
             workspace.registerComponent('comp2', component2);
@@ -157,4 +131,10 @@ describe('VirtualWorkspace (Component-based)', () => {
             expect(ws.getComponent('test-component')).toBe(component);
         });
     });
+
+    describe('render component according to render mode', () => {
+        it('should render in markdown', async () => {
+
+        })
+    })
 });

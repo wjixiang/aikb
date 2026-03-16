@@ -11,7 +11,8 @@ import {
     MarginStyle,
     border,
     BoxBorders,
-    BoxBorderChars
+    BoxBorderChars,
+    RenderMode
 } from '../core/types.js';
 
 /**
@@ -30,9 +31,10 @@ export abstract class TUIElement {
 
     /**
      * Render the element to a string
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      * Must be implemented by subclasses
      */
-    abstract render(): string;
+    abstract render(renderMode?: RenderMode): string;
 
     /**
      * Get the element's children
@@ -50,8 +52,9 @@ export abstract class TUIElement {
 
     /**
      * Calculate computed styles for the element
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    protected computeStyles(availableWidth?: number): ComputedStyles {
+    protected computeStyles(availableWidth?: number, renderMode?: RenderMode): ComputedStyles {
         const { styles } = this.metadata;
         const width = styles?.width;
         const height = styles?.height;
@@ -61,27 +64,44 @@ export abstract class TUIElement {
         const bordeStyle = this.resolveborder(styles?.border);
         const align = styles?.align || 'left';
 
+        // In markdown mode, always disable borders regardless of showBorder setting
+        const effectiveShowBorder = renderMode === 'markdown' ? false : showBorder;
+
+        // In markdown mode, use content's natural width without fixed constraints
+        const isMarkdown = renderMode === 'markdown';
+
+        // In markdown mode, zero out padding and margin for cleaner output
+        const effectivePadding = isMarkdown ? [0, 0, 0, 0] : padding;
+        const effectiveMargin = isMarkdown ? [0, 0, 0, 0] : margin;
+
         // Calculate dimensions
-        const contentDims = this.calculateContentDimensions();
-        const finalWidth = width ?? availableWidth ?? TUIElement.DEFAULT_TERMINAL_WIDTH;
+        const contentDims = this.calculateContentDimensions(availableWidth, renderMode);
+        let finalWidth: number;
+        if (isMarkdown) {
+            // In markdown mode, use content's natural width (no fixed width)
+            finalWidth = contentDims.width;
+        } else {
+            finalWidth = width ?? availableWidth ?? TUIElement.DEFAULT_TERMINAL_WIDTH;
+        }
         const finalHeight = height === 0
-            ? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0))
-            : (height ?? (contentDims.height + padding[0] + padding[2] + (showBorder ? 2 : 0)));
+            ? (contentDims.height + effectivePadding[0] + effectivePadding[2] + (effectiveShowBorder ? 2 : 0))
+            : (height ?? (contentDims.height + effectivePadding[0] + effectivePadding[2] + (effectiveShowBorder ? 2 : 0)));
 
         return {
             width: finalWidth,
             height: finalHeight,
-            padding,
-            margin,
-            border: showBorder ? bordeStyle : null,
+            padding: effectivePadding,
+            margin: effectiveMargin,
+            border: effectiveShowBorder ? bordeStyle : null,
             align
         };
     }
 
     /**
      * Calculate the dimensions of the content (without padding/border/margin)
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    protected calculateContentDimensions(): { width: number; height: number } {
+    protected calculateContentDimensions(availableWidth?: number, renderMode?: RenderMode): { width: number; height: number } {
         const { content } = this.metadata;
         const finalContent = content ?? '';
 
@@ -98,7 +118,7 @@ export abstract class TUIElement {
         // Calculate from children
         if (this.children.length > 0) {
             for (const child of this.children) {
-                const childRender = child.render();
+                const childRender = child.renderWithWidth(availableWidth, renderMode);
                 const childLines = childRender.split('\n');
                 maxContentWidth = Math.max(maxContentWidth, ...childLines.map(line => line.length));
                 maxContentHeight += childLines.length;
@@ -221,8 +241,9 @@ export abstract class TUIElement {
 
     /**
      * Render all children elements
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    protected renderChildren(availableWidth?: number): string[] {
+    protected renderChildren(availableWidth?: number, renderMode?: RenderMode): string[] {
         if (this.children.length === 0) {
             return [];
         }
@@ -230,7 +251,7 @@ export abstract class TUIElement {
         const result: string[] = [];
 
         for (const child of this.children) {
-            const childRender = child.renderWithWidth(availableWidth);
+            const childRender = child.renderWithWidth(availableWidth, renderMode);
             const childLines = childRender.split('\n');
             result.push(...childLines);
         }
@@ -241,9 +262,10 @@ export abstract class TUIElement {
     /**
      * Render the element with a specified available width
      * This is used by parent elements to constrain child width
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    renderWithWidth(availableWidth?: number): string {
-        return this.render();
+    renderWithWidth(availableWidth?: number, renderMode?: RenderMode): string {
+        return this.render(renderMode);
     }
 
     /**

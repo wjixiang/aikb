@@ -31,16 +31,18 @@ export class tdiv extends TUIElement {
 
     /**
      * Render the tdiv element
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    render(): string {
-        return this.renderWithWidth(undefined);
+    render(renderMode?: 'tui' | 'markdown'): string {
+        return this.renderWithWidth(undefined, renderMode);
     }
 
     /**
      * Render the tdiv element with a specified available width
+     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
      */
-    override renderWithWidth(availableWidth: number | undefined): string {
-        const styles = this.computeStyles(availableWidth);
+    override renderWithWidth(availableWidth: number | undefined, renderMode?: 'tui' | 'markdown'): string {
+        const styles = this.computeStyles(availableWidth, renderMode);
         // console.debug(styles)
         const content = this.metadata.content;
         const finalContent = content ?? '';
@@ -79,16 +81,20 @@ export class tdiv extends TUIElement {
         let contentLines: string[] = [];
 
         const rawLines = finalContent.split('\n');
+        // In markdown mode, don't wrap content - use natural line breaks only
+        const shouldWrap = renderMode !== 'markdown';
         for (let index = 0; index < rawLines.length; index++) {
             let currentLine = rawLines[index];
-            while (currentLine.length > innerWidth) {
-                contentLines.push(currentLine.slice(0, innerWidth));
-                currentLine = currentLine.slice(innerWidth);
+            if (shouldWrap) {
+                while (currentLine.length > innerWidth) {
+                    contentLines.push(currentLine.slice(0, innerWidth));
+                    currentLine = currentLine.slice(innerWidth);
+                }
             }
             contentLines.push(currentLine)
         }
 
-        const renderedChildren = this.renderChildren(innerWidth);
+        const renderedChildren = this.renderChildren(innerWidth, renderMode);
         const allContentLines = [...contentLines, ...renderedChildren];
 
         // Render content area
@@ -140,7 +146,7 @@ export class tdiv extends TUIElement {
     /**
      * Calculate content dimensions considering children
      */
-    protected override calculateContentDimensions(availableWidth?: number): { width: number; height: number } {
+    protected override calculateContentDimensions(availableWidth?: number, renderMode?: 'tui' | 'markdown'): { width: number; height: number } {
         const content = this.metadata.content;
         const finalContent = content ?? '';
 
@@ -157,7 +163,7 @@ export class tdiv extends TUIElement {
         // Calculate from children - pass available width to children
         if (this.children.length > 0) {
             for (const child of this.children) {
-                const childRender = child.renderWithWidth(availableWidth);
+                const childRender = child.renderWithWidth(availableWidth, renderMode);
                 const childLines = childRender.split('\n');
                 maxContentWidth = Math.max(maxContentWidth, ...childLines.map((line: string) => line.length));
                 maxContentHeight += childLines.length;

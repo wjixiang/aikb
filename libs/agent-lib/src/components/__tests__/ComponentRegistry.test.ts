@@ -6,57 +6,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ComponentRegistry } from '../ComponentRegistry.js';
-import { ToolComponent } from '../ui/index.js';
-import type { Tool } from '../ui/index.js';
-import { z } from 'zod';
+import { TestComponent, AnotherComponent } from '../../core/statefulContext/__tests__/testComponents.js';
 
 describe('ComponentRegistry', () => {
     let registry: ComponentRegistry;
-
-    // Test component
-    class TestComponent extends ToolComponent {
-        readonly componentId = 'test-component';
-        readonly displayName = 'Test Component';
-        readonly description = 'A test component';
-
-        toolSet = new Map<string, Tool>([
-            ['test_tool', {
-                toolName: 'test_tool',
-                paramsSchema: z.object({}),
-                desc: 'A test tool',
-            }],
-        ]);
-
-        async renderImply() {
-            return [];
-        }
-
-        async handleToolCall(toolName: string, params: any): Promise<void> {
-            // Mock implementation
-        }
-    }
-
-    class AnotherComponent extends ToolComponent {
-        readonly componentId = 'another-component';
-        readonly displayName = 'Another Component';
-        readonly description = 'Another test component';
-
-        toolSet = new Map<string, Tool>([
-            ['another_tool', {
-                toolName: 'another_tool',
-                paramsSchema: z.object({}),
-                desc: 'Another test tool',
-            }],
-        ]);
-
-        async renderImply() {
-            return [];
-        }
-
-        async handleToolCall(toolName: string, params: any): Promise<void> {
-            // Mock implementation
-        }
-    }
 
     beforeEach(() => {
         registry = new ComponentRegistry();

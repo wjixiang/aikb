@@ -1,5 +1,81 @@
-import { ToolComponent, type Tool, type ToolCallResult, tdiv } from '../../../components/index.js';
+import { ToolComponent, type Tool, type ToolCallResult, type TUIElement, tdiv } from '../../../components/index.js';
 import * as z from 'zod';
+
+/**
+ * Basic TestComponent - Simple component for testing registration
+ * Has a single test_tool
+ */
+export class TestComponent extends ToolComponent {
+    override readonly componentId = 'test-component';
+    override readonly displayName = 'Test Component';
+    override readonly description = 'A test component';
+
+    toolSet = new Map<string, Tool>([
+        ['test_tool', {
+            toolName: 'test_tool',
+            paramsSchema: z.object({}),
+            desc: 'A test tool',
+        }],
+    ]);
+
+    renderImply = async (): Promise<TUIElement[]> => {
+        return [];
+    };
+
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+        return { data: { success: true } };
+    };
+}
+
+/**
+ * TestComponent2 - Another component with different ID for testing
+ */
+export class TestComponent2 extends ToolComponent {
+    override readonly componentId = 'test-component-2';
+    override readonly displayName = 'Test Component 2';
+    override readonly description = 'Another test component';
+
+    toolSet = new Map<string, Tool>([
+        ['test_tool', {
+            toolName: 'test_tool',
+            paramsSchema: z.object({}),
+            desc: 'A test tool',
+        }],
+    ]);
+
+    renderImply = async (): Promise<TUIElement[]> => {
+        return [];
+    };
+
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+        return { data: { success: true } };
+    };
+}
+
+/**
+ * AnotherComponent - Component with different tool for testing
+ */
+export class AnotherComponent extends ToolComponent {
+    override readonly componentId = 'another-component';
+    override readonly displayName = 'Another Component';
+    override readonly description = 'Another test component';
+
+    toolSet = new Map<string, Tool>([
+        ['another_tool', {
+            toolName: 'another_tool',
+            paramsSchema: z.object({}),
+            desc: 'Another test tool',
+        }],
+    ]);
+
+    renderImply = async (): Promise<TUIElement[]> => {
+        return [];
+    };
+
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+        return { data: { success: true } };
+    };
+}
 
 /**
  * Test component A - Search functionality
